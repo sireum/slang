@@ -2,7 +2,8 @@
 
 [![Build Status](https://travis-ci.org/sireum/slang.svg?branch=master)](https://travis-ci.org/sireum/slang)
 
-Slang is a OO/FP programming language designed for formal analyses.
+Slang is a OO/FP programming language with contract and proof languages
+designed for formal analyses.
 It is (currently) a subset of Scala 2.x with different memory models 
 enabled via Scala's 
 [macro](https://github.com/sireum/runtime/blob/master/macros/shared/src/main/scala/org/sireum/%24internal/Macro.scala) 
