@@ -3,3 +3,5 @@
 target
 /.idea
 /.idea_modules
+/mill
+/versions.properties
