@@ -1,4 +1,6 @@
-# The Sireum Language (Slang)
+# The Sireum Programming Language (Slang)
+
+[![Build Status](https://travis-ci.org/sireum/slang.svg?branch=master)](https://travis-ci.org/sireum/slang)
 
 Slang is a OO/FP programming language designed for formal analyses.
 It is (currently) a subset of Scala 2.x with different memory models 
