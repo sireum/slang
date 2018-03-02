@@ -119,26 +119,6 @@ object TypeChecker {
     string"~>" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryMapsTo))
   )
 
-  def libraryReporter: (TypeChecker, Reporter) = {
-    val (initNameMap, initTypeMap) =
-      Resolver.addBuiltIns(HashMap.empty, HashMap.empty)
-    val (reporter, _, nameMap, typeMap) =
-      Resolver.parseProgramAndGloballyResolve(Library.files, initNameMap, initTypeMap)
-    val th =
-      TypeHierarchy.build(TypeHierarchy(nameMap, typeMap, Poset.empty, HashMap.empty), reporter)
-    val thOutlined = TypeOutliner.checkOutline(th, reporter)
-    val tc = TypeChecker(thOutlined, ISZ(), F)
-    val r = (tc, reporter)
-    return r
-  }
-
-  @memoize def checkedLibraryReporter: (TypeChecker, Reporter) = {
-    val (tc, reporter) = libraryReporter
-    val th = tc.typeHierarchy
-    val th2 = TypeChecker.checkComponents(th, th.nameMap, th.typeMap, reporter)
-    return (TypeChecker(th2, ISZ(), F), reporter)
-  }
-
   def buildTypeSubstMap(
     name: QName,
     posOpt: Option[Position],
@@ -180,92 +160,6 @@ object TypeChecker {
       substMap = substMap + m.typeParams(i) ~> args(i)
     }
     return Some(substMap)
-  }
-
-  def checkWorksheet(
-    thOpt: Option[TypeHierarchy],
-    program: AST.TopUnit.Program,
-    reporter: Reporter
-  ): AST.TopUnit.Program = {
-    val th: TypeHierarchy = thOpt match {
-      case Some(thi) => thi
-      case _ =>
-        val (tc, rep) = libraryReporter
-        if (rep.hasIssue) {
-          reporter.reports(rep.messages)
-          return program
-        }
-        tc.typeHierarchy
-    }
-
-    val gdr = GlobalDeclarationResolver(HashMap.empty, HashMap.empty, Reporter.create)
-    gdr.resolveProgram(
-      program(
-        body = program.body(
-          stmts = program.body.stmts.withFilter(
-            stmt =>
-              stmt match {
-                case _: AST.Stmt.Method => F
-                case _: AST.Stmt.SpecMethod => F
-                case _: AST.Stmt.Var => F
-                case _: AST.Stmt.VarPattern => F
-                case _: AST.Stmt.SpecVar => F
-                case _ => T
-            }
-          )
-        )
-      )
-    )
-
-    if (gdr.reporter.hasError) {
-      reporter.reports(gdr.reporter.messages)
-      return program
-    }
-
-    val th2: TypeHierarchy = {
-      val (rep, _, nameMap, typeMap) =
-        Resolver.combine(
-          (Reporter.create, ISZ(), th.nameMap, th.typeMap),
-          (Reporter.create, AST.TopUnit.Program.empty, gdr.globalNameMap, gdr.globalTypeMap)
-        )
-
-      if (rep.hasIssue) {
-        reporter.reports(rep.messages)
-        return program
-      }
-
-      TypeHierarchy.build(th(nameMap = nameMap, typeMap = typeMap), reporter)
-    }
-
-    if (reporter.hasError) {
-      return program
-    }
-
-    val th3 = TypeOutliner.checkOutline(th2, reporter)
-    if (reporter.hasError) {
-      return program
-    }
-
-    var nameMap: NameMap = HashMap.empty
-    var typeMap: TypeMap = HashMap.empty
-
-    for (name <- gdr.globalNameMap.keys) {
-      nameMap = nameMap + name ~> th3.nameMap.get(name).get
-    }
-
-    for (name <- gdr.globalTypeMap.keys) {
-      typeMap = typeMap + name ~> th3.typeMap.get(name).get
-    }
-
-    val th4 = checkComponents(th3, nameMap, typeMap, reporter)
-    if (reporter.hasError) {
-      return program
-    }
-
-    val typeChecker = TypeChecker(th4, ISZ(), F)
-    val scope = Scope.Local(HashMap.empty, HashMap.empty, None(), None(), Some(Scope.Global(ISZ(), ISZ(), ISZ())))
-    val newBody = typeChecker.checkBody(None(), scope, program.body, reporter)
-    return program(body = newBody)
   }
 
   def checkComponents(th: TypeHierarchy, nameMap: NameMap, typeMap: TypeMap, reporter: Reporter): TypeHierarchy = {

@@ -36,7 +36,7 @@ class LibraryTypeCheckingTest extends TestSuite {
   val tests = Tests {
 
     * - {
-      val (tc, rep) = TypeChecker.libraryReporter
+      val (tc, rep) = FrontEnd.libraryReporter
       rep.printMessages()
       assert(!rep.hasIssue)
       def nameInfo(th: TypeHierarchy, name: Predef.String): Resolver.NameMap = {

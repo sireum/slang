@@ -80,9 +80,21 @@ object Module {
 
     final override def ivyDeps = Agg.empty
 
-    final override def deps = Seq(parserObject)
+    final override def deps = Seq(astObject)
+
+    def astObject: Ast
+
+  }
+
+  trait FrontEnd extends Module {
+
+    final override def ivyDeps = Agg.empty
+
+    final override def deps = Seq(parserObject, tipeObject)
 
     def parserObject: Parser
+
+    def tipeObject: Tipe
 
   }
 

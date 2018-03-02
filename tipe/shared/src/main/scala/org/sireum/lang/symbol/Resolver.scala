@@ -27,7 +27,6 @@
 package org.sireum.lang.symbol
 
 import org.sireum._
-import org.sireum.lang.parser.Parser
 import org.sireum.ops._
 import org.sireum.message._
 import org.sireum.lang.{ast => AST}
@@ -51,6 +50,16 @@ object Resolver {
     }
 
     val emptyAttr = AST.Attr(None[Position]())
+    val emptyTypedAttr = AST.TypedAttr(None(), None())
+
+    @pure def id(name: String): AST.Id = {
+      return AST.Id(name, emptyAttr)
+    }
+
+    @pure def tname(name: String, args: ISZ[AST.Type]): AST.Type.Named = {
+      return AST.Type.Named(AST.Name(ISZ(id(name)), emptyAttr), args, emptyTypedAttr)
+    }
+
     val dollar = AST.Exp
       .Ident(AST.Id("$", emptyAttr), AST.ResolvedAttr(None[Position](), None[AST.ResolvedInfo](), None[AST.Typed]()))
     val dollarAssignExp = AST.Stmt.Expr(dollar, AST.TypedAttr(None(), None()))
@@ -61,7 +70,7 @@ object Resolver {
       AST.Typed.sireumName,
       T,
       scope,
-      Parser("val T: B = true").parseStmt[AST.Stmt.Var](initOpt = Some(dollarAssignExp)),
+      AST.Stmt.Var(T, id("T"), Some(tname("B", ISZ())), Some(dollarAssignExp), emptyAttr),
       None(),
       Some(AST.ResolvedInfo.Var(T, F, tName, "T"))
     )
@@ -71,19 +80,41 @@ object Resolver {
       AST.Typed.sireumName,
       T,
       scope,
-      Parser("val F: B = false").parseStmt[AST.Stmt.Var](initOpt = Some(dollarAssignExp)),
+      AST.Stmt.Var(T, id("F"), Some(tname("B", ISZ())), Some(dollarAssignExp), emptyAttr),
       None(),
       Some(AST.ResolvedInfo.Var(T, F, tName, "F"))
     )
 
     var tm = typeMap + AST.Typed.iszName ~>
-      TypeInfo.TypeAlias(AST.Typed.iszName, scope, Parser("type ISZ[T] = IS[Z, T]").parseStmt[AST.Stmt.TypeAlias])
+      TypeInfo.TypeAlias(
+        AST.Typed.iszName,
+        scope,
+        AST.Stmt.TypeAlias(
+          id("ISZ"),
+          ISZ(AST.TypeParam(id("T"))),
+          tname("IS", ISZ(tname("Z", ISZ()), tname("T", ISZ()))),
+          emptyAttr
+        )
+      )
 
     tm = tm + AST.Typed.mszName ~>
-      TypeInfo.TypeAlias(AST.Typed.mszName, scope, Parser("type MSZ[T] = MS[Z, T]").parseStmt[AST.Stmt.TypeAlias])
+      TypeInfo.TypeAlias(
+        AST.Typed.mszName,
+        scope,
+        AST.Stmt.TypeAlias(
+          id("MSZ"),
+          ISZ(AST.TypeParam(id("T"))),
+          tname("MS", ISZ(tname("Z", ISZ()), tname("T", ISZ()))),
+          emptyAttr
+        )
+      )
 
     tm = tm + AST.Typed.zsName ~>
-      TypeInfo.TypeAlias(AST.Typed.zsName, scope, Parser("type ZS = MS[Z, Z]").parseStmt[AST.Stmt.TypeAlias])
+      TypeInfo.TypeAlias(
+        AST.Typed.zsName,
+        scope,
+        AST.Stmt.TypeAlias(id("ZS"), ISZ(), tname("MS", ISZ(tname("Z", ISZ()), tname("Z", ISZ()))), emptyAttr)
+      )
 
     tm = tm + AST.Typed.unit.ids ~> TypeInfo.AbstractDatatype(
       AST.Typed.sireumName,
@@ -323,37 +354,6 @@ object Resolver {
       }
     }
     return (reporter, r._2 :+ u._2, rNameMap, rTypeMap)
-  }
-
-  @pure def parseProgramAndGloballyResolve(
-    sources: ISZ[(Option[String], String)],
-    globalNameMap: NameMap,
-    globalTypeMap: TypeMap
-  ): (Reporter, ISZ[AST.TopUnit.Program], NameMap, TypeMap) = {
-    @pure def parseGloballyResolve(p: (Option[String], String)): (Reporter, AST.TopUnit.Program, NameMap, TypeMap) = {
-      val reporter = Reporter.create
-      val r = Parser(p._2).parseTopUnit[AST.TopUnit.Program](T, F, F, p._1, reporter)
-      val nameMap = HashMap.empty[QName, Info]
-      val typeMap = HashMap.empty[QName, TypeInfo]
-      if (reporter.hasError) {
-        return (reporter, AST.TopUnit.Program.empty, nameMap, typeMap)
-      }
-      r match {
-        case Some(program) =>
-          val gdr = GlobalDeclarationResolver(nameMap, typeMap, Reporter.create)
-          gdr.resolveProgram(program)
-          reporter.reports(gdr.reporter.messages)
-          return (reporter, program, gdr.globalNameMap, gdr.globalTypeMap)
-        case _ => return (reporter, AST.TopUnit.Program.empty, nameMap, typeMap)
-      }
-    }
-
-    val t = ISZOps(sources).parMapFoldLeft[
-      (Reporter, AST.TopUnit.Program, NameMap, TypeMap),
-      (Reporter, ISZ[AST.TopUnit.Program], NameMap, TypeMap)
-    ](parseGloballyResolve _, combine _, (Reporter.create, ISZ(), globalNameMap, globalTypeMap))
-    val p = addBuiltIns(t._3, t._4)
-    return (t._1, t._2, p._1, p._2)
   }
 
   def typeParamMap(typeParams: ISZ[AST.TypeParam], reporter: Reporter): HashSMap[String, TypeInfo] = {

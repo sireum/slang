@@ -428,7 +428,7 @@ class TypeCheckerTest extends TestSuite {
     val reporter = Reporter.create
     Parser(input).parseTopUnit[TopUnit.Program](allowSireum = F, isWorksheet = T, isDiet = F, None(), reporter) match {
       case Some(program) if !reporter.hasIssue =>
-        val p = TypeChecker.checkWorksheet(None(), program, reporter)
+        val p = FrontEnd.checkWorksheet(None(), program, reporter)
         if (reporter.hasIssue) {
           if (isPassing) {
             reporter.printMessages()
@@ -449,7 +449,7 @@ class TypeCheckerTest extends TestSuite {
 
   def testStmt(input: Predef.String, isPassing: Boolean, msg: Predef.String = ""): Boolean = {
     val typeChecker: TypeChecker = {
-      val (tc, rep) = TypeChecker.libraryReporter
+      val (tc, rep) = FrontEnd.libraryReporter
       if (rep.hasIssue) {
         rep.printMessages()
         return false
