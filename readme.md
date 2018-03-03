@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/sireum/slang.svg?branch=master)](https://travis-ci.org/sireum/slang)
 
 Slang is an OO/FP programming language with contract and proof languages
-designed for formal analyses that serves as the basis for the next generation
+designed for formal analyses; it serves as the basis for the next generation
 [Logika](http://logika.sireum.org) verifier and proof checker, as well as for other
 formal method-based analysis techniques.
 
@@ -13,10 +13,10 @@ enabled via Scala's
 and  [compiler plugin](https://github.com/sireum/scalac-plugin) 
 facilities, with support for [IntelliJ](https://github.com/sireum/intellij-injector).
 While tied to Scala 2.x, the programming language can be realized
-on top of similar family of languages with meta-programming 
+on top of a similar family of languages with meta-programming 
 and/or compiler plugin facilities.
   
-This repository holds the Slang front-end 
+This repository holds the Slang front-end components 
 (i.e., parser, symbol resolver, and type checker).
 With the exception of a small part of its 
 [runtime library](https://github.com/sireum/runtime) and its
@@ -33,12 +33,14 @@ Slang currently runs on the JVM (Java 8+) and Javascript
 ./test.sh
 ```
 
-The test run builds the Slang runtime library and the front-end,
-then uses the result to parse, resolve, and type check the
-codebase itself. After type checking, 
-it serializes the codebase AST along with symbol and type information
-and deserializes them back and check for equivalence before/after
-de/serialization.
+It builds the Slang runtime library and the front-end,
+then uses the result to parse, resolve, and type check the codebase itself.
+After type checking, it serializes the codebase AST along with symbol and type information
+and deserializes them back and check for equivalence before/after de/serialization.
 
-(Currently on JVM only due to [lihaoyi/mill#164](https://github.com/lihaoyi/mill/issues/164))
+The above runs the Slang front-end test suite under a JVM; to run it under Node.js after the above
+(*caution:* it is a lot slower):
 
+```bash
+./mill slang.frontend.js.tests.test
+```
