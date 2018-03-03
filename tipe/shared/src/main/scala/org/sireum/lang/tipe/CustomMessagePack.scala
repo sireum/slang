@@ -52,9 +52,9 @@ object CustomMessagePack {
 
   @record class Reader(val reader: MessagePack.Reader.Impl) extends MsgPack.Reader {
 
-    val typedPool: MSZ[AST.Typed] = MSZ()
-    val resolvedInfoPool: MSZ[AST.ResolvedInfo] = MSZ()
-    val scopeGlobalPool: MSZ[Scope.Global] = MSZ()
+    var typedPool: MSZ[AST.Typed] = MSZ()
+    var resolvedInfoPool: MSZ[AST.ResolvedInfo] = MSZ()
+    var scopeGlobalPool: MSZ[Scope.Global] = MSZ()
 
     def errorOpt: Option[MessagePack.ErrorMsg] = {
       return reader.errorOpt
@@ -67,7 +67,7 @@ object CustomMessagePack {
       pOpt match {
         case Some((t, size)) =>
           assert(t == MessagePack.StringPoolExtType)
-          reader.stringPool.expand(size, "")
+          reader.stringPool = MSZ.create(size, "")
           var i = 0
           while (i < size) {
             val s = reader.readStringNoPool()
@@ -80,7 +80,7 @@ object CustomMessagePack {
       pOpt match {
         case Some((t, size)) =>
           assert(t == MessagePack.DocInfoExtType)
-          reader.docInfoPool.expand(size, message.DocInfo(None(), ISZ()))
+          reader.docInfoPool = MSZ.create(size, message.DocInfo(None(), ISZ()))
           var i = 0
           while (i < size) {
             val docInfo = reader.readDocInfoNoPool()
@@ -93,7 +93,7 @@ object CustomMessagePack {
       pOpt match {
         case Some((t, size)) =>
           assert(t == TypedPoolExtType)
-          typedPool.expand(size, AST.Typed.Tuple(ISZ()))
+          typedPool = MSZ.create(size, AST.Typed.Tuple(ISZ()))
           var i = 0
           while (i < size) {
             val typed = super.read_astTyped()
@@ -106,7 +106,7 @@ object CustomMessagePack {
       pOpt match {
         case Some((t, size)) =>
           assert(t == ResolvedInfoPoolExtType)
-          resolvedInfoPool.expand(size, AST.ResolvedInfo.Object(ISZ()))
+          resolvedInfoPool = MSZ.create(size, AST.ResolvedInfo.Object(ISZ()))
           var i = 0
           while (i < size) {
             val ri = super.read_astResolvedInfo()
@@ -119,7 +119,7 @@ object CustomMessagePack {
       pOpt match {
         case Some((t, size)) =>
           assert(t == ScopeGlobalPoolExtType)
-          scopeGlobalPool.expand(size, Scope.Global(ISZ(), ISZ(), ISZ()))
+          scopeGlobalPool = MSZ.create(size, Scope.Global(ISZ(), ISZ(), ISZ()))
           var i = 0
           while (i < size) {
             val sg = super.read_symbolScopeGlobal()
