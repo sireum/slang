@@ -35,6 +35,8 @@ import org.sireum.test._
 
 class TypeCheckerTest extends TestSuite {
 
+  val typeChecker: TypeChecker = LibraryTypeCheckingTest.tc
+
   val tests = Tests {
 
     "Passing" - {
@@ -428,7 +430,7 @@ class TypeCheckerTest extends TestSuite {
     val reporter = Reporter.create
     Parser(input).parseTopUnit[TopUnit.Program](allowSireum = F, isWorksheet = T, isDiet = F, None(), reporter) match {
       case Some(program) if !reporter.hasIssue =>
-        val p = FrontEnd.checkWorksheet(None(), program, reporter)
+        val p = FrontEnd.checkWorksheet(Some(typeChecker.typeHierarchy), program, reporter)
         if (reporter.hasIssue) {
           if (isPassing) {
             reporter.printMessages()
@@ -448,14 +450,6 @@ class TypeCheckerTest extends TestSuite {
   }
 
   def testStmt(input: Predef.String, isPassing: Boolean, msg: Predef.String = ""): Boolean = {
-    val typeChecker: TypeChecker = {
-      val (tc, rep) = FrontEnd.libraryReporter
-      if (rep.hasIssue) {
-        rep.printMessages()
-        return false
-      }
-      tc
-    }
     val stmt = Parser(input).parseStmt[Stmt]
     val scope = Scope.Local(HashMap.empty, HashMap.empty, None(), None(), Some(Scope.Global(ISZ(), ISZ(), ISZ())))
     val reporter = Reporter.create

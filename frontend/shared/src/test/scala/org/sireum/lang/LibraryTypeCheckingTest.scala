@@ -31,12 +31,17 @@ import org.sireum.lang.symbol._
 import org.sireum.lang.tipe._
 import org.sireum.test._
 
+object LibraryTypeCheckingTest {
+  val (tc, rep) = FrontEnd.libraryReporter
+}
+
+import LibraryTypeCheckingTest._
+
 class LibraryTypeCheckingTest extends TestSuite {
 
   val tests = Tests {
 
     * - {
-      val (tc, rep) = FrontEnd.libraryReporter
       rep.printMessages()
       assert(!rep.hasIssue)
       def nameInfo(th: TypeHierarchy, name: Predef.String): Resolver.NameMap = {
