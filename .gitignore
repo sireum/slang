@@ -1,7 +1,7 @@
-/runtime
-/out
-target
 /.idea
 /.idea_modules
+/out
+target
 /mill-standalone
 /versions.properties
+/runtime
