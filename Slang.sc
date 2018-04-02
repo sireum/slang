@@ -67,8 +67,8 @@ object Module {
   trait Parser extends Module {
 
     final override def ivyDeps = Agg(
-      ivy"org.scalameta::scalameta::$scalaMetaVersion".
-        excludeOrg("com.google.protobuf", "com.thesamet.scalapb")
+      ivy"org.scalameta::scalameta::$scalaMetaVersion"
+        //.excludeOrg("com.google.protobuf", "com.thesamet.scalapb")
     )
 
     final override def deps = Seq(astObject)
