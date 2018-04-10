@@ -29,7 +29,6 @@ import org.sireum.$internal.Trie
 import org.sireum.test._
 
 class SlangFrontEndRcTest extends TestSuite {
-  val notJs: Boolean = !org.sireum.$internal.Macro.isJs
   val tq = "\"\"\""
 
   val tests = Tests {

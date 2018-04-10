@@ -157,7 +157,6 @@ object SlangFrontEndTest {
 import SlangFrontEndTest._
 
 class SlangFrontEndTest extends TestSuite {
-  val notJs: Boolean = !org.sireum.$internal.Macro.isJs
   val tq = "\"\"\""
 
   val tests = Tests {
