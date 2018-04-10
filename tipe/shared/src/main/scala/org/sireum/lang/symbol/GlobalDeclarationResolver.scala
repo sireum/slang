@@ -376,7 +376,19 @@ import GlobalDeclarationResolver._
         declareType(
           "sig",
           name,
-          TypeInfo.Sig(currentName, F, F, tpe, ISZ(), members.specVars, members.specMethods, members.methods, sc, stmt),
+          TypeInfo.Sig(
+            currentName,
+            F,
+            F,
+            tpe,
+            ISZ(),
+            members.specVars,
+            members.specMethods,
+            members.methods,
+            members.refinements,
+            sc,
+            stmt
+          ),
           stmt.attr.posOpt
         )
       case stmt: AST.Stmt.AbstractDatatype =>
@@ -431,6 +443,7 @@ import GlobalDeclarationResolver._
             members.vars,
             members.specMethods,
             members.methods,
+            members.refinements,
             sc,
             stmt
           ),
@@ -518,7 +531,7 @@ import GlobalDeclarationResolver._
         case _ =>
       }
     }
-    TypeInfo.Members(specVars, vars, specMethods, methods)
+    TypeInfo.Members(specVars, vars, specMethods, methods, HashMap.empty)
   }
 
   def declareName(entity: String, name: QName, info: Info, posOpt: Option[Position]): Unit = {

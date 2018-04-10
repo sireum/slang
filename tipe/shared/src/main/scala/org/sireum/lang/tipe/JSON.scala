@@ -246,8 +246,16 @@ object JSON {
         ("specVars", printHashMap(F, o.specVars, printString _, print_symbolInfoSpecVar _)),
         ("specMethods", printHashMap(F, o.specMethods, printString _, print_symbolInfoSpecMethod _)),
         ("methods", printHashMap(F, o.methods, printString _, print_symbolInfoMethod _)),
+        ("refinements", printHashMap(F, o.refinements, printString _, print_symbolTypeInfoName _)),
         ("scope", print_symbolScopeGlobal(o.scope)),
         ("ast", print_astStmtSig(o.ast))
+      ))
+    }
+
+    @pure def print_symbolTypeInfoName(o: org.sireum.lang.symbol.TypeInfo.Name): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.symbol.TypeInfo.Name""""),
+        ("ids", printISZ(T, o.ids, printString _))
       ))
     }
 
@@ -267,6 +275,7 @@ object JSON {
         ("vars", printHashMap(F, o.vars, printString _, print_symbolInfoVar _)),
         ("specMethods", printHashMap(F, o.specMethods, printString _, print_symbolInfoSpecMethod _)),
         ("methods", printHashMap(F, o.methods, printString _, print_symbolInfoMethod _)),
+        ("refinements", printHashMap(F, o.refinements, printString _, print_symbolTypeInfoName _)),
         ("scope", print_symbolScopeGlobal(o.scope)),
         ("ast", print_astStmtAbstractDatatype(o.ast))
       ))
@@ -295,7 +304,8 @@ object JSON {
         ("specVars", printHashMap(F, o.specVars, printString _, print_symbolInfoSpecVar _)),
         ("vars", printHashMap(F, o.vars, printString _, print_symbolInfoVar _)),
         ("specMethods", printHashMap(F, o.specMethods, printString _, print_symbolInfoSpecMethod _)),
-        ("methods", printHashMap(F, o.methods, printString _, print_symbolInfoMethod _))
+        ("methods", printHashMap(F, o.methods, printString _, print_symbolInfoMethod _)),
+        ("refinements", printHashMap(F, o.refinements, printString _, print_symbolTypeInfoName _))
       ))
     }
 
@@ -2409,13 +2419,31 @@ object JSON {
       parser.parseObjectKey("methods")
       val methods = parser.parseHashMap(parser.parseString _, parse_symbolInfoMethod _)
       parser.parseObjectNext()
+      parser.parseObjectKey("refinements")
+      val refinements = parser.parseHashMap(parser.parseString _, parse_symbolTypeInfoName _)
+      parser.parseObjectNext()
       parser.parseObjectKey("scope")
       val scope = parse_symbolScopeGlobal()
       parser.parseObjectNext()
       parser.parseObjectKey("ast")
       val ast = parse_astStmtSig()
       parser.parseObjectNext()
-      return org.sireum.lang.symbol.TypeInfo.Sig(owner, outlined, typeChecked, tpe, ancestors, specVars, specMethods, methods, scope, ast)
+      return org.sireum.lang.symbol.TypeInfo.Sig(owner, outlined, typeChecked, tpe, ancestors, specVars, specMethods, methods, refinements, scope, ast)
+    }
+
+    def parse_symbolTypeInfoName(): org.sireum.lang.symbol.TypeInfo.Name = {
+      val r = parse_symbolTypeInfoNameT(F)
+      return r
+    }
+
+    def parse_symbolTypeInfoNameT(typeParsed: B): org.sireum.lang.symbol.TypeInfo.Name = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.symbol.TypeInfo.Name")
+      }
+      parser.parseObjectKey("ids")
+      val ids = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
+      return org.sireum.lang.symbol.TypeInfo.Name(ids)
     }
 
     def parse_symbolTypeInfoAbstractDatatype(): org.sireum.lang.symbol.TypeInfo.AbstractDatatype = {
@@ -2466,13 +2494,16 @@ object JSON {
       parser.parseObjectKey("methods")
       val methods = parser.parseHashMap(parser.parseString _, parse_symbolInfoMethod _)
       parser.parseObjectNext()
+      parser.parseObjectKey("refinements")
+      val refinements = parser.parseHashMap(parser.parseString _, parse_symbolTypeInfoName _)
+      parser.parseObjectNext()
       parser.parseObjectKey("scope")
       val scope = parse_symbolScopeGlobal()
       parser.parseObjectNext()
       parser.parseObjectKey("ast")
       val ast = parse_astStmtAbstractDatatype()
       parser.parseObjectNext()
-      return org.sireum.lang.symbol.TypeInfo.AbstractDatatype(owner, outlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, ancestors, specVars, vars, specMethods, methods, scope, ast)
+      return org.sireum.lang.symbol.TypeInfo.AbstractDatatype(owner, outlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, ancestors, specVars, vars, specMethods, methods, refinements, scope, ast)
     }
 
     def parse_symbolTypeInfoTypeAlias(): org.sireum.lang.symbol.TypeInfo.TypeAlias = {
@@ -2535,7 +2566,10 @@ object JSON {
       parser.parseObjectKey("methods")
       val methods = parser.parseHashMap(parser.parseString _, parse_symbolInfoMethod _)
       parser.parseObjectNext()
-      return org.sireum.lang.symbol.TypeInfo.Members(specVars, vars, specMethods, methods)
+      parser.parseObjectKey("refinements")
+      val refinements = parser.parseHashMap(parser.parseString _, parse_symbolTypeInfoName _)
+      parser.parseObjectNext()
+      return org.sireum.lang.symbol.TypeInfo.Members(specVars, vars, specMethods, methods, refinements)
     }
 
     def parse_astTopUnit(): org.sireum.lang.ast.TopUnit = {
@@ -6263,6 +6297,24 @@ object JSON {
       return r
     }
     val r = to(s, f_symbolTypeInfoSig _)
+    return r
+  }
+
+  def from_symbolTypeInfoName(o: org.sireum.lang.symbol.TypeInfo.Name, isCompact: B): String = {
+    val st = Printer.print_symbolTypeInfoName(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_symbolTypeInfoName(s: String): Either[org.sireum.lang.symbol.TypeInfo.Name, Json.ErrorMsg] = {
+    def f_symbolTypeInfoName(parser: Parser): org.sireum.lang.symbol.TypeInfo.Name = {
+      val r = parser.parse_symbolTypeInfoName()
+      return r
+    }
+    val r = to(s, f_symbolTypeInfoName _)
     return r
   }
 

@@ -315,11 +315,11 @@ object TypeOutliner {
     val members = outlineMembers(
       T,
       info.name,
-      TypeInfo.Members(info.specVars, HashMap.empty, info.specMethods, info.methods),
+      TypeInfo.Members(info.specVars, HashMap.empty, info.specMethods, info.methods, info.refinements),
       scope,
       reporter
     )
-    val (TypeInfo.Members(specVars, _, specMethods, methods), ancestors, newParents) =
+    val (TypeInfo.Members(specVars, _, specMethods, methods, refinements), ancestors, newParents) =
       outlineInheritedMembers(info.name, info.ast.parents, scope, members, reporter)
     val newInfo = info(
       outlined = T,
@@ -327,7 +327,8 @@ object TypeOutliner {
       ast = info.ast(parents = newParents),
       specVars = specVars,
       specMethods = specMethods,
-      methods = methods
+      methods = methods,
+      refinements = refinements
     )
     return (th: TypeHierarchy) => (th(typeMap = th.typeMap + info.name ~> newInfo), reporter)
   }
@@ -339,11 +340,11 @@ object TypeOutliner {
     val members = outlineMembers(
       info.ast.isRoot,
       info.name,
-      TypeInfo.Members(info.specVars, info.vars, info.specMethods, info.methods),
+      TypeInfo.Members(info.specVars, info.vars, info.specMethods, info.methods, info.refinements),
       scope,
       reporter
     )
-    val (TypeInfo.Members(specVars, vars, specMethods, methods), ancestors, newParents) =
+    val (TypeInfo.Members(specVars, vars, specMethods, methods, refinements), ancestors, newParents) =
       outlineInheritedMembers(info.name, info.ast.parents, scope, members, reporter)
     var newParams = ISZ[AST.AbstractDatatypeParam]()
     var paramTypes = ISZ[AST.Typed]()
@@ -370,7 +371,8 @@ object TypeOutliner {
           specVars = specVars,
           vars = vars,
           specMethods = specMethods,
-          methods = methods
+          methods = methods,
+          refinements = refinements
         )
       else
         info(
@@ -393,6 +395,7 @@ object TypeOutliner {
           vars = vars,
           specMethods = specMethods,
           methods = methods,
+          refinements = refinements,
           ast = info.ast(params = newParams, parents = newParents)
         )
     return (th: TypeHierarchy) => (th(typeMap = th.typeMap + info.name ~> newInfo), reporter)
@@ -548,7 +551,7 @@ object TypeOutliner {
       checkMethod(p)
     }
 
-    return TypeInfo.Members(specVars, vars, specMethods, methods)
+    return TypeInfo.Members(specVars, vars, specMethods, methods, HashMap.empty)
   }
 
   def outlineInheritedMembers(
@@ -562,6 +565,7 @@ object TypeOutliner {
     var vars = info.vars
     var specMethods = info.specMethods
     var methods = info.methods
+    var refinements = info.refinements
 
     def checkSpecInherit(id: String, tname: QName, posOpt: Option[Position]): B = {
       specVars.get(id) match {
@@ -803,8 +807,9 @@ object TypeOutliner {
             return
           } else {
             ok = checkMethodRefinement(otherInfo, mInfo, substMap, posOpt)
-            if (!ok) {
-              checkMethodRefinement(otherInfo, mInfo, substMap, posOpt)
+            if (ok) {
+              refinements = refinements + id ~> TypeInfo.Name(mInfo.owner)
+            } else {
               reporter.error(
                 posOpt,
                 TypeChecker.typeCheckerKind,
@@ -826,7 +831,9 @@ object TypeOutliner {
             case Some(otherInfo) =>
               val v = otherInfo.ast
               ok = checkVarRefinement(pm, v, substMap, posOpt)
-              if (!ok) {
+              if (ok) {
+                refinements = refinements + id ~> TypeInfo.Name(mInfo.owner)
+              } else {
                 reporter.error(
                   posOpt,
                   TypeChecker.typeCheckerKind,
@@ -919,7 +926,7 @@ object TypeOutliner {
       }
     }
     return (
-      TypeInfo.Members(specVars, vars, specMethods, methods),
+      TypeInfo.Members(specVars, vars, specMethods, methods, refinements),
       ancestors.elements.map(
         t =>
           t match {

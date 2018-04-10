@@ -68,305 +68,307 @@ object MsgPack {
 
     val _symbolTypeInfoSig: Z = -17
 
-    val _symbolTypeInfoAbstractDatatype: Z = -16
+    val _symbolTypeInfoName: Z = -16
 
-    val _symbolTypeInfoTypeAlias: Z = -15
+    val _symbolTypeInfoAbstractDatatype: Z = -15
 
-    val _symbolTypeInfoTypeVar: Z = -14
+    val _symbolTypeInfoTypeAlias: Z = -14
 
-    val _symbolTypeInfoMembers: Z = -13
+    val _symbolTypeInfoTypeVar: Z = -13
 
-    val _astTopUnitProgram: Z = -12
+    val _symbolTypeInfoMembers: Z = -12
 
-    val _astTopUnitSequentUnit: Z = -11
+    val _astTopUnitProgram: Z = -11
 
-    val _astTopUnitTruthTableUnit: Z = -10
+    val _astTopUnitSequentUnit: Z = -10
 
-    val _astStmtImport: Z = -9
+    val _astTopUnitTruthTableUnit: Z = -9
 
-    val _astStmtImportImporter: Z = -8
+    val _astStmtImport: Z = -8
 
-    val _astStmtImportMultiSelector: Z = -7
+    val _astStmtImportImporter: Z = -7
 
-    val _astStmtImportWildcardSelector: Z = -6
+    val _astStmtImportMultiSelector: Z = -6
 
-    val _astStmtImportNamedSelector: Z = -5
+    val _astStmtImportWildcardSelector: Z = -5
 
-    val _astStmtVar: Z = -4
+    val _astStmtImportNamedSelector: Z = -4
 
-    val _astStmtVarPattern: Z = -3
+    val _astStmtVar: Z = -3
 
-    val _astStmtSpecVar: Z = -2
+    val _astStmtVarPattern: Z = -2
 
-    val _astStmtMethod: Z = -1
+    val _astStmtSpecVar: Z = -1
 
-    val _astStmtExtMethod: Z = 0
+    val _astStmtMethod: Z = 0
 
-    val _astStmtSpecMethod: Z = 1
+    val _astStmtExtMethod: Z = 1
 
-    val _astStmtEnum: Z = 2
+    val _astStmtSpecMethod: Z = 2
 
-    val _astStmtSubZ: Z = 3
+    val _astStmtEnum: Z = 3
 
-    val _astStmtObject: Z = 4
+    val _astStmtSubZ: Z = 4
 
-    val _astStmtSig: Z = 5
+    val _astStmtObject: Z = 5
 
-    val _astStmtAbstractDatatype: Z = 6
+    val _astStmtSig: Z = 6
 
-    val _astStmtTypeAlias: Z = 7
+    val _astStmtAbstractDatatype: Z = 7
 
-    val _astStmtAssign: Z = 8
+    val _astStmtTypeAlias: Z = 8
 
-    val _astStmtBlock: Z = 9
+    val _astStmtAssign: Z = 9
 
-    val _astStmtIf: Z = 10
+    val _astStmtBlock: Z = 10
 
-    val _astStmtMatch: Z = 11
+    val _astStmtIf: Z = 11
 
-    val _astStmtWhile: Z = 12
+    val _astStmtMatch: Z = 12
 
-    val _astStmtDoWhile: Z = 13
+    val _astStmtWhile: Z = 13
 
-    val _astStmtFor: Z = 14
+    val _astStmtDoWhile: Z = 14
 
-    val _astStmtReturn: Z = 15
+    val _astStmtFor: Z = 15
 
-    val _astStmtLStmt: Z = 16
+    val _astStmtReturn: Z = 16
 
-    val _astStmtExpr: Z = 17
+    val _astStmtLStmt: Z = 17
 
-    val _astLClauseInvariants: Z = 18
+    val _astStmtExpr: Z = 18
 
-    val _astLClauseFacts: Z = 19
+    val _astLClauseInvariants: Z = 19
 
-    val _astLClauseFact: Z = 20
+    val _astLClauseFacts: Z = 20
 
-    val _astLClauseTheorems: Z = 21
+    val _astLClauseFact: Z = 21
 
-    val _astLClauseTheorem: Z = 22
+    val _astLClauseTheorems: Z = 22
 
-    val _astLClauseSequent: Z = 23
+    val _astLClauseTheorem: Z = 23
 
-    val _astLClauseProof: Z = 24
+    val _astLClauseSequent: Z = 24
 
-    val _astContractExp: Z = 25
+    val _astLClauseProof: Z = 25
 
-    val _astCase: Z = 26
+    val _astContractExp: Z = 26
 
-    val _astEnumGenRangeExpr: Z = 27
+    val _astCase: Z = 27
 
-    val _astEnumGenRangeStep: Z = 28
+    val _astEnumGenRangeExpr: Z = 28
 
-    val _astEnumGenFor: Z = 29
+    val _astEnumGenRangeStep: Z = 29
 
-    val _astTypeNamed: Z = 30
+    val _astEnumGenFor: Z = 30
 
-    val _astTypeFun: Z = 31
+    val _astTypeNamed: Z = 31
 
-    val _astTypeTuple: Z = 32
+    val _astTypeFun: Z = 32
 
-    val _astPatternLiteral: Z = 33
+    val _astTypeTuple: Z = 33
 
-    val _astPatternLitInterpolate: Z = 34
+    val _astPatternLiteral: Z = 34
 
-    val _astPatternRef: Z = 35
+    val _astPatternLitInterpolate: Z = 35
 
-    val _astPatternVarBinding: Z = 36
+    val _astPatternRef: Z = 36
 
-    val _astPatternWildcard: Z = 37
+    val _astPatternVarBinding: Z = 37
 
-    val _astPatternSeqWildcard: Z = 38
+    val _astPatternWildcard: Z = 38
 
-    val _astPatternStructure: Z = 39
+    val _astPatternSeqWildcard: Z = 39
 
-    val _astExpLitB: Z = 40
+    val _astPatternStructure: Z = 40
 
-    val _astExpLitC: Z = 41
+    val _astExpLitB: Z = 41
 
-    val _astExpLitZ: Z = 42
+    val _astExpLitC: Z = 42
 
-    val _astExpLitF32: Z = 43
+    val _astExpLitZ: Z = 43
 
-    val _astExpLitF64: Z = 44
+    val _astExpLitF32: Z = 44
 
-    val _astExpLitR: Z = 45
+    val _astExpLitF64: Z = 45
 
-    val _astExpLitString: Z = 46
+    val _astExpLitR: Z = 46
 
-    val _astExpStringInterpolate: Z = 47
+    val _astExpLitString: Z = 47
 
-    val _astExpThis: Z = 48
+    val _astExpStringInterpolate: Z = 48
 
-    val _astExpSuper: Z = 49
+    val _astExpThis: Z = 49
 
-    val _astExpUnary: Z = 50
+    val _astExpSuper: Z = 50
 
-    val _astExpBinary: Z = 51
+    val _astExpUnary: Z = 51
 
-    val _astExpIdent: Z = 52
+    val _astExpBinary: Z = 52
 
-    val _astExpEta: Z = 53
+    val _astExpIdent: Z = 53
 
-    val _astExpTuple: Z = 54
+    val _astExpEta: Z = 54
 
-    val _astExpSelect: Z = 55
+    val _astExpTuple: Z = 55
 
-    val _astExpInvoke: Z = 56
+    val _astExpSelect: Z = 56
 
-    val _astExpInvokeNamed: Z = 57
+    val _astExpInvoke: Z = 57
 
-    val _astExpIf: Z = 58
+    val _astExpInvokeNamed: Z = 58
 
-    val _astExpFunParam: Z = 59
+    val _astExpIf: Z = 59
 
-    val _astExpFun: Z = 60
+    val _astExpFunParam: Z = 60
 
-    val _astExpForYield: Z = 61
+    val _astExpFun: Z = 61
 
-    val _astExpQuant: Z = 62
+    val _astExpForYield: Z = 62
 
-    val _astNamedArg: Z = 63
+    val _astExpQuant: Z = 63
 
-    val _astVarFragment: Z = 64
+    val _astNamedArg: Z = 64
 
-    val _astDomainType: Z = 65
+    val _astVarFragment: Z = 65
 
-    val _astDomainRange: Z = 66
+    val _astDomainType: Z = 66
 
-    val _astId: Z = 67
+    val _astDomainRange: Z = 67
 
-    val _astName: Z = 68
+    val _astId: Z = 68
 
-    val _astBody: Z = 69
+    val _astName: Z = 69
 
-    val _astAbstractDatatypeParam: Z = 70
+    val _astBody: Z = 70
 
-    val _astMethodSig: Z = 71
+    val _astAbstractDatatypeParam: Z = 71
 
-    val _astParam: Z = 72
+    val _astMethodSig: Z = 72
 
-    val _astTypeParam: Z = 73
+    val _astParam: Z = 73
 
-    val _astContract: Z = 74
+    val _astTypeParam: Z = 74
 
-    val _astSubContract: Z = 75
+    val _astContract: Z = 75
 
-    val _astWhereDefVal: Z = 76
+    val _astSubContract: Z = 76
 
-    val _astWhereDefDef: Z = 77
+    val _astWhereDefVal: Z = 77
 
-    val _astSpecDef: Z = 78
+    val _astWhereDefDef: Z = 78
 
-    val _astTypedName: Z = 79
+    val _astSpecDef: Z = 79
 
-    val _astTypedTuple: Z = 80
+    val _astTypedName: Z = 80
 
-    val _astTypedFun: Z = 81
+    val _astTypedTuple: Z = 81
 
-    val _astTypedTypeVar: Z = 82
+    val _astTypedFun: Z = 82
 
-    val _astTypedPackage: Z = 83
+    val _astTypedTypeVar: Z = 83
 
-    val _astTypedObject: Z = 84
+    val _astTypedPackage: Z = 84
 
-    val _astTypedEnum: Z = 85
+    val _astTypedObject: Z = 85
 
-    val _astTypedMethodSubst: Z = 86
+    val _astTypedEnum: Z = 86
 
-    val _astTypedMethod: Z = 87
+    val _astTypedMethodSubst: Z = 87
 
-    val _astTypedMethods: Z = 88
+    val _astTypedMethod: Z = 88
 
-    val _astAttr: Z = 89
+    val _astTypedMethods: Z = 89
 
-    val _astTypedAttr: Z = 90
+    val _astAttr: Z = 90
 
-    val _astResolvedAttr: Z = 91
+    val _astTypedAttr: Z = 91
 
-    val _astResolvedInfoBuiltIn: Z = 92
+    val _astResolvedAttr: Z = 92
 
-    val _astResolvedInfoPackage: Z = 93
+    val _astResolvedInfoBuiltIn: Z = 93
 
-    val _astResolvedInfoEnum: Z = 94
+    val _astResolvedInfoPackage: Z = 94
 
-    val _astResolvedInfoEnumElement: Z = 95
+    val _astResolvedInfoEnum: Z = 95
 
-    val _astResolvedInfoObject: Z = 96
+    val _astResolvedInfoEnumElement: Z = 96
 
-    val _astResolvedInfoVar: Z = 97
+    val _astResolvedInfoObject: Z = 97
 
-    val _astResolvedInfoMethod: Z = 98
+    val _astResolvedInfoVar: Z = 98
 
-    val _astResolvedInfoMethods: Z = 99
+    val _astResolvedInfoMethod: Z = 99
 
-    val _astResolvedInfoType: Z = 100
+    val _astResolvedInfoMethods: Z = 100
 
-    val _astResolvedInfoTuple: Z = 101
+    val _astResolvedInfoType: Z = 101
 
-    val _astResolvedInfoLocalVar: Z = 102
+    val _astResolvedInfoTuple: Z = 102
 
-    val _astProofStepBasic: Z = 103
+    val _astResolvedInfoLocalVar: Z = 103
 
-    val _astProofStepSubProof: Z = 104
+    val _astProofStepBasic: Z = 104
 
-    val _astAssumeProofStepRegular: Z = 105
+    val _astProofStepSubProof: Z = 105
 
-    val _astAssumeProofStepForallIntroAps: Z = 106
+    val _astAssumeProofStepRegular: Z = 106
 
-    val _astAssumeProofStepExistsElimAps: Z = 107
+    val _astAssumeProofStepForallIntroAps: Z = 107
 
-    val _astJustPremise: Z = 108
+    val _astAssumeProofStepExistsElimAps: Z = 108
 
-    val _astJustAuto: Z = 109
+    val _astJustPremise: Z = 109
 
-    val _astJustCoq: Z = 110
+    val _astJustAuto: Z = 110
 
-    val _astJustSubst: Z = 111
+    val _astJustCoq: Z = 111
 
-    val _astJustInvariant: Z = 112
+    val _astJustSubst: Z = 112
 
-    val _astJustFact: Z = 113
+    val _astJustInvariant: Z = 113
 
-    val _astJustImplyIntro: Z = 114
+    val _astJustFact: Z = 114
 
-    val _astJustImplyElim: Z = 115
+    val _astJustImplyIntro: Z = 115
 
-    val _astJustNegIntro: Z = 116
+    val _astJustImplyElim: Z = 116
 
-    val _astJustNegElim: Z = 117
+    val _astJustNegIntro: Z = 117
 
-    val _astJustBottomElim: Z = 118
+    val _astJustNegElim: Z = 118
 
-    val _astJustForallIntro: Z = 119
+    val _astJustBottomElim: Z = 119
 
-    val _astJustForallElim: Z = 120
+    val _astJustForallIntro: Z = 120
 
-    val _astJustExistsIntro: Z = 121
+    val _astJustForallElim: Z = 121
 
-    val _astJustExistsElim: Z = 122
+    val _astJustExistsIntro: Z = 122
 
-    val _astJustOrIntro: Z = 123
+    val _astJustExistsElim: Z = 123
 
-    val _astJustOrElim: Z = 124
+    val _astJustOrIntro: Z = 124
 
-    val _astJustAndIntro: Z = 125
+    val _astJustOrElim: Z = 125
 
-    val _astJustAndElim: Z = 126
+    val _astJustAndIntro: Z = 126
 
-    val _astJustPbc: Z = 127
+    val _astJustAndElim: Z = 127
 
-    val _astTruthTableRow: Z = 128
+    val _astJustPbc: Z = 128
 
-    val _astTruthTableAssignment: Z = 129
+    val _astTruthTableRow: Z = 129
 
-    val _astTruthTableConclusionValidity: Z = 130
+    val _astTruthTableAssignment: Z = 130
 
-    val _astTruthTableConclusionTautology: Z = 131
+    val _astTruthTableConclusionValidity: Z = 131
 
-    val _astTruthTableConclusionContradictory: Z = 132
+    val _astTruthTableConclusionTautology: Z = 132
 
-    val _astTruthTableConclusionContingent: Z = 133
+    val _astTruthTableConclusionContradictory: Z = 133
+
+    val _astTruthTableConclusionContingent: Z = 134
 
   }
 
@@ -558,8 +560,14 @@ object MsgPack {
       writer.writeHashMap(o.specVars, writer.writeString _, write_symbolInfoSpecVar _)
       writer.writeHashMap(o.specMethods, writer.writeString _, write_symbolInfoSpecMethod _)
       writer.writeHashMap(o.methods, writer.writeString _, write_symbolInfoMethod _)
+      writer.writeHashMap(o.refinements, writer.writeString _, write_symbolTypeInfoName _)
       write_symbolScopeGlobal(o.scope)
       write_astStmtSig(o.ast)
+    }
+
+    def write_symbolTypeInfoName(o: org.sireum.lang.symbol.TypeInfo.Name): Unit = {
+      writer.writeZ(Constants._symbolTypeInfoName)
+      writer.writeISZ(o.ids, writer.writeString _)
     }
 
     def write_symbolTypeInfoAbstractDatatype(o: org.sireum.lang.symbol.TypeInfo.AbstractDatatype): Unit = {
@@ -577,6 +585,7 @@ object MsgPack {
       writer.writeHashMap(o.vars, writer.writeString _, write_symbolInfoVar _)
       writer.writeHashMap(o.specMethods, writer.writeString _, write_symbolInfoSpecMethod _)
       writer.writeHashMap(o.methods, writer.writeString _, write_symbolInfoMethod _)
+      writer.writeHashMap(o.refinements, writer.writeString _, write_symbolTypeInfoName _)
       write_symbolScopeGlobal(o.scope)
       write_astStmtAbstractDatatype(o.ast)
     }
@@ -600,6 +609,7 @@ object MsgPack {
       writer.writeHashMap(o.vars, writer.writeString _, write_symbolInfoVar _)
       writer.writeHashMap(o.specMethods, writer.writeString _, write_symbolInfoSpecMethod _)
       writer.writeHashMap(o.methods, writer.writeString _, write_symbolInfoMethod _)
+      writer.writeHashMap(o.refinements, writer.writeString _, write_symbolTypeInfoName _)
     }
 
     def write_astTopUnit(o: org.sireum.lang.ast.TopUnit): Unit = {
@@ -2196,9 +2206,23 @@ object MsgPack {
       val specVars = reader.readHashMap(reader.readString _, read_symbolInfoSpecVar _)
       val specMethods = reader.readHashMap(reader.readString _, read_symbolInfoSpecMethod _)
       val methods = reader.readHashMap(reader.readString _, read_symbolInfoMethod _)
+      val refinements = reader.readHashMap(reader.readString _, read_symbolTypeInfoName _)
       val scope = read_symbolScopeGlobal()
       val ast = read_astStmtSig()
-      return org.sireum.lang.symbol.TypeInfo.Sig(owner, outlined, typeChecked, tpe, ancestors, specVars, specMethods, methods, scope, ast)
+      return org.sireum.lang.symbol.TypeInfo.Sig(owner, outlined, typeChecked, tpe, ancestors, specVars, specMethods, methods, refinements, scope, ast)
+    }
+
+    def read_symbolTypeInfoName(): org.sireum.lang.symbol.TypeInfo.Name = {
+      val r = read_symbolTypeInfoNameT(F)
+      return r
+    }
+
+    def read_symbolTypeInfoNameT(typeParsed: B): org.sireum.lang.symbol.TypeInfo.Name = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._symbolTypeInfoName)
+      }
+      val ids = reader.readISZ(reader.readString _)
+      return org.sireum.lang.symbol.TypeInfo.Name(ids)
     }
 
     def read_symbolTypeInfoAbstractDatatype(): org.sireum.lang.symbol.TypeInfo.AbstractDatatype = {
@@ -2223,9 +2247,10 @@ object MsgPack {
       val vars = reader.readHashMap(reader.readString _, read_symbolInfoVar _)
       val specMethods = reader.readHashMap(reader.readString _, read_symbolInfoSpecMethod _)
       val methods = reader.readHashMap(reader.readString _, read_symbolInfoMethod _)
+      val refinements = reader.readHashMap(reader.readString _, read_symbolTypeInfoName _)
       val scope = read_symbolScopeGlobal()
       val ast = read_astStmtAbstractDatatype()
-      return org.sireum.lang.symbol.TypeInfo.AbstractDatatype(owner, outlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, ancestors, specVars, vars, specMethods, methods, scope, ast)
+      return org.sireum.lang.symbol.TypeInfo.AbstractDatatype(owner, outlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, ancestors, specVars, vars, specMethods, methods, refinements, scope, ast)
     }
 
     def read_symbolTypeInfoTypeAlias(): org.sireum.lang.symbol.TypeInfo.TypeAlias = {
@@ -2270,7 +2295,8 @@ object MsgPack {
       val vars = reader.readHashMap(reader.readString _, read_symbolInfoVar _)
       val specMethods = reader.readHashMap(reader.readString _, read_symbolInfoSpecMethod _)
       val methods = reader.readHashMap(reader.readString _, read_symbolInfoMethod _)
-      return org.sireum.lang.symbol.TypeInfo.Members(specVars, vars, specMethods, methods)
+      val refinements = reader.readHashMap(reader.readString _, read_symbolTypeInfoName _)
+      return org.sireum.lang.symbol.TypeInfo.Members(specVars, vars, specMethods, methods, refinements)
     }
 
     def read_astTopUnit(): org.sireum.lang.ast.TopUnit = {
@@ -5104,6 +5130,21 @@ object MsgPack {
       return r
     }
     val r = to(data, f_symbolTypeInfoSig _)
+    return r
+  }
+
+  def from_symbolTypeInfoName(o: org.sireum.lang.symbol.TypeInfo.Name, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_symbolTypeInfoName(o)
+    return w.result
+  }
+
+  def to_symbolTypeInfoName(data: ISZ[U8]): Either[org.sireum.lang.symbol.TypeInfo.Name, MessagePack.ErrorMsg] = {
+    def f_symbolTypeInfoName(reader: Reader): org.sireum.lang.symbol.TypeInfo.Name = {
+      val r = reader.read_symbolTypeInfoName()
+      return r
+    }
+    val r = to(data, f_symbolTypeInfoName _)
     return r
   }
 

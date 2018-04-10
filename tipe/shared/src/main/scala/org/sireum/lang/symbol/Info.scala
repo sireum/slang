@@ -579,11 +579,8 @@ object TypeInfo {
     )
   }
 
-  @datatype class Enum(
-    owner: ISZ[String],
-    elements: Map[String, AST.ResolvedInfo],
-    val posOpt: Option[Position]
-  ) extends TypeInfo {
+  @datatype class Enum(owner: ISZ[String], elements: Map[String, AST.ResolvedInfo], val posOpt: Option[Position])
+      extends TypeInfo {
 
     val nameTypedOpt: Option[AST.Typed] = Some(
       AST.Typed.Method(
@@ -621,6 +618,7 @@ object TypeInfo {
     specVars: HashMap[String, Info.SpecVar],
     specMethods: HashMap[String, Info.SpecMethod],
     methods: HashMap[String, Info.Method],
+    refinements: HashMap[String, Name],
     scope: Scope.Global,
     ast: AST.Stmt.Sig
   ) extends TypeInfo {
@@ -668,6 +666,8 @@ object TypeInfo {
     }
   }
 
+  @datatype class Name(ids: ISZ[String])
+
   @datatype class AbstractDatatype(
     owner: ISZ[String],
     outlined: B,
@@ -682,6 +682,7 @@ object TypeInfo {
     vars: HashMap[String, Info.Var],
     specMethods: HashMap[String, Info.SpecMethod],
     methods: HashMap[String, Info.Method],
+    refinements: HashMap[String, Name],
     scope: Scope.Global,
     ast: AST.Stmt.AbstractDatatype
   ) extends TypeInfo {
@@ -768,7 +769,8 @@ object TypeInfo {
     specVars: HashMap[String, Info.SpecVar],
     vars: HashMap[String, Info.Var],
     specMethods: HashMap[String, Info.SpecMethod],
-    methods: HashMap[String, Info.Method]
+    methods: HashMap[String, Info.Method],
+    refinements: HashMap[String, Name]
   )
 
 }
