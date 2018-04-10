@@ -786,23 +786,21 @@ object TypeOutliner {
       methods.get(id) match {
         case Some(otherInfo) =>
           if (name != otherInfo.owner) {
-            ok = checkMethodEquality(otherInfo, mInfo, substMap, posOpt)
-            if (!ok) {
+            val isEqual = checkMethodEquality(otherInfo, mInfo, substMap, posOpt)
+            if (isEqual) {
+              reporter.error(
+                posOpt,
+                TypeChecker.typeCheckerKind,
+                st"Explicit declaration of $id in ${(name, ".")} is required because it is inherited from ${(otherInfo.owner, ".")} and ${(mInfo.owner, ".")}.".render
+              )
+            } else {
               reporter.error(
                 posOpt,
                 TypeChecker.typeCheckerKind,
                 st"Cannot inherit $id from ${(tname, ".")} because it has been previously inherited from ${(otherInfo.owner, ".")} with differing type.".render
               )
-              return
             }
-            if (mInfo.hasBody && otherInfo.hasBody) {
-              reporter.error(
-                posOpt,
-                TypeChecker.typeCheckerKind,
-                st"Cannot inherit $id from ${(tname, ".")} because it has been previously inherited from ${(otherInfo.owner, ".")} with their own implementation.".render
-              )
-              return
-            }
+            return
           } else {
             ok = checkMethodRefinement(otherInfo, mInfo, substMap, posOpt)
             if (!ok) {
