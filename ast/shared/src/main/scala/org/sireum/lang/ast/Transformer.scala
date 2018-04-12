@@ -1965,7 +1965,7 @@ import Transformer._
           val r0: Result[Context, MethodSig] = transformMethodSig(ctx, o2.sig)
           val r1: Result[Context, Contract] = transformContract(r0.ctx, o2.contract)
           val r2: Result[Context, Option[Body]] = transformOption(r1.ctx, o2.bodyOpt, transformBody _)
-          val r3: Result[Context, Attr] = transformAttr(r2.ctx, o2.attr)
+          val r3: Result[Context, ResolvedAttr] = transformResolvedAttr(r2.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
             Result(r3.ctx, Some(o2(sig = r0.resultOpt.getOrElse(o2.sig), contract = r1.resultOpt.getOrElse(o2.contract), bodyOpt = r2.resultOpt.getOrElse(o2.bodyOpt), attr = r3.resultOpt.getOrElse(o2.attr))))
           else
@@ -1973,7 +1973,7 @@ import Transformer._
         case o2: Stmt.ExtMethod =>
           val r0: Result[Context, MethodSig] = transformMethodSig(ctx, o2.sig)
           val r1: Result[Context, Contract] = transformContract(r0.ctx, o2.contract)
-          val r2: Result[Context, Attr] = transformAttr(r1.ctx, o2.attr)
+          val r2: Result[Context, ResolvedAttr] = transformResolvedAttr(r1.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
             Result(r2.ctx, Some(o2(sig = r0.resultOpt.getOrElse(o2.sig), contract = r1.resultOpt.getOrElse(o2.contract), attr = r2.resultOpt.getOrElse(o2.attr))))
           else
@@ -1982,7 +1982,7 @@ import Transformer._
           val r0: Result[Context, MethodSig] = transformMethodSig(ctx, o2.sig)
           val r1: Result[Context, IS[Z, SpecDef]] = transformISZ(r0.ctx, o2.defs, transformSpecDef _)
           val r2: Result[Context, IS[Z, WhereDef]] = transformISZ(r1.ctx, o2.where, transformWhereDef _)
-          val r3: Result[Context, Attr] = transformAttr(r2.ctx, o2.attr)
+          val r3: Result[Context, ResolvedAttr] = transformResolvedAttr(r2.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
             Result(r3.ctx, Some(o2(sig = r0.resultOpt.getOrElse(o2.sig), defs = r1.resultOpt.getOrElse(o2.defs), where = r2.resultOpt.getOrElse(o2.where), attr = r3.resultOpt.getOrElse(o2.attr))))
           else

@@ -120,9 +120,7 @@ object JSON {
         ("isInObject", printB(o.isInObject)),
         ("scope", print_symbolScope(o.scope)),
         ("hasBody", printB(o.hasBody)),
-        ("ast", print_astStmtMethod(o.ast)),
-        ("typedOpt", printOption(F, o.typedOpt, print_astTyped _)),
-        ("resOpt", printOption(F, o.resOpt, print_astResolvedInfo _))
+        ("ast", print_astStmtMethod(o.ast))
       ))
     }
 
@@ -132,9 +130,7 @@ object JSON {
         ("owner", printISZ(T, o.owner, printString _)),
         ("isInObject", printB(o.isInObject)),
         ("scope", print_symbolScope(o.scope)),
-        ("ast", print_astStmtSpecMethod(o.ast)),
-        ("typedOpt", printOption(F, o.typedOpt, print_astTyped _)),
-        ("resOpt", printOption(F, o.resOpt, print_astResolvedInfo _))
+        ("ast", print_astStmtSpecMethod(o.ast))
       ))
     }
 
@@ -157,9 +153,7 @@ object JSON {
         ("type", st""""org.sireum.lang.symbol.Info.ExtMethod""""),
         ("owner", printISZ(T, o.owner, printString _)),
         ("scope", print_symbolScopeGlobal(o.scope)),
-        ("ast", print_astStmtExtMethod(o.ast)),
-        ("typedOpt", printOption(F, o.typedOpt, print_astTyped _)),
-        ("resOpt", printOption(F, o.resOpt, print_astResolvedInfo _))
+        ("ast", print_astStmtExtMethod(o.ast))
       ))
     }
 
@@ -461,7 +455,7 @@ object JSON {
         ("sig", print_astMethodSig(o.sig)),
         ("contract", print_astContract(o.contract)),
         ("bodyOpt", printOption(F, o.bodyOpt, print_astBody _)),
-        ("attr", print_astAttr(o.attr))
+        ("attr", print_astResolvedAttr(o.attr))
       ))
     }
 
@@ -471,7 +465,7 @@ object JSON {
         ("isPure", printB(o.isPure)),
         ("sig", print_astMethodSig(o.sig)),
         ("contract", print_astContract(o.contract)),
-        ("attr", print_astAttr(o.attr))
+        ("attr", print_astResolvedAttr(o.attr))
       ))
     }
 
@@ -481,7 +475,7 @@ object JSON {
         ("sig", print_astMethodSig(o.sig)),
         ("defs", printISZ(F, o.defs, print_astSpecDef _)),
         ("where", printISZ(F, o.where, print_astWhereDef _)),
-        ("attr", print_astAttr(o.attr))
+        ("attr", print_astResolvedAttr(o.attr))
       ))
     }
 
@@ -2124,13 +2118,7 @@ object JSON {
       parser.parseObjectKey("ast")
       val ast = parse_astStmtMethod()
       parser.parseObjectNext()
-      parser.parseObjectKey("typedOpt")
-      val typedOpt = parser.parseOption(parse_astTyped _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("resOpt")
-      val resOpt = parser.parseOption(parse_astResolvedInfo _)
-      parser.parseObjectNext()
-      return org.sireum.lang.symbol.Info.Method(owner, isInObject, scope, hasBody, ast, typedOpt, resOpt)
+      return org.sireum.lang.symbol.Info.Method(owner, isInObject, scope, hasBody, ast)
     }
 
     def parse_symbolInfoSpecMethod(): org.sireum.lang.symbol.Info.SpecMethod = {
@@ -2154,13 +2142,7 @@ object JSON {
       parser.parseObjectKey("ast")
       val ast = parse_astStmtSpecMethod()
       parser.parseObjectNext()
-      parser.parseObjectKey("typedOpt")
-      val typedOpt = parser.parseOption(parse_astTyped _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("resOpt")
-      val resOpt = parser.parseOption(parse_astResolvedInfo _)
-      parser.parseObjectNext()
-      return org.sireum.lang.symbol.Info.SpecMethod(owner, isInObject, scope, ast, typedOpt, resOpt)
+      return org.sireum.lang.symbol.Info.SpecMethod(owner, isInObject, scope, ast)
     }
 
     def parse_symbolInfoObject(): org.sireum.lang.symbol.Info.Object = {
@@ -2217,13 +2199,7 @@ object JSON {
       parser.parseObjectKey("ast")
       val ast = parse_astStmtExtMethod()
       parser.parseObjectNext()
-      parser.parseObjectKey("typedOpt")
-      val typedOpt = parser.parseOption(parse_astTyped _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("resOpt")
-      val resOpt = parser.parseOption(parse_astResolvedInfo _)
-      parser.parseObjectNext()
-      return org.sireum.lang.symbol.Info.ExtMethod(owner, scope, ast, typedOpt, resOpt)
+      return org.sireum.lang.symbol.Info.ExtMethod(owner, scope, ast)
     }
 
     def parse_symbolInfoEnum(): org.sireum.lang.symbol.Info.Enum = {
@@ -2883,7 +2859,7 @@ object JSON {
       val bodyOpt = parser.parseOption(parse_astBody _)
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
+      val attr = parse_astResolvedAttr()
       parser.parseObjectNext()
       return org.sireum.lang.ast.Stmt.Method(purity, hasOverride, isHelper, sig, contract, bodyOpt, attr)
     }
@@ -2907,7 +2883,7 @@ object JSON {
       val contract = parse_astContract()
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
+      val attr = parse_astResolvedAttr()
       parser.parseObjectNext()
       return org.sireum.lang.ast.Stmt.ExtMethod(isPure, sig, contract, attr)
     }
@@ -2931,7 +2907,7 @@ object JSON {
       val where = parser.parseISZ(parse_astWhereDef _)
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
+      val attr = parse_astResolvedAttr()
       parser.parseObjectNext()
       return org.sireum.lang.ast.Stmt.SpecMethod(sig, defs, where, attr)
     }

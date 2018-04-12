@@ -2534,17 +2534,19 @@ import TypeChecker._
               F,
               scope,
               T,
-              stmt,
-              None(),
-              Some(
-                AST.ResolvedInfo.Method(
-                  F,
-                  AST.MethodMode.Method,
-                  stmt.sig.typeParams.map(tp => tp.id.value),
-                  context,
-                  id,
-                  stmt.sig.params.map(p => p.id.value),
-                  None()
+              stmt(
+                attr = stmt.attr(
+                  resOpt = Some(
+                    AST.ResolvedInfo.Method(
+                      F,
+                      AST.MethodMode.Method,
+                      stmt.sig.typeParams.map(tp => tp.id.value),
+                      context,
+                      id,
+                      stmt.sig.params.map(p => p.id.value),
+                      None()
+                    )
+                  )
                 )
               )
             ),

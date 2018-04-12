@@ -127,7 +127,7 @@ object Stmt {
     sig: MethodSig,
     contract: Contract,
     bodyOpt: Option[Body],
-    @hidden attr: Attr
+    @hidden attr: ResolvedAttr
   ) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
@@ -136,7 +136,7 @@ object Stmt {
 
   }
 
-  @datatype class ExtMethod(isPure: B, sig: MethodSig, contract: Contract, @hidden attr: Attr) extends Stmt {
+  @datatype class ExtMethod(isPure: B, sig: MethodSig, contract: Contract, @hidden attr: ResolvedAttr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -144,7 +144,7 @@ object Stmt {
 
   }
 
-  @datatype class SpecMethod(sig: MethodSig, defs: ISZ[SpecDef], where: ISZ[WhereDef], @hidden attr: Attr)
+  @datatype class SpecMethod(sig: MethodSig, defs: ISZ[SpecDef], where: ISZ[WhereDef], @hidden attr: ResolvedAttr)
       extends Stmt {
 
     @pure override def posOpt: Option[Position] = {

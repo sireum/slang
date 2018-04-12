@@ -455,8 +455,6 @@ object MsgPack {
       write_symbolScope(o.scope)
       writer.writeB(o.hasBody)
       write_astStmtMethod(o.ast)
-      writer.writeOption(o.typedOpt, write_astTyped _)
-      writer.writeOption(o.resOpt, write_astResolvedInfo _)
     }
 
     def write_symbolInfoSpecMethod(o: org.sireum.lang.symbol.Info.SpecMethod): Unit = {
@@ -465,8 +463,6 @@ object MsgPack {
       writer.writeB(o.isInObject)
       write_symbolScope(o.scope)
       write_astStmtSpecMethod(o.ast)
-      writer.writeOption(o.typedOpt, write_astTyped _)
-      writer.writeOption(o.resOpt, write_astResolvedInfo _)
     }
 
     def write_symbolInfoObject(o: org.sireum.lang.symbol.Info.Object): Unit = {
@@ -486,8 +482,6 @@ object MsgPack {
       writer.writeISZ(o.owner, writer.writeString _)
       write_symbolScopeGlobal(o.scope)
       write_astStmtExtMethod(o.ast)
-      writer.writeOption(o.typedOpt, write_astTyped _)
-      writer.writeOption(o.resOpt, write_astResolvedInfo _)
     }
 
     def write_symbolInfoEnum(o: org.sireum.lang.symbol.Info.Enum): Unit = {
@@ -741,7 +735,7 @@ object MsgPack {
       write_astMethodSig(o.sig)
       write_astContract(o.contract)
       writer.writeOption(o.bodyOpt, write_astBody _)
-      write_astAttr(o.attr)
+      write_astResolvedAttr(o.attr)
     }
 
     def write_astStmtExtMethod(o: org.sireum.lang.ast.Stmt.ExtMethod): Unit = {
@@ -749,7 +743,7 @@ object MsgPack {
       writer.writeB(o.isPure)
       write_astMethodSig(o.sig)
       write_astContract(o.contract)
-      write_astAttr(o.attr)
+      write_astResolvedAttr(o.attr)
     }
 
     def write_astStmtSpecMethod(o: org.sireum.lang.ast.Stmt.SpecMethod): Unit = {
@@ -757,7 +751,7 @@ object MsgPack {
       write_astMethodSig(o.sig)
       writer.writeISZ(o.defs, write_astSpecDef _)
       writer.writeISZ(o.where, write_astWhereDef _)
-      write_astAttr(o.attr)
+      write_astResolvedAttr(o.attr)
     }
 
     def write_astStmtEnum(o: org.sireum.lang.ast.Stmt.Enum): Unit = {
@@ -2015,9 +2009,7 @@ object MsgPack {
       val scope = read_symbolScope()
       val hasBody = reader.readB()
       val ast = read_astStmtMethod()
-      val typedOpt = reader.readOption(read_astTyped _)
-      val resOpt = reader.readOption(read_astResolvedInfo _)
-      return org.sireum.lang.symbol.Info.Method(owner, isInObject, scope, hasBody, ast, typedOpt, resOpt)
+      return org.sireum.lang.symbol.Info.Method(owner, isInObject, scope, hasBody, ast)
     }
 
     def read_symbolInfoSpecMethod(): org.sireum.lang.symbol.Info.SpecMethod = {
@@ -2033,9 +2025,7 @@ object MsgPack {
       val isInObject = reader.readB()
       val scope = read_symbolScope()
       val ast = read_astStmtSpecMethod()
-      val typedOpt = reader.readOption(read_astTyped _)
-      val resOpt = reader.readOption(read_astResolvedInfo _)
-      return org.sireum.lang.symbol.Info.SpecMethod(owner, isInObject, scope, ast, typedOpt, resOpt)
+      return org.sireum.lang.symbol.Info.SpecMethod(owner, isInObject, scope, ast)
     }
 
     def read_symbolInfoObject(): org.sireum.lang.symbol.Info.Object = {
@@ -2070,9 +2060,7 @@ object MsgPack {
       val owner = reader.readISZ(reader.readString _)
       val scope = read_symbolScopeGlobal()
       val ast = read_astStmtExtMethod()
-      val typedOpt = reader.readOption(read_astTyped _)
-      val resOpt = reader.readOption(read_astResolvedInfo _)
-      return org.sireum.lang.symbol.Info.ExtMethod(owner, scope, ast, typedOpt, resOpt)
+      return org.sireum.lang.symbol.Info.ExtMethod(owner, scope, ast)
     }
 
     def read_symbolInfoEnum(): org.sireum.lang.symbol.Info.Enum = {
@@ -2541,7 +2529,7 @@ object MsgPack {
       val sig = read_astMethodSig()
       val contract = read_astContract()
       val bodyOpt = reader.readOption(read_astBody _)
-      val attr = read_astAttr()
+      val attr = read_astResolvedAttr()
       return org.sireum.lang.ast.Stmt.Method(purity, hasOverride, isHelper, sig, contract, bodyOpt, attr)
     }
 
@@ -2557,7 +2545,7 @@ object MsgPack {
       val isPure = reader.readB()
       val sig = read_astMethodSig()
       val contract = read_astContract()
-      val attr = read_astAttr()
+      val attr = read_astResolvedAttr()
       return org.sireum.lang.ast.Stmt.ExtMethod(isPure, sig, contract, attr)
     }
 
@@ -2573,7 +2561,7 @@ object MsgPack {
       val sig = read_astMethodSig()
       val defs = reader.readISZ(read_astSpecDef _)
       val where = reader.readISZ(read_astWhereDef _)
-      val attr = read_astAttr()
+      val attr = read_astResolvedAttr()
       return org.sireum.lang.ast.Stmt.SpecMethod(sig, defs, where, attr)
     }
 

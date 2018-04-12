@@ -2539,7 +2539,7 @@ import MTransformer._
           val r0: MOption[MethodSig] = transformMethodSig(o2.sig)
           val r1: MOption[Contract] = transformContract(o2.contract)
           val r2: MOption[Option[Body]] = transformOption(o2.bodyOpt, transformBody _)
-          val r3: MOption[Attr] = transformAttr(o2.attr)
+          val r3: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
             MSome(o2(sig = r0.getOrElse(o2.sig), contract = r1.getOrElse(o2.contract), bodyOpt = r2.getOrElse(o2.bodyOpt), attr = r3.getOrElse(o2.attr)))
           else
@@ -2547,7 +2547,7 @@ import MTransformer._
         case o2: Stmt.ExtMethod =>
           val r0: MOption[MethodSig] = transformMethodSig(o2.sig)
           val r1: MOption[Contract] = transformContract(o2.contract)
-          val r2: MOption[Attr] = transformAttr(o2.attr)
+          val r2: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
             MSome(o2(sig = r0.getOrElse(o2.sig), contract = r1.getOrElse(o2.contract), attr = r2.getOrElse(o2.attr)))
           else
@@ -2556,7 +2556,7 @@ import MTransformer._
           val r0: MOption[MethodSig] = transformMethodSig(o2.sig)
           val r1: MOption[IS[Z, SpecDef]] = transformISZ(o2.defs, transformSpecDef _)
           val r2: MOption[IS[Z, WhereDef]] = transformISZ(o2.where, transformWhereDef _)
-          val r3: MOption[Attr] = transformAttr(o2.attr)
+          val r3: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
             MSome(o2(sig = r0.getOrElse(o2.sig), defs = r1.getOrElse(o2.defs), where = r2.getOrElse(o2.where), attr = r3.getOrElse(o2.attr)))
           else

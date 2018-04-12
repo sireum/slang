@@ -362,15 +362,8 @@ object Info {
     }
   }
 
-  @datatype class Method(
-    owner: ISZ[String],
-    isInObject: B,
-    scope: Scope,
-    hasBody: B,
-    ast: AST.Stmt.Method,
-    typedOpt: Option[AST.Typed],
-    resOpt: Option[AST.ResolvedInfo]
-  ) extends Info {
+  @datatype class Method(owner: ISZ[String], isInObject: B, scope: Scope, hasBody: B, ast: AST.Stmt.Method)
+      extends Info {
 
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
@@ -382,18 +375,20 @@ object Info {
 
     @pure override def name: ISZ[String] = {
       return owner :+ ast.sig.id.value
+    }
+
+    @pure def typedOpt: Option[AST.Typed] = {
+      return ast.attr.typedOpt
+    }
+
+    @pure def resOpt: Option[AST.ResolvedInfo] = {
+      return ast.attr.resOpt
     }
 
   }
 
-  @datatype class SpecMethod(
-    val owner: ISZ[String],
-    isInObject: B,
-    scope: Scope,
-    ast: AST.Stmt.SpecMethod,
-    typedOpt: Option[AST.Typed],
-    resOpt: Option[AST.ResolvedInfo]
-  ) extends Info {
+  @datatype class SpecMethod(val owner: ISZ[String], isInObject: B, scope: Scope, ast: AST.Stmt.SpecMethod)
+      extends Info {
 
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
@@ -405,6 +400,14 @@ object Info {
 
     @pure override def name: ISZ[String] = {
       return owner :+ ast.sig.id.value
+    }
+
+    @pure def typedOpt: Option[AST.Typed] = {
+      return ast.attr.typedOpt
+    }
+
+    @pure def resOpt: Option[AST.ResolvedInfo] = {
+      return ast.attr.resOpt
     }
   }
 
@@ -429,13 +432,7 @@ object Info {
 
   }
 
-  @datatype class ExtMethod(
-    owner: ISZ[String],
-    scope: Scope.Global,
-    ast: AST.Stmt.ExtMethod,
-    typedOpt: Option[AST.Typed],
-    resOpt: Option[AST.ResolvedInfo]
-  ) extends Info {
+  @datatype class ExtMethod(owner: ISZ[String], scope: Scope.Global, ast: AST.Stmt.ExtMethod) extends Info {
 
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
@@ -449,6 +446,13 @@ object Info {
       return ast.sig.returnType.typedOpt.nonEmpty
     }
 
+    @pure def typedOpt: Option[AST.Typed] = {
+      return ast.attr.typedOpt
+    }
+
+    @pure def resOpt: Option[AST.ResolvedInfo] = {
+      return ast.attr.resOpt
+    }
   }
 
   object Enum {

@@ -730,7 +730,7 @@ class SlangParser(
     val sig =
       AST.MethodSig(isPure, cid(name), ISZ(tparams.map(translateTypeParam): _*), hasParams, params, translateType(tpe))
     val purity = if (isPure) AST.Purity.Pure else AST.Purity.Impure
-    AST.Stmt.Method(purity, hasOverride, isHelper, sig, emptyContract, None(), attr(stat.pos))
+    AST.Stmt.Method(purity, hasOverride, isHelper, sig, emptyContract, None(), resolvedAttr(stat.pos))
   }
 
   def translateDef(enclosing: Enclosing.Type, tree: Defn.Def): AST.Stmt = {
@@ -839,7 +839,7 @@ class SlangParser(
     def body(): AST.Stmt.Method = {
       def err(): AST.Stmt.Method = {
         errorInSlang(exp.pos, "Only block '{ ... }' is allowed for a method body")
-        AST.Stmt.Method(purity, hasOverride, isHelper, sig, emptyContract, None(), attr(tree.pos))
+        AST.Stmt.Method(purity, hasOverride, isHelper, sig, emptyContract, None(), resolvedAttr(tree.pos))
       }
 
       exp match {
@@ -858,7 +858,7 @@ class SlangParser(
                 else Some(bodyCheck(ISZ(exp.stats.map(translateStat(Enclosing.Method)): _*), ISZ()))
               )
           }
-          AST.Stmt.Method(purity, hasOverride, isHelper, sig, mc, bodyOpt, attr(tree.pos))
+          AST.Stmt.Method(purity, hasOverride, isHelper, sig, mc, bodyOpt, resolvedAttr(tree.pos))
         case l @ Term.Interpolate(Term.Name("l"), Seq(_: Lit.String), Nil) =>
           enclosing match {
             case Enclosing.Sig | Enclosing.DatatypeTrait | Enclosing.RecordTrait =>
@@ -868,7 +868,7 @@ class SlangParser(
                   "Only the @pure and/or override method modifiers are allowed for method declarations"
                 )
               }
-              AST.Stmt.Method(purity, hasOverride, isHelper, sig, parseContract(l), None(), attr(tree.pos))
+              AST.Stmt.Method(purity, hasOverride, isHelper, sig, parseContract(l), None(), resolvedAttr(tree.pos))
             case _ => err()
           }
         case _ => err()
@@ -881,14 +881,14 @@ class SlangParser(
       }
       exp match {
         case exp: Term.Name if exp.value == "$" =>
-          AST.Stmt.SpecMethod(sig, ISZ(), ISZ(), attr(tree.pos))
+          AST.Stmt.SpecMethod(sig, ISZ(), ISZ(), resolvedAttr(tree.pos))
         case exp @ Term.Interpolate(Term.Name("l"), Seq(_: Lit.String), Nil) =>
           val (sds, wds) = parseDefs(exp)
-          AST.Stmt.SpecMethod(sig, sds, wds, attr(tree.pos))
+          AST.Stmt.SpecMethod(sig, sds, wds, resolvedAttr(tree.pos))
         case _ =>
           hasError = true
           error(exp.pos, "Only '$' or 'l\"\"\"{ ... }\"\"\"' is allowed as Slang @spec method expression.")
-          AST.Stmt.SpecMethod(sig, ISZ(), ISZ(), attr(tree.pos))
+          AST.Stmt.SpecMethod(sig, ISZ(), ISZ(), resolvedAttr(tree.pos))
       }
     } else if (enclosing == Enclosing.ExtObject) {
       if (checkSymbol(sig.id.value.value)) {
@@ -902,13 +902,13 @@ class SlangParser(
         errorInSlang(exp.pos, s"Extension methods cannot have a @memoize modifier")
       exp match {
         case exp: Term.Name if exp.value == "$" =>
-          AST.Stmt.ExtMethod(isPure, sig, emptyContract, attr(tree.pos))
+          AST.Stmt.ExtMethod(isPure, sig, emptyContract, resolvedAttr(tree.pos))
         case exp @ Term.Interpolate(Term.Name("l"), Seq(_: Lit.String), Nil) =>
-          AST.Stmt.ExtMethod(isPure, sig, parseContract(exp), attr(tree.pos))
+          AST.Stmt.ExtMethod(isPure, sig, parseContract(exp), resolvedAttr(tree.pos))
         case _ =>
           hasError = true
           error(exp.pos, "Only '$' or 'l\"\"\"{ ... }\"\"\"' are allowed as Slang extension method expression.")
-          AST.Stmt.ExtMethod(isPure, sig, emptyContract, attr(tree.pos))
+          AST.Stmt.ExtMethod(isPure, sig, emptyContract, resolvedAttr(tree.pos))
       }
     } else body()
   }
