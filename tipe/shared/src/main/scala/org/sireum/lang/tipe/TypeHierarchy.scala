@@ -639,34 +639,4 @@ object TypeHierarchy {
   @pure def isCompatible(t1: AST.Typed, t2: AST.Typed): B = {
     return isSubType(t1, t2) || isSubType(t2, t1)
   }
-
-  @memoize def methodRefinements: Poset[AST.ResolvedInfo.Method] = {
-    var r = Poset.empty[AST.ResolvedInfo.Method]
-    for (info <- typeMap.values) {
-      val name = info.name
-      val (refinements, methods): (HashMap[String, TypeInfo.Name], HashMap[String, Info.Method]) = info match {
-        case info: TypeInfo.Sig => (info.refinements, info.methods)
-        case info: TypeInfo.AbstractDatatype => (info.refinements, info.methods)
-        case _ => (HashMap.empty, HashMap.empty)
-      }
-      for (p <- refinements.entries) {
-        val (id, sup) = p
-        methods.get(id) match {
-          case Some(m) =>
-            val supM: Option[Info.Method] = typeMap.get(sup.ids).get match {
-              case info: TypeInfo.Sig => info.methods.get(id)
-              case info: TypeInfo.AbstractDatatype => info.methods.get(id)
-              case _ => None()
-            }
-            (m.resOpt, supM.get.resOpt) match {
-              case (Some(mRes: AST.ResolvedInfo.Method), Some(supMRes: AST.ResolvedInfo.Method)) =>
-                r = r.addParents(mRes, ISZ(supMRes))
-              case _ => halt("Infeasible")
-            }
-          case _ =>
-        }
-      }
-    }
-    return r
-  }
 }
