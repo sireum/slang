@@ -475,6 +475,7 @@ object MsgPack {
       write_astStmtObject(o.ast)
       writer.writeOption(o.typedOpt, write_astTyped _)
       writer.writeOption(o.resOpt, write_astResolvedInfo _)
+      write_astResolvedInfoMethod(o.constructorRes)
     }
 
     def write_symbolInfoExtMethod(o: org.sireum.lang.symbol.Info.ExtMethod): Unit = {
@@ -2045,7 +2046,8 @@ object MsgPack {
       val ast = read_astStmtObject()
       val typedOpt = reader.readOption(read_astTyped _)
       val resOpt = reader.readOption(read_astResolvedInfo _)
-      return org.sireum.lang.symbol.Info.Object(owner, isSynthetic, scope, outlined, typeChecked, ast, typedOpt, resOpt)
+      val constructorRes = read_astResolvedInfoMethod()
+      return org.sireum.lang.symbol.Info.Object(owner, isSynthetic, scope, outlined, typeChecked, ast, typedOpt, resOpt, constructorRes)
     }
 
     def read_symbolInfoExtMethod(): org.sireum.lang.symbol.Info.ExtMethod = {

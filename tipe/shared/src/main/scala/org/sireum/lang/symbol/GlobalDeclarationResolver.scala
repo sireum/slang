@@ -118,7 +118,8 @@ import GlobalDeclarationResolver._
               T,
               AST.Stmt.Object(F, AST.Id(id, attr), ISZ(), ISZ(), attr),
               Some(AST.Typed.Object(owner, id)),
-              Some(AST.ResolvedInfo.Object(name))
+              Some(AST.ResolvedInfo.Object(name)),
+              AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), owner, id, ISZ(), None())
             )
           }
       }
@@ -269,7 +270,8 @@ import GlobalDeclarationResolver._
             T,
             AST.Stmt.Object(F, AST.Id(stringInterpolator, stmt.id.attr), ISZ(), ISZ(), stmt.attr),
             Some(AST.Typed.Object(name, stringInterpolator)),
-            Some(AST.ResolvedInfo.Object(stringInterpolatorName))
+            Some(AST.ResolvedInfo.Object(stringInterpolatorName)),
+            AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), currentName, id, ISZ(), None())
           ),
           stmt.attr.posOpt
         )
@@ -315,7 +317,8 @@ import GlobalDeclarationResolver._
           i = i + 1
         }
       case stmt: AST.Stmt.Object =>
-        val name = currentName :+ stmt.id.value
+        val id = stmt.id.value
+        val name = currentName :+ id
         val sc = scope(packageName, currentImports, name)
         globalTypeMap.get(name) match {
           case Some(info) =>
@@ -347,7 +350,8 @@ import GlobalDeclarationResolver._
             F,
             stmt,
             Some(AST.Typed.Object(currentName, stmt.id.value)),
-            Some(AST.ResolvedInfo.Object(name))
+            Some(AST.ResolvedInfo.Object(name)),
+            AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), currentName, id, ISZ(), None())
           ),
           stmt.attr.posOpt
         )

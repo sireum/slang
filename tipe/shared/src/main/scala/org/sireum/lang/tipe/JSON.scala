@@ -144,7 +144,8 @@ object JSON {
         ("typeChecked", printB(o.typeChecked)),
         ("ast", print_astStmtObject(o.ast)),
         ("typedOpt", printOption(F, o.typedOpt, print_astTyped _)),
-        ("resOpt", printOption(F, o.resOpt, print_astResolvedInfo _))
+        ("resOpt", printOption(F, o.resOpt, print_astResolvedInfo _)),
+        ("constructorRes", print_astResolvedInfoMethod(o.constructorRes))
       ))
     }
 
@@ -1338,6 +1339,7 @@ object JSON {
         case org.sireum.lang.ast.MethodMode.Constructor => "Constructor"
         case org.sireum.lang.ast.MethodMode.Copy => "Copy"
         case org.sireum.lang.ast.MethodMode.Extractor => "Extractor"
+        case org.sireum.lang.ast.MethodMode.ObjectConstructor => "ObjectConstructor"
         case org.sireum.lang.ast.MethodMode.Select => "Select"
         case org.sireum.lang.ast.MethodMode.Store => "Store"
       }
@@ -2178,7 +2180,10 @@ object JSON {
       parser.parseObjectKey("resOpt")
       val resOpt = parser.parseOption(parse_astResolvedInfo _)
       parser.parseObjectNext()
-      return org.sireum.lang.symbol.Info.Object(owner, isSynthetic, scope, outlined, typeChecked, ast, typedOpt, resOpt)
+      parser.parseObjectKey("constructorRes")
+      val constructorRes = parse_astResolvedInfoMethod()
+      parser.parseObjectNext()
+      return org.sireum.lang.symbol.Info.Object(owner, isSynthetic, scope, outlined, typeChecked, ast, typedOpt, resOpt, constructorRes)
     }
 
     def parse_symbolInfoExtMethod(): org.sireum.lang.symbol.Info.ExtMethod = {

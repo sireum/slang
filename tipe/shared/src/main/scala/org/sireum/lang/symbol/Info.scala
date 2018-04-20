@@ -419,7 +419,8 @@ object Info {
     typeChecked: B,
     ast: AST.Stmt.Object,
     typedOpt: Option[AST.Typed],
-    resOpt: Option[AST.ResolvedInfo]
+    resOpt: Option[AST.ResolvedInfo],
+    constructorRes: AST.ResolvedInfo.Method
   ) extends Info {
 
     @pure override def name: ISZ[String] = {

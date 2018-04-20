@@ -1170,6 +1170,7 @@ object WhereDef {
   'Constructor
   'Copy
   'Extractor
+  'ObjectConstructor
   'Select
   'Store
 }
@@ -1381,6 +1382,7 @@ object Typed {
         case MethodMode.Copy => return st"copy of $mST".render
         case MethodMode.Constructor => return st"constructor of $mST".render
         case MethodMode.Method => return st"method $mST".render
+        case MethodMode.ObjectConstructor => return st"object constructor of $mST".render
         case MethodMode.Select => return st"indexing of $mST".render
         case MethodMode.Spec => return st"@spec method $mST".render
         case MethodMode.Store => return st"update of $mST".render
