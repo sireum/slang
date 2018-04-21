@@ -2004,13 +2004,12 @@ import Transformer._
             Result(r1.ctx, None())
         case o2: Stmt.Object =>
           val r0: Result[Context, Id] = transformId(ctx, o2.id)
-          val r1: Result[Context, IS[Z, Type]] = transformISZ(r0.ctx, o2.parents, transformType _)
-          val r2: Result[Context, IS[Z, Stmt]] = transformISZ(r1.ctx, o2.stmts, transformStmt _)
-          val r3: Result[Context, Attr] = transformAttr(r2.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
-            Result(r3.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), parents = r1.resultOpt.getOrElse(o2.parents), stmts = r2.resultOpt.getOrElse(o2.stmts), attr = r3.resultOpt.getOrElse(o2.attr))))
+          val r1: Result[Context, IS[Z, Stmt]] = transformISZ(r0.ctx, o2.stmts, transformStmt _)
+          val r2: Result[Context, Attr] = transformAttr(r1.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            Result(r2.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), stmts = r1.resultOpt.getOrElse(o2.stmts), attr = r2.resultOpt.getOrElse(o2.attr))))
           else
-            Result(r3.ctx, None())
+            Result(r2.ctx, None())
         case o2: Stmt.Sig =>
           val r0: Result[Context, Id] = transformId(ctx, o2.id)
           val r1: Result[Context, IS[Z, TypeParam]] = transformISZ(r0.ctx, o2.typeParams, transformTypeParam _)

@@ -511,7 +511,6 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.Stmt.Object""""),
         ("isExt", printB(o.isExt)),
         ("id", print_astId(o.id)),
-        ("parents", printISZ(F, o.parents, print_astType _)),
         ("stmts", printISZ(F, o.stmts, print_astStmt _)),
         ("attr", print_astAttr(o.attr))
       ))
@@ -2998,16 +2997,13 @@ object JSON {
       parser.parseObjectKey("id")
       val id = parse_astId()
       parser.parseObjectNext()
-      parser.parseObjectKey("parents")
-      val parents = parser.parseISZ(parse_astType _)
-      parser.parseObjectNext()
       parser.parseObjectKey("stmts")
       val stmts = parser.parseISZ(parse_astStmt _)
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.Object(isExt, id, parents, stmts, attr)
+      return org.sireum.lang.ast.Stmt.Object(isExt, id, stmts, attr)
     }
 
     def parse_astStmtSig(): org.sireum.lang.ast.Stmt.Sig = {

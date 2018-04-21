@@ -116,7 +116,7 @@ import GlobalDeclarationResolver._
               scope,
               T,
               T,
-              AST.Stmt.Object(F, AST.Id(id, attr), ISZ(), ISZ(), attr),
+              AST.Stmt.Object(F, AST.Id(id, attr), ISZ(), attr),
               Some(AST.Typed.Object(owner, id)),
               Some(AST.ResolvedInfo.Object(name)),
               AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), owner, id, ISZ(), None())
@@ -268,7 +268,7 @@ import GlobalDeclarationResolver._
             sc,
             T,
             T,
-            AST.Stmt.Object(F, AST.Id(stringInterpolator, stmt.id.attr), ISZ(), ISZ(), stmt.attr),
+            AST.Stmt.Object(F, AST.Id(stringInterpolator, stmt.id.attr), ISZ(), stmt.attr),
             Some(AST.Typed.Object(name, stringInterpolator)),
             Some(AST.ResolvedInfo.Object(stringInterpolatorName)),
             AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), currentName, id, ISZ(), None())

@@ -47,9 +47,6 @@ object PostTipeAttrChecker {
     for (info <- nameMap.values) {
       info match {
         case info: Info.Object =>
-          for (parent <- info.ast.parents) {
-            t.transformType(parent)
-          }
           for (stmt <- info.ast.stmts) {
             stmt match {
               case _: Stmt.Object =>

@@ -1118,9 +1118,10 @@ class SlangParser(
         hasError = true
         errorNotSlang(mods.head.pos, "Object modifiers other than @ext are")
     }
-    if (hasExt && (estats.nonEmpty || ctorcalls.nonEmpty)) {
+    if (estats.nonEmpty || ctorcalls.nonEmpty) {
       hasError = true
-      error(name.pos, "Slang @ext objects have to be of the form '@ext object〈ID〉{ ... }'.")
+      if (hasExt) error(name.pos, "Slang @ext objects have to be of the form '@ext object〈ID〉{ ... }'.")
+      else error(name.pos, "Slang objects have to be of the form 'object〈ID〉{ ... }'.")
     } else if (hasEnum && (estats.nonEmpty || ctorcalls.nonEmpty)) {
       hasError = true
       error(stat.pos, "Slang @enum declarations should have the form: '@enum object〈ID〉{ ... }'")
@@ -1147,11 +1148,10 @@ class SlangParser(
       AST.Stmt.Object(
         hasExt,
         cid(name),
-        ISZ(ctorcalls.map(translateExtend): _*),
         checkNestedMethods(ISZ(stats.map(tstat): _*)),
         attr(stat.pos)
       )
-    } else AST.Stmt.Object(hasExt, cid(name), ISZ(), ISZ(), attr(stat.pos))
+    } else AST.Stmt.Object(hasExt, cid(name), ISZ(), attr(stat.pos))
   }
 
   def translateSig(enclosing: Enclosing.Type, stat: Defn.Trait): AST.Stmt = {

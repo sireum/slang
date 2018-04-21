@@ -2578,11 +2578,10 @@ import MTransformer._
             MNone()
         case o2: Stmt.Object =>
           val r0: MOption[Id] = transformId(o2.id)
-          val r1: MOption[IS[Z, Type]] = transformISZ(o2.parents, transformType _)
-          val r2: MOption[IS[Z, Stmt]] = transformISZ(o2.stmts, transformStmt _)
-          val r3: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-            MSome(o2(id = r0.getOrElse(o2.id), parents = r1.getOrElse(o2.parents), stmts = r2.getOrElse(o2.stmts), attr = r3.getOrElse(o2.attr)))
+          val r1: MOption[IS[Z, Stmt]] = transformISZ(o2.stmts, transformStmt _)
+          val r2: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id), stmts = r1.getOrElse(o2.stmts), attr = r2.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.Sig =>

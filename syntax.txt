@@ -66,7 +66,7 @@
 
 <enum-decl>        ::=  @enum object <ID> { <SYMBOL>* }
 
-<object-decl>      ::=  object <ID> <extends>? { <stmt>* }
+<object-decl>      ::=  object <ID> { <stmt>* }
                      |  @ext object <ID> { <stmt>* }
 
 <sig-decl>         ::=  @sig ⸨ sealed ⸩? trait <ID> <type-params>? <extends>? { <stmt>* }
