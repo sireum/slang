@@ -367,9 +367,9 @@ class SlangFrontEndTest extends TestSuite {
           * - failing("private object A", errMsg)
         }
 
-        * - failing("object A extends { val x: Z = 5 } with B", "early init")
+        * - failing("object A extends { val x: Z = 5 } with B", "Slang objects have")
 
-        * - failing("object A extends B(5)", "Cannot supply arguments")
+        * - failing("object A extends B(5)", "Slang objects have")
 
       }
 
