@@ -1122,12 +1122,6 @@ class SlangParser(
       hasError = true
       if (hasExt) error(name.pos, "Slang @ext objects have to be of the form '@ext object〈ID〉{ ... }'.")
       else error(name.pos, "Slang objects have to be of the form 'object〈ID〉{ ... }'.")
-    } else if (hasEnum && (estats.nonEmpty || ctorcalls.nonEmpty)) {
-      hasError = true
-      error(stat.pos, "Slang @enum declarations should have the form: '@enum object〈ID〉{ ... }'")
-    } else if (estats.nonEmpty) {
-      hasError = true
-      errorNotSlang(estats.head.pos, "Object early initializations are")
     } else if (hasSelfType(self)) {
       hasError = true
       errorNotSlang(self.pos, s"Self type: ${syntax(self)} is")
