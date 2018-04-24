@@ -301,12 +301,26 @@ import TypeChecker._
     posOpt: Option[Position],
     scope: Scope,
     prefix: String,
+    value: String,
     reporter: Reporter
   ): Option[AST.Typed] = {
+    def checkRange(n: Z, ast: AST.Stmt.SubZ): Unit = {
+      if (ast.hasMax) {
+        if (n < ast.min) {
+          reporter.error(posOpt, typeCheckerKind, s"Literal $value is lower than $prefix's minimum of ${ast.min}.")
+        }
+      }
+      if (ast.hasMin) {
+        if (n > ast.max) {
+          reporter.error(posOpt, typeCheckerKind, s"Literal $value is lower than $prefix's minimum of ${ast.max}.")
+        }
+      }
+    }
     scope.resolveName(typeHierarchy.nameMap, ISZ(prefix)) match {
       case Some(info: Info.Object) =>
         scope.resolveType(typeHierarchy.typeMap, info.owner) match {
           case Some(typeInfo: TypeInfo.SubZ) =>
+            checkRange(Z(value).get, typeInfo.ast)
             return Some(AST.Typed.Name(typeInfo.name, ISZ()))
           case _ =>
         }
@@ -1066,7 +1080,7 @@ import TypeChecker._
           return (siExp(args = args, attr = siExp.attr(typedOpt = AST.Typed.stringOpt)), Some(AST.Typed.string))
         case "st" => return (siExp(args = args, attr = siExp.attr(typedOpt = AST.Typed.stOpt)), Some(AST.Typed.st))
         case _ =>
-          val tOpt = checkStringInterpolator(siExp.posOpt, scope, siExp.prefix, reporter)
+          val tOpt = checkStringInterpolator(siExp.posOpt, scope, siExp.prefix, siExp.lits(0).value, reporter)
           tOpt match {
             case Some(_) => return (siExp(args = args, attr = siExp.attr(typedOpt = tOpt)), tOpt)
             case _ => return (siExp(args = args), None())
@@ -2687,7 +2701,7 @@ import TypeChecker._
             case "f64" => AST.Typed.f64
             case "string" => AST.Typed.string
             case _ =>
-              val tpeOpt = checkStringInterpolator(pattern.posOpt, scope, pattern.prefix, reporter)
+              val tpeOpt = checkStringInterpolator(pattern.posOpt, scope, pattern.prefix, pattern.value, reporter)
               tpeOpt match {
                 case Some(tpe) => tpe
                 case _ => return pattern
