@@ -1722,7 +1722,17 @@ object ResolvedInfo {
 
   @datatype class Tuple(size: Z, index: Z) extends ResolvedInfo
 
-  @datatype class LocalVar(context: ISZ[String], id: String) extends ResolvedInfo
+  object LocalVar {
+
+    @enum object Scope {
+      'Current
+      'Outer
+      'Closure
+    }
+  }
+
+  @datatype class LocalVar(context: ISZ[String], scope: ResolvedInfo.LocalVar.Scope.Type, id: String)
+      extends ResolvedInfo
 
 }
 

@@ -1601,9 +1601,14 @@ object MsgPack {
       writer.writeZ(o.index)
     }
 
+    def write_astResolvedInfoLocalVarScopeType(o: org.sireum.lang.ast.ResolvedInfo.LocalVar.Scope.Type): Unit = {
+      writer.writeZ(o.ordinal)
+    }
+
     def write_astResolvedInfoLocalVar(o: org.sireum.lang.ast.ResolvedInfo.LocalVar): Unit = {
       writer.writeZ(Constants._astResolvedInfoLocalVar)
       writer.writeISZ(o.context, writer.writeString _)
+      write_astResolvedInfoLocalVarScopeType(o.scope)
       writer.writeString(o.id)
     }
 
@@ -4288,6 +4293,11 @@ object MsgPack {
       return org.sireum.lang.ast.ResolvedInfo.Tuple(size, index)
     }
 
+    def read_astResolvedInfoLocalVarScopeType(): org.sireum.lang.ast.ResolvedInfo.LocalVar.Scope.Type = {
+      val r = reader.readZ()
+      return org.sireum.lang.ast.ResolvedInfo.LocalVar.Scope.byOrdinal(r).get
+    }
+
     def read_astResolvedInfoLocalVar(): org.sireum.lang.ast.ResolvedInfo.LocalVar = {
       val r = read_astResolvedInfoLocalVarT(F)
       return r
@@ -4298,8 +4308,9 @@ object MsgPack {
         reader.expectZ(Constants._astResolvedInfoLocalVar)
       }
       val context = reader.readISZ(reader.readString _)
+      val scope = read_astResolvedInfoLocalVarScopeType()
       val id = reader.readString()
-      return org.sireum.lang.ast.ResolvedInfo.LocalVar(context, id)
+      return org.sireum.lang.ast.ResolvedInfo.LocalVar(context, scope, id)
     }
 
     def read_astProofStep(): org.sireum.lang.ast.ProofStep = {

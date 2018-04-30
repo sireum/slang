@@ -267,9 +267,24 @@ import TypeChecker._
     return typeHierarchy.nameMap
   }
 
-  @pure def checkInfo(info: Info): (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
+  @pure def checkInfo(scopeOpt: Option[Scope], info: Info): (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
     info match {
-      case info: Info.LocalVar => return (info.typedOpt, info.resOpt)
+      case info: Info.LocalVar =>
+        @pure def rCurrent(): (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
+          return (info.typedOpt, info.resOpt)
+        }
+        val res: AST.ResolvedInfo.LocalVar = info.resOpt match {
+          case Some(r: AST.ResolvedInfo.LocalVar) => r
+          case _ => return rCurrent()
+        }
+        if (context != res.context) {
+          return (info.typedOpt, Some(res(scope = AST.ResolvedInfo.LocalVar.Scope.Closure)))
+        } else {
+          scopeOpt match {
+            case Some(scope: Scope.Local) if scope.nameMap.contains(info.ast.value) => return rCurrent()
+            case _ => return (info.typedOpt, Some(res(scope = AST.ResolvedInfo.LocalVar.Scope.Outer)))
+          }
+        }
       case info: Info.Package => return (info.typedOpt, info.resOpt)
       case info: Info.Object => return (info.typedOpt, info.resOpt)
       case info: Info.Enum => return (info.typedOpt, info.resOpt)
@@ -290,9 +305,9 @@ import TypeChecker._
     }
   }
 
-  @pure def checkInfoOpt(infoOpt: Option[Info]): (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
+  @pure def checkInfoOpt(scopeOpt: Option[Scope], infoOpt: Option[Info]): (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
     infoOpt match {
-      case Some(info) => return checkInfo(info)
+      case Some(info) => return checkInfo(scopeOpt, info)
       case _ => return (None(), None())
     }
   }
@@ -393,8 +408,13 @@ import TypeChecker._
             ok = F
           } else {
             scope = scope(
-              nameMap = scope.nameMap + key ~> Info
-                .LocalVar(context :+ key, F, id, tOpt, Some(AST.ResolvedInfo.LocalVar(context, key)))
+              nameMap = scope.nameMap + key ~> Info.LocalVar(
+                context :+ key,
+                F,
+                id,
+                tOpt,
+                Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, key))
+              )
             )
           }
         case _ =>
@@ -525,8 +545,13 @@ import TypeChecker._
         ok = F
       } else {
         scope = scope(
-          nameMap = scope.nameMap + key ~> Info
-            .LocalVar(context :+ key, F, id, tOpt, Some(AST.ResolvedInfo.LocalVar(context, key)))
+          nameMap = scope.nameMap + key ~> Info.LocalVar(
+            context :+ key,
+            F,
+            id,
+            tOpt,
+            Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, key))
+          )
         )
       }
     }
@@ -716,7 +741,7 @@ import TypeChecker._
         errAccess(receiverType)
         return noResult
       case receiverType: AST.Typed.Package =>
-        val r = checkInfoOpt(typeHierarchy.nameMap.get(receiverType.name :+ id))
+        val r = checkInfoOpt(None(), typeHierarchy.nameMap.get(receiverType.name :+ id))
         if (r._1.isEmpty) {
           reporter.error(
             ident.attr.posOpt,
@@ -726,7 +751,7 @@ import TypeChecker._
         }
         return r
       case receiverType: AST.Typed.Object =>
-        val r = checkInfoOpt(typeHierarchy.nameMap.get(receiverType.name :+ id))
+        val r = checkInfoOpt(None(), typeHierarchy.nameMap.get(receiverType.name :+ id))
         if (r._1.isEmpty) {
           reporter.error(
             ident.attr.posOpt,
@@ -1195,7 +1220,7 @@ import TypeChecker._
     def checkId(id: AST.Id): (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
       val infoOpt = scope.resolveName(typeHierarchy.nameMap, ISZ(id.value))
       infoOpt match {
-        case Some(info: Info.LocalVar) => return checkInfo(info)
+        case Some(info: Info.LocalVar) => return checkInfo(Some(scope), info)
         case _ =>
           scope.thisOpt match {
             case Some(t) =>
@@ -1209,7 +1234,7 @@ import TypeChecker._
           }
       }
       infoOpt match {
-        case Some(info) => return checkInfo(info)
+        case Some(info) => return checkInfo(Some(scope), info)
         case _ =>
       }
       reporter.error(id.attr.posOpt, typeCheckerKind, s"Could not resolve '${id.value}'.")
@@ -2622,8 +2647,13 @@ import TypeChecker._
             ok = F
           } else {
             scope = scope(
-              nameMap = scope.nameMap + key ~> Info
-                .LocalVar(context :+ key, F, id, tOpt, Some(AST.ResolvedInfo.LocalVar(context, key)))
+              nameMap = scope.nameMap + key ~> Info.LocalVar(
+                context :+ key,
+                F,
+                id,
+                tOpt,
+                Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, key))
+              )
             )
           }
         case _ =>
@@ -2671,7 +2701,7 @@ import TypeChecker._
           return pattern(attr = pattern.attr(typedOpt = Some(expectedType)))
         case pattern: AST.Pattern.Ref =>
           val refName = pattern.name.ids.map[String](id => id.value)
-          checkInfoOpt(scope.resolveName(typeHierarchy.nameMap, refName)) match {
+          checkInfoOpt(Some(scope), scope.resolveName(typeHierarchy.nameMap, refName)) match {
             case (Some(t), resOpt) =>
               if (typeHierarchy.glb(ISZ(expectedType, t)).isEmpty) {
                 reporter.error(
@@ -3048,7 +3078,7 @@ import TypeChecker._
         case Some(_: Info.LocalVar) =>
           err()
           return (None(), r)
-        case _ => Some(AST.ResolvedInfo.LocalVar(context, key))
+        case _ => Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, key))
       }
       val expectedOpt: Option[AST.Typed] = varStmt.tipeOpt match {
         case Some(tipe) =>
@@ -3371,8 +3401,13 @@ import TypeChecker._
           ok = F
         case _ =>
           scope = scope(
-            nameMap = scope.nameMap + id ~> Info
-              .LocalVar(context :+ id, T, p.id, p.tipe.typedOpt, Some(AST.ResolvedInfo.LocalVar(context, id)))
+            nameMap = scope.nameMap + id ~> Info.LocalVar(
+              context :+ id,
+              T,
+              p.id,
+              p.tipe.typedOpt,
+              Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, id))
+            )
           )
       }
     }
