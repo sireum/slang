@@ -1475,7 +1475,9 @@ object JSON {
       val value: String = o match {
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.Apply => "Apply"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.Assert => "Assert"
+        case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.AssertMsg => "AssertMsg"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.Assume => "Assume"
+        case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.AssumeMsg => "AssumeMsg"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.EnumByName => "EnumByName"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.EnumByOrdinal => "EnumByOrdinal"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.Cprint => "Cprint"

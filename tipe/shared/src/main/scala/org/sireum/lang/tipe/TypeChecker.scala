@@ -57,13 +57,11 @@ object TypeChecker {
   val builtInMethods: HashSet[String] =
     HashSet ++ ISZ("assert", "assume", "println", "print", "cprintln", "cprint", "eprintln", "eprint", "halt")
   val assertResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Assert))
-
+  val assertMsgResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.AssertMsg))
   val assertume1TypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(F, F, ISZ(AST.Typed.b), AST.Typed.unit))
-
-  val assertume2TypedOpt: Option[AST.Typed] = Some(
-    AST.Typed.Fun(F, F, ISZ(AST.Typed.b, AST.Typed.string), AST.Typed.unit)
-  )
+  val assertume2TypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(F, F, ISZ(AST.Typed.b, AST.Typed.string), AST.Typed.unit))
   val assumeResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Assume))
+  val assumeMsgResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.AssumeMsg))
   val printlnResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Println))
   val printResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Print))
   val cprintlnResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Cprintln))
@@ -2287,8 +2285,8 @@ import TypeChecker._
                 if targs.isEmpty && builtInMethods.contains(name) =>
               val (kind, resOpt): (BuiltInKind.Type, Option[AST.ResolvedInfo]) =
                 name.native match {
-                  case "assert" => (BuiltInKind.Assertume, assertResOpt)
-                  case "assume" => (BuiltInKind.Assertume, assumeResOpt)
+                  case "assert" => (BuiltInKind.Assertume, if (args.size == z"1") assertResOpt else assertMsgResOpt)
+                  case "assume" => (BuiltInKind.Assertume, if (args.size == z"1") assumeResOpt else assumeMsgResOpt)
                   case "println" => (BuiltInKind.Print, printlnResOpt)
                   case "print" => (BuiltInKind.Print, printResOpt)
                   case "cprintln" => (BuiltInKind.Print, cprintlnResOpt)

@@ -1645,7 +1645,9 @@ object ResolvedInfo {
     @enum object Kind {
       'Apply
       'Assert
+      'AssertMsg
       'Assume
+      'AssumeMsg
       'EnumByName
       'EnumByOrdinal
       'Cprint
