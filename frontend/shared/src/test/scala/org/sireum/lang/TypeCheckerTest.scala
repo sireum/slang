@@ -35,7 +35,7 @@ import org.sireum.test._
 
 class TypeCheckerTest extends TestSuite {
 
-  val typeChecker: TypeChecker = LibraryTypeCheckingTest.tc
+  lazy val typeChecker: TypeChecker = LibraryTypeCheckingTest.tc
 
   val tests = Tests {
 
@@ -440,7 +440,7 @@ class TypeCheckerTest extends TestSuite {
           }
         }
         assert(isPassing)
-        PostTipeAttrChecker.checkProgram(p, reporter)
+        PostTipeAttrChecker.checkProgram(p._2, reporter)
       case _ =>
     }
     if (reporter.hasIssue) {

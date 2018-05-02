@@ -93,14 +93,14 @@ object FrontEnd {
     thOpt: Option[TypeHierarchy],
     program: AST.TopUnit.Program,
     reporter: Reporter
-  ): AST.TopUnit.Program = {
+  ): (TypeHierarchy, AST.TopUnit.Program) = {
     val th: TypeHierarchy = thOpt match {
       case Some(thi) => thi
       case _ =>
         val (tc, rep) = libraryReporter
         if (rep.hasIssue) {
           reporter.reports(rep.messages)
-          return program
+          return (tc.typeHierarchy, program)
         }
         tc.typeHierarchy
     }
@@ -126,7 +126,7 @@ object FrontEnd {
 
     if (gdr.reporter.hasError) {
       reporter.reports(gdr.reporter.messages)
-      return program
+      return (th, program)
     }
 
     val th2: TypeHierarchy = {
@@ -138,19 +138,19 @@ object FrontEnd {
 
       if (rep.hasIssue) {
         reporter.reports(rep.messages)
-        return program
+        return (th, program)
       }
 
       TypeHierarchy.build(th(nameMap = nameMap, typeMap = typeMap), reporter)
     }
 
     if (reporter.hasError) {
-      return program
+      return (th2, program)
     }
 
     val th3 = TypeOutliner.checkOutline(th2, reporter)
     if (reporter.hasError) {
-      return program
+      return (th3, program)
     }
 
     var nameMap: NameMap = HashMap.empty
@@ -166,13 +166,13 @@ object FrontEnd {
 
     val th4 = TypeChecker.checkComponents(th3, nameMap, typeMap, reporter)
     if (reporter.hasError) {
-      return program
+      return (th4, program)
     }
 
     val typeChecker = TypeChecker(th4, ISZ(), F)
     val scope = Scope.Local(HashMap.empty, HashMap.empty, None(), None(), Some(Scope.Global(ISZ(), ISZ(), ISZ())))
     val newBody = typeChecker.checkBody(None(), scope, program.body, reporter)
-    return program(body = newBody)
+    return (th4, program(body = newBody))
   }
 
 }
