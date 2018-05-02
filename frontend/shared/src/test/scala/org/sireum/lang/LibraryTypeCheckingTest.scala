@@ -32,7 +32,7 @@ import org.sireum.lang.tipe._
 import org.sireum.test._
 
 object LibraryTypeCheckingTest {
-  val (tc, rep) = FrontEnd.libraryReporter
+  lazy val (tc, rep) = FrontEnd.libraryReporter
 }
 
 import LibraryTypeCheckingTest._
