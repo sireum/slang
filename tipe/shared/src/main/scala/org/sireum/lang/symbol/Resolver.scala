@@ -72,7 +72,7 @@ object Resolver {
       scope,
       AST.Stmt.Var(T, id("T"), Some(tname("B", ISZ())), Some(dollarAssignExp), emptyAttr),
       None(),
-      Some(AST.ResolvedInfo.Var(T, F, tName, "T"))
+      Some(AST.ResolvedInfo.Var(T, F, AST.Typed.sireumName, "T"))
     )
 
     val fName = AST.Typed.sireumName :+ "F"
@@ -82,7 +82,7 @@ object Resolver {
       scope,
       AST.Stmt.Var(T, id("F"), Some(tname("B", ISZ())), Some(dollarAssignExp), emptyAttr),
       None(),
-      Some(AST.ResolvedInfo.Var(T, F, tName, "F"))
+      Some(AST.ResolvedInfo.Var(T, F, AST.Typed.sireumName, "F"))
     )
 
     var tm = typeMap + AST.Typed.iszName ~>
