@@ -1877,7 +1877,7 @@ import TypeChecker._
         typeArguments: ISZ[AST.Typed]
       ): (AST.Exp, Option[AST.Typed]) = {
 
-        @pure def partResult: (AST.Exp, Option[AST.Typed]) = {
+        @pure def partResultH: (AST.Exp, Option[AST.Typed]) = {
           return (invokeExp(targs = targs, receiverOpt = receiverOpt), None())
         }
 
@@ -1887,9 +1887,9 @@ import TypeChecker._
               checkInvokeType(invokeExp.id.attr.posOpt, rOpt, tpe, typeArguments, invokeExp.args.size, ISZ())
             t2Opt match {
               case Some(t2) => (t2, newResOpt, targs)
-              case _ => return partResult
+              case _ => return partResultH
             }
-          case _ => return partResult
+          case _ => return partResultH
         }
 
         def checkInvokeMethod(
@@ -1899,14 +1899,14 @@ import TypeChecker._
         ): (AST.Exp, Option[AST.Typed]) = {
           if (m.tpe.isByName) {
             reporter.error(invokeExp.id.attr.posOpt, typeCheckerKind, s"$m does not accept any argument.")
-            return partResult
+            return partResultH
           } else if (m.tpe.args.size != invokeExp.args.size) {
             reporter.error(
               invokeExp.id.attr.posOpt,
               typeCheckerKind,
               s"$m is expecting ${m.tpe.args.size} argument(s), but ${invokeExp.args.size} found."
             )
-            return partResult
+            return partResultH
           }
 
           @pure def make(eArgs: ISZ[AST.Exp], tpeOpt: Option[AST.Typed]): AST.Exp = {
@@ -1934,7 +1934,7 @@ import TypeChecker._
             var found = F
             var i = 0
             val size = m.methods.size
-            var r = partResult
+            var r = partResultH
             while (!found && i < size) {
               val rep = Reporter.create
               r = checkInvokeMethod(m.methods(i), Some(res.methods(i)), rep)
@@ -1949,7 +1949,7 @@ import TypeChecker._
               return r
             } else {
               reporter.reports(messages)
-              return partResult
+              return partResultH
             }
           case m: AST.Typed.Method =>
             val r = checkInvokeMethod(m, resOpt, reporter); return r
@@ -1960,7 +1960,7 @@ import TypeChecker._
                 typeCheckerKind,
                 s"Cannot supply type arguments when applying a function."
               )
-              return partResult
+              return partResultH
             }
             val size = invokeExp.args.size
             if (t.args.size != size) {
@@ -1969,7 +1969,7 @@ import TypeChecker._
                 typeCheckerKind,
                 s"Function '$t' is expecting $size arguments, but $size found."
               )
-              return partResult
+              return partResultH
             }
             var i = 0
             var newArgs = ISZ[AST.Exp]()
@@ -1989,7 +1989,7 @@ import TypeChecker._
             )
           case _ =>
             reporter.error(invokeExp.id.attr.posOpt, typeCheckerKind, s"Cannot invoke on '$t'.")
-            return partResult
+            return partResultH
         }
       }
 
@@ -2032,7 +2032,7 @@ import TypeChecker._
         typeArguments: ISZ[AST.Typed]
       ): (AST.Exp, Option[AST.Typed]) = {
 
-        @pure def partResult: (AST.Exp, Option[AST.Typed]) = {
+        @pure def partResultNamedH: (AST.Exp, Option[AST.Typed]) = {
           return (invokeExp(targs = targs, receiverOpt = receiverOpt), None())
         }
 
@@ -2049,9 +2049,9 @@ import TypeChecker._
               )
             t2Opt match {
               case Some(t2) => (t2, newResOpt, targs)
-              case _ => return partResult
+              case _ => return partResultNamedH
             }
-          case _ => return partResult
+          case _ => return partResultNamedH
         }
 
         t match {
@@ -2062,7 +2062,7 @@ import TypeChecker._
                 typeCheckerKind,
                 s"$m is expecting ${m.tpe.args.size} arguments, but ${invokeExp.args.size} found."
               )
-              return partResult
+              return partResultNamedH
             }
 
             val nameToIndexMap: HashMap[String, Z] = {
@@ -2098,13 +2098,13 @@ import TypeChecker._
                     reporter.error(na.id.attr.posOpt, typeCheckerKind, s"Could not find parameter '$name' in '$m'.")
                 }
                 if (!ok) {
-                  return partResult
+                  return partResultNamedH
                 }
               }
               r.toIS
             }
 
-            @pure def make(eArgs: ISZ[AST.Exp], tpeOpt: Option[AST.Typed]): AST.Exp = {
+            @pure def makeNamed(eArgs: ISZ[AST.Exp], tpeOpt: Option[AST.Typed]): AST.Exp = {
               val args: ISZ[AST.NamedArg] =
                 if (eArgs.size == expArgs.size) {
                   var r = ISZ[AST.NamedArg]()
@@ -2126,7 +2126,7 @@ import TypeChecker._
             }
 
             val r =
-              checkInvokeGenH(m, invokeExp.id, expArgs, typeArgs, reporter, make _)
+              checkInvokeGenH(m, invokeExp.id, expArgs, typeArgs, reporter, makeNamed _)
             return r
           case _: AST.Typed.Fun =>
             reporter.error(
@@ -2134,10 +2134,10 @@ import TypeChecker._
               typeCheckerKind,
               s"Cannot supply named arguments when applying a function."
             )
-            return partResult
+            return partResultNamedH
           case _ =>
             reporter.error(invokeExp.id.attr.posOpt, typeCheckerKind, s"Cannot invoke with named arguments on '$t'.")
-            return partResult
+            return partResultNamedH
         }
       }
 
@@ -3194,7 +3194,7 @@ import TypeChecker._
             val (newRhs, _) = checkAssignExp(expectedOpt, scope, assignStmt.rhs, reporter)
             return assignStmt(lhs = lhs(attr = lhs.attr(resOpt = resOpt, typedOpt = expectedOpt)), rhs = newRhs)
           }
-          def partialResult(): AST.Stmt = {
+          def partResultIdent(): AST.Stmt = {
             val (newRhs, _) = checkAssignExp(None(), scope, assignStmt.rhs, reporter)
             return assignStmt(rhs = newRhs)
           }
@@ -3231,12 +3231,12 @@ import TypeChecker._
                 case _ =>
               }
               reporter.error(lhs.id.attr.posOpt, typeCheckerKind, s"Could not resolve '${lhs.id.value}'.")
-              val r = partialResult()
+              val r = partResultIdent()
               return r
           }
         case lhs: AST.Exp.Select =>
           val (newReceiver, receiverTypeOpt) = checkExp(None(), scope, lhs.receiverOpt.get, reporter)
-          def partialResult(): AST.Stmt = {
+          def partResultSelect(): AST.Stmt = {
             val (newRhs, _) = checkAssignExp(None(), scope, assignStmt.rhs, reporter)
             return assignStmt(lhs = lhs(receiverOpt = Some(newReceiver)), rhs = newRhs)
           }
@@ -3270,10 +3270,10 @@ import TypeChecker._
                   }
                 case _ =>
               }
-              val r = partialResult()
+              val r = partResultSelect()
               return r
             case Some(_) => halt("Unexpected situation when type checking field assignment.")
-            case _ => val r = partialResult(); return r
+            case _ => val r = partResultSelect(); return r
           }
         case lhs: AST.Exp.Invoke =>
           val receiver = lhs.receiverOpt.get

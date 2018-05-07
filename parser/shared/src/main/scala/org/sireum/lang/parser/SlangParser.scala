@@ -2530,7 +2530,6 @@ class SlangParser(
 
   def checkNestedMethods(m: AST.Stmt.Method): Unit = {
     var set = scala.collection.immutable.HashSet[Predef.String]()
-    var stack = scala.collection.immutable.Stack[scala.collection.immutable.HashSet[Predef.String]]()
     val transformer = new AST.Transformer[Unit](new AST.Transformer.PrePost[Unit] {
       def string: String = ""
 
@@ -2539,16 +2538,8 @@ class SlangParser(
         if (set.contains(id)) {
           reporter.error(o.sig.id.attr.posOpt, SlangParser.messageKind, s"Cannot redeclare nested method '$id'.")
         }
-        stack = stack.push(set)
         set = set + id
         super.preStmtMethod(ctx, o)
-      }
-
-      override def postStmtMethod(ctx: Unit, o: AST.Stmt.Method): AST.Transformer.Result[Unit, AST.Stmt] = {
-        val p = stack.pop2
-        set = p._1
-        stack = p._2
-        super.postStmtMethod(ctx, o)
       }
     })
     transformer.transformStmt((), m)
