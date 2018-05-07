@@ -2974,7 +2974,7 @@ import TypeChecker._
                     patterns = newPatterns,
                     attr = pattern.attr(
                       typedOpt = Some(expected),
-                      resOpt = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Tuple))
+                      resOpt = AST.Typed.unapplyTupleResOpt
                     )
                   )
                 case _ =>

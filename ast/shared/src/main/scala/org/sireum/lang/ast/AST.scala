@@ -1482,6 +1482,7 @@ object Typed {
   val mszName: ISZ[String] = sireumName :+ "MSZ"
   val zsName: ISZ[String] = sireumName :+ "ZS"
   val unapplySeqResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.UnapplySeq))
+  val unapplyTupleResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.UnapplyTuple))
 
   val bConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.b)))
   val bConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
@@ -1688,8 +1689,8 @@ object ResolvedInfo {
       'Print
       'Println
       'String
-      'Tuple
       'UnapplySeq
+      'UnapplyTuple
       'UnaryPlus
       'UnaryMinus
       'UnaryNot
