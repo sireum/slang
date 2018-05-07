@@ -1465,7 +1465,6 @@ object JSON {
         case o: org.sireum.lang.ast.ResolvedInfo.Var => return print_astResolvedInfoVar(o)
         case o: org.sireum.lang.ast.ResolvedInfo.Method => return print_astResolvedInfoMethod(o)
         case o: org.sireum.lang.ast.ResolvedInfo.Methods => return print_astResolvedInfoMethods(o)
-        case o: org.sireum.lang.ast.ResolvedInfo.Type => return print_astResolvedInfoType(o)
         case o: org.sireum.lang.ast.ResolvedInfo.Tuple => return print_astResolvedInfoTuple(o)
         case o: org.sireum.lang.ast.ResolvedInfo.LocalVar => return print_astResolvedInfoLocalVar(o)
       }
@@ -1520,11 +1519,12 @@ object JSON {
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.Println => "Println"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.String => "String"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.Tuple => "Tuple"
-        case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.Update => "Update"
+        case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.UnapplySeq => "UnapplySeq"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.UnaryPlus => "UnaryPlus"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.UnaryMinus => "UnaryMinus"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.UnaryNot => "UnaryNot"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.UnaryComplement => "UnaryComplement"
+        case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.Update => "Update"
       }
       return printObject(ISZ(
         ("type", printString("org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind")),
@@ -1596,13 +1596,6 @@ object JSON {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.ResolvedInfo.Methods""""),
         ("methods", printISZ(F, o.methods, print_astResolvedInfoMethod _))
-      ))
-    }
-
-    @pure def print_astResolvedInfoType(o: org.sireum.lang.ast.ResolvedInfo.Type): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.ResolvedInfo.Type""""),
-        ("name", printISZ(T, o.name, printString _))
       ))
     }
 
@@ -5033,7 +5026,7 @@ object JSON {
     }
 
     def parse_astResolvedInfo(): org.sireum.lang.ast.ResolvedInfo = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.ResolvedInfo.BuiltIn", "org.sireum.lang.ast.ResolvedInfo.Package", "org.sireum.lang.ast.ResolvedInfo.Enum", "org.sireum.lang.ast.ResolvedInfo.EnumElement", "org.sireum.lang.ast.ResolvedInfo.Object", "org.sireum.lang.ast.ResolvedInfo.Var", "org.sireum.lang.ast.ResolvedInfo.Method", "org.sireum.lang.ast.ResolvedInfo.Methods", "org.sireum.lang.ast.ResolvedInfo.Type", "org.sireum.lang.ast.ResolvedInfo.Tuple", "org.sireum.lang.ast.ResolvedInfo.LocalVar"))
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.ResolvedInfo.BuiltIn", "org.sireum.lang.ast.ResolvedInfo.Package", "org.sireum.lang.ast.ResolvedInfo.Enum", "org.sireum.lang.ast.ResolvedInfo.EnumElement", "org.sireum.lang.ast.ResolvedInfo.Object", "org.sireum.lang.ast.ResolvedInfo.Var", "org.sireum.lang.ast.ResolvedInfo.Method", "org.sireum.lang.ast.ResolvedInfo.Methods", "org.sireum.lang.ast.ResolvedInfo.Tuple", "org.sireum.lang.ast.ResolvedInfo.LocalVar"))
       t.native match {
         case "org.sireum.lang.ast.ResolvedInfo.BuiltIn" => val r = parse_astResolvedInfoBuiltInT(T); return r
         case "org.sireum.lang.ast.ResolvedInfo.Package" => val r = parse_astResolvedInfoPackageT(T); return r
@@ -5043,7 +5036,6 @@ object JSON {
         case "org.sireum.lang.ast.ResolvedInfo.Var" => val r = parse_astResolvedInfoVarT(T); return r
         case "org.sireum.lang.ast.ResolvedInfo.Method" => val r = parse_astResolvedInfoMethodT(T); return r
         case "org.sireum.lang.ast.ResolvedInfo.Methods" => val r = parse_astResolvedInfoMethodsT(T); return r
-        case "org.sireum.lang.ast.ResolvedInfo.Type" => val r = parse_astResolvedInfoTypeT(T); return r
         case "org.sireum.lang.ast.ResolvedInfo.Tuple" => val r = parse_astResolvedInfoTupleT(T); return r
         case "org.sireum.lang.ast.ResolvedInfo.LocalVar" => val r = parse_astResolvedInfoLocalVarT(T); return r
         case _ => val r = parse_astResolvedInfoLocalVarT(T); return r
@@ -5222,21 +5214,6 @@ object JSON {
       val methods = parser.parseISZ(parse_astResolvedInfoMethod _)
       parser.parseObjectNext()
       return org.sireum.lang.ast.ResolvedInfo.Methods(methods)
-    }
-
-    def parse_astResolvedInfoType(): org.sireum.lang.ast.ResolvedInfo.Type = {
-      val r = parse_astResolvedInfoTypeT(F)
-      return r
-    }
-
-    def parse_astResolvedInfoTypeT(typeParsed: B): org.sireum.lang.ast.ResolvedInfo.Type = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.ResolvedInfo.Type")
-      }
-      parser.parseObjectKey("name")
-      val name = parser.parseISZ(parser.parseString _)
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.ResolvedInfo.Type(name)
     }
 
     def parse_astResolvedInfoTuple(): org.sireum.lang.ast.ResolvedInfo.Tuple = {
@@ -8691,24 +8668,6 @@ object JSON {
       return r
     }
     val r = to(s, f_astResolvedInfoMethods _)
-    return r
-  }
-
-  def from_astResolvedInfoType(o: org.sireum.lang.ast.ResolvedInfo.Type, isCompact: B): String = {
-    val st = Printer.print_astResolvedInfoType(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astResolvedInfoType(s: String): Either[org.sireum.lang.ast.ResolvedInfo.Type, Json.ErrorMsg] = {
-    def f_astResolvedInfoType(parser: Parser): org.sireum.lang.ast.ResolvedInfo.Type = {
-      val r = parser.parse_astResolvedInfoType()
-      return r
-    }
-    val r = to(s, f_astResolvedInfoType _)
     return r
   }
 

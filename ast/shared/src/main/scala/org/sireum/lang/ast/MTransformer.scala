@@ -513,10 +513,6 @@ object MTransformer {
 
   val PostResultResolvedInfoMethods: MOption[ResolvedInfo] = MNone()
 
-  val PreResultResolvedInfoType: PreResult[ResolvedInfo] = PreResult(T, MNone())
-
-  val PostResultResolvedInfoType: MOption[ResolvedInfo] = MNone()
-
   val PreResultResolvedInfoTuple: PreResult[ResolvedInfo] = PreResult(T, MNone())
 
   val PostResultResolvedInfoTuple: MOption[ResolvedInfo] = MNone()
@@ -1329,7 +1325,6 @@ import MTransformer._
       case o: ResolvedInfo.Var => return preResolvedInfoVar(o)
       case o: ResolvedInfo.Method => return preResolvedInfoMethod(o)
       case o: ResolvedInfo.Methods => return preResolvedInfoMethods(o)
-      case o: ResolvedInfo.Type => return preResolvedInfoType(o)
       case o: ResolvedInfo.Tuple => return preResolvedInfoTuple(o)
       case o: ResolvedInfo.LocalVar => return preResolvedInfoLocalVar(o)
     }
@@ -1365,10 +1360,6 @@ import MTransformer._
 
   def preResolvedInfoMethods(o: ResolvedInfo.Methods): PreResult[ResolvedInfo] = {
     return PreResultResolvedInfoMethods
-  }
-
-  def preResolvedInfoType(o: ResolvedInfo.Type): PreResult[ResolvedInfo] = {
-    return PreResultResolvedInfoType
   }
 
   def preResolvedInfoTuple(o: ResolvedInfo.Tuple): PreResult[ResolvedInfo] = {
@@ -2226,7 +2217,6 @@ import MTransformer._
       case o: ResolvedInfo.Var => return postResolvedInfoVar(o)
       case o: ResolvedInfo.Method => return postResolvedInfoMethod(o)
       case o: ResolvedInfo.Methods => return postResolvedInfoMethods(o)
-      case o: ResolvedInfo.Type => return postResolvedInfoType(o)
       case o: ResolvedInfo.Tuple => return postResolvedInfoTuple(o)
       case o: ResolvedInfo.LocalVar => return postResolvedInfoLocalVar(o)
     }
@@ -2262,10 +2252,6 @@ import MTransformer._
 
   def postResolvedInfoMethods(o: ResolvedInfo.Methods): MOption[ResolvedInfo] = {
     return PostResultResolvedInfoMethods
-  }
-
-  def postResolvedInfoType(o: ResolvedInfo.Type): MOption[ResolvedInfo] = {
-    return PostResultResolvedInfoType
   }
 
   def postResolvedInfoTuple(o: ResolvedInfo.Tuple): MOption[ResolvedInfo] = {
@@ -4210,11 +4196,6 @@ import MTransformer._
           val r0: MOption[IS[Z, ResolvedInfo.Method]] = transformISZ(o2.methods, transformResolvedInfoMethod _)
           if (hasChanged || r0.nonEmpty)
             MSome(o2(methods = r0.getOrElse(o2.methods)))
-          else
-            MNone()
-        case o2: ResolvedInfo.Type =>
-          if (hasChanged)
-            MSome(o2)
           else
             MNone()
         case o2: ResolvedInfo.Tuple =>

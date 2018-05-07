@@ -302,73 +302,71 @@ object MsgPack {
 
     val _astResolvedInfoMethods: Z = 100
 
-    val _astResolvedInfoType: Z = 101
+    val _astResolvedInfoTuple: Z = 101
 
-    val _astResolvedInfoTuple: Z = 102
+    val _astResolvedInfoLocalVar: Z = 102
 
-    val _astResolvedInfoLocalVar: Z = 103
+    val _astProofStepBasic: Z = 103
 
-    val _astProofStepBasic: Z = 104
+    val _astProofStepSubProof: Z = 104
 
-    val _astProofStepSubProof: Z = 105
+    val _astAssumeProofStepRegular: Z = 105
 
-    val _astAssumeProofStepRegular: Z = 106
+    val _astAssumeProofStepForallIntroAps: Z = 106
 
-    val _astAssumeProofStepForallIntroAps: Z = 107
+    val _astAssumeProofStepExistsElimAps: Z = 107
 
-    val _astAssumeProofStepExistsElimAps: Z = 108
+    val _astJustPremise: Z = 108
 
-    val _astJustPremise: Z = 109
+    val _astJustAuto: Z = 109
 
-    val _astJustAuto: Z = 110
+    val _astJustCoq: Z = 110
 
-    val _astJustCoq: Z = 111
+    val _astJustSubst: Z = 111
 
-    val _astJustSubst: Z = 112
+    val _astJustInvariant: Z = 112
 
-    val _astJustInvariant: Z = 113
+    val _astJustFact: Z = 113
 
-    val _astJustFact: Z = 114
+    val _astJustImplyIntro: Z = 114
 
-    val _astJustImplyIntro: Z = 115
+    val _astJustImplyElim: Z = 115
 
-    val _astJustImplyElim: Z = 116
+    val _astJustNegIntro: Z = 116
 
-    val _astJustNegIntro: Z = 117
+    val _astJustNegElim: Z = 117
 
-    val _astJustNegElim: Z = 118
+    val _astJustBottomElim: Z = 118
 
-    val _astJustBottomElim: Z = 119
+    val _astJustForallIntro: Z = 119
 
-    val _astJustForallIntro: Z = 120
+    val _astJustForallElim: Z = 120
 
-    val _astJustForallElim: Z = 121
+    val _astJustExistsIntro: Z = 121
 
-    val _astJustExistsIntro: Z = 122
+    val _astJustExistsElim: Z = 122
 
-    val _astJustExistsElim: Z = 123
+    val _astJustOrIntro: Z = 123
 
-    val _astJustOrIntro: Z = 124
+    val _astJustOrElim: Z = 124
 
-    val _astJustOrElim: Z = 125
+    val _astJustAndIntro: Z = 125
 
-    val _astJustAndIntro: Z = 126
+    val _astJustAndElim: Z = 126
 
-    val _astJustAndElim: Z = 127
+    val _astJustPbc: Z = 127
 
-    val _astJustPbc: Z = 128
+    val _astTruthTableRow: Z = 128
 
-    val _astTruthTableRow: Z = 129
+    val _astTruthTableAssignment: Z = 129
 
-    val _astTruthTableAssignment: Z = 130
+    val _astTruthTableConclusionValidity: Z = 130
 
-    val _astTruthTableConclusionValidity: Z = 131
+    val _astTruthTableConclusionTautology: Z = 131
 
-    val _astTruthTableConclusionTautology: Z = 132
+    val _astTruthTableConclusionContradictory: Z = 132
 
-    val _astTruthTableConclusionContradictory: Z = 133
-
-    val _astTruthTableConclusionContingent: Z = 134
+    val _astTruthTableConclusionContingent: Z = 133
 
   }
 
@@ -1529,7 +1527,6 @@ object MsgPack {
         case o: org.sireum.lang.ast.ResolvedInfo.Var => write_astResolvedInfoVar(o)
         case o: org.sireum.lang.ast.ResolvedInfo.Method => write_astResolvedInfoMethod(o)
         case o: org.sireum.lang.ast.ResolvedInfo.Methods => write_astResolvedInfoMethods(o)
-        case o: org.sireum.lang.ast.ResolvedInfo.Type => write_astResolvedInfoType(o)
         case o: org.sireum.lang.ast.ResolvedInfo.Tuple => write_astResolvedInfoTuple(o)
         case o: org.sireum.lang.ast.ResolvedInfo.LocalVar => write_astResolvedInfoLocalVar(o)
       }
@@ -1588,11 +1585,6 @@ object MsgPack {
     def write_astResolvedInfoMethods(o: org.sireum.lang.ast.ResolvedInfo.Methods): Unit = {
       writer.writeZ(Constants._astResolvedInfoMethods)
       writer.writeISZ(o.methods, write_astResolvedInfoMethod _)
-    }
-
-    def write_astResolvedInfoType(o: org.sireum.lang.ast.ResolvedInfo.Type): Unit = {
-      writer.writeZ(Constants._astResolvedInfoType)
-      writer.writeISZ(o.name, writer.writeString _)
     }
 
     def write_astResolvedInfoTuple(o: org.sireum.lang.ast.ResolvedInfo.Tuple): Unit = {
@@ -4136,7 +4128,6 @@ object MsgPack {
         case Constants._astResolvedInfoVar => val r = read_astResolvedInfoVarT(T); return r
         case Constants._astResolvedInfoMethod => val r = read_astResolvedInfoMethodT(T); return r
         case Constants._astResolvedInfoMethods => val r = read_astResolvedInfoMethodsT(T); return r
-        case Constants._astResolvedInfoType => val r = read_astResolvedInfoTypeT(T); return r
         case Constants._astResolvedInfoTuple => val r = read_astResolvedInfoTupleT(T); return r
         case Constants._astResolvedInfoLocalVar => val r = read_astResolvedInfoLocalVarT(T); return r
         case _ =>
@@ -4264,19 +4255,6 @@ object MsgPack {
       }
       val methods = reader.readISZ(read_astResolvedInfoMethod _)
       return org.sireum.lang.ast.ResolvedInfo.Methods(methods)
-    }
-
-    def read_astResolvedInfoType(): org.sireum.lang.ast.ResolvedInfo.Type = {
-      val r = read_astResolvedInfoTypeT(F)
-      return r
-    }
-
-    def read_astResolvedInfoTypeT(typeParsed: B): org.sireum.lang.ast.ResolvedInfo.Type = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astResolvedInfoType)
-      }
-      val name = reader.readISZ(reader.readString _)
-      return org.sireum.lang.ast.ResolvedInfo.Type(name)
     }
 
     def read_astResolvedInfoTuple(): org.sireum.lang.ast.ResolvedInfo.Tuple = {
@@ -7109,21 +7087,6 @@ object MsgPack {
       return r
     }
     val r = to(data, f_astResolvedInfoMethods _)
-    return r
-  }
-
-  def from_astResolvedInfoType(o: org.sireum.lang.ast.ResolvedInfo.Type, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astResolvedInfoType(o)
-    return w.result
-  }
-
-  def to_astResolvedInfoType(data: ISZ[U8]): Either[org.sireum.lang.ast.ResolvedInfo.Type, MessagePack.ErrorMsg] = {
-    def f_astResolvedInfoType(reader: Reader): org.sireum.lang.ast.ResolvedInfo.Type = {
-      val r = reader.read_astResolvedInfoType()
-      return r
-    }
-    val r = to(data, f_astResolvedInfoType _)
     return r
   }
 

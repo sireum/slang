@@ -2824,7 +2824,7 @@ import TypeChecker._
                 declId(pattern.idOpt, tOpt)
                 return pattern(
                   patterns = newPatterns,
-                  attr = pattern.attr(typedOpt = tOpt, resOpt = AST.Typed.isResOpt)
+                  attr = pattern.attr(typedOpt = tOpt, resOpt = AST.Typed.unapplySeqResOpt)
                 )
               }
               (ti.name, expectedType) match {

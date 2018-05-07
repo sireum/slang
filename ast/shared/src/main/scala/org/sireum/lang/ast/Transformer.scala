@@ -717,7 +717,6 @@ object Transformer {
         case o: ResolvedInfo.Var => return preResolvedInfoVar(ctx, o)
         case o: ResolvedInfo.Method => return preResolvedInfoMethod(ctx, o)
         case o: ResolvedInfo.Methods => return preResolvedInfoMethods(ctx, o)
-        case o: ResolvedInfo.Type => return preResolvedInfoType(ctx, o)
         case o: ResolvedInfo.Tuple => return preResolvedInfoTuple(ctx, o)
         case o: ResolvedInfo.LocalVar => return preResolvedInfoLocalVar(ctx, o)
       }
@@ -752,10 +751,6 @@ object Transformer {
     }
 
     @pure def preResolvedInfoMethods(ctx: Context, o: ResolvedInfo.Methods): PreResult[Context, ResolvedInfo] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preResolvedInfoType(ctx: Context, o: ResolvedInfo.Type): PreResult[Context, ResolvedInfo] = {
       return PreResult(ctx, T, None())
     }
 
@@ -1614,7 +1609,6 @@ object Transformer {
         case o: ResolvedInfo.Var => return postResolvedInfoVar(ctx, o)
         case o: ResolvedInfo.Method => return postResolvedInfoMethod(ctx, o)
         case o: ResolvedInfo.Methods => return postResolvedInfoMethods(ctx, o)
-        case o: ResolvedInfo.Type => return postResolvedInfoType(ctx, o)
         case o: ResolvedInfo.Tuple => return postResolvedInfoTuple(ctx, o)
         case o: ResolvedInfo.LocalVar => return postResolvedInfoLocalVar(ctx, o)
       }
@@ -1649,10 +1643,6 @@ object Transformer {
     }
 
     @pure def postResolvedInfoMethods(ctx: Context, o: ResolvedInfo.Methods): Result[Context, ResolvedInfo] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postResolvedInfoType(ctx: Context, o: ResolvedInfo.Type): Result[Context, ResolvedInfo] = {
       return Result(ctx, None())
     }
 
@@ -3638,11 +3628,6 @@ import Transformer._
             Result(r0.ctx, Some(o2(methods = r0.resultOpt.getOrElse(o2.methods))))
           else
             Result(r0.ctx, None())
-        case o2: ResolvedInfo.Type =>
-          if (hasChanged)
-            Result(ctx, Some(o2))
-          else
-            Result(ctx, None())
         case o2: ResolvedInfo.Tuple =>
           if (hasChanged)
             Result(ctx, Some(o2))

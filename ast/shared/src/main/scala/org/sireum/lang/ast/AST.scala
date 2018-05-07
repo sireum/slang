@@ -1477,12 +1477,11 @@ object Typed {
 
   val optionName: ISZ[String] = sireumName :+ "Option"
   val isName: ISZ[String] = sireumName :+ "IS"
-  val isResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Type(isName))
   val msName: ISZ[String] = sireumName :+ "MS"
-  val msResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Type(msName))
   val iszName: ISZ[String] = sireumName :+ "ISZ"
   val mszName: ISZ[String] = sireumName :+ "MSZ"
   val zsName: ISZ[String] = sireumName :+ "ZS"
+  val unapplySeqResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.UnapplySeq))
 
   val bConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.b)))
   val bConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
@@ -1690,11 +1689,12 @@ object ResolvedInfo {
       'Println
       'String
       'Tuple
-      'Update
+      'UnapplySeq
       'UnaryPlus
       'UnaryMinus
       'UnaryNot
       'UnaryComplement
+      'Update
     }
   }
 
@@ -1721,8 +1721,6 @@ object ResolvedInfo {
   ) extends ResolvedInfo
 
   @datatype class Methods(methods: ISZ[Method]) extends ResolvedInfo
-
-  @datatype class Type(name: ISZ[String]) extends ResolvedInfo
 
   @datatype class Tuple(size: Z, index: Z) extends ResolvedInfo
 
