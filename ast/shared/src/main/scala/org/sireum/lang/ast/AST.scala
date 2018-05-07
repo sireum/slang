@@ -1644,30 +1644,11 @@ object ResolvedInfo {
 
     @enum object Kind {
       'Apply
+      'AsInstanceOf
       'Assert
       'AssertMsg
       'Assume
       'AssumeMsg
-      'EnumByName
-      'EnumByOrdinal
-      'Cprint
-      'Cprintln
-      'Eprint
-      'Eprintln
-      'Halt
-      'Hash
-      'EnumName
-      'Native
-      'EnumOrdinal
-      'Print
-      'Println
-      'String
-      'Tuple
-      'Update
-      'UnaryPlus
-      'UnaryMinus
-      'UnaryNot
-      'UnaryComplement
       'BinaryAdd
       'BinarySub
       'BinaryMul
@@ -1693,6 +1674,27 @@ object ResolvedInfo {
       'BinaryAppendAll
       'BinaryRemoveAll
       'BinaryMapsTo
+      'Cprint
+      'Cprintln
+      'EnumByName
+      'EnumByOrdinal
+      'EnumName
+      'EnumOrdinal
+      'Eprint
+      'Eprintln
+      'Halt
+      'Hash
+      'IsInstanceOf
+      'Native
+      'Print
+      'Println
+      'String
+      'Tuple
+      'Update
+      'UnaryPlus
+      'UnaryMinus
+      'UnaryNot
+      'UnaryComplement
     }
   }
 

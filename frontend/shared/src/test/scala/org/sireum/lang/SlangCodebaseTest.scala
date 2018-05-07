@@ -87,7 +87,7 @@ class SlangCodebaseTest extends TestSuite {
       report()
       val bin = CustomMessagePack.fromTypeHierarchy(th)
       val Either.Left(th2) = CustomMessagePack.toTypeHierarchy(bin)
-      th == th2
+      assert(th == th2)
     }
   }
 }

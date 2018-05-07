@@ -57,11 +57,20 @@ object TypeChecker {
   val builtInMethods: HashSet[String] =
     HashSet ++ ISZ("assert", "assume", "println", "print", "cprintln", "cprint", "eprintln", "eprint", "halt")
   val assertResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Assert))
-  val assertMsgResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.AssertMsg))
+
+  val assertMsgResOpt: Option[AST.ResolvedInfo] = Some(
+    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.AssertMsg)
+  )
   val assertume1TypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(F, F, ISZ(AST.Typed.b), AST.Typed.unit))
-  val assertume2TypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(F, F, ISZ(AST.Typed.b, AST.Typed.string), AST.Typed.unit))
+
+  val assertume2TypedOpt: Option[AST.Typed] = Some(
+    AST.Typed.Fun(F, F, ISZ(AST.Typed.b, AST.Typed.string), AST.Typed.unit)
+  )
   val assumeResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Assume))
-  val assumeMsgResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.AssumeMsg))
+
+  val assumeMsgResOpt: Option[AST.ResolvedInfo] = Some(
+    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.AssumeMsg)
+  )
   val printlnResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Println))
   val printResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Print))
   val cprintlnResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Cprintln))
@@ -79,6 +88,14 @@ object TypeChecker {
   val applyResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Apply))
   val stringResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.String))
   val hashResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Hash))
+
+  val isInstanceOfResOpt: Option[AST.ResolvedInfo] = Some(
+    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.IsInstanceOf)
+  )
+
+  val asInstanceOfResOpt: Option[AST.ResolvedInfo] = Some(
+    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.AsInstanceOf)
+  )
 
   val unopResOpt: HashMap[AST.Exp.UnaryOp.Type, Option[AST.ResolvedInfo]] = HashMap ++ ISZ[
     (AST.Exp.UnaryOp.Type, Option[AST.ResolvedInfo])
@@ -303,7 +320,10 @@ import TypeChecker._
     }
   }
 
-  @pure def checkInfoOpt(scopeOpt: Option[Scope], infoOpt: Option[Info]): (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
+  @pure def checkInfoOpt(
+    scopeOpt: Option[Scope],
+    infoOpt: Option[Info]
+  ): (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
     infoOpt match {
       case Some(info) => return checkInfo(scopeOpt, info)
       case _ => return (None(), None())
@@ -641,35 +661,49 @@ import TypeChecker._
   def checkSelectH(
     receiverType: AST.Typed,
     ident: AST.Id,
-    hasTypeArgs: B,
+    typeArgs: ISZ[AST.Typed],
     reporter: Reporter
-  ): (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
+  ): (Option[AST.Typed], Option[AST.ResolvedInfo], ISZ[AST.Typed]) = {
     val id = ident.value
     id.native match {
-      case "apply" => return (Some(receiverType), applyResOpt)
+      case "apply" => return (Some(receiverType), applyResOpt, typeArgs)
       case _ =>
     }
 
-    @pure def noResult: (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
-      return (None(), None())
+    @pure def noResult: (Option[AST.Typed], Option[AST.ResolvedInfo], ISZ[AST.Typed]) = {
+      return (None(), None(), typeArgs)
     }
 
     def errAccess(t: AST.Typed): Unit = {
       reporter.error(ident.attr.posOpt, typeCheckerKind, s"'$id' is not a member of type '$t'.")
     }
 
-    def checkAccess(t: AST.Typed): (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
+    def checkAccess(t: AST.Typed): (Option[AST.Typed], Option[AST.ResolvedInfo], ISZ[AST.Typed]) = {
       id.native match {
-        case "string" => return (AST.Typed.stringOpt, stringResOpt)
-        case "hash" => return (AST.Typed.zOpt, hashResOpt)
+        case "string" if typeArgs.isEmpty => return (AST.Typed.stringOpt, stringResOpt, typeArgs)
+        case "hash" if typeArgs.isEmpty => return (AST.Typed.zOpt, hashResOpt, typeArgs)
+        case "asInstanceOf" if typeArgs.size == z"1" =>
+          val asT = typeArgs(0)
+          if (!typeHierarchy.isSubType(t, asT) && !typeHierarchy.isSubType(asT, t)) {
+            reporter
+              .error(ident.attr.posOpt, typeCheckerKind, s"Cannot use 'asInstanceOf' on unrelated types '$t' and '$asT")
+          }
+          return (Some(asT), asInstanceOfResOpt, ISZ())
+        case "isInstanceOf" if typeArgs.size == z"1" =>
+          val asT = typeArgs(0)
+          if (!typeHierarchy.isSubType(t, asT) && !typeHierarchy.isSubType(asT, t)) {
+            reporter
+              .error(ident.attr.posOpt, typeCheckerKind, s"Cannot use 'isInstanceOf' on unrelated types '$t' and '$asT")
+          }
+          return (AST.Typed.bOpt, isInstanceOfResOpt, ISZ())
         case _ =>
           t match {
             case t: AST.Typed.Name if t.args.isEmpty =>
               typeHierarchy.typeMap.get(t.ids) match {
                 case Some(info: TypeInfo.Enum) =>
                   id.native match {
-                    case "name" => return (info.nameTypedOpt, TypeInfo.Enum.nameResOpt)
-                    case "ordinal" => return (info.ordinalTypedOpt, TypeInfo.Enum.ordinalResOpt)
+                    case "name" => return (info.nameTypedOpt, TypeInfo.Enum.nameResOpt, typeArgs)
+                    case "ordinal" => return (info.ordinalTypedOpt, TypeInfo.Enum.ordinalResOpt, typeArgs)
                     case _ =>
                   }
                 case _ =>
@@ -695,7 +729,7 @@ import TypeChecker._
                 val smOpt =
                   buildTypeSubstMap(info.name, ident.attr.posOpt, info.ast.typeParams, receiverType.args, reporter)
                 smOpt match {
-                  case Some(sm) => return (Some(rt.subst(sm)), r._2)
+                  case Some(sm) => return (Some(rt.subst(sm)), r._2, typeArgs)
                   case _ => return noResult
                 }
               case _ => val res = checkAccess(receiverType); return res
@@ -707,7 +741,7 @@ import TypeChecker._
                 val smOpt =
                   buildTypeSubstMap(info.name, ident.attr.posOpt, info.ast.typeParams, receiverType.args, reporter)
                 smOpt match {
-                  case Some(sm) => return (Some(rt.subst(sm)), r._2)
+                  case Some(sm) => return (Some(rt.subst(sm)), r._2, typeArgs)
                   case _ => return noResult
                 }
               case _ => val res = checkAccess(receiverType); return res
@@ -726,11 +760,11 @@ import TypeChecker._
               errAccess(receiverType)
               return noResult
             }
-            if (hasTypeArgs) {
+            if (typeArgs.nonEmpty) {
               errTypeArgs(receiverType)
               return noResult
             }
-            return (Some(receiverType.args(n - 1)), Some(AST.ResolvedInfo.Tuple(size, n)))
+            return (Some(receiverType.args(n - 1)), Some(AST.ResolvedInfo.Tuple(size, n)), typeArgs)
           case _ =>
             errAccess(receiverType)
             return noResult
@@ -747,7 +781,7 @@ import TypeChecker._
             st"'$id' is not a member of package '${(receiverType.name, ".")}'.".render
           )
         }
-        return r
+        return (r._1, r._2, typeArgs)
       case receiverType: AST.Typed.Object =>
         val r = checkInfoOpt(None(), typeHierarchy.nameMap.get(receiverType.name :+ id))
         if (r._1.isEmpty) {
@@ -757,22 +791,22 @@ import TypeChecker._
             st"'$id' is not a member of object '${(receiverType.name, ".")}'.".render
           )
         }
-        return r
+        return (r._1, r._2, typeArgs)
       case receiverType: AST.Typed.Enum =>
         typeHierarchy.nameMap.get(receiverType.name) match {
           case Some(info: Info.Enum) =>
             id.native match {
-              case "byName" => return (info.byNameTypedOpt, Info.Enum.byNameResOpt)
-              case "byOrdinal" => return (info.byOrdinalTypedOpt, Info.Enum.byOrdinalResOpt)
+              case "byName" => return (info.byNameTypedOpt, Info.Enum.byNameResOpt, typeArgs)
+              case "byOrdinal" => return (info.byOrdinalTypedOpt, Info.Enum.byOrdinalResOpt, typeArgs)
               case _ =>
             }
             info.elements.get(id) match {
               case Some(res) =>
-                if (hasTypeArgs) {
+                if (typeArgs.nonEmpty) {
                   errTypeArgs(receiverType)
                   return noResult
                 }
-                return (info.elementTypedOpt, Some(res))
+                return (info.elementTypedOpt, Some(res), typeArgs)
               case _ =>
                 errAccess(receiverType)
                 return noResult
@@ -878,8 +912,8 @@ import TypeChecker._
               r = r(attr = r.attr(typedOpt = tOpt, resOpt = unopResOpt.get(unaryExp.op).get))
               return (r, tOpt)
             case _ =>
-              val (typedOpt, resOpt) =
-                checkSelectH(expType, AST.Id(AST.Util.unopId(unaryExp.op), AST.Attr(unaryExp.posOpt)), F, reporter)
+              val (typedOpt, resOpt, _) =
+                checkSelectH(expType, AST.Id(AST.Util.unopId(unaryExp.op), AST.Attr(unaryExp.posOpt)), ISZ(), reporter)
               return (unaryExp(exp = newExp, attr = unaryExp.attr(resOpt = resOpt, typedOpt = typedOpt)), typedOpt)
           }
         case _ =>
@@ -1163,7 +1197,7 @@ import TypeChecker._
               }
               sm
             }
-          if (ref.targs.nonEmpty) {
+          if (typeArgs.nonEmpty) {
             etaParentOpt match {
               case Some(etaParent) =>
                 val tpe: AST.Typed =
@@ -1196,7 +1230,7 @@ import TypeChecker._
             }
           }
         case _ =>
-          if (ref.targs.nonEmpty) {
+          if (typeArgs.nonEmpty) {
             reporter.error(refExp.posOpt, typeCheckerKind, s"Cannot supply type arguments on '$t'.")
             return noResult
           } else {
@@ -1224,9 +1258,9 @@ import TypeChecker._
             case Some(t) =>
               val rep = Reporter.create
               rep.ignore = T
-              val r = checkSelectH(t, id, F, rep)
+              val r = checkSelectH(t, id, ISZ(), rep)
               if (r._1.nonEmpty) {
-                return r
+                return (r._1, r._2)
               }
             case _ =>
           }
@@ -1275,37 +1309,43 @@ import TypeChecker._
         }
       }
 
-      val (newExp, typedOpt): (AST.Exp.Select, Option[AST.Typed]) = {
+      val tr: (AST.Exp.Select, Option[AST.Typed], ISZ[AST.Typed]) = {
         selectExp.receiverOpt match {
           case Some(receiver) =>
-            val (newReceiver, receiverTypeOpt) =
-              checkExp(None(), scope, receiver, reporter)
+            val (newReceiver, receiverTypeOpt) = checkExp(None(), scope, receiver, reporter)
             receiverTypeOpt match {
               case Some(receiverType) =>
-                val (typedOpt, resOpt) =
-                  checkSelectH(receiverType, selectExp.id, selectExp.targs.nonEmpty, reporter)
+                val t = checkSelectH(receiverType, selectExp.id, typeArgs, reporter)
+
                 (
                   selectExp(
                     targs = newTargs,
                     receiverOpt = Some(newReceiver),
-                    attr = selectExp.attr(typedOpt = typedOpt, resOpt = resOpt)
+                    attr = selectExp.attr(typedOpt = t._1, resOpt = t._2)
                   ),
-                  typedOpt
+                  t._1,
+                  t._3
                 )
               case _ =>
-                (selectExp(targs = newTargs, receiverOpt = Some(newReceiver)), None[AST.Typed]())
+                (selectExp(targs = newTargs, receiverOpt = Some(newReceiver)), None[AST.Typed](), typeArgs)
             }
           case _ =>
             val (typedOpt, resOpt) = checkId(selectExp.id)
-            (selectExp(targs = newTargs, attr = selectExp.attr(typedOpt = typedOpt, resOpt = resOpt)), typedOpt)
+            (
+              selectExp(targs = newTargs, attr = selectExp.attr(typedOpt = typedOpt, resOpt = resOpt)),
+              typedOpt,
+              typeArgs
+            )
         }
       }
+
+      val (newExp, typedOpt, tArgs) = tr
 
       if (typedOpt.isEmpty) {
         return (newExp, typedOpt)
       }
 
-      val r = checkEtaH(typedOpt.get, newExp, typeArgs, etaParentOpt)
+      val r = checkEtaH(typedOpt.get, newExp, tArgs, etaParentOpt)
       return r
     }
 
@@ -1828,29 +1868,23 @@ import TypeChecker._
     }
 
     def checkInvoke(invokeExp: AST.Exp.Invoke): (AST.Exp, Option[AST.Typed]) = {
-      val (tArgs, newTargs): (ISZ[AST.Typed], ISZ[AST.Type]) = {
-        val pOpt = checkTypeArgs(invokeExp.targs)
-        if (pOpt.nonEmpty) {
-          pOpt.get
-        } else {
-          return (invokeExp, None())
-        }
-      }
 
       def checkInvokeH(
         tOpt: Option[AST.Typed],
         rOpt: Option[AST.ResolvedInfo],
-        receiverOpt: Option[AST.Exp]
+        receiverOpt: Option[AST.Exp],
+        targs: ISZ[AST.Type],
+        typeArguments: ISZ[AST.Typed]
       ): (AST.Exp, Option[AST.Typed]) = {
 
         @pure def partResult: (AST.Exp, Option[AST.Typed]) = {
-          return (invokeExp(targs = newTargs, receiverOpt = receiverOpt), None())
+          return (invokeExp(targs = targs, receiverOpt = receiverOpt), None())
         }
 
         val (t, resOpt, typeArgs): (AST.Typed, Option[AST.ResolvedInfo], ISZ[AST.Typed]) = tOpt match {
           case Some(tpe) =>
             val (t2Opt, newResOpt, targs) =
-              checkInvokeType(invokeExp.id.attr.posOpt, rOpt, tpe, tArgs, invokeExp.args.size, ISZ())
+              checkInvokeType(invokeExp.id.attr.posOpt, rOpt, tpe, typeArguments, invokeExp.args.size, ISZ())
             t2Opt match {
               case Some(t2) => (t2, newResOpt, targs)
               case _ => return partResult
@@ -1878,7 +1912,7 @@ import TypeChecker._
           @pure def make(eArgs: ISZ[AST.Exp], tpeOpt: Option[AST.Typed]): AST.Exp = {
             return invokeExp(
               receiverOpt = receiverOpt,
-              targs = newTargs,
+              targs = targs,
               args = eArgs,
               attr = invokeExp.attr(typedOpt = tpeOpt, resOpt = mResOpt)
             )
@@ -1959,6 +1993,15 @@ import TypeChecker._
         }
       }
 
+      val (typeArgs, newTargs): (ISZ[AST.Typed], ISZ[AST.Type]) = {
+        val pOpt = checkTypeArgs(invokeExp.targs)
+        if (pOpt.nonEmpty) {
+          pOpt.get
+        } else {
+          return (invokeExp, None())
+        }
+      }
+
       invokeExp.receiverOpt match {
         case Some(receiver) =>
           val (newReceiver, receiverTypeOpt) =
@@ -1968,35 +2011,29 @@ import TypeChecker._
             case _ =>
               return (invokeExp(targs = newTargs, receiverOpt = Some(newReceiver)), None())
           }
-          val (typedOpt, resOpt) =
-            checkSelectH(receiverType, invokeExp.id, invokeExp.targs.nonEmpty, reporter)
-          val r = checkInvokeH(typedOpt, resOpt, Some(newReceiver))
+          val (typedOpt, resOpt, tArgs2) =
+            checkSelectH(receiverType, invokeExp.id, typeArgs, reporter)
+          val r = checkInvokeH(typedOpt, resOpt, Some(newReceiver), newTargs, tArgs2)
           return r
         case _ =>
           val (typedOpt, resOpt) = checkId(invokeExp.id)
-          val r = checkInvokeH(typedOpt, resOpt, None())
+          val r = checkInvokeH(typedOpt, resOpt, None(), newTargs, typeArgs)
           return r
       }
     }
 
     def checkInvokeNamed(invokeExp: AST.Exp.InvokeNamed): (AST.Exp, Option[AST.Typed]) = {
-      val (tArgs, newTargs): (ISZ[AST.Typed], ISZ[AST.Type]) = {
-        val pOpt = checkTypeArgs(invokeExp.targs)
-        if (pOpt.nonEmpty) {
-          pOpt.get
-        } else {
-          return (invokeExp, None())
-        }
-      }
 
       def checkInvokeNamedH(
         tOpt: Option[AST.Typed],
         rOpt: Option[AST.ResolvedInfo],
-        receiverOpt: Option[AST.Exp]
+        receiverOpt: Option[AST.Exp],
+        targs: ISZ[AST.Type],
+        typeArguments: ISZ[AST.Typed]
       ): (AST.Exp, Option[AST.Typed]) = {
 
         @pure def partResult: (AST.Exp, Option[AST.Typed]) = {
-          return (invokeExp(targs = newTargs, receiverOpt = receiverOpt), None())
+          return (invokeExp(targs = targs, receiverOpt = receiverOpt), None())
         }
 
         val (t, resOpt, typeArgs): (AST.Typed, Option[AST.ResolvedInfo], ISZ[AST.Typed]) = tOpt match {
@@ -2006,7 +2043,7 @@ import TypeChecker._
                 invokeExp.id.attr.posOpt,
                 rOpt,
                 tpe,
-                tArgs,
+                typeArguments,
                 invokeExp.args.size,
                 invokeExp.args.map(na => na.id.value)
               )
@@ -2082,7 +2119,7 @@ import TypeChecker._
                 }
               return invokeExp(
                 receiverOpt = receiverOpt,
-                targs = newTargs,
+                targs = targs,
                 args = args,
                 attr = invokeExp.attr(typedOpt = tpeOpt, resOpt = resOpt)
               )
@@ -2104,6 +2141,15 @@ import TypeChecker._
         }
       }
 
+      val (typeArgs, newTargs): (ISZ[AST.Typed], ISZ[AST.Type]) = {
+        val pOpt = checkTypeArgs(invokeExp.targs)
+        if (pOpt.nonEmpty) {
+          pOpt.get
+        } else {
+          return (invokeExp, None())
+        }
+      }
+
       invokeExp.receiverOpt match {
         case Some(receiver) =>
           val (newReceiver, receiverTypeOpt) =
@@ -2113,13 +2159,13 @@ import TypeChecker._
             case _ =>
               return (invokeExp(targs = newTargs, receiverOpt = Some(newReceiver)), None())
           }
-          val (typedOpt, resOpt) =
-            checkSelectH(receiverType, invokeExp.id, invokeExp.targs.nonEmpty, reporter)
-          val r = checkInvokeNamedH(typedOpt, resOpt, Some(newReceiver))
+          val (typedOpt, resOpt, tArgs) =
+            checkSelectH(receiverType, invokeExp.id, typeArgs, reporter)
+          val r = checkInvokeNamedH(typedOpt, resOpt, Some(newReceiver), newTargs, tArgs)
           return r
         case _ =>
           val (typedOpt, resOpt) = checkId(invokeExp.id)
-          val r = checkInvokeNamedH(typedOpt, resOpt, None())
+          val r = checkInvokeNamedH(typedOpt, resOpt, None(), newTargs, typeArgs)
           return r
       }
     }

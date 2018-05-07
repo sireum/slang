@@ -71,7 +71,7 @@ class LibraryTypeCheckingTest extends TestSuite {
       assert(th == th2)
       //collectStats(th.nameMap, th.typeMap)
       reporter.printMessages()
-      !reporter.hasIssue
+      assert(!reporter.hasIssue)
     }
   }
 

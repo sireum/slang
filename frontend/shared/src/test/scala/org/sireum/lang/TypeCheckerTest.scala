@@ -47,6 +47,15 @@ class TypeCheckerTest extends TestSuite {
                                |@datatype trait Or[L, R]
                                |@datatype class Left[L, R](value: L) extends Or[L, R]
                                |@datatype class Right[L, R](value: R) extends Or[L, R]
+                               |val left = Left[Z, B](5)
+                               |val or = left.asInstanceOf[Or[Z, B]]
+                               |val left2 = or.asInstanceOf[Right[Z, B]]
+                               |""".stripMargin)
+
+        * - passingWorksheet("""import org.sireum._
+                               |@datatype trait Or[L, R]
+                               |@datatype class Left[L, R](value: L) extends Or[L, R]
+                               |@datatype class Right[L, R](value: R) extends Or[L, R]
                                |val or: Or[Z, B] = Left(5)
                                |or match {
                                |  case Left(n) => assert(n == 5)
@@ -414,17 +423,17 @@ class TypeCheckerTest extends TestSuite {
     }
   }
 
-  def passingStmt(input: Predef.String): Boolean =
-    testStmt(input, isPassing = true)
+  def passingStmt(input: Predef.String): Unit =
+    assert(testStmt(input, isPassing = true))
 
-  def failingStmt(input: Predef.String, msg: Predef.String): Boolean =
-    testStmt(input, isPassing = false, msg)
+  def failingStmt(input: Predef.String, msg: Predef.String): Unit =
+    assert(testStmt(input, isPassing = false, msg))
 
-  def passingWorksheet(input: Predef.String): Boolean =
-    testWorksheet(input, isPassing = true)
+  def passingWorksheet(input: Predef.String): Unit =
+    assert(testWorksheet(input, isPassing = true))
 
-  def failingWorksheet(input: Predef.String, msg: Predef.String): Boolean =
-    testWorksheet(input, isPassing = false, msg)
+  def failingWorksheet(input: Predef.String, msg: Predef.String): Unit =
+    assert(testWorksheet(input, isPassing = false, msg))
 
   def testWorksheet(input: Predef.String, isPassing: Boolean, msg: Predef.String = ""): Boolean = {
     val reporter = Reporter.create
