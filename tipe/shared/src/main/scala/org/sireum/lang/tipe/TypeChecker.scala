@@ -376,15 +376,15 @@ object TypeChecker {
     kind: String,
     th: TypeHierarchy,
     posOpt: Option[Position],
-    expected: AST.Typed.Method,
-    tpe: AST.Typed.Method,
+    expected: AST.Typed.Fun,
+    tpe: AST.Typed.Fun,
     reporter: Reporter
   ): Option[HashMap[String, AST.Typed]] = {
     def err(): Unit = {
       reporter.error(posOpt, kind, s"Could not unify type '$expected' with '$tpe'.")
     }
-    val expectedFun = expected.deBruijn.asInstanceOf[AST.Typed.Method].tpe
-    val tpeFun = tpe.deBruijn.asInstanceOf[AST.Typed.Method].tpe
+    val expectedFun = expected
+    val tpeFun = tpe.deBruijn.asInstanceOf[AST.Typed.Fun]
     val size = expectedFun.args.size
     if (size != tpeFun.args.size) {
       err()
