@@ -188,17 +188,21 @@ import GlobalDeclarationResolver._
             T,
             scope(packageName, currentImports, name),
             stmt.bodyOpt.nonEmpty,
-            stmt(attr = stmt.attr(resOpt = Some(
-              AST.ResolvedInfo.Method(
-                T,
-                AST.MethodMode.Method,
-                stmt.sig.typeParams.map(tp => tp.id.value),
-                currentName,
-                id,
-                params,
-                None()
+            stmt(
+              attr = stmt.attr(
+                resOpt = Some(
+                  AST.ResolvedInfo.Method(
+                    T,
+                    AST.MethodMode.Method,
+                    stmt.sig.typeParams.map(tp => tp.id.value),
+                    currentName,
+                    id,
+                    params,
+                    None()
+                  )
+                )
               )
-            )))
+            )
           ),
           stmt.attr.posOpt
         )
@@ -212,17 +216,21 @@ import GlobalDeclarationResolver._
           Info.ExtMethod(
             currentName,
             scope(packageName, currentImports, name),
-            stmt(attr = stmt.attr(resOpt = Some(
-              AST.ResolvedInfo.Method(
-                T,
-                AST.MethodMode.Ext,
-                stmt.sig.typeParams.map(tp => tp.id.value),
-                currentName,
-                id,
-                params,
-                None()
+            stmt(
+              attr = stmt.attr(
+                resOpt = Some(
+                  AST.ResolvedInfo.Method(
+                    T,
+                    AST.MethodMode.Ext,
+                    stmt.sig.typeParams.map(tp => tp.id.value),
+                    currentName,
+                    id,
+                    params,
+                    None()
+                  )
+                )
               )
-            )))
+            )
           ),
           stmt.attr.posOpt
         )
@@ -237,17 +245,21 @@ import GlobalDeclarationResolver._
             currentName,
             T,
             scope(packageName, currentImports, name),
-            stmt(attr = stmt.attr(resOpt = Some(
-              AST.ResolvedInfo.Method(
-                T,
-                AST.MethodMode.Spec,
-                stmt.sig.typeParams.map(tp => tp.id.value),
-                currentName,
-                id,
-                params,
-                None()
+            stmt(
+              attr = stmt.attr(
+                resOpt = Some(
+                  AST.ResolvedInfo.Method(
+                    T,
+                    AST.MethodMode.Spec,
+                    stmt.sig.typeParams.map(tp => tp.id.value),
+                    currentName,
+                    id,
+                    params,
+                    None()
+                  )
+                )
               )
-            )))
+            )
           ),
           stmt.attr.posOpt
         )
@@ -503,10 +515,21 @@ import GlobalDeclarationResolver._
             F,
             scope,
             stmt.bodyOpt.nonEmpty,
-            stmt(attr = stmt.attr(resOpt = Some(
-              AST.ResolvedInfo
-                .Method(F, AST.MethodMode.Method, stmt.sig.typeParams.map(tp => tp.id.value), owner, id, params, None())
-            )))
+            stmt(
+              attr = stmt.attr(
+                resOpt = Some(
+                  AST.ResolvedInfo.Method(
+                    F,
+                    AST.MethodMode.Method,
+                    stmt.sig.typeParams.map(tp => tp.id.value),
+                    owner,
+                    id,
+                    params,
+                    None()
+                  )
+                )
+              )
+            )
           )
 
         case stmt: AST.Stmt.SpecMethod =>
@@ -517,10 +540,21 @@ import GlobalDeclarationResolver._
             owner,
             F,
             scope,
-            stmt(attr = stmt.attr(resOpt = Some(
-              AST.ResolvedInfo
-                .Method(F, AST.MethodMode.Spec, stmt.sig.typeParams.map(tp => tp.id.value), owner, id, params, None())
-            )))
+            stmt(
+              attr = stmt.attr(
+                resOpt = Some(
+                  AST.ResolvedInfo.Method(
+                    F,
+                    AST.MethodMode.Spec,
+                    stmt.sig.typeParams.map(tp => tp.id.value),
+                    owner,
+                    id,
+                    params,
+                    None()
+                  )
+                )
+              )
+            )
           )
         case _ =>
       }

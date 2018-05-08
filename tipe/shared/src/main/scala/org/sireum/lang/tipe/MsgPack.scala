@@ -274,99 +274,97 @@ object MsgPack {
 
     val _astTypedEnum: Z = 86
 
-    val _astTypedMethodSubst: Z = 87
+    val _astTypedMethod: Z = 87
 
-    val _astTypedMethod: Z = 88
+    val _astTypedMethods: Z = 88
 
-    val _astTypedMethods: Z = 89
+    val _astAttr: Z = 89
 
-    val _astAttr: Z = 90
+    val _astTypedAttr: Z = 90
 
-    val _astTypedAttr: Z = 91
+    val _astResolvedAttr: Z = 91
 
-    val _astResolvedAttr: Z = 92
+    val _astResolvedInfoBuiltIn: Z = 92
 
-    val _astResolvedInfoBuiltIn: Z = 93
+    val _astResolvedInfoPackage: Z = 93
 
-    val _astResolvedInfoPackage: Z = 94
+    val _astResolvedInfoEnum: Z = 94
 
-    val _astResolvedInfoEnum: Z = 95
+    val _astResolvedInfoEnumElement: Z = 95
 
-    val _astResolvedInfoEnumElement: Z = 96
+    val _astResolvedInfoObject: Z = 96
 
-    val _astResolvedInfoObject: Z = 97
+    val _astResolvedInfoVar: Z = 97
 
-    val _astResolvedInfoVar: Z = 98
+    val _astResolvedInfoMethod: Z = 98
 
-    val _astResolvedInfoMethod: Z = 99
+    val _astResolvedInfoMethods: Z = 99
 
-    val _astResolvedInfoMethods: Z = 100
+    val _astResolvedInfoTuple: Z = 100
 
-    val _astResolvedInfoTuple: Z = 101
+    val _astResolvedInfoLocalVar: Z = 101
 
-    val _astResolvedInfoLocalVar: Z = 102
+    val _astProofStepBasic: Z = 102
 
-    val _astProofStepBasic: Z = 103
+    val _astProofStepSubProof: Z = 103
 
-    val _astProofStepSubProof: Z = 104
+    val _astAssumeProofStepRegular: Z = 104
 
-    val _astAssumeProofStepRegular: Z = 105
+    val _astAssumeProofStepForallIntroAps: Z = 105
 
-    val _astAssumeProofStepForallIntroAps: Z = 106
+    val _astAssumeProofStepExistsElimAps: Z = 106
 
-    val _astAssumeProofStepExistsElimAps: Z = 107
+    val _astJustPremise: Z = 107
 
-    val _astJustPremise: Z = 108
+    val _astJustAuto: Z = 108
 
-    val _astJustAuto: Z = 109
+    val _astJustCoq: Z = 109
 
-    val _astJustCoq: Z = 110
+    val _astJustSubst: Z = 110
 
-    val _astJustSubst: Z = 111
+    val _astJustInvariant: Z = 111
 
-    val _astJustInvariant: Z = 112
+    val _astJustFact: Z = 112
 
-    val _astJustFact: Z = 113
+    val _astJustImplyIntro: Z = 113
 
-    val _astJustImplyIntro: Z = 114
+    val _astJustImplyElim: Z = 114
 
-    val _astJustImplyElim: Z = 115
+    val _astJustNegIntro: Z = 115
 
-    val _astJustNegIntro: Z = 116
+    val _astJustNegElim: Z = 116
 
-    val _astJustNegElim: Z = 117
+    val _astJustBottomElim: Z = 117
 
-    val _astJustBottomElim: Z = 118
+    val _astJustForallIntro: Z = 118
 
-    val _astJustForallIntro: Z = 119
+    val _astJustForallElim: Z = 119
 
-    val _astJustForallElim: Z = 120
+    val _astJustExistsIntro: Z = 120
 
-    val _astJustExistsIntro: Z = 121
+    val _astJustExistsElim: Z = 121
 
-    val _astJustExistsElim: Z = 122
+    val _astJustOrIntro: Z = 122
 
-    val _astJustOrIntro: Z = 123
+    val _astJustOrElim: Z = 123
 
-    val _astJustOrElim: Z = 124
+    val _astJustAndIntro: Z = 124
 
-    val _astJustAndIntro: Z = 125
+    val _astJustAndElim: Z = 125
 
-    val _astJustAndElim: Z = 126
+    val _astJustPbc: Z = 126
 
-    val _astJustPbc: Z = 127
+    val _astTruthTableRow: Z = 127
 
-    val _astTruthTableRow: Z = 128
+    val _astTruthTableAssignment: Z = 128
 
-    val _astTruthTableAssignment: Z = 129
+    val _astTruthTableConclusionValidity: Z = 129
 
-    val _astTruthTableConclusionValidity: Z = 130
+    val _astTruthTableConclusionTautology: Z = 130
 
-    val _astTruthTableConclusionTautology: Z = 131
+    val _astTruthTableConclusionContradictory: Z = 131
 
-    val _astTruthTableConclusionContradictory: Z = 132
-
-    val _astTruthTableConclusionContingent: Z = 133
+    val _astTruthTableConclusionContingent: Z = 132
 
   }
 
@@ -1476,12 +1474,6 @@ object MsgPack {
       writer.writeISZ(o.name, writer.writeString _)
     }
 
-    def write_astTypedMethodSubst(o: org.sireum.lang.ast.Typed.Method.Subst): Unit = {
-      writer.writeZ(Constants._astTypedMethodSubst)
-      writer.writeString(o.id)
-      write_astTyped(o.tipe)
-    }
-
     def write_astTypedMethod(o: org.sireum.lang.ast.Typed.Method): Unit = {
       writer.writeZ(Constants._astTypedMethod)
       writer.writeB(o.isInObject)
@@ -1490,7 +1482,6 @@ object MsgPack {
       writer.writeISZ(o.owner, writer.writeString _)
       writer.writeString(o.name)
       writer.writeISZ(o.paramNames, writer.writeString _)
-      writer.writeISZ(o.substs, write_astTypedMethodSubst _)
       write_astTypedFun(o.tpe)
     }
 
@@ -4027,20 +4018,6 @@ object MsgPack {
       return org.sireum.lang.ast.Typed.Enum(name)
     }
 
-    def read_astTypedMethodSubst(): org.sireum.lang.ast.Typed.Method.Subst = {
-      val r = read_astTypedMethodSubstT(F)
-      return r
-    }
-
-    def read_astTypedMethodSubstT(typeParsed: B): org.sireum.lang.ast.Typed.Method.Subst = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astTypedMethodSubst)
-      }
-      val id = reader.readString()
-      val tipe = read_astTyped()
-      return org.sireum.lang.ast.Typed.Method.Subst(id, tipe)
-    }
-
     def read_astTypedMethod(): org.sireum.lang.ast.Typed.Method = {
       val r = read_astTypedMethodT(F)
       return r
@@ -4056,9 +4033,8 @@ object MsgPack {
       val owner = reader.readISZ(reader.readString _)
       val name = reader.readString()
       val paramNames = reader.readISZ(reader.readString _)
-      val substs = reader.readISZ(read_astTypedMethodSubst _)
       val tpe = read_astTypedFun()
-      return org.sireum.lang.ast.Typed.Method(isInObject, mode, typeParams, owner, name, paramNames, substs, tpe)
+      return org.sireum.lang.ast.Typed.Method(isInObject, mode, typeParams, owner, name, paramNames, tpe)
     }
 
     def read_astTypedMethods(): org.sireum.lang.ast.Typed.Methods = {
@@ -6862,21 +6838,6 @@ object MsgPack {
       return r
     }
     val r = to(data, f_astTypedEnum _)
-    return r
-  }
-
-  def from_astTypedMethodSubst(o: org.sireum.lang.ast.Typed.Method.Subst, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astTypedMethodSubst(o)
-    return w.result
-  }
-
-  def to_astTypedMethodSubst(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Method.Subst, MessagePack.ErrorMsg] = {
-    def f_astTypedMethodSubst(reader: Reader): org.sireum.lang.ast.Typed.Method.Subst = {
-      val r = reader.read_astTypedMethodSubst()
-      return r
-    }
-    val r = to(data, f_astTypedMethodSubst _)
     return r
   }
 

@@ -241,6 +241,217 @@ object TypeChecker {
     reporter.reports(p._2.messages)
     return r
   }
+
+  @pure def unifyCombine(
+    r: HashMap[String, AST.Typed],
+    m: HashMap[String, AST.Typed]
+  ): Option[HashMap[String, AST.Typed]] = {
+    var res = r
+    for (e <- m.entries) {
+      val (key, value) = e
+      res.get(key) match {
+        case Some(v) =>
+          if (value != v) {
+            return None()
+          }
+        case _ => res = res + key ~> value
+      }
+    }
+    return Some(res)
+  }
+
+  def unify(
+    th: TypeHierarchy,
+    posOpt: Option[Position],
+    allowSubType: B,
+    expected: AST.Typed,
+    tpe: AST.Typed,
+    reporter: Reporter
+  ): Option[HashMap[String, AST.Typed]] = {
+    def err(): Unit = {
+      reporter.error(posOpt, typeCheckerKind, s"Could not unify type '$expected' with '$tpe'.")
+    }
+
+    (expected, tpe) match {
+      case (_, tpe: AST.Typed.TypeVar) =>
+        return Some(HashMap.empty[String, AST.Typed] + tpe.id ~> expected)
+      case (expected: AST.Typed.TypeVar, _) =>
+        return Some(HashMap.empty[String, AST.Typed] + expected.id ~> tpe)
+      case (expected: AST.Typed.Name, tpe: AST.Typed.Name) =>
+        val rt: AST.Typed.Name = if (allowSubType && tpe.ids != expected.ids) {
+          val ancestors: ISZ[AST.Typed.Name] = th.typeMap.get(tpe.ids) match {
+            case Some(info: TypeInfo.AbstractDatatype) => info.ancestors
+            case Some(info: TypeInfo.Sig) => info.ancestors
+            case _ => halt(s"Unexpected situation when trying to unify $expected and $tpe")
+          }
+          var r = tpe
+          var found = F
+          for (ancestor <- ancestors if !found && ancestor.ids == expected.ids) {
+            r = ancestor
+            found = T
+          }
+          r
+        } else {
+          if (tpe.ids != expected.ids || tpe.args.size != expected.args.size) {
+            err()
+            return None()
+          }
+          tpe
+        }
+        val size = rt.args.size
+        var i = 0
+        var r = HashMap.empty[String, AST.Typed]
+        while (i < size) {
+          val mOpt = unify(th, posOpt, F, expected.args(i), rt.args(i), reporter)
+          mOpt match {
+            case Some(m) =>
+              unifyCombine(r, m) match {
+                case Some(c) => r = c
+                case _ => err(); return None()
+              }
+            case _ => return None()
+          }
+          i = i + 1
+        }
+        return Some(r)
+      case (expected: AST.Typed.Tuple, tpe: AST.Typed.Tuple) =>
+        val size = expected.args.size
+        if (size != tpe.args.size) {
+          err()
+          return None()
+        }
+        var i = 0
+        var r = HashMap.empty[String, AST.Typed]
+        while (i < size) {
+          val mOpt = unify(th, posOpt, F, expected.args(i), tpe.args(i), reporter)
+          mOpt match {
+            case Some(m) =>
+              unifyCombine(r, m) match {
+                case Some(c) => r = c
+                case _ => err(); return None()
+              }
+            case _ => return None()
+          }
+          i = i + 1
+        }
+        return Some(r)
+      case (expected: AST.Typed.Fun, _) if expected.isByName =>
+        unify(th, posOpt, allowSubType, expected.ret, tpe, reporter)
+      case (_, tpe: AST.Typed.Fun) if tpe.isByName => unify(th, posOpt, allowSubType, expected, tpe.ret, reporter)
+      case (expected: AST.Typed.Fun, tpe: AST.Typed.Fun) =>
+        val size = expected.args.size
+        if (size != tpe.args.size) {
+          err()
+          return None()
+        }
+        var i = 0
+        var r = HashMap.empty[String, AST.Typed]
+        while (i < size) {
+          val mOpt = unify(th, posOpt, F, expected.args(i), tpe.args(i), reporter)
+          mOpt match {
+            case Some(m) =>
+              unifyCombine(r, m) match {
+                case Some(c) => r = c
+                case _ => err(); return None()
+              }
+            case _ => return None()
+          }
+          i = i + 1
+        }
+        val mOpt = unify(th, posOpt, F, expected.ret, tpe.ret, reporter)
+        mOpt match {
+          case Some(m) =>
+            unifyCombine(r, m) match {
+              case Some(c) => r = c
+              case _ => err(); return None()
+            }
+          case _ => return None()
+        }
+        return Some(r)
+      case _ => return None()
+    }
+  }
+
+  def unifyMethod(
+    kind: String,
+    th: TypeHierarchy,
+    posOpt: Option[Position],
+    expected: AST.Typed.Method,
+    tpe: AST.Typed.Method,
+    reporter: Reporter
+  ): Option[HashMap[String, AST.Typed]] = {
+    def err(): Unit = {
+      reporter.error(posOpt, kind, s"Could not unify type '$expected' with '$tpe'.")
+    }
+    val expectedFun = expected.deBruijn.asInstanceOf[AST.Typed.Method].tpe
+    val tpeFun = tpe.deBruijn.asInstanceOf[AST.Typed.Method].tpe
+    val size = expectedFun.args.size
+    if (size != tpeFun.args.size) {
+      err()
+      return None()
+    }
+    var i = 0
+    var r = HashMap.empty[String, AST.Typed]
+    while (i < size) {
+      val mOpt = unify(th, posOpt, T, tpeFun.args(i), expectedFun.args(i), reporter)
+      mOpt match {
+        case Some(m) =>
+          unifyCombine(r, m) match {
+            case Some(c) => r = c
+            case _ => err(); return None()
+          }
+        case _ => return None()
+      }
+      i = i + 1
+    }
+    val mOpt = unify(th, posOpt, T, expectedFun.ret, tpeFun.ret, reporter)
+    mOpt match {
+      case Some(m) =>
+        unifyCombine(r, m) match {
+          case Some(c) => r = c
+          case _ => err(); return None()
+        }
+      case _ => return None()
+    }
+    return Some(r)
+  }
+
+  def unifies(
+    th: TypeHierarchy,
+    posOpt: Option[Position],
+    allowSubType: B,
+    expected: ISZ[AST.Typed],
+    tpe: ISZ[AST.Typed],
+    reporter: Reporter
+  ): Option[HashMap[String, AST.Typed]] = {
+    def err(): Unit = {
+      reporter.error(
+        posOpt,
+        typeCheckerKind,
+        s"Could not unify type '${AST.Typed.Tuple(expected)}' with '${AST.Typed.Tuple(tpe)}'."
+      )
+    }
+
+    val size = expected.size
+    if (size != tpe.size) {
+      return None()
+    }
+    var r = HashMap.empty[String, AST.Typed]
+    var i = 0
+    while (i < size) {
+      val mOpt = unify(th, posOpt, allowSubType, expected(i), tpe(i), reporter)
+      mOpt match {
+        case Some(m) =>
+          unifyCombine(r, m) match {
+            case Some(c) => r = c
+            case _ => err(); return None()
+          }
+        case _ => return None()
+      }
+      i = i + 1
+    }
+    return Some(r)
+  }
 }
 
 import TypeChecker._
@@ -253,7 +464,7 @@ import TypeChecker._
         if (tpe.args.nonEmpty) {
           return None()
         }
-        if (tpe.ids.size == 3) {
+        if (tpe.ids.size == z"3") {
           tpe.ids match {
             case AST.Typed.bName => return Some(BasicKind.B)
             case AST.Typed.zName => return Some(BasicKind.Z)
@@ -684,16 +895,33 @@ import TypeChecker._
         case "hash" if typeArgs.isEmpty => return (AST.Typed.zOpt, hashResOpt, typeArgs)
         case "asInstanceOf" if typeArgs.size == z"1" =>
           val asT = typeArgs(0)
-          if (!typeHierarchy.isSubType(t, asT) && !typeHierarchy.isSubType(asT, t)) {
-            reporter
-              .error(ident.attr.posOpt, typeCheckerKind, s"Cannot use 'asInstanceOf' on unrelated types '$t' and '$asT")
+          if (t == asT) {
+            reporter.warn(ident.attr.posOpt, typeCheckerKind, s"Useless 'asInstanceOf' on same type '$t'.")
+          }
+          if (!t.isInstanceOf[AST.Typed.Name]) {
+            reporter.error(ident.attr.posOpt, typeCheckerKind, s"Cannot use 'asInstanceOf' on '$t'.")
+          } else if (!typeHierarchy.isSubType(t, asT) && !typeHierarchy.isSubType(asT, t)) {
+            reporter.error(
+              ident.attr.posOpt,
+              typeCheckerKind,
+              s"Cannot use 'asInstanceOf' on unrelated types '$t' and '$asT'."
+            )
           }
           return (Some(asT), asInstanceOfResOpt, ISZ())
         case "isInstanceOf" if typeArgs.size == z"1" =>
           val asT = typeArgs(0)
-          if (!typeHierarchy.isSubType(t, asT) && !typeHierarchy.isSubType(asT, t)) {
+          if (t == asT) {
             reporter
-              .error(ident.attr.posOpt, typeCheckerKind, s"Cannot use 'isInstanceOf' on unrelated types '$t' and '$asT")
+              .warn(ident.attr.posOpt, typeCheckerKind, s"Useless 'isInstanceOf' on same type '$t' (trivially true).")
+          }
+          if (!t.isInstanceOf[AST.Typed.Name]) {
+            reporter.error(ident.attr.posOpt, typeCheckerKind, s"Cannot use 'isInstanceOf' on '$t'.")
+          } else if (!typeHierarchy.isSubType(t, asT) && !typeHierarchy.isSubType(asT, t)) {
+            reporter.error(
+              ident.attr.posOpt,
+              typeCheckerKind,
+              s"Cannot use 'isInstanceOf' on unrelated types '$t' and '$asT'."
+            )
           }
           return (AST.Typed.bOpt, isInstanceOfResOpt, ISZ())
         case _ =>
@@ -749,7 +977,7 @@ import TypeChecker._
           case _ => val res = checkAccess(receiverType); return res
         }
       case receiverType: AST.Typed.Tuple =>
-        if (id.size == 0 || ops.StringOps(id).first != '_') {
+        if (id.size == z"0" || ops.StringOps(id).first != c"_") {
           val res = checkAccess(receiverType)
           return res
         }
@@ -879,7 +1107,7 @@ import TypeChecker._
     }
 
     def checkHalt(haltExp: AST.Exp.Invoke, args: ISZ[AST.Exp]): (AST.Exp, Option[AST.Typed]) = {
-      if (args.size != 1) {
+      if (args.size != z"1") {
         reporter.error(haltExp.posOpt, typeCheckerKind, s"Expecting one argument, but ${args.size} found.")
         return (haltExp(attr = haltExp.attr(resOpt = haltResOpt, typedOpt = haltTypedOpt)), AST.Typed.nothingOpt)
       }
@@ -928,7 +1156,7 @@ import TypeChecker._
             .Tuple(ISZ(binaryExp.left, binaryExp.right), AST.TypedAttr(binaryExp.attr.posOpt, binaryExp.attr.typedOpt))
         )
         r match {
-          case (tuple: AST.Exp.Tuple, tOpt) if tuple.args.size == 2 =>
+          case (tuple: AST.Exp.Tuple, tOpt) if tuple.args.size == z"2" =>
             return (
               binaryExp(
                 left = tuple.args(0),
@@ -1164,8 +1392,7 @@ import TypeChecker._
             if (typeArgs.isEmpty && t.typeParams.nonEmpty && t.tpe.isByName) {
               expectedOpt match {
                 case Some(expected) =>
-                  val smOpt =
-                    unify(refExp.posOpt, T, expected, t.tpe.ret, reporter)
+                  val smOpt = unify(typeHierarchy, refExp.posOpt, T, expected, t.tpe.ret, reporter)
                   smOpt match {
                     case Some(sm) =>
                       val ok = checkUnboundTypeVar(refExp.posOpt, t, sm, t.typeParams, reporter)
@@ -1389,7 +1616,6 @@ import TypeChecker._
                         AST.Typed.sireumName,
                         "IS",
                         ISZ(),
-                        ISZ(),
                         constructorType
                       )
                     ),
@@ -1423,7 +1649,6 @@ import TypeChecker._
                         AST.Typed.sireumName,
                         "MS",
                         ISZ(),
-                        ISZ(),
                         constructorType
                       )
                     ),
@@ -1455,7 +1680,6 @@ import TypeChecker._
                         typeParams,
                         AST.Typed.sireumName,
                         "IS",
-                        ISZ(),
                         ISZ(),
                         constructorType
                       )
@@ -1489,7 +1713,6 @@ import TypeChecker._
                         AST.Typed.sireumName,
                         "MS",
                         ISZ(),
-                        ISZ(),
                         constructorType
                       )
                     ),
@@ -1519,7 +1742,6 @@ import TypeChecker._
                         ISZ(),
                         AST.Typed.sireumName,
                         "IS",
-                        ISZ(),
                         ISZ(),
                         constructorType
                       )
@@ -1553,7 +1775,6 @@ import TypeChecker._
                                 ISZ(),
                                 info.owner,
                                 info.ast.id.value,
-                                ISZ(),
                                 ISZ(),
                                 constructorType
                               )
@@ -1592,8 +1813,8 @@ import TypeChecker._
           }
         case tpe: AST.Typed.Name =>
           tpe.ids match {
-            case AST.Typed.`isName` if tpe.args.size == 2 =>
-              if (numOfArgs == 1) {
+            case AST.Typed.`isName` if tpe.args.size == z"2" =>
+              if (numOfArgs == z"1") {
                 val indexType = tpe.args(0)
                 val valueType = tpe.args(1)
                 val tupleVars = AST.Typed.Tuple(ISZ(indexType, valueType))
@@ -1603,18 +1824,9 @@ import TypeChecker._
                   Some(
                     AST.Typed.Methods(
                       ISZ(
-                        AST.Typed.Method(
-                          F,
-                          AST.MethodMode.Select,
-                          ISZ(),
-                          AST.Typed.sireumName,
-                          "IS",
-                          ISZ(),
-                          ISZ(),
-                          selectType
-                        ),
                         AST.Typed
-                          .Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "IS", ISZ(), ISZ(), storeType)
+                          .Method(F, AST.MethodMode.Select, ISZ(), AST.Typed.sireumName, "IS", ISZ(), selectType),
+                        AST.Typed.Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "IS", ISZ(), storeType)
                       )
                     )
                   ),
@@ -1638,10 +1850,7 @@ import TypeChecker._
                   yield tupleVars
                 val storeType = AST.Typed.Fun(T, F, argTypes, tpe)
                 return (
-                  Some(
-                    AST.Typed
-                      .Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "IS", ISZ(), ISZ(), storeType)
-                  ),
+                  Some(AST.Typed.Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "IS", ISZ(), storeType)),
                   Some(
                     AST.ResolvedInfo
                       .Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "IS", ISZ(), Some(storeType))
@@ -1649,8 +1858,8 @@ import TypeChecker._
                   newTypeArgs
                 )
               }
-            case AST.Typed.`msName` if tpe.args.size == 2 =>
-              if (numOfArgs == 1) {
+            case AST.Typed.`msName` if tpe.args.size == z"2" =>
+              if (numOfArgs == z"1") {
                 val indexType = tpe.args(0)
                 val valueType = tpe.args(1)
                 val tupleVars = AST.Typed.Tuple(ISZ(indexType, valueType))
@@ -1660,18 +1869,9 @@ import TypeChecker._
                   Some(
                     AST.Typed.Methods(
                       ISZ(
-                        AST.Typed.Method(
-                          F,
-                          AST.MethodMode.Select,
-                          ISZ(),
-                          AST.Typed.sireumName,
-                          "MS",
-                          ISZ(),
-                          ISZ(),
-                          selectType
-                        ),
                         AST.Typed
-                          .Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "MS", ISZ(), ISZ(), storeType)
+                          .Method(F, AST.MethodMode.Select, ISZ(), AST.Typed.sireumName, "MS", ISZ(), selectType),
+                        AST.Typed.Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "MS", ISZ(), storeType)
                       )
                     )
                   ),
@@ -1695,10 +1895,7 @@ import TypeChecker._
                   yield tupleVars
                 val storeType = AST.Typed.Fun(T, F, argTypes, tpe)
                 return (
-                  Some(
-                    AST.Typed
-                      .Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "MS", ISZ(), ISZ(), storeType)
-                  ),
+                  Some(AST.Typed.Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "MS", ISZ(), storeType)),
                   Some(
                     AST.ResolvedInfo
                       .Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "MS", ISZ(), Some(storeType))
@@ -1722,7 +1919,7 @@ import TypeChecker._
                         st"Could not find parameter(s) '${(names.elements, "', '")}' in '$tpe'.".render
                       )
                       return (None(), resOpt, newTypeArgs)
-                    } else if (ps.size == 0 && info.ast.params.size != 0) {
+                    } else if (ps.size == z"0" && info.ast.params.size != z"0") {
                       reporter
                         .error(posOpt, typeCheckerKind, st"Cannot perform copy of '$tpe' without argument.".render)
                       return (None(), resOpt, newTypeArgs)
@@ -1731,15 +1928,13 @@ import TypeChecker._
                   }
                   val paramNames = params.map[String](p => p.id.value)
                   val paramTypes = params.map[AST.Typed](p => p.tipe.typedOpt.get)
-                  val smOpt = unify(posOpt, F, tpe, info.tpe, reporter)
+                  val smOpt = unify(typeHierarchy, posOpt, F, tpe, info.tpe, reporter)
                   smOpt match {
                     case Some(sm) =>
                       val copyType = AST.Typed.Fun(T, F, paramTypes, tpe).subst(sm)
                       val id = info.ast.id.value
                       return (
-                        Some(
-                          AST.Typed.Method(F, AST.MethodMode.Copy, ISZ(), info.owner, id, paramNames, ISZ(), copyType)
-                        ),
+                        Some(AST.Typed.Method(F, AST.MethodMode.Copy, ISZ(), info.owner, id, paramNames, copyType)),
                         Some(
                           AST.ResolvedInfo
                             .Method(F, AST.MethodMode.Copy, ISZ(), info.owner, id, paramNames, Some(copyType))
@@ -1789,7 +1984,8 @@ import TypeChecker._
             args = args + m.paramNames(i) ~> newArg
             i = i + 1
           }
-          return (make(args.values, Some(funType.ret)), Some(funType.ret))
+          val tOpt = Some(funType.ret)
+          return (make(args.values, tOpt), tOpt)
         }
       }
 
@@ -1798,7 +1994,7 @@ import TypeChecker._
         def tryExpected(): (AST.Exp, Option[AST.Typed]) = {
           expectedOpt match {
             case Some(expected) =>
-              val smOpt = unify(expId.attr.posOpt, T, expected, m.tpe.ret, repExpected)
+              val smOpt = unify(typeHierarchy, expId.attr.posOpt, T, expected, m.tpe.ret, repExpected)
               smOpt match {
                 case Some(sm) =>
                   val ok = checkUnboundTypeVar(expId.attr.posOpt, m, sm, m.typeParams, repExpected)
@@ -1829,7 +2025,7 @@ import TypeChecker._
             }
           }
 
-          val smOpt = unifies(expId.attr.posOpt, T, argTypes, m.tpe.args, repArgs)
+          val smOpt = unifies(typeHierarchy, expId.attr.posOpt, T, argTypes, m.tpe.args, repArgs)
           smOpt match {
             case Some(sm) =>
               val ok = checkUnboundTypeVar(expId.attr.posOpt, m, sm, m.typeParams, repArgs)
@@ -2004,8 +2200,7 @@ import TypeChecker._
 
       invokeExp.receiverOpt match {
         case Some(receiver) =>
-          val (newReceiver, receiverTypeOpt) =
-            checkExp(None(), scope, receiver, reporter)
+          val (newReceiver, receiverTypeOpt) = checkExp(None(), scope, receiver, reporter)
           val receiverType: AST.Typed = receiverTypeOpt match {
             case Some(t) => t
             case _ =>
@@ -2276,7 +2471,7 @@ import TypeChecker._
               reporter.error(superExp.posOpt, typeCheckerKind, s"Could not find super type '${id.value}'.")
               return (superExp, None())
             case _ =>
-              if (parents.size != 1) {
+              if (parents.size != z"1") {
                 reporter
                   .error(superExp.posOpt, typeCheckerKind, "Explicit super type identifier is required: super[〈ID〉].")
                 return (superExp, None())
@@ -2442,40 +2637,6 @@ import TypeChecker._
     }
 
     return (newStmt.asAssignExp, expectedOpt)
-
-    /*
-    def noResult: (AST.AssignExp, Option[AST.Typed]) = {
-      return (newAexp, None())
-    }
-
-    def errType(): Unit = {
-      reporter.error(newStmt.posOpt, typeCheckerKind, s"Could not find a common type for leaf expressions.")
-    }
-
-    var types = ISZ[AST.Typed]()
-    for (expr <- newAexp.exprs) {
-      expr.typedOpt match {
-        case Some(t) => types = types :+ t
-        case _ => return noResult
-      }
-    }
-
-    typeHierarchy.lub(types) match {
-      case r @ Some(t) =>
-        expectedOpt match {
-          case Some(expected) =>
-            if (typeHierarchy.isSubType(t, expected)) {
-              return (newAexp, r)
-            } else {
-              reporter.error(newStmt.posOpt, typeCheckerKind, s"Expecting type '$expected', but '$t' found")
-              return (newAexp, None())
-            }
-          case _ => return (newAexp, r)
-        }
-
-      case _ => errType(); return noResult
-    }
-   */
   }
 
   def checkStmts(
@@ -2893,7 +3054,7 @@ import TypeChecker._
                         ok = F
                         return partialResult
                       }
-                      val smOpt = unify(pattern.posOpt, T, expected, info.tpe, reporter)
+                      val smOpt = unify(typeHierarchy, pattern.posOpt, T, expected, info.tpe, reporter)
                       smOpt match {
                         case Some(sm) =>
                           val ok2 = checkUnboundTypeVar(
@@ -2972,10 +3133,7 @@ import TypeChecker._
                   declId(pattern.idOpt, Some(expected))
                   return pattern(
                     patterns = newPatterns,
-                    attr = pattern.attr(
-                      typedOpt = Some(expected),
-                      resOpt = AST.Typed.unapplyTupleResOpt
-                    )
+                    attr = pattern.attr(typedOpt = Some(expected), resOpt = AST.Typed.unapplyTupleResOpt)
                   )
                 case _ =>
                   reporter.error(pattern.posOpt, typeCheckerKind, "Cannot match non-tuple type with tuple extractor.")
@@ -3613,167 +3771,5 @@ import TypeChecker._
     }
     return (th: TypeHierarchy) =>
       (th(nameMap = th.nameMap + info.name ~> info(ast = info.ast(stmts = newStmts))), reporter)
-  }
-
-  @pure def unifyCombine(
-    r: HashMap[String, AST.Typed],
-    m: HashMap[String, AST.Typed]
-  ): Option[HashMap[String, AST.Typed]] = {
-    var res = r
-    for (e <- m.entries) {
-      val (key, value) = e
-      res.get(key) match {
-        case Some(v) =>
-          if (value != v) {
-            return None()
-          }
-        case _ => res = res + key ~> value
-      }
-    }
-    return Some(res)
-  }
-
-  def unify(
-    posOpt: Option[Position],
-    allowSubType: B,
-    expected: AST.Typed,
-    tpe: AST.Typed,
-    reporter: Reporter
-  ): Option[HashMap[String, AST.Typed]] = {
-    def err(): Unit = {
-      reporter.error(posOpt, typeCheckerKind, s"Could not unify type '$expected' with '$tpe'.")
-    }
-
-    (expected, tpe) match {
-      case (_, tpe: AST.Typed.TypeVar) =>
-        return Some(HashMap.empty[String, AST.Typed] + tpe.id ~> expected)
-      case (expected: AST.Typed.Name, tpe: AST.Typed.Name) =>
-        val rt: AST.Typed.Name = if (allowSubType && tpe.ids != expected.ids) {
-          val ancestors: ISZ[AST.Typed.Name] = typeHierarchy.typeMap.get(tpe.ids) match {
-            case Some(info: TypeInfo.AbstractDatatype) => info.ancestors
-            case Some(info: TypeInfo.Sig) => info.ancestors
-            case _ => halt(s"Unexpected situation when trying to unify $expected and $tpe")
-          }
-          var r = tpe
-          var found = F
-          for (ancestor <- ancestors if !found && ancestor.ids == expected.ids) {
-            r = ancestor
-            found = T
-          }
-          r
-        } else {
-          if (tpe.ids != expected.ids || tpe.args.size != expected.args.size) {
-            err()
-            return None()
-          }
-          tpe
-        }
-        val size = rt.args.size
-        var i = 0
-        var r = HashMap.empty[String, AST.Typed]
-        while (i < size) {
-          val mOpt = unify(posOpt, F, expected.args(i), rt.args(i), reporter)
-          mOpt match {
-            case Some(m) =>
-              unifyCombine(r, m) match {
-                case Some(c) => r = c
-                case _ => err(); return None()
-              }
-            case _ => return None()
-          }
-          i = i + 1
-        }
-        return Some(r)
-      case (expected: AST.Typed.Tuple, tpe: AST.Typed.Tuple) =>
-        val size = expected.args.size
-        if (size != tpe.args.size) {
-          err()
-          return None()
-        }
-        var i = 0
-        var r = HashMap.empty[String, AST.Typed]
-        while (i < size) {
-          val mOpt = unify(posOpt, F, expected.args(i), tpe.args(i), reporter)
-          mOpt match {
-            case Some(m) =>
-              unifyCombine(r, m) match {
-                case Some(c) => r = c
-                case _ => err(); return None()
-              }
-            case _ => return None()
-          }
-          i = i + 1
-        }
-        return Some(r)
-      case (expected: AST.Typed.Fun, _) if expected.isByName => unify(posOpt, allowSubType, expected.ret, tpe, reporter)
-      case (_, tpe: AST.Typed.Fun) if tpe.isByName => unify(posOpt, allowSubType, expected, tpe.ret, reporter)
-      case (expected: AST.Typed.Fun, tpe: AST.Typed.Fun) =>
-        val size = expected.args.size
-        if (size != tpe.args.size) {
-          err()
-          return None()
-        }
-        var i = 0
-        var r = HashMap.empty[String, AST.Typed]
-        while (i < size) {
-          val mOpt = unify(posOpt, F, expected.args(i), tpe.args(i), reporter)
-          mOpt match {
-            case Some(m) =>
-              unifyCombine(r, m) match {
-                case Some(c) => r = c
-                case _ => err(); return None()
-              }
-            case _ => return None()
-          }
-          i = i + 1
-        }
-        val mOpt = unify(posOpt, F, expected.ret, tpe.ret, reporter)
-        mOpt match {
-          case Some(m) =>
-            unifyCombine(r, m) match {
-              case Some(c) => r = c
-              case _ => err(); return None()
-            }
-          case _ => return None()
-        }
-        return Some(r)
-      case _ => return None()
-    }
-  }
-
-  def unifies(
-    posOpt: Option[Position],
-    allowSubType: B,
-    expected: ISZ[AST.Typed],
-    tpe: ISZ[AST.Typed],
-    reporter: Reporter
-  ): Option[HashMap[String, AST.Typed]] = {
-    def err(): Unit = {
-      reporter.error(
-        posOpt,
-        typeCheckerKind,
-        s"Could not unify type '${AST.Typed.Tuple(expected)}' with '${AST.Typed.Tuple(tpe)}'."
-      )
-    }
-
-    val size = expected.size
-    if (size != tpe.size) {
-      return None()
-    }
-    var r = HashMap.empty[String, AST.Typed]
-    var i = 0
-    while (i < size) {
-      val mOpt = unify(posOpt, allowSubType, expected(i), tpe(i), reporter)
-      mOpt match {
-        case Some(m) =>
-          unifyCombine(r, m) match {
-            case Some(c) => r = c
-            case _ => err(); return None()
-          }
-        case _ => return None()
-      }
-      i = i + 1
-    }
-    return Some(r)
   }
 }

@@ -457,10 +457,6 @@ object MTransformer {
 
   val PostResultTypedEnum: MOption[Typed] = MNone()
 
-  val PreResultTypedMethodSubst: PreResult[Typed.Method.Subst] = PreResult(T, MNone())
-
-  val PostResultTypedMethodSubst: MOption[Typed.Method.Subst] = MNone()
-
   val PreResultTypedMethod: PreResult[Typed] = PreResult(T, MNone())
 
   val PostResultTypedMethod: MOption[Typed] = MNone()
@@ -1289,10 +1285,6 @@ import MTransformer._
 
   def preTypedEnum(o: Typed.Enum): PreResult[Typed] = {
     return PreResultTypedEnum
-  }
-
-  def preTypedMethodSubst(o: Typed.Method.Subst): PreResult[Typed.Method.Subst] = {
-    return PreResultTypedMethodSubst
   }
 
   def preTypedMethod(o: Typed.Method): PreResult[Typed] = {
@@ -2181,10 +2173,6 @@ import MTransformer._
 
   def postTypedEnum(o: Typed.Enum): MOption[Typed] = {
     return PostResultTypedEnum
-  }
-
-  def postTypedMethodSubst(o: Typed.Method.Subst): MOption[Typed.Method.Subst] = {
-    return PostResultTypedMethodSubst
   }
 
   def postTypedMethod(o: Typed.Method): MOption[Typed] = {
@@ -4011,10 +3999,9 @@ import MTransformer._
           else
             MNone()
         case o2: Typed.Method =>
-          val r0: MOption[IS[Z, Typed.Method.Subst]] = transformISZ(o2.substs, transformTypedMethodSubst _)
-          val r1: MOption[Typed.Fun] = transformTypedFun(o2.tpe)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(substs = r0.getOrElse(o2.substs), tpe = r1.getOrElse(o2.tpe)))
+          val r0: MOption[Typed.Fun] = transformTypedFun(o2.tpe)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(tpe = r0.getOrElse(o2.tpe)))
           else
             MNone()
         case o2: Typed.Methods =>
@@ -4033,33 +4020,6 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Typed = r.getOrElse(o)
     val postR: MOption[Typed] = postTyped(o2)
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
-  def transformTypedMethodSubst(o: Typed.Method.Subst): MOption[Typed.Method.Subst] = {
-    val preR: PreResult[Typed.Method.Subst] = preTypedMethodSubst(o)
-    val r: MOption[Typed.Method.Subst] = if (preR.continu) {
-      val o2: Typed.Method.Subst = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[Typed] = transformTyped(o2.tipe)
-      if (hasChanged || r0.nonEmpty)
-        MSome(o2(tipe = r0.getOrElse(o2.tipe)))
-      else
-        MNone()
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: Typed.Method.Subst = r.getOrElse(o)
-    val postR: MOption[Typed.Method.Subst] = postTypedMethodSubst(o2)
     if (postR.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -4784,10 +4744,9 @@ import MTransformer._
     val r: MOption[Typed.Method] = if (preR.continu) {
       val o2: Typed.Method = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[IS[Z, Typed.Method.Subst]] = transformISZ(o2.substs, transformTypedMethodSubst _)
-      val r1: MOption[Typed.Fun] = transformTypedFun(o2.tpe)
-      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-        MSome(o2(substs = r0.getOrElse(o2.substs), tpe = r1.getOrElse(o2.tpe)))
+      val r0: MOption[Typed.Fun] = transformTypedFun(o2.tpe)
+      if (hasChanged || r0.nonEmpty)
+        MSome(o2(tpe = r0.getOrElse(o2.tpe)))
       else
         MNone()
     } else if (preR.resultOpt.nonEmpty) {

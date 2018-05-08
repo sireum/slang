@@ -193,7 +193,6 @@ object TypeOutliner {
             info.owner,
             sig.id.value,
             sig.params.map(p => p.id.value),
-            ISZ(),
             sig.funType
           )
         )
@@ -215,7 +214,6 @@ object TypeOutliner {
             info.owner,
             sig.id.value,
             sig.params.map(p => p.id.value),
-            ISZ(),
             sig.funType
           )
         )
@@ -237,7 +235,6 @@ object TypeOutliner {
             info.owner,
             sig.id.value,
             sig.params.map(p => p.id.value),
-            ISZ(),
             sig.funType
           )
         )
@@ -374,7 +371,6 @@ object TypeOutliner {
               info.owner,
               info.ast.id.value,
               info.ast.params.map(p => p.id.value),
-              ISZ(),
               AST.Typed.Fun(T, F, paramTypes, info.tpe)
             )
           ),
@@ -393,7 +389,7 @@ object TypeOutliner {
     val typeParams = sig.typeParams
     for (tp <- typeParams) {
       scope.resolveType(typeHierarchy.typeMap, ISZ(tp.id.value)) match {
-        case Some(info) if info.name.size == 1 =>
+        case Some(info) if info.name.size == z"1" =>
           reporter
             .error(tp.id.attr.posOpt, TypeChecker.typeCheckerKind, s"Cannot redeclare type parameter ${tp.id.value}.")
           return None()
@@ -476,16 +472,8 @@ object TypeOutliner {
       sigOpt match {
         case Some((sig, tVars)) =>
           val tOpt: Option[AST.Typed] = Some(
-            AST.Typed.Method(
-              F,
-              AST.MethodMode.Spec,
-              tVars,
-              smInfo.owner,
-              id,
-              sig.params.map(p => p.id.value),
-              ISZ(),
-              sig.funType
-            )
+            AST.Typed
+              .Method(F, AST.MethodMode.Spec, tVars, smInfo.owner, id, sig.params.map(p => p.id.value), sig.funType)
           )
           specMethods = specMethods + id ~> smInfo(ast = sm(sig = sig, attr = sm.attr(typedOpt = tOpt)))
         case _ =>
@@ -503,16 +491,8 @@ object TypeOutliner {
       sigOpt match {
         case Some((sig, tVars)) =>
           val tOpt: Option[AST.Typed] = Some(
-            AST.Typed.Method(
-              F,
-              AST.MethodMode.Method,
-              tVars,
-              mInfo.owner,
-              id,
-              sig.params.map(p => p.id.value),
-              ISZ(),
-              sig.funType
-            )
+            AST.Typed
+              .Method(F, AST.MethodMode.Method, tVars, mInfo.owner, id, sig.params.map(p => p.id.value), sig.funType)
           )
           methods = methods + id ~> mInfo(ast = m(sig = sig, attr = m.attr(typedOpt = tOpt)))
         case _ =>
@@ -769,6 +749,7 @@ object TypeOutliner {
             )
             return
           }
+          return
         case _ =>
       }
       methods.get(id) match {
@@ -811,41 +792,24 @@ object TypeOutliner {
             }
           }
         case _ =>
-          vars.get(id) match {
-            case Some(otherInfo) =>
-              val v = otherInfo.ast
-              ok = checkVarRefinement(pm, v, substMap, posOpt)
-              if (ok) {
-                refinements = refinements + id ~> TypeInfo.Name(mInfo.owner)
-              } else {
-                reporter.error(
-                  posOpt,
-                  TypeChecker.typeCheckerKind,
-                  s"Cannot inherit $id because it has been previously declared with incompatible type."
-                )
-                return
-              }
-            case _ =>
-              if (substMap.isEmpty) {
-                methods = methods + id ~>
-                  (if (mInfo.ast.bodyOpt.nonEmpty) mInfo(ast = mInfo.ast(bodyOpt = None())) else mInfo)
-              } else {
-                var m = pm
-                var params = ISZ[AST.Param]()
-                for (param <- m.sig.params) {
-                  params = params :+ param(tipe = param.tipe.typed(param.tipe.typedOpt.get.subst(substMap)))
-                }
-                m = m(
-                  bodyOpt = None(),
-                  sig = m.sig(
-                    params = params,
-                    returnType = m.sig.returnType.typed(m.sig.returnType.typedOpt.get.subst(substMap))
-                  )
-                )
-                methods = methods + id ~> mInfo(
-                  ast = m(attr = m.attr(typedOpt = Some(mInfo.typedOpt.get.subst(substMap))))
-                )
-              }
+          assert(vars.get(id).isEmpty)
+          if (substMap.isEmpty) {
+            methods = methods + id ~>
+              (if (mInfo.ast.bodyOpt.nonEmpty) mInfo(ast = mInfo.ast(bodyOpt = None())) else mInfo)
+          } else {
+            var m = pm
+            var params = ISZ[AST.Param]()
+            for (param <- m.sig.params) {
+              params = params :+ param(tipe = param.tipe.typed(param.tipe.typedOpt.get.subst(substMap)))
+            }
+            m = m(
+              bodyOpt = None(),
+              sig = m.sig(
+                params = params,
+                returnType = m.sig.returnType.typed(m.sig.returnType.typedOpt.get.subst(substMap))
+              )
+            )
+            methods = methods + id ~> mInfo(ast = m(attr = m.attr(typedOpt = Some(mInfo.typedOpt.get.subst(substMap)))))
           }
       }
     }

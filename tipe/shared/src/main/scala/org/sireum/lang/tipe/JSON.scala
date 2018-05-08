@@ -1402,14 +1402,6 @@ object JSON {
       ))
     }
 
-    @pure def print_astTypedMethodSubst(o: org.sireum.lang.ast.Typed.Method.Subst): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Typed.Method.Subst""""),
-        ("id", printString(o.id)),
-        ("tipe", print_astTyped(o.tipe))
-      ))
-    }
-
     @pure def print_astTypedMethod(o: org.sireum.lang.ast.Typed.Method): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Typed.Method""""),
@@ -1419,7 +1411,6 @@ object JSON {
         ("owner", printISZ(T, o.owner, printString _)),
         ("name", printString(o.name)),
         ("paramNames", printISZ(T, o.paramNames, printString _)),
-        ("substs", printISZ(F, o.substs, print_astTypedMethodSubst _)),
         ("tpe", print_astTypedFun(o.tpe))
       ))
     }
@@ -4902,24 +4893,6 @@ object JSON {
       return org.sireum.lang.ast.Typed.Enum(name)
     }
 
-    def parse_astTypedMethodSubst(): org.sireum.lang.ast.Typed.Method.Subst = {
-      val r = parse_astTypedMethodSubstT(F)
-      return r
-    }
-
-    def parse_astTypedMethodSubstT(typeParsed: B): org.sireum.lang.ast.Typed.Method.Subst = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Typed.Method.Subst")
-      }
-      parser.parseObjectKey("id")
-      val id = parser.parseString()
-      parser.parseObjectNext()
-      parser.parseObjectKey("tipe")
-      val tipe = parse_astTyped()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Typed.Method.Subst(id, tipe)
-    }
-
     def parse_astTypedMethod(): org.sireum.lang.ast.Typed.Method = {
       val r = parse_astTypedMethodT(F)
       return r
@@ -4947,13 +4920,10 @@ object JSON {
       parser.parseObjectKey("paramNames")
       val paramNames = parser.parseISZ(parser.parseString _)
       parser.parseObjectNext()
-      parser.parseObjectKey("substs")
-      val substs = parser.parseISZ(parse_astTypedMethodSubst _)
-      parser.parseObjectNext()
       parser.parseObjectKey("tpe")
       val tpe = parse_astTypedFun()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Typed.Method(isInObject, mode, typeParams, owner, name, paramNames, substs, tpe)
+      return org.sireum.lang.ast.Typed.Method(isInObject, mode, typeParams, owner, name, paramNames, tpe)
     }
 
     def parse_astTypedMethods(): org.sireum.lang.ast.Typed.Methods = {
@@ -8398,24 +8368,6 @@ object JSON {
       return r
     }
     val r = to(s, f_astTypedEnum _)
-    return r
-  }
-
-  def from_astTypedMethodSubst(o: org.sireum.lang.ast.Typed.Method.Subst, isCompact: B): String = {
-    val st = Printer.print_astTypedMethodSubst(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astTypedMethodSubst(s: String): Either[org.sireum.lang.ast.Typed.Method.Subst, Json.ErrorMsg] = {
-    def f_astTypedMethodSubst(parser: Parser): org.sireum.lang.ast.Typed.Method.Subst = {
-      val r = parser.parse_astTypedMethodSubst()
-      return r
-    }
-    val r = to(s, f_astTypedMethodSubst _)
     return r
   }
 

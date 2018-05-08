@@ -1334,31 +1334,6 @@ object Typed {
     }
   }
 
-  object Method {
-
-    object Subst {
-
-      @pure def summarize(substs: ISZ[Subst]): HashSMap[String, Typed] = {
-        var r = HashSMap.emptyInit[String, Typed](substs.size)
-        for (subst <- substs) {
-          r.get(subst.id) match {
-            case Some(_) =>
-            case _ =>
-              r = r + subst.id ~> subst.tipe
-          }
-        }
-        return r
-      }
-
-      @pure def summarizeAsSubst(substs: ISZ[Subst]): ISZ[Subst] = {
-        return for (e <- summarize(substs).entries) yield Subst(e._1, e._2)
-      }
-    }
-
-    @datatype class Subst(id: String, tipe: Typed)
-
-  }
-
   @datatype class Method(
     isInObject: B,
     mode: MethodMode.Type,
@@ -1366,7 +1341,6 @@ object Typed {
     owner: ISZ[String],
     name: String,
     paramNames: ISZ[String],
-    substs: ISZ[Method.Subst],
     tpe: Typed.Fun
   ) extends Typed {
 
@@ -1393,16 +1367,7 @@ object Typed {
       if (m.isEmpty) {
         return this
       }
-      return Method(
-        isInObject,
-        mode,
-        typeParams,
-        owner,
-        name,
-        paramNames,
-        Method.Subst.summarizeAsSubst(substs ++ m.entries.map((p: (String, Typed)) => Method.Subst(p._1, p._2))),
-        tpe.subst(m)
-      )
+      return Method(isInObject, mode, typeParams, owner, name, paramNames, tpe.subst(m))
     }
 
     @pure override def collectTypeVars: ISZ[String] = {
@@ -1486,117 +1451,117 @@ object Typed {
 
   val bConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.b)))
   val bConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
-    sireumName, "B", ISZ(), ISZ(), Typed.bConstructorType))
+    sireumName, "B", ISZ(), Typed.bConstructorType))
   val bConstructorResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Method(T, MethodMode.Constructor, ISZ(),
     sireumName, "B", ISZ(), Some(Typed.bConstructorType)))
   val cConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.c)))
   val cConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
-    sireumName, "C", ISZ(), ISZ(), Typed.cConstructorType))
+    sireumName, "C", ISZ(), Typed.cConstructorType))
   val cConstructorResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Method(T, MethodMode.Constructor, ISZ(),
     sireumName, "C", ISZ(), Some(Typed.cConstructorType)))
   val zConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.z)))
   val zConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
-    sireumName, "Z", ISZ(), ISZ(), Typed.zConstructorType))
+    sireumName, "Z", ISZ(), Typed.zConstructorType))
   val zConstructorResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Method(T, MethodMode.Constructor, ISZ(),
     sireumName, "Z", ISZ(), Some(Typed.zConstructorType)))
   val z8ConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.z8)))
   val z8ConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
-    sireumName, "Z8", ISZ(), ISZ(), Typed.z8ConstructorType))
+    sireumName, "Z8", ISZ(), Typed.z8ConstructorType))
   val z8ConstructorResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Method(T, MethodMode.Constructor, ISZ(),
     sireumName, "Z8", ISZ(), Some(Typed.z8ConstructorType)))
   val z16ConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.z16)))
   val z16ConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
-    sireumName, "Z16", ISZ(), ISZ(), Typed.z16ConstructorType))
+    sireumName, "Z16", ISZ(), Typed.z16ConstructorType))
   val z16ConstructorResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Method(T, MethodMode.Constructor, ISZ(),
     sireumName, "Z16", ISZ(), Some(Typed.z16ConstructorType)))
   val z32ConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.z32)))
   val z32ConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
-    sireumName, "Z32", ISZ(), ISZ(), Typed.z32ConstructorType))
+    sireumName, "Z32", ISZ(), Typed.z32ConstructorType))
   val z32ConstructorResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Method(T, MethodMode.Constructor, ISZ(),
     sireumName, "Z32", ISZ(), Some(Typed.z32ConstructorType)))
   val z64ConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.z64)))
   val z64ConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
-    sireumName, "Z64", ISZ(), ISZ(), Typed.z64ConstructorType))
+    sireumName, "Z64", ISZ(), Typed.z64ConstructorType))
   val z64ConstructorResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Method(T, MethodMode.Constructor, ISZ(),
     sireumName, "Z64", ISZ(), Some(Typed.z64ConstructorType)))
   val nConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.n)))
   val nConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
-    sireumName, "N", ISZ(), ISZ(), Typed.nConstructorType))
+    sireumName, "N", ISZ(), Typed.nConstructorType))
   val nConstructorResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Method(T, MethodMode.Constructor, ISZ(),
     sireumName, "N", ISZ(), Some(Typed.nConstructorType)))
   val n8ConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.n8)))
   val n8ConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
-    sireumName, "N8", ISZ(), ISZ(), Typed.n8ConstructorType))
+    sireumName, "N8", ISZ(), Typed.n8ConstructorType))
   val n8ConstructorResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Method(T, MethodMode.Constructor, ISZ(),
     sireumName, "N8", ISZ(), Some(Typed.n8ConstructorType)))
   val n16ConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.n16)))
   val n16ConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
-    sireumName, "N16", ISZ(), ISZ(), Typed.n16ConstructorType))
+    sireumName, "N16", ISZ(), Typed.n16ConstructorType))
   val n16ConstructorResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Method(T, MethodMode.Constructor, ISZ(),
     sireumName, "N16", ISZ(), Some(Typed.n16ConstructorType)))
   val n32ConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.n32)))
   val n32ConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
-    sireumName, "N32", ISZ(), ISZ(), Typed.n32ConstructorType))
+    sireumName, "N32", ISZ(), Typed.n32ConstructorType))
   val n32ConstructorResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Method(T, MethodMode.Constructor, ISZ(),
     sireumName, "N32", ISZ(), Some(Typed.n32ConstructorType)))
   val n64ConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.n64)))
   val n64ConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
-    sireumName, "N64", ISZ(), ISZ(), Typed.n64ConstructorType))
+    sireumName, "N64", ISZ(), Typed.n64ConstructorType))
   val n64ConstructorResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Method(T, MethodMode.Constructor, ISZ(),
     sireumName, "N64", ISZ(), Some(Typed.n64ConstructorType)))
   val s8ConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.s8)))
   val s8ConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
-    sireumName, "S8", ISZ(), ISZ(), Typed.s8ConstructorType))
+    sireumName, "S8", ISZ(), Typed.s8ConstructorType))
   val s8ConstructorResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Method(T, MethodMode.Constructor, ISZ(),
     sireumName, "S8", ISZ(), Some(Typed.s8ConstructorType)))
   val s16ConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.s16)))
   val s16ConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
-    sireumName, "S16", ISZ(), ISZ(), Typed.s16ConstructorType))
+    sireumName, "S16", ISZ(), Typed.s16ConstructorType))
   val s16ConstructorResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Method(T, MethodMode.Constructor, ISZ(),
     sireumName, "S16", ISZ(), Some(Typed.s16ConstructorType)))
   val s32ConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.s32)))
   val s32ConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
-    sireumName, "S32", ISZ(), ISZ(), Typed.s32ConstructorType))
+    sireumName, "S32", ISZ(), Typed.s32ConstructorType))
   val s32ConstructorResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Method(T, MethodMode.Constructor, ISZ(),
     sireumName, "S32", ISZ(), Some(Typed.s32ConstructorType)))
   val s64ConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.s64)))
   val s64ConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
-    sireumName, "S64", ISZ(), ISZ(), Typed.s64ConstructorType))
+    sireumName, "S64", ISZ(), Typed.s64ConstructorType))
   val s64ConstructorResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Method(T, MethodMode.Constructor, ISZ(),
     sireumName, "S64", ISZ(), Some(Typed.s64ConstructorType)))
   val u8ConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.u8)))
   val u8ConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
-    sireumName, "U8", ISZ(), ISZ(), Typed.u8ConstructorType))
+    sireumName, "U8", ISZ(), Typed.u8ConstructorType))
   val u8ConstructorResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Method(T, MethodMode.Constructor, ISZ(),
     sireumName, "U8", ISZ(), Some(Typed.u8ConstructorType)))
   val u16ConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.u16)))
   val u16ConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
-    sireumName, "U16", ISZ(), ISZ(), Typed.u16ConstructorType))
+    sireumName, "U16", ISZ(), Typed.u16ConstructorType))
   val u16ConstructorResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Method(T, MethodMode.Constructor, ISZ(),
     sireumName, "U16", ISZ(), Some(Typed.u16ConstructorType)))
   val u32ConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.u32)))
   val u32ConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
-    sireumName, "U32", ISZ(), ISZ(), Typed.u32ConstructorType))
+    sireumName, "U32", ISZ(), Typed.u32ConstructorType))
   val u32ConstructorResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Method(T, MethodMode.Constructor, ISZ(),
     sireumName, "U32", ISZ(), Some(Typed.u32ConstructorType)))
   val u64ConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.u64)))
   val u64ConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
-    sireumName, "U64", ISZ(), ISZ(), Typed.u64ConstructorType))
+    sireumName, "U64", ISZ(), Typed.u64ConstructorType))
   val u64ConstructorResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Method(T, MethodMode.Constructor, ISZ(),
     sireumName, "U64", ISZ(), Some(Typed.u64ConstructorType)))
   val f32ConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.f32)))
   val f32ConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
-    sireumName, "F32", ISZ(), ISZ(), Typed.f32ConstructorType))
+    sireumName, "F32", ISZ(), Typed.f32ConstructorType))
   val f32ConstructorResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Method(T, MethodMode.Constructor, ISZ(),
     sireumName, "F32", ISZ(), Some(Typed.f32ConstructorType)))
   val f64ConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.f64)))
   val f64ConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
-    sireumName, "F64", ISZ(), ISZ(), Typed.f64ConstructorType))
+    sireumName, "F64", ISZ(), Typed.f64ConstructorType))
   val f64ConstructorResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Method(T, MethodMode.Constructor, ISZ(),
     sireumName, "F64", ISZ(), Some(Typed.f64ConstructorType)))
   val rConstructorType: Typed.Fun = Typed.Fun(T, F, ISZ(Typed.string), Typed.Name(optionName, ISZ(Typed.r)))
   val rConstructorMethodOpt: Option[Typed] = Some(Typed.Method(T, MethodMode.Constructor, ISZ(),
-    sireumName, "R", ISZ(), ISZ(), Typed.rConstructorType))
+    sireumName, "R", ISZ(), Typed.rConstructorType))
   val rConstructorResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.Method(T, MethodMode.Constructor, ISZ(),
     sireumName, "R", ISZ(), Some(Typed.rConstructorType)))
 

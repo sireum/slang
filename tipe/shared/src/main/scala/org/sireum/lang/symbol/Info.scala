@@ -76,7 +76,7 @@ object Scope {
     }
 
     @pure override def resolveName(globalNameMap: HashMap[ISZ[String], Info], name: ISZ[String]): Option[Info] = {
-      if (name.size == 1) {
+      if (name.size == z"1") {
         val infoOpt = nameMap.get(name(0))
         if (infoOpt.nonEmpty) {
           return infoOpt
@@ -92,7 +92,7 @@ object Scope {
       globalTypeMap: HashMap[ISZ[String], TypeInfo],
       name: ISZ[String]
     ): Option[TypeInfo] = {
-      if (name.size == 1) {
+      if (name.size == z"1") {
         val typeInfoOpt = typeMap.get(name(0))
         if (typeInfoOpt.nonEmpty) {
           return typeInfoOpt
@@ -362,8 +362,13 @@ object Info {
     }
   }
 
-  @datatype class Method(owner: ISZ[String], isInObject: B, scope: Scope, hasBody: B, ast: AST.Stmt.Method)
-      extends Info {
+  @datatype class Method(
+    owner: ISZ[String],
+    isInObject: B,
+    scope: Scope,
+    hasBody: B,
+    ast: AST.Stmt.Method
+  ) extends Info {
 
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
@@ -387,8 +392,12 @@ object Info {
 
   }
 
-  @datatype class SpecMethod(val owner: ISZ[String], isInObject: B, scope: Scope, ast: AST.Stmt.SpecMethod)
-      extends Info {
+  @datatype class SpecMethod(
+    val owner: ISZ[String],
+    isInObject: B,
+    scope: Scope,
+    ast: AST.Stmt.SpecMethod
+  ) extends Info {
 
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
@@ -487,7 +496,6 @@ object Info {
         name,
         "byName",
         ISZ(),
-        ISZ(),
         AST.Typed.Fun(T, F, ISZ(AST.Typed.string), AST.Typed.Name(AST.Typed.optionName, ISZ(elementTypedOpt.get)))
       )
     )
@@ -499,7 +507,6 @@ object Info {
         ISZ(),
         name,
         "byOrdinal",
-        ISZ(),
         ISZ(),
         AST.Typed.Fun(T, F, ISZ(AST.Typed.z), AST.Typed.Name(AST.Typed.optionName, ISZ(elementTypedOpt.get)))
       )
@@ -546,7 +553,6 @@ object Info {
     }
 
   }
-
 }
 
 @datatype trait TypeInfo {
@@ -588,21 +594,12 @@ object TypeInfo {
       extends TypeInfo {
 
     val nameTypedOpt: Option[AST.Typed] = Some(
-      AST.Typed.Method(
-        F,
-        AST.MethodMode.Method,
-        ISZ(),
-        name,
-        "name",
-        ISZ(),
-        ISZ(),
-        AST.Typed.Fun(T, T, ISZ(), AST.Typed.string)
-      )
+      AST.Typed
+        .Method(F, AST.MethodMode.Method, ISZ(), name, "name", ISZ(), AST.Typed.Fun(T, T, ISZ(), AST.Typed.string))
     )
 
     val ordinalTypedOpt: Option[AST.Typed] = Some(
-      AST.Typed
-        .Method(F, AST.MethodMode.Method, ISZ(), name, "ordinal", ISZ(), ISZ(), AST.Typed.Fun(T, T, ISZ(), AST.Typed.z))
+      AST.Typed.Method(F, AST.MethodMode.Method, ISZ(), name, "ordinal", ISZ(), AST.Typed.Fun(T, T, ISZ(), AST.Typed.z))
     )
 
     @pure override def name: ISZ[String] = {

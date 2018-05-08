@@ -683,10 +683,6 @@ object Transformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preTypedMethodSubst(ctx: Context, o: Typed.Method.Subst): PreResult[Context, Typed.Method.Subst] = {
-      return PreResult(ctx, T, None())
-    }
-
     @pure def preTypedMethod(ctx: Context, o: Typed.Method): PreResult[Context, Typed] = {
       return PreResult(ctx, T, None())
     }
@@ -1572,10 +1568,6 @@ object Transformer {
     }
 
     @pure def postTypedEnum(ctx: Context, o: Typed.Enum): Result[Context, Typed] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postTypedMethodSubst(ctx: Context, o: Typed.Method.Subst): Result[Context, Typed.Method.Subst] = {
       return Result(ctx, None())
     }
 
@@ -3441,12 +3433,11 @@ import Transformer._
           else
             Result(ctx, None())
         case o2: Typed.Method =>
-          val r0: Result[Context, IS[Z, Typed.Method.Subst]] = transformISZ(ctx, o2.substs, transformTypedMethodSubst _)
-          val r1: Result[Context, Typed.Fun] = transformTypedFun(r0.ctx, o2.tpe)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            Result(r1.ctx, Some(o2(substs = r0.resultOpt.getOrElse(o2.substs), tpe = r1.resultOpt.getOrElse(o2.tpe))))
+          val r0: Result[Context, Typed.Fun] = transformTypedFun(ctx, o2.tpe)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            Result(r0.ctx, Some(o2(tpe = r0.resultOpt.getOrElse(o2.tpe))))
           else
-            Result(r1.ctx, None())
+            Result(r0.ctx, None())
         case o2: Typed.Methods =>
           val r0: Result[Context, IS[Z, Typed.Method]] = transformISZ(ctx, o2.methods, transformTypedMethod _)
           if (hasChanged || r0.resultOpt.nonEmpty)
@@ -3463,33 +3454,6 @@ import Transformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: Typed = r.resultOpt.getOrElse(o)
     val postR: Result[Context, Typed] = pp.postTyped(r.ctx, o2)
-    if (postR.resultOpt.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return Result(postR.ctx, Some(o2))
-    } else {
-      return Result(postR.ctx, None())
-    }
-  }
-
-  @pure def transformTypedMethodSubst(ctx: Context, o: Typed.Method.Subst): Result[Context, Typed.Method.Subst] = {
-    val preR: PreResult[Context, Typed.Method.Subst] = pp.preTypedMethodSubst(ctx, o)
-    val r: Result[Context, Typed.Method.Subst] = if (preR.continu) {
-      val o2: Typed.Method.Subst = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: Result[Context, Typed] = transformTyped(ctx, o2.tipe)
-      if (hasChanged || r0.resultOpt.nonEmpty)
-        Result(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
-      else
-        Result(r0.ctx, None())
-    } else if (preR.resultOpt.nonEmpty) {
-      Result(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
-    } else {
-      Result(preR.ctx, None())
-    }
-    val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: Typed.Method.Subst = r.resultOpt.getOrElse(o)
-    val postR: Result[Context, Typed.Method.Subst] = pp.postTypedMethodSubst(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -4214,12 +4178,11 @@ import Transformer._
     val r: Result[Context, Typed.Method] = if (preR.continu) {
       val o2: Typed.Method = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: Result[Context, IS[Z, Typed.Method.Subst]] = transformISZ(ctx, o2.substs, transformTypedMethodSubst _)
-      val r1: Result[Context, Typed.Fun] = transformTypedFun(r0.ctx, o2.tpe)
-      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-        Result(r1.ctx, Some(o2(substs = r0.resultOpt.getOrElse(o2.substs), tpe = r1.resultOpt.getOrElse(o2.tpe))))
+      val r0: Result[Context, Typed.Fun] = transformTypedFun(ctx, o2.tpe)
+      if (hasChanged || r0.resultOpt.nonEmpty)
+        Result(r0.ctx, Some(o2(tpe = r0.resultOpt.getOrElse(o2.tpe))))
       else
-        Result(r1.ctx, None())
+        Result(r0.ctx, None())
     } else if (preR.resultOpt.nonEmpty) {
       Result(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
     } else {
