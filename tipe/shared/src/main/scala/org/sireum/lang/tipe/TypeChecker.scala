@@ -1956,11 +1956,11 @@ import TypeChecker._
       expArgs: ISZ[AST.Exp],
       typeArgs: ISZ[AST.Typed],
       rep: Reporter,
-      make: (ISZ[AST.Exp], Option[AST.Typed]) => AST.Exp @pure
+      make: (ISZ[AST.Exp], Option[AST.Typed], AST.Typed.Fun) => AST.Exp @pure
     ): (AST.Exp, Option[AST.Typed]) = {
 
       @pure def partResult: (AST.Exp, Option[AST.Typed]) = {
-        return (make(expArgs, None()), None())
+        return (make(expArgs, None(), AST.Typed.Fun(F, F, ISZ(), AST.Typed.nothing)), None())
       }
 
       def checkH(sm: HashMap[String, AST.Typed]): (AST.Exp, Option[AST.Typed]) = {
@@ -1975,7 +1975,7 @@ import TypeChecker._
             args = args :+ newArg
             i = i + 1
           }
-          return (make(args, Some(funType.ret)), Some(funType.ret))
+          return (make(args, Some(funType.ret), funType), Some(funType.ret))
         } else {
           var args = Map.empty[String, AST.Exp]
           while (i < size) {
@@ -1985,7 +1985,7 @@ import TypeChecker._
             i = i + 1
           }
           val tOpt = Some(funType.ret)
-          return (make(args.values, tOpt), tOpt)
+          return (make(args.values, tOpt, funType), tOpt)
         }
       }
 
@@ -2030,12 +2030,12 @@ import TypeChecker._
             case Some(sm) =>
               val ok = checkUnboundTypeVar(expId.attr.posOpt, m, sm, m.typeParams, repArgs)
               if (!ok) {
-                return (make(newArgs, None()), None())
+                return (make(newArgs, None(), AST.Typed.Fun(F, F, ISZ(), AST.Typed.nothing)), None())
               }
               val funType = m.tpe.subst(sm)
-              return (make(newArgs, Some(funType.ret)), Some(funType.ret))
+              return (make(newArgs, Some(funType.ret), funType), Some(funType.ret))
             case _ =>
-              return (make(newArgs, None()), None())
+              return (make(newArgs, None(), AST.Typed.Fun(F, F, ISZ(), AST.Typed.nothing)), None())
           }
         }
         val rArgs = tryArgs()
@@ -2105,12 +2105,18 @@ import TypeChecker._
             return partResultH
           }
 
-          @pure def make(eArgs: ISZ[AST.Exp], tpeOpt: Option[AST.Typed]): AST.Exp = {
+          @pure def make(eArgs: ISZ[AST.Exp], tpeOpt: Option[AST.Typed], funType: AST.Typed.Fun): AST.Exp = {
+            val ro: Option[AST.ResolvedInfo] = mResOpt.get match {
+              case r: AST.ResolvedInfo.Method => Some(r(tpeOpt = Some(funType)))
+              case _: AST.ResolvedInfo.BuiltIn => mResOpt
+              case _ => halt(s"Unexpected symbol info: ${resOpt.get}")
+            }
+
             return invokeExp(
               receiverOpt = receiverOpt,
               targs = targs,
               args = eArgs,
-              attr = invokeExp.attr(typedOpt = tpeOpt, resOpt = mResOpt)
+              attr = invokeExp.attr(typedOpt = tpeOpt, resOpt = ro)
             )
           }
 
@@ -2299,7 +2305,7 @@ import TypeChecker._
               r.toIS
             }
 
-            @pure def makeNamed(eArgs: ISZ[AST.Exp], tpeOpt: Option[AST.Typed]): AST.Exp = {
+            @pure def makeNamed(eArgs: ISZ[AST.Exp], tpeOpt: Option[AST.Typed], funType: AST.Typed.Fun): AST.Exp = {
               val args: ISZ[AST.NamedArg] =
                 if (eArgs.size == expArgs.size) {
                   var r = ISZ[AST.NamedArg]()
@@ -2312,11 +2318,16 @@ import TypeChecker._
                 } else {
                   invokeExp.args
                 }
+              val ro: Option[AST.ResolvedInfo] = resOpt.get match {
+                case r: AST.ResolvedInfo.Method => Some(r(tpeOpt = Some(funType)))
+                case _: AST.ResolvedInfo.BuiltIn => resOpt
+                case _ => halt(s"Unexpected symbol info: ${resOpt.get}")
+              }
               return invokeExp(
                 receiverOpt = receiverOpt,
                 targs = targs,
                 args = args,
-                attr = invokeExp.attr(typedOpt = tpeOpt, resOpt = resOpt)
+                attr = invokeExp.attr(typedOpt = tpeOpt, resOpt = ro)
               )
             }
 
