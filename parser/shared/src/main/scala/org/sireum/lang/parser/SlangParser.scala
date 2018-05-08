@@ -25,7 +25,6 @@
 
 package org.sireum.lang.parser
 
-import org.sireum.lang.ast.{Stmt, Transformer}
 import org.sireum.message
 import org.sireum.message.Reporter
 import org.sireum.lang.{ast => AST}
@@ -39,21 +38,19 @@ object SlangParser {
 
   val messageKind = "Slang Parser"
 
-  val bvs: Set[Predef.String] = Set("bb", "bl")
-
-  val unops: Map[Predef.String, AST.Exp.UnaryOp.Type] = Map(
-    "!" -> AST.Exp.UnaryOp.Not,
-    "+" -> AST.Exp.UnaryOp.Plus,
-    "-" -> AST.Exp.UnaryOp.Minus,
-    "~" -> AST.Exp.UnaryOp.Complement,
-    "¬" -> AST.Exp.UnaryOp.Not
+  val unops: Map[String, AST.Exp.UnaryOp.Type] = Map(
+    String("!") -> AST.Exp.UnaryOp.Not,
+    String("+") -> AST.Exp.UnaryOp.Plus,
+    String("-") -> AST.Exp.UnaryOp.Minus,
+    String("~") -> AST.Exp.UnaryOp.Complement,
+    String("¬") -> AST.Exp.UnaryOp.Not
   )
 
-  val builtinPrefix = Seq("z", "r", "c", "string", "f32", "f64")
+  val builtinPrefix: Seq[String] = Seq("z", "r", "c", "string", "f32", "f64")
 
-  val disallowedTypeIds = Seq()
+  val disallowedTypeIds: Seq[String] = Seq()
 
-  val disallowedMethodIds = Seq(
+  val disallowedMethodIds: Seq[String] = Seq(
     "assert",
     "assume",
     "print",
@@ -70,11 +67,12 @@ object SlangParser {
     "!="
   )
 
-  val disallowedMethodIdEndings = Seq("old", "result", "reads", "modifies", "pre", "requires", "post", "ensures", "=")
+  val disallowedMethodIdEndings: Seq[String] =
+    Seq("old", "result", "reads", "modifies", "pre", "requires", "post", "ensures", "=")
 
-  val unaryMethods = Seq("unary_!", "unary_+", "unary_-", "unary_~")
+  val unaryMethods: Seq[String] = Seq("unary_!", "unary_+", "unary_-", "unary_~")
 
-  val topLevelMethodsIds = Seq("assert", "assume", "print", "println", "eprint", "eprintln", "halt")
+  val topLevelMethodsIds: Seq[String] = Seq("assert", "assume", "print", "println", "eprint", "eprintln", "halt")
 
   def scalaDialect(isWorksheet: Boolean): Dialect =
     if (isWorksheet)
@@ -154,7 +152,6 @@ class SlangParser(
     val util = new org.langmeta.InputUtil(input)
     var line = 0
     import org.sireum._
-    import org.sireum.U32._
     var r = ISZ[U32]()
     try while (true) {
       r = r :+ U32(util.lineToOffset(line))
@@ -303,16 +300,16 @@ class SlangParser(
               )
 
             stats match {
-              case q"import org.sireum._" :: rest => packageF(stats)
-              case q"import org.sireum.logika._" :: rest => packageF(stats)
+              case q"import org.sireum._" :: _ => packageF(stats)
+              case q"import org.sireum.logika._" :: _ => packageF(stats)
               case _ =>
                 errorInSlang(ref.pos, "The first member of packages should be 'import org.sireum._'")
                 Result(text, hashSireum, None())
             }
           }
         } else Result(text, hashSireum, None())
-      case q"import org.sireum._" :: rest => topF(source.stats)
-      case q"import org.sireum.logika._" :: rest => topF(source.stats)
+      case q"import org.sireum._" :: _ => topF(source.stats)
+      case q"import org.sireum.logika._" :: _ => topF(source.stats)
       case Nil =>
         Result(
           text,
@@ -388,8 +385,21 @@ class SlangParser(
         rStmt
     }
 
-    val transformer = new AST.Transformer(new AST.Transformer.PrePost[Unit] {
+    lazy val transformer: AST.Transformer[Unit] = new AST.Transformer(new AST.Transformer.PrePost[Unit] {
       def string: String = ""
+      val stopPreResult: AST.Transformer.PreResult[Unit, AST.Stmt] = AST.Transformer.PreResult((), false, None())
+
+      override def preStmtExpr(ctx: Unit, o: AST.Stmt.Expr): AST.Transformer.PreResult[Unit, AST.Stmt] = {
+        o.exp match {
+          case AST.Exp.Invoke(expOpt, AST.Id(id), _, args) if topLevelMethodsIds.contains(id) =>
+            expOpt.foreach(e => transformer.transformExp((), e))
+            for (arg <- args) {
+              transformer.transformExp((), arg)
+            }
+            stopPreResult
+          case _ => super.preStmtExpr(ctx, o)
+        }
+      }
 
       override def preExpInvoke(ctx: Unit, o: AST.Exp.Invoke): AST.Transformer.PreResult[Unit, AST.Exp] = {
         if (topLevelMethodsIds.contains(o.id.value)) {
@@ -415,24 +425,7 @@ class SlangParser(
 
     })
 
-    r match {
-      case AST.Stmt.Expr(AST.Exp.Invoke(expOpt, AST.Id(id), _, args)) if id.value == "halt" =>
-        expOpt.foreach(e => transformer.transformExp((), e))
-        for (arg <- args) {
-          transformer.transformExp((), arg)
-        }
-      case r: AST.Stmt.Expr => transformer.transformStmt((), r)
-      case r: AST.Stmt.Assign => transformer.transformStmt((), r)
-      case r: AST.Stmt.Var => transformer.transformStmt((), r)
-      case r: AST.Stmt.VarPattern => transformer.transformStmt((), r)
-      case r: AST.Stmt.Return => transformer.transformStmt((), r)
-      case r: AST.Stmt.Match => transformer.transformExp((), r.exp)
-      case r: AST.Stmt.If => transformer.transformExp((), r.cond)
-      case r: AST.Stmt.DoWhile => transformer.transformExp((), r.cond)
-      case r: AST.Stmt.For => for (eg <- r.enumGens) transformer.transformEnumGenFor((), eg)
-      case r: AST.Stmt.While => transformer.transformExp((), r.cond)
-      case _ =>
-    }
+    transformer.transformStmt((), r)
 
     r
   }
@@ -594,7 +587,7 @@ class SlangParser(
         hasError = true
         error(mod.pos, "Only the @spec modifier is allowed for var declarations.")
     }
-    val isDollarExpr = expropt.map(isDollar).getOrElse(false)
+    val isDollarExpr = expropt.exists(isDollar)
     if (tpeopt.isEmpty && !(enclosing match {
         case Enclosing.Top | Enclosing.Method | Enclosing.Block => true
         case _ => false
@@ -1570,7 +1563,6 @@ class SlangParser(
 
   def translateParam(isMemoize: Boolean)(tp: Term.Param): AST.Param = {
     val mods = tp.mods
-    val paramname = tp.name
     val atpeopt = tp.decltpe
     val expropt = tp.default
     var hasHidden = false
@@ -1596,7 +1588,6 @@ class SlangParser(
 
   def translateFunParam(tp: Term.Param): AST.Exp.Fun.Param = {
     val mods = tp.mods
-    val paramname = tp.name
     val atpeopt = tp.decltpe
     val expropt = tp.default
     for (mod <- mods) mod match {
@@ -1607,7 +1598,7 @@ class SlangParser(
       errorInSlang(tp.pos, s"The parameter should have the form '〈ID〉⸨ :〈type〉⸩?'")
     }
     atpeopt
-      .map(ta => AST.Exp.Fun.Param(cid(tp.name), Some(translateTypeArg(false)(ta))))
+      .map(ta => AST.Exp.Fun.Param(cid(tp.name), Some(translateTypeArg(allowByName = false)(ta))))
       .getOrElse(AST.Exp.Fun.Param(cid(tp.name), None()))
   }
 
@@ -1681,7 +1672,7 @@ class SlangParser(
     var i = 0
     for (stmt <- stmts) {
       val (ret, hlt) = stmt match {
-        case stmt: AST.Stmt.Return => (true, false)
+        case _: AST.Stmt.Return => (true, false)
         case AST.Stmt.Expr(AST.Exp.Invoke(_, AST.Id(id), _, _)) if id.value == "halt" => (false, true)
         case _ => (false, false)
       }
@@ -1706,14 +1697,14 @@ class SlangParser(
 
   def checkLhs(lhs: AST.Exp): AST.Exp = {
     lhs match {
-      case lhs: AST.Exp.Ident =>
+      case _: AST.Exp.Ident =>
       case lhs: AST.Exp.Select if lhs.targs.isEmpty && lhs.receiverOpt.nonEmpty =>
         lhs.receiverOpt.foreach(receiver => checkLhs(receiver))
       case lhs: AST.Exp.Invoke
-          if lhs.id.value.value == "apply" && lhs.receiverOpt.nonEmpty && lhs.targs.isEmpty && lhs.args.size == 1 =>
+          if lhs.id.value.value == "apply" && lhs.receiverOpt.nonEmpty && lhs.targs.isEmpty && lhs.args.size == Z(1) =>
         lhs.receiverOpt.foreach(receiver => checkLhs(receiver))
       case _ =>
-        reporter.error(lhs.posOpt, SlangParser.messageKind, s"Invalid assignment left-hand-side form in Slang: ${lhs}")
+        reporter.error(lhs.posOpt, SlangParser.messageKind, s"Invalid assignment left-hand-side form in Slang: $lhs")
     }
     lhs
   }
@@ -1829,11 +1820,11 @@ class SlangParser(
     val exp = translateExp(stat.expr)
     val cases = stat.cases.map(translateCase)
     exp match {
-      case exp @ AST.Exp.Select(_, AST.Id(String("native")), _) =>
+      case AST.Exp.Select(_, AST.Id(String("native")), _) =>
         var i = 0
         for (c <- cases) {
           c.pattern match {
-            case pat: AST.Pattern.LitInterpolate =>
+            case _: AST.Pattern.LitInterpolate =>
               error(stat.cases(i).pat.pos, s"Cannot use a literal interpolator when matching using 'native'.")
             case _ =>
           }
@@ -2006,7 +1997,7 @@ class SlangParser(
     exp match {
       case exp: Lit => translateLit(exp)
       case exp: Term.Interpolate =>
-        val prefix = exp.prefix.value
+        val prefix: String = exp.prefix.value
         if (builtinPrefix.contains(prefix)) translateLit(exp)
         else translateStringInterpolate(exp)
       case exp: Term.Name =>
@@ -2148,20 +2139,20 @@ class SlangParser(
         try AST.Exp.LitZ(Z.$String(value), attr(pos))
         catch {
           case _: Throwable =>
-            error(pos, s"Invalid Z literal '${value}'.")
+            error(pos, s"Invalid Z literal '$value'.")
             AST.Exp.LitZ(0, attr(pos))
         }
       case "r" =>
         try AST.Exp.LitR(org.sireum.R.$String(value), attr(pos))
         catch {
           case _: Throwable =>
-            error(pos, s"Invalid R literal '${value}'.")
+            error(pos, s"Invalid R literal '$value'.")
             AST.Exp.LitR(org.sireum.R.$String("0"), attr(pos))
         }
       case "c" =>
         val c = StringContext.treatEscapes(value)
-        if (c.size != 1) {
-          error(pos, s"Invalid C literal '${value}'.")
+        if (c.length != 1) {
+          error(pos, s"Invalid C literal '$value'.")
           AST.Exp.LitC('?', attr(pos))
         } else AST.Exp.LitC(c.head, attr(pos))
       case "f32" =>
@@ -2181,8 +2172,6 @@ class SlangParser(
       case "string" => AST.Exp.LitString(value, attr(pos))
     }
     return r
-    error(pos, s"Invalid ${prefix.value.toUpperCase} number: '$syntx'")
-    AST.Exp.LitB(false, attr(pos))
   }
 
   def translateLit(lit: Pat.Interpolate): AST.Pattern.LitInterpolate = {
@@ -2195,35 +2184,33 @@ class SlangParser(
         case "z" =>
           try Z.$String(value)
           catch {
-            case _: Throwable => error(lit.pos, s"Invalid Z literal '${value}'.")
+            case _: Throwable => error(lit.pos, s"Invalid Z literal '$value'.")
           }
         case "r" =>
           try org.sireum.R.$String(value)
           catch {
-            case _: Throwable => error(lit.pos, s"Invalid R literal '${value}'.")
+            case _: Throwable => error(lit.pos, s"Invalid R literal '$value'.")
           }
         case "c" =>
           if ((StringContext.treatEscapes(value)).size != 1) {
-            error(lit.pos, s"Invalid C literal '${value}'.")
+            error(lit.pos, s"Invalid C literal '$value'.")
           }
         case "f32" =>
           try value.toFloat
           catch {
-            case _: Throwable =>
-              error(lit.pos, s"Invalid F32 literal '${value}'.")
+            case _: Throwable => error(lit.pos, s"Invalid F32 literal '$value'.")
           }
         case "f64" =>
-          try value.toFloat
+          try value.toDouble
           catch {
-            case _: Throwable =>
-              error(lit.pos, s"Invalid F64 literal '${value}'.")
+            case _: Throwable => error(lit.pos, s"Invalid F64 literal '$value'.")
           }
         case "string" =>
         case prefix =>
           try Z.$String(value)
           catch {
             case _: Throwable =>
-              error(lit.pos, s"Invalid ${prefix.head.toUpper}${prefix.substring(1)} literal '${value}'.")
+              error(lit.pos, s"Invalid ${prefix.head.toUpper}${prefix.substring(1)} literal '$value'.")
           }
       }
       AST.Pattern.LitInterpolate(lit.prefix.value, lit.parts.head.value.toString, typedAttr(lit.pos))
@@ -2244,7 +2231,7 @@ class SlangParser(
           try Z.$String(value)
           catch {
             case _: Throwable =>
-              error(s.pos, s"Invalid ${s.prefix.value.head.toUpper}${s.prefix.value.substring(1)} literal '${value}'.")
+              error(s.pos, s"Invalid ${s.prefix.value.head.toUpper}${s.prefix.value.substring(1)} literal '$value'.")
           }
 
         }
@@ -2270,7 +2257,7 @@ class SlangParser(
     if (t.targs.nonEmpty)
       errorInSlang(t.targs.head.pos, "Binary operations cannot have type arguments")
 
-    if (!t.op.value.headOption.exists(_ == '$') && !checkSymbol(t.op.value)) {
+    if (!t.op.value.headOption.contains('$') && !checkSymbol(t.op.value)) {
       error(
         t.op.pos,
         s"Cannot use infix expression notation to invoke '${t.op.value}' in Slang (use dot invoke notation instead)."
@@ -2583,24 +2570,23 @@ class SlangParser(
     id.headOption.exists(isSymbolFirstChar)
   }
 
-  def checkMethodId(pos: Position, id: Predef.String): Unit = {
+  def checkMethodId(pos: Position, id: String): Unit = {
     def err(): Unit = errorInSlang(pos, s"Identifier $id is disallowed")
 
+    val idv = id.value
     if (disallowedMethodIds.contains(id)) {
       err()
     } else if (unaryMethods.contains(id)) {
       return
-    } else if (id.startsWith("unary_")) {
-      err()
     } else {
-      val i = id.lastIndexOf('_')
-      if (i >= 0 && i != id.length - 1) {
-        val ending = id.substring(i + 1)
+      val i = idv.lastIndexOf('_')
+      if (i >= 0 && i != idv.length - 1) {
+        val ending: String = idv.substring(i + 1)
         if (disallowedMethodIdEndings.contains(ending)) {
           err()
         } else {
           try {
-            BigInt(ending)
+            BigInt(ending.value)
             err()
           } catch {
             case _: Throwable =>
@@ -2608,8 +2594,8 @@ class SlangParser(
         }
       }
     }
-    if (id.headOption.exists(isSymbolFirstChar)) {
-      if (!id.tail.forall(isSymbolFollowChar)) {
+    if (idv.headOption.exists(isSymbolFirstChar)) {
+      if (!idv.tail.forall(isSymbolFollowChar)) {
         errorInSlang(pos, s"Cannot mix symbol and non-symbol characters for identifier starting with a symbol")
       }
     }
