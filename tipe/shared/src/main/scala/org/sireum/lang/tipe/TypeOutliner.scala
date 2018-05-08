@@ -792,7 +792,6 @@ object TypeOutliner {
             }
           }
         case _ =>
-          assert(vars.get(id).isEmpty)
           if (substMap.isEmpty) {
             methods = methods + id ~>
               (if (mInfo.ast.bodyOpt.nonEmpty) mInfo(ast = mInfo.ast(bodyOpt = None())) else mInfo)
