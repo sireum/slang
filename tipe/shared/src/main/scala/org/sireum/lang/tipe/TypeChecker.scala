@@ -314,12 +314,14 @@ object TypeChecker {
         val rt: AST.Typed.Name =
           typeRel match {
             case TypeRelation.Subtype if !sameIds =>
-              findAncestor(expected, tpe) match {
+              val aOpt = findAncestor(expected, tpe)
+              aOpt match {
                 case Some(a) => a
                 case _ => err(); return None()
               }
             case TypeRelation.Supertype if !sameIds =>
-              findAncestor(tpe, expected) match {
+              val aOpt = findAncestor(tpe, expected)
+              aOpt match {
                 case Some(a) => a
                 case _ => err(); return None()
               }
