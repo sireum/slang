@@ -1681,7 +1681,7 @@ object ResolvedInfo {
     mode: MethodMode.Type,
     typeParams: ISZ[String],
     owner: ISZ[String],
-    name: String,
+    id: String,
     paramNames: ISZ[String],
     tpeOpt: Option[Typed.Fun]
   ) extends ResolvedInfo

@@ -1577,7 +1577,7 @@ object JSON {
         ("mode", print_astMethodModeType(o.mode)),
         ("typeParams", printISZ(T, o.typeParams, printString _)),
         ("owner", printISZ(T, o.owner, printString _)),
-        ("name", printString(o.name)),
+        ("id", printString(o.id)),
         ("paramNames", printISZ(T, o.paramNames, printString _)),
         ("tpeOpt", printOption(F, o.tpeOpt, print_astTypedFun _))
       ))
@@ -5159,8 +5159,8 @@ object JSON {
       parser.parseObjectKey("owner")
       val owner = parser.parseISZ(parser.parseString _)
       parser.parseObjectNext()
-      parser.parseObjectKey("name")
-      val name = parser.parseString()
+      parser.parseObjectKey("id")
+      val id = parser.parseString()
       parser.parseObjectNext()
       parser.parseObjectKey("paramNames")
       val paramNames = parser.parseISZ(parser.parseString _)
@@ -5168,7 +5168,7 @@ object JSON {
       parser.parseObjectKey("tpeOpt")
       val tpeOpt = parser.parseOption(parse_astTypedFun _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ResolvedInfo.Method(isInObject, mode, typeParams, owner, name, paramNames, tpeOpt)
+      return org.sireum.lang.ast.ResolvedInfo.Method(isInObject, mode, typeParams, owner, id, paramNames, tpeOpt)
     }
 
     def parse_astResolvedInfoMethods(): org.sireum.lang.ast.ResolvedInfo.Methods = {
