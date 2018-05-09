@@ -51,6 +51,12 @@ object TypeChecker {
     'Halt
   }
 
+  @enum object TypeRelation {
+    'Subtype
+    'Equal
+    'Supertype
+  }
+
   val typeCheckerKind: String = "Type Checker"
   val errType: AST.Typed = AST.Typed.Name(ISZ(), ISZ())
 
@@ -134,6 +140,8 @@ object TypeChecker {
     string"~>" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryMapsTo))
   )
 
+  val emptySubstMap: HashMap[String, AST.Typed] = HashMap.empty
+
   def buildTypeSubstMap(
     name: QName,
     posOpt: Option[Position],
@@ -149,7 +157,7 @@ object TypeChecker {
       )
       return None()
     }
-    var substMap = HashMap.empty[String, AST.Typed]
+    var substMap = emptySubstMap
     for (i <- z"0" until args.size) {
       substMap = substMap + typeParams(i).id.value ~> args(i)
     }
@@ -263,11 +271,37 @@ object TypeChecker {
   def unify(
     th: TypeHierarchy,
     posOpt: Option[Position],
-    allowSubType: B,
+    typeRel: TypeRelation.Type,
     expected: AST.Typed,
     tpe: AST.Typed,
     reporter: Reporter
   ): Option[HashMap[String, AST.Typed]] = {
+
+    def findAncestor(ancestor: AST.Typed.Name, t: AST.Typed.Name): Option[AST.Typed.Name] = {
+      val (ancestors, substMap): (ISZ[AST.Typed.Name], HashMap[String, AST.Typed]) = th.typeMap.get(t.ids) match {
+        case Some(info: TypeInfo.AbstractDatatype) =>
+          val smOpt = buildTypeSubstMap(t.ids, posOpt, info.ast.typeParams, t.args, reporter)
+          smOpt match {
+            case Some(sm) => (info.ancestors, sm)
+            case _ => return None()
+          }
+        case Some(info: TypeInfo.Sig) =>
+          val smOpt = buildTypeSubstMap(t.ids, posOpt, info.ast.typeParams, t.args, reporter)
+          smOpt match {
+            case Some(sm) => (info.ancestors, sm)
+            case _ => return None()
+          }
+        case _ => halt(s"Unexpected situation when trying to unify $ancestor and $t")
+      }
+      var r = t
+      var found = F
+      for (a <- ancestors if !found && a.ids == ancestor.ids) {
+        r = a
+        found = T
+      }
+      return if (found) Some(r.subst(substMap)) else None()
+    }
+
     def err(): Unit = {
       reporter.error(posOpt, typeCheckerKind, s"Could not unify type '$expected' with '$tpe'.")
     }
@@ -275,34 +309,32 @@ object TypeChecker {
     (expected, tpe) match {
       case (_, tpe: AST.Typed.TypeVar) =>
         return Some(HashMap.empty[String, AST.Typed] + tpe.id ~> expected)
-      case (expected: AST.Typed.TypeVar, _) =>
-        return Some(HashMap.empty[String, AST.Typed] + expected.id ~> tpe)
       case (expected: AST.Typed.Name, tpe: AST.Typed.Name) =>
-        val rt: AST.Typed.Name = if (allowSubType && tpe.ids != expected.ids) {
-          val ancestors: ISZ[AST.Typed.Name] = th.typeMap.get(tpe.ids) match {
-            case Some(info: TypeInfo.AbstractDatatype) => info.ancestors
-            case Some(info: TypeInfo.Sig) => info.ancestors
-            case _ => halt(s"Unexpected situation when trying to unify $expected and $tpe")
+        val sameIds = tpe.ids == expected.ids
+        val rt: AST.Typed.Name =
+          typeRel match {
+            case TypeRelation.Subtype if !sameIds =>
+              findAncestor(expected, tpe) match {
+                case Some(a) => a
+                case _ => err(); return None()
+              }
+            case TypeRelation.Supertype if !sameIds =>
+              findAncestor(tpe, expected) match {
+                case Some(a) => a
+                case _ => err(); return None()
+              }
+            case _ =>
+              if (!sameIds) {
+                err()
+                return None()
+              }
+              tpe
           }
-          var r = tpe
-          var found = F
-          for (ancestor <- ancestors if !found && ancestor.ids == expected.ids) {
-            r = ancestor
-            found = T
-          }
-          r
-        } else {
-          if (tpe.ids != expected.ids || tpe.args.size != expected.args.size) {
-            err()
-            return None()
-          }
-          tpe
-        }
         val size = rt.args.size
         var i = 0
         var r = HashMap.empty[String, AST.Typed]
         while (i < size) {
-          val mOpt = unify(th, posOpt, F, expected.args(i), rt.args(i), reporter)
+          val mOpt = unify(th, posOpt, TypeRelation.Equal, expected.args(i), rt.args(i), reporter)
           mOpt match {
             case Some(m) =>
               unifyCombine(r, m) match {
@@ -323,7 +355,7 @@ object TypeChecker {
         var i = 0
         var r = HashMap.empty[String, AST.Typed]
         while (i < size) {
-          val mOpt = unify(th, posOpt, F, expected.args(i), tpe.args(i), reporter)
+          val mOpt = unify(th, posOpt, TypeRelation.Equal, expected.args(i), tpe.args(i), reporter)
           mOpt match {
             case Some(m) =>
               unifyCombine(r, m) match {
@@ -336,8 +368,8 @@ object TypeChecker {
         }
         return Some(r)
       case (expected: AST.Typed.Fun, _) if expected.isByName =>
-        unify(th, posOpt, allowSubType, expected.ret, tpe, reporter)
-      case (_, tpe: AST.Typed.Fun) if tpe.isByName => unify(th, posOpt, allowSubType, expected, tpe.ret, reporter)
+        unify(th, posOpt, typeRel, expected.ret, tpe, reporter)
+      case (_, tpe: AST.Typed.Fun) if tpe.isByName => unify(th, posOpt, typeRel, expected, tpe.ret, reporter)
       case (expected: AST.Typed.Fun, tpe: AST.Typed.Fun) =>
         val size = expected.args.size
         if (size != tpe.args.size) {
@@ -347,7 +379,7 @@ object TypeChecker {
         var i = 0
         var r = HashMap.empty[String, AST.Typed]
         while (i < size) {
-          val mOpt = unify(th, posOpt, F, expected.args(i), tpe.args(i), reporter)
+          val mOpt = unify(th, posOpt, TypeRelation.Equal, expected.args(i), tpe.args(i), reporter)
           mOpt match {
             case Some(m) =>
               unifyCombine(r, m) match {
@@ -358,7 +390,7 @@ object TypeChecker {
           }
           i = i + 1
         }
-        val mOpt = unify(th, posOpt, F, expected.ret, tpe.ret, reporter)
+        val mOpt = unify(th, posOpt, TypeRelation.Equal, expected.ret, tpe.ret, reporter)
         mOpt match {
           case Some(m) =>
             unifyCombine(r, m) match {
@@ -393,7 +425,7 @@ object TypeChecker {
     var i = 0
     var r = HashMap.empty[String, AST.Typed]
     while (i < size) {
-      val mOpt = unify(th, posOpt, T, tpeFun.args(i), expectedFun.args(i), reporter)
+      val mOpt = unify(th, posOpt, TypeRelation.Supertype, expectedFun.args(i), tpeFun.args(i), reporter)
       mOpt match {
         case Some(m) =>
           unifyCombine(r, m) match {
@@ -404,7 +436,7 @@ object TypeChecker {
       }
       i = i + 1
     }
-    val mOpt = unify(th, posOpt, T, expectedFun.ret, tpeFun.ret, reporter)
+    val mOpt = unify(th, posOpt, TypeRelation.Subtype, expectedFun.ret, tpeFun.ret, reporter)
     mOpt match {
       case Some(m) =>
         unifyCombine(r, m) match {
@@ -419,7 +451,7 @@ object TypeChecker {
   def unifies(
     th: TypeHierarchy,
     posOpt: Option[Position],
-    allowSubType: B,
+    typeRel: TypeRelation.Type,
     expected: ISZ[AST.Typed],
     tpe: ISZ[AST.Typed],
     reporter: Reporter
@@ -439,7 +471,7 @@ object TypeChecker {
     var r = HashMap.empty[String, AST.Typed]
     var i = 0
     while (i < size) {
-      val mOpt = unify(th, posOpt, allowSubType, expected(i), tpe(i), reporter)
+      val mOpt = unify(th, posOpt, typeRel, expected(i), tpe(i), reporter)
       mOpt match {
         case Some(m) =>
           unifyCombine(r, m) match {
@@ -1392,7 +1424,7 @@ import TypeChecker._
             if (typeArgs.isEmpty && t.typeParams.nonEmpty && t.tpe.isByName) {
               expectedOpt match {
                 case Some(expected) =>
-                  val smOpt = unify(typeHierarchy, refExp.posOpt, T, expected, t.tpe.ret, reporter)
+                  val smOpt = unify(typeHierarchy, refExp.posOpt, TypeRelation.Subtype, expected, t.tpe.ret, reporter)
                   smOpt match {
                     case Some(sm) =>
                       val ok = checkUnboundTypeVar(refExp.posOpt, t, sm, t.typeParams, reporter)
@@ -1928,7 +1960,7 @@ import TypeChecker._
                   }
                   val paramNames = params.map[String](p => p.id.value)
                   val paramTypes = params.map[AST.Typed](p => p.tipe.typedOpt.get)
-                  val smOpt = unify(typeHierarchy, posOpt, F, tpe, info.tpe, reporter)
+                  val smOpt = unify(typeHierarchy, posOpt, TypeRelation.Equal, tpe, info.tpe, reporter)
                   smOpt match {
                     case Some(sm) =>
                       val copyType = AST.Typed.Fun(T, F, paramTypes, tpe).subst(sm)
@@ -1994,7 +2026,8 @@ import TypeChecker._
         def tryExpected(): (AST.Exp, Option[AST.Typed]) = {
           expectedOpt match {
             case Some(expected) =>
-              val smOpt = unify(typeHierarchy, expId.attr.posOpt, T, expected, m.tpe.ret, repExpected)
+              val smOpt =
+                unify(typeHierarchy, expId.attr.posOpt, TypeRelation.Subtype, expected, m.tpe.ret, repExpected)
               smOpt match {
                 case Some(sm) =>
                   val ok = checkUnboundTypeVar(expId.attr.posOpt, m, sm, m.typeParams, repExpected)
@@ -2025,7 +2058,7 @@ import TypeChecker._
             }
           }
 
-          val smOpt = unifies(typeHierarchy, expId.attr.posOpt, T, argTypes, m.tpe.args, repArgs)
+          val smOpt = unifies(typeHierarchy, expId.attr.posOpt, TypeRelation.Subtype, argTypes, m.tpe.args, repArgs)
           smOpt match {
             case Some(sm) =>
               val ok = checkUnboundTypeVar(expId.attr.posOpt, m, sm, m.typeParams, repArgs)
@@ -2107,7 +2140,8 @@ import TypeChecker._
 
           @pure def make(eArgs: ISZ[AST.Exp], tpeOpt: Option[AST.Typed], funType: AST.Typed.Fun): AST.Exp = {
             val ro: Option[AST.ResolvedInfo] = mResOpt.get match {
-              case r: AST.ResolvedInfo.Method => Some(r(tpeOpt = Some(funType)))
+              case r: AST.ResolvedInfo.Method =>
+                if (funType == r.tpeOpt.get) Some(r) else Some(r(tpeOpt = Some(funType)))
               case _: AST.ResolvedInfo.BuiltIn => mResOpt
               case _ => halt(s"Unexpected symbol info: ${resOpt.get}")
             }
@@ -2319,7 +2353,8 @@ import TypeChecker._
                   invokeExp.args
                 }
               val ro: Option[AST.ResolvedInfo] = resOpt.get match {
-                case r: AST.ResolvedInfo.Method => Some(r(tpeOpt = Some(funType)))
+                case r: AST.ResolvedInfo.Method =>
+                  if (r.tpeOpt.get == funType) Some(r) else Some(r(tpeOpt = Some(funType)))
                 case _: AST.ResolvedInfo.BuiltIn => resOpt
                 case _ => halt(s"Unexpected symbol info: ${resOpt.get}")
               }
@@ -3065,7 +3100,8 @@ import TypeChecker._
                         ok = F
                         return partialResult
                       }
-                      val smOpt = unify(typeHierarchy, pattern.posOpt, T, expected, info.tpe, reporter)
+                      val smOpt =
+                        unify(typeHierarchy, pattern.posOpt, TypeRelation.Subtype, expected, info.tpe, reporter)
                       smOpt match {
                         case Some(sm) =>
                           val ok2 = checkUnboundTypeVar(
