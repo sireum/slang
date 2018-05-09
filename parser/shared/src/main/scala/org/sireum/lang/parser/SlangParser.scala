@@ -2525,13 +2525,25 @@ class SlangParser(
       override def preStmtMethod(ctx: Unit, o: AST.Stmt.Method): AST.Transformer.PreResult[Unit, AST.Stmt] = {
         val id = o.sig.id.value.value
         if (set.contains(id)) {
-          reporter.error(o.sig.id.attr.posOpt, SlangParser.messageKind, s"Cannot redeclare nested method '$id'.")
+          reporter
+            .error(o.sig.id.attr.posOpt, SlangParser.messageKind, s"Cannot redeclare nested method '$id' in Slang.")
+        }
+        if (o.sig.typeParams.nonEmpty) {
+          reporter
+            .error(o.sig.id.attr.posOpt, SlangParser.messageKind, "Cannot declare generic nested methods in Slang.")
         }
         set = set + id
         super.preStmtMethod(ctx, o)
       }
     })
-    transformer.transformStmt((), m)
+    m.bodyOpt match {
+      case Some(body) =>
+        for (stmt <- body.stmts) {
+          transformer.transformStmt((), stmt)
+        }
+      case _ =>
+    }
+
   }
 
   def cid(t: Pat.Var): AST.Id = cid(t.name.value, t.pos)
