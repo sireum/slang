@@ -544,8 +544,8 @@ object TypeOutliner {
     info: TypeInfo.Members,
     reporter: Reporter
   ): (TypeInfo.Members, ISZ[AST.Typed.Name], ISZ[AST.Type.Named]) = {
+    val vars = info.vars
     var specVars = info.specVars
-    var vars = info.vars
     var specMethods = info.specMethods
     var methods = info.methods
     var refinements = info.refinements
@@ -649,25 +649,6 @@ object TypeOutliner {
       }
     }
 
-    def inheritVar(vInfo: Info.Var, posOpt: Option[Position], substMap: HashMap[String, AST.Typed]): Unit = {
-      val owner = vInfo.owner
-      var v = vInfo.ast
-      val id = v.id.value
-      val ok = checkInherit(id, owner, posOpt)
-      if (ok) {
-        if (substMap.isEmpty) {
-          if (v.initOpt.nonEmpty) {
-            v = v(initOpt = None())
-          }
-          vars = vars + id ~> vInfo(ast = v)
-        } else {
-          val t = v.tipeOpt.get.typed(v.tipeOpt.get.typedOpt.get.subst(substMap))
-          v = v(tipeOpt = Some(t), initOpt = None())
-          vars = vars + id ~> vInfo(ast = v, typedOpt = t.typedOpt)
-        }
-      }
-    }
-
     def inheritSpecMethod(
       smInfo: Info.SpecMethod,
       posOpt: Option[Position],
@@ -719,24 +700,6 @@ object TypeOutliner {
       val t1 = m.typedOpt.get.deBruijn
       val t2 = supM.typedOpt.get.subst(substMap).deBruijn
       return typeHierarchy.isRefinement(t1, t2)
-    }
-
-    def checkVarRefinement(
-      m: AST.Stmt.Method,
-      v: AST.Stmt.Var,
-      substMap: HashMap[String, AST.Typed],
-      posOpt: Option[Position]
-    ): B = {
-      if (m.sig.typeParams.nonEmpty) {
-        return F
-      }
-      if (m.sig.hasParams || m.sig.params.nonEmpty) {
-        return F
-      }
-      val rt = m.sig.returnType.typedOpt.get.subst(substMap)
-      val t = v.tipeOpt.get.typedOpt.get
-      val r = typeHierarchy.isSubType(t, rt)
-      return r
     }
 
     def inheritMethod(mInfo: Info.Method, posOpt: Option[Position], substMap: HashMap[String, AST.Typed]): Unit = {
@@ -873,9 +836,6 @@ object TypeOutliner {
                       }
                       for (p <- ti.specVars.values) {
                         inheritSpecVar(p, parent.attr.posOpt, substMap)
-                      }
-                      for (p <- ti.vars.values) {
-                        inheritVar(p, parent.attr.posOpt, substMap)
                       }
                       for (p <- ti.specMethods.values) {
                         inheritSpecMethod(p, parent.attr.posOpt, substMap)

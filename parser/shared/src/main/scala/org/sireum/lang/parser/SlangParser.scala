@@ -465,22 +465,7 @@ class SlangParser(
 
   def translateVal(enclosing: Enclosing.Type, stat: Defn.Val): AST.Stmt = {
     var hasError = false
-    enclosing match {
-      case Enclosing.Top | Enclosing.Object | Enclosing.ExtObject | Enclosing.DatatypeClass | Enclosing.RecordClass |
-          Enclosing.Method | Enclosing.Block =>
-      case _ =>
-        hasError = true
-        if (isWorksheet)
-          errorInSlang(
-            stat.pos,
-            "Val declarations can only appear at the top-level, inside objects, classes, methods, or code blocks"
-          )
-        else errorInSlang(stat.pos, "Val declarations can only appear inside objects, classes, methods, or code blocks")
-    }
     val mods = stat.mods
-    val patsnel = stat.pats
-    val tpeopt = stat.decltpe
-    val expr = stat.rhs
     var hasSpec = false
     for (mod <- mods) mod match {
       case mod"@spec" =>
@@ -493,6 +478,22 @@ class SlangParser(
         hasError = true
         error(mod.pos, "Only the @spec modifier is allowed for val declarations.")
     }
+    enclosing match {
+      case Enclosing.Top | Enclosing.Object | Enclosing.ExtObject | Enclosing.DatatypeClass | Enclosing.RecordClass |
+          Enclosing.Method | Enclosing.Block =>
+      case Enclosing.Sig | Enclosing.DatatypeTrait | Enclosing.RecordTrait if hasSpec =>
+      case _ =>
+        hasError = true
+        if (isWorksheet)
+          errorInSlang(
+            stat.pos,
+            "Val declarations can only appear at the top-level, inside objects, classes, methods, or code blocks"
+          )
+        else errorInSlang(stat.pos, "Val declarations can only appear inside objects, classes, methods, or code blocks")
+    }
+    val patsnel = stat.pats
+    val tpeopt = stat.decltpe
+    val expr = stat.rhs
     val isDollarExpr = isDollar(expr)
     if (tpeopt.isEmpty && !(enclosing match {
         case Enclosing.Top | Enclosing.Method | Enclosing.Block => true
@@ -555,9 +556,23 @@ class SlangParser(
 
   def translateVar(enclosing: Enclosing.Type, stat: Defn.Var): AST.Stmt = {
     var hasError = false
+    val mods = stat.mods
+    var hasSpec = false
+    for (mod <- mods) mod match {
+      case mod"@spec" =>
+        if (hasSpec) {
+          hasError = true
+          error(mod.pos, "Redundant @spec.")
+        }
+        hasSpec = true
+      case _ =>
+        hasError = true
+        error(mod.pos, "Only the @spec modifier is allowed for var declarations.")
+    }
     enclosing match {
       case Enclosing.Top | Enclosing.Object | Enclosing.ExtObject | Enclosing.RecordClass | Enclosing.Method |
           Enclosing.Block =>
+      case Enclosing.Sig | Enclosing.DatatypeTrait | Enclosing.RecordTrait if hasSpec =>
       case _ =>
         hasError = true
         if (isWorksheet)
@@ -571,22 +586,9 @@ class SlangParser(
             "Val declarations can only appear inside objects, @record classes, methods, or code blocks"
           )
     }
-    val mods = stat.mods
     val patsnel = stat.pats
     val tpeopt = stat.decltpe
     val expropt = stat.rhs
-    var hasSpec = false
-    for (mod <- mods) mod match {
-      case mod"@spec" =>
-        if (hasSpec) {
-          hasError = true
-          error(mod.pos, "Redundant @spec.")
-        }
-        hasSpec = true
-      case _ =>
-        hasError = true
-        error(mod.pos, "Only the @spec modifier is allowed for var declarations.")
-    }
     val isDollarExpr = expropt.exists(isDollar)
     if (tpeopt.isEmpty && !(enclosing match {
         case Enclosing.Top | Enclosing.Method | Enclosing.Block => true
