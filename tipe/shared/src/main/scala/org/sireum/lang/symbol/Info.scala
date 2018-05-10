@@ -362,13 +362,8 @@ object Info {
     }
   }
 
-  @datatype class Method(
-    owner: ISZ[String],
-    isInObject: B,
-    scope: Scope,
-    hasBody: B,
-    ast: AST.Stmt.Method
-  ) extends Info {
+  @datatype class Method(owner: ISZ[String], isInObject: B, scope: Scope, hasBody: B, ast: AST.Stmt.Method)
+      extends Info {
 
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
@@ -386,18 +381,26 @@ object Info {
       return ast.attr.typedOpt
     }
 
+    @pure def methodType: AST.Typed.Method = {
+      return typedOpt.get.asInstanceOf[AST.Typed.Method]
+    }
+
     @pure def resOpt: Option[AST.ResolvedInfo] = {
       return ast.attr.resOpt
+    }
+
+    @pure def methodRes: AST.ResolvedInfo.Method = {
+      return resOpt.get.asInstanceOf[AST.ResolvedInfo.Method]
+    }
+
+    @pure def builtInRes: AST.ResolvedInfo.BuiltIn = {
+      return resOpt.get.asInstanceOf[AST.ResolvedInfo.BuiltIn]
     }
 
   }
 
-  @datatype class SpecMethod(
-    val owner: ISZ[String],
-    isInObject: B,
-    scope: Scope,
-    ast: AST.Stmt.SpecMethod
-  ) extends Info {
+  @datatype class SpecMethod(val owner: ISZ[String], isInObject: B, scope: Scope, ast: AST.Stmt.SpecMethod)
+      extends Info {
 
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
@@ -417,6 +420,10 @@ object Info {
 
     @pure def resOpt: Option[AST.ResolvedInfo] = {
       return ast.attr.resOpt
+    }
+
+    @pure def methodRes: AST.ResolvedInfo.Method = {
+      return resOpt.get.asInstanceOf[AST.ResolvedInfo.Method]
     }
   }
 
@@ -462,6 +469,10 @@ object Info {
 
     @pure def resOpt: Option[AST.ResolvedInfo] = {
       return ast.attr.resOpt
+    }
+
+    @pure def methodRes: AST.ResolvedInfo.Method = {
+      return resOpt.get.asInstanceOf[AST.ResolvedInfo.Method]
     }
   }
 

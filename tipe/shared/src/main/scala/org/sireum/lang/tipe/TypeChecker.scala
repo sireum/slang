@@ -67,11 +67,6 @@ object TypeChecker {
   val assertMsgResOpt: Option[AST.ResolvedInfo] = Some(
     AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.AssertMsg)
   )
-  val assertume1TypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(F, F, ISZ(AST.Typed.b), AST.Typed.unit))
-
-  val assertume2TypedOpt: Option[AST.Typed] = Some(
-    AST.Typed.Fun(F, F, ISZ(AST.Typed.b, AST.Typed.string), AST.Typed.unit)
-  )
   val assumeResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Assume))
 
   val assumeMsgResOpt: Option[AST.ResolvedInfo] = Some(
@@ -465,6 +460,23 @@ object TypeChecker {
       i = i + 1
     }
     return Some(r)
+  }
+
+  def checkTypeUsage(posOpt: Option[Position], t: AST.Typed, reporter: Reporter): Unit = {
+    def err(): Unit = {
+      reporter.error(posOpt, typeCheckerKind, s"Invalid usage of type '$t'.")
+    }
+    t match {
+      case _: AST.Typed.Name => // skip
+      case _: AST.Typed.Enum => // skip
+      case _: AST.Typed.Fun => // skip
+      case _: AST.Typed.Method => err()
+      case _: AST.Typed.Methods => err()
+      case _: AST.Typed.Object => err()
+      case _: AST.Typed.Package => err()
+      case _: AST.Typed.Tuple => // skip
+      case _: AST.Typed.TypeVar => // skip
+    }
   }
 }
 
@@ -1084,12 +1096,10 @@ import TypeChecker._
       msgOpt match {
         case Some(msg) =>
           val (newMsg, _) = checkExp(AST.Typed.stringOpt, scope, msg, reporter)
-          val attr =
-            assertumeExp.attr(typedOpt = assertume2TypedOpt, resOpt = resOpt)
+          val attr = assertumeExp.attr(typedOpt = AST.Typed.unitOpt, resOpt = resOpt)
           return (assertumeExp(args = ISZ(newCondExp, newMsg), attr = attr), AST.Typed.unitOpt)
         case _ =>
-          val attr =
-            assertumeExp.attr(typedOpt = assertume1TypedOpt, resOpt = resOpt)
+          val attr = assertumeExp.attr(typedOpt = AST.Typed.unitOpt, resOpt = resOpt)
           return (assertumeExp(args = ISZ(newCondExp), attr = attr), AST.Typed.unitOpt)
       }
     }
@@ -1100,23 +1110,15 @@ import TypeChecker._
       args: ISZ[AST.Exp]
     ): (AST.Exp, Option[AST.Typed]) = {
       var newArgs = ISZ[AST.Exp]()
-      var argTypes: ISZ[AST.Typed] = {
-        val hasBool: B = resOpt.get match {
-          case AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Cprint) => T
-          case AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Cprintln) => T
-          case _ => F
-        }
-        if (hasBool) ISZ[AST.Typed](AST.Typed.b) else ISZ[AST.Typed]()
-      }
       for (arg <- args) {
         val (newArg, argTypeOpt) = checkExp(None(), scope, arg, reporter)
         argTypeOpt match {
-          case Some(argType) => argTypes = argTypes :+ argType
+          case Some(argType) => checkTypeUsage(arg.posOpt, argType, reporter)
           case _ =>
         }
         newArgs = newArgs :+ newArg
       }
-      val attr = printExp.attr(typedOpt = Some(AST.Typed.Fun(F, F, argTypes, AST.Typed.unit)), resOpt = resOpt)
+      val attr = printExp.attr(typedOpt = AST.Typed.unitOpt, resOpt = resOpt)
       return (printExp(args = newArgs, attr = attr), AST.Typed.unitOpt)
     }
 
@@ -1125,7 +1127,11 @@ import TypeChecker._
         reporter.error(haltExp.posOpt, typeCheckerKind, s"Expecting one argument, but ${args.size} found.")
         return (haltExp(attr = haltExp.attr(resOpt = haltResOpt, typedOpt = haltTypedOpt)), AST.Typed.nothingOpt)
       }
-      val (newArg, _) = checkExp(AST.Typed.stringOpt, scope, args(0), reporter)
+      val (newArg, argTypeOpt) = checkExp(AST.Typed.stringOpt, scope, args(0), reporter)
+      argTypeOpt match {
+        case Some(argType) => checkTypeUsage(newArg.posOpt, argType, reporter)
+        case _ =>
+      }
       return (
         haltExp(args = ISZ(newArg), attr = haltExp.attr(resOpt = haltResOpt, typedOpt = haltTypedOpt)),
         AST.Typed.nothingOpt
@@ -1343,7 +1349,9 @@ import TypeChecker._
         val (newArg, argTypeOpt) = checkExp(expecteds(i), scope, arg, reporter)
         newArgs = newArgs :+ newArg
         argTypeOpt match {
-          case Some(argType) => argTypes = argTypes :+ argType
+          case Some(argType) =>
+            checkTypeUsage(arg.posOpt, argType, reporter)
+            argTypes = argTypes :+ argType
           case _ => ok = F
         }
         i = i + 1

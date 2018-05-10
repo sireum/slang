@@ -185,7 +185,7 @@ object TypeOutliner {
     val sigOpt = outlineMethodSig(info.scope, sm.sig, reporter)
     sigOpt match {
       case Some((sig, tVars)) =>
-        val res = info.resOpt.get.asInstanceOf[AST.ResolvedInfo.Method]
+        val res = info.methodRes
         val tOpt: Option[AST.Typed] = Some(
           AST.Typed.Method(
             T,
@@ -209,7 +209,7 @@ object TypeOutliner {
     val sigOpt = outlineMethodSig(info.scope, m.sig, reporter)
     sigOpt match {
       case Some((sig, tVars)) =>
-        val res = info.resOpt.get.asInstanceOf[AST.ResolvedInfo.Method]
+        val res = info.methodRes
         val tOpt: Option[AST.Typed] = Some(
           AST.Typed.Method(
             T,
@@ -233,7 +233,7 @@ object TypeOutliner {
     val sigOpt = outlineMethodSig(info.scope, m.sig, reporter)
     sigOpt match {
       case Some((sig, tVars)) =>
-        val res = info.resOpt.get.asInstanceOf[AST.ResolvedInfo.Method]
+        val res = info.methodRes
         val tOpt: Option[AST.Typed] = Some(
           AST.Typed.Method(
             T,
@@ -484,7 +484,7 @@ object TypeOutliner {
       val sigOpt = outlineMethodSig(scope, sm.sig, reporter)
       sigOpt match {
         case Some((sig, tVars)) =>
-          val res = smInfo.resOpt.get.asInstanceOf[AST.ResolvedInfo.Method]
+          val res = smInfo.methodRes
           val tOpt: Option[AST.Typed] = Some(
             AST.Typed
               .Method(F, AST.MethodMode.Spec, tVars, smInfo.owner, id, sig.params.map(p => p.id.value), sig.funType)
@@ -506,7 +506,7 @@ object TypeOutliner {
       val sigOpt = outlineMethodSig(scope, m.sig, reporter)
       sigOpt match {
         case Some((sig, tVars)) =>
-          val res = mInfo.resOpt.get.asInstanceOf[AST.ResolvedInfo.Method]
+          val res = mInfo.methodRes
           val tOpt: Option[AST.Typed] = Some(
             AST.Typed
               .Method(F, AST.MethodMode.Method, tVars, mInfo.owner, id, sig.params.map(p => p.id.value), sig.funType)
