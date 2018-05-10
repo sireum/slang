@@ -370,46 +370,23 @@ object TypeChecker {
         }
         return Some(r)
       case (expected: AST.Typed.Fun, _) if expected.isByName =>
-        unify(th, posOpt, typeRel, expected.ret, tpe, reporter)
-      case (_, tpe: AST.Typed.Fun) if tpe.isByName => unify(th, posOpt, typeRel, expected, tpe.ret, reporter)
+        val r = unify(th, posOpt, typeRel, expected.ret, tpe, reporter)
+        return r
+      case (_, tpe: AST.Typed.Fun) if tpe.isByName =>
+        val r = unify(th, posOpt, typeRel, expected, tpe.ret, reporter)
+        return r
       case (expected: AST.Typed.Fun, tpe: AST.Typed.Fun) =>
-        val size = expected.args.size
-        if (size != tpe.args.size) {
-          err()
-          return None()
-        }
-        var i = 0
-        var r = HashMap.empty[String, AST.Typed]
-        while (i < size) {
-          val mOpt = unify(th, posOpt, TypeRelation.Equal, expected.args(i), tpe.args(i), reporter)
-          mOpt match {
-            case Some(m) =>
-              unifyCombine(r, m) match {
-                case Some(c) => r = c
-                case _ => err(); return None()
-              }
-            case _ => return None()
-          }
-          i = i + 1
-        }
-        val mOpt = unify(th, posOpt, TypeRelation.Equal, expected.ret, tpe.ret, reporter)
-        mOpt match {
-          case Some(m) =>
-            unifyCombine(r, m) match {
-              case Some(c) => r = c
-              case _ => err(); return None()
-            }
-          case _ => return None()
-        }
-        return Some(r)
+        val r = unifyFun(typeCheckerKind, th, posOpt, TypeRelation.Equal, expected, tpe, reporter)
+        return r
       case _ => return None()
     }
   }
 
-  def unifyMethod(
+  def unifyFun(
     kind: String,
     th: TypeHierarchy,
     posOpt: Option[Position],
+    typeRel: TypeRelation.Type,
     expected: AST.Typed.Fun,
     tpe: AST.Typed.Fun,
     reporter: Reporter
@@ -417,17 +394,20 @@ object TypeChecker {
     def err(): Unit = {
       reporter.error(posOpt, kind, s"Could not unify type '$expected' with '$tpe'.")
     }
-    val expectedFun = expected
-    val tpeFun = tpe.deBruijn.asInstanceOf[AST.Typed.Fun]
-    val size = expectedFun.args.size
-    if (size != tpeFun.args.size) {
+    val size = expected.args.size
+    if (size != tpe.args.size) {
       err()
       return None()
     }
     var i = 0
     var r = HashMap.empty[String, AST.Typed]
+    val mode: TypeRelation.Type = typeRel match {
+      case TypeRelation.Subtype => TypeRelation.Supertype
+      case TypeRelation.Supertype => TypeRelation.Subtype
+      case TypeRelation.Equal => typeRel
+    }
     while (i < size) {
-      val mOpt = unify(th, posOpt, TypeRelation.Supertype, expectedFun.args(i), tpeFun.args(i), reporter)
+      val mOpt = unify(th, posOpt, mode, expected.args(i), tpe.args(i), reporter)
       mOpt match {
         case Some(m) =>
           unifyCombine(r, m) match {
@@ -438,7 +418,7 @@ object TypeChecker {
       }
       i = i + 1
     }
-    val mOpt = unify(th, posOpt, TypeRelation.Subtype, expectedFun.ret, tpeFun.ret, reporter)
+    val mOpt = unify(th, posOpt, typeRel, expected.ret, tpe.ret, reporter)
     mOpt match {
       case Some(m) =>
         unifyCombine(r, m) match {
