@@ -43,6 +43,7 @@ object TypeChecker {
     'F32
     'F64
     'R
+    'String
   }
 
   @enum object BuiltInKind {
@@ -498,6 +499,7 @@ import TypeChecker._
             case AST.Typed.f32Name => return Some(BasicKind.F32)
             case AST.Typed.f64Name => return Some(BasicKind.F64)
             case AST.Typed.rName => return Some(BasicKind.R)
+            case AST.Typed.stringName => return Some(BasicKind.String)
             case _ =>
           }
         }

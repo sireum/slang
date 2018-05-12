@@ -1435,7 +1435,8 @@ object Typed {
   val rName: ISZ[String] = sireumName :+ "R"
   val r: Typed.Name = Typed.Name(rName, ISZ())
   val rOpt: Option[Typed] = Some(r)
-  val string: Typed.Name = Typed.Name(sireumName :+ "String", ISZ())
+  val stringName: ISZ[String] = sireumName :+ "String"
+  val string: Typed.Name = Typed.Name(stringName, ISZ())
   val stringOpt: Option[Typed] = Some(string)
   val st: Typed.Name = Typed.Name(sireumName :+ "ST", ISZ())
   val stOpt: Option[Typed] = Some(st)
