@@ -1235,7 +1235,7 @@ import TypeChecker._
       val lOpt = basicKind(scope, leftType, binaryExp.left.posOpt, reporter)
 
       lOpt match {
-        case Some(leftKind) =>
+        case Some(leftKind) if leftKind != BasicKind.String || AST.Util.isCompareBinop(binaryExp.op) =>
           reporter.reports(rep.messages)
           val (newRight, rightTypeOpt) = checkExp(None(), scope, binaryExp.right, reporter)
 
