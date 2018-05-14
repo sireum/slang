@@ -1226,7 +1226,7 @@ object Typed {
   @datatype class Fun(isPure: B, isByName: B, args: ISZ[Typed], ret: Typed) extends Typed {
 
     @pure override def isPureFun: B = {
-      return F
+      return isPure
     }
 
     @pure override def string: String = {
