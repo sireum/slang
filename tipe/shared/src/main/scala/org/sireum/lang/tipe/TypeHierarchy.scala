@@ -234,7 +234,7 @@ object TypeHierarchy {
       i = i + 1
     }
 
-    if (typeNames.size != 0 && typeNames.size + 1 != types.size) {
+    if (typeNames.size != z"0" && typeNames.size + 1 != types.size) {
       return None()
     }
 
@@ -294,7 +294,7 @@ object TypeHierarchy {
       i = i + 1
     }
 
-    if (typeNames.size != 0 && typeNames.size + 1 != types.size) {
+    if (typeNames.size != z"0" && typeNames.size + 1 != types.size) {
       return None()
     }
 
@@ -351,9 +351,33 @@ object TypeHierarchy {
   }
 
   def typed(scope: Scope, tipe: AST.Type, reporter: Reporter): Option[AST.Type] = {
-    def checkNothing(t: AST.Typed): Unit = {
+    def check(t: AST.Typed): Unit = {
       if (t == AST.Typed.nothing) {
         reporter.error(tipe.posOpt, TypeChecker.typeCheckerKind, s"Cannot use type '$t'.")
+      } else {
+        t match {
+          case t: AST.Typed.Name =>
+            if ((t.ids == AST.Typed.isName || t.ids == AST.Typed.msName) && t.args.size > 0) {
+              t.args(0) match {
+                case it: AST.Typed.Name =>
+                  if (it != AST.Typed.z) {
+                    typeMap.get(it.ids) match {
+                      case Some(_: TypeInfo.SubZ) =>
+                      case Some(_) =>
+                        reporter.error(
+                          tipe.posOpt,
+                          TypeChecker.typeCheckerKind,
+                          s"Cannot use type '$t' as index for '${(t.ids, ".")}'."
+                        )
+                      case _ =>
+                    }
+                  }
+                case _: AST.Typed.TypeVar =>
+                case _ =>
+              }
+            }
+          case _ =>
+        }
       }
     }
     tipe match {
@@ -386,7 +410,7 @@ object TypeHierarchy {
               return None()
             }
             val tpe = dealias(AST.Typed.Name(ti.name, argTypes), tipe.posOpt, reporter)
-            checkNothing(tpe)
+            check(tpe)
             return Some(tipe(typeArgs = newTypeArgs, attr = tipe.attr(typedOpt = Some(tpe))))
           case Some(ti: TypeInfo.TypeVar) =>
             if (newTypeArgs.nonEmpty) {
@@ -413,7 +437,7 @@ object TypeHierarchy {
               case _ => halt("Infeasible")
             }
             if (newTypeArgs.size != p._2) {
-              if (p._2 == 0) {
+              if (p._2 == z"0") {
                 reporter.error(
                   tipe.posOpt,
                   TypeChecker.typeCheckerKind,
@@ -429,7 +453,7 @@ object TypeHierarchy {
               return None()
             }
             val t = AST.Typed.Name(p._3, argTypes)
-            checkNothing(t)
+            check(t)
             return Some(tipe(typeArgs = newTypeArgs, attr = tipe.attr(typedOpt = Some(t))))
           case _ =>
             reporter

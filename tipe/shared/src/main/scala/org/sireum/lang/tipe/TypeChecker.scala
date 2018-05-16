@@ -469,7 +469,7 @@ object TypeChecker {
     }
     t match {
       case _: AST.Typed.Name => // skip
-      case _: AST.Typed.Enum => // skip
+      case _: AST.Typed.Enum => err()
       case _: AST.Typed.Fun => // skip
       case _: AST.Typed.Method => err()
       case _: AST.Typed.Methods => err()
