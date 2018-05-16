@@ -581,7 +581,7 @@ object Pattern {
 
 object Exp {
 
-  @datatype class LitB(value: B, @hidden attr: Attr) extends Exp with Lit {
+  @datatype class LitB(val value: B, @hidden attr: Attr) extends Exp with Lit {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -592,7 +592,7 @@ object Exp {
     }
   }
 
-  @datatype class LitC(value: C, @hidden attr: Attr) extends Exp with Lit {
+  @datatype class LitC(val value: C, @hidden attr: Attr) extends Exp with Lit {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -603,7 +603,7 @@ object Exp {
     }
   }
 
-  @datatype class LitZ(value: Z, @hidden attr: Attr) extends Exp with Lit {
+  @datatype class LitZ(val value: Z, @hidden attr: Attr) extends Exp with Lit {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -614,7 +614,7 @@ object Exp {
     }
   }
 
-  @datatype class LitF32(value: F32, @hidden attr: Attr) extends Exp with Lit {
+  @datatype class LitF32(val value: F32, @hidden attr: Attr) extends Exp with Lit {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -625,7 +625,7 @@ object Exp {
     }
   }
 
-  @datatype class LitF64(value: F64, @hidden attr: Attr) extends Exp with Lit {
+  @datatype class LitF64(val value: F64, @hidden attr: Attr) extends Exp with Lit {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -636,7 +636,7 @@ object Exp {
     }
   }
 
-  @datatype class LitR(value: R, @hidden attr: Attr) extends Exp with Lit {
+  @datatype class LitR(val value: R, @hidden attr: Attr) extends Exp with Lit {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -647,7 +647,7 @@ object Exp {
     }
   }
 
-  @datatype class LitString(value: String, @hidden attr: Attr) extends Exp with Lit {
+  @datatype class LitString(val value: String, @hidden attr: Attr) extends Exp with Lit {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
