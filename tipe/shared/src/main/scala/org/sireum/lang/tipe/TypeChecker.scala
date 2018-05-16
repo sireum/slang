@@ -1054,6 +1054,8 @@ import TypeChecker._
             id.native match {
               case "byName" => return (info.byNameTypedOpt, Info.Enum.byNameResOpt, typeArgs)
               case "byOrdinal" => return (info.byOrdinalTypedOpt, Info.Enum.byOrdinalResOpt, typeArgs)
+              case "elements" => return (info.elementsTypedOpt, Info.Enum.elementsResOpt, typeArgs)
+              case "numOfElements" => return (info.numOfElementsTypedOpt, Info.Enum.numOfElementsResOpt, typeArgs)
               case _ =>
             }
             info.elements.get(id) match {

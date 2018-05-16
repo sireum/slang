@@ -1498,6 +1498,8 @@ object JSON {
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.Cprintln => "Cprintln"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.EnumByName => "EnumByName"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.EnumByOrdinal => "EnumByOrdinal"
+        case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.EnumElements => "EnumElements"
+        case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.EnumNumOfElements => "EnumNumOfElements"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.EnumName => "EnumName"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.EnumOrdinal => "EnumOrdinal"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.Eprint => "Eprint"

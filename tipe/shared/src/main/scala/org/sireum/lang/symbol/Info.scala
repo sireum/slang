@@ -488,6 +488,14 @@ object Info {
       AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.EnumByOrdinal)
     )
 
+    val elementsResOpt: Option[AST.ResolvedInfo] = Some(
+      AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.EnumElements)
+    )
+
+    val numOfElementsResOpt: Option[AST.ResolvedInfo] = Some(
+      AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.EnumNumOfElements)
+    )
+
   }
 
   @datatype class Enum(
@@ -520,6 +528,30 @@ object Info {
         "byOrdinal",
         ISZ(),
         AST.Typed.Fun(T, F, ISZ(AST.Typed.z), AST.Typed.Name(AST.Typed.optionName, ISZ(elementTypedOpt.get)))
+      )
+    )
+
+    val elementsTypedOpt: Option[AST.Typed] = Some(
+      AST.Typed.Method(
+        T,
+        AST.MethodMode.Method,
+        ISZ(),
+        name,
+        "elements",
+        ISZ(),
+        AST.Typed.Fun(T, T, ISZ(), AST.Typed.Name(AST.Typed.isName, ISZ(AST.Typed.z, elementTypedOpt.get)))
+      )
+    )
+
+    val numOfElementsTypedOpt: Option[AST.Typed] = Some(
+      AST.Typed.Method(
+        T,
+        AST.MethodMode.Method,
+        ISZ(),
+        name,
+        "numOfElements",
+        ISZ(),
+        AST.Typed.Fun(T, T, ISZ(), AST.Typed.z)
       )
     )
   }

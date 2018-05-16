@@ -1644,6 +1644,8 @@ object ResolvedInfo {
       'Cprintln
       'EnumByName
       'EnumByOrdinal
+      'EnumElements
+      'EnumNumOfElements
       'EnumName
       'EnumOrdinal
       'Eprint
