@@ -577,14 +577,14 @@ import TypeChecker._
     reporter: Reporter
   ): Option[AST.Typed] = {
     def checkRange(n: Z, ast: AST.Stmt.SubZ): Unit = {
-      if (ast.hasMax) {
+      if (ast.hasMin) {
         if (n < ast.min) {
           reporter.error(posOpt, typeCheckerKind, s"Literal $value is lower than $prefix's minimum of ${ast.min}.")
         }
       }
-      if (ast.hasMin) {
+      if (ast.hasMax) {
         if (n > ast.max) {
-          reporter.error(posOpt, typeCheckerKind, s"Literal $value is lower than $prefix's minimum of ${ast.max}.")
+          reporter.error(posOpt, typeCheckerKind, s"Literal $value is higher than $prefix's maximum of ${ast.max}.")
         }
       }
     }
