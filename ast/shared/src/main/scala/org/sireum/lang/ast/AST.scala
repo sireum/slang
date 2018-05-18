@@ -832,8 +832,13 @@ object Exp {
     }
   }
 
-  @datatype class Invoke(receiverOpt: Option[Exp], id: Id, targs: ISZ[Type], args: ISZ[Exp], @hidden attr: ResolvedAttr)
-      extends Exp {
+  @datatype class Invoke(
+    receiverOpt: Option[Exp],
+    ident: Ident,
+    targs: ISZ[Type],
+    args: ISZ[Exp],
+    @hidden attr: ResolvedAttr
+  ) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -846,7 +851,7 @@ object Exp {
 
   @datatype class InvokeNamed(
     receiverOpt: Option[Exp],
-    id: Id,
+    ident: Ident,
     targs: ISZ[Type],
     args: ISZ[NamedArg],
     @hidden attr: ResolvedAttr

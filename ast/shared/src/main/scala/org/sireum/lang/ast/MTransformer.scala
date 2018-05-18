@@ -3323,22 +3323,22 @@ import MTransformer._
             MNone()
         case o2: Exp.Invoke =>
           val r0: MOption[Option[Exp]] = transformOption(o2.receiverOpt, transformExp _)
-          val r1: MOption[Id] = transformId(o2.id)
+          val r1: MOption[Exp.Ident] = transformExpIdent(o2.ident)
           val r2: MOption[IS[Z, Type]] = transformISZ(o2.targs, transformType _)
           val r3: MOption[IS[Z, Exp]] = transformISZ(o2.args, transformExp _)
           val r4: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
-            MSome(o2(receiverOpt = r0.getOrElse(o2.receiverOpt), id = r1.getOrElse(o2.id), targs = r2.getOrElse(o2.targs), args = r3.getOrElse(o2.args), attr = r4.getOrElse(o2.attr)))
+            MSome(o2(receiverOpt = r0.getOrElse(o2.receiverOpt), ident = r1.getOrElse(o2.ident), targs = r2.getOrElse(o2.targs), args = r3.getOrElse(o2.args), attr = r4.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Exp.InvokeNamed =>
           val r0: MOption[Option[Exp]] = transformOption(o2.receiverOpt, transformExp _)
-          val r1: MOption[Id] = transformId(o2.id)
+          val r1: MOption[Exp.Ident] = transformExpIdent(o2.ident)
           val r2: MOption[IS[Z, Type]] = transformISZ(o2.targs, transformType _)
           val r3: MOption[IS[Z, NamedArg]] = transformISZ(o2.args, transformNamedArg _)
           val r4: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
-            MSome(o2(receiverOpt = r0.getOrElse(o2.receiverOpt), id = r1.getOrElse(o2.id), targs = r2.getOrElse(o2.targs), args = r3.getOrElse(o2.args), attr = r4.getOrElse(o2.attr)))
+            MSome(o2(receiverOpt = r0.getOrElse(o2.receiverOpt), ident = r1.getOrElse(o2.ident), targs = r2.getOrElse(o2.targs), args = r3.getOrElse(o2.args), attr = r4.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Exp.If =>
@@ -4689,6 +4689,42 @@ import MTransformer._
      case MSome(result: Exp.LitString) => MSome[Exp.LitString](result)
      case MSome(_) => halt("Can only produce object of type Exp.LitString")
      case _ => MNone[Exp.LitString]()
+    }
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformExpIdent(o: Exp.Ident): MOption[Exp.Ident] = {
+    val preR: PreResult[Exp.Ident] = preExpIdent(o) match {
+     case PreResult(continu, MSome(r: Exp.Ident)) => PreResult(continu, MSome[Exp.Ident](r))
+     case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp.Ident")
+     case PreResult(continu, _) => PreResult(continu, MNone[Exp.Ident]())
+    }
+    val r: MOption[Exp.Ident] = if (preR.continu) {
+      val o2: Exp.Ident = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[Id] = transformId(o2.id)
+      val r1: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+        MSome(o2(id = r0.getOrElse(o2.id), attr = r1.getOrElse(o2.attr)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Exp.Ident = r.getOrElse(o)
+    val postR: MOption[Exp.Ident] = postExpIdent(o2) match {
+     case MSome(result: Exp.Ident) => MSome[Exp.Ident](result)
+     case MSome(_) => halt("Can only produce object of type Exp.Ident")
+     case _ => MNone[Exp.Ident]()
     }
     if (postR.nonEmpty) {
       return postR

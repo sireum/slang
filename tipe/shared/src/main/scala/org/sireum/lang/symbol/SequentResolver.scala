@@ -94,7 +94,7 @@ object SequentResolver {
     }
 
     override def preExpInvoke(o: Exp.Invoke): PreResult[Exp] = {
-      val id = o.id
+      val id = o.ident.id
       val k = id.value
       scope.resolve(k) match {
         case Some(_) =>
@@ -129,7 +129,7 @@ object SequentResolver {
         case _ =>
           freeVarMap.get(k) match {
             case Some((_, n)) =>
-              if (n != 0) {
+              if (n != z"0") {
                 reporter.error(
                   o.attr.posOpt,
                   resolverKind,

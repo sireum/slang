@@ -391,7 +391,7 @@ class SlangParser(
 
       override def preStmtExpr(ctx: Unit, o: AST.Stmt.Expr): AST.Transformer.PreResult[Unit, AST.Stmt] = {
         o.exp match {
-          case AST.Exp.Invoke(expOpt, AST.Id(id), _, args) if topLevelMethodsIds.contains(id) =>
+          case AST.Exp.Invoke(expOpt, AST.Exp.Ident(AST.Id(id)), _, args) if topLevelMethodsIds.contains(id) =>
             expOpt.foreach(e => transformer.transformExp((), e))
             for (arg <- args) {
               transformer.transformExp((), arg)
@@ -402,22 +402,22 @@ class SlangParser(
       }
 
       override def preExpInvoke(ctx: Unit, o: AST.Exp.Invoke): AST.Transformer.PreResult[Unit, AST.Exp] = {
-        if (topLevelMethodsIds.contains(o.id.value)) {
+        if (topLevelMethodsIds.contains(o.ident.id.value)) {
           reporter.error(
-            o.id.attr.posOpt,
+            o.ident.attr.posOpt,
             SlangParser.messageKind,
-            s"Method '${o.id.value}' can only be called at the statement level."
+            s"Method '${o.ident.id.value}' can only be called at the statement level."
           )
         }
         super.preExpInvoke(ctx, o)
       }
 
       override def preExpInvokeNamed(ctx: Unit, o: AST.Exp.InvokeNamed): AST.Transformer.PreResult[Unit, AST.Exp] = {
-        if (topLevelMethodsIds.contains(o.id.value)) {
+        if (topLevelMethodsIds.contains(o.ident.id.value)) {
           reporter.error(
-            o.id.attr.posOpt,
+            o.ident.attr.posOpt,
             SlangParser.messageKind,
-            s"Method '${o.id.value}' cannot be called using named arguments."
+            s"Method '${o.ident.id.value}' cannot be called using named arguments."
           )
         }
         super.preExpInvokeNamed(ctx, o)
@@ -1675,7 +1675,7 @@ class SlangParser(
     for (stmt <- stmts) {
       val (ret, hlt) = stmt match {
         case _: AST.Stmt.Return => (true, false)
-        case AST.Stmt.Expr(AST.Exp.Invoke(_, AST.Id(id), _, _)) if id.value == "halt" => (false, true)
+        case AST.Stmt.Expr(AST.Exp.Invoke(_, AST.Exp.Ident(AST.Id(id)), _, _)) if id.value == "halt" => (false, true)
         case _ => (false, false)
       }
       if ((ret || hlt) && Z(i) != stmts.size - 1) {
@@ -1703,7 +1703,9 @@ class SlangParser(
       case lhs: AST.Exp.Select if lhs.targs.isEmpty && lhs.receiverOpt.nonEmpty =>
         lhs.receiverOpt.foreach(receiver => checkLhs(receiver))
       case lhs: AST.Exp.Invoke
-          if lhs.id.value.value == "apply" && lhs.receiverOpt.nonEmpty && lhs.targs.isEmpty && lhs.args.size == Z(1) =>
+          if lhs.ident.id.value.value == "apply" && lhs.receiverOpt.nonEmpty && lhs.targs.isEmpty && lhs.args.size == Z(
+            1
+          ) =>
         lhs.receiverOpt.foreach(receiver => checkLhs(receiver))
       case _ =>
         reporter.error(lhs.posOpt, SlangParser.messageKind, s"Invalid assignment left-hand-side form in Slang: $lhs")
@@ -1712,7 +1714,7 @@ class SlangParser(
   }
 
   def translateAssign(enclosing: Enclosing.Type, stat: Term.Assign): AST.Stmt = {
-    stmtCheck(enclosing, stat, "Assigments")
+    stmtCheck(enclosing, stat, "Assignments")
     val lhs = translateExp(stat.lhs)
     AST.Stmt.Assign(checkLhs(lhs), translateAssignExp(stat.rhs), attr(stat.pos))
   }
@@ -1726,7 +1728,7 @@ class SlangParser(
   ): AST.Stmt = {
     val pos = stat.pos
 
-    stmtCheck(enclosing, stat, "Assigments")
+    stmtCheck(enclosing, stat, "Assignments")
     var lhs = translateExp(fun)
     val prevPos = fun.pos
     if (argss.nonEmpty) {
@@ -2303,14 +2305,19 @@ class SlangParser(
       case Left(args) =>
         AST.Exp.InvokeNamed(
           opt(receiverOpt.map(translateExp)),
-          name,
+          AST.Exp.Ident(name, resolvedAttr(namePos)),
           ISZ(tpes.map(translateType): _*),
           args,
           resolvedAttr(pos)
         )
       case Right(args) =>
-        AST.Exp
-          .Invoke(opt(receiverOpt.map(translateExp)), name, ISZ(tpes.map(translateType): _*), args, resolvedAttr(pos))
+        AST.Exp.Invoke(
+          opt(receiverOpt.map(translateExp)),
+          AST.Exp.Ident(name, resolvedAttr(namePos)),
+          ISZ(tpes.map(translateType): _*),
+          args,
+          resolvedAttr(pos)
+        )
     }
     var prevPos = namePos
     for (i <- 1 until argss.size) {
@@ -2418,8 +2425,17 @@ class SlangParser(
 
   def translateApply(fun: AST.Exp, termArgs: Seq[Term], pos: Position): AST.Exp = {
     translateArgs(termArgs) match {
-      case Left(args) => AST.Exp.InvokeNamed(Some(fun), cidNoCheck("apply", pos), ISZ(), args, resolvedAttr(pos))
-      case Right(args) => AST.Exp.Invoke(Some(fun), cidNoCheck("apply", pos), ISZ(), args, resolvedAttr(pos))
+      case Left(args) =>
+        AST.Exp.InvokeNamed(
+          Some(fun),
+          AST.Exp.Ident(cidNoCheck("apply", pos), resolvedAttr(pos)),
+          ISZ(),
+          args,
+          resolvedAttr(pos)
+        )
+      case Right(args) =>
+        AST.Exp
+          .Invoke(Some(fun), AST.Exp.Ident(cidNoCheck("apply", pos), resolvedAttr(pos)), ISZ(), args, resolvedAttr(pos))
     }
   }
 

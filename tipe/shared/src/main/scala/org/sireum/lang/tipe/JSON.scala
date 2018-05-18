@@ -1088,7 +1088,7 @@ object JSON {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Exp.Invoke""""),
         ("receiverOpt", printOption(F, o.receiverOpt, print_astExp _)),
-        ("id", print_astId(o.id)),
+        ("ident", print_astExpIdent(o.ident)),
         ("targs", printISZ(F, o.targs, print_astType _)),
         ("args", printISZ(F, o.args, print_astExp _)),
         ("attr", print_astResolvedAttr(o.attr))
@@ -1099,7 +1099,7 @@ object JSON {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Exp.InvokeNamed""""),
         ("receiverOpt", printOption(F, o.receiverOpt, print_astExp _)),
-        ("id", print_astId(o.id)),
+        ("ident", print_astExpIdent(o.ident)),
         ("targs", printISZ(F, o.targs, print_astType _)),
         ("args", printISZ(F, o.args, print_astNamedArg _)),
         ("attr", print_astResolvedAttr(o.attr))
@@ -4216,8 +4216,8 @@ object JSON {
       parser.parseObjectKey("receiverOpt")
       val receiverOpt = parser.parseOption(parse_astExp _)
       parser.parseObjectNext()
-      parser.parseObjectKey("id")
-      val id = parse_astId()
+      parser.parseObjectKey("ident")
+      val ident = parse_astExpIdent()
       parser.parseObjectNext()
       parser.parseObjectKey("targs")
       val targs = parser.parseISZ(parse_astType _)
@@ -4228,7 +4228,7 @@ object JSON {
       parser.parseObjectKey("attr")
       val attr = parse_astResolvedAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Exp.Invoke(receiverOpt, id, targs, args, attr)
+      return org.sireum.lang.ast.Exp.Invoke(receiverOpt, ident, targs, args, attr)
     }
 
     def parse_astExpInvokeNamed(): org.sireum.lang.ast.Exp.InvokeNamed = {
@@ -4243,8 +4243,8 @@ object JSON {
       parser.parseObjectKey("receiverOpt")
       val receiverOpt = parser.parseOption(parse_astExp _)
       parser.parseObjectNext()
-      parser.parseObjectKey("id")
-      val id = parse_astId()
+      parser.parseObjectKey("ident")
+      val ident = parse_astExpIdent()
       parser.parseObjectNext()
       parser.parseObjectKey("targs")
       val targs = parser.parseISZ(parse_astType _)
@@ -4255,7 +4255,7 @@ object JSON {
       parser.parseObjectKey("attr")
       val attr = parse_astResolvedAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Exp.InvokeNamed(receiverOpt, id, targs, args, attr)
+      return org.sireum.lang.ast.Exp.InvokeNamed(receiverOpt, ident, targs, args, attr)
     }
 
     def parse_astExpIf(): org.sireum.lang.ast.Exp.If = {

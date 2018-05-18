@@ -66,9 +66,11 @@ class LibraryTypeCheckingTest extends TestSuite {
           PostTipeAttrChecker.checkNameTypeMaps(nameInfo(th, name), typeInfo(th, name), reporter)
         }
       }
-      val bin = CustomMessagePack.fromTypeHierarchy(th)
-      val Either.Left(th2) = CustomMessagePack.toTypeHierarchy(bin)
-      assert(th == th2)
+      if (!reporter.hasError) {
+        val bin = CustomMessagePack.fromTypeHierarchy(th)
+        val Either.Left(th2) = CustomMessagePack.toTypeHierarchy(bin)
+        assert(th == th2)
+      }
       //collectStats(th.nameMap, th.typeMap)
       reporter.printMessages()
       assert(!reporter.hasIssue)

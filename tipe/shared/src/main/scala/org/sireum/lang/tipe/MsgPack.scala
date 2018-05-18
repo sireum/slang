@@ -1233,7 +1233,7 @@ object MsgPack {
     def write_astExpInvoke(o: org.sireum.lang.ast.Exp.Invoke): Unit = {
       writer.writeZ(Constants._astExpInvoke)
       writer.writeOption(o.receiverOpt, write_astExp _)
-      write_astId(o.id)
+      write_astExpIdent(o.ident)
       writer.writeISZ(o.targs, write_astType _)
       writer.writeISZ(o.args, write_astExp _)
       write_astResolvedAttr(o.attr)
@@ -1242,7 +1242,7 @@ object MsgPack {
     def write_astExpInvokeNamed(o: org.sireum.lang.ast.Exp.InvokeNamed): Unit = {
       writer.writeZ(Constants._astExpInvokeNamed)
       writer.writeOption(o.receiverOpt, write_astExp _)
-      write_astId(o.id)
+      write_astExpIdent(o.ident)
       writer.writeISZ(o.targs, write_astType _)
       writer.writeISZ(o.args, write_astNamedArg _)
       write_astResolvedAttr(o.attr)
@@ -3525,11 +3525,11 @@ object MsgPack {
         reader.expectZ(Constants._astExpInvoke)
       }
       val receiverOpt = reader.readOption(read_astExp _)
-      val id = read_astId()
+      val ident = read_astExpIdent()
       val targs = reader.readISZ(read_astType _)
       val args = reader.readISZ(read_astExp _)
       val attr = read_astResolvedAttr()
-      return org.sireum.lang.ast.Exp.Invoke(receiverOpt, id, targs, args, attr)
+      return org.sireum.lang.ast.Exp.Invoke(receiverOpt, ident, targs, args, attr)
     }
 
     def read_astExpInvokeNamed(): org.sireum.lang.ast.Exp.InvokeNamed = {
@@ -3542,11 +3542,11 @@ object MsgPack {
         reader.expectZ(Constants._astExpInvokeNamed)
       }
       val receiverOpt = reader.readOption(read_astExp _)
-      val id = read_astId()
+      val ident = read_astExpIdent()
       val targs = reader.readISZ(read_astType _)
       val args = reader.readISZ(read_astNamedArg _)
       val attr = read_astResolvedAttr()
-      return org.sireum.lang.ast.Exp.InvokeNamed(receiverOpt, id, targs, args, attr)
+      return org.sireum.lang.ast.Exp.InvokeNamed(receiverOpt, ident, targs, args, attr)
     }
 
     def read_astExpIf(): org.sireum.lang.ast.Exp.If = {

@@ -2757,22 +2757,22 @@ import Transformer._
             Result(r3.ctx, None())
         case o2: Exp.Invoke =>
           val r0: Result[Context, Option[Exp]] = transformOption(ctx, o2.receiverOpt, transformExp _)
-          val r1: Result[Context, Id] = transformId(r0.ctx, o2.id)
+          val r1: Result[Context, Exp.Ident] = transformExpIdent(r0.ctx, o2.ident)
           val r2: Result[Context, IS[Z, Type]] = transformISZ(r1.ctx, o2.targs, transformType _)
           val r3: Result[Context, IS[Z, Exp]] = transformISZ(r2.ctx, o2.args, transformExp _)
           val r4: Result[Context, ResolvedAttr] = transformResolvedAttr(r3.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty)
-            Result(r4.ctx, Some(o2(receiverOpt = r0.resultOpt.getOrElse(o2.receiverOpt), id = r1.resultOpt.getOrElse(o2.id), targs = r2.resultOpt.getOrElse(o2.targs), args = r3.resultOpt.getOrElse(o2.args), attr = r4.resultOpt.getOrElse(o2.attr))))
+            Result(r4.ctx, Some(o2(receiverOpt = r0.resultOpt.getOrElse(o2.receiverOpt), ident = r1.resultOpt.getOrElse(o2.ident), targs = r2.resultOpt.getOrElse(o2.targs), args = r3.resultOpt.getOrElse(o2.args), attr = r4.resultOpt.getOrElse(o2.attr))))
           else
             Result(r4.ctx, None())
         case o2: Exp.InvokeNamed =>
           val r0: Result[Context, Option[Exp]] = transformOption(ctx, o2.receiverOpt, transformExp _)
-          val r1: Result[Context, Id] = transformId(r0.ctx, o2.id)
+          val r1: Result[Context, Exp.Ident] = transformExpIdent(r0.ctx, o2.ident)
           val r2: Result[Context, IS[Z, Type]] = transformISZ(r1.ctx, o2.targs, transformType _)
           val r3: Result[Context, IS[Z, NamedArg]] = transformISZ(r2.ctx, o2.args, transformNamedArg _)
           val r4: Result[Context, ResolvedAttr] = transformResolvedAttr(r3.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty)
-            Result(r4.ctx, Some(o2(receiverOpt = r0.resultOpt.getOrElse(o2.receiverOpt), id = r1.resultOpt.getOrElse(o2.id), targs = r2.resultOpt.getOrElse(o2.targs), args = r3.resultOpt.getOrElse(o2.args), attr = r4.resultOpt.getOrElse(o2.attr))))
+            Result(r4.ctx, Some(o2(receiverOpt = r0.resultOpt.getOrElse(o2.receiverOpt), ident = r1.resultOpt.getOrElse(o2.ident), targs = r2.resultOpt.getOrElse(o2.targs), args = r3.resultOpt.getOrElse(o2.args), attr = r4.resultOpt.getOrElse(o2.attr))))
           else
             Result(r4.ctx, None())
         case o2: Exp.If =>
@@ -4123,6 +4123,42 @@ import Transformer._
      case Result(postCtx, Some(result: Exp.LitString)) => Result(postCtx, Some[Exp.LitString](result))
      case Result(_, Some(_)) => halt("Can only produce object of type Exp.LitString")
      case Result(postCtx, _) => Result(postCtx, None[Exp.LitString]())
+    }
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return Result(postR.ctx, Some(o2))
+    } else {
+      return Result(postR.ctx, None())
+    }
+  }
+
+  @pure def transformExpIdent(ctx: Context, o: Exp.Ident): Result[Context, Exp.Ident] = {
+    val preR: PreResult[Context, Exp.Ident] = pp.preExpIdent(ctx, o) match {
+     case PreResult(preCtx, continu, Some(r: Exp.Ident)) => PreResult(preCtx, continu, Some[Exp.Ident](r))
+     case PreResult(_, _, Some(_)) => halt("Can only produce object of type Exp.Ident")
+     case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp.Ident]())
+    }
+    val r: Result[Context, Exp.Ident] = if (preR.continu) {
+      val o2: Exp.Ident = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: Result[Context, Id] = transformId(ctx, o2.id)
+      val r1: Result[Context, ResolvedAttr] = transformResolvedAttr(r0.ctx, o2.attr)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+        Result(r1.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), attr = r1.resultOpt.getOrElse(o2.attr))))
+      else
+        Result(r1.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      Result(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      Result(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: Exp.Ident = r.resultOpt.getOrElse(o)
+    val postR: Result[Context, Exp.Ident] = pp.postExpIdent(r.ctx, o2) match {
+     case Result(postCtx, Some(result: Exp.Ident)) => Result(postCtx, Some[Exp.Ident](result))
+     case Result(_, Some(_)) => halt("Can only produce object of type Exp.Ident")
+     case Result(postCtx, _) => Result(postCtx, None[Exp.Ident]())
     }
     if (postR.resultOpt.nonEmpty) {
       return postR
