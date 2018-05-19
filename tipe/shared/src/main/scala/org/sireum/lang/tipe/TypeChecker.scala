@@ -61,6 +61,8 @@ object TypeChecker {
   val typeCheckerKind: String = "Type Checker"
   val errType: AST.Typed = AST.Typed.Name(ISZ(), ISZ())
 
+  val sTypeParams: ISZ[String] = ISZ("I", "V")
+
   val builtInMethods: HashSet[String] =
     HashSet ++ ISZ("assert", "assume", "println", "print", "cprintln", "cprint", "eprintln", "eprint", "halt")
   val assertResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Assert))
@@ -1674,13 +1676,12 @@ import TypeChecker._
                     yield valueTypeVar
                   val constructorType =
                     AST.Typed.Fun(T, F, argTypes, AST.Typed.Name(AST.Typed.isName, ISZ(indexTypeVar, valueTypeVar)))
-                  val typeParams = ISZ[String]("I", "V")
                   return (
                     Some(
                       AST.Typed.Method(
                         T,
                         AST.MethodMode.Constructor,
-                        typeParams,
+                        sTypeParams,
                         AST.Typed.sireumName,
                         "IS",
                         ISZ(),
@@ -1691,7 +1692,7 @@ import TypeChecker._
                       AST.ResolvedInfo.Method(
                         T,
                         AST.MethodMode.Constructor,
-                        typeParams,
+                        sTypeParams,
                         AST.Typed.sireumName,
                         "IS",
                         ISZ(),
@@ -1707,13 +1708,12 @@ import TypeChecker._
                     for (_ <- z"0" until numOfArgs) yield valueTypeVar
                   val constructorType: AST.Typed.Fun =
                     AST.Typed.Fun(T, F, argTypes, AST.Typed.Name(AST.Typed.msName, ISZ(indexTypeVar, valueTypeVar)))
-                  val typeParams = ISZ[String]("I", "V")
                   return (
                     Some(
                       AST.Typed.Method(
                         T,
                         AST.MethodMode.Constructor,
-                        typeParams,
+                        sTypeParams,
                         AST.Typed.sireumName,
                         "MS",
                         ISZ(),
@@ -1724,7 +1724,7 @@ import TypeChecker._
                       AST.ResolvedInfo.Method(
                         T,
                         AST.MethodMode.Constructor,
-                        typeParams,
+                        sTypeParams,
                         AST.Typed.sireumName,
                         "MS",
                         ISZ(),
@@ -1994,6 +1994,7 @@ import TypeChecker._
                     }
                     ps
                   }
+                  val typeParams = info.ast.typeParams.map[String](tp => tp.id.value)
                   val paramNames = params.map[String](p => p.id.value)
                   val paramTypes = params.map[AST.Typed](p => p.tipe.typedOpt.get)
                   val smOpt = unify(typeHierarchy, posOpt, TypeRelation.Equal, tpe, info.tpe, reporter)
@@ -3853,8 +3854,11 @@ import TypeChecker._
   def checkObject(info: Info.Object): TypeHierarchy => (TypeHierarchy, Reporter) @pure = {
     assert(info.outlined, st"${(info.name, ".")} is not outlined".render)
     val name = info.name
-    def getStmt(id: String): Option[AST.Stmt] = {
-      typeHierarchy.nameMap.get(name :+ id).get match {
+    @pure def getInfo(id: String): Info = {
+      return typeHierarchy.nameMap.get(name :+ id).get
+    }
+    @pure def getStmt(id: String): Option[AST.Stmt] = {
+      getInfo(id) match {
         case info: Info.Var => return Some(info.ast)
         case info: Info.SpecVar => return Some(info.ast)
         case info: Info.SpecMethod => return Some(info.ast)
@@ -3883,14 +3887,34 @@ import TypeChecker._
     val newStmtOpts = checkStmtOpts(scope, stmtOpts, reporter)
     var i = 0
     var newStmts = ISZ[AST.Stmt]()
+    var nameEntries = ISZ[(QName, Info)]()
     for (stmtOpt <- newStmtOpts) {
       stmtOpt match {
-        case Some(stmt) => newStmts = newStmts :+ stmt
+        case Some(stmt) =>
+          stmt match {
+            case stmt: AST.Stmt.Var =>
+              val v = getInfo(stmt.id.value).asInstanceOf[Info.Var]
+              nameEntries = nameEntries :+ (v.name ~> v(ast = stmt))
+            case stmt: AST.Stmt.SpecVar =>
+              val sv = getInfo(stmt.id.value).asInstanceOf[Info.SpecVar]
+              nameEntries = nameEntries :+ (sv.name ~> sv(ast = stmt))
+            case stmt: AST.Stmt.Method =>
+              val m = getInfo(stmt.sig.id.value).asInstanceOf[Info.Method]
+              nameEntries = nameEntries :+ (m.name ~> m(ast = stmt))
+            case stmt: AST.Stmt.SpecMethod =>
+              val sm = getInfo(stmt.sig.id.value).asInstanceOf[Info.SpecMethod]
+              nameEntries = nameEntries :+ (sm.name ~> sm(ast = stmt))
+            case stmt: AST.Stmt.ExtMethod =>
+              val em = getInfo(stmt.sig.id.value).asInstanceOf[Info.ExtMethod]
+              nameEntries = nameEntries :+ (em.name ~> em(ast = stmt))
+            case _ =>
+          }
+          newStmts = newStmts :+ stmt
         case _ => newStmts = newStmts :+ info.ast.stmts(i)
       }
       i = i + 1
     }
-    return (th: TypeHierarchy) =>
-      (th(nameMap = th.nameMap + info.name ~> info(ast = info.ast(stmts = newStmts))), reporter)
+    nameEntries = nameEntries :+ (info.name ~> info(ast = info.ast(stmts = newStmts)))
+    return (th: TypeHierarchy) => (th(nameMap = th.nameMap ++ nameEntries), reporter)
   }
 }

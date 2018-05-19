@@ -41,7 +41,9 @@ object PostTipeAttrChecker {
   val SpecDefResult: MTransformer.PreResult[SpecDef] = MTransformer.PreResult[SpecDef](F, MNone()) // TODO: Unskip contract
   val TypedResult: MTransformer.PreResult[TypedAttr] = MTransformer.PreResult[TypedAttr](F, MNone())
   val WhereDefResult: MTransformer.PreResult[WhereDef] = MTransformer.PreResult[WhereDef](F, MNone()) // TODO: Unskip contract
-
+  val avoidCheckNames: HashSet[QName] = HashSet ++ ISZ(
+    Typed.sireumName :+ "T", Typed.sireumName :+ "F"
+  )
   def checkNameTypeMaps(nameMap: NameMap, typeMap: TypeMap, reporter: Reporter): Unit = {
     val t = PostTipeAttrChecker(HashSSet.empty)
     for (info <- nameMap.values) {
@@ -53,6 +55,11 @@ object PostTipeAttrChecker {
               case _ => t.transformStmt(stmt)
             }
           }
+        case info: Info.Var if !avoidCheckNames.contains(info.owner :+ info.ast.id.value) => t.transformStmt(info.ast)
+        case info: Info.SpecVar => t.transformStmt(info.ast)
+        case info: Info.Method => t.transformStmt(info.ast)
+        case info: Info.SpecMethod => t.transformStmt(info.ast)
+        case info: Info.ExtMethod => t.transformStmt(info.ast)
         case _ =>
       }
     }
