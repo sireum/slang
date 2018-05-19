@@ -1191,8 +1191,8 @@ object Typed {
     }
 
     @pure override def string: String = {
-      return if (args.isEmpty) st"${(ids, ".")}".render
-      else st"${(ids, ".")}[${(args, ", ")}]".render
+      return if (args.isEmpty) st"${(short(ids), ".")}".render
+      else st"${(short(ids), ".")}[${(args, ", ")}]".render
     }
 
     @pure override def subst(m: HashMap[String, Typed]): Typed.Name = {
@@ -1647,6 +1647,10 @@ object Typed {
     )
   // @formatter:on
 
+  def short(ids: ISZ[String]): ISZ[String] = {
+    return if (ids.size >= 2 && ids(0) == string"org" && ids(1) == string"sireum") ops.ISZOps(ids).drop(2)
+    else ids
+  }
 }
 
 @datatype class Attr(posOpt: Option[Position])
