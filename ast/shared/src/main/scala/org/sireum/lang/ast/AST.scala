@@ -1166,6 +1166,8 @@ object WhereDef {
   }
 
   @pure def collectTypeVars: ISZ[String]
+
+  @pure def hasTypeVars: B
 }
 
 @enum object MethodMode {
@@ -1204,6 +1206,12 @@ object Typed {
       return for (arg <- args; tv <- arg.collectTypeVars) yield tv
     }
 
+    @pure override def hasTypeVars: B = {
+      for (arg <- args if arg.hasTypeVars) {
+        return T
+      }
+      return F
+    }
   }
 
   @datatype class Tuple(args: ISZ[Typed]) extends Typed {
@@ -1225,6 +1233,13 @@ object Typed {
 
     @pure override def collectTypeVars: ISZ[String] = {
       return for (arg <- args; tv <- arg.collectTypeVars) yield tv
+    }
+
+    @pure override def hasTypeVars: B = {
+      for (arg <- args if arg.hasTypeVars) {
+        return T
+      }
+      return F
     }
   }
 
@@ -1251,6 +1266,12 @@ object Typed {
       return (for (arg <- args; tv <- arg.collectTypeVars) yield tv) ++ ret.collectTypeVars
     }
 
+    @pure override def hasTypeVars: B = {
+      for (arg <- args if arg.hasTypeVars) {
+        return T
+      }
+      return ret.hasTypeVars
+    }
   }
 
   @datatype class TypeVar(id: String) extends Typed {
@@ -1276,6 +1297,10 @@ object Typed {
     @pure override def collectTypeVars: ISZ[String] = {
       return ISZ(id)
     }
+
+    @pure override def hasTypeVars: B = {
+      return T
+    }
   }
 
   @datatype class Package(name: ISZ[String]) extends Typed {
@@ -1294,6 +1319,10 @@ object Typed {
 
     @pure override def collectTypeVars: ISZ[String] = {
       return ISZ()
+    }
+
+    @pure override def hasTypeVars: B = {
+      return F
     }
   }
 
@@ -1318,6 +1347,10 @@ object Typed {
     @pure override def collectTypeVars: ISZ[String] = {
       return ISZ()
     }
+
+    @pure override def hasTypeVars: B = {
+      return F
+    }
   }
 
   @datatype class Enum(name: ISZ[String]) extends Typed {
@@ -1336,6 +1369,10 @@ object Typed {
 
     @pure override def collectTypeVars: ISZ[String] = {
       return ISZ()
+    }
+
+    @pure override def hasTypeVars: B = {
+      return F
     }
   }
 
@@ -1378,6 +1415,10 @@ object Typed {
     @pure override def collectTypeVars: ISZ[String] = {
       return tpe.collectTypeVars
     }
+
+    @pure override def hasTypeVars: B = {
+      return tpe.hasTypeVars
+    }
   }
 
   @datatype class Methods(methods: ISZ[Method]) extends Typed {
@@ -1396,6 +1437,13 @@ object Typed {
 
     @pure override def collectTypeVars: ISZ[String] = {
       return for (m <- methods; tv <- m.collectTypeVars) yield tv
+    }
+
+    @pure override def hasTypeVars: B = {
+      for (m <- methods if m.hasTypeVars) {
+        return T
+      }
+      return F
     }
   }
 
