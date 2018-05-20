@@ -2764,6 +2764,7 @@ import TypeChecker._
   }
 
   def checkStmts(
+    useLocalScope: B,
     expectedOpt: Option[AST.Typed],
     scope: Scope.Local,
     stmts: ISZ[AST.Stmt],
@@ -2776,7 +2777,9 @@ import TypeChecker._
       val (newScope2Opt, newStmt) = checkStmt(newScope, stmts(i), reporter)
       newScope2Opt match {
         case Some(newScope2) =>
-          newScope = newScope2
+          if (useLocalScope) {
+            newScope = newScope2
+          }
           newStmts = newStmts :+ newStmt
         case _ =>
           for (j <- i until stmts.size) {
@@ -2808,7 +2811,12 @@ import TypeChecker._
     return (Some(newScope), newStmts)
   }
 
-  def checkStmtOpts(scope: Scope.Local, stmtOpts: ISZ[Option[AST.Stmt]], reporter: Reporter): ISZ[Option[AST.Stmt]] = {
+  def checkStmtOpts(
+    useLocalScope: B,
+    scope: Scope.Local,
+    stmtOpts: ISZ[Option[AST.Stmt]],
+    reporter: Reporter
+  ): ISZ[Option[AST.Stmt]] = {
     var newScope = scope
     var newStmtOpts = ISZ[Option[AST.Stmt]]()
     for (i <- z"0" until stmtOpts.size) {
@@ -2817,7 +2825,9 @@ import TypeChecker._
           val (newScope2Opt, newStmt) = checkStmt(newScope, stmt, reporter)
           newScope2Opt match {
             case Some(newScope2) =>
-              newScope = newScope2
+              if (useLocalScope) {
+                newScope = newScope2
+              }
               newStmtOpts = newStmtOpts :+ Some(newStmt)
             case _ =>
               for (j <- i until stmtOpts.size) {
@@ -2933,7 +2943,7 @@ import TypeChecker._
       return body
     }
     scope = sc(nameMap = scope.nameMap)
-    val (newScopeOpt, newStmts) = checkStmts(expectedOpt, scope, stmts, reporter)
+    val (newScopeOpt, newStmts) = checkStmts(T, expectedOpt, scope, stmts, reporter)
     val undecls: ISZ[String] = newScopeOpt match {
       case Some(newScope) =>
         var r = ISZ[String]()
@@ -3758,7 +3768,7 @@ import TypeChecker._
         case _ => stmts = stmts :+ stmt
       }
     }
-    val (_, newStmts) = checkStmts(None(), scope, stmts, reporter)
+    val (_, newStmts) = checkStmts(F, None(), scope, stmts, reporter)
     var specVars: HashMap[String, Info.SpecVar] = info.specVars
     var vars: HashMap[String, Info.Var] = info.vars
     var specMethods: HashMap[String, Info.SpecMethod] = info.specMethods
@@ -3815,7 +3825,7 @@ import TypeChecker._
         case _ => stmts = stmts :+ stmt
       }
     }
-    val (_, newStmts) = checkStmts(None(), scope, stmts, reporter)
+    val (_, newStmts) = checkStmts(F, None(), scope, stmts, reporter)
     var specVars: HashMap[String, Info.SpecVar] = info.specVars
     var specMethods: HashMap[String, Info.SpecMethod] = info.specMethods
     var methods: HashMap[String, Info.Method] = info.methods
@@ -3884,7 +3894,7 @@ import TypeChecker._
         case _ => stmtOpts = stmtOpts :+ Some(stmt)
       }
     }
-    val newStmtOpts = checkStmtOpts(scope, stmtOpts, reporter)
+    val newStmtOpts = checkStmtOpts(F, scope, stmtOpts, reporter)
     var i = 0
     var newStmts = ISZ[AST.Stmt]()
     var nameEntries = ISZ[(QName, Info)]()
