@@ -374,7 +374,7 @@ class TypeCheckerTest extends TestSuite {
         * - failingWorksheet("""import org.sireum._
                                |@pure def foo(x: Z): Unit = { return x + 1 }
                                |foo(4)
-                               |""".stripMargin, "Expecting type 'org.sireum.Unit'")
+                               |""".stripMargin, "Expecting type 'Unit'")
 
         * - failingWorksheet("""import org.sireum._
                                |val zs = ZS(1, 2, 3).map(x => x + 1)
@@ -396,7 +396,7 @@ class TypeCheckerTest extends TestSuite {
 
         * - failingWorksheet("""import org.sireum._
                                |val x: MEither[B, Z] = MEither.Right(value = T)
-                               |""".stripMargin, "but 'org.sireum.B'")
+                               |""".stripMargin, "but 'B'")
 
         * - failingWorksheet("""import org.sireum._
                                |val x = Either.Left(T)
@@ -410,9 +410,9 @@ class TypeCheckerTest extends TestSuite {
 
       "Stmt" - {
 
-        * - failingStmt("assert(1)", "but 'org.sireum.Z' found")
+        * - failingStmt("assert(1)", "but 'Z' found")
 
-        * - failingStmt("""halt(1)""", "but 'org.sireum.Z' found")
+        * - failingStmt("""halt(1)""", "but 'Z' found")
 
         * - failingStmt("""println(org.sireum.Map.empty)""", "Explicit type")
 
