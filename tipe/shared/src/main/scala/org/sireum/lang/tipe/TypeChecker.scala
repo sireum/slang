@@ -709,7 +709,7 @@ import TypeChecker._
           val (newEndExp, endExpTypeOpt) = checkExp(startExpTypeOpt, scope, range.end, reporter)
           val newByOpt: Option[AST.Exp] = range.byOpt match {
             case Some(by) =>
-              val (newByExp, _) = checkExp(startExpTypeOpt, scope, by, reporter)
+              val (newByExp, _) = checkExp(Some(AST.Typed.z), scope, by, reporter)
               Some(newByExp)
             case _ => None()
           }
