@@ -775,6 +775,7 @@ object MsgPack {
 
     def write_astStmtObject(o: org.sireum.lang.ast.Stmt.Object): Unit = {
       writer.writeZ(Constants._astStmtObject)
+      writer.writeB(o.isApp)
       writer.writeB(o.isExt)
       write_astId(o.id)
       writer.writeISZ(o.stmts, write_astStmt _)
@@ -2601,11 +2602,12 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astStmtObject)
       }
+      val isApp = reader.readB()
       val isExt = reader.readB()
       val id = read_astId()
       val stmts = reader.readISZ(read_astStmt _)
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.Object(isExt, id, stmts, attr)
+      return org.sireum.lang.ast.Stmt.Object(isApp, isExt, id, stmts, attr)
     }
 
     def read_astStmtSig(): org.sireum.lang.ast.Stmt.Sig = {

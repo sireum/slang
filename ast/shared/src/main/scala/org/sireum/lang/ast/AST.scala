@@ -184,7 +184,7 @@ object Stmt {
     }
   }
 
-  @datatype class Object(isExt: B, id: Id, stmts: ISZ[Stmt], @hidden attr: Attr) extends Stmt {
+  @datatype class Object(isApp: B, isExt: B, id: Id, stmts: ISZ[Stmt], @hidden attr: Attr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt

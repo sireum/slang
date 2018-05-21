@@ -1097,6 +1097,7 @@ class SlangParser(
     val self = stat.templ.self
     var hasExt = false
     var hasEnum = false
+    var hasApp = false
     for (mod <- mods) mod match {
       case mod"@ext" =>
         if (hasExt) {
@@ -1114,10 +1115,24 @@ class SlangParser(
         hasError = true
         errorNotSlang(mods.head.pos, "Object modifiers other than @ext are")
     }
-    if (estats.nonEmpty || ctorcalls.nonEmpty) {
+      ctorcalls match {
+        case List(Init(Type.Name("App"), Name(""), Nil)) => hasApp = true
+        case List() =>
+        case _ =>
+          error(name.pos, "Slang @ext objects have to be of the form '@ext object〈ID〉[ extends App ] { ... }'.")
+      }
+    if ((hasExt, hasEnum, hasApp) match {
+      case (true, false, true) => true
+      case (false, true, false) => true
+      case (false, false, true) => true
+      case _ => false
+    }) {
+      error(name.pos, "Slang @ext, @enum, or App extension cannot be used together.")
+    }
+    if (estats.nonEmpty) {
       hasError = true
-      if (hasExt) error(name.pos, "Slang @ext objects have to be of the form '@ext object〈ID〉{ ... }'.")
-      else error(name.pos, "Slang objects have to be of the form 'object〈ID〉{ ... }'.")
+      if (hasExt) error(name.pos, "Slang @ext objects have to be of the form '@ext object〈ID〉[ extends App ] { ... }'.")
+      else error(name.pos, "Slang objects have to be of the form 'object〈ID〉〉[ extends App ] { ... }'.")
     } else if (hasSelfType(self)) {
       hasError = true
       errorNotSlang(self.pos, s"Self type: ${syntax(self)} is")
@@ -1135,8 +1150,8 @@ class SlangParser(
       AST.Stmt.Enum(cid(name), ISZ(elements: _*), attr(stat.pos))
     } else if (!hasError) {
       val tstat = if (hasExt) translateStat(Enclosing.ExtObject) _ else translateStat(Enclosing.Object) _
-      AST.Stmt.Object(hasExt, cid(name), checkMemberStmts(ISZ(stats.map(tstat): _*)), attr(stat.pos))
-    } else AST.Stmt.Object(hasExt, cid(name), ISZ(), attr(stat.pos))
+      AST.Stmt.Object(hasApp, hasExt, cid(name), checkMemberStmts(ISZ(stats.map(tstat): _*)), attr(stat.pos))
+    } else AST.Stmt.Object(hasApp, hasExt, cid(name), ISZ(), attr(stat.pos))
   }
 
   def translateSig(enclosing: Enclosing.Type, stat: Defn.Trait): AST.Stmt = {
