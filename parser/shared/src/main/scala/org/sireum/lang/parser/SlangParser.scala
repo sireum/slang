@@ -1121,13 +1121,13 @@ class SlangParser(
         case _ =>
           error(name.pos, "Slang @ext objects have to be of the form '@ext object〈ID〉[ extends App ] { ... }'.")
       }
-    if ((hasExt, hasEnum, hasApp) match {
-      case (true, false, true) => true
+    if (!((hasExt, hasEnum, hasApp) match {
+      case (true, false, false) => true
       case (false, true, false) => true
       case (false, false, true) => true
       case (false, false, false) => true
       case _ => false
-    }) {
+    })) {
       error(name.pos, "Slang @ext, @enum, or App extension cannot be used together.")
     }
     if (estats.nonEmpty) {
