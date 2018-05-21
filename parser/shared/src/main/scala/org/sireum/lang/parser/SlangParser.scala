@@ -1125,6 +1125,7 @@ class SlangParser(
       case (true, false, true) => true
       case (false, true, false) => true
       case (false, false, true) => true
+      case (false, false, false) => true
       case _ => false
     }) {
       error(name.pos, "Slang @ext, @enum, or App extension cannot be used together.")
