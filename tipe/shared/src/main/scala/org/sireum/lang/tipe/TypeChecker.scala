@@ -992,7 +992,7 @@ import TypeChecker._
                 val smOpt =
                   buildTypeSubstMap(info.name, ident.attr.posOpt, info.ast.typeParams, receiverType.args, reporter)
                 smOpt match {
-                  case Some(sm) => return (Some(rt.subst(sm)), r._2, typeArgs)
+                  case Some(sm) => return (Some(rt.subst(sm)), AST.ResolvedInfo.substOpt(r._2, sm), typeArgs)
                   case _ => return noResult
                 }
               case _ => val res = checkAccess(receiverType); return res
@@ -1004,7 +1004,7 @@ import TypeChecker._
                 val smOpt =
                   buildTypeSubstMap(info.name, ident.attr.posOpt, info.ast.typeParams, receiverType.args, reporter)
                 smOpt match {
-                  case Some(sm) => return (Some(rt.subst(sm)), r._2, typeArgs)
+                  case Some(sm) => return (Some(rt.subst(sm)), AST.ResolvedInfo.substOpt(r._2, sm), typeArgs)
                   case _ => return noResult
                 }
               case _ => val res = checkAccess(receiverType); return res
@@ -1524,9 +1524,9 @@ import TypeChecker._
                 val tpe: AST.Typed =
                   if (t.tpe.isByName) t.tpe(isByName = F) else t.tpe
                 val tOpt = Some(tpe.subst(substMap))
-                return (etaParent(ref = ref, attr = etaParent.attr(typedOpt = tOpt)), tOpt)
+                return (etaParent(ref = ref.subst(substMap), attr = etaParent.attr(typedOpt = tOpt)), tOpt)
               case _ if t.tpe.isByName =>
-                return (refExp, Some(t.tpe.ret.subst(substMap)))
+                return (ref.subst(substMap).asExp, Some(t.tpe.ret.subst(substMap)))
               case _ =>
                 reporter.error(
                   refExp.posOpt,
@@ -1539,8 +1539,8 @@ import TypeChecker._
             etaParentOpt match {
               case Some(etaParent) =>
                 val tOpt: Option[AST.Typed] = Some(if (t.tpe.isByName) t.tpe(isByName = F) else t.tpe)
-                return (etaParent(ref = ref, attr = etaParent.attr(typedOpt = tOpt)), tOpt)
-              case _ if t.tpe.isByName => return (refExp, Some(t.tpe.ret.subst(substMap)))
+                return (etaParent(ref = ref.subst(substMap), attr = etaParent.attr(typedOpt = tOpt)), tOpt)
+              case _ if t.tpe.isByName => return (ref.subst(substMap).asExp, Some(t.tpe.ret.subst(substMap)))
               case _ =>
                 reporter.error(
                   refExp.posOpt,

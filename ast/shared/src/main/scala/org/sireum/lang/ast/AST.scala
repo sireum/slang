@@ -742,6 +742,8 @@ object Exp {
     @pure def targs: ISZ[Type]
 
     @pure def asExp: Exp
+
+    @pure def subst(substMap: HashMap[String, Typed]): Ref
   }
 
   @datatype class Binary(left: Exp, op: String, right: Exp, @hidden attr: ResolvedAttr) extends Exp {
@@ -792,6 +794,16 @@ object Exp {
     @pure override def typedOpt: Option[Typed] = {
       return attr.typedOpt
     }
+
+    @pure def subst(substMap: HashMap[String, Typed]): Ref = {
+      if (substMap.isEmpty) {
+        return this
+      }
+      return Ident(
+        id,
+        ResolvedAttr(posOpt, ResolvedInfo.substOpt(attr.resOpt, substMap), Typed.substOpt(attr.typedOpt, substMap))
+      )
+    }
   }
 
   @datatype class Eta(ref: Ref, @hidden attr: TypedAttr) extends Exp {
@@ -830,6 +842,16 @@ object Exp {
     @pure override def typedOpt: Option[Typed] = {
       return attr.typedOpt
     }
+
+    @pure def subst(substMap: HashMap[String, Typed]): Ref = {
+      return Select(
+        receiverOpt,
+        id,
+        targs,
+        ResolvedAttr(attr.posOpt, ResolvedInfo.substOpt(attr.resOpt, substMap), Typed.substOpt(attr.typedOpt, substMap))
+      )
+    }
+
   }
 
   @datatype class Invoke(
@@ -1649,9 +1671,18 @@ object Typed {
     )
   // @formatter:on
 
-  def short(ids: ISZ[String]): ISZ[String] = {
+  @pure def short(ids: ISZ[String]): ISZ[String] = {
     return if (ids.size >= 2 && ids(0) == string"org" && ids(1) == string"sireum") ops.ISZOps(ids).drop(2)
     else ids
+  }
+
+  @pure def substOpt(tOpt: Option[Typed], substMap: HashMap[String, Typed]): Option[Typed] = {
+    tOpt match {
+      case Some(t) if substMap.nonEmpty =>
+        val newT = t.subst(substMap)
+        return if (newT == t) tOpt else Some(newT)
+      case _ => return tOpt
+    }
   }
 }
 
@@ -1661,7 +1692,12 @@ object Typed {
 
 @datatype class ResolvedAttr(posOpt: Option[Position], resOpt: Option[ResolvedInfo], typedOpt: Option[Typed])
 
-@datatype trait ResolvedInfo
+@datatype trait ResolvedInfo {
+
+  @pure def subst(substMap: HashMap[String, Typed]): ResolvedInfo = {
+    return this
+  }
+}
 
 object ResolvedInfo {
 
@@ -1746,7 +1782,16 @@ object ResolvedInfo {
     id: String,
     paramNames: ISZ[String],
     tpeOpt: Option[Typed.Fun]
-  ) extends ResolvedInfo
+  ) extends ResolvedInfo {
+
+    @pure override def subst(substMap: HashMap[String, Typed]): ResolvedInfo = {
+      tpeOpt match {
+        case Some(tpe) => return Method(isInObject, mode, typeParams, owner, id, paramNames, Some(tpe.subst(substMap)))
+        case _ => return this
+      }
+    }
+
+  }
 
   @datatype class Methods(methods: ISZ[Method]) extends ResolvedInfo
 
@@ -1764,6 +1809,14 @@ object ResolvedInfo {
   @datatype class LocalVar(context: ISZ[String], scope: ResolvedInfo.LocalVar.Scope.Type, id: String)
       extends ResolvedInfo
 
+  @pure def substOpt(resOpt: Option[ResolvedInfo], substMap: HashMap[String, Typed]): Option[ResolvedInfo] = {
+    resOpt match {
+      case Some(res) if substMap.nonEmpty =>
+        val newRes = res.subst(substMap)
+        return if (newRes == res) resOpt else Some(newRes)
+      case _ => return resOpt
+    }
+  }
 }
 
 @datatype trait ProofStep {
