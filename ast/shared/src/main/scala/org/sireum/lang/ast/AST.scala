@@ -1495,6 +1495,8 @@ object Typed {
   val stOpt: Option[Typed] = Some(st)
 
   val optionName: ISZ[String] = sireumName :+ "Option"
+  val someName: ISZ[String] = sireumName :+ "Some"
+  val noneName: ISZ[String] = sireumName :+ "None"
   val isName: ISZ[String] = sireumName :+ "IS"
   val msName: ISZ[String] = sireumName :+ "MS"
   val iszName: ISZ[String] = sireumName :+ "ISZ"
