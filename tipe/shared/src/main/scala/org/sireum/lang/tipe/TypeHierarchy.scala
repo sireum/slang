@@ -663,4 +663,28 @@ object TypeHierarchy {
   @pure def isCompatible(t1: AST.Typed, t2: AST.Typed): B = {
     return isSubType(t1, t2) || isSubType(t2, t1)
   }
+
+  @pure def isMutable(t: AST.Typed): B = {
+    t match {
+      case t: AST.Typed.Name =>
+        typeMap.get(t.ids) match {
+          case Some(info) =>
+            info match {
+              case info: TypeInfo.AbstractDatatype => return !info.ast.isDatatype
+              case info: TypeInfo.Sig => return !info.ast.isImmutable && !info.ast.isExt
+              case _ => return F
+            }
+          case _ => return F
+        }
+      case t: AST.Typed.Tuple =>
+        for (arg <- t.args) {
+          if (isMutable(arg)) {
+            return T
+          }
+        }
+        return F
+      case _: AST.Typed.TypeVar => return T
+      case _ => return F
+    }
+  }
 }

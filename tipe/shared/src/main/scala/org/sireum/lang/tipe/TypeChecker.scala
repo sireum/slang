@@ -2973,7 +2973,7 @@ import TypeChecker._
     var scope = createNewScope(sc)
     var ok = T
 
-    def declId(idOpt: Option[AST.Id], tOpt: Option[AST.Typed]): Unit = {
+    def declId(checkMutable: B, idOpt: Option[AST.Id], tOpt: Option[AST.Typed]): Unit = {
       idOpt match {
         case Some(id) =>
           val key = id.value
@@ -2985,6 +2985,17 @@ import TypeChecker._
             )
             ok = F
           } else {
+            if (checkMutable) {
+              val t = tOpt.get
+              if (typeHierarchy.isMutable(t)) {
+                val possibly: String = if (t.hasTypeVars) " possibly"  else ""
+                reporter.error(
+                  id.attr.posOpt,
+                  typeCheckerKind,
+                  s"Cannot introduce a new name '$key' for$possibly mutable type '$t'."
+                )
+              }
+            }
             scope = scope(
               nameMap = scope.nameMap + key ~> Info.LocalVar(
                 context :+ key,
@@ -3087,13 +3098,13 @@ import TypeChecker._
               if (newTipe.typedOpt.nonEmpty) {
                 val t = newTipe.typedOpt.get
                 val tOpt: Option[AST.Typed] = Some(t)
-                declId(Some(pattern.id), tOpt)
+                declId(F, Some(pattern.id), tOpt)
                 return pattern(tipeOpt = Some(newTipe), attr = pattern.attr(typedOpt = tOpt))
               }
               return pattern(tipeOpt = Some(newTipe))
             case _ =>
               val tOpt: Option[AST.Typed] = Some(expectedType)
-              declId(Some(pattern.id), tOpt)
+              declId(F, Some(pattern.id), tOpt)
               return pattern(attr = pattern.attr(typedOpt = tOpt))
           }
         case pattern: AST.Pattern.Structure =>
@@ -3116,7 +3127,7 @@ import TypeChecker._
                   newPatterns = newPatterns :+ newPattern
                 }
                 val tOpt: Option[AST.Typed] = Some(expectedType)
-                declId(pattern.idOpt, tOpt)
+                declId(T, pattern.idOpt, tOpt)
                 return pattern(
                   patterns = newPatterns,
                   attr = pattern.attr(typedOpt = tOpt, resOpt = AST.Typed.unapplySeqResOpt)
@@ -3204,7 +3215,7 @@ import TypeChecker._
                             return partialResult
                           }
                           val typedOpt: Option[AST.Typed] = Some(info.tpe.subst(sm))
-                          declId(pattern.idOpt, typedOpt)
+                          declId(T, pattern.idOpt, typedOpt)
                           var newPatterns = ISZ[AST.Pattern]()
                           var i = 0
                           val exts = info.extractorTypeMap.values
@@ -3265,7 +3276,7 @@ import TypeChecker._
                     newPatterns = newPatterns :+ p
                     i = i + 1
                   }
-                  declId(pattern.idOpt, Some(expected))
+                  declId(T, pattern.idOpt, Some(expected))
                   return pattern(
                     patterns = newPatterns,
                     attr = pattern.attr(typedOpt = Some(expected), resOpt = AST.Typed.unapplyTupleResOpt)
