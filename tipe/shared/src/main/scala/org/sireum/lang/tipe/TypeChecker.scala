@@ -3544,27 +3544,29 @@ import TypeChecker._
             val (newRhs, _) = checkAssignExp(None(), scope, assignStmt.rhs, reporter)
             return assignStmt(lhs = lhs(receiverOpt = Some(newReceiver)), rhs = newRhs)
           }
+          def checkSelectAssignH(varInfo: Info.Var): AST.Stmt = {
+            if (varInfo.ast.isVal) {
+              reporter.error(
+                lhs.id.attr.posOpt,
+                typeCheckerKind,
+                st"Cannot assign to val '${lhs.id.value}' of '${(varInfo.owner, ".")}'.".render
+              )
+            }
+            val (newRhs, _) = checkAssignExp(varInfo.typedOpt, scope, assignStmt.rhs, reporter)
+            return assignStmt(
+              lhs = lhs(
+                receiverOpt = Some(newReceiver),
+                attr = lhs.attr(resOpt = varInfo.resOpt, typedOpt = varInfo.typedOpt)
+              ),
+              rhs = newRhs
+            )
+          }
           receiverTypeOpt match {
             case Some(t: AST.Typed.Name) =>
               typeHierarchy.typeMap.get(t.ids) match {
                 case Some(info: TypeInfo.AbstractDatatype) =>
                   info.vars.get(lhs.id.value) match {
-                    case Some(varInfo) =>
-                      if (varInfo.ast.isVal) {
-                        reporter.error(
-                          lhs.id.attr.posOpt,
-                          typeCheckerKind,
-                          st"Cannot assign to val '${lhs.id.value}' of '${(info.name, ".")}'.".render
-                        )
-                      }
-                      val (newRhs, _) = checkAssignExp(varInfo.typedOpt, scope, assignStmt.rhs, reporter)
-                      return assignStmt(
-                        lhs = lhs(
-                          receiverOpt = Some(newReceiver),
-                          attr = lhs.attr(resOpt = varInfo.resOpt, typedOpt = varInfo.typedOpt)
-                        ),
-                        rhs = newRhs
-                      )
+                    case Some(varInfo) => val r = checkSelectAssignH(varInfo); return r
                     case _ =>
                       reporter.error(
                         lhs.id.attr.posOpt,
@@ -3576,7 +3578,26 @@ import TypeChecker._
               }
               val r = partResultSelect()
               return r
-            case Some(_) => halt("Unexpected situation when type checking field assignment.")
+            case Some(t: AST.Typed.Object) =>
+              typeHierarchy.nameMap.get(t.owner :+ t.id :+ lhs.id.value) match {
+                case Some(varInfo: Info.Var) => val r = checkSelectAssignH(varInfo); return r
+                case _ =>
+                  reporter.error(
+                    lhs.id.attr.posOpt,
+                    typeCheckerKind,
+                    st"'${lhs.id.value}' is not a var of '${(t.owner :+ t.id, ".")}'.".render
+                  )
+                  val r = partResultSelect()
+                  return r
+              }
+            case Some(t) =>
+              reporter.error(
+                lhs.id.attr.posOpt,
+                typeCheckerKind,
+                st"'${lhs.id.value}' is not a var of '$t'.".render
+              )
+              val r = partResultSelect()
+              return r
             case _ => val r = partResultSelect(); return r
           }
         case lhs: AST.Exp.Invoke =>
