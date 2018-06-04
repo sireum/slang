@@ -3496,7 +3496,12 @@ import TypeChecker._
         case lhs: AST.Exp.Ident =>
           def checkAssignH(expectedOpt: Option[AST.Typed], resOpt: Option[AST.ResolvedInfo]): AST.Stmt = {
             val (newRhs, _) = checkAssignExp(expectedOpt, scope, assignStmt.rhs, reporter)
-            return assignStmt(lhs = lhs(attr = lhs.attr(resOpt = resOpt, typedOpt = expectedOpt)), rhs = newRhs)
+            val newResOpt: Option[AST.ResolvedInfo] = resOpt match {
+              case Some(res: AST.ResolvedInfo.LocalVar) if !scope.nameMap.contains(res.id) =>
+                Some(res(scope = AST.ResolvedInfo.LocalVar.Scope.Outer))
+              case _ => resOpt
+            }
+            return assignStmt(lhs = lhs(attr = lhs.attr(resOpt = newResOpt, typedOpt = expectedOpt)), rhs = newRhs)
           }
           def partResultIdent(): AST.Stmt = {
             val (newRhs, _) = checkAssignExp(None(), scope, assignStmt.rhs, reporter)
