@@ -1618,6 +1618,7 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.ResolvedInfo.LocalVar""""),
         ("context", printISZ(T, o.context, printString _)),
         ("scope", print_astResolvedInfoLocalVarScopeType(o.scope)),
+        ("isVal", printB(o.isVal)),
         ("id", printString(o.id))
       ))
     }
@@ -5246,10 +5247,13 @@ object JSON {
       parser.parseObjectKey("scope")
       val scope = parse_astResolvedInfoLocalVarScopeType()
       parser.parseObjectNext()
+      parser.parseObjectKey("isVal")
+      val isVal = parser.parseB()
+      parser.parseObjectNext()
       parser.parseObjectKey("id")
       val id = parser.parseString()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ResolvedInfo.LocalVar(context, scope, id)
+      return org.sireum.lang.ast.ResolvedInfo.LocalVar(context, scope, isVal, id)
     }
 
     def parse_astProofStep(): org.sireum.lang.ast.ProofStep = {
