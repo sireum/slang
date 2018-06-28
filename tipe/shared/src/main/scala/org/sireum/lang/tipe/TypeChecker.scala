@@ -677,7 +677,7 @@ import TypeChecker._
                 F,
                 id,
                 tOpt,
-                Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, key))
+                Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, T, key))
               )
             )
           }
@@ -814,7 +814,7 @@ import TypeChecker._
             F,
             id,
             tOpt,
-            Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, key))
+            Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, T, key))
           )
         )
       }
@@ -2988,7 +2988,7 @@ import TypeChecker._
             if (checkMutable) {
               val t = tOpt.get
               if (typeHierarchy.isMutable(t)) {
-                val possibly: String = if (t.hasTypeVars) " possibly"  else ""
+                val possibly: String = if (t.hasTypeVars) " possibly" else ""
                 reporter.error(
                   id.attr.posOpt,
                   typeCheckerKind,
@@ -3002,7 +3002,7 @@ import TypeChecker._
                 F,
                 id,
                 tOpt,
-                Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, key))
+                Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, T, key))
               )
             )
           }
@@ -3426,7 +3426,7 @@ import TypeChecker._
         case Some(_: Info.LocalVar) =>
           err()
           return (None(), r)
-        case _ => Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, key))
+        case _ => Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, varStmt.isVal, key))
       }
       val expectedOpt: Option[AST.Typed] = varStmt.tipeOpt match {
         case Some(tipe) =>
@@ -3498,7 +3498,8 @@ import TypeChecker._
             val (newRhs, _) = checkAssignExp(expectedOpt, scope, assignStmt.rhs, reporter)
             val newResOpt: Option[AST.ResolvedInfo] = resOpt match {
               case Some(res: AST.ResolvedInfo.LocalVar) if !scope.nameMap.contains(res.id) =>
-                Some(res(scope = AST.ResolvedInfo.LocalVar.Scope.Outer))
+                if (res.context != context) Some(res(scope = AST.ResolvedInfo.LocalVar.Scope.Closure))
+                else Some(res(scope = AST.ResolvedInfo.LocalVar.Scope.Outer))
               case _ => resOpt
             }
             return assignStmt(lhs = lhs(attr = lhs.attr(resOpt = newResOpt, typedOpt = expectedOpt)), rhs = newRhs)
@@ -3596,11 +3597,7 @@ import TypeChecker._
                   return r
               }
             case Some(t) =>
-              reporter.error(
-                lhs.id.attr.posOpt,
-                typeCheckerKind,
-                st"'${lhs.id.value}' is not a var of '$t'.".render
-              )
+              reporter.error(lhs.id.attr.posOpt, typeCheckerKind, st"'${lhs.id.value}' is not a var of '$t'.".render)
               val r = partResultSelect()
               return r
             case _ => val r = partResultSelect(); return r
@@ -3777,7 +3774,7 @@ import TypeChecker._
               T,
               p.id,
               p.tipe.typedOpt,
-              Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, id))
+              Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, T, id))
             )
           )
       }

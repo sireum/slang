@@ -1806,7 +1806,7 @@ object ResolvedInfo {
     }
   }
 
-  @datatype class LocalVar(context: ISZ[String], scope: ResolvedInfo.LocalVar.Scope.Type, id: String)
+  @datatype class LocalVar(context: ISZ[String], scope: ResolvedInfo.LocalVar.Scope.Type, isVal: B, id: String)
       extends ResolvedInfo
 
   @pure def substOpt(resOpt: Option[ResolvedInfo], substMap: HashMap[String, Typed]): Option[ResolvedInfo] = {
