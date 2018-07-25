@@ -40,7 +40,6 @@ object PostTipeAttrChecker {
   val ResolvedResult: MTransformer.PreResult[ResolvedAttr] = MTransformer.PreResult[ResolvedAttr](F, MNone())
   val SpecDefResult: MTransformer.PreResult[SpecDef] = MTransformer.PreResult[SpecDef](F, MNone()) // TODO: Unskip contract
   val TypedResult: MTransformer.PreResult[TypedAttr] = MTransformer.PreResult[TypedAttr](F, MNone())
-  val WhereDefResult: MTransformer.PreResult[WhereDef] = MTransformer.PreResult[WhereDef](F, MNone()) // TODO: Unskip contract
   val avoidCheckNames: HashSet[QName] = HashSet ++ ISZ(
     Typed.sireumName :+ "T", Typed.sireumName :+ "F"
   )
@@ -101,10 +100,6 @@ object PostTipeAttrChecker {
 
   override def preSpecDef(o: SpecDef): MTransformer.PreResult[SpecDef] = {
     return PostTipeAttrChecker.SpecDefResult
-  }
-
-  override def preWhereDef(o: WhereDef): MTransformer.PreResult[WhereDef] = {
-    return PostTipeAttrChecker.WhereDefResult
   }
 
   override def preAttr(o: Attr): MTransformer.PreResult[Attr] = {

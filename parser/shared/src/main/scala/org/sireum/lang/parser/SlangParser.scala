@@ -129,7 +129,7 @@ object SlangParser {
   private[SlangParser] lazy val rDollarId = AST.Id("$", emptyAttr)
   private[SlangParser] lazy val rExp = AST.Exp.Ident(rDollarId, emptyResolvedAttr)
   private[SlangParser] lazy val rStmt = AST.Stmt.Expr(rExp, emptyTypedAttr)
-  private[SlangParser] lazy val emptyContract = AST.Contract(ISZ(), ISZ(), ISZ(), ISZ(), ISZ())
+  private[SlangParser] lazy val emptyContract = AST.Contract(ISZ(), ISZ())
 
 }
 
@@ -877,14 +877,13 @@ class SlangParser(
       }
       exp match {
         case exp: Term.Name if exp.value == "$" =>
-          AST.Stmt.SpecMethod(sig, ISZ(), ISZ(), resolvedAttr(tree.pos))
+          AST.Stmt.SpecMethod(sig, ISZ(), resolvedAttr(tree.pos))
         case exp @ Term.Interpolate(Term.Name("l"), Seq(_: Lit.String), Nil) =>
-          val (sds, wds) = parseDefs(exp)
-          AST.Stmt.SpecMethod(sig, sds, wds, resolvedAttr(tree.pos))
+          AST.Stmt.SpecMethod(sig, parseDefs(exp), resolvedAttr(tree.pos))
         case _ =>
           hasError = true
           error(exp.pos, "Only '$' or 'l\"\"\"{ ... }\"\"\"' is allowed as Slang @spec method expression.")
-          AST.Stmt.SpecMethod(sig, ISZ(), ISZ(), resolvedAttr(tree.pos))
+          AST.Stmt.SpecMethod(sig, ISZ(), resolvedAttr(tree.pos))
       }
     } else if (enclosing == Enclosing.ExtObject) {
       if (checkSymbol(sig.id.value.value)) {
@@ -1115,19 +1114,19 @@ class SlangParser(
         hasError = true
         errorNotSlang(mods.head.pos, "Object modifiers other than @ext are")
     }
-      ctorcalls match {
-        case List(Init(Type.Name("App"), Name(""), Nil)) => hasApp = true
-        case List() =>
-        case _ =>
-          error(name.pos, "Slang @ext objects have to be of the form '@ext object〈ID〉[ extends App ] { ... }'.")
-      }
+    ctorcalls match {
+      case List(Init(Type.Name("App"), Name(""), Nil)) => hasApp = true
+      case List() =>
+      case _ =>
+        error(name.pos, "Slang @ext objects have to be of the form '@ext object〈ID〉[ extends App ] { ... }'.")
+    }
     if (!((hasExt, hasEnum, hasApp) match {
-      case (true, false, false) => true
-      case (false, true, false) => true
-      case (false, false, true) => true
-      case (false, false, false) => true
-      case _ => false
-    })) {
+        case (true, false, false) => true
+        case (false, true, false) => true
+        case (false, false, true) => true
+        case (false, false, false) => true
+        case _ => false
+      })) {
       error(name.pos, "Slang @ext, @enum, or App extension cannot be used together.")
     }
     if (estats.nonEmpty) {
@@ -2481,11 +2480,10 @@ class SlangParser(
     } finally lPointOpt = scala.None
   }
 
-  def parseDefs(exp: Term.Interpolate): (ISZ[AST.SpecDef], ISZ[AST.WhereDef]) = {
-    if (!checkLSyntax(exp)) return (ISZ(), ISZ())
+  def parseDefs(exp: Term.Interpolate): ISZ[AST.SpecDef] = {
+    if (!checkLSyntax(exp)) return ISZ()
     lParser(exp) { parser =>
-      val (sds, wds) = parser.specDefs()
-      (ISZ(sds: _*), ISZ(wds: _*))
+      ISZ(parser.specDefs(): _*)
     }
   }
 

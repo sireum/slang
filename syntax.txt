@@ -198,6 +198,12 @@
                      |  if ( <exp> ) <exp> else <exp>
                      |  for ( <for-enum-gen> ⸨ ; <for-enum-gen> ⸩* ) yield <exp>
                      |  ( <params> ) => <exp>
+                     |  {
+                          ( <params> ) =>
+                          l""" <def-contract> """
+                          <stmt>*
+                          <exp>
+                        }
                      |  <quant-op> <ID> ⸨ , <ID> ⸩* : <domain> <exp>  // only in the proof context
 
 <quant-op>         ::=  ∀
@@ -315,31 +321,28 @@
 
 <spec-ldef>        ::=  l""" <spec-defs> """
 
-<def-contract>     ::=  ⸨ reads <exp> ⸨ , <exp> ⸩* ⸩?
-                        ⸨ requires <named-exps> ⸩?
+<def-contract>     ::=  ⸨ requires <named-exps> ⸩?
                         ⸨ modifies <exp> ⸨ , <exp> ⸩* ⸩?
                         ⸨ ensures <named-exps> ⸩?
                         <sub-contract>*
+                     |  ⸨ <contract-case> ⸩+  // newline separated
+                        <sub-contract>*
 
-<named-exps>       ::=  ⸨ ⸨ <ID> : ⸩? <exp> ⸩+  // newline separated
+<contract-case>    ::=  case ⸨ <ID> ⸩? :
+                        ⸨ requires <named-exps> ⸩?
+                        ⸨ modifies <exp> ⸨ , <exp> ⸩* ⸩?
+                        ⸨ ensures <named-exps> ⸩?
 
 <sub-contract>     ::=  def <ID> ( <ID> ⸨ , <ID> ⸩* ) <def-contract>
 
+<named-exps>       ::=  ⸨ ⸨ <ID> : ⸩? <exp> ⸩+  // newline separated
 
 <spec-defs>        ::=  <spec-def>+            // newline separated
-                        where <where-def>+     // newline separated
 
 <spec-def>         ::=  = <named-exp> ⸨ , <spec-def-cond> ⸩?
 
 <spec-def-cond>    ::=  ⸨ case <pattern> ⸩? if <exp>
                      |  otherwise
-
-<where-def>        ::=  val <ID> : <type> = <exp>
-                     |  def <ID> ( <spec-param> ⸨ , <spec-param> ⸩* ) : <type>
-                        <spec-def>+            // newline separated
-
-<spec-param>       ::=  <ID> : <type>
-
 
 <loop-inv-mod>     ::=  ⸨ invariant <named-exps> ⸩?
                         ⸨ modifies <exp> ⸨ , <exp> ⸩* ⸩?
@@ -354,7 +357,7 @@
 
 <facts>            ::=  fact ⸨ <ID> : <exp> ⸩+   // newline separated
 
-<theorems>         ::=  theorem ⸨ <ID> : <sequent> ⸩+
+<theorems>         ::=  theorem ⸨ <ID> : <exp> ⸩+   // newline separated
 
 <sequent>          ::=  ⸨ <exp> ⸨  , <exp> ⸩* ⸩? <sequent-op> <exp> ⸨  , <exp> ⸩* <proof>?
 
@@ -365,42 +368,59 @@
                         <proof-step>+            // newline separated
                         }
 
-<proof-step>       ::=  <NUM> . <exp> <just>
+<proof-step>       ::=  <NUM> . <exp> . . <just>
                      |  <NUM> . <sub-proof>
 
 <sub-proof>        ::=  {
                         <assume-step>            // newline separated
-                        <proof-step>
+                        <proof-step>+            // newline separated
                         }
 
-<assume-step>      ::=  <NUM> . <exp> assume
-                     |  <NUM> . ID ⸨ , <ID> ⸩* ⸨ <exp> assume ⸩?
-                     |  <NUM> . ID ⸨ , <ID> ⸩* : <domain> ⸨ ID ⸨ , <ID> ⸩* : <domain> ⸩* ⸨ <exp> assume ⸩?
+<assume-step>      ::=  <NUM> . <exp> . . assume
+                     |  <NUM> . [ ID ⸨ , <ID> ⸩* ] ⸨ <exp> . . assume ⸩?
+                     |  <NUM> . [ ID ⸨ , <ID> ⸩* : <domain> ⸨ ID ⸨ , <ID> ⸩* : <domain> ⸩* ] ⸨ <exp> . . assume ⸩?
 
+<just>             ::=  ⸨ <just-op> ⸩? <ID> <just-args>?
+
+<just-sym>         ::= <and-op>
+                     | <or-op>
+                     | <imply-op>
+                     | <neg-op>
+                     | <bottom>
+                     | ∀
+                     | ∃
+
+<just-arg>         ::= ( <exp> ⸨ , <exp> ⸩* )
+                     | <exp>
+
+/*
 <just>             ::=  premise
-                     |  <and-op> i      <NUM> <NUM>+
+                     |  <and-op> i      ( <NUM> ⸨ , <NUM> ⸩+ )
                      |  <and-op> e1     <NUM>
                      |  <and-op> e2     <NUM>
                      |  <or-intro1>     <NUM>
                      |  <or-intro2>     <NUM>
                      |  <or-elim>       <NUM>
                      |  <imply-op> i    <NUM>
-                     |  <imply-op> e    <NUM> <NUM>+
+                     |  <imply-op> e    ( <NUM> ⸨ , <NUM> ⸩+ )
                      |  <neg-op> i      <NUM>
-                     |  <neg-op> e      <NUM> <NUM>
+                     |  <neg-op> e      ( <NUM> , <NUM> )
                      |  <bottom> e      <NUM>
                      |  pbc             <NUM>
                      |  <forall-intro>  <NUM>
-                     |  <forall-elim>   <NUM> <exp> ⸨ , <exp> ⸩*
-                     |  <exists-intro>  <NUM> <exp> ⸨ , <exp> ⸩*
-                     |  <exists-elim>   <NUM> <NUM>
+                     |  <forall-elim>   ( <NUM> ⸨ , <exp> ⸩+ )
+                     |  <exists-intro>  ( <NUM> ⸨ , <exp> ⸩+ )
+                     |  <exists-elim>   ( <NUM> , <NUM> )
                      |  fact            <ID> ⸨ . <ID> ⸩*
                      |  invariant       ⸨ <ID> ⸨ . <ID> ⸩* ⸩?
-                     |  subst <         <NUM> <NUM>
-                     |  subst >         <NUM> <NUM>
-                     |  algebra         <NUM>*
-                     |  auto            <NUM>*
-                     |  coq>            <STRING> <NUM>*
+                     |  substl          ( <NUM> , <NUM> )
+                     |  substr          ( <NUM> , <NUM> )
+                     |  algebra         <NUM>
+                     |  auto            <NUM>
+                     |  algebra         ⸨ ( <NUM> ⸨ , <NUM> ⸩+ ) ⸩?
+                     |  auto            ⸨ ( <NUM> ⸨ , <NUM> ⸩+ ) ⸩?
+                     |  coq             <STRING>
+                     |  coq             ( <STRING> ⸨ , <NUM> ⸩+ )
 
 <or-intro1>        ::=  <or-op> i1
                      |  Vi1
@@ -433,6 +453,7 @@
                      |  Ee
                      |  somee
                      |  existse
+*/
 
 <truth-table>      ::=  ⸨ * ⸩*
                         <hline>

@@ -144,7 +144,7 @@ object Stmt {
 
   }
 
-  @datatype class SpecMethod(sig: MethodSig, defs: ISZ[SpecDef], where: ISZ[WhereDef], @hidden attr: ResolvedAttr)
+  @datatype class SpecMethod(sig: MethodSig, defs: ISZ[SpecDef], @hidden attr: ResolvedAttr)
       extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
@@ -399,13 +399,9 @@ object LClause {
 
   @datatype class Invariants(value: ISZ[ContractExp]) extends LClause
 
-  @datatype class Facts(value: ISZ[Fact]) extends LClause
+  @datatype class Facts(value: ISZ[ContractExp]) extends LClause
 
-  @datatype class Fact(id: Id, exp: Exp)
-
-  @datatype class Theorems(value: ISZ[Theorem]) extends LClause
-
-  @datatype class Theorem(id: Id, sequent: Sequent)
+  @datatype class Theorems(value: ISZ[ContractExp]) extends LClause
 
   @datatype class Sequent(premises: ISZ[Exp], conclusions: ISZ[Exp], proofOpt: Option[Proof]) extends LClause
 
@@ -993,24 +989,18 @@ object Domain {
 @datatype class TypeParam(id: Id)
 
 @datatype class Contract(
-  reads: ISZ[Exp],
-  requires: ISZ[ContractExp],
-  modifies: ISZ[Exp],
-  ensures: ISZ[ContractExp],
+  cases: ISZ[ContractCase],
   subs: ISZ[SubContract]
 )
 
+@datatype class ContractCase(
+  idOpt: Option[Id],
+  requires: ISZ[ContractExp],
+  modifies: ISZ[Exp],
+  ensures: ISZ[ContractExp],
+)
+
 @datatype class SubContract(id: Id, params: ISZ[Id], contract: Contract)
-
-@datatype trait WhereDef
-
-object WhereDef {
-
-  @datatype class Val(id: Id, tipe: Type, exp: Exp) extends WhereDef
-
-  @datatype class Def(id: Id, params: ISZ[Param], rTipe: Type, defs: ISZ[SpecDef]) extends WhereDef
-
-}
 
 @datatype class SpecDef(idOpt: Option[Id], exp: Exp, isOtherwise: B, patternOpt: Option[Pattern], guardOpt: Option[Exp])
 
@@ -1845,53 +1835,7 @@ object AssumeProofStep {
 
 }
 
-@datatype trait Just {
-  def attr: Attr
-}
-
-object Just {
-
-  @datatype class Premise(@hidden val attr: Attr) extends Just
-
-  @datatype class Auto(isAlgebra: B, steps: ISZ[Exp.LitZ], @hidden val attr: Attr) extends Just
-
-  @datatype class Coq(path: Exp.LitString, steps: ISZ[Exp.LitZ], @hidden val attr: Attr) extends Just
-
-  @datatype class Subst(isRight: B, eqStep: Exp.LitZ, step: Exp.LitZ, @hidden val attr: Attr) extends Just
-
-  @datatype class Invariant(nameOpt: Option[Name], @hidden val attr: Attr) extends Just
-
-  @datatype class Fact(name: Name, @hidden val attr: Attr) extends Just
-
-  @datatype class ImplyIntro(subProofStep: Exp.LitZ, @hidden val attr: Attr) extends Just
-
-  @datatype class ImplyElim(implyStep: Exp.LitZ, steps: ISZ[Exp.LitZ], @hidden val attr: Attr) extends Just
-
-  @datatype class NegIntro(subProofStep: Exp.LitZ, @hidden val attr: Attr) extends Just
-
-  @datatype class NegElim(step: Exp.LitZ, negStep: Exp.LitZ, @hidden val attr: Attr) extends Just
-
-  @datatype class BottomElim(subProofStep: Exp.LitZ, @hidden val attr: Attr) extends Just
-
-  @datatype class ForallIntro(subProofStep: Exp.LitZ, @hidden val attr: Attr) extends Just
-
-  @datatype class ForallElim(forallStep: Exp.LitZ, args: ISZ[Exp], @hidden val attr: Attr) extends Just
-
-  @datatype class ExistsIntro(existsStep: Exp.LitZ, args: ISZ[Exp], @hidden val attr: Attr) extends Just
-
-  @datatype class ExistsElim(existsStep: Exp.LitZ, subProofStep: Exp.LitZ, @hidden val attr: Attr) extends Just
-
-  @datatype class OrIntro(is1: B, step: Exp.LitZ, @hidden val attr: Attr) extends Just
-
-  @datatype class OrElim(orStep: Exp.LitZ, subProofSteps: ISZ[Exp.LitZ], @hidden val attr: Attr) extends Just
-
-  @datatype class AndIntro(steps: ISZ[Exp.LitZ], @hidden val attr: Attr) extends Just
-
-  @datatype class AndElim(is1: B, andStep: Exp.LitZ, @hidden val attr: Attr) extends Just
-
-  @datatype class Pbc(subProofStep: Exp.LitZ, @hidden val attr: Attr) extends Just
-
-}
+@datatype class Just(kind: String, args: ISZ[Exp], @hidden val attr: Attr)
 
 object TruthTable {
 

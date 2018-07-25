@@ -264,15 +264,7 @@ object Transformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preLClauseFact(ctx: Context, o: LClause.Fact): PreResult[Context, LClause.Fact] = {
-      return PreResult(ctx, T, None())
-    }
-
     @pure def preLClauseTheorems(ctx: Context, o: LClause.Theorems): PreResult[Context, LClause] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preLClauseTheorem(ctx: Context, o: LClause.Theorem): PreResult[Context, LClause.Theorem] = {
       return PreResult(ctx, T, None())
     }
 
@@ -618,22 +610,11 @@ object Transformer {
       return PreResult(ctx, T, None())
     }
 
+    @pure def preContractCase(ctx: Context, o: ContractCase): PreResult[Context, ContractCase] = {
+      return PreResult(ctx, T, None())
+    }
+
     @pure def preSubContract(ctx: Context, o: SubContract): PreResult[Context, SubContract] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preWhereDef(ctx: Context, o: WhereDef): PreResult[Context, WhereDef] = {
-      o match {
-        case o: WhereDef.Val => return preWhereDefVal(ctx, o)
-        case o: WhereDef.Def => return preWhereDefDef(ctx, o)
-      }
-    }
-
-    @pure def preWhereDefVal(ctx: Context, o: WhereDef.Val): PreResult[Context, WhereDef] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preWhereDefDef(ctx: Context, o: WhereDef.Def): PreResult[Context, WhereDef] = {
       return PreResult(ctx, T, None())
     }
 
@@ -794,107 +775,6 @@ object Transformer {
     }
 
     @pure def preJust(ctx: Context, o: Just): PreResult[Context, Just] = {
-      o match {
-        case o: Just.Premise => return preJustPremise(ctx, o)
-        case o: Just.Auto => return preJustAuto(ctx, o)
-        case o: Just.Coq => return preJustCoq(ctx, o)
-        case o: Just.Subst => return preJustSubst(ctx, o)
-        case o: Just.Invariant => return preJustInvariant(ctx, o)
-        case o: Just.Fact => return preJustFact(ctx, o)
-        case o: Just.ImplyIntro => return preJustImplyIntro(ctx, o)
-        case o: Just.ImplyElim => return preJustImplyElim(ctx, o)
-        case o: Just.NegIntro => return preJustNegIntro(ctx, o)
-        case o: Just.NegElim => return preJustNegElim(ctx, o)
-        case o: Just.BottomElim => return preJustBottomElim(ctx, o)
-        case o: Just.ForallIntro => return preJustForallIntro(ctx, o)
-        case o: Just.ForallElim => return preJustForallElim(ctx, o)
-        case o: Just.ExistsIntro => return preJustExistsIntro(ctx, o)
-        case o: Just.ExistsElim => return preJustExistsElim(ctx, o)
-        case o: Just.OrIntro => return preJustOrIntro(ctx, o)
-        case o: Just.OrElim => return preJustOrElim(ctx, o)
-        case o: Just.AndIntro => return preJustAndIntro(ctx, o)
-        case o: Just.AndElim => return preJustAndElim(ctx, o)
-        case o: Just.Pbc => return preJustPbc(ctx, o)
-      }
-    }
-
-    @pure def preJustPremise(ctx: Context, o: Just.Premise): PreResult[Context, Just] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preJustAuto(ctx: Context, o: Just.Auto): PreResult[Context, Just] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preJustCoq(ctx: Context, o: Just.Coq): PreResult[Context, Just] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preJustSubst(ctx: Context, o: Just.Subst): PreResult[Context, Just] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preJustInvariant(ctx: Context, o: Just.Invariant): PreResult[Context, Just] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preJustFact(ctx: Context, o: Just.Fact): PreResult[Context, Just] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preJustImplyIntro(ctx: Context, o: Just.ImplyIntro): PreResult[Context, Just] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preJustImplyElim(ctx: Context, o: Just.ImplyElim): PreResult[Context, Just] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preJustNegIntro(ctx: Context, o: Just.NegIntro): PreResult[Context, Just] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preJustNegElim(ctx: Context, o: Just.NegElim): PreResult[Context, Just] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preJustBottomElim(ctx: Context, o: Just.BottomElim): PreResult[Context, Just] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preJustForallIntro(ctx: Context, o: Just.ForallIntro): PreResult[Context, Just] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preJustForallElim(ctx: Context, o: Just.ForallElim): PreResult[Context, Just] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preJustExistsIntro(ctx: Context, o: Just.ExistsIntro): PreResult[Context, Just] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preJustExistsElim(ctx: Context, o: Just.ExistsElim): PreResult[Context, Just] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preJustOrIntro(ctx: Context, o: Just.OrIntro): PreResult[Context, Just] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preJustOrElim(ctx: Context, o: Just.OrElim): PreResult[Context, Just] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preJustAndIntro(ctx: Context, o: Just.AndIntro): PreResult[Context, Just] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preJustAndElim(ctx: Context, o: Just.AndElim): PreResult[Context, Just] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preJustPbc(ctx: Context, o: Just.Pbc): PreResult[Context, Just] = {
       return PreResult(ctx, T, None())
     }
 
@@ -1152,15 +1032,7 @@ object Transformer {
       return Result(ctx, None())
     }
 
-    @pure def postLClauseFact(ctx: Context, o: LClause.Fact): Result[Context, LClause.Fact] = {
-      return Result(ctx, None())
-    }
-
     @pure def postLClauseTheorems(ctx: Context, o: LClause.Theorems): Result[Context, LClause] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postLClauseTheorem(ctx: Context, o: LClause.Theorem): Result[Context, LClause.Theorem] = {
       return Result(ctx, None())
     }
 
@@ -1506,22 +1378,11 @@ object Transformer {
       return Result(ctx, None())
     }
 
+    @pure def postContractCase(ctx: Context, o: ContractCase): Result[Context, ContractCase] = {
+      return Result(ctx, None())
+    }
+
     @pure def postSubContract(ctx: Context, o: SubContract): Result[Context, SubContract] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postWhereDef(ctx: Context, o: WhereDef): Result[Context, WhereDef] = {
-      o match {
-        case o: WhereDef.Val => return postWhereDefVal(ctx, o)
-        case o: WhereDef.Def => return postWhereDefDef(ctx, o)
-      }
-    }
-
-    @pure def postWhereDefVal(ctx: Context, o: WhereDef.Val): Result[Context, WhereDef] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postWhereDefDef(ctx: Context, o: WhereDef.Def): Result[Context, WhereDef] = {
       return Result(ctx, None())
     }
 
@@ -1682,107 +1543,6 @@ object Transformer {
     }
 
     @pure def postJust(ctx: Context, o: Just): Result[Context, Just] = {
-      o match {
-        case o: Just.Premise => return postJustPremise(ctx, o)
-        case o: Just.Auto => return postJustAuto(ctx, o)
-        case o: Just.Coq => return postJustCoq(ctx, o)
-        case o: Just.Subst => return postJustSubst(ctx, o)
-        case o: Just.Invariant => return postJustInvariant(ctx, o)
-        case o: Just.Fact => return postJustFact(ctx, o)
-        case o: Just.ImplyIntro => return postJustImplyIntro(ctx, o)
-        case o: Just.ImplyElim => return postJustImplyElim(ctx, o)
-        case o: Just.NegIntro => return postJustNegIntro(ctx, o)
-        case o: Just.NegElim => return postJustNegElim(ctx, o)
-        case o: Just.BottomElim => return postJustBottomElim(ctx, o)
-        case o: Just.ForallIntro => return postJustForallIntro(ctx, o)
-        case o: Just.ForallElim => return postJustForallElim(ctx, o)
-        case o: Just.ExistsIntro => return postJustExistsIntro(ctx, o)
-        case o: Just.ExistsElim => return postJustExistsElim(ctx, o)
-        case o: Just.OrIntro => return postJustOrIntro(ctx, o)
-        case o: Just.OrElim => return postJustOrElim(ctx, o)
-        case o: Just.AndIntro => return postJustAndIntro(ctx, o)
-        case o: Just.AndElim => return postJustAndElim(ctx, o)
-        case o: Just.Pbc => return postJustPbc(ctx, o)
-      }
-    }
-
-    @pure def postJustPremise(ctx: Context, o: Just.Premise): Result[Context, Just] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postJustAuto(ctx: Context, o: Just.Auto): Result[Context, Just] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postJustCoq(ctx: Context, o: Just.Coq): Result[Context, Just] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postJustSubst(ctx: Context, o: Just.Subst): Result[Context, Just] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postJustInvariant(ctx: Context, o: Just.Invariant): Result[Context, Just] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postJustFact(ctx: Context, o: Just.Fact): Result[Context, Just] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postJustImplyIntro(ctx: Context, o: Just.ImplyIntro): Result[Context, Just] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postJustImplyElim(ctx: Context, o: Just.ImplyElim): Result[Context, Just] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postJustNegIntro(ctx: Context, o: Just.NegIntro): Result[Context, Just] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postJustNegElim(ctx: Context, o: Just.NegElim): Result[Context, Just] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postJustBottomElim(ctx: Context, o: Just.BottomElim): Result[Context, Just] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postJustForallIntro(ctx: Context, o: Just.ForallIntro): Result[Context, Just] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postJustForallElim(ctx: Context, o: Just.ForallElim): Result[Context, Just] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postJustExistsIntro(ctx: Context, o: Just.ExistsIntro): Result[Context, Just] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postJustExistsElim(ctx: Context, o: Just.ExistsElim): Result[Context, Just] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postJustOrIntro(ctx: Context, o: Just.OrIntro): Result[Context, Just] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postJustOrElim(ctx: Context, o: Just.OrElim): Result[Context, Just] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postJustAndIntro(ctx: Context, o: Just.AndIntro): Result[Context, Just] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postJustAndElim(ctx: Context, o: Just.AndElim): Result[Context, Just] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postJustPbc(ctx: Context, o: Just.Pbc): Result[Context, Just] = {
       return Result(ctx, None())
     }
 
@@ -1963,12 +1723,11 @@ import Transformer._
         case o2: Stmt.SpecMethod =>
           val r0: Result[Context, MethodSig] = transformMethodSig(ctx, o2.sig)
           val r1: Result[Context, IS[Z, SpecDef]] = transformISZ(r0.ctx, o2.defs, transformSpecDef _)
-          val r2: Result[Context, IS[Z, WhereDef]] = transformISZ(r1.ctx, o2.where, transformWhereDef _)
-          val r3: Result[Context, ResolvedAttr] = transformResolvedAttr(r2.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
-            Result(r3.ctx, Some(o2(sig = r0.resultOpt.getOrElse(o2.sig), defs = r1.resultOpt.getOrElse(o2.defs), where = r2.resultOpt.getOrElse(o2.where), attr = r3.resultOpt.getOrElse(o2.attr))))
+          val r2: Result[Context, ResolvedAttr] = transformResolvedAttr(r1.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            Result(r2.ctx, Some(o2(sig = r0.resultOpt.getOrElse(o2.sig), defs = r1.resultOpt.getOrElse(o2.defs), attr = r2.resultOpt.getOrElse(o2.attr))))
           else
-            Result(r3.ctx, None())
+            Result(r2.ctx, None())
         case o2: Stmt.Enum =>
           val r0: Result[Context, Id] = transformId(ctx, o2.id)
           val r1: Result[Context, IS[Z, Id]] = transformISZ(r0.ctx, o2.elements, transformId _)
@@ -2292,13 +2051,13 @@ import Transformer._
           else
             Result(r0.ctx, None())
         case o2: LClause.Facts =>
-          val r0: Result[Context, IS[Z, LClause.Fact]] = transformISZ(ctx, o2.value, transformLClauseFact _)
+          val r0: Result[Context, IS[Z, ContractExp]] = transformISZ(ctx, o2.value, transformContractExp _)
           if (hasChanged || r0.resultOpt.nonEmpty)
             Result(r0.ctx, Some(o2(value = r0.resultOpt.getOrElse(o2.value))))
           else
             Result(r0.ctx, None())
         case o2: LClause.Theorems =>
-          val r0: Result[Context, IS[Z, LClause.Theorem]] = transformISZ(ctx, o2.value, transformLClauseTheorem _)
+          val r0: Result[Context, IS[Z, ContractExp]] = transformISZ(ctx, o2.value, transformContractExp _)
           if (hasChanged || r0.resultOpt.nonEmpty)
             Result(r0.ctx, Some(o2(value = r0.resultOpt.getOrElse(o2.value))))
           else
@@ -2327,62 +2086,6 @@ import Transformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: LClause = r.resultOpt.getOrElse(o)
     val postR: Result[Context, LClause] = pp.postLClause(r.ctx, o2)
-    if (postR.resultOpt.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return Result(postR.ctx, Some(o2))
-    } else {
-      return Result(postR.ctx, None())
-    }
-  }
-
-  @pure def transformLClauseFact(ctx: Context, o: LClause.Fact): Result[Context, LClause.Fact] = {
-    val preR: PreResult[Context, LClause.Fact] = pp.preLClauseFact(ctx, o)
-    val r: Result[Context, LClause.Fact] = if (preR.continu) {
-      val o2: LClause.Fact = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: Result[Context, Id] = transformId(ctx, o2.id)
-      val r1: Result[Context, Exp] = transformExp(r0.ctx, o2.exp)
-      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-        Result(r1.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), exp = r1.resultOpt.getOrElse(o2.exp))))
-      else
-        Result(r1.ctx, None())
-    } else if (preR.resultOpt.nonEmpty) {
-      Result(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
-    } else {
-      Result(preR.ctx, None())
-    }
-    val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: LClause.Fact = r.resultOpt.getOrElse(o)
-    val postR: Result[Context, LClause.Fact] = pp.postLClauseFact(r.ctx, o2)
-    if (postR.resultOpt.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return Result(postR.ctx, Some(o2))
-    } else {
-      return Result(postR.ctx, None())
-    }
-  }
-
-  @pure def transformLClauseTheorem(ctx: Context, o: LClause.Theorem): Result[Context, LClause.Theorem] = {
-    val preR: PreResult[Context, LClause.Theorem] = pp.preLClauseTheorem(ctx, o)
-    val r: Result[Context, LClause.Theorem] = if (preR.continu) {
-      val o2: LClause.Theorem = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: Result[Context, Id] = transformId(ctx, o2.id)
-      val r1: Result[Context, LClause.Sequent] = transformLClauseSequent(r0.ctx, o2.sequent)
-      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-        Result(r1.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), sequent = r1.resultOpt.getOrElse(o2.sequent))))
-      else
-        Result(r1.ctx, None())
-    } else if (preR.resultOpt.nonEmpty) {
-      Result(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
-    } else {
-      Result(preR.ctx, None())
-    }
-    val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: LClause.Theorem = r.resultOpt.getOrElse(o)
-    val postR: Result[Context, LClause.Theorem] = pp.postLClauseTheorem(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -3260,15 +2963,12 @@ import Transformer._
     val r: Result[Context, Contract] = if (preR.continu) {
       val o2: Contract = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: Result[Context, IS[Z, Exp]] = transformISZ(ctx, o2.reads, transformExp _)
-      val r1: Result[Context, IS[Z, ContractExp]] = transformISZ(r0.ctx, o2.requires, transformContractExp _)
-      val r2: Result[Context, IS[Z, Exp]] = transformISZ(r1.ctx, o2.modifies, transformExp _)
-      val r3: Result[Context, IS[Z, ContractExp]] = transformISZ(r2.ctx, o2.ensures, transformContractExp _)
-      val r4: Result[Context, IS[Z, SubContract]] = transformISZ(r3.ctx, o2.subs, transformSubContract _)
-      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty)
-        Result(r4.ctx, Some(o2(reads = r0.resultOpt.getOrElse(o2.reads), requires = r1.resultOpt.getOrElse(o2.requires), modifies = r2.resultOpt.getOrElse(o2.modifies), ensures = r3.resultOpt.getOrElse(o2.ensures), subs = r4.resultOpt.getOrElse(o2.subs))))
+      val r0: Result[Context, IS[Z, ContractCase]] = transformISZ(ctx, o2.cases, transformContractCase _)
+      val r1: Result[Context, IS[Z, SubContract]] = transformISZ(r0.ctx, o2.subs, transformSubContract _)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+        Result(r1.ctx, Some(o2(cases = r0.resultOpt.getOrElse(o2.cases), subs = r1.resultOpt.getOrElse(o2.subs))))
       else
-        Result(r4.ctx, None())
+        Result(r1.ctx, None())
     } else if (preR.resultOpt.nonEmpty) {
       Result(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
     } else {
@@ -3277,6 +2977,36 @@ import Transformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: Contract = r.resultOpt.getOrElse(o)
     val postR: Result[Context, Contract] = pp.postContract(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return Result(postR.ctx, Some(o2))
+    } else {
+      return Result(postR.ctx, None())
+    }
+  }
+
+  @pure def transformContractCase(ctx: Context, o: ContractCase): Result[Context, ContractCase] = {
+    val preR: PreResult[Context, ContractCase] = pp.preContractCase(ctx, o)
+    val r: Result[Context, ContractCase] = if (preR.continu) {
+      val o2: ContractCase = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: Result[Context, Option[Id]] = transformOption(ctx, o2.idOpt, transformId _)
+      val r1: Result[Context, IS[Z, ContractExp]] = transformISZ(r0.ctx, o2.requires, transformContractExp _)
+      val r2: Result[Context, IS[Z, Exp]] = transformISZ(r1.ctx, o2.modifies, transformExp _)
+      val r3: Result[Context, IS[Z, ContractExp]] = transformISZ(r2.ctx, o2.ensures, transformContractExp _)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+        Result(r3.ctx, Some(o2(idOpt = r0.resultOpt.getOrElse(o2.idOpt), requires = r1.resultOpt.getOrElse(o2.requires), modifies = r2.resultOpt.getOrElse(o2.modifies), ensures = r3.resultOpt.getOrElse(o2.ensures))))
+      else
+        Result(r3.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      Result(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      Result(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: ContractCase = r.resultOpt.getOrElse(o)
+    val postR: Result[Context, ContractCase] = pp.postContractCase(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -3306,48 +3036,6 @@ import Transformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: SubContract = r.resultOpt.getOrElse(o)
     val postR: Result[Context, SubContract] = pp.postSubContract(r.ctx, o2)
-    if (postR.resultOpt.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return Result(postR.ctx, Some(o2))
-    } else {
-      return Result(postR.ctx, None())
-    }
-  }
-
-  @pure def transformWhereDef(ctx: Context, o: WhereDef): Result[Context, WhereDef] = {
-    val preR: PreResult[Context, WhereDef] = pp.preWhereDef(ctx, o)
-    val r: Result[Context, WhereDef] = if (preR.continu) {
-      val o2: WhereDef = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val rOpt: Result[Context, WhereDef] = o2 match {
-        case o2: WhereDef.Val =>
-          val r0: Result[Context, Id] = transformId(ctx, o2.id)
-          val r1: Result[Context, Type] = transformType(r0.ctx, o2.tipe)
-          val r2: Result[Context, Exp] = transformExp(r1.ctx, o2.exp)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            Result(r2.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), tipe = r1.resultOpt.getOrElse(o2.tipe), exp = r2.resultOpt.getOrElse(o2.exp))))
-          else
-            Result(r2.ctx, None())
-        case o2: WhereDef.Def =>
-          val r0: Result[Context, Id] = transformId(ctx, o2.id)
-          val r1: Result[Context, IS[Z, Param]] = transformISZ(r0.ctx, o2.params, transformParam _)
-          val r2: Result[Context, Type] = transformType(r1.ctx, o2.rTipe)
-          val r3: Result[Context, IS[Z, SpecDef]] = transformISZ(r2.ctx, o2.defs, transformSpecDef _)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
-            Result(r3.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), params = r1.resultOpt.getOrElse(o2.params), rTipe = r2.resultOpt.getOrElse(o2.rTipe), defs = r3.resultOpt.getOrElse(o2.defs))))
-          else
-            Result(r3.ctx, None())
-      }
-      rOpt
-    } else if (preR.resultOpt.nonEmpty) {
-      Result(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
-    } else {
-      Result(preR.ctx, None())
-    }
-    val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: WhereDef = r.resultOpt.getOrElse(o)
-    val postR: Result[Context, WhereDef] = pp.postWhereDef(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -3714,156 +3402,12 @@ import Transformer._
     val r: Result[Context, Just] = if (preR.continu) {
       val o2: Just = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
-      val rOpt: Result[Context, Just] = o2 match {
-        case o2: Just.Premise =>
-          val r0: Result[Context, Attr] = transformAttr(ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            Result(r0.ctx, Some(o2(attr = r0.resultOpt.getOrElse(o2.attr))))
-          else
-            Result(r0.ctx, None())
-        case o2: Just.Auto =>
-          val r0: Result[Context, IS[Z, Exp.LitZ]] = transformISZ(ctx, o2.steps, transformExpLitZ _)
-          val r1: Result[Context, Attr] = transformAttr(r0.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            Result(r1.ctx, Some(o2(steps = r0.resultOpt.getOrElse(o2.steps), attr = r1.resultOpt.getOrElse(o2.attr))))
-          else
-            Result(r1.ctx, None())
-        case o2: Just.Coq =>
-          val r0: Result[Context, Exp.LitString] = transformExpLitString(ctx, o2.path)
-          val r1: Result[Context, IS[Z, Exp.LitZ]] = transformISZ(r0.ctx, o2.steps, transformExpLitZ _)
-          val r2: Result[Context, Attr] = transformAttr(r1.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            Result(r2.ctx, Some(o2(path = r0.resultOpt.getOrElse(o2.path), steps = r1.resultOpt.getOrElse(o2.steps), attr = r2.resultOpt.getOrElse(o2.attr))))
-          else
-            Result(r2.ctx, None())
-        case o2: Just.Subst =>
-          val r0: Result[Context, Exp.LitZ] = transformExpLitZ(ctx, o2.eqStep)
-          val r1: Result[Context, Exp.LitZ] = transformExpLitZ(r0.ctx, o2.step)
-          val r2: Result[Context, Attr] = transformAttr(r1.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            Result(r2.ctx, Some(o2(eqStep = r0.resultOpt.getOrElse(o2.eqStep), step = r1.resultOpt.getOrElse(o2.step), attr = r2.resultOpt.getOrElse(o2.attr))))
-          else
-            Result(r2.ctx, None())
-        case o2: Just.Invariant =>
-          val r0: Result[Context, Option[Name]] = transformOption(ctx, o2.nameOpt, transformName _)
-          val r1: Result[Context, Attr] = transformAttr(r0.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            Result(r1.ctx, Some(o2(nameOpt = r0.resultOpt.getOrElse(o2.nameOpt), attr = r1.resultOpt.getOrElse(o2.attr))))
-          else
-            Result(r1.ctx, None())
-        case o2: Just.Fact =>
-          val r0: Result[Context, Name] = transformName(ctx, o2.name)
-          val r1: Result[Context, Attr] = transformAttr(r0.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            Result(r1.ctx, Some(o2(name = r0.resultOpt.getOrElse(o2.name), attr = r1.resultOpt.getOrElse(o2.attr))))
-          else
-            Result(r1.ctx, None())
-        case o2: Just.ImplyIntro =>
-          val r0: Result[Context, Exp.LitZ] = transformExpLitZ(ctx, o2.subProofStep)
-          val r1: Result[Context, Attr] = transformAttr(r0.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            Result(r1.ctx, Some(o2(subProofStep = r0.resultOpt.getOrElse(o2.subProofStep), attr = r1.resultOpt.getOrElse(o2.attr))))
-          else
-            Result(r1.ctx, None())
-        case o2: Just.ImplyElim =>
-          val r0: Result[Context, Exp.LitZ] = transformExpLitZ(ctx, o2.implyStep)
-          val r1: Result[Context, IS[Z, Exp.LitZ]] = transformISZ(r0.ctx, o2.steps, transformExpLitZ _)
-          val r2: Result[Context, Attr] = transformAttr(r1.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            Result(r2.ctx, Some(o2(implyStep = r0.resultOpt.getOrElse(o2.implyStep), steps = r1.resultOpt.getOrElse(o2.steps), attr = r2.resultOpt.getOrElse(o2.attr))))
-          else
-            Result(r2.ctx, None())
-        case o2: Just.NegIntro =>
-          val r0: Result[Context, Exp.LitZ] = transformExpLitZ(ctx, o2.subProofStep)
-          val r1: Result[Context, Attr] = transformAttr(r0.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            Result(r1.ctx, Some(o2(subProofStep = r0.resultOpt.getOrElse(o2.subProofStep), attr = r1.resultOpt.getOrElse(o2.attr))))
-          else
-            Result(r1.ctx, None())
-        case o2: Just.NegElim =>
-          val r0: Result[Context, Exp.LitZ] = transformExpLitZ(ctx, o2.step)
-          val r1: Result[Context, Exp.LitZ] = transformExpLitZ(r0.ctx, o2.negStep)
-          val r2: Result[Context, Attr] = transformAttr(r1.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            Result(r2.ctx, Some(o2(step = r0.resultOpt.getOrElse(o2.step), negStep = r1.resultOpt.getOrElse(o2.negStep), attr = r2.resultOpt.getOrElse(o2.attr))))
-          else
-            Result(r2.ctx, None())
-        case o2: Just.BottomElim =>
-          val r0: Result[Context, Exp.LitZ] = transformExpLitZ(ctx, o2.subProofStep)
-          val r1: Result[Context, Attr] = transformAttr(r0.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            Result(r1.ctx, Some(o2(subProofStep = r0.resultOpt.getOrElse(o2.subProofStep), attr = r1.resultOpt.getOrElse(o2.attr))))
-          else
-            Result(r1.ctx, None())
-        case o2: Just.ForallIntro =>
-          val r0: Result[Context, Exp.LitZ] = transformExpLitZ(ctx, o2.subProofStep)
-          val r1: Result[Context, Attr] = transformAttr(r0.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            Result(r1.ctx, Some(o2(subProofStep = r0.resultOpt.getOrElse(o2.subProofStep), attr = r1.resultOpt.getOrElse(o2.attr))))
-          else
-            Result(r1.ctx, None())
-        case o2: Just.ForallElim =>
-          val r0: Result[Context, Exp.LitZ] = transformExpLitZ(ctx, o2.forallStep)
-          val r1: Result[Context, IS[Z, Exp]] = transformISZ(r0.ctx, o2.args, transformExp _)
-          val r2: Result[Context, Attr] = transformAttr(r1.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            Result(r2.ctx, Some(o2(forallStep = r0.resultOpt.getOrElse(o2.forallStep), args = r1.resultOpt.getOrElse(o2.args), attr = r2.resultOpt.getOrElse(o2.attr))))
-          else
-            Result(r2.ctx, None())
-        case o2: Just.ExistsIntro =>
-          val r0: Result[Context, Exp.LitZ] = transformExpLitZ(ctx, o2.existsStep)
-          val r1: Result[Context, IS[Z, Exp]] = transformISZ(r0.ctx, o2.args, transformExp _)
-          val r2: Result[Context, Attr] = transformAttr(r1.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            Result(r2.ctx, Some(o2(existsStep = r0.resultOpt.getOrElse(o2.existsStep), args = r1.resultOpt.getOrElse(o2.args), attr = r2.resultOpt.getOrElse(o2.attr))))
-          else
-            Result(r2.ctx, None())
-        case o2: Just.ExistsElim =>
-          val r0: Result[Context, Exp.LitZ] = transformExpLitZ(ctx, o2.existsStep)
-          val r1: Result[Context, Exp.LitZ] = transformExpLitZ(r0.ctx, o2.subProofStep)
-          val r2: Result[Context, Attr] = transformAttr(r1.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            Result(r2.ctx, Some(o2(existsStep = r0.resultOpt.getOrElse(o2.existsStep), subProofStep = r1.resultOpt.getOrElse(o2.subProofStep), attr = r2.resultOpt.getOrElse(o2.attr))))
-          else
-            Result(r2.ctx, None())
-        case o2: Just.OrIntro =>
-          val r0: Result[Context, Exp.LitZ] = transformExpLitZ(ctx, o2.step)
-          val r1: Result[Context, Attr] = transformAttr(r0.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            Result(r1.ctx, Some(o2(step = r0.resultOpt.getOrElse(o2.step), attr = r1.resultOpt.getOrElse(o2.attr))))
-          else
-            Result(r1.ctx, None())
-        case o2: Just.OrElim =>
-          val r0: Result[Context, Exp.LitZ] = transformExpLitZ(ctx, o2.orStep)
-          val r1: Result[Context, IS[Z, Exp.LitZ]] = transformISZ(r0.ctx, o2.subProofSteps, transformExpLitZ _)
-          val r2: Result[Context, Attr] = transformAttr(r1.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            Result(r2.ctx, Some(o2(orStep = r0.resultOpt.getOrElse(o2.orStep), subProofSteps = r1.resultOpt.getOrElse(o2.subProofSteps), attr = r2.resultOpt.getOrElse(o2.attr))))
-          else
-            Result(r2.ctx, None())
-        case o2: Just.AndIntro =>
-          val r0: Result[Context, IS[Z, Exp.LitZ]] = transformISZ(ctx, o2.steps, transformExpLitZ _)
-          val r1: Result[Context, Attr] = transformAttr(r0.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            Result(r1.ctx, Some(o2(steps = r0.resultOpt.getOrElse(o2.steps), attr = r1.resultOpt.getOrElse(o2.attr))))
-          else
-            Result(r1.ctx, None())
-        case o2: Just.AndElim =>
-          val r0: Result[Context, Exp.LitZ] = transformExpLitZ(ctx, o2.andStep)
-          val r1: Result[Context, Attr] = transformAttr(r0.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            Result(r1.ctx, Some(o2(andStep = r0.resultOpt.getOrElse(o2.andStep), attr = r1.resultOpt.getOrElse(o2.attr))))
-          else
-            Result(r1.ctx, None())
-        case o2: Just.Pbc =>
-          val r0: Result[Context, Exp.LitZ] = transformExpLitZ(ctx, o2.subProofStep)
-          val r1: Result[Context, Attr] = transformAttr(r0.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            Result(r1.ctx, Some(o2(subProofStep = r0.resultOpt.getOrElse(o2.subProofStep), attr = r1.resultOpt.getOrElse(o2.attr))))
-          else
-            Result(r1.ctx, None())
-      }
-      rOpt
+      val r0: Result[Context, IS[Z, Exp]] = transformISZ(ctx, o2.args, transformExp _)
+      val r1: Result[Context, Attr] = transformAttr(r0.ctx, o2.attr)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+        Result(r1.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args), attr = r1.resultOpt.getOrElse(o2.attr))))
+      else
+        Result(r1.ctx, None())
     } else if (preR.resultOpt.nonEmpty) {
       Result(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
     } else {

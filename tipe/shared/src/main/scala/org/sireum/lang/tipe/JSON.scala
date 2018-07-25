@@ -475,7 +475,6 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.Stmt.SpecMethod""""),
         ("sig", print_astMethodSig(o.sig)),
         ("defs", printISZ(F, o.defs, print_astSpecDef _)),
-        ("where", printISZ(F, o.where, print_astWhereDef _)),
         ("attr", print_astResolvedAttr(o.attr))
       ))
     }
@@ -689,30 +688,14 @@ object JSON {
     @pure def print_astLClauseFacts(o: org.sireum.lang.ast.LClause.Facts): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.LClause.Facts""""),
-        ("value", printISZ(F, o.value, print_astLClauseFact _))
-      ))
-    }
-
-    @pure def print_astLClauseFact(o: org.sireum.lang.ast.LClause.Fact): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.LClause.Fact""""),
-        ("id", print_astId(o.id)),
-        ("exp", print_astExp(o.exp))
+        ("value", printISZ(F, o.value, print_astContractExp _))
       ))
     }
 
     @pure def print_astLClauseTheorems(o: org.sireum.lang.ast.LClause.Theorems): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.LClause.Theorems""""),
-        ("value", printISZ(F, o.value, print_astLClauseTheorem _))
-      ))
-    }
-
-    @pure def print_astLClauseTheorem(o: org.sireum.lang.ast.LClause.Theorem): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.LClause.Theorem""""),
-        ("id", print_astId(o.id)),
-        ("sequent", print_astLClauseSequent(o.sequent))
+        ("value", printISZ(F, o.value, print_astContractExp _))
       ))
     }
 
@@ -1263,11 +1246,18 @@ object JSON {
     @pure def print_astContract(o: org.sireum.lang.ast.Contract): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Contract""""),
-        ("reads", printISZ(F, o.reads, print_astExp _)),
+        ("cases", printISZ(F, o.cases, print_astContractCase _)),
+        ("subs", printISZ(F, o.subs, print_astSubContract _))
+      ))
+    }
+
+    @pure def print_astContractCase(o: org.sireum.lang.ast.ContractCase): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.ContractCase""""),
+        ("idOpt", printOption(F, o.idOpt, print_astId _)),
         ("requires", printISZ(F, o.requires, print_astContractExp _)),
         ("modifies", printISZ(F, o.modifies, print_astExp _)),
-        ("ensures", printISZ(F, o.ensures, print_astContractExp _)),
-        ("subs", printISZ(F, o.subs, print_astSubContract _))
+        ("ensures", printISZ(F, o.ensures, print_astContractExp _))
       ))
     }
 
@@ -1277,32 +1267,6 @@ object JSON {
         ("id", print_astId(o.id)),
         ("params", printISZ(F, o.params, print_astId _)),
         ("contract", print_astContract(o.contract))
-      ))
-    }
-
-    @pure def print_astWhereDef(o: org.sireum.lang.ast.WhereDef): ST = {
-      o match {
-        case o: org.sireum.lang.ast.WhereDef.Val => return print_astWhereDefVal(o)
-        case o: org.sireum.lang.ast.WhereDef.Def => return print_astWhereDefDef(o)
-      }
-    }
-
-    @pure def print_astWhereDefVal(o: org.sireum.lang.ast.WhereDef.Val): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.WhereDef.Val""""),
-        ("id", print_astId(o.id)),
-        ("tipe", print_astType(o.tipe)),
-        ("exp", print_astExp(o.exp))
-      ))
-    }
-
-    @pure def print_astWhereDefDef(o: org.sireum.lang.ast.WhereDef.Def): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.WhereDef.Def""""),
-        ("id", print_astId(o.id)),
-        ("params", printISZ(F, o.params, print_astParam _)),
-        ("rTipe", print_astType(o.rTipe)),
-        ("defs", printISZ(F, o.defs, print_astSpecDef _))
       ))
     }
 
@@ -1682,197 +1646,10 @@ object JSON {
     }
 
     @pure def print_astJust(o: org.sireum.lang.ast.Just): ST = {
-      o match {
-        case o: org.sireum.lang.ast.Just.Premise => return print_astJustPremise(o)
-        case o: org.sireum.lang.ast.Just.Auto => return print_astJustAuto(o)
-        case o: org.sireum.lang.ast.Just.Coq => return print_astJustCoq(o)
-        case o: org.sireum.lang.ast.Just.Subst => return print_astJustSubst(o)
-        case o: org.sireum.lang.ast.Just.Invariant => return print_astJustInvariant(o)
-        case o: org.sireum.lang.ast.Just.Fact => return print_astJustFact(o)
-        case o: org.sireum.lang.ast.Just.ImplyIntro => return print_astJustImplyIntro(o)
-        case o: org.sireum.lang.ast.Just.ImplyElim => return print_astJustImplyElim(o)
-        case o: org.sireum.lang.ast.Just.NegIntro => return print_astJustNegIntro(o)
-        case o: org.sireum.lang.ast.Just.NegElim => return print_astJustNegElim(o)
-        case o: org.sireum.lang.ast.Just.BottomElim => return print_astJustBottomElim(o)
-        case o: org.sireum.lang.ast.Just.ForallIntro => return print_astJustForallIntro(o)
-        case o: org.sireum.lang.ast.Just.ForallElim => return print_astJustForallElim(o)
-        case o: org.sireum.lang.ast.Just.ExistsIntro => return print_astJustExistsIntro(o)
-        case o: org.sireum.lang.ast.Just.ExistsElim => return print_astJustExistsElim(o)
-        case o: org.sireum.lang.ast.Just.OrIntro => return print_astJustOrIntro(o)
-        case o: org.sireum.lang.ast.Just.OrElim => return print_astJustOrElim(o)
-        case o: org.sireum.lang.ast.Just.AndIntro => return print_astJustAndIntro(o)
-        case o: org.sireum.lang.ast.Just.AndElim => return print_astJustAndElim(o)
-        case o: org.sireum.lang.ast.Just.Pbc => return print_astJustPbc(o)
-      }
-    }
-
-    @pure def print_astJustPremise(o: org.sireum.lang.ast.Just.Premise): ST = {
       return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Just.Premise""""),
-        ("attr", print_astAttr(o.attr))
-      ))
-    }
-
-    @pure def print_astJustAuto(o: org.sireum.lang.ast.Just.Auto): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Just.Auto""""),
-        ("isAlgebra", printB(o.isAlgebra)),
-        ("steps", printISZ(F, o.steps, print_astExpLitZ _)),
-        ("attr", print_astAttr(o.attr))
-      ))
-    }
-
-    @pure def print_astJustCoq(o: org.sireum.lang.ast.Just.Coq): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Just.Coq""""),
-        ("path", print_astExpLitString(o.path)),
-        ("steps", printISZ(F, o.steps, print_astExpLitZ _)),
-        ("attr", print_astAttr(o.attr))
-      ))
-    }
-
-    @pure def print_astJustSubst(o: org.sireum.lang.ast.Just.Subst): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Just.Subst""""),
-        ("isRight", printB(o.isRight)),
-        ("eqStep", print_astExpLitZ(o.eqStep)),
-        ("step", print_astExpLitZ(o.step)),
-        ("attr", print_astAttr(o.attr))
-      ))
-    }
-
-    @pure def print_astJustInvariant(o: org.sireum.lang.ast.Just.Invariant): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Just.Invariant""""),
-        ("nameOpt", printOption(F, o.nameOpt, print_astName _)),
-        ("attr", print_astAttr(o.attr))
-      ))
-    }
-
-    @pure def print_astJustFact(o: org.sireum.lang.ast.Just.Fact): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Just.Fact""""),
-        ("name", print_astName(o.name)),
-        ("attr", print_astAttr(o.attr))
-      ))
-    }
-
-    @pure def print_astJustImplyIntro(o: org.sireum.lang.ast.Just.ImplyIntro): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Just.ImplyIntro""""),
-        ("subProofStep", print_astExpLitZ(o.subProofStep)),
-        ("attr", print_astAttr(o.attr))
-      ))
-    }
-
-    @pure def print_astJustImplyElim(o: org.sireum.lang.ast.Just.ImplyElim): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Just.ImplyElim""""),
-        ("implyStep", print_astExpLitZ(o.implyStep)),
-        ("steps", printISZ(F, o.steps, print_astExpLitZ _)),
-        ("attr", print_astAttr(o.attr))
-      ))
-    }
-
-    @pure def print_astJustNegIntro(o: org.sireum.lang.ast.Just.NegIntro): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Just.NegIntro""""),
-        ("subProofStep", print_astExpLitZ(o.subProofStep)),
-        ("attr", print_astAttr(o.attr))
-      ))
-    }
-
-    @pure def print_astJustNegElim(o: org.sireum.lang.ast.Just.NegElim): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Just.NegElim""""),
-        ("step", print_astExpLitZ(o.step)),
-        ("negStep", print_astExpLitZ(o.negStep)),
-        ("attr", print_astAttr(o.attr))
-      ))
-    }
-
-    @pure def print_astJustBottomElim(o: org.sireum.lang.ast.Just.BottomElim): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Just.BottomElim""""),
-        ("subProofStep", print_astExpLitZ(o.subProofStep)),
-        ("attr", print_astAttr(o.attr))
-      ))
-    }
-
-    @pure def print_astJustForallIntro(o: org.sireum.lang.ast.Just.ForallIntro): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Just.ForallIntro""""),
-        ("subProofStep", print_astExpLitZ(o.subProofStep)),
-        ("attr", print_astAttr(o.attr))
-      ))
-    }
-
-    @pure def print_astJustForallElim(o: org.sireum.lang.ast.Just.ForallElim): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Just.ForallElim""""),
-        ("forallStep", print_astExpLitZ(o.forallStep)),
+        ("type", st""""org.sireum.lang.ast.Just""""),
+        ("kind", printString(o.kind)),
         ("args", printISZ(F, o.args, print_astExp _)),
-        ("attr", print_astAttr(o.attr))
-      ))
-    }
-
-    @pure def print_astJustExistsIntro(o: org.sireum.lang.ast.Just.ExistsIntro): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Just.ExistsIntro""""),
-        ("existsStep", print_astExpLitZ(o.existsStep)),
-        ("args", printISZ(F, o.args, print_astExp _)),
-        ("attr", print_astAttr(o.attr))
-      ))
-    }
-
-    @pure def print_astJustExistsElim(o: org.sireum.lang.ast.Just.ExistsElim): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Just.ExistsElim""""),
-        ("existsStep", print_astExpLitZ(o.existsStep)),
-        ("subProofStep", print_astExpLitZ(o.subProofStep)),
-        ("attr", print_astAttr(o.attr))
-      ))
-    }
-
-    @pure def print_astJustOrIntro(o: org.sireum.lang.ast.Just.OrIntro): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Just.OrIntro""""),
-        ("is1", printB(o.is1)),
-        ("step", print_astExpLitZ(o.step)),
-        ("attr", print_astAttr(o.attr))
-      ))
-    }
-
-    @pure def print_astJustOrElim(o: org.sireum.lang.ast.Just.OrElim): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Just.OrElim""""),
-        ("orStep", print_astExpLitZ(o.orStep)),
-        ("subProofSteps", printISZ(F, o.subProofSteps, print_astExpLitZ _)),
-        ("attr", print_astAttr(o.attr))
-      ))
-    }
-
-    @pure def print_astJustAndIntro(o: org.sireum.lang.ast.Just.AndIntro): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Just.AndIntro""""),
-        ("steps", printISZ(F, o.steps, print_astExpLitZ _)),
-        ("attr", print_astAttr(o.attr))
-      ))
-    }
-
-    @pure def print_astJustAndElim(o: org.sireum.lang.ast.Just.AndElim): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Just.AndElim""""),
-        ("is1", printB(o.is1)),
-        ("andStep", print_astExpLitZ(o.andStep)),
-        ("attr", print_astAttr(o.attr))
-      ))
-    }
-
-    @pure def print_astJustPbc(o: org.sireum.lang.ast.Just.Pbc): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Just.Pbc""""),
-        ("subProofStep", print_astExpLitZ(o.subProofStep)),
         ("attr", print_astAttr(o.attr))
       ))
     }
@@ -2912,13 +2689,10 @@ object JSON {
       parser.parseObjectKey("defs")
       val defs = parser.parseISZ(parse_astSpecDef _)
       parser.parseObjectNext()
-      parser.parseObjectKey("where")
-      val where = parser.parseISZ(parse_astWhereDef _)
-      parser.parseObjectNext()
       parser.parseObjectKey("attr")
       val attr = parse_astResolvedAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.SpecMethod(sig, defs, where, attr)
+      return org.sireum.lang.ast.Stmt.SpecMethod(sig, defs, attr)
     }
 
     def parse_astStmtEnum(): org.sireum.lang.ast.Stmt.Enum = {
@@ -3396,27 +3170,9 @@ object JSON {
         parser.parseObjectType("org.sireum.lang.ast.LClause.Facts")
       }
       parser.parseObjectKey("value")
-      val value = parser.parseISZ(parse_astLClauseFact _)
+      val value = parser.parseISZ(parse_astContractExp _)
       parser.parseObjectNext()
       return org.sireum.lang.ast.LClause.Facts(value)
-    }
-
-    def parse_astLClauseFact(): org.sireum.lang.ast.LClause.Fact = {
-      val r = parse_astLClauseFactT(F)
-      return r
-    }
-
-    def parse_astLClauseFactT(typeParsed: B): org.sireum.lang.ast.LClause.Fact = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.LClause.Fact")
-      }
-      parser.parseObjectKey("id")
-      val id = parse_astId()
-      parser.parseObjectNext()
-      parser.parseObjectKey("exp")
-      val exp = parse_astExp()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.LClause.Fact(id, exp)
     }
 
     def parse_astLClauseTheorems(): org.sireum.lang.ast.LClause.Theorems = {
@@ -3429,27 +3185,9 @@ object JSON {
         parser.parseObjectType("org.sireum.lang.ast.LClause.Theorems")
       }
       parser.parseObjectKey("value")
-      val value = parser.parseISZ(parse_astLClauseTheorem _)
+      val value = parser.parseISZ(parse_astContractExp _)
       parser.parseObjectNext()
       return org.sireum.lang.ast.LClause.Theorems(value)
-    }
-
-    def parse_astLClauseTheorem(): org.sireum.lang.ast.LClause.Theorem = {
-      val r = parse_astLClauseTheoremT(F)
-      return r
-    }
-
-    def parse_astLClauseTheoremT(typeParsed: B): org.sireum.lang.ast.LClause.Theorem = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.LClause.Theorem")
-      }
-      parser.parseObjectKey("id")
-      val id = parse_astId()
-      parser.parseObjectNext()
-      parser.parseObjectKey("sequent")
-      val sequent = parse_astLClauseSequent()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.LClause.Theorem(id, sequent)
     }
 
     def parse_astLClauseSequent(): org.sireum.lang.ast.LClause.Sequent = {
@@ -4623,8 +4361,26 @@ object JSON {
       if (!typeParsed) {
         parser.parseObjectType("org.sireum.lang.ast.Contract")
       }
-      parser.parseObjectKey("reads")
-      val reads = parser.parseISZ(parse_astExp _)
+      parser.parseObjectKey("cases")
+      val cases = parser.parseISZ(parse_astContractCase _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("subs")
+      val subs = parser.parseISZ(parse_astSubContract _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Contract(cases, subs)
+    }
+
+    def parse_astContractCase(): org.sireum.lang.ast.ContractCase = {
+      val r = parse_astContractCaseT(F)
+      return r
+    }
+
+    def parse_astContractCaseT(typeParsed: B): org.sireum.lang.ast.ContractCase = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.ContractCase")
+      }
+      parser.parseObjectKey("idOpt")
+      val idOpt = parser.parseOption(parse_astId _)
       parser.parseObjectNext()
       parser.parseObjectKey("requires")
       val requires = parser.parseISZ(parse_astContractExp _)
@@ -4635,10 +4391,7 @@ object JSON {
       parser.parseObjectKey("ensures")
       val ensures = parser.parseISZ(parse_astContractExp _)
       parser.parseObjectNext()
-      parser.parseObjectKey("subs")
-      val subs = parser.parseISZ(parse_astSubContract _)
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Contract(reads, requires, modifies, ensures, subs)
+      return org.sireum.lang.ast.ContractCase(idOpt, requires, modifies, ensures)
     }
 
     def parse_astSubContract(): org.sireum.lang.ast.SubContract = {
@@ -4660,60 +4413,6 @@ object JSON {
       val contract = parse_astContract()
       parser.parseObjectNext()
       return org.sireum.lang.ast.SubContract(id, params, contract)
-    }
-
-    def parse_astWhereDef(): org.sireum.lang.ast.WhereDef = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.WhereDef.Val", "org.sireum.lang.ast.WhereDef.Def"))
-      t.native match {
-        case "org.sireum.lang.ast.WhereDef.Val" => val r = parse_astWhereDefValT(T); return r
-        case "org.sireum.lang.ast.WhereDef.Def" => val r = parse_astWhereDefDefT(T); return r
-        case _ => val r = parse_astWhereDefDefT(T); return r
-      }
-    }
-
-    def parse_astWhereDefVal(): org.sireum.lang.ast.WhereDef.Val = {
-      val r = parse_astWhereDefValT(F)
-      return r
-    }
-
-    def parse_astWhereDefValT(typeParsed: B): org.sireum.lang.ast.WhereDef.Val = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.WhereDef.Val")
-      }
-      parser.parseObjectKey("id")
-      val id = parse_astId()
-      parser.parseObjectNext()
-      parser.parseObjectKey("tipe")
-      val tipe = parse_astType()
-      parser.parseObjectNext()
-      parser.parseObjectKey("exp")
-      val exp = parse_astExp()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.WhereDef.Val(id, tipe, exp)
-    }
-
-    def parse_astWhereDefDef(): org.sireum.lang.ast.WhereDef.Def = {
-      val r = parse_astWhereDefDefT(F)
-      return r
-    }
-
-    def parse_astWhereDefDefT(typeParsed: B): org.sireum.lang.ast.WhereDef.Def = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.WhereDef.Def")
-      }
-      parser.parseObjectKey("id")
-      val id = parse_astId()
-      parser.parseObjectNext()
-      parser.parseObjectKey("params")
-      val params = parser.parseISZ(parse_astParam _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("rTipe")
-      val rTipe = parse_astType()
-      parser.parseObjectNext()
-      parser.parseObjectKey("defs")
-      val defs = parser.parseISZ(parse_astSpecDef _)
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.WhereDef.Def(id, params, rTipe, defs)
     }
 
     def parse_astSpecDef(): org.sireum.lang.ast.SpecDef = {
@@ -5375,274 +5074,16 @@ object JSON {
     }
 
     def parse_astJust(): org.sireum.lang.ast.Just = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Just.Premise", "org.sireum.lang.ast.Just.Auto", "org.sireum.lang.ast.Just.Coq", "org.sireum.lang.ast.Just.Subst", "org.sireum.lang.ast.Just.Invariant", "org.sireum.lang.ast.Just.Fact", "org.sireum.lang.ast.Just.ImplyIntro", "org.sireum.lang.ast.Just.ImplyElim", "org.sireum.lang.ast.Just.NegIntro", "org.sireum.lang.ast.Just.NegElim", "org.sireum.lang.ast.Just.BottomElim", "org.sireum.lang.ast.Just.ForallIntro", "org.sireum.lang.ast.Just.ForallElim", "org.sireum.lang.ast.Just.ExistsIntro", "org.sireum.lang.ast.Just.ExistsElim", "org.sireum.lang.ast.Just.OrIntro", "org.sireum.lang.ast.Just.OrElim", "org.sireum.lang.ast.Just.AndIntro", "org.sireum.lang.ast.Just.AndElim", "org.sireum.lang.ast.Just.Pbc"))
-      t.native match {
-        case "org.sireum.lang.ast.Just.Premise" => val r = parse_astJustPremiseT(T); return r
-        case "org.sireum.lang.ast.Just.Auto" => val r = parse_astJustAutoT(T); return r
-        case "org.sireum.lang.ast.Just.Coq" => val r = parse_astJustCoqT(T); return r
-        case "org.sireum.lang.ast.Just.Subst" => val r = parse_astJustSubstT(T); return r
-        case "org.sireum.lang.ast.Just.Invariant" => val r = parse_astJustInvariantT(T); return r
-        case "org.sireum.lang.ast.Just.Fact" => val r = parse_astJustFactT(T); return r
-        case "org.sireum.lang.ast.Just.ImplyIntro" => val r = parse_astJustImplyIntroT(T); return r
-        case "org.sireum.lang.ast.Just.ImplyElim" => val r = parse_astJustImplyElimT(T); return r
-        case "org.sireum.lang.ast.Just.NegIntro" => val r = parse_astJustNegIntroT(T); return r
-        case "org.sireum.lang.ast.Just.NegElim" => val r = parse_astJustNegElimT(T); return r
-        case "org.sireum.lang.ast.Just.BottomElim" => val r = parse_astJustBottomElimT(T); return r
-        case "org.sireum.lang.ast.Just.ForallIntro" => val r = parse_astJustForallIntroT(T); return r
-        case "org.sireum.lang.ast.Just.ForallElim" => val r = parse_astJustForallElimT(T); return r
-        case "org.sireum.lang.ast.Just.ExistsIntro" => val r = parse_astJustExistsIntroT(T); return r
-        case "org.sireum.lang.ast.Just.ExistsElim" => val r = parse_astJustExistsElimT(T); return r
-        case "org.sireum.lang.ast.Just.OrIntro" => val r = parse_astJustOrIntroT(T); return r
-        case "org.sireum.lang.ast.Just.OrElim" => val r = parse_astJustOrElimT(T); return r
-        case "org.sireum.lang.ast.Just.AndIntro" => val r = parse_astJustAndIntroT(T); return r
-        case "org.sireum.lang.ast.Just.AndElim" => val r = parse_astJustAndElimT(T); return r
-        case "org.sireum.lang.ast.Just.Pbc" => val r = parse_astJustPbcT(T); return r
-        case _ => val r = parse_astJustPbcT(T); return r
-      }
-    }
-
-    def parse_astJustPremise(): org.sireum.lang.ast.Just.Premise = {
-      val r = parse_astJustPremiseT(F)
+      val r = parse_astJustT(F)
       return r
     }
 
-    def parse_astJustPremiseT(typeParsed: B): org.sireum.lang.ast.Just.Premise = {
+    def parse_astJustT(typeParsed: B): org.sireum.lang.ast.Just = {
       if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Just.Premise")
+        parser.parseObjectType("org.sireum.lang.ast.Just")
       }
-      parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Just.Premise(attr)
-    }
-
-    def parse_astJustAuto(): org.sireum.lang.ast.Just.Auto = {
-      val r = parse_astJustAutoT(F)
-      return r
-    }
-
-    def parse_astJustAutoT(typeParsed: B): org.sireum.lang.ast.Just.Auto = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Just.Auto")
-      }
-      parser.parseObjectKey("isAlgebra")
-      val isAlgebra = parser.parseB()
-      parser.parseObjectNext()
-      parser.parseObjectKey("steps")
-      val steps = parser.parseISZ(parse_astExpLitZ _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Just.Auto(isAlgebra, steps, attr)
-    }
-
-    def parse_astJustCoq(): org.sireum.lang.ast.Just.Coq = {
-      val r = parse_astJustCoqT(F)
-      return r
-    }
-
-    def parse_astJustCoqT(typeParsed: B): org.sireum.lang.ast.Just.Coq = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Just.Coq")
-      }
-      parser.parseObjectKey("path")
-      val path = parse_astExpLitString()
-      parser.parseObjectNext()
-      parser.parseObjectKey("steps")
-      val steps = parser.parseISZ(parse_astExpLitZ _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Just.Coq(path, steps, attr)
-    }
-
-    def parse_astJustSubst(): org.sireum.lang.ast.Just.Subst = {
-      val r = parse_astJustSubstT(F)
-      return r
-    }
-
-    def parse_astJustSubstT(typeParsed: B): org.sireum.lang.ast.Just.Subst = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Just.Subst")
-      }
-      parser.parseObjectKey("isRight")
-      val isRight = parser.parseB()
-      parser.parseObjectNext()
-      parser.parseObjectKey("eqStep")
-      val eqStep = parse_astExpLitZ()
-      parser.parseObjectNext()
-      parser.parseObjectKey("step")
-      val step = parse_astExpLitZ()
-      parser.parseObjectNext()
-      parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Just.Subst(isRight, eqStep, step, attr)
-    }
-
-    def parse_astJustInvariant(): org.sireum.lang.ast.Just.Invariant = {
-      val r = parse_astJustInvariantT(F)
-      return r
-    }
-
-    def parse_astJustInvariantT(typeParsed: B): org.sireum.lang.ast.Just.Invariant = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Just.Invariant")
-      }
-      parser.parseObjectKey("nameOpt")
-      val nameOpt = parser.parseOption(parse_astName _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Just.Invariant(nameOpt, attr)
-    }
-
-    def parse_astJustFact(): org.sireum.lang.ast.Just.Fact = {
-      val r = parse_astJustFactT(F)
-      return r
-    }
-
-    def parse_astJustFactT(typeParsed: B): org.sireum.lang.ast.Just.Fact = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Just.Fact")
-      }
-      parser.parseObjectKey("name")
-      val name = parse_astName()
-      parser.parseObjectNext()
-      parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Just.Fact(name, attr)
-    }
-
-    def parse_astJustImplyIntro(): org.sireum.lang.ast.Just.ImplyIntro = {
-      val r = parse_astJustImplyIntroT(F)
-      return r
-    }
-
-    def parse_astJustImplyIntroT(typeParsed: B): org.sireum.lang.ast.Just.ImplyIntro = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Just.ImplyIntro")
-      }
-      parser.parseObjectKey("subProofStep")
-      val subProofStep = parse_astExpLitZ()
-      parser.parseObjectNext()
-      parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Just.ImplyIntro(subProofStep, attr)
-    }
-
-    def parse_astJustImplyElim(): org.sireum.lang.ast.Just.ImplyElim = {
-      val r = parse_astJustImplyElimT(F)
-      return r
-    }
-
-    def parse_astJustImplyElimT(typeParsed: B): org.sireum.lang.ast.Just.ImplyElim = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Just.ImplyElim")
-      }
-      parser.parseObjectKey("implyStep")
-      val implyStep = parse_astExpLitZ()
-      parser.parseObjectNext()
-      parser.parseObjectKey("steps")
-      val steps = parser.parseISZ(parse_astExpLitZ _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Just.ImplyElim(implyStep, steps, attr)
-    }
-
-    def parse_astJustNegIntro(): org.sireum.lang.ast.Just.NegIntro = {
-      val r = parse_astJustNegIntroT(F)
-      return r
-    }
-
-    def parse_astJustNegIntroT(typeParsed: B): org.sireum.lang.ast.Just.NegIntro = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Just.NegIntro")
-      }
-      parser.parseObjectKey("subProofStep")
-      val subProofStep = parse_astExpLitZ()
-      parser.parseObjectNext()
-      parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Just.NegIntro(subProofStep, attr)
-    }
-
-    def parse_astJustNegElim(): org.sireum.lang.ast.Just.NegElim = {
-      val r = parse_astJustNegElimT(F)
-      return r
-    }
-
-    def parse_astJustNegElimT(typeParsed: B): org.sireum.lang.ast.Just.NegElim = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Just.NegElim")
-      }
-      parser.parseObjectKey("step")
-      val step = parse_astExpLitZ()
-      parser.parseObjectNext()
-      parser.parseObjectKey("negStep")
-      val negStep = parse_astExpLitZ()
-      parser.parseObjectNext()
-      parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Just.NegElim(step, negStep, attr)
-    }
-
-    def parse_astJustBottomElim(): org.sireum.lang.ast.Just.BottomElim = {
-      val r = parse_astJustBottomElimT(F)
-      return r
-    }
-
-    def parse_astJustBottomElimT(typeParsed: B): org.sireum.lang.ast.Just.BottomElim = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Just.BottomElim")
-      }
-      parser.parseObjectKey("subProofStep")
-      val subProofStep = parse_astExpLitZ()
-      parser.parseObjectNext()
-      parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Just.BottomElim(subProofStep, attr)
-    }
-
-    def parse_astJustForallIntro(): org.sireum.lang.ast.Just.ForallIntro = {
-      val r = parse_astJustForallIntroT(F)
-      return r
-    }
-
-    def parse_astJustForallIntroT(typeParsed: B): org.sireum.lang.ast.Just.ForallIntro = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Just.ForallIntro")
-      }
-      parser.parseObjectKey("subProofStep")
-      val subProofStep = parse_astExpLitZ()
-      parser.parseObjectNext()
-      parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Just.ForallIntro(subProofStep, attr)
-    }
-
-    def parse_astJustForallElim(): org.sireum.lang.ast.Just.ForallElim = {
-      val r = parse_astJustForallElimT(F)
-      return r
-    }
-
-    def parse_astJustForallElimT(typeParsed: B): org.sireum.lang.ast.Just.ForallElim = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Just.ForallElim")
-      }
-      parser.parseObjectKey("forallStep")
-      val forallStep = parse_astExpLitZ()
+      parser.parseObjectKey("kind")
+      val kind = parser.parseString()
       parser.parseObjectNext()
       parser.parseObjectKey("args")
       val args = parser.parseISZ(parse_astExp _)
@@ -5650,148 +5091,7 @@ object JSON {
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Just.ForallElim(forallStep, args, attr)
-    }
-
-    def parse_astJustExistsIntro(): org.sireum.lang.ast.Just.ExistsIntro = {
-      val r = parse_astJustExistsIntroT(F)
-      return r
-    }
-
-    def parse_astJustExistsIntroT(typeParsed: B): org.sireum.lang.ast.Just.ExistsIntro = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Just.ExistsIntro")
-      }
-      parser.parseObjectKey("existsStep")
-      val existsStep = parse_astExpLitZ()
-      parser.parseObjectNext()
-      parser.parseObjectKey("args")
-      val args = parser.parseISZ(parse_astExp _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Just.ExistsIntro(existsStep, args, attr)
-    }
-
-    def parse_astJustExistsElim(): org.sireum.lang.ast.Just.ExistsElim = {
-      val r = parse_astJustExistsElimT(F)
-      return r
-    }
-
-    def parse_astJustExistsElimT(typeParsed: B): org.sireum.lang.ast.Just.ExistsElim = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Just.ExistsElim")
-      }
-      parser.parseObjectKey("existsStep")
-      val existsStep = parse_astExpLitZ()
-      parser.parseObjectNext()
-      parser.parseObjectKey("subProofStep")
-      val subProofStep = parse_astExpLitZ()
-      parser.parseObjectNext()
-      parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Just.ExistsElim(existsStep, subProofStep, attr)
-    }
-
-    def parse_astJustOrIntro(): org.sireum.lang.ast.Just.OrIntro = {
-      val r = parse_astJustOrIntroT(F)
-      return r
-    }
-
-    def parse_astJustOrIntroT(typeParsed: B): org.sireum.lang.ast.Just.OrIntro = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Just.OrIntro")
-      }
-      parser.parseObjectKey("is1")
-      val is1 = parser.parseB()
-      parser.parseObjectNext()
-      parser.parseObjectKey("step")
-      val step = parse_astExpLitZ()
-      parser.parseObjectNext()
-      parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Just.OrIntro(is1, step, attr)
-    }
-
-    def parse_astJustOrElim(): org.sireum.lang.ast.Just.OrElim = {
-      val r = parse_astJustOrElimT(F)
-      return r
-    }
-
-    def parse_astJustOrElimT(typeParsed: B): org.sireum.lang.ast.Just.OrElim = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Just.OrElim")
-      }
-      parser.parseObjectKey("orStep")
-      val orStep = parse_astExpLitZ()
-      parser.parseObjectNext()
-      parser.parseObjectKey("subProofSteps")
-      val subProofSteps = parser.parseISZ(parse_astExpLitZ _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Just.OrElim(orStep, subProofSteps, attr)
-    }
-
-    def parse_astJustAndIntro(): org.sireum.lang.ast.Just.AndIntro = {
-      val r = parse_astJustAndIntroT(F)
-      return r
-    }
-
-    def parse_astJustAndIntroT(typeParsed: B): org.sireum.lang.ast.Just.AndIntro = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Just.AndIntro")
-      }
-      parser.parseObjectKey("steps")
-      val steps = parser.parseISZ(parse_astExpLitZ _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Just.AndIntro(steps, attr)
-    }
-
-    def parse_astJustAndElim(): org.sireum.lang.ast.Just.AndElim = {
-      val r = parse_astJustAndElimT(F)
-      return r
-    }
-
-    def parse_astJustAndElimT(typeParsed: B): org.sireum.lang.ast.Just.AndElim = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Just.AndElim")
-      }
-      parser.parseObjectKey("is1")
-      val is1 = parser.parseB()
-      parser.parseObjectNext()
-      parser.parseObjectKey("andStep")
-      val andStep = parse_astExpLitZ()
-      parser.parseObjectNext()
-      parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Just.AndElim(is1, andStep, attr)
-    }
-
-    def parse_astJustPbc(): org.sireum.lang.ast.Just.Pbc = {
-      val r = parse_astJustPbcT(F)
-      return r
-    }
-
-    def parse_astJustPbcT(typeParsed: B): org.sireum.lang.ast.Just.Pbc = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Just.Pbc")
-      }
-      parser.parseObjectKey("subProofStep")
-      val subProofStep = parse_astExpLitZ()
-      parser.parseObjectNext()
-      parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Just.Pbc(subProofStep, attr)
+      return org.sireum.lang.ast.Just(kind, args, attr)
     }
 
     def parse_astTruthTableRow(): org.sireum.lang.ast.TruthTable.Row = {
@@ -7031,24 +6331,6 @@ object JSON {
     return r
   }
 
-  def from_astLClauseFact(o: org.sireum.lang.ast.LClause.Fact, isCompact: B): String = {
-    val st = Printer.print_astLClauseFact(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astLClauseFact(s: String): Either[org.sireum.lang.ast.LClause.Fact, Json.ErrorMsg] = {
-    def f_astLClauseFact(parser: Parser): org.sireum.lang.ast.LClause.Fact = {
-      val r = parser.parse_astLClauseFact()
-      return r
-    }
-    val r = to(s, f_astLClauseFact _)
-    return r
-  }
-
   def from_astLClauseTheorems(o: org.sireum.lang.ast.LClause.Theorems, isCompact: B): String = {
     val st = Printer.print_astLClauseTheorems(o)
     if (isCompact) {
@@ -7064,24 +6346,6 @@ object JSON {
       return r
     }
     val r = to(s, f_astLClauseTheorems _)
-    return r
-  }
-
-  def from_astLClauseTheorem(o: org.sireum.lang.ast.LClause.Theorem, isCompact: B): String = {
-    val st = Printer.print_astLClauseTheorem(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astLClauseTheorem(s: String): Either[org.sireum.lang.ast.LClause.Theorem, Json.ErrorMsg] = {
-    def f_astLClauseTheorem(parser: Parser): org.sireum.lang.ast.LClause.Theorem = {
-      val r = parser.parse_astLClauseTheorem()
-      return r
-    }
-    val r = to(s, f_astLClauseTheorem _)
     return r
   }
 
@@ -8147,6 +7411,24 @@ object JSON {
     return r
   }
 
+  def from_astContractCase(o: org.sireum.lang.ast.ContractCase, isCompact: B): String = {
+    val st = Printer.print_astContractCase(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astContractCase(s: String): Either[org.sireum.lang.ast.ContractCase, Json.ErrorMsg] = {
+    def f_astContractCase(parser: Parser): org.sireum.lang.ast.ContractCase = {
+      val r = parser.parse_astContractCase()
+      return r
+    }
+    val r = to(s, f_astContractCase _)
+    return r
+  }
+
   def from_astSubContract(o: org.sireum.lang.ast.SubContract, isCompact: B): String = {
     val st = Printer.print_astSubContract(o)
     if (isCompact) {
@@ -8162,60 +7444,6 @@ object JSON {
       return r
     }
     val r = to(s, f_astSubContract _)
-    return r
-  }
-
-  def from_astWhereDef(o: org.sireum.lang.ast.WhereDef, isCompact: B): String = {
-    val st = Printer.print_astWhereDef(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astWhereDef(s: String): Either[org.sireum.lang.ast.WhereDef, Json.ErrorMsg] = {
-    def f_astWhereDef(parser: Parser): org.sireum.lang.ast.WhereDef = {
-      val r = parser.parse_astWhereDef()
-      return r
-    }
-    val r = to(s, f_astWhereDef _)
-    return r
-  }
-
-  def from_astWhereDefVal(o: org.sireum.lang.ast.WhereDef.Val, isCompact: B): String = {
-    val st = Printer.print_astWhereDefVal(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astWhereDefVal(s: String): Either[org.sireum.lang.ast.WhereDef.Val, Json.ErrorMsg] = {
-    def f_astWhereDefVal(parser: Parser): org.sireum.lang.ast.WhereDef.Val = {
-      val r = parser.parse_astWhereDefVal()
-      return r
-    }
-    val r = to(s, f_astWhereDefVal _)
-    return r
-  }
-
-  def from_astWhereDefDef(o: org.sireum.lang.ast.WhereDef.Def, isCompact: B): String = {
-    val st = Printer.print_astWhereDefDef(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astWhereDefDef(s: String): Either[org.sireum.lang.ast.WhereDef.Def, Json.ErrorMsg] = {
-    def f_astWhereDefDef(parser: Parser): org.sireum.lang.ast.WhereDef.Def = {
-      val r = parser.parse_astWhereDefDef()
-      return r
-    }
-    val r = to(s, f_astWhereDefDef _)
     return r
   }
 
@@ -8810,366 +8038,6 @@ object JSON {
       return r
     }
     val r = to(s, f_astJust _)
-    return r
-  }
-
-  def from_astJustPremise(o: org.sireum.lang.ast.Just.Premise, isCompact: B): String = {
-    val st = Printer.print_astJustPremise(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astJustPremise(s: String): Either[org.sireum.lang.ast.Just.Premise, Json.ErrorMsg] = {
-    def f_astJustPremise(parser: Parser): org.sireum.lang.ast.Just.Premise = {
-      val r = parser.parse_astJustPremise()
-      return r
-    }
-    val r = to(s, f_astJustPremise _)
-    return r
-  }
-
-  def from_astJustAuto(o: org.sireum.lang.ast.Just.Auto, isCompact: B): String = {
-    val st = Printer.print_astJustAuto(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astJustAuto(s: String): Either[org.sireum.lang.ast.Just.Auto, Json.ErrorMsg] = {
-    def f_astJustAuto(parser: Parser): org.sireum.lang.ast.Just.Auto = {
-      val r = parser.parse_astJustAuto()
-      return r
-    }
-    val r = to(s, f_astJustAuto _)
-    return r
-  }
-
-  def from_astJustCoq(o: org.sireum.lang.ast.Just.Coq, isCompact: B): String = {
-    val st = Printer.print_astJustCoq(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astJustCoq(s: String): Either[org.sireum.lang.ast.Just.Coq, Json.ErrorMsg] = {
-    def f_astJustCoq(parser: Parser): org.sireum.lang.ast.Just.Coq = {
-      val r = parser.parse_astJustCoq()
-      return r
-    }
-    val r = to(s, f_astJustCoq _)
-    return r
-  }
-
-  def from_astJustSubst(o: org.sireum.lang.ast.Just.Subst, isCompact: B): String = {
-    val st = Printer.print_astJustSubst(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astJustSubst(s: String): Either[org.sireum.lang.ast.Just.Subst, Json.ErrorMsg] = {
-    def f_astJustSubst(parser: Parser): org.sireum.lang.ast.Just.Subst = {
-      val r = parser.parse_astJustSubst()
-      return r
-    }
-    val r = to(s, f_astJustSubst _)
-    return r
-  }
-
-  def from_astJustInvariant(o: org.sireum.lang.ast.Just.Invariant, isCompact: B): String = {
-    val st = Printer.print_astJustInvariant(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astJustInvariant(s: String): Either[org.sireum.lang.ast.Just.Invariant, Json.ErrorMsg] = {
-    def f_astJustInvariant(parser: Parser): org.sireum.lang.ast.Just.Invariant = {
-      val r = parser.parse_astJustInvariant()
-      return r
-    }
-    val r = to(s, f_astJustInvariant _)
-    return r
-  }
-
-  def from_astJustFact(o: org.sireum.lang.ast.Just.Fact, isCompact: B): String = {
-    val st = Printer.print_astJustFact(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astJustFact(s: String): Either[org.sireum.lang.ast.Just.Fact, Json.ErrorMsg] = {
-    def f_astJustFact(parser: Parser): org.sireum.lang.ast.Just.Fact = {
-      val r = parser.parse_astJustFact()
-      return r
-    }
-    val r = to(s, f_astJustFact _)
-    return r
-  }
-
-  def from_astJustImplyIntro(o: org.sireum.lang.ast.Just.ImplyIntro, isCompact: B): String = {
-    val st = Printer.print_astJustImplyIntro(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astJustImplyIntro(s: String): Either[org.sireum.lang.ast.Just.ImplyIntro, Json.ErrorMsg] = {
-    def f_astJustImplyIntro(parser: Parser): org.sireum.lang.ast.Just.ImplyIntro = {
-      val r = parser.parse_astJustImplyIntro()
-      return r
-    }
-    val r = to(s, f_astJustImplyIntro _)
-    return r
-  }
-
-  def from_astJustImplyElim(o: org.sireum.lang.ast.Just.ImplyElim, isCompact: B): String = {
-    val st = Printer.print_astJustImplyElim(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astJustImplyElim(s: String): Either[org.sireum.lang.ast.Just.ImplyElim, Json.ErrorMsg] = {
-    def f_astJustImplyElim(parser: Parser): org.sireum.lang.ast.Just.ImplyElim = {
-      val r = parser.parse_astJustImplyElim()
-      return r
-    }
-    val r = to(s, f_astJustImplyElim _)
-    return r
-  }
-
-  def from_astJustNegIntro(o: org.sireum.lang.ast.Just.NegIntro, isCompact: B): String = {
-    val st = Printer.print_astJustNegIntro(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astJustNegIntro(s: String): Either[org.sireum.lang.ast.Just.NegIntro, Json.ErrorMsg] = {
-    def f_astJustNegIntro(parser: Parser): org.sireum.lang.ast.Just.NegIntro = {
-      val r = parser.parse_astJustNegIntro()
-      return r
-    }
-    val r = to(s, f_astJustNegIntro _)
-    return r
-  }
-
-  def from_astJustNegElim(o: org.sireum.lang.ast.Just.NegElim, isCompact: B): String = {
-    val st = Printer.print_astJustNegElim(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astJustNegElim(s: String): Either[org.sireum.lang.ast.Just.NegElim, Json.ErrorMsg] = {
-    def f_astJustNegElim(parser: Parser): org.sireum.lang.ast.Just.NegElim = {
-      val r = parser.parse_astJustNegElim()
-      return r
-    }
-    val r = to(s, f_astJustNegElim _)
-    return r
-  }
-
-  def from_astJustBottomElim(o: org.sireum.lang.ast.Just.BottomElim, isCompact: B): String = {
-    val st = Printer.print_astJustBottomElim(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astJustBottomElim(s: String): Either[org.sireum.lang.ast.Just.BottomElim, Json.ErrorMsg] = {
-    def f_astJustBottomElim(parser: Parser): org.sireum.lang.ast.Just.BottomElim = {
-      val r = parser.parse_astJustBottomElim()
-      return r
-    }
-    val r = to(s, f_astJustBottomElim _)
-    return r
-  }
-
-  def from_astJustForallIntro(o: org.sireum.lang.ast.Just.ForallIntro, isCompact: B): String = {
-    val st = Printer.print_astJustForallIntro(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astJustForallIntro(s: String): Either[org.sireum.lang.ast.Just.ForallIntro, Json.ErrorMsg] = {
-    def f_astJustForallIntro(parser: Parser): org.sireum.lang.ast.Just.ForallIntro = {
-      val r = parser.parse_astJustForallIntro()
-      return r
-    }
-    val r = to(s, f_astJustForallIntro _)
-    return r
-  }
-
-  def from_astJustForallElim(o: org.sireum.lang.ast.Just.ForallElim, isCompact: B): String = {
-    val st = Printer.print_astJustForallElim(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astJustForallElim(s: String): Either[org.sireum.lang.ast.Just.ForallElim, Json.ErrorMsg] = {
-    def f_astJustForallElim(parser: Parser): org.sireum.lang.ast.Just.ForallElim = {
-      val r = parser.parse_astJustForallElim()
-      return r
-    }
-    val r = to(s, f_astJustForallElim _)
-    return r
-  }
-
-  def from_astJustExistsIntro(o: org.sireum.lang.ast.Just.ExistsIntro, isCompact: B): String = {
-    val st = Printer.print_astJustExistsIntro(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astJustExistsIntro(s: String): Either[org.sireum.lang.ast.Just.ExistsIntro, Json.ErrorMsg] = {
-    def f_astJustExistsIntro(parser: Parser): org.sireum.lang.ast.Just.ExistsIntro = {
-      val r = parser.parse_astJustExistsIntro()
-      return r
-    }
-    val r = to(s, f_astJustExistsIntro _)
-    return r
-  }
-
-  def from_astJustExistsElim(o: org.sireum.lang.ast.Just.ExistsElim, isCompact: B): String = {
-    val st = Printer.print_astJustExistsElim(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astJustExistsElim(s: String): Either[org.sireum.lang.ast.Just.ExistsElim, Json.ErrorMsg] = {
-    def f_astJustExistsElim(parser: Parser): org.sireum.lang.ast.Just.ExistsElim = {
-      val r = parser.parse_astJustExistsElim()
-      return r
-    }
-    val r = to(s, f_astJustExistsElim _)
-    return r
-  }
-
-  def from_astJustOrIntro(o: org.sireum.lang.ast.Just.OrIntro, isCompact: B): String = {
-    val st = Printer.print_astJustOrIntro(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astJustOrIntro(s: String): Either[org.sireum.lang.ast.Just.OrIntro, Json.ErrorMsg] = {
-    def f_astJustOrIntro(parser: Parser): org.sireum.lang.ast.Just.OrIntro = {
-      val r = parser.parse_astJustOrIntro()
-      return r
-    }
-    val r = to(s, f_astJustOrIntro _)
-    return r
-  }
-
-  def from_astJustOrElim(o: org.sireum.lang.ast.Just.OrElim, isCompact: B): String = {
-    val st = Printer.print_astJustOrElim(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astJustOrElim(s: String): Either[org.sireum.lang.ast.Just.OrElim, Json.ErrorMsg] = {
-    def f_astJustOrElim(parser: Parser): org.sireum.lang.ast.Just.OrElim = {
-      val r = parser.parse_astJustOrElim()
-      return r
-    }
-    val r = to(s, f_astJustOrElim _)
-    return r
-  }
-
-  def from_astJustAndIntro(o: org.sireum.lang.ast.Just.AndIntro, isCompact: B): String = {
-    val st = Printer.print_astJustAndIntro(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astJustAndIntro(s: String): Either[org.sireum.lang.ast.Just.AndIntro, Json.ErrorMsg] = {
-    def f_astJustAndIntro(parser: Parser): org.sireum.lang.ast.Just.AndIntro = {
-      val r = parser.parse_astJustAndIntro()
-      return r
-    }
-    val r = to(s, f_astJustAndIntro _)
-    return r
-  }
-
-  def from_astJustAndElim(o: org.sireum.lang.ast.Just.AndElim, isCompact: B): String = {
-    val st = Printer.print_astJustAndElim(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astJustAndElim(s: String): Either[org.sireum.lang.ast.Just.AndElim, Json.ErrorMsg] = {
-    def f_astJustAndElim(parser: Parser): org.sireum.lang.ast.Just.AndElim = {
-      val r = parser.parse_astJustAndElim()
-      return r
-    }
-    val r = to(s, f_astJustAndElim _)
-    return r
-  }
-
-  def from_astJustPbc(o: org.sireum.lang.ast.Just.Pbc, isCompact: B): String = {
-    val st = Printer.print_astJustPbc(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astJustPbc(s: String): Either[org.sireum.lang.ast.Just.Pbc, Json.ErrorMsg] = {
-    def f_astJustPbc(parser: Parser): org.sireum.lang.ast.Just.Pbc = {
-      val r = parser.parse_astJustPbc()
-      return r
-    }
-    val r = to(s, f_astJustPbc _)
     return r
   }
 

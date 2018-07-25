@@ -660,8 +660,8 @@ object TypeOutliner {
       val ok = checkInherit(id, owner, posOpt)
       if (ok) {
         if (substMap.isEmpty) {
-          if (sm.defs.nonEmpty || sm.where.nonEmpty) {
-            sm = sm(defs = ISZ(), where = ISZ())
+          if (sm.defs.nonEmpty) {
+            sm = sm(defs = ISZ())
           }
           specMethods = specMethods + id ~> smInfo(ast = sm)
         } else {

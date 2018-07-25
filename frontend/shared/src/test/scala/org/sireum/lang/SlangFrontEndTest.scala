@@ -249,7 +249,7 @@ class SlangFrontEndTest extends TestSuite {
 
           * - passing("@ext object Foo { @pure def f: Z = $ }")
 
-          * - passing("@ext object Foo { def f: Z = l\"\"\"reads g\nmodifies g\"\"\" }")
+          * - passing("@ext object Foo { def f: Z = l\"\"\"modifies g\"\"\" }")
         }
       }
 
