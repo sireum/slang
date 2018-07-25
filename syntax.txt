@@ -368,7 +368,7 @@
                         <proof-step>+            // newline separated
                         }
 
-<proof-step>       ::=  <NUM> . <exp> . . <just>
+<proof-step>       ::=  <NUM> . <exp> ... <just>
                      |  <NUM> . <sub-proof>
 
 <sub-proof>        ::=  {
@@ -376,11 +376,11 @@
                         <proof-step>+            // newline separated
                         }
 
-<assume-step>      ::=  <NUM> . <exp> . . assume
-                     |  <NUM> . [ ID ⸨ , <ID> ⸩* ] ⸨ <exp> . . assume ⸩?
-                     |  <NUM> . [ ID ⸨ , <ID> ⸩* : <domain> ⸨ ID ⸨ , <ID> ⸩* : <domain> ⸩* ] ⸨ <exp> . . assume ⸩?
+<assume-step>      ::=  <NUM> . <exp> ... assume
+                     |  <NUM> . [ ID ⸨ , <ID> ⸩* ] ⸨ <exp> ... assume ⸩?
+                     |  <NUM> . [ ID ⸨ , <ID> ⸩* : <domain> ⸨ ID ⸨ , <ID> ⸩* : <domain> ⸩* ] ⸨ <exp> ... assume ⸩?
 
-<just>             ::=  ⸨ <just-op> ⸩? <ID> <just-args>?
+<just>             ::=  ⸨ <just-op> ⸩? <ID> ⸨ ( <exp> ⸨ , <exp> ⸩* ) ⸩?
 
 <just-sym>         ::= <and-op>
                      | <or-op>
@@ -389,9 +389,6 @@
                      | <bottom>
                      | ∀
                      | ∃
-
-<just-arg>         ::= ( <exp> ⸨ , <exp> ⸩* )
-                     | <exp>
 
 /*
 <just>             ::=  premise
