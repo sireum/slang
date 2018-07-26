@@ -276,7 +276,11 @@ object Transformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preContractExp(ctx: Context, o: ContractExp): PreResult[Context, ContractExp] = {
+    @pure def preOptNamedExp(ctx: Context, o: OptNamedExp): PreResult[Context, OptNamedExp] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preNamedExp(ctx: Context, o: NamedExp): PreResult[Context, NamedExp] = {
       return PreResult(ctx, T, None())
     }
 
@@ -1044,7 +1048,11 @@ object Transformer {
       return Result(ctx, None())
     }
 
-    @pure def postContractExp(ctx: Context, o: ContractExp): Result[Context, ContractExp] = {
+    @pure def postOptNamedExp(ctx: Context, o: OptNamedExp): Result[Context, OptNamedExp] = {
+      return Result(ctx, None())
+    }
+
+    @pure def postNamedExp(ctx: Context, o: NamedExp): Result[Context, NamedExp] = {
       return Result(ctx, None())
     }
 
@@ -1815,7 +1823,7 @@ import Transformer._
             Result(r2.ctx, None())
         case o2: Stmt.While =>
           val r0: Result[Context, Exp] = transformExp(ctx, o2.cond)
-          val r1: Result[Context, IS[Z, ContractExp]] = transformISZ(r0.ctx, o2.invariants, transformContractExp _)
+          val r1: Result[Context, IS[Z, NamedExp]] = transformISZ(r0.ctx, o2.invariants, transformNamedExp _)
           val r2: Result[Context, IS[Z, Exp]] = transformISZ(r1.ctx, o2.modifies, transformExp _)
           val r3: Result[Context, Body] = transformBody(r2.ctx, o2.body)
           val r4: Result[Context, Attr] = transformAttr(r3.ctx, o2.attr)
@@ -1825,7 +1833,7 @@ import Transformer._
             Result(r4.ctx, None())
         case o2: Stmt.DoWhile =>
           val r0: Result[Context, Exp] = transformExp(ctx, o2.cond)
-          val r1: Result[Context, IS[Z, ContractExp]] = transformISZ(r0.ctx, o2.invariants, transformContractExp _)
+          val r1: Result[Context, IS[Z, NamedExp]] = transformISZ(r0.ctx, o2.invariants, transformNamedExp _)
           val r2: Result[Context, IS[Z, Exp]] = transformISZ(r1.ctx, o2.modifies, transformExp _)
           val r3: Result[Context, Body] = transformBody(r2.ctx, o2.body)
           val r4: Result[Context, Attr] = transformAttr(r3.ctx, o2.attr)
@@ -1835,7 +1843,7 @@ import Transformer._
             Result(r4.ctx, None())
         case o2: Stmt.For =>
           val r0: Result[Context, IS[Z, EnumGen.For]] = transformISZ(ctx, o2.enumGens, transformEnumGenFor _)
-          val r1: Result[Context, IS[Z, ContractExp]] = transformISZ(r0.ctx, o2.invariants, transformContractExp _)
+          val r1: Result[Context, IS[Z, NamedExp]] = transformISZ(r0.ctx, o2.invariants, transformNamedExp _)
           val r2: Result[Context, IS[Z, Exp]] = transformISZ(r1.ctx, o2.modifies, transformExp _)
           val r3: Result[Context, Body] = transformBody(r2.ctx, o2.body)
           val r4: Result[Context, Attr] = transformAttr(r3.ctx, o2.attr)
@@ -2045,19 +2053,19 @@ import Transformer._
       val hasChanged: B = preR.resultOpt.nonEmpty
       val rOpt: Result[Context, LClause] = o2 match {
         case o2: LClause.Invariants =>
-          val r0: Result[Context, IS[Z, ContractExp]] = transformISZ(ctx, o2.value, transformContractExp _)
+          val r0: Result[Context, IS[Z, NamedExp]] = transformISZ(ctx, o2.value, transformNamedExp _)
           if (hasChanged || r0.resultOpt.nonEmpty)
             Result(r0.ctx, Some(o2(value = r0.resultOpt.getOrElse(o2.value))))
           else
             Result(r0.ctx, None())
         case o2: LClause.Facts =>
-          val r0: Result[Context, IS[Z, ContractExp]] = transformISZ(ctx, o2.value, transformContractExp _)
+          val r0: Result[Context, IS[Z, NamedExp]] = transformISZ(ctx, o2.value, transformNamedExp _)
           if (hasChanged || r0.resultOpt.nonEmpty)
             Result(r0.ctx, Some(o2(value = r0.resultOpt.getOrElse(o2.value))))
           else
             Result(r0.ctx, None())
         case o2: LClause.Theorems =>
-          val r0: Result[Context, IS[Z, ContractExp]] = transformISZ(ctx, o2.value, transformContractExp _)
+          val r0: Result[Context, IS[Z, NamedExp]] = transformISZ(ctx, o2.value, transformNamedExp _)
           if (hasChanged || r0.resultOpt.nonEmpty)
             Result(r0.ctx, Some(o2(value = r0.resultOpt.getOrElse(o2.value))))
           else
@@ -2095,10 +2103,10 @@ import Transformer._
     }
   }
 
-  @pure def transformContractExp(ctx: Context, o: ContractExp): Result[Context, ContractExp] = {
-    val preR: PreResult[Context, ContractExp] = pp.preContractExp(ctx, o)
-    val r: Result[Context, ContractExp] = if (preR.continu) {
-      val o2: ContractExp = preR.resultOpt.getOrElse(o)
+  @pure def transformOptNamedExp(ctx: Context, o: OptNamedExp): Result[Context, OptNamedExp] = {
+    val preR: PreResult[Context, OptNamedExp] = pp.preOptNamedExp(ctx, o)
+    val r: Result[Context, OptNamedExp] = if (preR.continu) {
+      val o2: OptNamedExp = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: Result[Context, Option[Id]] = transformOption(ctx, o2.idOpt, transformId _)
       val r1: Result[Context, Exp] = transformExp(r0.ctx, o2.exp)
@@ -2112,8 +2120,36 @@ import Transformer._
       Result(preR.ctx, None())
     }
     val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: ContractExp = r.resultOpt.getOrElse(o)
-    val postR: Result[Context, ContractExp] = pp.postContractExp(r.ctx, o2)
+    val o2: OptNamedExp = r.resultOpt.getOrElse(o)
+    val postR: Result[Context, OptNamedExp] = pp.postOptNamedExp(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return Result(postR.ctx, Some(o2))
+    } else {
+      return Result(postR.ctx, None())
+    }
+  }
+
+  @pure def transformNamedExp(ctx: Context, o: NamedExp): Result[Context, NamedExp] = {
+    val preR: PreResult[Context, NamedExp] = pp.preNamedExp(ctx, o)
+    val r: Result[Context, NamedExp] = if (preR.continu) {
+      val o2: NamedExp = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: Result[Context, Id] = transformId(ctx, o2.id)
+      val r1: Result[Context, Exp] = transformExp(r0.ctx, o2.exp)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+        Result(r1.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), exp = r1.resultOpt.getOrElse(o2.exp))))
+      else
+        Result(r1.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      Result(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      Result(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: NamedExp = r.resultOpt.getOrElse(o)
+    val postR: Result[Context, NamedExp] = pp.postNamedExp(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -2992,9 +3028,9 @@ import Transformer._
       val o2: ContractCase = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: Result[Context, Option[Id]] = transformOption(ctx, o2.idOpt, transformId _)
-      val r1: Result[Context, IS[Z, ContractExp]] = transformISZ(r0.ctx, o2.requires, transformContractExp _)
+      val r1: Result[Context, IS[Z, OptNamedExp]] = transformISZ(r0.ctx, o2.requires, transformOptNamedExp _)
       val r2: Result[Context, IS[Z, Exp]] = transformISZ(r1.ctx, o2.modifies, transformExp _)
-      val r3: Result[Context, IS[Z, ContractExp]] = transformISZ(r2.ctx, o2.ensures, transformContractExp _)
+      val r3: Result[Context, IS[Z, OptNamedExp]] = transformISZ(r2.ctx, o2.ensures, transformOptNamedExp _)
       if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
         Result(r3.ctx, Some(o2(idOpt = r0.resultOpt.getOrElse(o2.idOpt), requires = r1.resultOpt.getOrElse(o2.requires), modifies = r2.resultOpt.getOrElse(o2.modifies), ensures = r3.resultOpt.getOrElse(o2.ensures))))
       else

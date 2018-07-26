@@ -144,8 +144,7 @@ object Stmt {
 
   }
 
-  @datatype class SpecMethod(sig: MethodSig, defs: ISZ[SpecDef], @hidden attr: ResolvedAttr)
-      extends Stmt {
+  @datatype class SpecMethod(sig: MethodSig, defs: ISZ[SpecDef], @hidden attr: ResolvedAttr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -288,7 +287,7 @@ object Stmt {
 
   }
 
-  @datatype class While(cond: Exp, invariants: ISZ[ContractExp], modifies: ISZ[Exp], body: Body, @hidden attr: Attr)
+  @datatype class While(cond: Exp, invariants: ISZ[NamedExp], modifies: ISZ[Exp], body: Body, @hidden attr: Attr)
       extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
@@ -297,7 +296,7 @@ object Stmt {
 
   }
 
-  @datatype class DoWhile(cond: Exp, invariants: ISZ[ContractExp], modifies: ISZ[Exp], body: Body, @hidden attr: Attr)
+  @datatype class DoWhile(cond: Exp, invariants: ISZ[NamedExp], modifies: ISZ[Exp], body: Body, @hidden attr: Attr)
       extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
@@ -308,7 +307,7 @@ object Stmt {
 
   @datatype class For(
     enumGens: ISZ[EnumGen.For],
-    invariants: ISZ[ContractExp],
+    invariants: ISZ[NamedExp],
     modifies: ISZ[Exp],
     body: Body,
     @hidden attr: Attr
@@ -397,11 +396,11 @@ object Stmt {
 
 object LClause {
 
-  @datatype class Invariants(value: ISZ[ContractExp]) extends LClause
+  @datatype class Invariants(value: ISZ[NamedExp]) extends LClause
 
-  @datatype class Facts(value: ISZ[ContractExp]) extends LClause
+  @datatype class Facts(value: ISZ[NamedExp]) extends LClause
 
-  @datatype class Theorems(value: ISZ[ContractExp]) extends LClause
+  @datatype class Theorems(value: ISZ[NamedExp]) extends LClause
 
   @datatype class Sequent(premises: ISZ[Exp], conclusions: ISZ[Exp], proofOpt: Option[Proof]) extends LClause
 
@@ -409,7 +408,9 @@ object LClause {
 
 }
 
-@datatype class ContractExp(idOpt: Option[Id], exp: Exp)
+@datatype class OptNamedExp(idOpt: Option[Id], exp: Exp)
+
+@datatype class NamedExp(id: Id, exp: Exp)
 
 @datatype class Case(pattern: Pattern, condOpt: Option[Exp], body: Body)
 
@@ -988,16 +989,13 @@ object Domain {
 
 @datatype class TypeParam(id: Id)
 
-@datatype class Contract(
-  cases: ISZ[ContractCase],
-  subs: ISZ[SubContract]
-)
+@datatype class Contract(cases: ISZ[ContractCase], subs: ISZ[SubContract])
 
 @datatype class ContractCase(
   idOpt: Option[Id],
-  requires: ISZ[ContractExp],
+  requires: ISZ[OptNamedExp],
   modifies: ISZ[Exp],
-  ensures: ISZ[ContractExp]
+  ensures: ISZ[OptNamedExp]
 )
 
 @datatype class SubContract(id: Id, params: ISZ[Id], contract: Contract)

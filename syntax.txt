@@ -321,21 +321,23 @@
 
 <spec-ldef>        ::=  l""" <spec-defs> """
 
-<def-contract>     ::=  ⸨ requires <named-exps> ⸩?
+<def-contract>     ::=  ⸨ requires <opt-named-exps> ⸩?
                         ⸨ modifies <exp> ⸨ , <exp> ⸩* ⸩?
-                        ⸨ ensures <named-exps> ⸩?
+                        ⸨ ensures <opt-named-exps> ⸩?
                         <sub-contract>*
                      |  ⸨ <contract-case> ⸩+  // newline separated
                         <sub-contract>*
 
 <contract-case>    ::=  case <ID> :
-                        ⸨ requires <named-exps> ⸩?
+                        ⸨ requires <opt-named-exps> ⸩?
                         ⸨ modifies <exp> ⸨ , <exp> ⸩* ⸩?
-                        ⸨ ensures <named-exps> ⸩?
+                        ⸨ ensures <opt-named-exps> ⸩?
 
 <sub-contract>     ::=  def <ID> ( <ID> ⸨ , <ID> ⸩* ) <def-contract>
 
-<named-exps>       ::=  ⸨ ⸨ <ID> : ⸩? <exp> ⸩+  // newline separated
+<named-exps>       ::=  ⸨ <ID> : <exp> ⸩+       // newline separated
+
+<opt-named-exps>   ::=  ⸨ ⸨ <ID> : ⸩? <exp> ⸩+  // newline separated
 
 <spec-defs>        ::=  <spec-def>+            // newline separated
 
