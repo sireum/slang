@@ -328,7 +328,7 @@
                      |  ⸨ <contract-case> ⸩+  // newline separated
                         <sub-contract>*
 
-<contract-case>    ::=  case ⸨ <ID> ⸩? :
+<contract-case>    ::=  case <ID> :
                         ⸨ requires <named-exps> ⸩?
                         ⸨ modifies <exp> ⸨ , <exp> ⸩* ⸩?
                         ⸨ ensures <named-exps> ⸩?

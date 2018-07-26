@@ -452,15 +452,10 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
         var cs = List[AST.ContractCase]()
         while (token.is[KwCase]) {
           next()
-          val idOpt: SOption[AST.Id] = if (token.is[Colon]) {
-            SNone()
-          } else {
-            val ident = acceptToken[Ident]
-            acceptToken[Colon]
-            SSome(id(ident))
-          }
+          val ident = acceptToken[Ident]
+          acceptToken[Colon]
           newLinesOpt()
-          cs ::= contractCase(idOpt)
+          cs ::= contractCase(SSome(id(ident)))
         }
         isz(cs.reverse)
       } else ISZ(contractCase(SNone()))

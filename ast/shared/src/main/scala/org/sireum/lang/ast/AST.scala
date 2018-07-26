@@ -997,7 +997,7 @@ object Domain {
   idOpt: Option[Id],
   requires: ISZ[ContractExp],
   modifies: ISZ[Exp],
-  ensures: ISZ[ContractExp],
+  ensures: ISZ[ContractExp]
 )
 
 @datatype class SubContract(id: Id, params: ISZ[Id], contract: Contract)
