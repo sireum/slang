@@ -142,61 +142,43 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
   @inline def tokenCurrOrAfterNl(p: => Boolean): Boolean =
     p || TokensHelper.isNl(token) && ahead(p)
 
-  val justPrefix: List[() => Option[(String, Int)]] = List(
-    () => {
-      var text = "∧"
-      val r = isIdentOf("&") &&
-        ahead {
-          text += token.text
-          isIdentOf("i") || isIdentOf("e1") || isIdentOf("e2")
-        }
-      if (r) Some((text, 5)) else None
-    },
-    () => {
-      var text = "∨"
-      val r = isIdentOf("|") &&
-        ahead {
-          text += token.text
-          isIdentOf("i1") || isIdentOf("i2") || isIdentOf("e")
-        }
-      if (r) Some((text, 5)) else None
-    },
+  val justOps: List[() => Option[(String, Int)]] = List(
     () => {
       var text = ""
-      val r = (isIdentOf(implyInternalSym) || isIdentOf("!") || isIdentOf("¬") || isIdentOf("~") || isIdentOf("∀") || isIdentOf(
-        "∃"
-      )) && {
-        text = token.asInstanceOf[Ident].value
+      val r = (isIdentOf(implyInternalSym) || isIdentOf("&") || isIdentOf("|") ||
+        isIdentOf("!") || isIdentOf("¬") || isIdentOf("~") || isIdentOf("∀") ||
+        isIdentOf("∃") || isIdentOf("F")) && {
+        text = token.asInstanceOf[Ident].value.
+          replaceAllLiterally("!", "¬").
+          replaceAllLiterally("~", "¬").
+          replaceAllLiterally("&", "∧").
+          replaceAllLiterally("|", "∨").
+          replaceAllLiterally("F", "⊥").
+          replaceAllLiterally(implyInternalSym, "→")
         ahead {
           text += token.text
-          isIdentOf("i") || isIdentOf("e")
+          token.is[Ident]
         }
       }
-      if (r)
-        Some(
-          (
-            text.replaceAllLiterally("!", "¬").replaceAllLiterally("~", "¬").replaceAllLiterally(implyInternalSym, "→"),
-            5
-          )
-        )
-      else None
+      if (r) Some((text, 5)) else None
     },
     () => {
-      if (isIdentOf("F") && ahead(isIdentOf("e"))) Some(("⊥e", 5)) else None
-    },
-    () => {
-      if ({
+      var text = "⊥"
+      val r = {
         val t1 = token
         isIdentOf("_") && ahead {
           val t2 = token
           isIdentOf("|") && t2.pos.start == t1.pos.start + 1 && aheadNF {
             val t3 = token
             isIdentOf("_") && t3.pos.start == t2.pos.start + 1 &&
-            aheadNF(isIdentOf("e"))
+            aheadNF {
+              text += token.text
+              token.is[Ident]
+            }
           }
         }
-      }) Some(("⊥e", 7))
-      else None
+      }
+      if (r) Some((text, 7)) else None
     }
   )
 
@@ -236,7 +218,7 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
       else true
 
     def find(): Option[(String, Int)] = {
-      for (jp <- justPrefix) {
+      for (jp <- justOps) {
         val r = jp()
         if (r.isDefined)
           return r
@@ -410,7 +392,7 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
     *                     { SubContract {nl} }
     *                     EOF
     *
-    *  ContractCase   ::= case [ Ident ] :
+    *  ContractCase   ::= `case' [ Ident ] `:'
     *                     [ Ident<requires> {nl} NamedExprs ]
     *                     [ Ident<modifies> {nl} Expr { `,' {nl} Expr } ] {nl}
     *                     [ Ident<ensures> {nl} NamedExprs ]
@@ -419,7 +401,7 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
     *
     *  NamedExpr      ::= [ Ident `:' {nl} ] Expr
     *
-    *  SubContract    ::= def Ident `(' Ident {`,' Ident} `)' {nl} DefContract
+    *  SubContract    ::= `def' Ident `(' Ident {`,' Ident} `)' {nl} DefContract
     *
     *  PureOpt        ::= [ `@' Ident<pure> ]
     *  }}}
@@ -725,18 +707,21 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
   /** {{{
     *  Proof          ::= `{' { {nl} ProofStep } {nl} `}' {nl}
     *
-    *  ProofStep      ::= Int `.' Expr . . . Just
+    *  ProofStep      ::= Int `.' Expr `.' `.' `.' Just
     *                   |  Int `.' SubProof
     *
     *  SubProof       ::= `{' {nl} AssumeStep { {nl} ProofStep } {nl} `}'
     *
-    *  AssumeStep     ::= Int `.' {nl} Expr {nl} . . . Ident<assume>
+    *  AssumeStep     ::= Int `.' {nl} Expr {nl} `.' `.' `.' Ident<assume>
     *                   |  Int `.' {nl} [ {nl} Idents {nl} ]
     *                   |  Int `.' {nl} [ {nl} Idents `:' Domain { {nl} Idents `:' Domain } {nl} ]
-    *                   |  Int `.' {nl} [ {nl} Idents {nl} ] {nl} Expr {nl} . . . Ident<assume>
-    *                   |  Int `.' {nl} [ {nl} Idents `:' Domain { {nl} Idents `:' Domain } {nl} ] {nl} Expr {nl} . . . Ident<assume>
+    *                   |  Int `.' {nl} [ {nl} Idents {nl} ] {nl} Expr {nl} `.' `.' `.' Ident<assume>
+    *                   |  Int `.' {nl} [ {nl} Idents `:' Domain { {nl} Idents `:' Domain } {nl} ] {nl} Expr {nl} `.' `.' `.' Ident<assume>
     *
-    *  Just           ::=
+    *  Just           ::= [ JustOp ] Ident [ `(' {nl} Expr { {nl} `,' {nl} Expr } {nl} `)' ]
+    *
+    *  JustOp         ::= `∧' | `^' | `&' | `∨' | `|' | `⊻' | `|^' | `→' | `->'
+    *                   | `¬` | `~' | `!' | `⊥' | `_' `|' `_' | `∀' | `∃'
     *  }}}
     */
   private def proof(): AST.LClause.Proof = {
@@ -749,19 +734,17 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
       (0 until offset - 4).foreach(_ => next())
       val endPoint = token.pos.end
       next()
-      if (tokenCurrOrAfterNl(token.is[LeftParen])) {
+      if (token.is[LeftParen]) {
         var args = List[AST.Exp]()
         acceptToken[LeftParen]
         newLinesOpt()
-        if (token.isNot[RightParen]) {
+        args ::= sparser.translateExp(expr())
+        newLinesOpt()
+        while (token.is[Comma]) {
+          next()
+          newLinesOpt()
           args ::= sparser.translateExp(expr())
           newLinesOpt()
-          while (token.is[Comma]) {
-            next()
-            newLinesOpt()
-            args ::= sparser.translateExp(expr())
-            newLinesOpt()
-          }
         }
         val t = acceptToken[RightParen]
         AST.Just(kind, isz(args.reverse), sparser.attr(Position.Range(input, startPoint, t.pos.end)))
