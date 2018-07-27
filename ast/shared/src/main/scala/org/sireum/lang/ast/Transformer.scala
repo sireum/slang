@@ -276,10 +276,6 @@ object Transformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preOptNamedExp(ctx: Context, o: OptNamedExp): PreResult[Context, OptNamedExp] = {
-      return PreResult(ctx, T, None())
-    }
-
     @pure def preNamedExp(ctx: Context, o: NamedExp): PreResult[Context, NamedExp] = {
       return PreResult(ctx, T, None())
     }
@@ -1045,10 +1041,6 @@ object Transformer {
     }
 
     @pure def postLClauseProof(ctx: Context, o: LClause.Proof): Result[Context, LClause] = {
-      return Result(ctx, None())
-    }
-
-    @pure def postOptNamedExp(ctx: Context, o: OptNamedExp): Result[Context, OptNamedExp] = {
       return Result(ctx, None())
     }
 
@@ -2103,34 +2095,6 @@ import Transformer._
     }
   }
 
-  @pure def transformOptNamedExp(ctx: Context, o: OptNamedExp): Result[Context, OptNamedExp] = {
-    val preR: PreResult[Context, OptNamedExp] = pp.preOptNamedExp(ctx, o)
-    val r: Result[Context, OptNamedExp] = if (preR.continu) {
-      val o2: OptNamedExp = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: Result[Context, Option[Id]] = transformOption(ctx, o2.idOpt, transformId _)
-      val r1: Result[Context, Exp] = transformExp(r0.ctx, o2.exp)
-      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-        Result(r1.ctx, Some(o2(idOpt = r0.resultOpt.getOrElse(o2.idOpt), exp = r1.resultOpt.getOrElse(o2.exp))))
-      else
-        Result(r1.ctx, None())
-    } else if (preR.resultOpt.nonEmpty) {
-      Result(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
-    } else {
-      Result(preR.ctx, None())
-    }
-    val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: OptNamedExp = r.resultOpt.getOrElse(o)
-    val postR: Result[Context, OptNamedExp] = pp.postOptNamedExp(r.ctx, o2)
-    if (postR.resultOpt.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return Result(postR.ctx, Some(o2))
-    } else {
-      return Result(postR.ctx, None())
-    }
-  }
-
   @pure def transformNamedExp(ctx: Context, o: NamedExp): Result[Context, NamedExp] = {
     val preR: PreResult[Context, NamedExp] = pp.preNamedExp(ctx, o)
     val r: Result[Context, NamedExp] = if (preR.continu) {
@@ -3028,9 +2992,9 @@ import Transformer._
       val o2: ContractCase = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: Result[Context, Option[Id]] = transformOption(ctx, o2.idOpt, transformId _)
-      val r1: Result[Context, IS[Z, OptNamedExp]] = transformISZ(r0.ctx, o2.requires, transformOptNamedExp _)
+      val r1: Result[Context, IS[Z, Exp]] = transformISZ(r0.ctx, o2.requires, transformExp _)
       val r2: Result[Context, IS[Z, Exp]] = transformISZ(r1.ctx, o2.modifies, transformExp _)
-      val r3: Result[Context, IS[Z, OptNamedExp]] = transformISZ(r2.ctx, o2.ensures, transformOptNamedExp _)
+      val r3: Result[Context, IS[Z, Exp]] = transformISZ(r2.ctx, o2.ensures, transformExp _)
       if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
         Result(r3.ctx, Some(o2(idOpt = r0.resultOpt.getOrElse(o2.idOpt), requires = r1.resultOpt.getOrElse(o2.requires), modifies = r2.resultOpt.getOrElse(o2.modifies), ensures = r3.resultOpt.getOrElse(o2.ensures))))
       else

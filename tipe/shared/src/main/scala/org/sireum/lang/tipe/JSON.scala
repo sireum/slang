@@ -715,14 +715,6 @@ object JSON {
       ))
     }
 
-    @pure def print_astOptNamedExp(o: org.sireum.lang.ast.OptNamedExp): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.OptNamedExp""""),
-        ("idOpt", printOption(F, o.idOpt, print_astId _)),
-        ("exp", print_astExp(o.exp))
-      ))
-    }
-
     @pure def print_astNamedExp(o: org.sireum.lang.ast.NamedExp): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.NamedExp""""),
@@ -1263,9 +1255,9 @@ object JSON {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.ContractCase""""),
         ("idOpt", printOption(F, o.idOpt, print_astId _)),
-        ("requires", printISZ(F, o.requires, print_astOptNamedExp _)),
+        ("requires", printISZ(F, o.requires, print_astExp _)),
         ("modifies", printISZ(F, o.modifies, print_astExp _)),
-        ("ensures", printISZ(F, o.ensures, print_astOptNamedExp _))
+        ("ensures", printISZ(F, o.ensures, print_astExp _))
       ))
     }
 
@@ -3234,24 +3226,6 @@ object JSON {
       return org.sireum.lang.ast.LClause.Proof(steps)
     }
 
-    def parse_astOptNamedExp(): org.sireum.lang.ast.OptNamedExp = {
-      val r = parse_astOptNamedExpT(F)
-      return r
-    }
-
-    def parse_astOptNamedExpT(typeParsed: B): org.sireum.lang.ast.OptNamedExp = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.OptNamedExp")
-      }
-      parser.parseObjectKey("idOpt")
-      val idOpt = parser.parseOption(parse_astId _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("exp")
-      val exp = parse_astExp()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.OptNamedExp(idOpt, exp)
-    }
-
     def parse_astNamedExp(): org.sireum.lang.ast.NamedExp = {
       val r = parse_astNamedExpT(F)
       return r
@@ -4409,13 +4383,13 @@ object JSON {
       val idOpt = parser.parseOption(parse_astId _)
       parser.parseObjectNext()
       parser.parseObjectKey("requires")
-      val requires = parser.parseISZ(parse_astOptNamedExp _)
+      val requires = parser.parseISZ(parse_astExp _)
       parser.parseObjectNext()
       parser.parseObjectKey("modifies")
       val modifies = parser.parseISZ(parse_astExp _)
       parser.parseObjectNext()
       parser.parseObjectKey("ensures")
-      val ensures = parser.parseISZ(parse_astOptNamedExp _)
+      val ensures = parser.parseISZ(parse_astExp _)
       parser.parseObjectNext()
       return org.sireum.lang.ast.ContractCase(idOpt, requires, modifies, ensures)
     }
@@ -6408,24 +6382,6 @@ object JSON {
       return r
     }
     val r = to(s, f_astLClauseProof _)
-    return r
-  }
-
-  def from_astOptNamedExp(o: org.sireum.lang.ast.OptNamedExp, isCompact: B): String = {
-    val st = Printer.print_astOptNamedExp(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astOptNamedExp(s: String): Either[org.sireum.lang.ast.OptNamedExp, Json.ErrorMsg] = {
-    def f_astOptNamedExp(parser: Parser): org.sireum.lang.ast.OptNamedExp = {
-      val r = parser.parse_astOptNamedExp()
-      return r
-    }
-    val r = to(s, f_astOptNamedExp _)
     return r
   }
 

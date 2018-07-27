@@ -408,8 +408,6 @@ object LClause {
 
 }
 
-@datatype class OptNamedExp(idOpt: Option[Id], exp: Exp)
-
 @datatype class NamedExp(id: Id, exp: Exp)
 
 @datatype class Case(pattern: Pattern, condOpt: Option[Exp], body: Body)
@@ -993,9 +991,9 @@ object Domain {
 
 @datatype class ContractCase(
   idOpt: Option[Id],
-  requires: ISZ[OptNamedExp],
+  requires: ISZ[Exp],
   modifies: ISZ[Exp],
-  ensures: ISZ[OptNamedExp]
+  ensures: ISZ[Exp]
 )
 
 @datatype class SubContract(id: Id, params: ISZ[Id], contract: Contract)

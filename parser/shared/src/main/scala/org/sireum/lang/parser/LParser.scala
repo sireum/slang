@@ -397,9 +397,7 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
     *                     [ Ident<modifies> {nl} Expr { `,' {nl} Expr } ] {nl}
     *                     [ Ident<ensures> {nl} OptNamedExprs ]
     *
-    *  OptNamedExprs  ::= NamedExpr {nl} { NamedExpr {nl} }
-    *
-    *  OptNamedExpr   ::= [ Ident `:' {nl} ] Expr
+    *  Exprnls        ::= Expr {nl} { Expr {nl} }
     *
     *  NamedExprs     ::= NamedExpr {nl} { NamedExpr {nl} }
     *
@@ -433,18 +431,18 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
     }
 
     def contractCase(idOpt: SOption[AST.Id]): AST.ContractCase = {
-      val requires: List[AST.OptNamedExp] = if (isIdentOf("requires")) {
+      val requires: List[AST.Exp] = if (isIdentOf("requires")) {
         next()
         newLinesOpt()
-        optNamedExprs(
+        exprnls(
           !(isIdentOf("modifies") || isIdentOf("ensures") || token.is[KwCase] || token.is[KwDef] || token.is[EOF])
         )
       } else List()
       val mods: List[AST.Exp] = modifies()
-      val ensures: List[AST.OptNamedExp] = if (isIdentOf("ensures")) {
+      val ensures: List[AST.Exp] = if (isIdentOf("ensures")) {
         next()
         newLinesOpt()
-        optNamedExprs(!(token.is[KwDef] || token.is[KwCase] || token.is[EOF]))
+        exprnls(!(token.is[KwDef] || token.is[KwCase] || token.is[EOF]))
       } else List()
       AST.ContractCase(idOpt, isz(requires), isz(mods), isz(ensures))
     }
@@ -490,14 +488,14 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
       AST.NamedExp(id(ident), sparser.translateExp(expr()))
   }
 
-  def optNamedExpr(): AST.OptNamedExp =
+  def optNamedExpr(): (SOption[AST.Id], AST.Exp) =
     if (token.is[Ident] && ahead(token.is[Colon])) {
       val ident = acceptToken[Ident]
       acceptToken[Colon]
       newLinesOpt()
-      AST.OptNamedExp(SSome(id(ident)), sparser.translateExp(expr()))
+      (SSome(id(ident)), sparser.translateExp(expr()))
     } else {
-      AST.OptNamedExp(SNone(), sparser.translateExp(expr()))
+      (SNone(), sparser.translateExp(expr()))
     }
 
   def namedExprs(continue: => Boolean): List[AST.NamedExp] = {
@@ -510,11 +508,11 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
     r.reverse
   }
 
-  def optNamedExprs(continue: => Boolean): List[AST.OptNamedExp] = {
-    var r = List(optNamedExpr())
+  def exprnls(continue: => Boolean): List[AST.Exp] = {
+    var r = List(sparser.translateExp(expr()))
     newLinesOpt()
     while (continue) {
-      r ::= optNamedExpr()
+      r ::= sparser.translateExp(expr())
       newLinesOpt()
     }
     r.reverse
@@ -543,7 +541,7 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
 
   def specDef(): AST.SpecDef = {
     accept[Token.Equals]
-    val AST.OptNamedExp(idOpt, e) = optNamedExpr()
+    val (idOpt, e) = optNamedExpr()
     val (isOtherwise, patternOpt, guardOpt) = if (token.is[Comma]) {
       next()
       val pOpt: SOption[AST.Pattern] = if (token.is[KwCase]) {

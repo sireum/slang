@@ -148,181 +148,179 @@ object MsgPack {
 
     val _astLClauseProof: Z = 23
 
-    val _astOptNamedExp: Z = 24
+    val _astNamedExp: Z = 24
 
-    val _astNamedExp: Z = 25
+    val _astCase: Z = 25
 
-    val _astCase: Z = 26
+    val _astEnumGenRangeExpr: Z = 26
 
-    val _astEnumGenRangeExpr: Z = 27
+    val _astEnumGenRangeStep: Z = 27
 
-    val _astEnumGenRangeStep: Z = 28
+    val _astEnumGenFor: Z = 28
 
-    val _astEnumGenFor: Z = 29
+    val _astTypeNamed: Z = 29
 
-    val _astTypeNamed: Z = 30
+    val _astTypeFun: Z = 30
 
-    val _astTypeFun: Z = 31
+    val _astTypeTuple: Z = 31
 
-    val _astTypeTuple: Z = 32
+    val _astPatternLiteral: Z = 32
 
-    val _astPatternLiteral: Z = 33
+    val _astPatternLitInterpolate: Z = 33
 
-    val _astPatternLitInterpolate: Z = 34
+    val _astPatternRef: Z = 34
 
-    val _astPatternRef: Z = 35
+    val _astPatternVarBinding: Z = 35
 
-    val _astPatternVarBinding: Z = 36
+    val _astPatternWildcard: Z = 36
 
-    val _astPatternWildcard: Z = 37
+    val _astPatternSeqWildcard: Z = 37
 
-    val _astPatternSeqWildcard: Z = 38
+    val _astPatternStructure: Z = 38
 
-    val _astPatternStructure: Z = 39
+    val _astExpLitB: Z = 39
 
-    val _astExpLitB: Z = 40
+    val _astExpLitC: Z = 40
 
-    val _astExpLitC: Z = 41
+    val _astExpLitZ: Z = 41
 
-    val _astExpLitZ: Z = 42
+    val _astExpLitF32: Z = 42
 
-    val _astExpLitF32: Z = 43
+    val _astExpLitF64: Z = 43
 
-    val _astExpLitF64: Z = 44
+    val _astExpLitR: Z = 44
 
-    val _astExpLitR: Z = 45
+    val _astExpLitString: Z = 45
 
-    val _astExpLitString: Z = 46
+    val _astExpStringInterpolate: Z = 46
 
-    val _astExpStringInterpolate: Z = 47
+    val _astExpThis: Z = 47
 
-    val _astExpThis: Z = 48
+    val _astExpSuper: Z = 48
 
-    val _astExpSuper: Z = 49
+    val _astExpUnary: Z = 49
 
-    val _astExpUnary: Z = 50
+    val _astExpBinary: Z = 50
 
-    val _astExpBinary: Z = 51
+    val _astExpIdent: Z = 51
 
-    val _astExpIdent: Z = 52
+    val _astExpEta: Z = 52
 
-    val _astExpEta: Z = 53
+    val _astExpTuple: Z = 53
 
-    val _astExpTuple: Z = 54
+    val _astExpSelect: Z = 54
 
-    val _astExpSelect: Z = 55
+    val _astExpInvoke: Z = 55
 
-    val _astExpInvoke: Z = 56
+    val _astExpInvokeNamed: Z = 56
 
-    val _astExpInvokeNamed: Z = 57
+    val _astExpIf: Z = 57
 
-    val _astExpIf: Z = 58
+    val _astExpFunParam: Z = 58
 
-    val _astExpFunParam: Z = 59
+    val _astExpFun: Z = 59
 
-    val _astExpFun: Z = 60
+    val _astExpForYield: Z = 60
 
-    val _astExpForYield: Z = 61
+    val _astExpQuant: Z = 61
 
-    val _astExpQuant: Z = 62
+    val _astNamedArg: Z = 62
 
-    val _astNamedArg: Z = 63
+    val _astVarFragment: Z = 63
 
-    val _astVarFragment: Z = 64
+    val _astDomainType: Z = 64
 
-    val _astDomainType: Z = 65
+    val _astDomainRange: Z = 65
 
-    val _astDomainRange: Z = 66
+    val _astId: Z = 66
 
-    val _astId: Z = 67
+    val _astName: Z = 67
 
-    val _astName: Z = 68
+    val _astBody: Z = 68
 
-    val _astBody: Z = 69
+    val _astAbstractDatatypeParam: Z = 69
 
-    val _astAbstractDatatypeParam: Z = 70
+    val _astMethodSig: Z = 70
 
-    val _astMethodSig: Z = 71
+    val _astParam: Z = 71
 
-    val _astParam: Z = 72
+    val _astTypeParam: Z = 72
 
-    val _astTypeParam: Z = 73
+    val _astContract: Z = 73
 
-    val _astContract: Z = 74
+    val _astContractCase: Z = 74
 
-    val _astContractCase: Z = 75
+    val _astSubContract: Z = 75
 
-    val _astSubContract: Z = 76
+    val _astSpecDef: Z = 76
 
-    val _astSpecDef: Z = 77
+    val _astTypedName: Z = 77
 
-    val _astTypedName: Z = 78
+    val _astTypedTuple: Z = 78
 
-    val _astTypedTuple: Z = 79
+    val _astTypedFun: Z = 79
 
-    val _astTypedFun: Z = 80
+    val _astTypedTypeVar: Z = 80
 
-    val _astTypedTypeVar: Z = 81
+    val _astTypedPackage: Z = 81
 
-    val _astTypedPackage: Z = 82
+    val _astTypedObject: Z = 82
 
-    val _astTypedObject: Z = 83
+    val _astTypedEnum: Z = 83
 
-    val _astTypedEnum: Z = 84
+    val _astTypedMethod: Z = 84
 
-    val _astTypedMethod: Z = 85
+    val _astTypedMethods: Z = 85
 
-    val _astTypedMethods: Z = 86
+    val _astAttr: Z = 86
 
-    val _astAttr: Z = 87
+    val _astTypedAttr: Z = 87
 
-    val _astTypedAttr: Z = 88
+    val _astResolvedAttr: Z = 88
 
-    val _astResolvedAttr: Z = 89
+    val _astResolvedInfoBuiltIn: Z = 89
 
-    val _astResolvedInfoBuiltIn: Z = 90
+    val _astResolvedInfoPackage: Z = 90
 
-    val _astResolvedInfoPackage: Z = 91
+    val _astResolvedInfoEnum: Z = 91
 
-    val _astResolvedInfoEnum: Z = 92
+    val _astResolvedInfoEnumElement: Z = 92
 
-    val _astResolvedInfoEnumElement: Z = 93
+    val _astResolvedInfoObject: Z = 93
 
-    val _astResolvedInfoObject: Z = 94
+    val _astResolvedInfoVar: Z = 94
 
-    val _astResolvedInfoVar: Z = 95
+    val _astResolvedInfoMethod: Z = 95
 
-    val _astResolvedInfoMethod: Z = 96
+    val _astResolvedInfoMethods: Z = 96
 
-    val _astResolvedInfoMethods: Z = 97
+    val _astResolvedInfoTuple: Z = 97
 
-    val _astResolvedInfoTuple: Z = 98
+    val _astResolvedInfoLocalVar: Z = 98
 
-    val _astResolvedInfoLocalVar: Z = 99
+    val _astProofStepBasic: Z = 99
 
-    val _astProofStepBasic: Z = 100
+    val _astProofStepSubProof: Z = 100
 
-    val _astProofStepSubProof: Z = 101
+    val _astAssumeProofStepRegular: Z = 101
 
-    val _astAssumeProofStepRegular: Z = 102
+    val _astAssumeProofStepForallIntroAps: Z = 102
 
-    val _astAssumeProofStepForallIntroAps: Z = 103
+    val _astAssumeProofStepExistsElimAps: Z = 103
 
-    val _astAssumeProofStepExistsElimAps: Z = 104
+    val _astJust: Z = 104
 
-    val _astJust: Z = 105
+    val _astTruthTableRow: Z = 105
 
-    val _astTruthTableRow: Z = 106
+    val _astTruthTableAssignment: Z = 106
 
-    val _astTruthTableAssignment: Z = 107
+    val _astTruthTableConclusionValidity: Z = 107
 
-    val _astTruthTableConclusionValidity: Z = 108
+    val _astTruthTableConclusionTautology: Z = 108
 
-    val _astTruthTableConclusionTautology: Z = 109
+    val _astTruthTableConclusionContradictory: Z = 109
 
-    val _astTruthTableConclusionContradictory: Z = 110
-
-    val _astTruthTableConclusionContingent: Z = 111
+    val _astTruthTableConclusionContingent: Z = 110
 
   }
 
@@ -894,12 +892,6 @@ object MsgPack {
       writer.writeISZ(o.steps, write_astProofStep _)
     }
 
-    def write_astOptNamedExp(o: org.sireum.lang.ast.OptNamedExp): Unit = {
-      writer.writeZ(Constants._astOptNamedExp)
-      writer.writeOption(o.idOpt, write_astId _)
-      write_astExp(o.exp)
-    }
-
     def write_astNamedExp(o: org.sireum.lang.ast.NamedExp): Unit = {
       writer.writeZ(Constants._astNamedExp)
       write_astId(o.id)
@@ -1330,9 +1322,9 @@ object MsgPack {
     def write_astContractCase(o: org.sireum.lang.ast.ContractCase): Unit = {
       writer.writeZ(Constants._astContractCase)
       writer.writeOption(o.idOpt, write_astId _)
-      writer.writeISZ(o.requires, write_astOptNamedExp _)
+      writer.writeISZ(o.requires, write_astExp _)
       writer.writeISZ(o.modifies, write_astExp _)
-      writer.writeISZ(o.ensures, write_astOptNamedExp _)
+      writer.writeISZ(o.ensures, write_astExp _)
     }
 
     def write_astSubContract(o: org.sireum.lang.ast.SubContract): Unit = {
@@ -2707,20 +2699,6 @@ object MsgPack {
       return org.sireum.lang.ast.LClause.Proof(steps)
     }
 
-    def read_astOptNamedExp(): org.sireum.lang.ast.OptNamedExp = {
-      val r = read_astOptNamedExpT(F)
-      return r
-    }
-
-    def read_astOptNamedExpT(typeParsed: B): org.sireum.lang.ast.OptNamedExp = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astOptNamedExp)
-      }
-      val idOpt = reader.readOption(read_astId _)
-      val exp = read_astExp()
-      return org.sireum.lang.ast.OptNamedExp(idOpt, exp)
-    }
-
     def read_astNamedExp(): org.sireum.lang.ast.NamedExp = {
       val r = read_astNamedExpT(F)
       return r
@@ -3601,9 +3579,9 @@ object MsgPack {
         reader.expectZ(Constants._astContractCase)
       }
       val idOpt = reader.readOption(read_astId _)
-      val requires = reader.readISZ(read_astOptNamedExp _)
+      val requires = reader.readISZ(read_astExp _)
       val modifies = reader.readISZ(read_astExp _)
-      val ensures = reader.readISZ(read_astOptNamedExp _)
+      val ensures = reader.readISZ(read_astExp _)
       return org.sireum.lang.ast.ContractCase(idOpt, requires, modifies, ensures)
     }
 
@@ -5194,21 +5172,6 @@ object MsgPack {
       return r
     }
     val r = to(data, f_astLClauseProof _)
-    return r
-  }
-
-  def from_astOptNamedExp(o: org.sireum.lang.ast.OptNamedExp, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astOptNamedExp(o)
-    return w.result
-  }
-
-  def to_astOptNamedExp(data: ISZ[U8]): Either[org.sireum.lang.ast.OptNamedExp, MessagePack.ErrorMsg] = {
-    def f_astOptNamedExp(reader: Reader): org.sireum.lang.ast.OptNamedExp = {
-      val r = reader.read_astOptNamedExp()
-      return r
-    }
-    val r = to(data, f_astOptNamedExp _)
     return r
   }
 
