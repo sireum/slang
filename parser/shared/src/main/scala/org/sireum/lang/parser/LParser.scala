@@ -641,15 +641,24 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
   /** {{{
     *  Theorems       ::= Ident<theorem> {nl} Theorem {nl} { Theorem {nl} }
     *
-    *  Theorem        ::= Ident `:' {nl} Expr
+    *  Theorem        ::= Ident `:' {nl} Expr {nl} Proof
     *  }}}
     */
   private def theorems(): AST.LClause.Theorems = {
-    def theorem(): AST.NamedExp = {
+    def theorem(): AST.LClause.Theorem = {
       val ident = id(acceptToken[Ident])
       accept[Colon]
       newLinesOpt()
-      AST.NamedExp(ident, sparser.translateExp(expr()))
+      val oldIn = in.asInstanceOf[LimitingTokenIterator]
+      val proofIndex = findTokenPos(t => t.is[LeftBrace], _ => true)
+      if (proofIndex < 0) {
+        reporter.syntaxError(s"A proof { ... } is required for a theorem", at = token)
+      } else {
+        in = new LimitingTokenIterator(oldIn.i, proofIndex - 1)
+        val e = sparser.translateExp(expr())
+        in = new LimitingTokenIterator(proofIndex, oldIn.end)
+        AST.LClause.Theorem(ident, e, proof())
+      }
     }
 
     next()
@@ -675,7 +684,7 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
   ): AST.LClause.Sequent = {
     if (sequentIndex < 0) reporter.syntaxError(s"... ⊢ ... expected", at = token)
     val emptyPremises = tokenCurrOrAfterNl(isSequentToken(token))
-    var oldIn = in.asInstanceOf[LimitingTokenIterator]
+    val oldIn = in.asInstanceOf[LimitingTokenIterator]
     val premises =
       if (emptyPremises) List()
       else {
@@ -690,7 +699,6 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
       newLinesOpt()
       AST.LClause.Sequent(isz(premises), isz(conclusions), SNone())
     } else {
-      oldIn = in.asInstanceOf[LimitingTokenIterator]
       in = new LimitingTokenIterator(oldIn.i, proofIndex - 1)
       val conclusions = exprs()
       in = new LimitingTokenIterator(proofIndex, oldIn.end)

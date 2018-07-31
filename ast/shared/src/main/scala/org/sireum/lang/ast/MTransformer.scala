@@ -197,6 +197,10 @@ object MTransformer {
 
   val PostResultLClauseTheorems: MOption[LClause] = MNone()
 
+  val PreResultLClauseTheorem: PreResult[LClause] = PreResult(T, MNone())
+
+  val PostResultLClauseTheorem: MOption[LClause] = MNone()
+
   val PreResultLClauseSequent: PreResult[LClause] = PreResult(T, MNone())
 
   val PostResultLClauseSequent: MOption[LClause] = MNone()
@@ -767,6 +771,7 @@ import MTransformer._
       case o: LClause.Invariants => return preLClauseInvariants(o)
       case o: LClause.Facts => return preLClauseFacts(o)
       case o: LClause.Theorems => return preLClauseTheorems(o)
+      case o: LClause.Theorem => return preLClauseTheorem(o)
       case o: LClause.Sequent => return preLClauseSequent(o)
       case o: LClause.Proof => return preLClauseProof(o)
     }
@@ -782,6 +787,10 @@ import MTransformer._
 
   def preLClauseTheorems(o: LClause.Theorems): PreResult[LClause] = {
     return PreResultLClauseTheorems
+  }
+
+  def preLClauseTheorem(o: LClause.Theorem): PreResult[LClause] = {
+    return PreResultLClauseTheorem
   }
 
   def preLClauseSequent(o: LClause.Sequent): PreResult[LClause] = {
@@ -1535,6 +1544,7 @@ import MTransformer._
       case o: LClause.Invariants => return postLClauseInvariants(o)
       case o: LClause.Facts => return postLClauseFacts(o)
       case o: LClause.Theorems => return postLClauseTheorems(o)
+      case o: LClause.Theorem => return postLClauseTheorem(o)
       case o: LClause.Sequent => return postLClauseSequent(o)
       case o: LClause.Proof => return postLClauseProof(o)
     }
@@ -1550,6 +1560,10 @@ import MTransformer._
 
   def postLClauseTheorems(o: LClause.Theorems): MOption[LClause] = {
     return PostResultLClauseTheorems
+  }
+
+  def postLClauseTheorem(o: LClause.Theorem): MOption[LClause] = {
+    return PostResultLClauseTheorem
   }
 
   def postLClauseSequent(o: LClause.Sequent): MOption[LClause] = {
@@ -2523,21 +2537,29 @@ import MTransformer._
       val hasChanged: B = preR.resultOpt.nonEmpty
       val rOpt: MOption[LClause] = o2 match {
         case o2: LClause.Invariants =>
-          val r0: MOption[IS[Z, NamedExp]] = transformISZ(o2.value, transformNamedExp _)
+          val r0: MOption[IS[Z, NamedExp]] = transformISZ(o2.invariants, transformNamedExp _)
           if (hasChanged || r0.nonEmpty)
-            MSome(o2(value = r0.getOrElse(o2.value)))
+            MSome(o2(invariants = r0.getOrElse(o2.invariants)))
           else
             MNone()
         case o2: LClause.Facts =>
-          val r0: MOption[IS[Z, NamedExp]] = transformISZ(o2.value, transformNamedExp _)
+          val r0: MOption[IS[Z, NamedExp]] = transformISZ(o2.facts, transformNamedExp _)
           if (hasChanged || r0.nonEmpty)
-            MSome(o2(value = r0.getOrElse(o2.value)))
+            MSome(o2(facts = r0.getOrElse(o2.facts)))
           else
             MNone()
         case o2: LClause.Theorems =>
-          val r0: MOption[IS[Z, NamedExp]] = transformISZ(o2.value, transformNamedExp _)
+          val r0: MOption[IS[Z, LClause.Theorem]] = transformISZ(o2.theorems, transformLClauseTheorem _)
           if (hasChanged || r0.nonEmpty)
-            MSome(o2(value = r0.getOrElse(o2.value)))
+            MSome(o2(theorems = r0.getOrElse(o2.theorems)))
+          else
+            MNone()
+        case o2: LClause.Theorem =>
+          val r0: MOption[Id] = transformId(o2.id)
+          val r1: MOption[Exp] = transformExp(o2.exp)
+          val r2: MOption[LClause.Proof] = transformLClauseProof(o2.proof)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id), exp = r1.getOrElse(o2.exp), proof = r2.getOrElse(o2.proof)))
           else
             MNone()
         case o2: LClause.Sequent =>
@@ -4110,6 +4132,43 @@ import MTransformer._
      case MSome(result: Type.Named) => MSome[Type.Named](result)
      case MSome(_) => halt("Can only produce object of type Type.Named")
      case _ => MNone[Type.Named]()
+    }
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformLClauseTheorem(o: LClause.Theorem): MOption[LClause.Theorem] = {
+    val preR: PreResult[LClause.Theorem] = preLClauseTheorem(o) match {
+     case PreResult(continu, MSome(r: LClause.Theorem)) => PreResult(continu, MSome[LClause.Theorem](r))
+     case PreResult(_, MSome(_)) => halt("Can only produce object of type LClause.Theorem")
+     case PreResult(continu, _) => PreResult(continu, MNone[LClause.Theorem]())
+    }
+    val r: MOption[LClause.Theorem] = if (preR.continu) {
+      val o2: LClause.Theorem = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[Id] = transformId(o2.id)
+      val r1: MOption[Exp] = transformExp(o2.exp)
+      val r2: MOption[LClause.Proof] = transformLClauseProof(o2.proof)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+        MSome(o2(id = r0.getOrElse(o2.id), exp = r1.getOrElse(o2.exp), proof = r2.getOrElse(o2.proof)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: LClause.Theorem = r.getOrElse(o)
+    val postR: MOption[LClause.Theorem] = postLClauseTheorem(o2) match {
+     case MSome(result: LClause.Theorem) => MSome[LClause.Theorem](result)
+     case MSome(_) => halt("Can only produce object of type LClause.Theorem")
+     case _ => MNone[LClause.Theorem]()
     }
     if (postR.nonEmpty) {
       return postR

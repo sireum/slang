@@ -251,6 +251,7 @@ object Transformer {
         case o: LClause.Invariants => return preLClauseInvariants(ctx, o)
         case o: LClause.Facts => return preLClauseFacts(ctx, o)
         case o: LClause.Theorems => return preLClauseTheorems(ctx, o)
+        case o: LClause.Theorem => return preLClauseTheorem(ctx, o)
         case o: LClause.Sequent => return preLClauseSequent(ctx, o)
         case o: LClause.Proof => return preLClauseProof(ctx, o)
       }
@@ -265,6 +266,10 @@ object Transformer {
     }
 
     @pure def preLClauseTheorems(ctx: Context, o: LClause.Theorems): PreResult[Context, LClause] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preLClauseTheorem(ctx: Context, o: LClause.Theorem): PreResult[Context, LClause] = {
       return PreResult(ctx, T, None())
     }
 
@@ -1019,6 +1024,7 @@ object Transformer {
         case o: LClause.Invariants => return postLClauseInvariants(ctx, o)
         case o: LClause.Facts => return postLClauseFacts(ctx, o)
         case o: LClause.Theorems => return postLClauseTheorems(ctx, o)
+        case o: LClause.Theorem => return postLClauseTheorem(ctx, o)
         case o: LClause.Sequent => return postLClauseSequent(ctx, o)
         case o: LClause.Proof => return postLClauseProof(ctx, o)
       }
@@ -1033,6 +1039,10 @@ object Transformer {
     }
 
     @pure def postLClauseTheorems(ctx: Context, o: LClause.Theorems): Result[Context, LClause] = {
+      return Result(ctx, None())
+    }
+
+    @pure def postLClauseTheorem(ctx: Context, o: LClause.Theorem): Result[Context, LClause] = {
       return Result(ctx, None())
     }
 
@@ -2045,23 +2055,31 @@ import Transformer._
       val hasChanged: B = preR.resultOpt.nonEmpty
       val rOpt: Result[Context, LClause] = o2 match {
         case o2: LClause.Invariants =>
-          val r0: Result[Context, IS[Z, NamedExp]] = transformISZ(ctx, o2.value, transformNamedExp _)
+          val r0: Result[Context, IS[Z, NamedExp]] = transformISZ(ctx, o2.invariants, transformNamedExp _)
           if (hasChanged || r0.resultOpt.nonEmpty)
-            Result(r0.ctx, Some(o2(value = r0.resultOpt.getOrElse(o2.value))))
+            Result(r0.ctx, Some(o2(invariants = r0.resultOpt.getOrElse(o2.invariants))))
           else
             Result(r0.ctx, None())
         case o2: LClause.Facts =>
-          val r0: Result[Context, IS[Z, NamedExp]] = transformISZ(ctx, o2.value, transformNamedExp _)
+          val r0: Result[Context, IS[Z, NamedExp]] = transformISZ(ctx, o2.facts, transformNamedExp _)
           if (hasChanged || r0.resultOpt.nonEmpty)
-            Result(r0.ctx, Some(o2(value = r0.resultOpt.getOrElse(o2.value))))
+            Result(r0.ctx, Some(o2(facts = r0.resultOpt.getOrElse(o2.facts))))
           else
             Result(r0.ctx, None())
         case o2: LClause.Theorems =>
-          val r0: Result[Context, IS[Z, NamedExp]] = transformISZ(ctx, o2.value, transformNamedExp _)
+          val r0: Result[Context, IS[Z, LClause.Theorem]] = transformISZ(ctx, o2.theorems, transformLClauseTheorem _)
           if (hasChanged || r0.resultOpt.nonEmpty)
-            Result(r0.ctx, Some(o2(value = r0.resultOpt.getOrElse(o2.value))))
+            Result(r0.ctx, Some(o2(theorems = r0.resultOpt.getOrElse(o2.theorems))))
           else
             Result(r0.ctx, None())
+        case o2: LClause.Theorem =>
+          val r0: Result[Context, Id] = transformId(ctx, o2.id)
+          val r1: Result[Context, Exp] = transformExp(r0.ctx, o2.exp)
+          val r2: Result[Context, LClause.Proof] = transformLClauseProof(r1.ctx, o2.proof)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            Result(r2.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), exp = r1.resultOpt.getOrElse(o2.exp), proof = r2.resultOpt.getOrElse(o2.proof))))
+          else
+            Result(r2.ctx, None())
         case o2: LClause.Sequent =>
           val r0: Result[Context, IS[Z, Exp]] = transformISZ(ctx, o2.premises, transformExp _)
           val r1: Result[Context, IS[Z, Exp]] = transformISZ(r0.ctx, o2.conclusions, transformExp _)
@@ -3632,6 +3650,43 @@ import Transformer._
      case Result(postCtx, Some(result: Type.Named)) => Result(postCtx, Some[Type.Named](result))
      case Result(_, Some(_)) => halt("Can only produce object of type Type.Named")
      case Result(postCtx, _) => Result(postCtx, None[Type.Named]())
+    }
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return Result(postR.ctx, Some(o2))
+    } else {
+      return Result(postR.ctx, None())
+    }
+  }
+
+  @pure def transformLClauseTheorem(ctx: Context, o: LClause.Theorem): Result[Context, LClause.Theorem] = {
+    val preR: PreResult[Context, LClause.Theorem] = pp.preLClauseTheorem(ctx, o) match {
+     case PreResult(preCtx, continu, Some(r: LClause.Theorem)) => PreResult(preCtx, continu, Some[LClause.Theorem](r))
+     case PreResult(_, _, Some(_)) => halt("Can only produce object of type LClause.Theorem")
+     case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[LClause.Theorem]())
+    }
+    val r: Result[Context, LClause.Theorem] = if (preR.continu) {
+      val o2: LClause.Theorem = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: Result[Context, Id] = transformId(ctx, o2.id)
+      val r1: Result[Context, Exp] = transformExp(r0.ctx, o2.exp)
+      val r2: Result[Context, LClause.Proof] = transformLClauseProof(r1.ctx, o2.proof)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+        Result(r2.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), exp = r1.resultOpt.getOrElse(o2.exp), proof = r2.resultOpt.getOrElse(o2.proof))))
+      else
+        Result(r2.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      Result(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      Result(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: LClause.Theorem = r.resultOpt.getOrElse(o)
+    val postR: Result[Context, LClause.Theorem] = pp.postLClauseTheorem(r.ctx, o2) match {
+     case Result(postCtx, Some(result: LClause.Theorem)) => Result(postCtx, Some[LClause.Theorem](result))
+     case Result(_, Some(_)) => halt("Can only produce object of type LClause.Theorem")
+     case Result(postCtx, _) => Result(postCtx, None[LClause.Theorem]())
     }
     if (postR.resultOpt.nonEmpty) {
       return postR

@@ -357,9 +357,9 @@
 
 <invariants>       ::=  invariant <named-exps>
 
-<facts>            ::=  fact ⸨ <ID> : <exp> ⸩+   // newline separated
+<facts>            ::=  fact <named-exps>   // newline separated
 
-<theorems>         ::=  theorem ⸨ <ID> : <exp> ⸩+   // newline separated
+<theorems>         ::=  theorem ⸨ <ID> : <exp> <proof> ⸩+   // newline separated
 
 <sequent>          ::=  ⸨ <exp> ⸨  , <exp> ⸩* ⸩? <sequent-op> <exp> ⸨  , <exp> ⸩* <proof>?
 

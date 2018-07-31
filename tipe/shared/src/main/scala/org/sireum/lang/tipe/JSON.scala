@@ -673,6 +673,7 @@ object JSON {
         case o: org.sireum.lang.ast.LClause.Invariants => return print_astLClauseInvariants(o)
         case o: org.sireum.lang.ast.LClause.Facts => return print_astLClauseFacts(o)
         case o: org.sireum.lang.ast.LClause.Theorems => return print_astLClauseTheorems(o)
+        case o: org.sireum.lang.ast.LClause.Theorem => return print_astLClauseTheorem(o)
         case o: org.sireum.lang.ast.LClause.Sequent => return print_astLClauseSequent(o)
         case o: org.sireum.lang.ast.LClause.Proof => return print_astLClauseProof(o)
       }
@@ -681,21 +682,30 @@ object JSON {
     @pure def print_astLClauseInvariants(o: org.sireum.lang.ast.LClause.Invariants): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.LClause.Invariants""""),
-        ("value", printISZ(F, o.value, print_astNamedExp _))
+        ("invariants", printISZ(F, o.invariants, print_astNamedExp _))
       ))
     }
 
     @pure def print_astLClauseFacts(o: org.sireum.lang.ast.LClause.Facts): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.LClause.Facts""""),
-        ("value", printISZ(F, o.value, print_astNamedExp _))
+        ("facts", printISZ(F, o.facts, print_astNamedExp _))
       ))
     }
 
     @pure def print_astLClauseTheorems(o: org.sireum.lang.ast.LClause.Theorems): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.LClause.Theorems""""),
-        ("value", printISZ(F, o.value, print_astNamedExp _))
+        ("theorems", printISZ(F, o.theorems, print_astLClauseTheorem _))
+      ))
+    }
+
+    @pure def print_astLClauseTheorem(o: org.sireum.lang.ast.LClause.Theorem): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.LClause.Theorem""""),
+        ("id", print_astId(o.id)),
+        ("exp", print_astExp(o.exp)),
+        ("proof", print_astLClauseProof(o.proof))
       ))
     }
 
@@ -3134,11 +3144,12 @@ object JSON {
     }
 
     def parse_astLClause(): org.sireum.lang.ast.LClause = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.LClause.Invariants", "org.sireum.lang.ast.LClause.Facts", "org.sireum.lang.ast.LClause.Theorems", "org.sireum.lang.ast.LClause.Sequent", "org.sireum.lang.ast.LClause.Proof"))
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.LClause.Invariants", "org.sireum.lang.ast.LClause.Facts", "org.sireum.lang.ast.LClause.Theorems", "org.sireum.lang.ast.LClause.Theorem", "org.sireum.lang.ast.LClause.Sequent", "org.sireum.lang.ast.LClause.Proof"))
       t.native match {
         case "org.sireum.lang.ast.LClause.Invariants" => val r = parse_astLClauseInvariantsT(T); return r
         case "org.sireum.lang.ast.LClause.Facts" => val r = parse_astLClauseFactsT(T); return r
         case "org.sireum.lang.ast.LClause.Theorems" => val r = parse_astLClauseTheoremsT(T); return r
+        case "org.sireum.lang.ast.LClause.Theorem" => val r = parse_astLClauseTheoremT(T); return r
         case "org.sireum.lang.ast.LClause.Sequent" => val r = parse_astLClauseSequentT(T); return r
         case "org.sireum.lang.ast.LClause.Proof" => val r = parse_astLClauseProofT(T); return r
         case _ => val r = parse_astLClauseProofT(T); return r
@@ -3154,10 +3165,10 @@ object JSON {
       if (!typeParsed) {
         parser.parseObjectType("org.sireum.lang.ast.LClause.Invariants")
       }
-      parser.parseObjectKey("value")
-      val value = parser.parseISZ(parse_astNamedExp _)
+      parser.parseObjectKey("invariants")
+      val invariants = parser.parseISZ(parse_astNamedExp _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.LClause.Invariants(value)
+      return org.sireum.lang.ast.LClause.Invariants(invariants)
     }
 
     def parse_astLClauseFacts(): org.sireum.lang.ast.LClause.Facts = {
@@ -3169,10 +3180,10 @@ object JSON {
       if (!typeParsed) {
         parser.parseObjectType("org.sireum.lang.ast.LClause.Facts")
       }
-      parser.parseObjectKey("value")
-      val value = parser.parseISZ(parse_astNamedExp _)
+      parser.parseObjectKey("facts")
+      val facts = parser.parseISZ(parse_astNamedExp _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.LClause.Facts(value)
+      return org.sireum.lang.ast.LClause.Facts(facts)
     }
 
     def parse_astLClauseTheorems(): org.sireum.lang.ast.LClause.Theorems = {
@@ -3184,10 +3195,31 @@ object JSON {
       if (!typeParsed) {
         parser.parseObjectType("org.sireum.lang.ast.LClause.Theorems")
       }
-      parser.parseObjectKey("value")
-      val value = parser.parseISZ(parse_astNamedExp _)
+      parser.parseObjectKey("theorems")
+      val theorems = parser.parseISZ(parse_astLClauseTheorem _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.LClause.Theorems(value)
+      return org.sireum.lang.ast.LClause.Theorems(theorems)
+    }
+
+    def parse_astLClauseTheorem(): org.sireum.lang.ast.LClause.Theorem = {
+      val r = parse_astLClauseTheoremT(F)
+      return r
+    }
+
+    def parse_astLClauseTheoremT(typeParsed: B): org.sireum.lang.ast.LClause.Theorem = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.LClause.Theorem")
+      }
+      parser.parseObjectKey("id")
+      val id = parse_astId()
+      parser.parseObjectNext()
+      parser.parseObjectKey("exp")
+      val exp = parse_astExp()
+      parser.parseObjectNext()
+      parser.parseObjectKey("proof")
+      val proof = parse_astLClauseProof()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.LClause.Theorem(id, exp, proof)
     }
 
     def parse_astLClauseSequent(): org.sireum.lang.ast.LClause.Sequent = {
@@ -6346,6 +6378,24 @@ object JSON {
       return r
     }
     val r = to(s, f_astLClauseTheorems _)
+    return r
+  }
+
+  def from_astLClauseTheorem(o: org.sireum.lang.ast.LClause.Theorem, isCompact: B): String = {
+    val st = Printer.print_astLClauseTheorem(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astLClauseTheorem(s: String): Either[org.sireum.lang.ast.LClause.Theorem, Json.ErrorMsg] = {
+    def f_astLClauseTheorem(parser: Parser): org.sireum.lang.ast.LClause.Theorem = {
+      val r = parser.parse_astLClauseTheorem()
+      return r
+    }
+    val r = to(s, f_astLClauseTheorem _)
     return r
   }
 

@@ -396,11 +396,13 @@ object Stmt {
 
 object LClause {
 
-  @datatype class Invariants(value: ISZ[NamedExp]) extends LClause
+  @datatype class Invariants(invariants: ISZ[NamedExp]) extends LClause
 
-  @datatype class Facts(value: ISZ[NamedExp]) extends LClause
+  @datatype class Facts(facts: ISZ[NamedExp]) extends LClause
 
-  @datatype class Theorems(value: ISZ[NamedExp]) extends LClause
+  @datatype class Theorems(theorems: ISZ[Theorem]) extends LClause
+
+  @datatype class Theorem(id: Id, exp: Exp, proof: Proof) extends LClause
 
   @datatype class Sequent(premises: ISZ[Exp], conclusions: ISZ[Exp], proofOpt: Option[Proof]) extends LClause
 
