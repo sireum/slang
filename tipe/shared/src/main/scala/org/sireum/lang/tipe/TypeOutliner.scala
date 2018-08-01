@@ -849,21 +849,21 @@ object TypeOutliner {
                         inheritMethod(p, posOpt, substMap)
                       }
                       for (p <- ti.invariants.values) {
-                        val id = p.id.value
+                        val id = p.id
                         if (checkInheritInvFactTheorem(id, posOpt)) {
                           invariants = invariants + id ~> p
                         }
                       }
                       for (p <- ti.facts.values) {
-                        val id = p.id.value
+                        val id = p.id
                         if (checkInheritInvFactTheorem(id, posOpt)) {
                           facts = facts + id ~> p
                         }
                       }
                       for (p <- ti.theorems.values) {
-                        val id = p.id.value
+                        val id = p.id
                         if (checkInheritInvFactTheorem(id, posOpt)) {
-                          theorems = theorems + id ~> p(proofOpt = None())
+                          theorems = theorems + id ~> p(ast = p.ast(proofOpt = None()))
                         }
                       }
                     case _ =>
@@ -888,21 +888,21 @@ object TypeOutliner {
                         inheritMethod(p, posOpt, substMap)
                       }
                       for (p <- ti.invariants.values) {
-                        val id = p.id.value
+                        val id = p.id
                         if (checkInheritInvFactTheorem(id, posOpt)) {
                           invariants = invariants + id ~> p
                         }
                       }
                       for (p <- ti.facts.values) {
-                        val id = p.id.value
+                        val id = p.id
                         if (checkInheritInvFactTheorem(id, posOpt)) {
                           facts = facts + id ~> p
                         }
                       }
                       for (p <- ti.theorems.values) {
-                        val id = p.id.value
+                        val id = p.id
                         if (checkInheritInvFactTheorem(id, posOpt)) {
-                          theorems = theorems + id ~> p(proofOpt = None())
+                          theorems = theorems + id ~> p(ast = p.ast(proofOpt = None()))
                         }
                       }
                     case _ =>

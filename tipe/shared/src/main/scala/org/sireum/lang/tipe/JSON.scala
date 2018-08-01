@@ -146,9 +146,9 @@ object JSON {
         ("typedOpt", printOption(F, o.typedOpt, print_astTyped _)),
         ("resOpt", printOption(F, o.resOpt, print_astResolvedInfo _)),
         ("constructorRes", print_astResolvedInfoMethod(o.constructorRes)),
-        ("invariants", printHashMap(F, o.invariants, printString _, print_astNamedExp _)),
-        ("facts", printHashMap(F, o.facts, printString _, print_astNamedExp _)),
-        ("theorems", printHashMap(F, o.theorems, printString _, print_astLClauseTheorem _))
+        ("invariants", printHashMap(F, o.invariants, printString _, print_symbolInfoNamedExp _)),
+        ("facts", printHashMap(F, o.facts, printString _, print_symbolInfoNamedExp _)),
+        ("theorems", printHashMap(F, o.theorems, printString _, print_symbolInfoTheorem _))
       ))
     }
 
@@ -205,6 +205,24 @@ object JSON {
       ))
     }
 
+    @pure def print_symbolInfoNamedExp(o: org.sireum.lang.symbol.Info.NamedExp): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.symbol.Info.NamedExp""""),
+        ("owner", printISZ(T, o.owner, printString _)),
+        ("id", printString(o.id)),
+        ("ast", print_astNamedExp(o.ast))
+      ))
+    }
+
+    @pure def print_symbolInfoTheorem(o: org.sireum.lang.symbol.Info.Theorem): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.symbol.Info.Theorem""""),
+        ("owner", printISZ(T, o.owner, printString _)),
+        ("id", printString(o.id)),
+        ("ast", print_astLClauseTheorem(o.ast))
+      ))
+    }
+
     @pure def print_symbolTypeInfo(o: org.sireum.lang.symbol.TypeInfo): ST = {
       o match {
         case o: org.sireum.lang.symbol.TypeInfo.SubZ => return print_symbolTypeInfoSubZ(o)
@@ -244,9 +262,9 @@ object JSON {
         ("specVars", printHashMap(F, o.specVars, printString _, print_symbolInfoSpecVar _)),
         ("specMethods", printHashMap(F, o.specMethods, printString _, print_symbolInfoSpecMethod _)),
         ("methods", printHashMap(F, o.methods, printString _, print_symbolInfoMethod _)),
-        ("invariants", printHashMap(F, o.invariants, printString _, print_astNamedExp _)),
-        ("facts", printHashMap(F, o.facts, printString _, print_astNamedExp _)),
-        ("theorems", printHashMap(F, o.theorems, printString _, print_astLClauseTheorem _)),
+        ("invariants", printHashMap(F, o.invariants, printString _, print_symbolInfoNamedExp _)),
+        ("facts", printHashMap(F, o.facts, printString _, print_symbolInfoNamedExp _)),
+        ("theorems", printHashMap(F, o.theorems, printString _, print_symbolInfoTheorem _)),
         ("refinements", printHashMap(F, o.refinements, printString _, print_symbolTypeInfoName _)),
         ("scope", print_symbolScopeGlobal(o.scope)),
         ("ast", print_astStmtSig(o.ast))
@@ -276,9 +294,9 @@ object JSON {
         ("vars", printHashMap(F, o.vars, printString _, print_symbolInfoVar _)),
         ("specMethods", printHashMap(F, o.specMethods, printString _, print_symbolInfoSpecMethod _)),
         ("methods", printHashMap(F, o.methods, printString _, print_symbolInfoMethod _)),
-        ("invariants", printHashMap(F, o.invariants, printString _, print_astNamedExp _)),
-        ("facts", printHashMap(F, o.facts, printString _, print_astNamedExp _)),
-        ("theorems", printHashMap(F, o.theorems, printString _, print_astLClauseTheorem _)),
+        ("invariants", printHashMap(F, o.invariants, printString _, print_symbolInfoNamedExp _)),
+        ("facts", printHashMap(F, o.facts, printString _, print_symbolInfoNamedExp _)),
+        ("theorems", printHashMap(F, o.theorems, printString _, print_symbolInfoTheorem _)),
         ("refinements", printHashMap(F, o.refinements, printString _, print_symbolTypeInfoName _)),
         ("scope", print_symbolScopeGlobal(o.scope)),
         ("ast", print_astStmtAbstractDatatype(o.ast))
@@ -309,9 +327,9 @@ object JSON {
         ("vars", printHashMap(F, o.vars, printString _, print_symbolInfoVar _)),
         ("specMethods", printHashMap(F, o.specMethods, printString _, print_symbolInfoSpecMethod _)),
         ("methods", printHashMap(F, o.methods, printString _, print_symbolInfoMethod _)),
-        ("invariants", printHashMap(F, o.invariants, printString _, print_astNamedExp _)),
-        ("facts", printHashMap(F, o.facts, printString _, print_astNamedExp _)),
-        ("theorems", printHashMap(F, o.theorems, printString _, print_astLClauseTheorem _)),
+        ("invariants", printHashMap(F, o.invariants, printString _, print_symbolInfoNamedExp _)),
+        ("facts", printHashMap(F, o.facts, printString _, print_symbolInfoNamedExp _)),
+        ("theorems", printHashMap(F, o.theorems, printString _, print_symbolInfoTheorem _)),
         ("refinements", printHashMap(F, o.refinements, printString _, print_symbolTypeInfoName _))
       ))
     }
@@ -1987,13 +2005,13 @@ object JSON {
       val constructorRes = parse_astResolvedInfoMethod()
       parser.parseObjectNext()
       parser.parseObjectKey("invariants")
-      val invariants = parser.parseHashMap(parser.parseString _, parse_astNamedExp _)
+      val invariants = parser.parseHashMap(parser.parseString _, parse_symbolInfoNamedExp _)
       parser.parseObjectNext()
       parser.parseObjectKey("facts")
-      val facts = parser.parseHashMap(parser.parseString _, parse_astNamedExp _)
+      val facts = parser.parseHashMap(parser.parseString _, parse_symbolInfoNamedExp _)
       parser.parseObjectNext()
       parser.parseObjectKey("theorems")
-      val theorems = parser.parseHashMap(parser.parseString _, parse_astLClauseTheorem _)
+      val theorems = parser.parseHashMap(parser.parseString _, parse_symbolInfoTheorem _)
       parser.parseObjectNext()
       return org.sireum.lang.symbol.Info.Object(owner, isSynthetic, scope, outlined, typeChecked, ast, typedOpt, resOpt, constructorRes, invariants, facts, theorems)
     }
@@ -2127,6 +2145,48 @@ object JSON {
       return org.sireum.lang.symbol.Info.QuantVar(name, ast, typedOpt, resOpt)
     }
 
+    def parse_symbolInfoNamedExp(): org.sireum.lang.symbol.Info.NamedExp = {
+      val r = parse_symbolInfoNamedExpT(F)
+      return r
+    }
+
+    def parse_symbolInfoNamedExpT(typeParsed: B): org.sireum.lang.symbol.Info.NamedExp = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.symbol.Info.NamedExp")
+      }
+      parser.parseObjectKey("owner")
+      val owner = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("id")
+      val id = parser.parseString()
+      parser.parseObjectNext()
+      parser.parseObjectKey("ast")
+      val ast = parse_astNamedExp()
+      parser.parseObjectNext()
+      return org.sireum.lang.symbol.Info.NamedExp(owner, id, ast)
+    }
+
+    def parse_symbolInfoTheorem(): org.sireum.lang.symbol.Info.Theorem = {
+      val r = parse_symbolInfoTheoremT(F)
+      return r
+    }
+
+    def parse_symbolInfoTheoremT(typeParsed: B): org.sireum.lang.symbol.Info.Theorem = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.symbol.Info.Theorem")
+      }
+      parser.parseObjectKey("owner")
+      val owner = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("id")
+      val id = parser.parseString()
+      parser.parseObjectNext()
+      parser.parseObjectKey("ast")
+      val ast = parse_astLClauseTheorem()
+      parser.parseObjectNext()
+      return org.sireum.lang.symbol.Info.Theorem(owner, id, ast)
+    }
+
     def parse_symbolTypeInfo(): org.sireum.lang.symbol.TypeInfo = {
       val t = parser.parseObjectTypes(ISZ("org.sireum.lang.symbol.TypeInfo.SubZ", "org.sireum.lang.symbol.TypeInfo.Enum", "org.sireum.lang.symbol.TypeInfo.Sig", "org.sireum.lang.symbol.TypeInfo.AbstractDatatype", "org.sireum.lang.symbol.TypeInfo.TypeAlias", "org.sireum.lang.symbol.TypeInfo.TypeVar"))
       t.native match {
@@ -2213,13 +2273,13 @@ object JSON {
       val methods = parser.parseHashMap(parser.parseString _, parse_symbolInfoMethod _)
       parser.parseObjectNext()
       parser.parseObjectKey("invariants")
-      val invariants = parser.parseHashMap(parser.parseString _, parse_astNamedExp _)
+      val invariants = parser.parseHashMap(parser.parseString _, parse_symbolInfoNamedExp _)
       parser.parseObjectNext()
       parser.parseObjectKey("facts")
-      val facts = parser.parseHashMap(parser.parseString _, parse_astNamedExp _)
+      val facts = parser.parseHashMap(parser.parseString _, parse_symbolInfoNamedExp _)
       parser.parseObjectNext()
       parser.parseObjectKey("theorems")
-      val theorems = parser.parseHashMap(parser.parseString _, parse_astLClauseTheorem _)
+      val theorems = parser.parseHashMap(parser.parseString _, parse_symbolInfoTheorem _)
       parser.parseObjectNext()
       parser.parseObjectKey("refinements")
       val refinements = parser.parseHashMap(parser.parseString _, parse_symbolTypeInfoName _)
@@ -2297,13 +2357,13 @@ object JSON {
       val methods = parser.parseHashMap(parser.parseString _, parse_symbolInfoMethod _)
       parser.parseObjectNext()
       parser.parseObjectKey("invariants")
-      val invariants = parser.parseHashMap(parser.parseString _, parse_astNamedExp _)
+      val invariants = parser.parseHashMap(parser.parseString _, parse_symbolInfoNamedExp _)
       parser.parseObjectNext()
       parser.parseObjectKey("facts")
-      val facts = parser.parseHashMap(parser.parseString _, parse_astNamedExp _)
+      val facts = parser.parseHashMap(parser.parseString _, parse_symbolInfoNamedExp _)
       parser.parseObjectNext()
       parser.parseObjectKey("theorems")
-      val theorems = parser.parseHashMap(parser.parseString _, parse_astLClauseTheorem _)
+      val theorems = parser.parseHashMap(parser.parseString _, parse_symbolInfoTheorem _)
       parser.parseObjectNext()
       parser.parseObjectKey("refinements")
       val refinements = parser.parseHashMap(parser.parseString _, parse_symbolTypeInfoName _)
@@ -2378,13 +2438,13 @@ object JSON {
       val methods = parser.parseHashMap(parser.parseString _, parse_symbolInfoMethod _)
       parser.parseObjectNext()
       parser.parseObjectKey("invariants")
-      val invariants = parser.parseHashMap(parser.parseString _, parse_astNamedExp _)
+      val invariants = parser.parseHashMap(parser.parseString _, parse_symbolInfoNamedExp _)
       parser.parseObjectNext()
       parser.parseObjectKey("facts")
-      val facts = parser.parseHashMap(parser.parseString _, parse_astNamedExp _)
+      val facts = parser.parseHashMap(parser.parseString _, parse_symbolInfoNamedExp _)
       parser.parseObjectNext()
       parser.parseObjectKey("theorems")
-      val theorems = parser.parseHashMap(parser.parseString _, parse_astLClauseTheorem _)
+      val theorems = parser.parseHashMap(parser.parseString _, parse_symbolInfoTheorem _)
       parser.parseObjectNext()
       parser.parseObjectKey("refinements")
       val refinements = parser.parseHashMap(parser.parseString _, parse_symbolTypeInfoName _)
@@ -5580,6 +5640,42 @@ object JSON {
       return r
     }
     val r = to(s, f_symbolInfoQuantVar _)
+    return r
+  }
+
+  def from_symbolInfoNamedExp(o: org.sireum.lang.symbol.Info.NamedExp, isCompact: B): String = {
+    val st = Printer.print_symbolInfoNamedExp(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_symbolInfoNamedExp(s: String): Either[org.sireum.lang.symbol.Info.NamedExp, Json.ErrorMsg] = {
+    def f_symbolInfoNamedExp(parser: Parser): org.sireum.lang.symbol.Info.NamedExp = {
+      val r = parser.parse_symbolInfoNamedExp()
+      return r
+    }
+    val r = to(s, f_symbolInfoNamedExp _)
+    return r
+  }
+
+  def from_symbolInfoTheorem(o: org.sireum.lang.symbol.Info.Theorem, isCompact: B): String = {
+    val st = Printer.print_symbolInfoTheorem(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_symbolInfoTheorem(s: String): Either[org.sireum.lang.symbol.Info.Theorem, Json.ErrorMsg] = {
+    def f_symbolInfoTheorem(parser: Parser): org.sireum.lang.symbol.Info.Theorem = {
+      val r = parser.parse_symbolInfoTheorem()
+      return r
+    }
+    val r = to(s, f_symbolInfoTheorem _)
     return r
   }
 
