@@ -436,7 +436,10 @@ object Info {
     ast: AST.Stmt.Object,
     typedOpt: Option[AST.Typed],
     resOpt: Option[AST.ResolvedInfo],
-    constructorRes: AST.ResolvedInfo.Method
+    constructorRes: AST.ResolvedInfo.Method,
+    invariants: HashMap[String, AST.NamedExp],
+    facts: HashMap[String, AST.NamedExp],
+    theorems: HashMap[String, AST.LClause.Theorem]
   ) extends Info {
 
     @pure override def name: ISZ[String] = {
@@ -663,6 +666,9 @@ object TypeInfo {
     specVars: HashMap[String, Info.SpecVar],
     specMethods: HashMap[String, Info.SpecMethod],
     methods: HashMap[String, Info.Method],
+    invariants: HashMap[String, AST.NamedExp],
+    facts: HashMap[String, AST.NamedExp],
+    theorems: HashMap[String, AST.LClause.Theorem],
     refinements: HashMap[String, Name],
     scope: Scope.Global,
     ast: AST.Stmt.Sig
@@ -727,6 +733,9 @@ object TypeInfo {
     vars: HashMap[String, Info.Var],
     specMethods: HashMap[String, Info.SpecMethod],
     methods: HashMap[String, Info.Method],
+    invariants: HashMap[String, AST.NamedExp],
+    facts: HashMap[String, AST.NamedExp],
+    theorems: HashMap[String, AST.LClause.Theorem],
     refinements: HashMap[String, Name],
     scope: Scope.Global,
     ast: AST.Stmt.AbstractDatatype
@@ -815,6 +824,9 @@ object TypeInfo {
     vars: HashMap[String, Info.Var],
     specMethods: HashMap[String, Info.SpecMethod],
     methods: HashMap[String, Info.Method],
+    invariants: HashMap[String, AST.NamedExp],
+    facts: HashMap[String, AST.NamedExp],
+    theorems: HashMap[String, AST.LClause.Theorem],
     refinements: HashMap[String, Name]
   )
 

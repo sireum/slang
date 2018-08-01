@@ -145,7 +145,10 @@ object JSON {
         ("ast", print_astStmtObject(o.ast)),
         ("typedOpt", printOption(F, o.typedOpt, print_astTyped _)),
         ("resOpt", printOption(F, o.resOpt, print_astResolvedInfo _)),
-        ("constructorRes", print_astResolvedInfoMethod(o.constructorRes))
+        ("constructorRes", print_astResolvedInfoMethod(o.constructorRes)),
+        ("invariants", printHashMap(F, o.invariants, printString _, print_astNamedExp _)),
+        ("facts", printHashMap(F, o.facts, printString _, print_astNamedExp _)),
+        ("theorems", printHashMap(F, o.theorems, printString _, print_astLClauseTheorem _))
       ))
     }
 
@@ -241,6 +244,9 @@ object JSON {
         ("specVars", printHashMap(F, o.specVars, printString _, print_symbolInfoSpecVar _)),
         ("specMethods", printHashMap(F, o.specMethods, printString _, print_symbolInfoSpecMethod _)),
         ("methods", printHashMap(F, o.methods, printString _, print_symbolInfoMethod _)),
+        ("invariants", printHashMap(F, o.invariants, printString _, print_astNamedExp _)),
+        ("facts", printHashMap(F, o.facts, printString _, print_astNamedExp _)),
+        ("theorems", printHashMap(F, o.theorems, printString _, print_astLClauseTheorem _)),
         ("refinements", printHashMap(F, o.refinements, printString _, print_symbolTypeInfoName _)),
         ("scope", print_symbolScopeGlobal(o.scope)),
         ("ast", print_astStmtSig(o.ast))
@@ -270,6 +276,9 @@ object JSON {
         ("vars", printHashMap(F, o.vars, printString _, print_symbolInfoVar _)),
         ("specMethods", printHashMap(F, o.specMethods, printString _, print_symbolInfoSpecMethod _)),
         ("methods", printHashMap(F, o.methods, printString _, print_symbolInfoMethod _)),
+        ("invariants", printHashMap(F, o.invariants, printString _, print_astNamedExp _)),
+        ("facts", printHashMap(F, o.facts, printString _, print_astNamedExp _)),
+        ("theorems", printHashMap(F, o.theorems, printString _, print_astLClauseTheorem _)),
         ("refinements", printHashMap(F, o.refinements, printString _, print_symbolTypeInfoName _)),
         ("scope", print_symbolScopeGlobal(o.scope)),
         ("ast", print_astStmtAbstractDatatype(o.ast))
@@ -300,6 +309,9 @@ object JSON {
         ("vars", printHashMap(F, o.vars, printString _, print_symbolInfoVar _)),
         ("specMethods", printHashMap(F, o.specMethods, printString _, print_symbolInfoSpecMethod _)),
         ("methods", printHashMap(F, o.methods, printString _, print_symbolInfoMethod _)),
+        ("invariants", printHashMap(F, o.invariants, printString _, print_astNamedExp _)),
+        ("facts", printHashMap(F, o.facts, printString _, print_astNamedExp _)),
+        ("theorems", printHashMap(F, o.theorems, printString _, print_astLClauseTheorem _)),
         ("refinements", printHashMap(F, o.refinements, printString _, print_symbolTypeInfoName _))
       ))
     }
@@ -705,7 +717,7 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.LClause.Theorem""""),
         ("id", print_astId(o.id)),
         ("exp", print_astExp(o.exp)),
-        ("proof", print_astLClauseProof(o.proof))
+        ("proofOpt", printOption(F, o.proofOpt, print_astLClauseProof _))
       ))
     }
 
@@ -1974,7 +1986,16 @@ object JSON {
       parser.parseObjectKey("constructorRes")
       val constructorRes = parse_astResolvedInfoMethod()
       parser.parseObjectNext()
-      return org.sireum.lang.symbol.Info.Object(owner, isSynthetic, scope, outlined, typeChecked, ast, typedOpt, resOpt, constructorRes)
+      parser.parseObjectKey("invariants")
+      val invariants = parser.parseHashMap(parser.parseString _, parse_astNamedExp _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("facts")
+      val facts = parser.parseHashMap(parser.parseString _, parse_astNamedExp _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("theorems")
+      val theorems = parser.parseHashMap(parser.parseString _, parse_astLClauseTheorem _)
+      parser.parseObjectNext()
+      return org.sireum.lang.symbol.Info.Object(owner, isSynthetic, scope, outlined, typeChecked, ast, typedOpt, resOpt, constructorRes, invariants, facts, theorems)
     }
 
     def parse_symbolInfoExtMethod(): org.sireum.lang.symbol.Info.ExtMethod = {
@@ -2191,6 +2212,15 @@ object JSON {
       parser.parseObjectKey("methods")
       val methods = parser.parseHashMap(parser.parseString _, parse_symbolInfoMethod _)
       parser.parseObjectNext()
+      parser.parseObjectKey("invariants")
+      val invariants = parser.parseHashMap(parser.parseString _, parse_astNamedExp _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("facts")
+      val facts = parser.parseHashMap(parser.parseString _, parse_astNamedExp _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("theorems")
+      val theorems = parser.parseHashMap(parser.parseString _, parse_astLClauseTheorem _)
+      parser.parseObjectNext()
       parser.parseObjectKey("refinements")
       val refinements = parser.parseHashMap(parser.parseString _, parse_symbolTypeInfoName _)
       parser.parseObjectNext()
@@ -2200,7 +2230,7 @@ object JSON {
       parser.parseObjectKey("ast")
       val ast = parse_astStmtSig()
       parser.parseObjectNext()
-      return org.sireum.lang.symbol.TypeInfo.Sig(owner, outlined, typeChecked, tpe, ancestors, specVars, specMethods, methods, refinements, scope, ast)
+      return org.sireum.lang.symbol.TypeInfo.Sig(owner, outlined, typeChecked, tpe, ancestors, specVars, specMethods, methods, invariants, facts, theorems, refinements, scope, ast)
     }
 
     def parse_symbolTypeInfoName(): org.sireum.lang.symbol.TypeInfo.Name = {
@@ -2266,6 +2296,15 @@ object JSON {
       parser.parseObjectKey("methods")
       val methods = parser.parseHashMap(parser.parseString _, parse_symbolInfoMethod _)
       parser.parseObjectNext()
+      parser.parseObjectKey("invariants")
+      val invariants = parser.parseHashMap(parser.parseString _, parse_astNamedExp _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("facts")
+      val facts = parser.parseHashMap(parser.parseString _, parse_astNamedExp _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("theorems")
+      val theorems = parser.parseHashMap(parser.parseString _, parse_astLClauseTheorem _)
+      parser.parseObjectNext()
       parser.parseObjectKey("refinements")
       val refinements = parser.parseHashMap(parser.parseString _, parse_symbolTypeInfoName _)
       parser.parseObjectNext()
@@ -2275,7 +2314,7 @@ object JSON {
       parser.parseObjectKey("ast")
       val ast = parse_astStmtAbstractDatatype()
       parser.parseObjectNext()
-      return org.sireum.lang.symbol.TypeInfo.AbstractDatatype(owner, outlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, ancestors, specVars, vars, specMethods, methods, refinements, scope, ast)
+      return org.sireum.lang.symbol.TypeInfo.AbstractDatatype(owner, outlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, ancestors, specVars, vars, specMethods, methods, invariants, facts, theorems, refinements, scope, ast)
     }
 
     def parse_symbolTypeInfoTypeAlias(): org.sireum.lang.symbol.TypeInfo.TypeAlias = {
@@ -2338,10 +2377,19 @@ object JSON {
       parser.parseObjectKey("methods")
       val methods = parser.parseHashMap(parser.parseString _, parse_symbolInfoMethod _)
       parser.parseObjectNext()
+      parser.parseObjectKey("invariants")
+      val invariants = parser.parseHashMap(parser.parseString _, parse_astNamedExp _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("facts")
+      val facts = parser.parseHashMap(parser.parseString _, parse_astNamedExp _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("theorems")
+      val theorems = parser.parseHashMap(parser.parseString _, parse_astLClauseTheorem _)
+      parser.parseObjectNext()
       parser.parseObjectKey("refinements")
       val refinements = parser.parseHashMap(parser.parseString _, parse_symbolTypeInfoName _)
       parser.parseObjectNext()
-      return org.sireum.lang.symbol.TypeInfo.Members(specVars, vars, specMethods, methods, refinements)
+      return org.sireum.lang.symbol.TypeInfo.Members(specVars, vars, specMethods, methods, invariants, facts, theorems, refinements)
     }
 
     def parse_astTopUnit(): org.sireum.lang.ast.TopUnit = {
@@ -3216,10 +3264,10 @@ object JSON {
       parser.parseObjectKey("exp")
       val exp = parse_astExp()
       parser.parseObjectNext()
-      parser.parseObjectKey("proof")
-      val proof = parse_astLClauseProof()
+      parser.parseObjectKey("proofOpt")
+      val proofOpt = parser.parseOption(parse_astLClauseProof _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.LClause.Theorem(id, exp, proof)
+      return org.sireum.lang.ast.LClause.Theorem(id, exp, proofOpt)
     }
 
     def parse_astLClauseSequent(): org.sireum.lang.ast.LClause.Sequent = {

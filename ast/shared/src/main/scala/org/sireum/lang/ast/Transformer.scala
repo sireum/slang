@@ -2075,9 +2075,9 @@ import Transformer._
         case o2: LClause.Theorem =>
           val r0: Result[Context, Id] = transformId(ctx, o2.id)
           val r1: Result[Context, Exp] = transformExp(r0.ctx, o2.exp)
-          val r2: Result[Context, LClause.Proof] = transformLClauseProof(r1.ctx, o2.proof)
+          val r2: Result[Context, Option[LClause.Proof]] = transformOption(r1.ctx, o2.proofOpt, transformLClauseProof _)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            Result(r2.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), exp = r1.resultOpt.getOrElse(o2.exp), proof = r2.resultOpt.getOrElse(o2.proof))))
+            Result(r2.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), exp = r1.resultOpt.getOrElse(o2.exp), proofOpt = r2.resultOpt.getOrElse(o2.proofOpt))))
           else
             Result(r2.ctx, None())
         case o2: LClause.Sequent =>
@@ -3671,9 +3671,9 @@ import Transformer._
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: Result[Context, Id] = transformId(ctx, o2.id)
       val r1: Result[Context, Exp] = transformExp(r0.ctx, o2.exp)
-      val r2: Result[Context, LClause.Proof] = transformLClauseProof(r1.ctx, o2.proof)
+      val r2: Result[Context, Option[LClause.Proof]] = transformOption(r1.ctx, o2.proofOpt, transformLClauseProof _)
       if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-        Result(r2.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), exp = r1.resultOpt.getOrElse(o2.exp), proof = r2.resultOpt.getOrElse(o2.proof))))
+        Result(r2.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), exp = r1.resultOpt.getOrElse(o2.exp), proofOpt = r2.resultOpt.getOrElse(o2.proofOpt))))
       else
         Result(r2.ctx, None())
     } else if (preR.resultOpt.nonEmpty) {

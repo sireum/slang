@@ -430,6 +430,9 @@ object MsgPack {
       writer.writeOption(o.typedOpt, write_astTyped _)
       writer.writeOption(o.resOpt, write_astResolvedInfo _)
       write_astResolvedInfoMethod(o.constructorRes)
+      writer.writeHashMap(o.invariants, writer.writeString _, write_astNamedExp _)
+      writer.writeHashMap(o.facts, writer.writeString _, write_astNamedExp _)
+      writer.writeHashMap(o.theorems, writer.writeString _, write_astLClauseTheorem _)
     }
 
     def write_symbolInfoExtMethod(o: org.sireum.lang.symbol.Info.ExtMethod): Unit = {
@@ -509,6 +512,9 @@ object MsgPack {
       writer.writeHashMap(o.specVars, writer.writeString _, write_symbolInfoSpecVar _)
       writer.writeHashMap(o.specMethods, writer.writeString _, write_symbolInfoSpecMethod _)
       writer.writeHashMap(o.methods, writer.writeString _, write_symbolInfoMethod _)
+      writer.writeHashMap(o.invariants, writer.writeString _, write_astNamedExp _)
+      writer.writeHashMap(o.facts, writer.writeString _, write_astNamedExp _)
+      writer.writeHashMap(o.theorems, writer.writeString _, write_astLClauseTheorem _)
       writer.writeHashMap(o.refinements, writer.writeString _, write_symbolTypeInfoName _)
       write_symbolScopeGlobal(o.scope)
       write_astStmtSig(o.ast)
@@ -534,6 +540,9 @@ object MsgPack {
       writer.writeHashMap(o.vars, writer.writeString _, write_symbolInfoVar _)
       writer.writeHashMap(o.specMethods, writer.writeString _, write_symbolInfoSpecMethod _)
       writer.writeHashMap(o.methods, writer.writeString _, write_symbolInfoMethod _)
+      writer.writeHashMap(o.invariants, writer.writeString _, write_astNamedExp _)
+      writer.writeHashMap(o.facts, writer.writeString _, write_astNamedExp _)
+      writer.writeHashMap(o.theorems, writer.writeString _, write_astLClauseTheorem _)
       writer.writeHashMap(o.refinements, writer.writeString _, write_symbolTypeInfoName _)
       write_symbolScopeGlobal(o.scope)
       write_astStmtAbstractDatatype(o.ast)
@@ -558,6 +567,9 @@ object MsgPack {
       writer.writeHashMap(o.vars, writer.writeString _, write_symbolInfoVar _)
       writer.writeHashMap(o.specMethods, writer.writeString _, write_symbolInfoSpecMethod _)
       writer.writeHashMap(o.methods, writer.writeString _, write_symbolInfoMethod _)
+      writer.writeHashMap(o.invariants, writer.writeString _, write_astNamedExp _)
+      writer.writeHashMap(o.facts, writer.writeString _, write_astNamedExp _)
+      writer.writeHashMap(o.theorems, writer.writeString _, write_astLClauseTheorem _)
       writer.writeHashMap(o.refinements, writer.writeString _, write_symbolTypeInfoName _)
     }
 
@@ -887,7 +899,7 @@ object MsgPack {
       writer.writeZ(Constants._astLClauseTheorem)
       write_astId(o.id)
       write_astExp(o.exp)
-      write_astLClauseProof(o.proof)
+      writer.writeOption(o.proofOpt, write_astLClauseProof _)
     }
 
     def write_astLClauseSequent(o: org.sireum.lang.ast.LClause.Sequent): Unit = {
@@ -1823,7 +1835,10 @@ object MsgPack {
       val typedOpt = reader.readOption(read_astTyped _)
       val resOpt = reader.readOption(read_astResolvedInfo _)
       val constructorRes = read_astResolvedInfoMethod()
-      return org.sireum.lang.symbol.Info.Object(owner, isSynthetic, scope, outlined, typeChecked, ast, typedOpt, resOpt, constructorRes)
+      val invariants = reader.readHashMap(reader.readString _, read_astNamedExp _)
+      val facts = reader.readHashMap(reader.readString _, read_astNamedExp _)
+      val theorems = reader.readHashMap(reader.readString _, read_astLClauseTheorem _)
+      return org.sireum.lang.symbol.Info.Object(owner, isSynthetic, scope, outlined, typeChecked, ast, typedOpt, resOpt, constructorRes, invariants, facts, theorems)
     }
 
     def read_symbolInfoExtMethod(): org.sireum.lang.symbol.Info.ExtMethod = {
@@ -1972,10 +1987,13 @@ object MsgPack {
       val specVars = reader.readHashMap(reader.readString _, read_symbolInfoSpecVar _)
       val specMethods = reader.readHashMap(reader.readString _, read_symbolInfoSpecMethod _)
       val methods = reader.readHashMap(reader.readString _, read_symbolInfoMethod _)
+      val invariants = reader.readHashMap(reader.readString _, read_astNamedExp _)
+      val facts = reader.readHashMap(reader.readString _, read_astNamedExp _)
+      val theorems = reader.readHashMap(reader.readString _, read_astLClauseTheorem _)
       val refinements = reader.readHashMap(reader.readString _, read_symbolTypeInfoName _)
       val scope = read_symbolScopeGlobal()
       val ast = read_astStmtSig()
-      return org.sireum.lang.symbol.TypeInfo.Sig(owner, outlined, typeChecked, tpe, ancestors, specVars, specMethods, methods, refinements, scope, ast)
+      return org.sireum.lang.symbol.TypeInfo.Sig(owner, outlined, typeChecked, tpe, ancestors, specVars, specMethods, methods, invariants, facts, theorems, refinements, scope, ast)
     }
 
     def read_symbolTypeInfoName(): org.sireum.lang.symbol.TypeInfo.Name = {
@@ -2013,10 +2031,13 @@ object MsgPack {
       val vars = reader.readHashMap(reader.readString _, read_symbolInfoVar _)
       val specMethods = reader.readHashMap(reader.readString _, read_symbolInfoSpecMethod _)
       val methods = reader.readHashMap(reader.readString _, read_symbolInfoMethod _)
+      val invariants = reader.readHashMap(reader.readString _, read_astNamedExp _)
+      val facts = reader.readHashMap(reader.readString _, read_astNamedExp _)
+      val theorems = reader.readHashMap(reader.readString _, read_astLClauseTheorem _)
       val refinements = reader.readHashMap(reader.readString _, read_symbolTypeInfoName _)
       val scope = read_symbolScopeGlobal()
       val ast = read_astStmtAbstractDatatype()
-      return org.sireum.lang.symbol.TypeInfo.AbstractDatatype(owner, outlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, ancestors, specVars, vars, specMethods, methods, refinements, scope, ast)
+      return org.sireum.lang.symbol.TypeInfo.AbstractDatatype(owner, outlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, ancestors, specVars, vars, specMethods, methods, invariants, facts, theorems, refinements, scope, ast)
     }
 
     def read_symbolTypeInfoTypeAlias(): org.sireum.lang.symbol.TypeInfo.TypeAlias = {
@@ -2061,8 +2082,11 @@ object MsgPack {
       val vars = reader.readHashMap(reader.readString _, read_symbolInfoVar _)
       val specMethods = reader.readHashMap(reader.readString _, read_symbolInfoSpecMethod _)
       val methods = reader.readHashMap(reader.readString _, read_symbolInfoMethod _)
+      val invariants = reader.readHashMap(reader.readString _, read_astNamedExp _)
+      val facts = reader.readHashMap(reader.readString _, read_astNamedExp _)
+      val theorems = reader.readHashMap(reader.readString _, read_astLClauseTheorem _)
       val refinements = reader.readHashMap(reader.readString _, read_symbolTypeInfoName _)
-      return org.sireum.lang.symbol.TypeInfo.Members(specVars, vars, specMethods, methods, refinements)
+      return org.sireum.lang.symbol.TypeInfo.Members(specVars, vars, specMethods, methods, invariants, facts, theorems, refinements)
     }
 
     def read_astTopUnit(): org.sireum.lang.ast.TopUnit = {
@@ -2693,8 +2717,8 @@ object MsgPack {
       }
       val id = read_astId()
       val exp = read_astExp()
-      val proof = read_astLClauseProof()
-      return org.sireum.lang.ast.LClause.Theorem(id, exp, proof)
+      val proofOpt = reader.readOption(read_astLClauseProof _)
+      return org.sireum.lang.ast.LClause.Theorem(id, exp, proofOpt)
     }
 
     def read_astLClauseSequent(): org.sireum.lang.ast.LClause.Sequent = {

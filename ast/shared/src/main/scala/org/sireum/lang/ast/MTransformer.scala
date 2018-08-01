@@ -2557,9 +2557,9 @@ import MTransformer._
         case o2: LClause.Theorem =>
           val r0: MOption[Id] = transformId(o2.id)
           val r1: MOption[Exp] = transformExp(o2.exp)
-          val r2: MOption[LClause.Proof] = transformLClauseProof(o2.proof)
+          val r2: MOption[Option[LClause.Proof]] = transformOption(o2.proofOpt, transformLClauseProof _)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(id = r0.getOrElse(o2.id), exp = r1.getOrElse(o2.exp), proof = r2.getOrElse(o2.proof)))
+            MSome(o2(id = r0.getOrElse(o2.id), exp = r1.getOrElse(o2.exp), proofOpt = r2.getOrElse(o2.proofOpt)))
           else
             MNone()
         case o2: LClause.Sequent =>
@@ -4153,9 +4153,9 @@ import MTransformer._
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: MOption[Id] = transformId(o2.id)
       val r1: MOption[Exp] = transformExp(o2.exp)
-      val r2: MOption[LClause.Proof] = transformLClauseProof(o2.proof)
+      val r2: MOption[Option[LClause.Proof]] = transformOption(o2.proofOpt, transformLClauseProof _)
       if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-        MSome(o2(id = r0.getOrElse(o2.id), exp = r1.getOrElse(o2.exp), proof = r2.getOrElse(o2.proof)))
+        MSome(o2(id = r0.getOrElse(o2.id), exp = r1.getOrElse(o2.exp), proofOpt = r2.getOrElse(o2.proofOpt)))
       else
         MNone()
     } else if (preR.resultOpt.nonEmpty) {

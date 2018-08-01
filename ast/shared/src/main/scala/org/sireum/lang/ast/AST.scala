@@ -402,7 +402,7 @@ object LClause {
 
   @datatype class Theorems(theorems: ISZ[Theorem]) extends LClause
 
-  @datatype class Theorem(id: Id, exp: Exp, proof: Proof) extends LClause
+  @datatype class Theorem(id: Id, exp: Exp, proofOpt: Option[Proof]) extends LClause
 
   @datatype class Sequent(premises: ISZ[Exp], conclusions: ISZ[Exp], proofOpt: Option[Proof]) extends LClause
 

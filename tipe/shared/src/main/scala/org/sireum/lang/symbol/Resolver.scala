@@ -131,6 +131,9 @@ object Resolver {
       HashMap.empty,
       HashMap.empty,
       HashMap.empty,
+      HashMap.empty,
+      HashMap.empty,
+      HashMap.empty,
       scope,
       AST.Stmt.AbstractDatatype(T, T, AST.Id("Unit", emptyAttr), ISZ(), ISZ(), ISZ(), ISZ(), emptyAttr)
     )
@@ -145,6 +148,9 @@ object Resolver {
       Map.empty,
       None(),
       ISZ(),
+      HashMap.empty,
+      HashMap.empty,
+      HashMap.empty,
       HashMap.empty,
       HashMap.empty,
       HashMap.empty,

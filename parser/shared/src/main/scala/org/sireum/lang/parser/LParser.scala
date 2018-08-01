@@ -657,7 +657,7 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
         in = new LimitingTokenIterator(oldIn.i, proofIndex - 1)
         val e = sparser.translateExp(expr())
         in = new LimitingTokenIterator(proofIndex, oldIn.end)
-        AST.LClause.Theorem(ident, e, proof())
+        AST.LClause.Theorem(ident, e, SSome(proof()))
       }
     }
 
