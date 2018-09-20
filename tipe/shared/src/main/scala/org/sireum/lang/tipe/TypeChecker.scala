@@ -1994,7 +1994,6 @@ import TypeChecker._
                     }
                     ps
                   }
-                  val typeParams = info.ast.typeParams.map[String](tp => tp.id.value)
                   val paramNames = params.map[String](p => p.id.value)
                   val paramTypes = params.map[AST.Typed](p => p.tipe.typedOpt.get)
                   val smOpt = unify(typeHierarchy, posOpt, TypeRelation.Equal, tpe, info.tpe, reporter)
@@ -2700,7 +2699,7 @@ import TypeChecker._
 
         case exp: AST.Exp.LitZ => return (exp, exp.typedOpt)
 
-        case exp: AST.Exp.Quant => halt("Unimplemented") // TODO
+        case _: AST.Exp.Quant => halt("Unimplemented") // TODO
 
         case exp: AST.Exp.Select => val r = checkSelect(exp, None()); return r
 
@@ -2831,7 +2830,7 @@ import TypeChecker._
               newStmtOpts = newStmtOpts :+ Some(newStmt)
             case _ =>
               for (j <- i until stmtOpts.size) {
-                newStmtOpts = newStmtOpts :+ stmtOpts(i)
+                newStmtOpts = newStmtOpts :+ stmtOpts(j)
               }
               return newStmtOpts
           }
