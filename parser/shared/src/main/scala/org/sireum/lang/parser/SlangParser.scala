@@ -149,7 +149,7 @@ class SlangParser(
   var lPointOpt: scala.Option[Int] = scala.None
 
   val fileInfo = message.DocInfo(uriOpt = fileUriOpt, lineOffsets = {
-    val util = new org.langmeta.InputUtil(input)
+    val util = new scala.meta.InputUtil(input)
     var line = 0
     import org.sireum._
     var r = ISZ[U32]()

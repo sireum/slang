@@ -23,7 +23,7 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.langmeta
+package scala.meta
 
 class InputUtil(input: inputs.Input) {
   def lineToOffset(line: Int): Int = {
