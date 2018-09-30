@@ -20,5 +20,5 @@ The above runs the Slang front-end test suite under a JVM; to run it under Node.
 (*caution:* it is a lot slower):
 
 ```bash
-./mill slang.frontend.js.tests.test
+NODEJS_MAX_HEAP=4096 <path-to-repo>/mill-standalone slang.frontend.js.tests.test
 ```
