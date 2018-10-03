@@ -201,7 +201,8 @@ object TypeChecker {
     }
     for (info <- nameMap.values) {
       info match {
-        case info: Info.Object => jobs = jobs :+ (() => TypeChecker(th, info.name, F).checkObject(info))
+        case info: Info.Object if !info.ast.isExt =>
+          jobs = jobs :+ (() => TypeChecker(th, info.name, F).checkObject(info))
         case _ =>
       }
     }
