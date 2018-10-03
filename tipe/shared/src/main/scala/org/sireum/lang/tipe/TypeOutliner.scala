@@ -256,6 +256,7 @@ object TypeOutliner {
     val reporter = Reporter.create
 
     var infos = ISZ[(QName, Info)]()
+    var newStmts = ISZ[AST.Stmt]()
     for (stmt <- info.ast.stmts) {
       val idOpt: Option[String] = stmt match {
         case stmt: AST.Stmt.SpecVar => Some(stmt.id.value)
@@ -267,23 +268,55 @@ object TypeOutliner {
       }
       idOpt match {
         case Some(id) =>
-          val infoOpt: Option[Info] = typeHierarchy.nameMap.get(info.name :+ id).get match {
-            case inf: Info.SpecVar => val rOpt = outlineSpecVar(inf, reporter); rOpt
-            case inf: Info.Var => val rOpt = outlineVar(inf, reporter); rOpt
-            case inf: Info.SpecMethod => val rOpt = outlineSpecMethod(inf, reporter); rOpt
-            case inf: Info.Method => val rOpt = outlineMethod(inf, reporter); rOpt
-            case inf: Info.ExtMethod => val rOpt = outlineExtMethod(inf, reporter); rOpt
-            case _ => None()
+          typeHierarchy.nameMap.get(info.name :+ id).get match {
+            case inf: Info.SpecVar =>
+              val rOpt = outlineSpecVar(inf, reporter)
+              rOpt match {
+                case Some(r: Info.SpecVar) =>
+                  infos = infos :+ ((r.name, r))
+                  newStmts = newStmts :+ r.ast
+                case _ => newStmts = newStmts :+ stmt
+              }
+            case inf: Info.Var =>
+              val rOpt = outlineVar(inf, reporter)
+              rOpt match {
+                case Some(r: Info.Var) =>
+                  infos = infos :+ ((r.name, r))
+                  newStmts = newStmts :+ r.ast
+                case _ => newStmts = newStmts :+ stmt
+              }
+            case inf: Info.SpecMethod =>
+              val rOpt = outlineSpecMethod(inf, reporter)
+              rOpt match {
+                case Some(r: Info.SpecMethod) =>
+                  infos = infos :+ ((r.name, r))
+                  newStmts = newStmts :+ r.ast
+                case _ => newStmts = newStmts :+ stmt
+              }
+            case inf: Info.Method =>
+              val rOpt = outlineMethod(inf, reporter)
+              rOpt match {
+                case Some(r: Info.Method) =>
+                  infos = infos :+ ((r.name, r))
+                  newStmts = newStmts :+ r.ast
+                case _ => newStmts = newStmts :+ stmt
+              }
+            case inf: Info.ExtMethod =>
+              val rOpt = outlineExtMethod(inf, reporter)
+              rOpt match {
+                case Some(r: Info.ExtMethod) =>
+                  infos = infos :+ ((r.name, r))
+                  newStmts = newStmts :+ r.ast
+                case _ => newStmts = newStmts :+ stmt
+              }
+            case _ => newStmts = newStmts :+ stmt
           }
-          infoOpt match {
-            case Some(inf) => infos = infos :+ ((inf.name, inf))
-            case _ =>
-          }
-        case _ =>
+        case _ => newStmts = newStmts :+ stmt
       }
     }
 
-    return (th: TypeHierarchy) => (th(nameMap = th.nameMap ++ infos + info.name ~> info(outlined = T)), reporter)
+    return (th: TypeHierarchy) =>
+      (th(nameMap = th.nameMap ++ infos + info.name ~> info(outlined = T, ast = info.ast(stmts = newStmts))), reporter)
   }
 
   @pure def outlineTypeAliases(infos: ISZ[TypeInfo.TypeAlias]): TypeHierarchy => (TypeHierarchy, Reporter) @pure = {
@@ -309,11 +342,24 @@ object TypeOutliner {
     val members = outlineMembers(
       T,
       info.name,
-      TypeInfo.Members(info.specVars, HashMap.empty, info.specMethods, info.methods, info.invariants, info.facts, info.theorems, info.refinements),
+      TypeInfo.Members(
+        info.specVars,
+        HashMap.empty,
+        info.specMethods,
+        info.methods,
+        info.invariants,
+        info.facts,
+        info.theorems,
+        info.refinements
+      ),
       scope,
       reporter
     )
-    val (TypeInfo.Members(specVars, _, specMethods, methods, invariants, facts, theorems, refinements), ancestors, newParents) =
+    val (
+      TypeInfo.Members(specVars, _, specMethods, methods, invariants, facts, theorems, refinements),
+      ancestors,
+      newParents
+    ) =
       outlineInheritedMembers(info.name, info.ast.parents, scope, members, reporter)
     val newInfo = info(
       outlined = T,
@@ -337,11 +383,24 @@ object TypeOutliner {
     val members = outlineMembers(
       info.ast.isRoot,
       info.name,
-      TypeInfo.Members(info.specVars, info.vars, info.specMethods, info.methods, info.invariants, info.facts, info.theorems, info.refinements),
+      TypeInfo.Members(
+        info.specVars,
+        info.vars,
+        info.specMethods,
+        info.methods,
+        info.invariants,
+        info.facts,
+        info.theorems,
+        info.refinements
+      ),
       scope,
       reporter
     )
-    val (TypeInfo.Members(specVars, vars, specMethods, methods, invariants, facts, theorems, refinements), ancestors, newParents) =
+    val (
+      TypeInfo.Members(specVars, vars, specMethods, methods, invariants, facts, theorems, refinements),
+      ancestors,
+      newParents
+    ) =
       outlineInheritedMembers(info.name, info.ast.parents, scope, members, reporter)
     var newParams = ISZ[AST.AbstractDatatypeParam]()
     var paramTypes = ISZ[AST.Typed]()
@@ -543,7 +602,8 @@ object TypeOutliner {
       checkMethod(p)
     }
 
-    return TypeInfo.Members(specVars, vars, specMethods, methods, info.invariants, info.facts, info.theorems, HashMap.empty)
+    return TypeInfo
+      .Members(specVars, vars, specMethods, methods, info.invariants, info.facts, info.theorems, HashMap.empty)
   }
 
   def outlineInheritedMembers(
@@ -694,11 +754,8 @@ object TypeOutliner {
 
     def checkInheritInvFactTheorem(id: String, posOpt: Option[Position]): B = {
       if (invariants.contains(id) || facts.contains(id) || theorems.contains(id)) {
-        reporter.error(
-          posOpt,
-          TypeChecker.typeCheckerKind,
-          s"Cannot inherit $id because it has been previously declared."
-        )
+        reporter
+          .error(posOpt, TypeChecker.typeCheckerKind, s"Cannot inherit $id because it has been previously declared.")
         return F
       }
       return T
