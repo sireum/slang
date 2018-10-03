@@ -46,7 +46,9 @@ object cli {
         tpe = Type.Str(Some(','), None()),
         description = "Fully qualified names of traits, classes, and objects to force full type checking on when type outlining is enabled"),
       Opt(name = "verbose", longKey = "verbose", shortKey = None(),
-        tpe = Type.Flag(F), description = "Enable verbose mode")
+        tpe = Type.Flag(F), description = "Enable verbose mode"),
+      Opt(name = "noRuntime", longKey = "no-runtime", shortKey = Some('r'),
+        tpe = Type.Flag(F), description = "Do not use built-in runtime (use runtime in sourcepath)")
     ),
     groups = ISZ(OptGroup(name = "Persistence", opts = ISZ(
       Opt(name = "save", longKey = "save", shortKey = None(), tpe = Type.Path(F, None()),
