@@ -43,14 +43,14 @@ object FrontEnd {
   ): (Reporter, ISZ[AST.TopUnit.Program], NameMap, TypeMap) = {
     @pure def parseGloballyResolve(p: (Option[String], String)): (Reporter, AST.TopUnit.Program, NameMap, TypeMap) = {
       val reporter = Reporter.create
-      val r = Parser(p._2).parseTopUnit[AST.TopUnit.Program](T, F, F, p._1, reporter)
+      val topUnitOpt = Parser(p._2).parseTopUnit[AST.TopUnit](T, F, F, p._1, reporter)
       val nameMap = HashMap.empty[QName, Info]
       val typeMap = HashMap.empty[QName, TypeInfo]
       if (reporter.hasError) {
         return (reporter, AST.TopUnit.Program.empty, nameMap, typeMap)
       }
-      r match {
-        case Some(program) =>
+      topUnitOpt match {
+        case Some(program: AST.TopUnit.Program) =>
           val gdr = GlobalDeclarationResolver(nameMap, typeMap, Reporter.create)
           gdr.resolveProgram(program)
           reporter.reports(gdr.reporter.messages)
