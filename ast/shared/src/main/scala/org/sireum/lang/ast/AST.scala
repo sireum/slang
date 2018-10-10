@@ -1736,6 +1736,9 @@ object ResolvedInfo {
       'Halt
       'Hash
       'IsInstanceOf
+      'Indices
+      'Min
+      'Max
       'Native
       'Print
       'Println

@@ -106,6 +106,18 @@ object TypeChecker {
     AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.AsInstanceOf)
   )
 
+  val minResOpt: Option[AST.ResolvedInfo] = Some(
+    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Min)
+  )
+
+  val maxResOpt: Option[AST.ResolvedInfo] = Some(
+    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Max)
+  )
+
+  val indicesResOpt: Option[AST.ResolvedInfo] = Some(
+    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Indices)
+  )
+
   val unopResOpt: HashMap[AST.Exp.UnaryOp.Type, Option[AST.ResolvedInfo]] = HashMap ++ ISZ[
     (AST.Exp.UnaryOp.Type, Option[AST.ResolvedInfo])
   ](
@@ -962,15 +974,19 @@ import TypeChecker._
           return (AST.Typed.bOpt, isInstanceOfResOpt, ISZ())
         case _ =>
           t match {
-            case t: AST.Typed.Name if t.args.isEmpty =>
-              typeHierarchy.typeMap.get(t.ids) match {
-                case Some(info: TypeInfo.Enum) =>
-                  id.native match {
-                    case "name" => return (info.nameTypedOpt, TypeInfo.Enum.nameResOpt, typeArgs)
-                    case "ordinal" => return (info.ordinalTypedOpt, TypeInfo.Enum.ordinalResOpt, typeArgs)
-                    case _ =>
-                  }
-                case _ =>
+            case t: AST.Typed.Name =>
+              if (t.args.isEmpty) {
+                typeHierarchy.typeMap.get(t.ids) match {
+                  case Some(info: TypeInfo.Enum) =>
+                    id.native match {
+                      case "name" => return (info.nameTypedOpt, TypeInfo.Enum.nameResOpt, typeArgs)
+                      case "ordinal" => return (info.ordinalTypedOpt, TypeInfo.Enum.ordinalResOpt, typeArgs)
+                      case _ =>
+                    }
+                  case _ =>
+                }
+              } else if (id == "indices" && (t.ids == AST.Typed.isName || t.ids == AST.Typed.msName)) {
+                return (Some(AST.Typed.Name(AST.Typed.isName, ISZ(AST.Typed.z, t.args(0)))), indicesResOpt, typeArgs)
               }
             case _ =>
           }
@@ -1047,6 +1063,15 @@ import TypeChecker._
         }
         return (r._1, r._2, typeArgs)
       case receiverType: AST.Typed.Object =>
+        typeHierarchy.typeMap.get(receiverType.name) match {
+          case Some(info: TypeInfo.SubZ) =>
+            id.native match {
+              case "Max" if info.ast.hasMax => return (info.typedOpt, minResOpt, typeArgs)
+              case "Min" if info.ast.hasMin => return (info.typedOpt, maxResOpt, typeArgs)
+              case _ =>
+            }
+          case _ =>
+        }
         val r = checkInfoOpt(None(), typeHierarchy.nameMap.get(receiverType.name :+ id))
         if (r._1.isEmpty) {
           reporter.error(

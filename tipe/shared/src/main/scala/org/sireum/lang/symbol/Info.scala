@@ -618,6 +618,8 @@ object TypeInfo {
 
   @datatype class SubZ(owner: ISZ[String], ast: AST.Stmt.SubZ) extends TypeInfo {
 
+    val typedOpt: Option[AST.Typed] = Some(AST.Typed.Name(name, ISZ()))
+
     @pure override def name: ISZ[String] = {
       return owner :+ ast.id.value
     }
@@ -629,6 +631,7 @@ object TypeInfo {
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
     }
+
   }
 
   object Enum {
