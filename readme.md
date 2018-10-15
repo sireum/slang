@@ -1,6 +1,6 @@
 # The Sireum Programming Language (Slang)
 
-[![Build Status](https://travis-ci.org/sireum/slang.svg?branch=master)](https://travis-ci.org/sireum/slang)
+[![Build Status](https://travis-ci.org/sireum/slang.svg?branch=master)](https://travis-ci.org/sireum/slang) [![](https://jitpack.io/v/org.sireum/slang.svg)](https://jitpack.io/#org.sireum/slang)
 
 This repository holds the [Slang](https://github.com/sireum/kekinian) 
 front-end components (i.e., parser, symbol resolver, and type checker).

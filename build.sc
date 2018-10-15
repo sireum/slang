@@ -31,10 +31,13 @@ object runtime extends mill.Module {
 
   object macros extends Runtime.Module.Macros
 
-  object library extends Runtime.Module.Library {
-
+  object test extends Runtime.Module.Test {
     final override def macrosObject = macros
+  }
 
+  object library extends Runtime.Module.Library {
+    final override def macrosObject = macros
+    final override def testObject = test
   }
 
 }
@@ -44,29 +47,24 @@ object slang extends mill.Module {
   final override def millSourcePath = super.millSourcePath / up
 
   object ast extends Slang.Module.Ast {
-
     final override def libraryObject = runtime.library
-
+    final override def testObject = runtime.test
   }
 
   object parser extends Slang.Module.Parser {
-
     final override def astObject = ast
-
+    final override def testObject = runtime.test
   }
 
   object tipe extends Slang.Module.Tipe {
-
     final override def astObject = ast
-
+    final override def testObject = runtime.test
   }
 
   object frontend extends Slang.Module.FrontEnd {
-
     final override def parserObject = parser
-
     final override def tipeObject = tipe
-
+    final override def testObject = runtime.test
   }
 
 }

@@ -27,7 +27,11 @@ import mill._
 import mill.scalalib._
 import org.sireum.mill.SireumModule._
 
-trait Module extends CrossJvmJs {
+trait Module extends CrossSharedJsJitPack {
+
+  final override def subUrl: String = "slang"
+
+  final override def developers = Seq(Developers.robby)
 
   final override def jvmDeps = Seq()
 
@@ -37,9 +41,12 @@ trait Module extends CrossJvmJs {
     ivy"org.sireum::scalac-plugin:$scalacPluginVersion"
   )
 
-  final override def testIvyDeps = Agg(
-    ivy"org.scalatest::scalatest::$scalaTestVersion"
-  )
+  final override def testDeps =
+    if (isSourceDep) Seq(testObject.shared) else Seq()
+
+  final override def testIvyDeps =
+    if (isSourceDep) Agg.empty
+    else Agg(jpLatest(isCross = true, "sireum", "runtime", "test"))
 
   final override def jvmTestIvyDeps = Agg.empty
 
@@ -51,24 +58,36 @@ trait Module extends CrossJvmJs {
 
   final override def jsTestFrameworks = jvmTestFrameworks
 
+  def testObject: CrossJvmJsPublish
 }
 
 object Module {
 
   trait Ast extends Module {
 
-    final override def ivyDeps = Agg.empty
+    final override def description: String = "Slang AST"
 
-    final override def deps = Seq(libraryObject)
+    final override def artifactName = "ast"
+
+    final override def ivyDeps =
+      if (isSourceDep) Agg.empty
+      else Agg(jpLatest(isCross = true, "sireum", "runtime", "library"))
+
+    final override def deps =
+      if (isSourceDep) Seq(libraryObject) else Seq()
 
     def libraryObject: CrossJvmJsPublish
   }
 
   trait Parser extends Module {
 
+    final override def description: String = "Slang Parser"
+
+    final override def artifactName = "parser"
+
     final override def ivyDeps = Agg(
       ivy"org.scalameta::scalameta::$scalaMetaVersion"
-        //.excludeOrg("com.google.protobuf", "com.thesamet.scalapb")
+        .excludeOrg("com.google.protobuf", "com.thesamet.scalapb")
     )
 
     final override def deps = Seq(astObject)
@@ -79,6 +98,10 @@ object Module {
 
   trait Tipe extends Module {
 
+    final override def description: String = "Slang Type Checker"
+
+    final override def artifactName = "tipe"
+
     final override def ivyDeps = Agg.empty
 
     final override def deps = Seq(astObject)
@@ -88,6 +111,10 @@ object Module {
   }
 
   trait FrontEnd extends Module {
+
+    final override def description: String = "Slang Front-End"
+
+    final override def artifactName = "frontend"
 
     final override def ivyDeps = Agg.empty
 

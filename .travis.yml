@@ -4,4 +4,6 @@ jdk:
   - oraclejdk11
 
 script:
+  - ./prelude.sh
+  - ./mill-standalone jitPack --owner sireum --repo slang --lib frontend || true
   - ./test.sh

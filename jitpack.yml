@@ -1,0 +1,11 @@
+jdk:
+  - oraclejdk8
+before_install:
+  - ./test.sh
+install:
+  - ./mill-standalone all slang.ast.shared.m2 slang.parser.shared.m2 slang.tipe.shared.m2 slang.frontend.shared.m2
+  - mkdir -p ~/.m2/repository
+  - cp -Rv out/slang/ast/shared/m2/dest/* ~/.m2/repository/
+  - cp -Rv out/slang/parser/shared/m2/dest/* ~/.m2/repository/
+  - cp -Rv out/slang/tipe/shared/m2/dest/* ~/.m2/repository/
+  - cp -Rv out/slang/frontend/shared/m2/dest/* ~/.m2/repository/
