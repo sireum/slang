@@ -32,12 +32,15 @@ object runtime extends mill.Module {
   object macros extends Runtime.Module.Macros
 
   object test extends Runtime.Module.Test {
-    final override def macrosObject = macros
+    override def macrosObject = macros
   }
 
-  object library extends Runtime.Module.Library {
-    final override def macrosObject = macros
-    final override def testObject = test
+  trait testProvider extends Runtime.Module.TestProvider {
+    override def testObject = test
+  }
+
+  object library extends Runtime.Module.Library with testProvider {
+    override def macrosObject = macros
   }
 
 }
@@ -46,25 +49,22 @@ object slang extends mill.Module {
 
   final override def millSourcePath = super.millSourcePath / up
 
-  object ast extends Slang.Module.Ast {
+  object ast extends Slang.Module.Ast with runtime.testProvider {
     final override def libraryObject = runtime.library
-    final override def testObject = runtime.test
   }
 
-  object parser extends Slang.Module.Parser {
+  object parser extends Slang.Module.Parser with runtime.testProvider {
+    final override def astObject = ast
+  }
+
+  object tipe extends Slang.Module.Tipe with runtime.testProvider {
     final override def astObject = ast
     final override def testObject = runtime.test
   }
 
-  object tipe extends Slang.Module.Tipe {
-    final override def astObject = ast
-    final override def testObject = runtime.test
-  }
-
-  object frontend extends Slang.Module.FrontEnd {
+  object frontend extends Slang.Module.FrontEnd with runtime.testProvider {
     final override def parserObject = parser
     final override def tipeObject = tipe
-    final override def testObject = runtime.test
   }
 
 }
