@@ -6,4 +6,5 @@ jdk:
 script:
   - ./prelude.sh
   - ./mill-standalone jitPack --owner sireum --repo slang --lib frontend || true
+  - export SIREUM_SOURCE_BUILD=true
   - ./test.sh
