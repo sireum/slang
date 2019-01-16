@@ -60,12 +60,22 @@ object cli {
     )))
   )
 
+  val slangRun: Tool = Tool(
+    name = "slangRun",
+    command = "run",
+    description = "Slang script runner",
+    header = "Slang Script Runner",
+    usage = "<slang-file>+",
+    opts = ISZ(),
+    groups = ISZ()
+  )
+
   val group: Group = Group(
     name = "slang",
     description = "Slang toolbox",
     header = "The Sireum Language (Slang) Toolbox",
     unlisted = F,
-    subs = ISZ(slangTipe)
+    subs = ISZ(slangRun, slangTipe)
   )
 
 }
