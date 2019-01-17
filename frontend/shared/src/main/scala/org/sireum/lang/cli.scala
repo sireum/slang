@@ -38,6 +38,8 @@ object cli {
     header = "Slang Script Runner",
     usage = "<slang-file>+",
     opts = ISZ(
+      Opt(name = "server", longKey = "server", shortKey = Some('s'),
+        tpe = Type.Flag(F), description = "Disable Scala compile server"),
       Opt(name = "transformed", longKey = "transformed", shortKey = Some('t'),
         tpe = Type.Flag(F), description = "Show Scala transformed tree")
     ),
