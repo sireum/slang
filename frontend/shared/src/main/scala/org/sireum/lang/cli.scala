@@ -30,6 +30,20 @@ import org.sireum._
 import org.sireum.cli.CliOpt._
 
 object cli {
+
+  val slangRun: Tool = Tool(
+    name = "slangRun",
+    command = "run",
+    description = "Slang script runner",
+    header = "Slang Script Runner",
+    usage = "<slang-file>+",
+    opts = ISZ(
+      Opt(name = "transformed", longKey = "transformed", shortKey = Some('t'),
+        tpe = Type.Flag(F), description = "Show Scala transformed tree")
+    ),
+    groups = ISZ()
+  )
+
   val slangTipe: Tool = Tool(
     name = "slangTipe",
     command = "tipe",
@@ -58,16 +72,6 @@ object cli {
       Opt(name = "gzip", longKey = "no-gzip", shortKey = Some('z'), tpe = Type.Flag(T),
         description = "Disable gzip compression when saving and/or loading")
     )))
-  )
-
-  val slangRun: Tool = Tool(
-    name = "slangRun",
-    command = "run",
-    description = "Slang script runner",
-    header = "Slang Script Runner",
-    usage = "<slang-file>+",
-    opts = ISZ(),
-    groups = ISZ()
   )
 
   val group: Group = Group(
