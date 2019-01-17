@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2017, Robby, Kansas State University
+ Copyright (c) 2019, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,7 @@ import org.sireum.lang.{ast => AST}
 import org.sireum.{B, ISZ, None, Option, Some, String, Z}
 
 import scala.meta._
+import scala.meta.internal.fastparse
 import scala.meta.internal.parsers.ScalametaParser
 import scala.util.{Success, Try}
 
