@@ -34,11 +34,16 @@ object cli {
   val slangRun: Tool = Tool(
     name = "slangRun",
     command = "run",
-    description = "Slang script runner",
+    description = "Script runner",
     header = "Slang Script Runner",
     usage = "<slang-file>+",
     opts = ISZ(
-      Opt(name = "server", longKey = "server", shortKey = Some('s'),
+      Opt(name = "input", longKey = "input", shortKey = Some('i'),
+        tpe = Type.Path(multiple = F, default = None()),
+        description = "Input file for stdin (default: <slang-file>.txt, if any)"),
+      Opt(name = "output", longKey = "output", shortKey = Some('o'),
+        tpe = Type.Path(multiple = F, default = None()), description = "Output file for stdin & stderr"),
+      Opt(name = "server", longKey = "no-server", shortKey = Some('s'),
         tpe = Type.Flag(F), description = "Disable Scala compile server"),
       Opt(name = "transformed", longKey = "transformed", shortKey = Some('t'),
         tpe = Type.Flag(F), description = "Show Scala transformed tree")
@@ -49,7 +54,7 @@ object cli {
   val slangTipe: Tool = Tool(
     name = "slangTipe",
     command = "tipe",
-    description = "Slang type checker",
+    description = "Type checker",
     header = "Slang Type Checker",
     usage = "<option>* [<slang-file>]",
     opts = ISZ(
@@ -78,8 +83,8 @@ object cli {
 
   val group: Group = Group(
     name = "slang",
-    description = "Slang toolbox",
-    header = "The Sireum Language (Slang) Toolbox",
+    description = "Slang tools",
+    header = "The Sireum Language (Slang) Tools",
     unlisted = F,
     subs = ISZ(slangRun, slangTipe)
   )
