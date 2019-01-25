@@ -168,7 +168,7 @@ class SlangParser(
           val parser = new ScalametaParser(input, dialect)
           translateSource(parser.parseSource())
         } else Result(text, hashSireum, None())
-      } else {
+      } else if (fileUriOpt.isEmpty || fileUri.endsWith(".slang")) {
         val parser = new ScalametaParser(input, dialect)
         val oldIn = parser.in
         parser.in = oldIn.fork
@@ -182,7 +182,7 @@ class SlangParser(
         } else {
           new LParser(input, dialect, this).sequentFile(fileUriOpt)
         }
-      }
+      } else Result(text, hashSireum, None())
     } catch {
       case e: ParseException =>
         error(e.pos, e.shortMessage)
