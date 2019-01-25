@@ -76,9 +76,8 @@ object SlangParser {
   val topLevelMethodsIds: Seq[String] = Seq("assert", "assume", "print", "println", "eprint", "eprintln", "halt")
 
   def scalaDialect(isWorksheet: Boolean): Dialect =
-    if (isWorksheet)
-      scala.meta.dialects.Scala212.copy(allowToplevelTerms = true, allowLiteralTypes = true, allowTrailingCommas = true)
-    else scala.meta.dialects.Scala212.copy(allowLiteralTypes = true, allowTrailingCommas = true)
+    if (isWorksheet) scala.meta.dialects.Scala212.copy(allowToplevelTerms = true)
+    else scala.meta.dialects.Scala212
 
   case class Result(text: Predef.String, hashSireum: Boolean, unitOpt: Option[AST.TopUnit])
 
