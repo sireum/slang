@@ -163,12 +163,12 @@ class SlangParser(
   def parseTopUnit(): Result = {
     try {
       val fileUri = fileUriOpt.getOrElse("").value
-      if (fileUri.endsWith(".scala") || fileUri.endsWith(".sc")) {
-        if (hashSireum) {
+      if (fileUri.endsWith(".scala") || fileUri.endsWith(".sc") || fileUri.endsWith(".slang")) {
+        if (hashSireum || fileUri.endsWith(".slang")) {
           val parser = new ScalametaParser(input, dialect)
           translateSource(parser.parseSource())
         } else Result(text, hashSireum, None())
-      } else if (fileUriOpt.isEmpty || fileUri.endsWith(".slang")) {
+      } else if (fileUriOpt.isEmpty || fileUri.endsWith(".logika")) {
         val parser = new ScalametaParser(input, dialect)
         val oldIn = parser.in
         parser.in = oldIn.fork
@@ -2277,20 +2277,20 @@ class SlangParser(
     if (t.targs.nonEmpty)
       errorInSlang(t.targs.head.pos, "Binary operations cannot have type arguments")
 
-    if (!t.op.value.headOption.contains('$') && !checkSymbol(t.op.value)) {
+    val id = t.op.value
+    if (!checkSymbol(id) && id != LParser.simpInternalSym && id != LParser.impInternalSym) {
       error(
         t.op.pos,
         s"Cannot use infix expression notation to invoke '${t.op.value}' in Slang (use dot invoke notation instead)."
       )
     }
-    val op = if (t.op.value == LParser.implyInternalSym) "->" else t.op.value
     t.args match {
-      case List(right) => AST.Exp.Binary(translateExp(t.lhs), op, translateExp(right), resolvedAttr(t.op.pos))
+      case List(right) => AST.Exp.Binary(translateExp(t.lhs), id, translateExp(right), resolvedAttr(t.op.pos))
       case _ =>
         import org.sireum._
         error(
           t.op.pos,
-          st"Invalid righ-hand-side for '${t.op.value}': '(${(t.args.map(_.syntax), ", ")})'".render.value
+          st"Invalid righ-hand-side for '$id': '(${(t.args.map(_.syntax), ", ")})'".render.value
         )
         rExp
     }
@@ -2587,7 +2587,8 @@ class SlangParser(
   def cid(id: Predef.String, pos: Position): AST.Id = {
     if (id.contains('$') || id.endsWith("_="))
       errorInSlang(pos, s"'$id' is not a valid identifier form")
-
+    if (id == "V")
+      errorInSlang(pos, s"'$id' is a reserved identifier")
     cidNoCheck(id, pos)
   }
 

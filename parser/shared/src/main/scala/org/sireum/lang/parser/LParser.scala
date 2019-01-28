@@ -60,11 +60,14 @@ object LParser {
   val existsTokens = ListSet("∃", "E", "some", "exists")
   val quantTokens: ListSet[String] = forallTokens ++ existsTokens
   val lStmtFirst = ListSet("requires", "theorem", "fact")
-  val implyInternalSym = "$->:"
+  val impInternalSym = "imp_:"
+  val simpInternalSym = "simp_:"
 
   val internalOpMap = Map(
-    "→" -> implyInternalSym,
-    "->" -> implyInternalSym,
+    "→" -> impInternalSym,
+    "->" -> impInternalSym,
+    "==>" -> simpInternalSym,
+    "⟹" -> simpInternalSym,
     "∧" -> "&",
     "^" -> "&",
     "∨" -> "|",
@@ -145,7 +148,7 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
   val justOps: List[() => Option[(String, Int)]] = List(
     () => {
       var text = ""
-      val r = (isIdentOf(implyInternalSym) || isIdentOf("&") || isIdentOf("|") ||
+      val r = (isIdentOf(impInternalSym) || isIdentOf("&") || isIdentOf("|") ||
         isIdentOf("!") || isIdentOf("¬") || isIdentOf("~") || isIdentOf("∀") ||
         isIdentOf("∃") || isIdentOf("F")) && {
         text = token.asInstanceOf[Ident].value.
@@ -154,7 +157,7 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
           replaceAllLiterally("&", "∧").
           replaceAllLiterally("|", "∨").
           replaceAllLiterally("F", "⊥").
-          replaceAllLiterally(implyInternalSym, "→")
+          replaceAllLiterally(impInternalSym, "→")
         ahead {
           text += token.text
           token.is[Ident]
