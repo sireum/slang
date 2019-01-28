@@ -36,7 +36,7 @@ import org.sireum.test.SireumRcSpec
 
 class TruthTableVerifierRcTest extends SireumRcSpec {
   lazy val textResources: scala.collection.Map[scala.Seq[Predef.String], Predef.String] =
-    RC.text(Seq())((p, _) => p.head == "truthtable" && p.last.endsWith(".slang"))
+    RC.text(Seq())((p, _) => p.head == "truthtable" && p.last.endsWith(".logika"))
 
   def check(path: scala.Seq[Predef.String], content: Predef.String): Boolean = {
     LParser[Boolean](content, Reporter.create) { (p, reporter) =>

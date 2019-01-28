@@ -33,7 +33,7 @@ import org.sireum.lang.test.TestUtil
 
 class LParserRcTest extends SireumRcSpec {
   lazy val textResources: scala.collection.Map[scala.Seq[Predef.String], Predef.String] =
-    RC.text(Seq())((p, _) => p.last.endsWith(".slang"))
+    RC.text(Seq())((p, _) => p.last.endsWith(".logika"))
 
   def check(path: scala.Seq[Predef.String], content: Predef.String): Boolean = {
     path.head match {
