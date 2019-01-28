@@ -65,11 +65,27 @@ object SlangParser {
     "unapplySeq",
     "~>",
     "==",
-    "!="
+    "!=",
+    "->",
+    "→",
+    "==>",
+    "⟹",
+    "∧",
+    "^",
+    "∨",
+    "¬",
+    "≠",
+    "≤",
+    "≥",
+    "⊤",
+    "⊥",
+    "≡",
+    "⊻",
+    "⊢"
   )
 
   val disallowedMethodIdEndings: Seq[String] =
-    Seq("old", "result", "reads", "modifies", "pre", "requires", "post", "ensures", "=")
+    Seq("old", "result", "reads", "modifies", "pre", "requires", "post", "ensures", "=", "in")
 
   val unaryMethods: Seq[String] = Seq("unary_!", "unary_+", "unary_-", "unary_~")
 
@@ -2617,7 +2633,7 @@ class SlangParser(
   }
 
   def checkMethodId(pos: Position, id: String): Unit = {
-    def err(): Unit = errorInSlang(pos, s"Identifier $id is disallowed")
+    def err(): Unit = errorInSlang(pos, s"'$id' is a reserved identifier")
 
     val idv = id.value
     if (disallowedMethodIds.contains(id)) {
