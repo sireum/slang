@@ -1494,6 +1494,7 @@ object JSON {
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.BinaryImply => "BinaryImply"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.BinaryCondAnd => "BinaryCondAnd"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.BinaryCondOr => "BinaryCondOr"
+        case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.BinaryCondImply => "BinaryCondImply"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.BinaryAppend => "BinaryAppend"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.BinaryPrepend => "BinaryPrepend"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.BinaryAppendAll => "BinaryAppendAll"

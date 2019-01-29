@@ -1719,6 +1719,7 @@ object ResolvedInfo {
       'BinaryImply
       'BinaryCondAnd
       'BinaryCondOr
+      'BinaryCondImply
       'BinaryAppend
       'BinaryPrepend
       'BinaryAppendAll
