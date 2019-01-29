@@ -2294,7 +2294,7 @@ class SlangParser(
       errorInSlang(t.targs.head.pos, "Binary operations cannot have type arguments")
 
     val id = t.op.value
-    if (!checkSymbol(id) && id != LParser.simpInternalSym && id != LParser.impInternalSym) {
+    if (!checkSymbol(id) && id != LParser.simpInternalSym && id != LParser.impInternalSym && id != "V") {
       error(
         t.op.pos,
         s"Cannot use infix expression notation to invoke '${t.op.value}' in Slang (use dot invoke notation instead)."
