@@ -145,9 +145,10 @@ object TypeChecker {
     string"&" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryAnd)),
     string"|" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryOr)),
     string"|^" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryXor)),
-    string"->" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryImply)),
+    string"imp_:" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryImply)),
     string"&&" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryCondAnd)),
     string"||" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryCondOr)),
+    string"simp_:" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryCondImply)),
     string":+" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryAppend)),
     string"+:" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryPrepend)),
     string"++" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryAppendAll)),
@@ -1363,7 +1364,7 @@ import TypeChecker._
                 binaryExp(
                   left = newLeft,
                   right = newRight,
-                  attr = binaryExp.attr(resOpt = binopResOpt.get(binaryExp.op).get, typedOpt = tOpt)
+                  attr = binaryExp.attr(resOpt = binopResOpt.get(binaryExp.op).getOrElse(None()), typedOpt = tOpt)
                 ),
                 tOpt
               )
