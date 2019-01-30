@@ -2199,11 +2199,11 @@ class SlangParser(
             AST.Exp.LitF32(0.0f, attr(pos))
         }
       case "f64" =>
-        try AST.Exp.LitF32(value.toFloat, attr(pos))
+        try AST.Exp.LitF64(value.toDouble, attr(pos))
         catch {
           case _: Throwable =>
             error(pos, "Invalid 64-bit double number form.")
-            AST.Exp.LitF32(0.0f, attr(pos))
+            AST.Exp.LitF64(0.0, attr(pos))
         }
       case "string" => AST.Exp.LitString(value, attr(pos))
     }
