@@ -65,7 +65,7 @@ object PostTipeAttrChecker {
     for (info <- typeMap.values) {
       info match {
         case info: TypeInfo.Sig => t.transformStmt(info.ast)
-        case info: TypeInfo.AbstractDatatype => t.transformStmt(info.ast)
+        case info: TypeInfo.Adt => t.transformStmt(info.ast)
         case _ =>
       }
     }

@@ -74,7 +74,7 @@ object MsgPack {
 
     val _symbolTypeInfoName: Z = -14
 
-    val _symbolTypeInfoAbstractDatatype: Z = -13
+    val _symbolTypeInfoAdt: Z = -13
 
     val _symbolTypeInfoTypeAlias: Z = -12
 
@@ -118,7 +118,7 @@ object MsgPack {
 
     val _astStmtSig: Z = 8
 
-    val _astStmtAbstractDatatype: Z = 9
+    val _astStmtAdt: Z = 9
 
     val _astStmtTypeAlias: Z = 10
 
@@ -244,7 +244,7 @@ object MsgPack {
 
     val _astBody: Z = 71
 
-    val _astAbstractDatatypeParam: Z = 72
+    val _astAdtParam: Z = 72
 
     val _astMethodSig: Z = 73
 
@@ -501,7 +501,7 @@ object MsgPack {
         case o: org.sireum.lang.symbol.TypeInfo.SubZ => write_symbolTypeInfoSubZ(o)
         case o: org.sireum.lang.symbol.TypeInfo.Enum => write_symbolTypeInfoEnum(o)
         case o: org.sireum.lang.symbol.TypeInfo.Sig => write_symbolTypeInfoSig(o)
-        case o: org.sireum.lang.symbol.TypeInfo.AbstractDatatype => write_symbolTypeInfoAbstractDatatype(o)
+        case o: org.sireum.lang.symbol.TypeInfo.Adt => write_symbolTypeInfoAdt(o)
         case o: org.sireum.lang.symbol.TypeInfo.TypeAlias => write_symbolTypeInfoTypeAlias(o)
         case o: org.sireum.lang.symbol.TypeInfo.TypeVar => write_symbolTypeInfoTypeVar(o)
       }
@@ -543,8 +543,8 @@ object MsgPack {
       writer.writeISZ(o.ids, writer.writeString _)
     }
 
-    def write_symbolTypeInfoAbstractDatatype(o: org.sireum.lang.symbol.TypeInfo.AbstractDatatype): Unit = {
-      writer.writeZ(Constants._symbolTypeInfoAbstractDatatype)
+    def write_symbolTypeInfoAdt(o: org.sireum.lang.symbol.TypeInfo.Adt): Unit = {
+      writer.writeZ(Constants._symbolTypeInfoAdt)
       writer.writeISZ(o.owner, writer.writeString _)
       writer.writeB(o.outlined)
       writer.writeB(o.typeChecked)
@@ -563,7 +563,7 @@ object MsgPack {
       writer.writeHashMap(o.theorems, writer.writeString _, write_symbolInfoTheorem _)
       writer.writeHashMap(o.refinements, writer.writeString _, write_symbolTypeInfoName _)
       write_symbolScopeGlobal(o.scope)
-      write_astStmtAbstractDatatype(o.ast)
+      write_astStmtAdt(o.ast)
     }
 
     def write_symbolTypeInfoTypeAlias(o: org.sireum.lang.symbol.TypeInfo.TypeAlias): Unit = {
@@ -637,7 +637,7 @@ object MsgPack {
         case o: org.sireum.lang.ast.Stmt.SubZ => write_astStmtSubZ(o)
         case o: org.sireum.lang.ast.Stmt.Object => write_astStmtObject(o)
         case o: org.sireum.lang.ast.Stmt.Sig => write_astStmtSig(o)
-        case o: org.sireum.lang.ast.Stmt.AbstractDatatype => write_astStmtAbstractDatatype(o)
+        case o: org.sireum.lang.ast.Stmt.Adt => write_astStmtAdt(o)
         case o: org.sireum.lang.ast.Stmt.TypeAlias => write_astStmtTypeAlias(o)
         case o: org.sireum.lang.ast.Stmt.Assign => write_astStmtAssign(o)
         case o: org.sireum.lang.ast.Stmt.Block => write_astStmtBlock(o)
@@ -780,13 +780,13 @@ object MsgPack {
       write_astAttr(o.attr)
     }
 
-    def write_astStmtAbstractDatatype(o: org.sireum.lang.ast.Stmt.AbstractDatatype): Unit = {
-      writer.writeZ(Constants._astStmtAbstractDatatype)
+    def write_astStmtAdt(o: org.sireum.lang.ast.Stmt.Adt): Unit = {
+      writer.writeZ(Constants._astStmtAdt)
       writer.writeB(o.isRoot)
       writer.writeB(o.isDatatype)
       write_astId(o.id)
       writer.writeISZ(o.typeParams, write_astTypeParam _)
-      writer.writeISZ(o.params, write_astAbstractDatatypeParam _)
+      writer.writeISZ(o.params, write_astAdtParam _)
       writer.writeISZ(o.parents, write_astTypeNamed _)
       writer.writeISZ(o.stmts, write_astStmt _)
       write_astAttr(o.attr)
@@ -1323,8 +1323,8 @@ object MsgPack {
       writer.writeISZ(o.undecls, writer.writeString _)
     }
 
-    def write_astAbstractDatatypeParam(o: org.sireum.lang.ast.AbstractDatatypeParam): Unit = {
-      writer.writeZ(Constants._astAbstractDatatypeParam)
+    def write_astAdtParam(o: org.sireum.lang.ast.AdtParam): Unit = {
+      writer.writeZ(Constants._astAdtParam)
       writer.writeB(o.isHidden)
       writer.writeB(o.isVal)
       write_astId(o.id)
@@ -1979,7 +1979,7 @@ object MsgPack {
         case Constants._symbolTypeInfoSubZ => val r = read_symbolTypeInfoSubZT(T); return r
         case Constants._symbolTypeInfoEnum => val r = read_symbolTypeInfoEnumT(T); return r
         case Constants._symbolTypeInfoSig => val r = read_symbolTypeInfoSigT(T); return r
-        case Constants._symbolTypeInfoAbstractDatatype => val r = read_symbolTypeInfoAbstractDatatypeT(T); return r
+        case Constants._symbolTypeInfoAdt => val r = read_symbolTypeInfoAdtT(T); return r
         case Constants._symbolTypeInfoTypeAlias => val r = read_symbolTypeInfoTypeAliasT(T); return r
         case Constants._symbolTypeInfoTypeVar => val r = read_symbolTypeInfoTypeVarT(T); return r
         case _ =>
@@ -2057,14 +2057,14 @@ object MsgPack {
       return org.sireum.lang.symbol.TypeInfo.Name(ids)
     }
 
-    def read_symbolTypeInfoAbstractDatatype(): org.sireum.lang.symbol.TypeInfo.AbstractDatatype = {
-      val r = read_symbolTypeInfoAbstractDatatypeT(F)
+    def read_symbolTypeInfoAdt(): org.sireum.lang.symbol.TypeInfo.Adt = {
+      val r = read_symbolTypeInfoAdtT(F)
       return r
     }
 
-    def read_symbolTypeInfoAbstractDatatypeT(typeParsed: B): org.sireum.lang.symbol.TypeInfo.AbstractDatatype = {
+    def read_symbolTypeInfoAdtT(typeParsed: B): org.sireum.lang.symbol.TypeInfo.Adt = {
       if (!typeParsed) {
-        reader.expectZ(Constants._symbolTypeInfoAbstractDatatype)
+        reader.expectZ(Constants._symbolTypeInfoAdt)
       }
       val owner = reader.readISZ(reader.readString _)
       val outlined = reader.readB()
@@ -2084,8 +2084,8 @@ object MsgPack {
       val theorems = reader.readHashMap(reader.readString _, read_symbolInfoTheorem _)
       val refinements = reader.readHashMap(reader.readString _, read_symbolTypeInfoName _)
       val scope = read_symbolScopeGlobal()
-      val ast = read_astStmtAbstractDatatype()
-      return org.sireum.lang.symbol.TypeInfo.AbstractDatatype(owner, outlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, ancestors, specVars, vars, specMethods, methods, invariants, facts, theorems, refinements, scope, ast)
+      val ast = read_astStmtAdt()
+      return org.sireum.lang.symbol.TypeInfo.Adt(owner, outlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, ancestors, specVars, vars, specMethods, methods, invariants, facts, theorems, refinements, scope, ast)
     }
 
     def read_symbolTypeInfoTypeAlias(): org.sireum.lang.symbol.TypeInfo.TypeAlias = {
@@ -2215,7 +2215,7 @@ object MsgPack {
         case Constants._astStmtSubZ => val r = read_astStmtSubZT(T); return r
         case Constants._astStmtObject => val r = read_astStmtObjectT(T); return r
         case Constants._astStmtSig => val r = read_astStmtSigT(T); return r
-        case Constants._astStmtAbstractDatatype => val r = read_astStmtAbstractDatatypeT(T); return r
+        case Constants._astStmtAdt => val r = read_astStmtAdtT(T); return r
         case Constants._astStmtTypeAlias => val r = read_astStmtTypeAliasT(T); return r
         case Constants._astStmtAssign => val r = read_astStmtAssignT(T); return r
         case Constants._astStmtBlock => val r = read_astStmtBlockT(T); return r
@@ -2488,24 +2488,24 @@ object MsgPack {
       return org.sireum.lang.ast.Stmt.Sig(isImmutable, isExt, id, typeParams, parents, stmts, attr)
     }
 
-    def read_astStmtAbstractDatatype(): org.sireum.lang.ast.Stmt.AbstractDatatype = {
-      val r = read_astStmtAbstractDatatypeT(F)
+    def read_astStmtAdt(): org.sireum.lang.ast.Stmt.Adt = {
+      val r = read_astStmtAdtT(F)
       return r
     }
 
-    def read_astStmtAbstractDatatypeT(typeParsed: B): org.sireum.lang.ast.Stmt.AbstractDatatype = {
+    def read_astStmtAdtT(typeParsed: B): org.sireum.lang.ast.Stmt.Adt = {
       if (!typeParsed) {
-        reader.expectZ(Constants._astStmtAbstractDatatype)
+        reader.expectZ(Constants._astStmtAdt)
       }
       val isRoot = reader.readB()
       val isDatatype = reader.readB()
       val id = read_astId()
       val typeParams = reader.readISZ(read_astTypeParam _)
-      val params = reader.readISZ(read_astAbstractDatatypeParam _)
+      val params = reader.readISZ(read_astAdtParam _)
       val parents = reader.readISZ(read_astTypeNamed _)
       val stmts = reader.readISZ(read_astStmt _)
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.AbstractDatatype(isRoot, isDatatype, id, typeParams, params, parents, stmts, attr)
+      return org.sireum.lang.ast.Stmt.Adt(isRoot, isDatatype, id, typeParams, params, parents, stmts, attr)
     }
 
     def read_astStmtTypeAlias(): org.sireum.lang.ast.Stmt.TypeAlias = {
@@ -3591,20 +3591,20 @@ object MsgPack {
       return org.sireum.lang.ast.Body(stmts, undecls)
     }
 
-    def read_astAbstractDatatypeParam(): org.sireum.lang.ast.AbstractDatatypeParam = {
-      val r = read_astAbstractDatatypeParamT(F)
+    def read_astAdtParam(): org.sireum.lang.ast.AdtParam = {
+      val r = read_astAdtParamT(F)
       return r
     }
 
-    def read_astAbstractDatatypeParamT(typeParsed: B): org.sireum.lang.ast.AbstractDatatypeParam = {
+    def read_astAdtParamT(typeParsed: B): org.sireum.lang.ast.AdtParam = {
       if (!typeParsed) {
-        reader.expectZ(Constants._astAbstractDatatypeParam)
+        reader.expectZ(Constants._astAdtParam)
       }
       val isHidden = reader.readB()
       val isVal = reader.readB()
       val id = read_astId()
       val tipe = read_astType()
-      return org.sireum.lang.ast.AbstractDatatypeParam(isHidden, isVal, id, tipe)
+      return org.sireum.lang.ast.AdtParam(isHidden, isVal, id, tipe)
     }
 
     def read_astMethodSig(): org.sireum.lang.ast.MethodSig = {
@@ -4643,18 +4643,18 @@ object MsgPack {
     return r
   }
 
-  def from_symbolTypeInfoAbstractDatatype(o: org.sireum.lang.symbol.TypeInfo.AbstractDatatype, pooling: B): ISZ[U8] = {
+  def from_symbolTypeInfoAdt(o: org.sireum.lang.symbol.TypeInfo.Adt, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_symbolTypeInfoAbstractDatatype(o)
+    w.write_symbolTypeInfoAdt(o)
     return w.result
   }
 
-  def to_symbolTypeInfoAbstractDatatype(data: ISZ[U8]): Either[org.sireum.lang.symbol.TypeInfo.AbstractDatatype, MessagePack.ErrorMsg] = {
-    def f_symbolTypeInfoAbstractDatatype(reader: Reader): org.sireum.lang.symbol.TypeInfo.AbstractDatatype = {
-      val r = reader.read_symbolTypeInfoAbstractDatatype()
+  def to_symbolTypeInfoAdt(data: ISZ[U8]): Either[org.sireum.lang.symbol.TypeInfo.Adt, MessagePack.ErrorMsg] = {
+    def f_symbolTypeInfoAdt(reader: Reader): org.sireum.lang.symbol.TypeInfo.Adt = {
+      val r = reader.read_symbolTypeInfoAdt()
       return r
     }
-    val r = to(data, f_symbolTypeInfoAbstractDatatype _)
+    val r = to(data, f_symbolTypeInfoAdt _)
     return r
   }
 
@@ -5018,18 +5018,18 @@ object MsgPack {
     return r
   }
 
-  def from_astStmtAbstractDatatype(o: org.sireum.lang.ast.Stmt.AbstractDatatype, pooling: B): ISZ[U8] = {
+  def from_astStmtAdt(o: org.sireum.lang.ast.Stmt.Adt, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astStmtAbstractDatatype(o)
+    w.write_astStmtAdt(o)
     return w.result
   }
 
-  def to_astStmtAbstractDatatype(data: ISZ[U8]): Either[org.sireum.lang.ast.Stmt.AbstractDatatype, MessagePack.ErrorMsg] = {
-    def f_astStmtAbstractDatatype(reader: Reader): org.sireum.lang.ast.Stmt.AbstractDatatype = {
-      val r = reader.read_astStmtAbstractDatatype()
+  def to_astStmtAdt(data: ISZ[U8]): Either[org.sireum.lang.ast.Stmt.Adt, MessagePack.ErrorMsg] = {
+    def f_astStmtAdt(reader: Reader): org.sireum.lang.ast.Stmt.Adt = {
+      val r = reader.read_astStmtAdt()
       return r
     }
-    val r = to(data, f_astStmtAbstractDatatype _)
+    val r = to(data, f_astStmtAdt _)
     return r
   }
 
@@ -6098,18 +6098,18 @@ object MsgPack {
     return r
   }
 
-  def from_astAbstractDatatypeParam(o: org.sireum.lang.ast.AbstractDatatypeParam, pooling: B): ISZ[U8] = {
+  def from_astAdtParam(o: org.sireum.lang.ast.AdtParam, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astAbstractDatatypeParam(o)
+    w.write_astAdtParam(o)
     return w.result
   }
 
-  def to_astAbstractDatatypeParam(data: ISZ[U8]): Either[org.sireum.lang.ast.AbstractDatatypeParam, MessagePack.ErrorMsg] = {
-    def f_astAbstractDatatypeParam(reader: Reader): org.sireum.lang.ast.AbstractDatatypeParam = {
-      val r = reader.read_astAbstractDatatypeParam()
+  def to_astAdtParam(data: ISZ[U8]): Either[org.sireum.lang.ast.AdtParam, MessagePack.ErrorMsg] = {
+    def f_astAdtParam(reader: Reader): org.sireum.lang.ast.AdtParam = {
+      val r = reader.read_astAdtParam()
       return r
     }
-    val r = to(data, f_astAbstractDatatypeParam _)
+    val r = to(data, f_astAdtParam _)
     return r
   }
 

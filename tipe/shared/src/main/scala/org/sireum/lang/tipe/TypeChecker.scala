@@ -207,8 +207,8 @@ object TypeChecker {
       info match {
         case info: TypeInfo.Sig if !info.typeChecked =>
           jobs = jobs :+ (() => TypeChecker(th, info.name, F).checkSig(info))
-        case info: TypeInfo.AbstractDatatype if !info.typeChecked =>
-          jobs = jobs :+ (() => TypeChecker(th, info.name, F).checkAbstractDatatype(info))
+        case info: TypeInfo.Adt if !info.typeChecked =>
+          jobs = jobs :+ (() => TypeChecker(th, info.name, F).checkAdt(info))
         case _ =>
       }
     }
@@ -233,9 +233,9 @@ object TypeChecker {
           var newStmts = ISZ[AST.Stmt]()
           for (stmt <- info.ast.stmts) {
             stmt match {
-              case stmt: AST.Stmt.AbstractDatatype =>
+              case stmt: AST.Stmt.Adt =>
                 r.typeMap.get(info.name :+ stmt.id.value) match {
-                  case Some(adtInfo: TypeInfo.AbstractDatatype) => newStmts = newStmts :+ adtInfo.ast
+                  case Some(adtInfo: TypeInfo.Adt) => newStmts = newStmts :+ adtInfo.ast
                   case _ => halt(s"Unexpected situation when type checking object @datatype/@record members")
                 }
               case stmt: AST.Stmt.Sig =>
@@ -296,7 +296,7 @@ object TypeChecker {
 
     def findAncestor(ancestor: AST.Typed.Name, t: AST.Typed.Name): Option[AST.Typed.Name] = {
       val (ancestors, substMap): (ISZ[AST.Typed.Name], HashMap[String, AST.Typed]) = th.typeMap.get(t.ids) match {
-        case Some(info: TypeInfo.AbstractDatatype) =>
+        case Some(info: TypeInfo.Adt) =>
           val smOpt = buildTypeSubstMap(t.ids, posOpt, info.ast.typeParams, t.args, reporter)
           smOpt match {
             case Some(sm) => (info.ancestors, sm)
@@ -1015,7 +1015,7 @@ import TypeChecker._
                 }
               case _ => val res = checkAccess(receiverType); return res
             }
-          case info: TypeInfo.AbstractDatatype =>
+          case info: TypeInfo.Adt =>
             val r = info.typeRes(id, inSpec)
             r._1 match {
               case Some(rt) =>
@@ -1888,7 +1888,7 @@ import TypeChecker._
                             newTypeArgs
                           )
 
-                        case info: TypeInfo.AbstractDatatype if !info.ast.isRoot =>
+                        case info: TypeInfo.Adt if !info.ast.isRoot =>
                           info.constructorTypeOpt match {
                             case Some(constructorType) =>
                               return (Some(constructorType), info.constructorResOpt, newTypeArgs)
@@ -2000,8 +2000,8 @@ import TypeChecker._
               }
             case _ =>
               typeHierarchy.typeMap.get(tpe.ids) match {
-                case Some(info: TypeInfo.AbstractDatatype) if !info.ast.isRoot =>
-                  val params: ISZ[AST.AbstractDatatypeParam] = if (argNames.isEmpty) {
+                case Some(info: TypeInfo.Adt) if !info.ast.isRoot =>
+                  val params: ISZ[AST.AdtParam] = if (argNames.isEmpty) {
                     info.ast.params
                   } else {
                     val argNameSet = HashSSet.emptyInit[String](argNames.size) ++ argNames
@@ -2593,7 +2593,7 @@ import TypeChecker._
       scope.thisOpt match {
         case Some(t: AST.Typed.Name) =>
           val parents: ISZ[AST.Typed] = typeHierarchy.typeMap.get(t.ids) match {
-            case Some(info: TypeInfo.AbstractDatatype) => info.ast.parents.map(p => p.typedOpt.get)
+            case Some(info: TypeInfo.Adt) => info.ast.parents.map(p => p.typedOpt.get)
             case Some(info: TypeInfo.Sig) => info.ast.parents.map(p => p.typedOpt.get)
             case _ => halt("Unexpected situation when type checking super.")
           }
@@ -2919,7 +2919,7 @@ import TypeChecker._
             case Some(thisType: AST.Typed.Name) =>
               val hasMethod: B = typeHierarchy.typeMap.get(thisType.ids) match {
                 case Some(info: TypeInfo.Sig) => info.methods.contains(id)
-                case Some(info: TypeInfo.AbstractDatatype) => info.methods.contains(id)
+                case Some(info: TypeInfo.Adt) => info.methods.contains(id)
                 case _ => F
               }
               if (hasMethod) {
@@ -3210,7 +3210,7 @@ import TypeChecker._
                   return r
                 case (_, expected: AST.Typed.Name) =>
                   scope.resolveType(typeHierarchy.typeMap, name) match {
-                    case Some(info: TypeInfo.AbstractDatatype) if !info.ast.isRoot =>
+                    case Some(info: TypeInfo.Adt) if !info.ast.isRoot =>
                       def partialResult: AST.Pattern = {
                         return pattern(attr = pattern.attr(resOpt = info.extractorResOpt))
                       }
@@ -3557,7 +3557,7 @@ import TypeChecker._
               scope.thisOpt match {
                 case Some(t: AST.Typed.Name) =>
                   typeHierarchy.typeMap.get(t.ids) match {
-                    case Some(info: TypeInfo.AbstractDatatype) =>
+                    case Some(info: TypeInfo.Adt) =>
                       info.vars.get(lhs.id.value) match {
                         case Some(varInfo) => val r = checkVarInfo(varInfo); return r
                         case _ =>
@@ -3596,7 +3596,7 @@ import TypeChecker._
           receiverTypeOpt match {
             case Some(t: AST.Typed.Name) =>
               typeHierarchy.typeMap.get(t.ids) match {
-                case Some(info: TypeInfo.AbstractDatatype) =>
+                case Some(info: TypeInfo.Adt) =>
                   info.vars.get(lhs.id.value) match {
                     case Some(varInfo) => val r = checkSelectAssignH(varInfo); return r
                     case _ =>
@@ -3673,9 +3673,9 @@ import TypeChecker._
 
       case stmt: AST.Stmt.LStmt => return (Some(scope), stmt) // TODO
 
-      case stmt: AST.Stmt.AbstractDatatype =>
+      case stmt: AST.Stmt.Adt =>
         typeHierarchy.typeMap.get(context :+ stmt.id.value) match {
-          case Some(info: TypeInfo.AbstractDatatype) => return (Some(scope), info.ast)
+          case Some(info: TypeInfo.Adt) => return (Some(scope), info.ast)
           case _ => halt("Unexpected situation when type checking statement.")
         }
 
@@ -3812,7 +3812,7 @@ import TypeChecker._
     return stmt(bodyOpt = Some(newBody))
   }
 
-  def checkAbstractDatatype(info: TypeInfo.AbstractDatatype): TypeHierarchy => (TypeHierarchy, Reporter) @pure = {
+  def checkAdt(info: TypeInfo.Adt): TypeHierarchy => (TypeHierarchy, Reporter) @pure = {
     assert(info.outlined, st"${(info.name, ".")} is not outlined".render)
     val reporter = Reporter.create
     val typeParams = typeParamMap(info.ast.typeParams, reporter)
@@ -3949,7 +3949,7 @@ import TypeChecker._
         case stmt: AST.Stmt.SpecMethod => stmtOpts = stmtOpts :+ getStmt(stmt.sig.id.value)
         case stmt: AST.Stmt.ExtMethod => stmtOpts = stmtOpts :+ getStmt(stmt.sig.id.value)
         case _: AST.Stmt.Sig => stmtOpts = stmtOpts :+ None()
-        case _: AST.Stmt.AbstractDatatype => stmtOpts = stmtOpts :+ None()
+        case _: AST.Stmt.Adt => stmtOpts = stmtOpts :+ None()
         case _: AST.Stmt.Object => stmtOpts = stmtOpts :+ None()
         case _ => stmtOpts = stmtOpts :+ Some(stmt)
       }

@@ -137,9 +137,9 @@ object MTransformer {
 
   val PostResultStmtSig: MOption[Stmt] = MNone()
 
-  val PreResultStmtAbstractDatatype: PreResult[Stmt] = PreResult(T, MNone())
+  val PreResultStmtAdt: PreResult[Stmt] = PreResult(T, MNone())
 
-  val PostResultStmtAbstractDatatype: MOption[Stmt] = MNone()
+  val PostResultStmtAdt: MOption[Stmt] = MNone()
 
   val PreResultStmtTypeAlias: PreResult[Stmt] = PreResult(T, MNone())
 
@@ -389,9 +389,9 @@ object MTransformer {
 
   val PostResultBody: MOption[Body] = MNone()
 
-  val PreResultAbstractDatatypeParam: PreResult[AbstractDatatypeParam] = PreResult(T, MNone())
+  val PreResultAdtParam: PreResult[AdtParam] = PreResult(T, MNone())
 
-  val PostResultAbstractDatatypeParam: MOption[AbstractDatatypeParam] = MNone()
+  val PostResultAdtParam: MOption[AdtParam] = MNone()
 
   val PreResultMethodSig: PreResult[MethodSig] = PreResult(T, MNone())
 
@@ -596,7 +596,7 @@ import MTransformer._
       case o: Stmt.SubZ => return preStmtSubZ(o)
       case o: Stmt.Object => return preStmtObject(o)
       case o: Stmt.Sig => return preStmtSig(o)
-      case o: Stmt.AbstractDatatype => return preStmtAbstractDatatype(o)
+      case o: Stmt.Adt => return preStmtAdt(o)
       case o: Stmt.TypeAlias => return preStmtTypeAlias(o)
       case o: Stmt.Assign => return preStmtAssign(o)
       case o: Stmt.Block => return preStmtBlock(o)
@@ -678,8 +678,8 @@ import MTransformer._
     return PreResultStmtSig
   }
 
-  def preStmtAbstractDatatype(o: Stmt.AbstractDatatype): PreResult[Stmt] = {
-    return PreResultStmtAbstractDatatype
+  def preStmtAdt(o: Stmt.Adt): PreResult[Stmt] = {
+    return PreResultStmtAdt
   }
 
   def preStmtTypeAlias(o: Stmt.TypeAlias): PreResult[Stmt] = {
@@ -1115,8 +1115,8 @@ import MTransformer._
     return PreResultBody
   }
 
-  def preAbstractDatatypeParam(o: AbstractDatatypeParam): PreResult[AbstractDatatypeParam] = {
-    return PreResultAbstractDatatypeParam
+  def preAdtParam(o: AdtParam): PreResult[AdtParam] = {
+    return PreResultAdtParam
   }
 
   def preMethodSig(o: MethodSig): PreResult[MethodSig] = {
@@ -1369,7 +1369,7 @@ import MTransformer._
       case o: Stmt.SubZ => return postStmtSubZ(o)
       case o: Stmt.Object => return postStmtObject(o)
       case o: Stmt.Sig => return postStmtSig(o)
-      case o: Stmt.AbstractDatatype => return postStmtAbstractDatatype(o)
+      case o: Stmt.Adt => return postStmtAdt(o)
       case o: Stmt.TypeAlias => return postStmtTypeAlias(o)
       case o: Stmt.Assign => return postStmtAssign(o)
       case o: Stmt.Block => return postStmtBlock(o)
@@ -1451,8 +1451,8 @@ import MTransformer._
     return PostResultStmtSig
   }
 
-  def postStmtAbstractDatatype(o: Stmt.AbstractDatatype): MOption[Stmt] = {
-    return PostResultStmtAbstractDatatype
+  def postStmtAdt(o: Stmt.Adt): MOption[Stmt] = {
+    return PostResultStmtAdt
   }
 
   def postStmtTypeAlias(o: Stmt.TypeAlias): MOption[Stmt] = {
@@ -1888,8 +1888,8 @@ import MTransformer._
     return PostResultBody
   }
 
-  def postAbstractDatatypeParam(o: AbstractDatatypeParam): MOption[AbstractDatatypeParam] = {
-    return PostResultAbstractDatatypeParam
+  def postAdtParam(o: AdtParam): MOption[AdtParam] = {
+    return PostResultAdtParam
   }
 
   def postMethodSig(o: MethodSig): MOption[MethodSig] = {
@@ -2253,10 +2253,10 @@ import MTransformer._
             MSome(o2(id = r0.getOrElse(o2.id), typeParams = r1.getOrElse(o2.typeParams), parents = r2.getOrElse(o2.parents), stmts = r3.getOrElse(o2.stmts), attr = r4.getOrElse(o2.attr)))
           else
             MNone()
-        case o2: Stmt.AbstractDatatype =>
+        case o2: Stmt.Adt =>
           val r0: MOption[Id] = transformId(o2.id)
           val r1: MOption[IS[Z, TypeParam]] = transformISZ(o2.typeParams, transformTypeParam _)
-          val r2: MOption[IS[Z, AbstractDatatypeParam]] = transformISZ(o2.params, transformAbstractDatatypeParam _)
+          val r2: MOption[IS[Z, AdtParam]] = transformISZ(o2.params, transformAdtParam _)
           val r3: MOption[IS[Z, Type.Named]] = transformISZ(o2.parents, transformTypeNamed _)
           val r4: MOption[IS[Z, Stmt]] = transformISZ(o2.stmts, transformStmt _)
           val r5: MOption[Attr] = transformAttr(o2.attr)
@@ -3345,10 +3345,10 @@ import MTransformer._
     }
   }
 
-  def transformAbstractDatatypeParam(o: AbstractDatatypeParam): MOption[AbstractDatatypeParam] = {
-    val preR: PreResult[AbstractDatatypeParam] = preAbstractDatatypeParam(o)
-    val r: MOption[AbstractDatatypeParam] = if (preR.continu) {
-      val o2: AbstractDatatypeParam = preR.resultOpt.getOrElse(o)
+  def transformAdtParam(o: AdtParam): MOption[AdtParam] = {
+    val preR: PreResult[AdtParam] = preAdtParam(o)
+    val r: MOption[AdtParam] = if (preR.continu) {
+      val o2: AdtParam = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: MOption[Id] = transformId(o2.id)
       val r1: MOption[Type] = transformType(o2.tipe)
@@ -3362,8 +3362,8 @@ import MTransformer._
       MNone()
     }
     val hasChanged: B = r.nonEmpty
-    val o2: AbstractDatatypeParam = r.getOrElse(o)
-    val postR: MOption[AbstractDatatypeParam] = postAbstractDatatypeParam(o2)
+    val o2: AdtParam = r.getOrElse(o)
+    val postR: MOption[AdtParam] = postAdtParam(o2)
     if (postR.nonEmpty) {
       return postR
     } else if (hasChanged) {

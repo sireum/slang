@@ -228,7 +228,7 @@ object JSON {
         case o: org.sireum.lang.symbol.TypeInfo.SubZ => return print_symbolTypeInfoSubZ(o)
         case o: org.sireum.lang.symbol.TypeInfo.Enum => return print_symbolTypeInfoEnum(o)
         case o: org.sireum.lang.symbol.TypeInfo.Sig => return print_symbolTypeInfoSig(o)
-        case o: org.sireum.lang.symbol.TypeInfo.AbstractDatatype => return print_symbolTypeInfoAbstractDatatype(o)
+        case o: org.sireum.lang.symbol.TypeInfo.Adt => return print_symbolTypeInfoAdt(o)
         case o: org.sireum.lang.symbol.TypeInfo.TypeAlias => return print_symbolTypeInfoTypeAlias(o)
         case o: org.sireum.lang.symbol.TypeInfo.TypeVar => return print_symbolTypeInfoTypeVar(o)
       }
@@ -278,9 +278,9 @@ object JSON {
       ))
     }
 
-    @pure def print_symbolTypeInfoAbstractDatatype(o: org.sireum.lang.symbol.TypeInfo.AbstractDatatype): ST = {
+    @pure def print_symbolTypeInfoAdt(o: org.sireum.lang.symbol.TypeInfo.Adt): ST = {
       return printObject(ISZ(
-        ("type", st""""org.sireum.lang.symbol.TypeInfo.AbstractDatatype""""),
+        ("type", st""""org.sireum.lang.symbol.TypeInfo.Adt""""),
         ("owner", printISZ(T, o.owner, printString _)),
         ("outlined", printB(o.outlined)),
         ("typeChecked", printB(o.typeChecked)),
@@ -299,7 +299,7 @@ object JSON {
         ("theorems", printHashMap(F, o.theorems, printString _, print_symbolInfoTheorem _)),
         ("refinements", printHashMap(F, o.refinements, printString _, print_symbolTypeInfoName _)),
         ("scope", print_symbolScopeGlobal(o.scope)),
-        ("ast", print_astStmtAbstractDatatype(o.ast))
+        ("ast", print_astStmtAdt(o.ast))
       ))
     }
 
@@ -386,7 +386,7 @@ object JSON {
         case o: org.sireum.lang.ast.Stmt.SubZ => return print_astStmtSubZ(o)
         case o: org.sireum.lang.ast.Stmt.Object => return print_astStmtObject(o)
         case o: org.sireum.lang.ast.Stmt.Sig => return print_astStmtSig(o)
-        case o: org.sireum.lang.ast.Stmt.AbstractDatatype => return print_astStmtAbstractDatatype(o)
+        case o: org.sireum.lang.ast.Stmt.Adt => return print_astStmtAdt(o)
         case o: org.sireum.lang.ast.Stmt.TypeAlias => return print_astStmtTypeAlias(o)
         case o: org.sireum.lang.ast.Stmt.Assign => return print_astStmtAssign(o)
         case o: org.sireum.lang.ast.Stmt.Block => return print_astStmtBlock(o)
@@ -559,14 +559,14 @@ object JSON {
       ))
     }
 
-    @pure def print_astStmtAbstractDatatype(o: org.sireum.lang.ast.Stmt.AbstractDatatype): ST = {
+    @pure def print_astStmtAdt(o: org.sireum.lang.ast.Stmt.Adt): ST = {
       return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Stmt.AbstractDatatype""""),
+        ("type", st""""org.sireum.lang.ast.Stmt.Adt""""),
         ("isRoot", printB(o.isRoot)),
         ("isDatatype", printB(o.isDatatype)),
         ("id", print_astId(o.id)),
         ("typeParams", printISZ(F, o.typeParams, print_astTypeParam _)),
-        ("params", printISZ(F, o.params, print_astAbstractDatatypeParam _)),
+        ("params", printISZ(F, o.params, print_astAdtParam _)),
         ("parents", printISZ(F, o.parents, print_astTypeNamed _)),
         ("stmts", printISZ(F, o.stmts, print_astStmt _)),
         ("attr", print_astAttr(o.attr))
@@ -1245,9 +1245,9 @@ object JSON {
       ))
     }
 
-    @pure def print_astAbstractDatatypeParam(o: org.sireum.lang.ast.AbstractDatatypeParam): ST = {
+    @pure def print_astAdtParam(o: org.sireum.lang.ast.AdtParam): ST = {
       return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.AbstractDatatypeParam""""),
+        ("type", st""""org.sireum.lang.ast.AdtParam""""),
         ("isHidden", printB(o.isHidden)),
         ("isVal", printB(o.isVal)),
         ("id", print_astId(o.id)),
@@ -2192,12 +2192,12 @@ object JSON {
     }
 
     def parse_symbolTypeInfo(): org.sireum.lang.symbol.TypeInfo = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.symbol.TypeInfo.SubZ", "org.sireum.lang.symbol.TypeInfo.Enum", "org.sireum.lang.symbol.TypeInfo.Sig", "org.sireum.lang.symbol.TypeInfo.AbstractDatatype", "org.sireum.lang.symbol.TypeInfo.TypeAlias", "org.sireum.lang.symbol.TypeInfo.TypeVar"))
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.symbol.TypeInfo.SubZ", "org.sireum.lang.symbol.TypeInfo.Enum", "org.sireum.lang.symbol.TypeInfo.Sig", "org.sireum.lang.symbol.TypeInfo.Adt", "org.sireum.lang.symbol.TypeInfo.TypeAlias", "org.sireum.lang.symbol.TypeInfo.TypeVar"))
       t.native match {
         case "org.sireum.lang.symbol.TypeInfo.SubZ" => val r = parse_symbolTypeInfoSubZT(T); return r
         case "org.sireum.lang.symbol.TypeInfo.Enum" => val r = parse_symbolTypeInfoEnumT(T); return r
         case "org.sireum.lang.symbol.TypeInfo.Sig" => val r = parse_symbolTypeInfoSigT(T); return r
-        case "org.sireum.lang.symbol.TypeInfo.AbstractDatatype" => val r = parse_symbolTypeInfoAbstractDatatypeT(T); return r
+        case "org.sireum.lang.symbol.TypeInfo.Adt" => val r = parse_symbolTypeInfoAdtT(T); return r
         case "org.sireum.lang.symbol.TypeInfo.TypeAlias" => val r = parse_symbolTypeInfoTypeAliasT(T); return r
         case "org.sireum.lang.symbol.TypeInfo.TypeVar" => val r = parse_symbolTypeInfoTypeVarT(T); return r
         case _ => val r = parse_symbolTypeInfoTypeVarT(T); return r
@@ -2312,14 +2312,14 @@ object JSON {
       return org.sireum.lang.symbol.TypeInfo.Name(ids)
     }
 
-    def parse_symbolTypeInfoAbstractDatatype(): org.sireum.lang.symbol.TypeInfo.AbstractDatatype = {
-      val r = parse_symbolTypeInfoAbstractDatatypeT(F)
+    def parse_symbolTypeInfoAdt(): org.sireum.lang.symbol.TypeInfo.Adt = {
+      val r = parse_symbolTypeInfoAdtT(F)
       return r
     }
 
-    def parse_symbolTypeInfoAbstractDatatypeT(typeParsed: B): org.sireum.lang.symbol.TypeInfo.AbstractDatatype = {
+    def parse_symbolTypeInfoAdtT(typeParsed: B): org.sireum.lang.symbol.TypeInfo.Adt = {
       if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.symbol.TypeInfo.AbstractDatatype")
+        parser.parseObjectType("org.sireum.lang.symbol.TypeInfo.Adt")
       }
       parser.parseObjectKey("owner")
       val owner = parser.parseISZ(parser.parseString _)
@@ -2376,9 +2376,9 @@ object JSON {
       val scope = parse_symbolScopeGlobal()
       parser.parseObjectNext()
       parser.parseObjectKey("ast")
-      val ast = parse_astStmtAbstractDatatype()
+      val ast = parse_astStmtAdt()
       parser.parseObjectNext()
-      return org.sireum.lang.symbol.TypeInfo.AbstractDatatype(owner, outlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, ancestors, specVars, vars, specMethods, methods, invariants, facts, theorems, refinements, scope, ast)
+      return org.sireum.lang.symbol.TypeInfo.Adt(owner, outlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, ancestors, specVars, vars, specMethods, methods, invariants, facts, theorems, refinements, scope, ast)
     }
 
     def parse_symbolTypeInfoTypeAlias(): org.sireum.lang.symbol.TypeInfo.TypeAlias = {
@@ -2542,7 +2542,7 @@ object JSON {
     }
 
     def parse_astStmt(): org.sireum.lang.ast.Stmt = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Stmt.Import", "org.sireum.lang.ast.Stmt.Var", "org.sireum.lang.ast.Stmt.VarPattern", "org.sireum.lang.ast.Stmt.SpecVar", "org.sireum.lang.ast.Stmt.Method", "org.sireum.lang.ast.Stmt.ExtMethod", "org.sireum.lang.ast.Stmt.SpecMethod", "org.sireum.lang.ast.Stmt.Enum", "org.sireum.lang.ast.Stmt.SubZ", "org.sireum.lang.ast.Stmt.Object", "org.sireum.lang.ast.Stmt.Sig", "org.sireum.lang.ast.Stmt.AbstractDatatype", "org.sireum.lang.ast.Stmt.TypeAlias", "org.sireum.lang.ast.Stmt.Assign", "org.sireum.lang.ast.Stmt.Block", "org.sireum.lang.ast.Stmt.If", "org.sireum.lang.ast.Stmt.Match", "org.sireum.lang.ast.Stmt.While", "org.sireum.lang.ast.Stmt.DoWhile", "org.sireum.lang.ast.Stmt.For", "org.sireum.lang.ast.Stmt.Return", "org.sireum.lang.ast.Stmt.LStmt", "org.sireum.lang.ast.Stmt.Expr"))
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Stmt.Import", "org.sireum.lang.ast.Stmt.Var", "org.sireum.lang.ast.Stmt.VarPattern", "org.sireum.lang.ast.Stmt.SpecVar", "org.sireum.lang.ast.Stmt.Method", "org.sireum.lang.ast.Stmt.ExtMethod", "org.sireum.lang.ast.Stmt.SpecMethod", "org.sireum.lang.ast.Stmt.Enum", "org.sireum.lang.ast.Stmt.SubZ", "org.sireum.lang.ast.Stmt.Object", "org.sireum.lang.ast.Stmt.Sig", "org.sireum.lang.ast.Stmt.Adt", "org.sireum.lang.ast.Stmt.TypeAlias", "org.sireum.lang.ast.Stmt.Assign", "org.sireum.lang.ast.Stmt.Block", "org.sireum.lang.ast.Stmt.If", "org.sireum.lang.ast.Stmt.Match", "org.sireum.lang.ast.Stmt.While", "org.sireum.lang.ast.Stmt.DoWhile", "org.sireum.lang.ast.Stmt.For", "org.sireum.lang.ast.Stmt.Return", "org.sireum.lang.ast.Stmt.LStmt", "org.sireum.lang.ast.Stmt.Expr"))
       t.native match {
         case "org.sireum.lang.ast.Stmt.Import" => val r = parse_astStmtImportT(T); return r
         case "org.sireum.lang.ast.Stmt.Var" => val r = parse_astStmtVarT(T); return r
@@ -2555,7 +2555,7 @@ object JSON {
         case "org.sireum.lang.ast.Stmt.SubZ" => val r = parse_astStmtSubZT(T); return r
         case "org.sireum.lang.ast.Stmt.Object" => val r = parse_astStmtObjectT(T); return r
         case "org.sireum.lang.ast.Stmt.Sig" => val r = parse_astStmtSigT(T); return r
-        case "org.sireum.lang.ast.Stmt.AbstractDatatype" => val r = parse_astStmtAbstractDatatypeT(T); return r
+        case "org.sireum.lang.ast.Stmt.Adt" => val r = parse_astStmtAdtT(T); return r
         case "org.sireum.lang.ast.Stmt.TypeAlias" => val r = parse_astStmtTypeAliasT(T); return r
         case "org.sireum.lang.ast.Stmt.Assign" => val r = parse_astStmtAssignT(T); return r
         case "org.sireum.lang.ast.Stmt.Block" => val r = parse_astStmtBlockT(T); return r
@@ -2943,14 +2943,14 @@ object JSON {
       return org.sireum.lang.ast.Stmt.Sig(isImmutable, isExt, id, typeParams, parents, stmts, attr)
     }
 
-    def parse_astStmtAbstractDatatype(): org.sireum.lang.ast.Stmt.AbstractDatatype = {
-      val r = parse_astStmtAbstractDatatypeT(F)
+    def parse_astStmtAdt(): org.sireum.lang.ast.Stmt.Adt = {
+      val r = parse_astStmtAdtT(F)
       return r
     }
 
-    def parse_astStmtAbstractDatatypeT(typeParsed: B): org.sireum.lang.ast.Stmt.AbstractDatatype = {
+    def parse_astStmtAdtT(typeParsed: B): org.sireum.lang.ast.Stmt.Adt = {
       if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Stmt.AbstractDatatype")
+        parser.parseObjectType("org.sireum.lang.ast.Stmt.Adt")
       }
       parser.parseObjectKey("isRoot")
       val isRoot = parser.parseB()
@@ -2965,7 +2965,7 @@ object JSON {
       val typeParams = parser.parseISZ(parse_astTypeParam _)
       parser.parseObjectNext()
       parser.parseObjectKey("params")
-      val params = parser.parseISZ(parse_astAbstractDatatypeParam _)
+      val params = parser.parseISZ(parse_astAdtParam _)
       parser.parseObjectNext()
       parser.parseObjectKey("parents")
       val parents = parser.parseISZ(parse_astTypeNamed _)
@@ -2976,7 +2976,7 @@ object JSON {
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.AbstractDatatype(isRoot, isDatatype, id, typeParams, params, parents, stmts, attr)
+      return org.sireum.lang.ast.Stmt.Adt(isRoot, isDatatype, id, typeParams, params, parents, stmts, attr)
     }
 
     def parse_astStmtTypeAlias(): org.sireum.lang.ast.Stmt.TypeAlias = {
@@ -4406,14 +4406,14 @@ object JSON {
       return org.sireum.lang.ast.Body(stmts, undecls)
     }
 
-    def parse_astAbstractDatatypeParam(): org.sireum.lang.ast.AbstractDatatypeParam = {
-      val r = parse_astAbstractDatatypeParamT(F)
+    def parse_astAdtParam(): org.sireum.lang.ast.AdtParam = {
+      val r = parse_astAdtParamT(F)
       return r
     }
 
-    def parse_astAbstractDatatypeParamT(typeParsed: B): org.sireum.lang.ast.AbstractDatatypeParam = {
+    def parse_astAdtParamT(typeParsed: B): org.sireum.lang.ast.AdtParam = {
       if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.AbstractDatatypeParam")
+        parser.parseObjectType("org.sireum.lang.ast.AdtParam")
       }
       parser.parseObjectKey("isHidden")
       val isHidden = parser.parseB()
@@ -4427,7 +4427,7 @@ object JSON {
       parser.parseObjectKey("tipe")
       val tipe = parse_astType()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.AbstractDatatypeParam(isHidden, isVal, id, tipe)
+      return org.sireum.lang.ast.AdtParam(isHidden, isVal, id, tipe)
     }
 
     def parse_astMethodSig(): org.sireum.lang.ast.MethodSig = {
@@ -5773,8 +5773,8 @@ object JSON {
     return r
   }
 
-  def from_symbolTypeInfoAbstractDatatype(o: org.sireum.lang.symbol.TypeInfo.AbstractDatatype, isCompact: B): String = {
-    val st = Printer.print_symbolTypeInfoAbstractDatatype(o)
+  def from_symbolTypeInfoAdt(o: org.sireum.lang.symbol.TypeInfo.Adt, isCompact: B): String = {
+    val st = Printer.print_symbolTypeInfoAdt(o)
     if (isCompact) {
       return st.renderCompact
     } else {
@@ -5782,12 +5782,12 @@ object JSON {
     }
   }
 
-  def to_symbolTypeInfoAbstractDatatype(s: String): Either[org.sireum.lang.symbol.TypeInfo.AbstractDatatype, Json.ErrorMsg] = {
-    def f_symbolTypeInfoAbstractDatatype(parser: Parser): org.sireum.lang.symbol.TypeInfo.AbstractDatatype = {
-      val r = parser.parse_symbolTypeInfoAbstractDatatype()
+  def to_symbolTypeInfoAdt(s: String): Either[org.sireum.lang.symbol.TypeInfo.Adt, Json.ErrorMsg] = {
+    def f_symbolTypeInfoAdt(parser: Parser): org.sireum.lang.symbol.TypeInfo.Adt = {
+      val r = parser.parse_symbolTypeInfoAdt()
       return r
     }
-    val r = to(s, f_symbolTypeInfoAbstractDatatype _)
+    val r = to(s, f_symbolTypeInfoAdt _)
     return r
   }
 
@@ -6223,8 +6223,8 @@ object JSON {
     return r
   }
 
-  def from_astStmtAbstractDatatype(o: org.sireum.lang.ast.Stmt.AbstractDatatype, isCompact: B): String = {
-    val st = Printer.print_astStmtAbstractDatatype(o)
+  def from_astStmtAdt(o: org.sireum.lang.ast.Stmt.Adt, isCompact: B): String = {
+    val st = Printer.print_astStmtAdt(o)
     if (isCompact) {
       return st.renderCompact
     } else {
@@ -6232,12 +6232,12 @@ object JSON {
     }
   }
 
-  def to_astStmtAbstractDatatype(s: String): Either[org.sireum.lang.ast.Stmt.AbstractDatatype, Json.ErrorMsg] = {
-    def f_astStmtAbstractDatatype(parser: Parser): org.sireum.lang.ast.Stmt.AbstractDatatype = {
-      val r = parser.parse_astStmtAbstractDatatype()
+  def to_astStmtAdt(s: String): Either[org.sireum.lang.ast.Stmt.Adt, Json.ErrorMsg] = {
+    def f_astStmtAdt(parser: Parser): org.sireum.lang.ast.Stmt.Adt = {
+      val r = parser.parse_astStmtAdt()
       return r
     }
-    val r = to(s, f_astStmtAbstractDatatype _)
+    val r = to(s, f_astStmtAdt _)
     return r
   }
 
@@ -7519,8 +7519,8 @@ object JSON {
     return r
   }
 
-  def from_astAbstractDatatypeParam(o: org.sireum.lang.ast.AbstractDatatypeParam, isCompact: B): String = {
-    val st = Printer.print_astAbstractDatatypeParam(o)
+  def from_astAdtParam(o: org.sireum.lang.ast.AdtParam, isCompact: B): String = {
+    val st = Printer.print_astAdtParam(o)
     if (isCompact) {
       return st.renderCompact
     } else {
@@ -7528,12 +7528,12 @@ object JSON {
     }
   }
 
-  def to_astAbstractDatatypeParam(s: String): Either[org.sireum.lang.ast.AbstractDatatypeParam, Json.ErrorMsg] = {
-    def f_astAbstractDatatypeParam(parser: Parser): org.sireum.lang.ast.AbstractDatatypeParam = {
-      val r = parser.parse_astAbstractDatatypeParam()
+  def to_astAdtParam(s: String): Either[org.sireum.lang.ast.AdtParam, Json.ErrorMsg] = {
+    def f_astAdtParam(parser: Parser): org.sireum.lang.ast.AdtParam = {
+      val r = parser.parse_astAdtParam()
       return r
     }
-    val r = to(s, f_astAbstractDatatypeParam _)
+    val r = to(s, f_astAdtParam _)
     return r
   }
 

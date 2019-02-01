@@ -207,12 +207,12 @@ object Stmt {
 
   }
 
-  @datatype class AbstractDatatype(
+  @datatype class Adt(
     isRoot: B,
     isDatatype: B,
     id: Id,
     typeParams: ISZ[TypeParam],
-    params: ISZ[AbstractDatatypeParam],
+    params: ISZ[AdtParam],
     parents: ISZ[Type.Named],
     stmts: ISZ[Stmt],
     @hidden attr: Attr
@@ -966,7 +966,7 @@ object Domain {
 
 @datatype class Body(stmts: ISZ[Stmt], @hidden undecls: ISZ[String])
 
-@datatype class AbstractDatatypeParam(isHidden: B, isVal: B, id: Id, tipe: Type)
+@datatype class AdtParam(isHidden: B, isVal: B, id: Id, tipe: Type)
 
 @datatype class MethodSig(
   isPure: B,

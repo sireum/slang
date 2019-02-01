@@ -76,7 +76,7 @@ object Transformer {
         case o: Stmt.SubZ => return preStmtSubZ(ctx, o)
         case o: Stmt.Object => return preStmtObject(ctx, o)
         case o: Stmt.Sig => return preStmtSig(ctx, o)
-        case o: Stmt.AbstractDatatype => return preStmtAbstractDatatype(ctx, o)
+        case o: Stmt.Adt => return preStmtAdt(ctx, o)
         case o: Stmt.TypeAlias => return preStmtTypeAlias(ctx, o)
         case o: Stmt.Assign => return preStmtAssign(ctx, o)
         case o: Stmt.Block => return preStmtBlock(ctx, o)
@@ -158,7 +158,7 @@ object Transformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preStmtAbstractDatatype(ctx: Context, o: Stmt.AbstractDatatype): PreResult[Context, Stmt] = {
+    @pure def preStmtAdt(ctx: Context, o: Stmt.Adt): PreResult[Context, Stmt] = {
       return PreResult(ctx, T, None())
     }
 
@@ -595,7 +595,7 @@ object Transformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preAbstractDatatypeParam(ctx: Context, o: AbstractDatatypeParam): PreResult[Context, AbstractDatatypeParam] = {
+    @pure def preAdtParam(ctx: Context, o: AdtParam): PreResult[Context, AdtParam] = {
       return PreResult(ctx, T, None())
     }
 
@@ -849,7 +849,7 @@ object Transformer {
         case o: Stmt.SubZ => return postStmtSubZ(ctx, o)
         case o: Stmt.Object => return postStmtObject(ctx, o)
         case o: Stmt.Sig => return postStmtSig(ctx, o)
-        case o: Stmt.AbstractDatatype => return postStmtAbstractDatatype(ctx, o)
+        case o: Stmt.Adt => return postStmtAdt(ctx, o)
         case o: Stmt.TypeAlias => return postStmtTypeAlias(ctx, o)
         case o: Stmt.Assign => return postStmtAssign(ctx, o)
         case o: Stmt.Block => return postStmtBlock(ctx, o)
@@ -931,7 +931,7 @@ object Transformer {
       return Result(ctx, None())
     }
 
-    @pure def postStmtAbstractDatatype(ctx: Context, o: Stmt.AbstractDatatype): Result[Context, Stmt] = {
+    @pure def postStmtAdt(ctx: Context, o: Stmt.Adt): Result[Context, Stmt] = {
       return Result(ctx, None())
     }
 
@@ -1368,7 +1368,7 @@ object Transformer {
       return Result(ctx, None())
     }
 
-    @pure def postAbstractDatatypeParam(ctx: Context, o: AbstractDatatypeParam): Result[Context, AbstractDatatypeParam] = {
+    @pure def postAdtParam(ctx: Context, o: AdtParam): Result[Context, AdtParam] = {
       return Result(ctx, None())
     }
 
@@ -1771,10 +1771,10 @@ import Transformer._
             Result(r4.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), typeParams = r1.resultOpt.getOrElse(o2.typeParams), parents = r2.resultOpt.getOrElse(o2.parents), stmts = r3.resultOpt.getOrElse(o2.stmts), attr = r4.resultOpt.getOrElse(o2.attr))))
           else
             Result(r4.ctx, None())
-        case o2: Stmt.AbstractDatatype =>
+        case o2: Stmt.Adt =>
           val r0: Result[Context, Id] = transformId(ctx, o2.id)
           val r1: Result[Context, IS[Z, TypeParam]] = transformISZ(r0.ctx, o2.typeParams, transformTypeParam _)
-          val r2: Result[Context, IS[Z, AbstractDatatypeParam]] = transformISZ(r1.ctx, o2.params, transformAbstractDatatypeParam _)
+          val r2: Result[Context, IS[Z, AdtParam]] = transformISZ(r1.ctx, o2.params, transformAdtParam _)
           val r3: Result[Context, IS[Z, Type.Named]] = transformISZ(r2.ctx, o2.parents, transformTypeNamed _)
           val r4: Result[Context, IS[Z, Stmt]] = transformISZ(r3.ctx, o2.stmts, transformStmt _)
           val r5: Result[Context, Attr] = transformAttr(r4.ctx, o2.attr)
@@ -2863,10 +2863,10 @@ import Transformer._
     }
   }
 
-  @pure def transformAbstractDatatypeParam(ctx: Context, o: AbstractDatatypeParam): Result[Context, AbstractDatatypeParam] = {
-    val preR: PreResult[Context, AbstractDatatypeParam] = pp.preAbstractDatatypeParam(ctx, o)
-    val r: Result[Context, AbstractDatatypeParam] = if (preR.continu) {
-      val o2: AbstractDatatypeParam = preR.resultOpt.getOrElse(o)
+  @pure def transformAdtParam(ctx: Context, o: AdtParam): Result[Context, AdtParam] = {
+    val preR: PreResult[Context, AdtParam] = pp.preAdtParam(ctx, o)
+    val r: Result[Context, AdtParam] = if (preR.continu) {
+      val o2: AdtParam = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: Result[Context, Id] = transformId(ctx, o2.id)
       val r1: Result[Context, Type] = transformType(r0.ctx, o2.tipe)
@@ -2880,8 +2880,8 @@ import Transformer._
       Result(preR.ctx, None())
     }
     val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: AbstractDatatypeParam = r.resultOpt.getOrElse(o)
-    val postR: Result[Context, AbstractDatatypeParam] = pp.postAbstractDatatypeParam(r.ctx, o2)
+    val o2: AdtParam = r.resultOpt.getOrElse(o)
+    val postR: Result[Context, AdtParam] = pp.postAdtParam(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {

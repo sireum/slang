@@ -726,7 +726,7 @@ object TypeInfo {
 
   @datatype class Name(ids: ISZ[String])
 
-  @datatype class AbstractDatatype(
+  @datatype class Adt(
     owner: ISZ[String],
     outlined: B,
     typeChecked: B,
@@ -745,7 +745,7 @@ object TypeInfo {
     theorems: HashMap[String, Info.Theorem],
     refinements: HashMap[String, Name],
     scope: Scope.Global,
-    ast: AST.Stmt.AbstractDatatype
+    ast: AST.Stmt.Adt
   ) extends TypeInfo {
 
     @pure override def canHaveCompanion: B = {

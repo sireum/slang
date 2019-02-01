@@ -71,7 +71,7 @@ import GlobalDeclarationResolver._
               info.ast.id.attr.posOpt,
               info.scope
             )
-          case info: TypeInfo.AbstractDatatype =>
+          case info: TypeInfo.Adt =>
             return (
               info.owner,
               info.ast.id.value,
@@ -416,7 +416,7 @@ import GlobalDeclarationResolver._
           ),
           stmt.attr.posOpt
         )
-      case stmt: AST.Stmt.AbstractDatatype =>
+      case stmt: AST.Stmt.Adt =>
         val name = currentName :+ stmt.id.value
         val sc = scope(packageName, currentImports, name)
         var paramVars = HashMap.empty[String, Info.Var]
@@ -455,7 +455,7 @@ import GlobalDeclarationResolver._
         declareType(
           if (stmt.isDatatype) "datatype" else "record",
           name,
-          TypeInfo.AbstractDatatype(
+          TypeInfo.Adt(
             currentName,
             F,
             F,

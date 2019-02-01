@@ -116,7 +116,7 @@ object Resolver {
         AST.Stmt.TypeAlias(id("ZS"), ISZ(), tname("MS", ISZ(tname("Z", ISZ()), tname("Z", ISZ()))), emptyAttr)
       )
 
-    tm = tm + AST.Typed.unit.ids ~> TypeInfo.AbstractDatatype(
+    tm = tm + AST.Typed.unit.ids ~> TypeInfo.Adt(
       AST.Typed.sireumName,
       T,
       T,
@@ -135,10 +135,10 @@ object Resolver {
       HashMap.empty,
       HashMap.empty,
       scope,
-      AST.Stmt.AbstractDatatype(T, T, AST.Id("Unit", emptyAttr), ISZ(), ISZ(), ISZ(), ISZ(), emptyAttr)
+      AST.Stmt.Adt(T, T, AST.Id("Unit", emptyAttr), ISZ(), ISZ(), ISZ(), ISZ(), emptyAttr)
     )
 
-    tm = tm + AST.Typed.nothing.ids ~> TypeInfo.AbstractDatatype(
+    tm = tm + AST.Typed.nothing.ids ~> TypeInfo.Adt(
       AST.Typed.sireumName,
       T,
       T,
@@ -157,7 +157,7 @@ object Resolver {
       HashMap.empty,
       HashMap.empty,
       scope,
-      AST.Stmt.AbstractDatatype(T, T, AST.Id("Nothing", emptyAttr), ISZ(), ISZ(), ISZ(), ISZ(), emptyAttr)
+      AST.Stmt.Adt(T, T, AST.Id("Nothing", emptyAttr), ISZ(), ISZ(), ISZ(), ISZ(), emptyAttr)
     )
 
     return (nm, tm)
@@ -208,17 +208,17 @@ object Resolver {
 
     for (ti <- globalTypes) {
       ti match {
-        case ti: TypeInfo.AbstractDatatype if ti.ast.isRoot => r = r.addNode(ti.name)
+        case ti: TypeInfo.Adt if ti.ast.isRoot => r = r.addNode(ti.name)
         case ti: TypeInfo.Sig => r = r.addNode(ti.name)
         case _ =>
       }
     }
     for (ti <- globalTypes) {
       ti match {
-        case ti: TypeInfo.AbstractDatatype if !ti.ast.isRoot =>
+        case ti: TypeInfo.Adt if !ti.ast.isRoot =>
           for (t <- ti.ast.parents) {
             ti.scope.resolveType(globalTypeMap, AST.Util.ids2strings(t.name.ids)) match {
-              case Some(parent: TypeInfo.AbstractDatatype) if parent.ast.isDatatype == ti.ast.isDatatype =>
+              case Some(parent: TypeInfo.Adt) if parent.ast.isDatatype == ti.ast.isDatatype =>
                 r = r.addChildren(parent.name, ISZ(ti.name))
               case Some(parent: TypeInfo.Sig) if parent.ast.isImmutable == ti.ast.isDatatype =>
                 r = r.addChildren(parent.name, ISZ(ti.name))

@@ -1279,7 +1279,7 @@ class SlangParser(
       case _ =>
         error(mod.pos, "No modifiers are allowed for Slang @datatype traits.")
     }
-    AST.Stmt.AbstractDatatype(
+    AST.Stmt.Adt(
       isRoot = true,
       isDatatype = true,
       cid(tname),
@@ -1324,8 +1324,8 @@ class SlangParser(
       case _ =>
         error(mod.pos, "No modifiers are allowed for Slang @datatype classes.")
     }
-    val params = ISZ(paramss.flatMap(_.map(translateAbstractDatatypeParam(isDatatype = true))): _*)
-    AST.Stmt.AbstractDatatype(
+    val params = ISZ(paramss.flatMap(_.map(translateAdtParam(isDatatype = true))): _*)
+    AST.Stmt.Adt(
       isRoot = false,
       isDatatype = true,
       cid(tname),
@@ -1367,7 +1367,7 @@ class SlangParser(
       case _ =>
         error(mod.pos, "No modifiers are allowed for Slang @record traits.")
     }
-    AST.Stmt.AbstractDatatype(
+    AST.Stmt.Adt(
       isRoot = true,
       isDatatype = false,
       cid(tname),
@@ -1412,8 +1412,8 @@ class SlangParser(
       case _ =>
         error(mod.pos, "No modifiers are allowed for Slang @record classes.")
     }
-    val params = ISZ(paramss.flatMap(_.map(translateAbstractDatatypeParam(isDatatype = false))): _*)
-    AST.Stmt.AbstractDatatype(
+    val params = ISZ(paramss.flatMap(_.map(translateAdtParam(isDatatype = false))): _*)
+    AST.Stmt.Adt(
       isRoot = false,
       isDatatype = false,
       cid(tname),
@@ -1669,7 +1669,7 @@ class SlangParser(
     }
   }
 
-  def translateAbstractDatatypeParam(isDatatype: Boolean)(tp: Term.Param): AST.AbstractDatatypeParam = {
+  def translateAdtParam(isDatatype: Boolean)(tp: Term.Param): AST.AdtParam = {
     val mods = tp.mods
     val paramname = tp.name
     val atpeopt = tp.decltpe
@@ -1697,9 +1697,9 @@ class SlangParser(
       val hidden = if (hasHidden) "@hidden " else ""
       errorInSlang(tp.pos, s"The abstract dataype parameter should have the form '$hidden〈ID〉:〈type〉'")
     }
-    if (hasError) AST.AbstractDatatypeParam(hasHidden, !isVar, cid(paramname), unitType)
+    if (hasError) AST.AdtParam(hasHidden, !isVar, cid(paramname), unitType)
     else
-      AST.AbstractDatatypeParam(hasHidden, !isVar, cid(paramname), translateTypeArg(allowByName = false)(atpeopt.get))
+      AST.AdtParam(hasHidden, !isVar, cid(paramname), translateTypeArg(allowByName = false)(atpeopt.get))
   }
 
   def bodyCheck(stmts: ISZ[AST.Stmt], undecls: ISZ[String]): AST.Body = {

@@ -45,7 +45,7 @@ object TypeHierarchy {
       case info: TypeInfo.Sig =>
         val args = info.ast.typeParams.map(typedParam _)
         return AST.Typed.Name(info.name, args)
-      case info: TypeInfo.AbstractDatatype =>
+      case info: TypeInfo.Adt =>
         val args = info.ast.typeParams.map(typedParam _)
         return AST.Typed.Name(info.name, args)
       case info: TypeInfo.TypeAlias =>
@@ -166,7 +166,7 @@ object TypeHierarchy {
             }
             r = r(poset = r.poset.addParents(typed.ids, parentTypeNames))
           }
-        case info: TypeInfo.AbstractDatatype =>
+        case info: TypeInfo.Adt =>
           if (!info.outlined) {
             val typed = typedInfo(info)
             val scope = typeParamsScope(info.ast.typeParams, info.scope, reporter)
@@ -248,7 +248,7 @@ object TypeHierarchy {
         val tn = typeNames(0)
         val ancestors: ISZ[AST.Typed.Name] = typeMap.get(tn.ids) match {
           case Some(info: TypeInfo.Sig) => info.ancestors
-          case Some(info: TypeInfo.AbstractDatatype) => info.ancestors
+          case Some(info: TypeInfo.Adt) => info.ancestors
           case _ => halt(s"Unexpected situation while computing the least upper bound of { '${(ts, "', '")}' }.")
         }
         var commonType = tn
@@ -307,7 +307,7 @@ object TypeHierarchy {
       case Some(glb) =>
         val (tpe, ancestors): (AST.Typed, HashSet[AST.Typed.Name]) = typeMap.get(glb) match {
           case Some(info: TypeInfo.Sig) => (info.tpe, HashSet.empty[AST.Typed.Name] ++ info.ancestors)
-          case Some(info: TypeInfo.AbstractDatatype) => (info.tpe, HashSet.empty[AST.Typed.Name] ++ info.ancestors)
+          case Some(info: TypeInfo.Adt) => (info.tpe, HashSet.empty[AST.Typed.Name] ++ info.ancestors)
           case _ => halt(s"Unexpected situation while computing the greatest lower bound of { '${(ts, "', '")}' }.")
         }
         for (t <- typeNames) {
@@ -432,7 +432,7 @@ object TypeHierarchy {
                   ti.ast.typeParams.size,
                   ti.name
                 )
-              case ti: TypeInfo.AbstractDatatype =>
+              case ti: TypeInfo.Adt =>
                 (if (ti.ast.isDatatype) "@datatype" else "@record", ti.ast.typeParams.size, ti.name)
               case _ => halt("Infeasible")
             }
@@ -646,7 +646,7 @@ object TypeHierarchy {
         val (outlined, ancestors, substMap): (B, ISZ[AST.Typed.Name], HashMap[String, AST.Typed]) =
           typeMap.get(t1.ids) match {
             case Some(info: TypeInfo.Sig) => (info.outlined, info.ancestors, buildSm(info.ast.typeParams))
-            case Some(info: TypeInfo.AbstractDatatype) => (info.outlined, info.ancestors, buildSm(info.ast.typeParams))
+            case Some(info: TypeInfo.Adt) => (info.outlined, info.ancestors, buildSm(info.ast.typeParams))
             case _ => return F
           }
         if (!outlined) {
@@ -670,7 +670,7 @@ object TypeHierarchy {
         typeMap.get(t.ids) match {
           case Some(info) =>
             info match {
-              case info: TypeInfo.AbstractDatatype => return !info.ast.isDatatype
+              case info: TypeInfo.Adt => return !info.ast.isDatatype
               case info: TypeInfo.Sig => return !info.ast.isImmutable && !info.ast.isExt
               case _ => return F
             }

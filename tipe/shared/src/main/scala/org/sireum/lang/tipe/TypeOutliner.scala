@@ -40,7 +40,7 @@ object TypeOutliner {
       def isOutlined(ids: QName): B = {
         typeMap.get(ids).get match {
           case ti: TypeInfo.Sig => return ti.outlined
-          case ti: TypeInfo.AbstractDatatype => return ti.outlined
+          case ti: TypeInfo.Adt => return ti.outlined
           case _ => return T
         }
       }
@@ -90,7 +90,7 @@ object TypeOutliner {
             } else {
               ok = T
             }
-          case ti: TypeInfo.AbstractDatatype =>
+          case ti: TypeInfo.Adt =>
             if (!ti.outlined) {
               val po = parentsOutlined(ti.name, th.typeMap)
               if (po) {
@@ -376,7 +376,7 @@ object TypeOutliner {
     return (th: TypeHierarchy) => (th(typeMap = th.typeMap + info.name ~> newInfo), reporter)
   }
 
-  @pure def outlineAdt(info: TypeInfo.AbstractDatatype): TypeHierarchy => (TypeHierarchy, Reporter) @pure = {
+  @pure def outlineAdt(info: TypeInfo.Adt): TypeHierarchy => (TypeHierarchy, Reporter) @pure = {
     val reporter = Reporter.create
     val tm = typeParamMap(info.ast.typeParams, reporter)
     val scope = localTypeScope(tm.map, info.scope)
@@ -402,7 +402,7 @@ object TypeOutliner {
       newParents
     ) =
       outlineInheritedMembers(info.name, info.ast.parents, scope, members, reporter)
-    var newParams = ISZ[AST.AbstractDatatypeParam]()
+    var newParams = ISZ[AST.AdtParam]()
     var paramTypes = ISZ[AST.Typed]()
     var extractorTypeMap = Map.empty[String, AST.Typed]
     for (p <- info.ast.params) {
@@ -418,7 +418,7 @@ object TypeOutliner {
         case _ =>
       }
     }
-    val newInfo: TypeInfo.AbstractDatatype =
+    val newInfo: TypeInfo.Adt =
       if (info.ast.isRoot) {
         info(
           outlined = T,
@@ -925,7 +925,7 @@ object TypeOutliner {
                       }
                     case _ =>
                   }
-                case Some(ti: TypeInfo.AbstractDatatype) =>
+                case Some(ti: TypeInfo.Adt) =>
                   val substMapOpt =
                     TypeChecker.buildTypeSubstMap(ti.name, parent.posOpt, ti.ast.typeParams, t.args, reporter)
                   substMapOpt match {
