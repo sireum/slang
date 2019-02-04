@@ -116,7 +116,7 @@ import GlobalDeclarationResolver._
               scope,
               T,
               T,
-              AST.Stmt.Object(F, F, AST.Id(id, attr), ISZ(), attr),
+              AST.Stmt.Object(F, None(), AST.Id(id, attr), ISZ(), attr),
               Some(AST.Typed.Object(owner, id)),
               Some(AST.ResolvedInfo.Object(name)),
               AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), owner, id, ISZ(), None()),
@@ -283,7 +283,7 @@ import GlobalDeclarationResolver._
             sc,
             T,
             T,
-            AST.Stmt.Object(F, F, AST.Id(stringInterpolator, stmt.id.attr), ISZ(), stmt.attr),
+            AST.Stmt.Object(F, None(), AST.Id(stringInterpolator, stmt.id.attr), ISZ(), stmt.attr),
             Some(AST.Typed.Object(name, stringInterpolator)),
             Some(AST.ResolvedInfo.Object(stringInterpolatorName)),
             AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), currentName, id, ISZ(), None()),
@@ -341,7 +341,7 @@ import GlobalDeclarationResolver._
         globalTypeMap.get(name) match {
           case Some(info) =>
             val posOpt = stmt.attr.posOpt
-            if (stmt.isExt | !info.canHaveCompanion) {
+            if (stmt.extNameOpt.nonEmpty || !info.canHaveCompanion) {
               reporter.error(
                 posOpt,
                 resolverKind,
@@ -360,7 +360,7 @@ import GlobalDeclarationResolver._
         val (invariants, facts, theorems) = resolveInvFactTheorems(name, stmt.stmts)
 
         declareName(
-          if (stmt.isExt) "extension object" else "object",
+          if (stmt.extNameOpt.nonEmpty) "extension object" else "object",
           name,
           Info.Object(
             currentName,

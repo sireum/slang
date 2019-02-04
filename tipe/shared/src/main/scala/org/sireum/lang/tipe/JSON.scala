@@ -539,7 +539,7 @@ object JSON {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Stmt.Object""""),
         ("isApp", printB(o.isApp)),
-        ("isExt", printB(o.isExt)),
+        ("extNameOpt", printOption(T, o.extNameOpt, printString _)),
         ("id", print_astId(o.id)),
         ("stmts", printISZ(F, o.stmts, print_astStmt _)),
         ("attr", print_astAttr(o.attr))
@@ -2895,8 +2895,8 @@ object JSON {
       parser.parseObjectKey("isApp")
       val isApp = parser.parseB()
       parser.parseObjectNext()
-      parser.parseObjectKey("isExt")
-      val isExt = parser.parseB()
+      parser.parseObjectKey("extNameOpt")
+      val extNameOpt = parser.parseOption(parser.parseString _)
       parser.parseObjectNext()
       parser.parseObjectKey("id")
       val id = parse_astId()
@@ -2907,7 +2907,7 @@ object JSON {
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.Object(isApp, isExt, id, stmts, attr)
+      return org.sireum.lang.ast.Stmt.Object(isApp, extNameOpt, id, stmts, attr)
     }
 
     def parse_astStmtSig(): org.sireum.lang.ast.Stmt.Sig = {

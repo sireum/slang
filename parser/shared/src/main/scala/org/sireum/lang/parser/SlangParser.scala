@@ -1024,20 +1024,18 @@ class SlangParser(
     }
     val q"@bits(..${modparams: List[Term]}) class $tname" = stat
 
-    var isSigned = false
-    var bitWidth: Z = 0
+    var signedOpt: Option[B] = None()
     var min: Z = 0
     var max: Z = 0
     var index = false
     var hasMin = false
     var hasMax = false
-    var width = 64
+    var width = 0
     for (p <- modparams) p match {
       case q"signed = ${exp: Term}" =>
-        isSigned = extractStaticB(exp)
+        signedOpt = Some(extractStaticB(exp))
       case t @ q"width = ${exp: Term}" =>
-        bitWidth = extractStaticZ(exp)
-        width = bitWidth match {
+        width = extractStaticZ(exp) match {
           case Z.Int(8) => 8
           case Z.Int(16) => 16
           case Z.Int(32) => 32
@@ -1057,6 +1055,41 @@ class SlangParser(
       case q"index = ${exp: Term}" =>
         index = extractStaticB(exp)
       case t => error(t.pos, s"Invalid Slang @bits argument '${syntax(t)}'.")
+    }
+
+    val isSigned: B = signedOpt match {
+      case Some(x) => x
+      case _ => if (hasMin) min < 0 else true
+    }
+
+    if (width == 0) {
+      width = if (hasMin && hasMax) {
+        if (isSigned) {
+          if (Z(Byte.MinValue) <= min && max <= Z(Byte.MaxValue)) 8
+          else if (Z(Short.MinValue) <= min && max <= Z(Short.MaxValue)) 16
+          else if (Z(Int.MinValue) <= min && max <= Z(Int.MaxValue)) 32
+          else if (Z(Long.MinValue) <= min && max <= Z(Long.MaxValue)) 64
+          else {
+            error(stat.pos, s"Invalid Slang @bits: min/max do not fit into signed integer 8, 16, 32, or 64 bits.")
+            64
+          }
+        } else {
+          if (min >= 0 && max <= Z(Byte.MaxValue) - Z(Byte.MinValue)) 8
+          else if (min >= 0 && max <= Z(Short.MaxValue) - Z(Short.MinValue)) 16
+          else if (min >= 0 && max <= Z(Int.MaxValue) - Z(Int.MinValue)) 32
+          else if (min >= 0 && max <= Z(Long.MaxValue) - Z(Long.MinValue)) 64
+          else {
+            error(stat.pos, s"Invalid Slang @bits: min/max do not fit into unsigned integer 8, 16, 32, or 64 bits.")
+            64
+          }
+        }
+      } else {
+        error(
+          stat.pos,
+          s"Slang @bits ${stat.name.value} requires either width or min/max to be specified."
+        )
+        64
+      }
     }
 
     val signedString = if (isSigned) "signed" else "unsigned"
@@ -1084,7 +1117,7 @@ class SlangParser(
       isWrapped,
       hasMin,
       hasMax,
-      bitWidth,
+      width,
       min,
       max,
       if (index) min else 0,
@@ -1111,16 +1144,28 @@ class SlangParser(
     val ctorcalls = stat.templ.inits
     val stats = stat.templ.stats
     val self = stat.templ.self
-    var hasExt = false
+    var extNameOpt: Option[String] = None()
     var hasEnum = false
     var hasApp = false
     for (mod <- mods) mod match {
-      case mod"@ext" =>
-        if (hasExt) {
+      case mod"@ext(name = ${arg: Lit.String})" =>
+        if (extNameOpt.nonEmpty) {
           hasError = true
           error(mods.head.pos, "Redundant @ext.")
         }
-        hasExt = true
+        extNameOpt = Some(arg.value)
+      case mod"@ext(${arg: Lit.String})" =>
+        if (extNameOpt.nonEmpty) {
+          hasError = true
+          error(mods.head.pos, "Redundant @ext.")
+        }
+        extNameOpt = Some(arg.value)
+      case mod"@ext" =>
+        if (extNameOpt.nonEmpty) {
+          hasError = true
+          error(mods.head.pos, "Redundant @ext.")
+        }
+        extNameOpt = Some("")
       case mod"@enum" =>
         if (hasEnum) {
           hasError = true
@@ -1137,7 +1182,7 @@ class SlangParser(
       case _ =>
         error(name.pos, "Slang @ext objects have to be of the form '@ext object〈ID〉[ extends App ] { ... }'.")
     }
-    if (!((hasExt, hasEnum, hasApp) match {
+    if (!((extNameOpt.nonEmpty.value, hasEnum, hasApp) match {
         case (true, false, false) => true
         case (false, true, false) => true
         case (false, false, true) => true
@@ -1148,7 +1193,8 @@ class SlangParser(
     }
     if (estats.nonEmpty) {
       hasError = true
-      if (hasExt) error(name.pos, "Slang @ext objects have to be of the form '@ext object〈ID〉[ extends App ] { ... }'.")
+      if (extNameOpt.nonEmpty)
+        error(name.pos, "Slang @ext objects have to be of the form '@ext[(...)] object〈ID〉[ extends App ] { ... }'.")
       else error(name.pos, "Slang objects have to be of the form 'object〈ID〉〉[ extends App ] { ... }'.")
     } else if (hasSelfType(self)) {
       hasError = true
@@ -1166,9 +1212,9 @@ class SlangParser(
 
       AST.Stmt.Enum(cid(name), ISZ(elements: _*), attr(stat.pos))
     } else if (!hasError) {
-      val tstat = if (hasExt) translateStat(Enclosing.ExtObject) _ else translateStat(Enclosing.Object) _
-      AST.Stmt.Object(hasApp, hasExt, cid(name), checkMemberStmts(ISZ(stats.map(tstat): _*)), attr(stat.pos))
-    } else AST.Stmt.Object(hasApp, hasExt, cid(name), ISZ(), attr(stat.pos))
+      val tstat = if (extNameOpt.nonEmpty) translateStat(Enclosing.ExtObject) _ else translateStat(Enclosing.Object) _
+      AST.Stmt.Object(hasApp, extNameOpt, cid(name), checkMemberStmts(ISZ(stats.map(tstat): _*)), attr(stat.pos))
+    } else AST.Stmt.Object(hasApp, extNameOpt, cid(name), ISZ(), attr(stat.pos))
   }
 
   def translateSig(enclosing: Enclosing.Type, stat: Defn.Trait): AST.Stmt = {
