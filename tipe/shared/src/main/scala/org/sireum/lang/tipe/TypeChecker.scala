@@ -347,13 +347,17 @@ object TypeChecker {
                 err()
                 return None()
               }
-              tpe
+              if (typeRel == TypeRelation.Subtype) tpe else expected
           }
         val size = rt.args.size
         var i = 0
         var r = HashMap.empty[String, AST.Typed]
         while (i < size) {
-          val mOpt = unify(th, posOpt, TypeRelation.Equal, expected.args(i), rt.args(i), reporter)
+          val mOpt: Option[HashMap[String, AST.Typed]] =
+            if (typeRel == TypeRelation.Subtype)
+              unify(th, posOpt, TypeRelation.Equal, expected.args(i), rt.args(i), reporter)
+            else unify(th, posOpt, TypeRelation.Equal, rt.args(i), tpe.args(i), reporter)
+
           mOpt match {
             case Some(m) =>
               unifyCombine(r, m) match {
@@ -2122,7 +2126,7 @@ import TypeChecker._
             }
           }
 
-          val smOpt = unifies(typeHierarchy, expId.attr.posOpt, TypeRelation.Subtype, argTypes, m.tpe.args, repArgs)
+          val smOpt = unifies(typeHierarchy, expId.attr.posOpt, TypeRelation.Supertype, argTypes, m.tpe.args, repArgs)
           smOpt match {
             case Some(sm) =>
               val ok = checkUnboundTypeVar(expId.attr.posOpt, m, sm, m.typeParams, repArgs)

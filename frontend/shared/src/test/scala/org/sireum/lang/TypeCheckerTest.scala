@@ -44,6 +44,12 @@ class TypeCheckerTest extends TestSuite {
       "Worksheet" - {
 
         * - passingWorksheet("""import org.sireum._
+                               |def foo[T](opt: Option[T]): String = {
+                               |  return opt.string
+                               |}
+                               |foo(Some("a"))""".stripMargin)
+
+        * - passingWorksheet("""import org.sireum._
                                |@datatype trait Or[L, R]
                                |@datatype class Left[L, R](value: L) extends Or[L, R]
                                |@datatype class Right[L, R](value: R) extends Or[L, R]
