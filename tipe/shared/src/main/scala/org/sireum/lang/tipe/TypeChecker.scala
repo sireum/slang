@@ -2038,6 +2038,7 @@ import TypeChecker._
                       )
                     case _ => return (None(), resOpt, newTypeArgs)
                   }
+                case _ =>
               }
           }
         case _ =>
