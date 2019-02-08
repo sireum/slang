@@ -2995,6 +2995,7 @@ import TypeChecker._
   }
 
   def checkPattern(
+    unrefinedIdOpt: Option[AST.Id],
     expected: AST.Typed,
     sc: Scope.Local,
     pat: AST.Pattern,
@@ -3018,7 +3019,11 @@ import TypeChecker._
           } else {
             if (checkMutable) {
               val t = tOpt.get
-              if (typeHierarchy.isMutable(t)) {
+              val refined: B = unrefinedIdOpt match {
+                case Some(uid) => uid.value == id.value
+                case _ => F
+              }
+              if (!refined && typeHierarchy.isMutable(t)) {
                 val possibly: String = if (t.hasTypeVars) " possibly" else ""
                 reporter.error(
                   id.attr.posOpt,
@@ -3129,7 +3134,7 @@ import TypeChecker._
               if (newTipe.typedOpt.nonEmpty) {
                 val t = newTipe.typedOpt.get
                 val tOpt: Option[AST.Typed] = Some(t)
-                declId(F, Some(pattern.id), tOpt)
+                declId(T, Some(pattern.id), tOpt)
                 return pattern(tipeOpt = Some(newTipe), attr = pattern.attr(typedOpt = tOpt))
               }
               return pattern(tipeOpt = Some(newTipe))
@@ -3418,8 +3423,12 @@ import TypeChecker._
     }
 
     var newCases = ISZ[AST.Case]()
+    val unrefinedIdOpt: Option[AST.Id] = stmt.exp match {
+      case AST.Exp.Ident(id) => Some(id)
+      case _ => None()
+    }
     for (c <- stmt.cases) {
-      val (newScopeOpt, newPattern) = checkPattern(expType, scope, c.pattern, reporter)
+      val (newScopeOpt, newPattern) = checkPattern(unrefinedIdOpt, expType, scope, c.pattern, reporter)
       newScopeOpt match {
         case Some(newScope) =>
           val newCondOpt: Option[AST.Exp] = c.condOpt match {
@@ -3507,7 +3516,7 @@ import TypeChecker._
       initTypeOpt match {
         case Some(initType) =>
           val expected: AST.Typed = if (expectedOpt.nonEmpty) expectedOpt.get else initType
-          val (scopeOpt, newPattern) = checkPattern(expected, scope, vpStmt.pattern, reporter)
+          val (scopeOpt, newPattern) = checkPattern(None(), expected, scope, vpStmt.pattern, reporter)
           return (scopeOpt, vpStmt(pattern = newPattern, tipeOpt = newTipeOpt, init = newInit))
         case _ =>
           if (expectedOpt.isEmpty) {
