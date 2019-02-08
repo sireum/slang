@@ -2748,26 +2748,25 @@ import TypeChecker._
     }
 
     val r = checkExpH()
-    (expectedOpt, r._2) match {
-      case (Some(expected), Some(t)) if expected == t => return r
-      case (Some(expected: AST.Typed.Fun), Some(t)) if expected.isByName =>
-        if (typeHierarchy.isSubType(t, expected.ret)) {
-          return r
-        } else {
-          reporter.error(exp.posOpt, typeCheckerKind, s"Expecting type '$expected', but '$t' found.")
-          return (r._1, None())
-        }
-      case (Some(expected), Some(t)) =>
-        if (typeHierarchy.isSubType(t, expected)) {
-          return r
-        } else {
-          reporter.error(exp.posOpt, typeCheckerKind, s"Expecting type '$expected', but '$t' found.")
-          return (r._1, None())
+    r._2 match {
+      case Some(t) =>
+        expectedOpt match {
+          case Some(expected) if expected == t =>
+          case Some(expected: AST.Typed.Fun) if expected.isByName =>
+            if (!typeHierarchy.isSubType(t, expected.ret)) {
+              reporter.error(exp.posOpt, typeCheckerKind, s"Expecting type '$expected', but '$t' found.")
+              return (r._1, None())
+            }
+          case Some(expected) =>
+            if (!typeHierarchy.isSubType(t, expected)) {
+              reporter.error(exp.posOpt, typeCheckerKind, s"Expecting type '$expected', but '$t' found.")
+              return (r._1, None())
+            }
+          case _ =>
         }
       case _ =>
-        return r
     }
-
+    return r
   }
 
   def checkAssignExp(
@@ -3023,7 +3022,7 @@ import TypeChecker._
                 case Some(uid) => uid.value == id.value
                 case _ => F
               }
-              if (!refined && typeHierarchy.isMutable(t)) {
+              if (!refined && typeHierarchy.isMutable(t, T)) {
                 val possibly: String = if (t.hasTypeVars) " possibly" else ""
                 reporter.error(
                   id.attr.posOpt,

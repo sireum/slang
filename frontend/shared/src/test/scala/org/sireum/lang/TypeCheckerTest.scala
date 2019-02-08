@@ -44,6 +44,14 @@ class TypeCheckerTest extends TestSuite {
       "Worksheet" - {
 
         * - passingWorksheet("""import org.sireum._
+                               |@msig trait F
+                               |@record class Foo(x: Z) extends F
+                               |val f: F = Foo(4)
+                               |f match {
+                               |  case f: Foo =>
+                               |}""".stripMargin)
+
+        * - passingWorksheet("""import org.sireum._
                                |def foo[T](opt: Option[T]): String = {
                                |  return opt.string
                                |}
@@ -366,6 +374,18 @@ class TypeCheckerTest extends TestSuite {
     "Failing" - {
 
       "Worksheet" - {
+
+        * - failingWorksheet("""import org.sireum._
+                               |@record class Foo
+                               |val a: Option[Foo] = Some(Foo())""".stripMargin, "mutable")
+
+        * - failingWorksheet("""import org.sireum._
+                               |@msig trait F
+                               |@record class Foo(x: Z) extends F
+                               |val f: F = Foo(4)
+                               |f match {
+                               |  case f2: Foo =>
+                               |}""".stripMargin, "mutable")
 
         * - failingWorksheet("""import org.sireum._
                                |@pure def foo(): Z = { return 4 }

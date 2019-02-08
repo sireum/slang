@@ -406,7 +406,14 @@ object TypeOutliner {
     var paramTypes = ISZ[AST.Typed]()
     var extractorTypeMap = Map.empty[String, AST.Typed]
     for (p <- info.ast.params) {
-      val newTipeOpt = typeHierarchy.typed(scope, p.tipe, reporter)
+      val newTipeOpt: Option[AST.Type] =
+        vars.get(p.id.value) match {
+          case Some(v) =>
+            Some(p.tipe.typed(v.typedOpt.get))
+          case _ =>
+            val r = typeHierarchy.typed(scope, p.tipe, reporter)
+            r
+        }
       newTipeOpt match {
         case Some(newTipe) if newTipe.typedOpt.nonEmpty =>
           val t = newTipe.typedOpt.get

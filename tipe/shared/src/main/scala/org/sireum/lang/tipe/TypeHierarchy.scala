@@ -68,7 +68,7 @@ object TypeHierarchy {
               reporter.error(
                 t.name.attr.posOpt,
                 resolverKind,
-                s"Could not resolve type named '${st"${(name, ".")}".render}'."
+                st"Could not resolve type named '${(name, ".")}'.".render
               )
           }
           val args: ISZ[AST.Typed] = {
@@ -249,7 +249,7 @@ object TypeHierarchy {
         val ancestors: ISZ[AST.Typed.Name] = typeMap.get(tn.ids) match {
           case Some(info: TypeInfo.Sig) => info.ancestors
           case Some(info: TypeInfo.Adt) => info.ancestors
-          case _ => halt(s"Unexpected situation while computing the least upper bound of { '${(ts, "', '")}' }.")
+          case _ => halt(st"Unexpected situation while computing the least upper bound of { '${(ts, "', '")}' }.".render)
         }
         var commonType = tn
         var found = F
@@ -350,36 +350,57 @@ object TypeHierarchy {
     }
   }
 
-  def typed(scope: Scope, tipe: AST.Type, reporter: Reporter): Option[AST.Type] = {
-    def check(t: AST.Typed): Unit = {
-      if (t == AST.Typed.nothing) {
-        reporter.error(tipe.posOpt, TypeChecker.typeCheckerKind, s"Cannot use type '$t'.")
-      } else {
-        t match {
-          case t: AST.Typed.Name =>
-            if ((t.ids == AST.Typed.isName || t.ids == AST.Typed.msName) && t.args.size > 0) {
-              t.args(0) match {
-                case it: AST.Typed.Name =>
-                  if (it != AST.Typed.z) {
-                    typeMap.get(it.ids) match {
-                      case Some(_: TypeInfo.SubZ) =>
-                      case Some(_) =>
-                        reporter.error(
-                          tipe.posOpt,
-                          TypeChecker.typeCheckerKind,
-                          s"Cannot use type '$t' as index for '${(t.ids, ".")}'."
-                        )
-                      case _ =>
-                    }
+  def checkTyped(posOpt: Option[Position], t: AST.Typed, reporter: Reporter): Unit = {
+    if (t == AST.Typed.nothing) {
+      reporter.error(posOpt, TypeChecker.typeCheckerKind, s"Cannot use type '$t'.")
+    } else {
+      t match {
+        case t: AST.Typed.Name =>
+          val isIS = t.ids == AST.Typed.isName
+          if ((isIS || t.ids == AST.Typed.msName) && t.args.size > 0) {
+            t.args(0) match {
+              case it: AST.Typed.Name =>
+                if (it != AST.Typed.z) {
+                  typeMap.get(it.ids) match {
+                    case Some(_: TypeInfo.SubZ) =>
+                    case Some(_) =>
+                      reporter.error(
+                        posOpt,
+                        TypeChecker.typeCheckerKind,
+                        st"Cannot use type '$t' as index for '${(t.ids, ".")}'.".render
+                      )
+                    case _ =>
                   }
-                case _: AST.Typed.TypeVar =>
-                case _ =>
+                }
+              case _: AST.Typed.TypeVar =>
+              case _ =>
+            }
+            if (isIS && t.args.size > 1 && isMutable(t.args(1), F)) {
+              reporter.error(
+                posOpt,
+                TypeChecker.typeCheckerKind,
+                st"Cannot use mutable type '${t.args(1)}' as element for '${(t.ids, ".")}'.".render
+              )
+            }
+          } else {
+            if (!isMutable(t, T)) {
+              for (arg <- t.args) {
+                if (isMutable(arg, F)) {
+                  reporter.error(
+                    posOpt,
+                    TypeChecker.typeCheckerKind,
+                    st"Cannot use mutable type '$arg' as an argument for immutable type '${(t.ids, ".")}'.".render
+                  )
+                }
               }
             }
-          case _ =>
-        }
+          }
+        case _ =>
       }
     }
+  }
+
+  def typed(scope: Scope, tipe: AST.Type, reporter: Reporter): Option[AST.Type] = {
     tipe match {
       case tipe: AST.Type.Named =>
         var newTypeArgs = ISZ[AST.Type]()
@@ -410,7 +431,7 @@ object TypeHierarchy {
               return None()
             }
             val tpe = dealias(AST.Typed.Name(ti.name, argTypes), tipe.posOpt, reporter)
-            check(tpe)
+            checkTyped(tipe.posOpt, tpe, reporter)
             return Some(tipe(typeArgs = newTypeArgs, attr = tipe.attr(typedOpt = Some(tpe))))
           case Some(ti: TypeInfo.TypeVar) =>
             if (newTypeArgs.nonEmpty) {
@@ -453,7 +474,7 @@ object TypeHierarchy {
               return None()
             }
             val t = AST.Typed.Name(p._3, argTypes)
-            check(t)
+            checkTyped(tipe.posOpt, t, reporter)
             return Some(tipe(typeArgs = newTypeArgs, attr = tipe.attr(typedOpt = Some(t))))
           case _ =>
             reporter
@@ -664,9 +685,12 @@ object TypeHierarchy {
     return isSubType(t1, t2) || isSubType(t2, t1)
   }
 
-  @pure def isMutable(t: AST.Typed): B = {
+  @pure def isMutable(t: AST.Typed, typeVarMutable: B): B = {
     t match {
       case t: AST.Typed.Name =>
+        if (t.ids == AST.Typed.msName) {
+          return T
+        }
         typeMap.get(t.ids) match {
           case Some(info) =>
             info match {
@@ -678,12 +702,12 @@ object TypeHierarchy {
         }
       case t: AST.Typed.Tuple =>
         for (arg <- t.args) {
-          if (isMutable(arg)) {
+          if (isMutable(arg, typeVarMutable)) {
             return T
           }
         }
         return F
-      case _: AST.Typed.TypeVar => return T
+      case _: AST.Typed.TypeVar => return typeVarMutable
       case _ => return F
     }
   }
