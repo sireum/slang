@@ -46,7 +46,9 @@ object cli {
       Opt(name = "server", longKey = "no-server", shortKey = Some('s'),
         tpe = Type.Flag(F), description = "Disable Scala compile server"),
       Opt(name = "transformed", longKey = "transformed", shortKey = Some('t'),
-        tpe = Type.Flag(F), description = "Show Scala transformed tree")
+        tpe = Type.Flag(F), description = "Show Scala transformed tree"),
+      Opt(name = "native", longKey = "native", shortKey = Some('n'),
+        tpe = Type.Flag(F), description = "Generate native executable"),
     ),
     groups = ISZ()
   )
