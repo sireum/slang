@@ -2531,7 +2531,7 @@ class SlangParser(
     val startOffset = pos.start + 4
     val endOffset = pos.end - 3
     lPointOpt = scala.Some(startOffset)
-    try f(new LParser(Input.Slice(input, startOffset, endOffset), dialect, this))
+    try f(new LParser(Input.String(input.text.substring(startOffset, endOffset)), dialect, this))
     catch {
       case e: ParseException =>
         throw ParseException(Position.Range(input, startOffset + e.pos.start, startOffset + e.pos.end), e.shortMessage)
