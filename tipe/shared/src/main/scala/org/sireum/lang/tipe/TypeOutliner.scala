@@ -408,8 +408,7 @@ object TypeOutliner {
     for (p <- info.ast.params) {
       val newTipeOpt: Option[AST.Type] =
         vars.get(p.id.value) match {
-          case Some(v) =>
-            Some(p.tipe.typed(v.typedOpt.get))
+          case Some(v) => v.ast.tipeOpt
           case _ =>
             val r = typeHierarchy.typed(scope, p.tipe, reporter)
             r
