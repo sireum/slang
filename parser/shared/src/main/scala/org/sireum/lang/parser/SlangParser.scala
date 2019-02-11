@@ -115,13 +115,16 @@ object SlangParser {
     reporter: Reporter
   ): Result = {
     val text = txt.replaceAllLiterally("\r\n", "\n") // WORKAROUND: scalameta crlf issues
-    val i = text.indexOf('\n')
     val sb = new _root_.java.lang.StringBuilder
-    if (i >= 0) {
-      for (j <- 0 until i) text(j) match {
-        case '\t' | '\r' | ' ' =>
-        case c => sb.append(c)
+    var i = 0
+    while (i < text.length && text(i).isWhitespace) i += 1
+    var found = false
+    while (i < text.length && !found) {
+      text(i) match {
+        case '\n' => found = true
+        case c => if (!c.isWhitespace) sb.append(c)
       }
+      i += 1
     }
     val firstLine = sb.toString
     val hashSireum = firstLine.contains("#Sireum")
