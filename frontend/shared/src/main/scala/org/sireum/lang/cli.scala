@@ -36,7 +36,7 @@ object cli {
     command = "run",
     description = "Script runner",
     header = "Slang Script Runner",
-    usage = "<slang-file>+",
+    usage = "<option>* <slang-file> <arg>*",
     opts = ISZ(
       Opt(name = "input", longKey = "input", shortKey = Some('i'),
         tpe = Type.Path(multiple = F, default = None()),
