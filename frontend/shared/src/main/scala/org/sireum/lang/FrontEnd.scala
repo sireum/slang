@@ -109,7 +109,7 @@ object FrontEnd {
     gdr.resolveProgram(
       program(
         body = program.body(
-          stmts = program.body.stmts.withFilter(
+          stmts = program.body.stmts.filter(
             stmt =>
               stmt match {
                 case _: AST.Stmt.Method => F

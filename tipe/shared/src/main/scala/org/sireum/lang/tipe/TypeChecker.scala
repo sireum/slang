@@ -2009,7 +2009,7 @@ import TypeChecker._
                     info.ast.params
                   } else {
                     val argNameSet = HashSSet.emptyInit[String](argNames.size) ++ argNames
-                    val ps = info.ast.params.withFilter(p => argNameSet.contains(p.id.value))
+                    val ps = info.ast.params.filter(p => argNameSet.contains(p.id.value))
                     if (argNameSet.size != ps.size) {
                       val names = argNameSet -- info.ast.params.map[String](p => p.id.value)
                       reporter.error(
@@ -2273,7 +2273,7 @@ import TypeChecker._
               reporter.error(
                 invokeExp.ident.attr.posOpt,
                 typeCheckerKind,
-                s"Function '$t' is expecting $size arguments, but $size found."
+                s"Function '$t' is expecting ${t.args.size} arguments, but $size found."
               )
               return partResultH
             }
