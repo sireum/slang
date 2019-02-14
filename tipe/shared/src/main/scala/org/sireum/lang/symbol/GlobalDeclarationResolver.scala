@@ -1,6 +1,6 @@
 // #Sireum
 /*
- Copyright (c) 2017, Robby, Kansas State University
+ Copyright (c) 2019, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -391,7 +391,7 @@ import GlobalDeclarationResolver._
         assert(members.vars.isEmpty)
         val tpe = AST.Typed.Name(
           name,
-          for (tVar <- typeParamMap(stmt.typeParams, reporter).keys.elements)
+          for (tVar <- typeParamMap(stmt.typeParams, reporter).keys)
             yield AST.Typed.TypeVar(tVar)
         )
         val (invariants, facts, theorems) = resolveInvFactTheorems(name, stmt.stmts)
@@ -441,7 +441,7 @@ import GlobalDeclarationResolver._
           )
         }
         val members = resolveMembers(name, sc, stmt.stmts, paramVars)
-        val typeVars = typeParamMap(stmt.typeParams, reporter).keys.elements
+        val typeVars = typeParamMap(stmt.typeParams, reporter).keys
         val tpe = AST.Typed.Name(name, for (tVar <- typeVars) yield AST.Typed.TypeVar(tVar))
         val constructorResOpt: Option[AST.ResolvedInfo] = Some(
           AST.ResolvedInfo

@@ -1,6 +1,6 @@
 // #Sireum
 /*
- Copyright (c) 2017, Robby, Kansas State University
+ Copyright (c) 2019, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -449,7 +449,7 @@ object TypeOutliner {
             AST.Typed.Method(
               T,
               AST.MethodMode.Constructor,
-              tm.keys.elements,
+              tm.keys,
               info.owner,
               info.ast.id.value,
               info.ast.params.map(p => p.id.value),
@@ -496,7 +496,7 @@ object TypeOutliner {
     val returnTypeOpt = typeHierarchy.typed(mScope, sig.returnType, reporter)
     returnTypeOpt match {
       case Some(returnType) if returnTypeOpt.nonEmpty =>
-        return Some((sig(params = params, returnType = returnType), tm.keys.elements))
+        return Some((sig(params = params, returnType = returnType), tm.keys))
       case _ => return None()
     }
   }

@@ -259,7 +259,7 @@ object CustomMessagePack {
     }
 
     override def result: ISZ[U8] = {
-      val strings = writer.stringPool.keys.elements
+      val strings = writer.stringPool.keys
       val poolBufferSize: Z = {
         var r: Z = 0
         for (s <- strings) {
@@ -274,19 +274,19 @@ object CustomMessagePack {
           r.writer.writeStringNoPool(s)
         }
         r.writer.writeExtTypeHeader(MessagePack.DocInfoExtType, writer.docInfoPool.size)
-        for (di <- writer.docInfoPool.keys.elements) {
+        for (di <- writer.docInfoPool.keys) {
           r.writer.writeDocInfoNoPool(di)
         }
         r.writer.writeExtTypeHeader(TypedPoolExtType, typedPool.size)
-        for (t <- typedPool.keys.elements) {
+        for (t <- typedPool.keys) {
           r.write_astTyped(t)
         }
         r.writer.writeExtTypeHeader(ResolvedInfoPoolExtType, resolvedInfoPool.size)
-        for (ri <- resolvedInfoPool.keys.elements) {
+        for (ri <- resolvedInfoPool.keys) {
           r.write_astResolvedInfo(ri)
         }
         r.writer.writeExtTypeHeader(ScopeGlobalPoolExtType, scopeGlobalInfoPool.size)
-        for (sg <- scopeGlobalInfoPool.keys.elements) {
+        for (sg <- scopeGlobalInfoPool.keys) {
           r.write_symbolScopeGlobal(sg)
         }
         (r.writer.buf, r.writer.size)
