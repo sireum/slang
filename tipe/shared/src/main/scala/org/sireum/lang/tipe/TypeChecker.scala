@@ -667,15 +667,16 @@ import TypeChecker._
   }
 
   def checkEnumGens(
+    checkMixed: B,
     sc: Scope,
     enumGens: ISZ[AST.EnumGen.For],
     reporter: Reporter
-  ): (Option[Scope.Local], ISZ[AST.EnumGen.For], AST.Typed, B) = {
+  ): (Option[Scope.Local], ISZ[AST.EnumGen.For], Option[AST.Typed], B) = {
 
     var scope = createNewScope(sc)
     var ok = T
     var isISOpt: Option[B] = None()
-    var indexType: AST.Typed = AST.Typed.z
+    var indexTypeOpt: Option[AST.Typed] = None()
 
     def declId(idOpt: Option[AST.Id], tOpt: Option[AST.Typed]): Unit = {
       idOpt match {
@@ -704,13 +705,16 @@ import TypeChecker._
     }
 
     def checkIS(posOpt: Option[Position], b: B): B = {
+      if (!checkMixed) {
+        return T
+      }
       isISOpt match {
         case Some(prev) =>
           if (b != prev) {
             reporter.error(
               posOpt,
               typeCheckerKind,
-              st"For-yield expressions cannot involve both '${(AST.Typed.isName, ".")}' and '${(AST.Typed.msName, ".")}'.".render
+              st"For-yield expressions cannot involve both immutable and mutable sequence/generator.".render
             )
             return F
           }
@@ -734,6 +738,7 @@ import TypeChecker._
           (startExpTypeOpt, endExpTypeOpt) match {
             case (Some(startExpType), Some(_)) if newByOpt.nonEmpty || range.byOpt.isEmpty =>
               checkIndexType(range.start.posOpt, startExpType, reporter)
+              indexTypeOpt = Some(AST.Typed.z)
               declId(enumGen.idOpt, Some(startExpType))
               val newCondOpt: Option[AST.Exp] = enumGen.condOpt match {
                 case Some(cond) if ok =>
@@ -750,21 +755,36 @@ import TypeChecker._
               return enumGen(range = range(start = newStartExp, end = newEndExp, byOpt = newByOpt))
           }
         case range: AST.EnumGen.Range.Expr =>
+          def errType(t: ST): Unit = {
+            reporter.error(
+              range.exp.posOpt,
+              typeCheckerKind,
+              st"Expecting either type of 'org.sireum.{IS, MS, Jen, MJen}', but '$t' found.".render
+            )
+          }
           val (newExp, expTypeOpt) = checkExp(None(), scope, range.exp, reporter)
           expTypeOpt match {
             case Some(expType: AST.Typed.Name) =>
               expType.ids match {
                 case AST.Typed.isName =>
                   ok = checkIS(range.attr.posOpt, T)
-                  indexType = expType.args(0)
+                  indexTypeOpt = Some(expType.args(0))
                 case AST.Typed.msName =>
                   ok = checkIS(range.attr.posOpt, F)
-                  indexType = expType.args(0)
-                case _ =>
+                  indexTypeOpt = Some(expType.args(0))
+                case AST.Typed.jenName =>
+                  ok = checkIS(range.attr.posOpt, T)
+                  indexTypeOpt = None()
+                case AST.Typed.mjenName =>
+                  ok = checkIS(range.attr.posOpt, F)
+                  indexTypeOpt = None()
+                case ids =>
+                  errType(st"${(ids, ".")}")
                   ok = F
               }
               val newCondOpt: Option[AST.Exp] = if (ok) {
-                declId(enumGen.idOpt, Some(if (range.isIndices) expType.args(0) else expType.args(1)))
+                declId(enumGen.idOpt,
+                  Some(if (range.isIndices || indexTypeOpt.isEmpty) expType.args(0) else expType.args(1)))
                 enumGen.condOpt match {
                   case Some(cond) =>
                     val (newCond, _) = checkExp(AST.Typed.bOpt, scope, cond, reporter)
@@ -776,11 +796,7 @@ import TypeChecker._
               }
               return enumGen(range = range(exp = newExp), condOpt = newCondOpt)
             case Some(expType) =>
-              reporter.error(
-                range.exp.posOpt,
-                typeCheckerKind,
-                st"Expecting either type of '${(AST.Typed.isName, ".")}' or '${(AST.Typed.msName, ".")}', but '$expType' found.".render
-              )
+              errType(st"$expType")
               ok = F
               return enumGen(range = range(exp = newExp))
             case _ =>
@@ -804,7 +820,7 @@ import TypeChecker._
       i = i + 1
     }
 
-    return (if (ok) Some(scope) else None(), newEnumGens, indexType, isISOpt.getOrElse(T))
+    return (if (ok) Some(scope) else None(), newEnumGens, indexTypeOpt, isISOpt.getOrElse(T))
   }
 
   def checkFun(
@@ -2560,7 +2576,7 @@ import TypeChecker._
     }
 
     def checkForYield(forExp: AST.Exp.ForYield): (AST.Exp, Option[AST.Typed]) = {
-      val (newScopeOpt, newEnumGens, indexType, isIS) = checkEnumGens(scope, forExp.enumGens, reporter)
+      val (newScopeOpt, newEnumGens, indexTypeOpt, isImm) = checkEnumGens(T, scope, forExp.enumGens, reporter)
       newScopeOpt match {
         case Some(newScope) =>
           val expectedValueOpt: Option[AST.Typed] = expectedOpt match {
@@ -2574,9 +2590,19 @@ import TypeChecker._
             case Some(t) =>
               val tOpt: Option[AST.Typed] = expectedValueOpt match {
                 case Some(expectedValue) =>
-                  Some(AST.Typed.Name(if (isIS) AST.Typed.isName else AST.Typed.msName, ISZ(indexType, expectedValue)))
+                  indexTypeOpt match {
+                    case Some(indexType) =>
+                      Some(AST.Typed.Name(if (isImm) AST.Typed.isName else AST.Typed.msName, ISZ(indexType, expectedValue)))
+                    case _ =>
+                      Some(AST.Typed.Name(if (isImm) AST.Typed.jenName else AST.Typed.mjenName, ISZ(expectedValue)))
+                  }
                 case _ =>
-                  Some(AST.Typed.Name(if (isIS) AST.Typed.isName else AST.Typed.msName, ISZ(indexType, t)))
+                  indexTypeOpt match {
+                    case Some(indexType) =>
+                      Some(AST.Typed.Name(if (isImm) AST.Typed.isName else AST.Typed.msName, ISZ(indexType, t)))
+                    case _ =>
+                      Some(AST.Typed.Name(if (isImm) AST.Typed.jenName else AST.Typed.mjenName, ISZ(t)))
+                  }
               }
               return (forExp(enumGens = newEnumGens, exp = newExp, attr = forExp.attr(typedOpt = tOpt)), tOpt)
             case _ => return (forExp(enumGens = newEnumGens, exp = newExp), None())
@@ -3673,7 +3699,7 @@ import TypeChecker._
     }
 
     def checkFor(forStmt: AST.Stmt.For): AST.Stmt = {
-      val (newScopeOpt, newEnumGens, _, _) = checkEnumGens(scope, forStmt.enumGens, reporter)
+      val (newScopeOpt, newEnumGens, _, _) = checkEnumGens(F, scope, forStmt.enumGens, reporter)
       newScopeOpt match {
         case Some(newScope) =>
           val newBody = checkBody(None(), newScope, forStmt.body, reporter)

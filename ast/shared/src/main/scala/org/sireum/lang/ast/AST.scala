@@ -1513,6 +1513,8 @@ object Typed {
   val iszName: ISZ[String] = sireumName :+ "ISZ"
   val mszName: ISZ[String] = sireumName :+ "MSZ"
   val zsName: ISZ[String] = sireumName :+ "ZS"
+  val jenName: ISZ[String] = sireumName :+ "Jen"
+  val mjenName: ISZ[String] = sireumName :+ "MJen"
   val unapplySeqResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.UnapplySeq))
   val unapplyTupleResOpt: Option[ResolvedInfo] = Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.UnapplyTuple))
 
