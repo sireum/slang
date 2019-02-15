@@ -1,0 +1,14 @@
+version: 1.0.{build}
+
+image: Visual Studio 2017
+
+environment:
+  JAVA_OPTS: '-Xmx2G'
+
+cache:
+  - bin\scala
+  - bin\win\java
+
+build_script:
+  - ps: bin\init.ps1
+  - cmd: bin\build.cmd test

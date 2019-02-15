@@ -1,9 +1,23 @@
-language: java
+language: objective-c
 
-jdk:
-  - oraclejdk11
+os: osx
+
+osx_image: xcode10.1
+
+cache:
+  directories:
+    - bin/mac/java
+    - bin/scala
+
+addons:
+  homebrew:
+    packages:
+      - p7zip
+
+before_install:
+  - bin/init.sh
 
 script:
-  - ./prelude.sh
-  - ./mill-standalone jitPack --owner sireum --repo slang --lib frontend || true
-  - ./test.sh
+  - if echo "$TRAVIS_COMMIT_MESSAGE" | grep -F -q "[skip travis]" ; then echo "skip travis" && exit 0 ; fi
+  - unset JVM_OPTS
+  - bin/build.cmd test

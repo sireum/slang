@@ -1,0 +1,27 @@
+language: none
+
+services:
+
+build:
+  pre_ci:
+  pre_ci_boot:
+    image_name: sireum/ci
+    image_tag: latest
+    pull: true
+    options: "-e HOME=/root"
+  ci:
+    - >
+      if [[ ! `git show -s HEAD | grep -F -q "[skip shippable]"` ]]; then
+        mkdir -p $HOME/.coursier &&
+        git submodule update --init --recursive &&
+        bin/init.sh &&
+        bin/build.cmd test;
+      fi
+  post_ci:
+  on_success:
+  on_failure:
+  push:
+  cache: true
+  cache_dir_list:
+    - $SHIPPABLE_BUILD_DIR/bin/linux/java
+    - $SHIPPABLE_BUILD_DIR/bin/scala
