@@ -100,21 +100,23 @@ def m2(): Unit = {
       yield ISZ("slang", pkg, plat, "m2")
 
   val m2Paths: ISZ[Os.Path] =
-    for (cd <- for (m2 <- m2s) yield st"${(m2, Os.fileSep)}".render) yield  Os.cwd.up / "out" / cd
+    for (cd <- for (m2 <- m2s) yield st"${(m2, Os.fileSep)}".render) yield  home / "out" / cd
 
   for (m2p <- m2Paths) {
     m2p.removeAll()
   }
 
+  (home / "out").removeAll()
 
   Os.proc(ISZ[String](mill.string, "all") ++ (for (m2 <- m2s) yield st"${(m2, ".")}".render)).
     at(home).env(ISZ("SIREUM_SOURCE_BUILD" ~> "false")).console.runCheck()
 
   val repository = Os.home / ".m2" / "repository"
+  repository.removeAll()
 
   println()
   println("Artifacts")
-  for (m2p <- m2Paths; p <- (m2p / "dest").overlayMove(repository, F, F, _ => T, T).keys) {
+  for (m2p <- m2Paths; p <- (m2p / "dest").overlayMove(repository, F, F, _ => T, T).values) {
     println(s"* $p")
   }
   println()
@@ -129,7 +131,7 @@ for (i <- 1 until Os.cliArgs.size) {
   Os.cliArgs(i) match {
     case string"compile" => compile()
     case string"test" => test()
-    case string"test-js" => test()
+    case string"test-js" => testJs()
     case string"m2" => m2()
     case string"jitpack" => jitpack()
     case cmd =>
