@@ -43,7 +43,8 @@ def clone(repo: String): Unit = {
 
 def jitpack(): Unit = {
   println("Triggering jitpack ...")
-  val r = Os.proc(ISZ(mill.string, "jitPack", "--owner", "sireum", "--repo", "slang", "--lib", "frontend")).at(home).run()
+  val r = Os.proc(ISZ(mill.string, "jitPack", "--owner", "sireum", "--repo", "slang", "--lib", "frontend")).
+    at(home).console.run()
   r match {
     case r: Os.Proc.Result.Normal =>
       println(r.out)
