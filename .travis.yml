@@ -20,4 +20,4 @@ before_install:
 script:
   - if echo "$TRAVIS_COMMIT_MESSAGE" | grep -F -q "[skip travis]" ; then echo "skip travis" && exit 0 ; fi
   - unset JVM_OPTS
-  - bin/build.cmd test
+  - bin/build.cmd compile test

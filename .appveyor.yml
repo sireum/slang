@@ -11,4 +11,4 @@ cache:
 
 build_script:
   - ps: bin\init.ps1
-  - cmd: bin\build.cmd test
+  - cmd: bin\build.cmd compile test

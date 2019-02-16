@@ -38,6 +38,7 @@ def clone(repo: String): Unit = {
   } else {
     Os.proc(ISZ("git", "pull", "--recurse-submodules")).at(home / repo).console.runCheck()
   }
+  println()
 }
 
 def jitpack(): Unit = {
@@ -53,7 +54,7 @@ def jitpack(): Unit = {
     case r: Os.Proc.Result.Exception =>
       eprintln(s"Exception: ${r.err}")
     case _: Os.Proc.Result.Timeout =>
-      eprintln("Timout")
+      eprintln("Timeout")
       eprintln()
   }
   println()
@@ -73,7 +74,8 @@ def compile(): Unit = {
   }
   tipe()
   println("Compiling ...")
-  Os.proc(ISZ(mill.string, "all", "slang.frontend.shared.tests.compile")).at(home).console.runCheck()
+  Os.proc(ISZ(mill.string, "all", "slang.frontend.shared.tests.compile",
+    "slang.frontend.js.tests.compile")).at(home).console.runCheck()
   println()
 }
 
@@ -86,7 +88,7 @@ def test(): Unit = {
 
 def testJs(): Unit = {
   compile()
-  println("Running shared tests ...")
+  println("Running js tests ...")
   Os.proc(ISZ(mill.string, "all", "slang.parser.js.tests", "slang.frontend.js.tests")).at(home).console.runCheck()
   println()
 }

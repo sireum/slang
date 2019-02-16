@@ -15,7 +15,7 @@ build:
         mkdir -p $HOME/.coursier &&
         git submodule update --init --recursive &&
         bin/init.sh &&
-        bin/build.cmd test;
+        bin/build.cmd compile test;
       fi
   post_ci:
   on_success:
