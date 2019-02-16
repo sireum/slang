@@ -99,6 +99,14 @@ def m2(): Unit = {
     for (pkg <- ISZ("ast", "parser", "tipe", "frontend"); plat <- ISZ("shared", "js"))
       yield ISZ("slang", pkg, plat, "m2")
 
+  val m2Paths: ISZ[Os.Path] =
+    for (cd <- for (m2 <- m2s) yield st"${(m2, Os.fileSep)}".render) yield  Os.cwd.up / "out" / cd
+
+  for (m2p <- m2Paths) {
+    m2p.removeAll()
+  }
+
+
   Os.proc(ISZ[String](mill.string, "all") ++ (for (m2 <- m2s) yield st"${(m2, ".")}".render)).
     at(home).env(ISZ("SIREUM_SOURCE_BUILD" ~> "false")).console.runCheck()
 
@@ -106,10 +114,8 @@ def m2(): Unit = {
 
   println()
   println("Artifacts")
-  for (cd <- for (m2 <- m2s) yield st"${(m2, Os.fileSep)}${Os.fileSep}dest".render) {
-    for (p <- (Os.cwd.up / "out" / cd).overlayMove(repository, F, F, _ => T, T).keys) {
-      println(s"* $p")
-    }
+  for (m2p <- m2Paths; p <- (m2p / "dest").overlayMove(repository, F, F, _ => T, T).keys) {
+    println(s"* $p")
   }
   println()
 }
