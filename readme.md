@@ -12,14 +12,12 @@ front-end components (i.e., parser, symbol resolver, and type checker).
 * **macOS/Linux**
 
   ```bash
-  bin/init.sh
   bin/build.cmd test
   ```
   
 * **Windows**
 
   ```cmd
-  bin\init.bat
   bin\build.cmd test
   ```
 
@@ -36,7 +34,7 @@ to run it under Node.js after the above
 
   ```bash
   export NODEJS_MAX_HEAP=4096 # MB
-  bin/build.cmd
+  bin/build.cmd test-js
   ```
   
 * **Windows**
