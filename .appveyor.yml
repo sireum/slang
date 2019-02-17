@@ -10,5 +10,4 @@ cache:
   - bin\win\java
 
 build_script:
-  - ps: bin\init.ps1
-  - cmd: bin\build.cmd compile test
+  - cmd: bin\build.cmd jitpack test
