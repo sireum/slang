@@ -16,3 +16,5 @@ target
 /bin/scala
 /lib
 /runtime
+*.cmd.jar
+*.cmd.com
