@@ -9,6 +9,7 @@ target
 /bin/prelude.ps1
 /bin/sireum
 /bin/sireum.jar
+/bin/.sireum-win.jar
 /bin/sireum.bat
 /bin/mac
 /bin/linux
