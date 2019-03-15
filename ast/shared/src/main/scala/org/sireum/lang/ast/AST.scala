@@ -94,7 +94,7 @@ object Stmt {
 
   }
 
-  @datatype class Var(isVal: B, id: Id, tipeOpt: Option[Type], initOpt: Option[AssignExp], @hidden attr: Attr)
+  @datatype class Var(isVal: B, id: Id, tipeOpt: Option[Type], initOpt: Option[AssignExp], @hidden attr: ResolvedAttr)
       extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
@@ -112,7 +112,7 @@ object Stmt {
 
   }
 
-  @datatype class SpecVar(isVal: B, id: Id, tipe: Type, @hidden attr: Attr) extends Stmt {
+  @datatype class SpecVar(isVal: B, id: Id, tipe: Type, @hidden attr: ResolvedAttr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -420,7 +420,7 @@ object EnumGen {
 
   object Range {
 
-    @datatype class Expr(isReverse: B, isIndices: B, exp: Exp, @hidden attr: Attr) extends Range
+    @datatype class Expr(exp: Exp, @hidden attr: Attr) extends Range
 
     @datatype class Step(isInclusive: B, start: Exp, end: Exp, byOpt: Option[Exp], @hidden attr: Attr) extends Range
 

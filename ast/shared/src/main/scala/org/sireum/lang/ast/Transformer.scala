@@ -1691,7 +1691,7 @@ import Transformer._
           val r0: Result[Context, Id] = transformId(ctx, o2.id)
           val r1: Result[Context, Option[Type]] = transformOption(r0.ctx, o2.tipeOpt, transformType _)
           val r2: Result[Context, Option[AssignExp]] = transformOption(r1.ctx, o2.initOpt, transformAssignExp _)
-          val r3: Result[Context, Attr] = transformAttr(r2.ctx, o2.attr)
+          val r3: Result[Context, ResolvedAttr] = transformResolvedAttr(r2.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
             Result(r3.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), tipeOpt = r1.resultOpt.getOrElse(o2.tipeOpt), initOpt = r2.resultOpt.getOrElse(o2.initOpt), attr = r3.resultOpt.getOrElse(o2.attr))))
           else
@@ -1708,7 +1708,7 @@ import Transformer._
         case o2: Stmt.SpecVar =>
           val r0: Result[Context, Id] = transformId(ctx, o2.id)
           val r1: Result[Context, Type] = transformType(r0.ctx, o2.tipe)
-          val r2: Result[Context, Attr] = transformAttr(r1.ctx, o2.attr)
+          val r2: Result[Context, ResolvedAttr] = transformResolvedAttr(r1.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
             Result(r2.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), tipe = r1.resultOpt.getOrElse(o2.tipe), attr = r2.resultOpt.getOrElse(o2.attr))))
           else

@@ -164,7 +164,7 @@ object TypeOutliner {
     val newTipeOpt = typeHierarchy.typed(info.scope, sv.tipe, reporter)
     newTipeOpt match {
       case Some(newTipe) =>
-        return Some(info(ast = sv(tipe = newTipe), typedOpt = newTipe.typedOpt))
+        return Some(info(ast = sv(tipe = newTipe, attr = sv.attr(typedOpt = newTipe.typedOpt))))
       case _ => return None()
     }
   }
@@ -175,7 +175,7 @@ object TypeOutliner {
     val newTipeOpt = typeHierarchy.typed(info.scope, tpe, reporter)
     newTipeOpt match {
       case Some(newTipe) =>
-        return Some(info(ast = v(tipeOpt = newTipeOpt), typedOpt = newTipe.typedOpt))
+        return Some(info(ast = v(tipeOpt = newTipeOpt, attr = v.attr(typedOpt = newTipe.typedOpt))))
       case _ => return None()
     }
   }
@@ -527,7 +527,7 @@ object TypeOutliner {
       val tipeOpt = typeHierarchy.typed(scope, sv.tipe, reporter)
       tipeOpt match {
         case Some(tipe) if tipe.typedOpt.nonEmpty =>
-          specVars = specVars + id ~> svInfo(ast = sv(tipe = tipe), typedOpt = tipe.typedOpt)
+          specVars = specVars + id ~> svInfo(ast = sv(tipe = tipe, attr = sv.attr(typedOpt = tipe.typedOpt)))
         case _ =>
       }
     }
@@ -543,7 +543,7 @@ object TypeOutliner {
       val tipeOpt = typeHierarchy.typed(scope, tpe, reporter)
       tipeOpt match {
         case Some(tipe) =>
-          vars = vars + id ~> vInfo(ast = v(tipeOpt = Some(tipe)), typedOpt = tipe.typedOpt)
+          vars = vars + id ~> vInfo(ast = v(tipeOpt = Some(tipe), attr = v.attr(typedOpt = tipe.typedOpt)))
         case _ =>
       }
     }
@@ -722,7 +722,7 @@ object TypeOutliner {
           specVars = specVars + id ~> svInfo
         } else {
           sv = sv(tipe = sv.tipe.typed(sv.tipe.typedOpt.get.subst(substMap)))
-          specVars = specVars + id ~> svInfo(ast = sv, typedOpt = sv.tipe.typedOpt)
+          specVars = specVars + id ~> svInfo(ast = sv(attr = sv.attr(typedOpt = sv.tipe.typedOpt)))
         }
       }
     }

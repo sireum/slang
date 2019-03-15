@@ -158,9 +158,7 @@ import GlobalDeclarationResolver._
             currentName,
             T,
             scope(packageName, currentImports, name),
-            stmt,
-            None(),
-            Some(AST.ResolvedInfo.Var(T, F, currentName, stmt.id.value))
+            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Var(T, F, currentName, stmt.id.value))))
           ),
           stmt.attr.posOpt
         )
@@ -173,9 +171,7 @@ import GlobalDeclarationResolver._
             currentName,
             T,
             scope(packageName, currentImports, name),
-            stmt,
-            None(),
-            Some(AST.ResolvedInfo.Var(T, T, currentName, stmt.id.value))
+            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Var(T, T, currentName, stmt.id.value))))
           ),
           stmt.attr.posOpt
         )
@@ -431,13 +427,13 @@ import GlobalDeclarationResolver._
           if (paramVars.contains(id)) {
             reporter.error(p.id.attr.posOpt, resolverKind, s"Cannot redeclare parameter '$id'.")
           }
+          val paramResInfoOpt = Some[AST.ResolvedInfo](AST.ResolvedInfo.Var(F, F, name, id))
           paramVars = paramVars + id ~> Info.Var(
             name,
             F,
             sc,
-            AST.Stmt.Var(p.isVal, p.id, Some(p.tipe), None(), p.id.attr),
-            None(),
-            Some(AST.ResolvedInfo.Var(F, F, name, id))
+            AST.Stmt.Var(p.isVal, p.id, Some(p.tipe), None(),
+              AST.ResolvedAttr(posOpt = p.id.attr.posOpt, resOpt = paramResInfoOpt, typedOpt = None()))
           )
         }
         val members = resolveMembers(name, sc, stmt.stmts, paramVars)
@@ -569,12 +565,14 @@ import GlobalDeclarationResolver._
         case stmt: AST.Stmt.Var =>
           checkId(stmt.id)
           val id = stmt.id.value
-          vars = vars + id ~> Info.Var(owner, F, scope, stmt, None(), Some(AST.ResolvedInfo.Var(F, F, owner, id)))
+          vars = vars + id ~> Info.Var(owner, F, scope,
+            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Var(F, F, owner, id)))))
         case stmt: AST.Stmt.SpecVar =>
           checkId(stmt.id)
           val id = stmt.id.value
           specVars =
-            specVars + id ~> Info.SpecVar(owner, F, scope, stmt, None(), Some(AST.ResolvedInfo.Var(F, T, owner, id)))
+            specVars + id ~> Info.SpecVar(owner, F, scope,
+              stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Var(F, T, owner, id)))))
         case stmt: AST.Stmt.Method =>
           checkId(stmt.sig.id)
           val id = stmt.sig.id.value

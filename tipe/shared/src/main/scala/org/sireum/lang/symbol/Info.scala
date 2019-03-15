@@ -125,17 +125,17 @@ object Scope {
     }
 
     @pure def resolveImported(globalNameMap: HashMap[ISZ[String], Info], name: ISZ[String]): Option[Info] = {
-      for (i <- imports.indices.reverse) {
+      for (i <- imports.size - 1 to 0 by -1) {
         val impor = imports(i)
         val importers = impor.importers
-        for (j <- importers.indices.reverse) {
+        for (j <- importers.size - 1 to 0 by -1) {
           val importer = importers(j)
           val contextName = AST.Util.ids2strings(importer.name.ids)
           importer.selectorOpt match {
             case Some(selector: AST.Stmt.Import.MultiSelector) =>
               val nss = selector.selectors
               val name0 = name(0)
-              for (k <- nss.indices.reverse) {
+              for (k <- nss.size -1 to 0 by -1) {
                 val ns = nss(k)
                 if (name0 == ns.to.value) {
                   val n = (contextName :+ ns.from.value) ++ ops.ISZOps(name).drop(1)
@@ -190,17 +190,17 @@ object Scope {
       globalTypeMap: HashMap[ISZ[String], TypeInfo],
       name: ISZ[String]
     ): Option[TypeInfo] = {
-      for (i <- imports.indices.reverse) {
+      for (i <- imports.size - 1 to 0 by -1) {
         val impor = imports(i)
         val importers = impor.importers
-        for (j <- importers.indices.reverse) {
+        for (j <- importers.size - 1 to 0 by -1) {
           val importer = importers(j)
           val contextName = AST.Util.ids2strings(importer.name.ids)
           importer.selectorOpt match {
             case Some(selector: AST.Stmt.Import.MultiSelector) =>
               val nss = selector.selectors
               val name0 = name(0)
-              for (k <- nss.indices.reverse) {
+              for (k <- nss.size - 1 to 0 by -1) {
                 val ns = nss(k)
                 if (name0 == ns.to.value) {
                   val n = (contextName :+ ns.from.value) ++ ops.ISZOps(name).drop(1)
@@ -319,9 +319,7 @@ object Info {
     owner: ISZ[String],
     isInObject: B,
     scope: Scope,
-    ast: AST.Stmt.Var,
-    typedOpt: Option[AST.Typed],
-    resOpt: Option[AST.ResolvedInfo]
+    ast: AST.Stmt.Var
   ) extends Info {
 
     @pure override def posOpt: Option[Position] = {
@@ -338,15 +336,21 @@ object Info {
     @pure override def name: ISZ[String] = {
       return owner :+ ast.id.value
     }
+
+    @pure def typedOpt: Option[AST.Typed] = {
+      return ast.attr.typedOpt
+    }
+
+    @pure def resOpt: Option[AST.ResolvedInfo] = {
+      return ast.attr.resOpt
+    }
   }
 
   @datatype class SpecVar(
     owner: ISZ[String],
     isInObject: B,
     scope: Scope,
-    ast: AST.Stmt.SpecVar,
-    typedOpt: Option[AST.Typed],
-    resOpt: Option[AST.ResolvedInfo]
+    ast: AST.Stmt.SpecVar
   ) extends Info {
 
     @pure override def posOpt: Option[Position] = {
@@ -359,6 +363,14 @@ object Info {
 
     @pure override def name: ISZ[String] = {
       return owner :+ ast.id.value
+    }
+
+    @pure def typedOpt: Option[AST.Typed] = {
+      return ast.attr.typedOpt
+    }
+
+    @pure def resOpt: Option[AST.ResolvedInfo] = {
+      return ast.attr.resOpt
     }
   }
 

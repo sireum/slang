@@ -166,9 +166,6 @@
 <for-enum-gen>     ::=  <ID> <- <for-range> ⸨ if <exp> ⸩?
 
 <for-range>        ::=  <exp>
-                     |  <exp> . reverse
-                     |  <exp> . indices
-                     |  <exp> . indices . reverse
                      |  <exp> until <exp> ⸨ by <exp> ⸩?
                      |  <exp> to <exp> ⸨ by <exp> ⸩?
 

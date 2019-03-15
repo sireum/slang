@@ -784,7 +784,7 @@ import TypeChecker._
               }
               val newCondOpt: Option[AST.Exp] = if (ok) {
                 declId(enumGen.idOpt,
-                  Some(if (range.isIndices || indexTypeOpt.isEmpty) expType.args(0) else expType.args(1)))
+                  Some(if (indexTypeOpt.isEmpty) expType.args(0) else expType.args(1)))
                 enumGen.condOpt match {
                   case Some(cond) =>
                     val (newCond, _) = checkExp(AST.Typed.bOpt, scope, cond, reporter)
@@ -3519,7 +3519,7 @@ import TypeChecker._
           val newScope = scope(
             nameMap = scope.nameMap + key ~> Info.LocalVar(name, varStmt.isVal, r.id, typedOpt, resOpt)
           )
-          val newStmt = r(initOpt = Some(rhs))
+          val newStmt = r(initOpt = Some(rhs), attr = r.attr(typedOpt = typedOpt, resOpt = resOpt))
           return (Some(newScope), newStmt)
         case _ =>
           return (None(), r)

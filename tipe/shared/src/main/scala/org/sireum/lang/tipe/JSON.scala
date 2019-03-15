@@ -95,9 +95,7 @@ object JSON {
         ("owner", printISZ(T, o.owner, printString _)),
         ("isInObject", printB(o.isInObject)),
         ("scope", print_symbolScope(o.scope)),
-        ("ast", print_astStmtVar(o.ast)),
-        ("typedOpt", printOption(F, o.typedOpt, print_astTyped _)),
-        ("resOpt", printOption(F, o.resOpt, print_astResolvedInfo _))
+        ("ast", print_astStmtVar(o.ast))
       ))
     }
 
@@ -107,9 +105,7 @@ object JSON {
         ("owner", printISZ(T, o.owner, printString _)),
         ("isInObject", printB(o.isInObject)),
         ("scope", print_symbolScope(o.scope)),
-        ("ast", print_astStmtSpecVar(o.ast)),
-        ("typedOpt", printOption(F, o.typedOpt, print_astTyped _)),
-        ("resOpt", printOption(F, o.resOpt, print_astResolvedInfo _))
+        ("ast", print_astStmtSpecVar(o.ast))
       ))
     }
 
@@ -452,7 +448,7 @@ object JSON {
         ("id", print_astId(o.id)),
         ("tipeOpt", printOption(F, o.tipeOpt, print_astType _)),
         ("initOpt", printOption(F, o.initOpt, print_astAssignExp _)),
-        ("attr", print_astAttr(o.attr))
+        ("attr", print_astResolvedAttr(o.attr))
       ))
     }
 
@@ -473,7 +469,7 @@ object JSON {
         ("isVal", printB(o.isVal)),
         ("id", print_astId(o.id)),
         ("tipe", print_astType(o.tipe)),
-        ("attr", print_astAttr(o.attr))
+        ("attr", print_astResolvedAttr(o.attr))
       ))
     }
 
@@ -782,8 +778,6 @@ object JSON {
     @pure def print_astEnumGenRangeExpr(o: org.sireum.lang.ast.EnumGen.Range.Expr): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.EnumGen.Range.Expr""""),
-        ("isReverse", printB(o.isReverse)),
-        ("isIndices", printB(o.isIndices)),
         ("exp", print_astExp(o.exp)),
         ("attr", print_astAttr(o.attr))
       ))
@@ -1882,13 +1876,7 @@ object JSON {
       parser.parseObjectKey("ast")
       val ast = parse_astStmtVar()
       parser.parseObjectNext()
-      parser.parseObjectKey("typedOpt")
-      val typedOpt = parser.parseOption(parse_astTyped _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("resOpt")
-      val resOpt = parser.parseOption(parse_astResolvedInfo _)
-      parser.parseObjectNext()
-      return org.sireum.lang.symbol.Info.Var(owner, isInObject, scope, ast, typedOpt, resOpt)
+      return org.sireum.lang.symbol.Info.Var(owner, isInObject, scope, ast)
     }
 
     def parse_symbolInfoSpecVar(): org.sireum.lang.symbol.Info.SpecVar = {
@@ -1912,13 +1900,7 @@ object JSON {
       parser.parseObjectKey("ast")
       val ast = parse_astStmtSpecVar()
       parser.parseObjectNext()
-      parser.parseObjectKey("typedOpt")
-      val typedOpt = parser.parseOption(parse_astTyped _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("resOpt")
-      val resOpt = parser.parseOption(parse_astResolvedInfo _)
-      parser.parseObjectNext()
-      return org.sireum.lang.symbol.Info.SpecVar(owner, isInObject, scope, ast, typedOpt, resOpt)
+      return org.sireum.lang.symbol.Info.SpecVar(owner, isInObject, scope, ast)
     }
 
     def parse_symbolInfoMethod(): org.sireum.lang.symbol.Info.Method = {
@@ -2683,7 +2665,7 @@ object JSON {
       val initOpt = parser.parseOption(parse_astAssignExp _)
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
+      val attr = parse_astResolvedAttr()
       parser.parseObjectNext()
       return org.sireum.lang.ast.Stmt.Var(isVal, id, tipeOpt, initOpt, attr)
     }
@@ -2734,7 +2716,7 @@ object JSON {
       val tipe = parse_astType()
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
+      val attr = parse_astResolvedAttr()
       parser.parseObjectNext()
       return org.sireum.lang.ast.Stmt.SpecVar(isVal, id, tipe, attr)
     }
@@ -3427,19 +3409,13 @@ object JSON {
       if (!typeParsed) {
         parser.parseObjectType("org.sireum.lang.ast.EnumGen.Range.Expr")
       }
-      parser.parseObjectKey("isReverse")
-      val isReverse = parser.parseB()
-      parser.parseObjectNext()
-      parser.parseObjectKey("isIndices")
-      val isIndices = parser.parseB()
-      parser.parseObjectNext()
       parser.parseObjectKey("exp")
       val exp = parse_astExp()
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.EnumGen.Range.Expr(isReverse, isIndices, exp, attr)
+      return org.sireum.lang.ast.EnumGen.Range.Expr(exp, attr)
     }
 
     def parse_astEnumGenRangeStep(): org.sireum.lang.ast.EnumGen.Range.Step = {

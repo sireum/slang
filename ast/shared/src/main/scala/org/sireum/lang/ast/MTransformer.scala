@@ -2173,7 +2173,7 @@ import MTransformer._
           val r0: MOption[Id] = transformId(o2.id)
           val r1: MOption[Option[Type]] = transformOption(o2.tipeOpt, transformType _)
           val r2: MOption[Option[AssignExp]] = transformOption(o2.initOpt, transformAssignExp _)
-          val r3: MOption[Attr] = transformAttr(o2.attr)
+          val r3: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
             MSome(o2(id = r0.getOrElse(o2.id), tipeOpt = r1.getOrElse(o2.tipeOpt), initOpt = r2.getOrElse(o2.initOpt), attr = r3.getOrElse(o2.attr)))
           else
@@ -2190,7 +2190,7 @@ import MTransformer._
         case o2: Stmt.SpecVar =>
           val r0: MOption[Id] = transformId(o2.id)
           val r1: MOption[Type] = transformType(o2.tipe)
-          val r2: MOption[Attr] = transformAttr(o2.attr)
+          val r2: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
             MSome(o2(id = r0.getOrElse(o2.id), tipe = r1.getOrElse(o2.tipe), attr = r2.getOrElse(o2.attr)))
           else

@@ -563,7 +563,7 @@ class SlangParser(
     }
     if (hasError) rStmt
     else if (hasSpec)
-      AST.Stmt.SpecVar(isVal = true, cid(patsnel.head.asInstanceOf[Pat.Var]), translateType(tpeopt.get), attr(stat.pos))
+      AST.Stmt.SpecVar(isVal = true, cid(patsnel.head.asInstanceOf[Pat.Var]), translateType(tpeopt.get), resolvedAttr(stat.pos))
     else
       patsnel.head match {
         case x: Pat.Var =>
@@ -575,7 +575,7 @@ class SlangParser(
             if (isDiet && tpeopt.nonEmpty) None()
             else if (isDollarExpr) None()
             else Some(translateAssignExp(expr)),
-            attr(stat.pos)
+            resolvedAttr(stat.pos)
           )
           if (tpeopt.isEmpty) checkTyped(expr.pos, r.initOpt)
           r
@@ -662,7 +662,7 @@ class SlangParser(
     if (hasError) rStmt
     else if (hasSpec)
       AST.Stmt
-        .SpecVar(isVal = false, cid(patsnel.head.asInstanceOf[Pat.Var]), translateType(tpeopt.get), attr(stat.pos))
+        .SpecVar(isVal = false, cid(patsnel.head.asInstanceOf[Pat.Var]), translateType(tpeopt.get), resolvedAttr(stat.pos))
     else
       patsnel.head match {
         case x: Pat.Var =>
@@ -674,7 +674,7 @@ class SlangParser(
             if (isDiet && tpeopt.nonEmpty) None()
             else if (isDollarExpr) None()
             else opt(expropt.map(translateAssignExp)),
-            attr(stat.pos)
+            resolvedAttr(stat.pos)
           )
           if (tpeopt.isEmpty) checkTyped(expropt.get.pos, r.initOpt)
           r
@@ -2059,11 +2059,7 @@ class SlangParser(
         AST.EnumGen.Range.Step(isInclusive = false, translateExp(start), translateExp(end), None(), attr(r.pos))
       case q"$start to $end" =>
         AST.EnumGen.Range.Step(isInclusive = true, translateExp(start), translateExp(end), None(), attr(r.pos))
-      case q"$s.indices" => AST.EnumGen.Range.Expr(isReverse = false, isIndices = true, translateExp(s), attr(r.pos))
-      case q"$s.indices.reverse" =>
-        AST.EnumGen.Range.Expr(isReverse = true, isIndices = true, translateExp(s), attr(r.pos))
-      case q"$s.reverse" => AST.EnumGen.Range.Expr(isReverse = true, isIndices = false, translateExp(s), attr(r.pos))
-      case _ => AST.EnumGen.Range.Expr(isReverse = false, isIndices = false, translateExp(r), attr(r.pos))
+      case _ => AST.EnumGen.Range.Expr(translateExp(r), attr(r.pos))
     }
   }
 

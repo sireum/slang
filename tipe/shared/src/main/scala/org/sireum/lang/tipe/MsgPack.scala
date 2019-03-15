@@ -392,8 +392,6 @@ object MsgPack {
       writer.writeB(o.isInObject)
       write_symbolScope(o.scope)
       write_astStmtVar(o.ast)
-      writer.writeOption(o.typedOpt, write_astTyped _)
-      writer.writeOption(o.resOpt, write_astResolvedInfo _)
     }
 
     def write_symbolInfoSpecVar(o: org.sireum.lang.symbol.Info.SpecVar): Unit = {
@@ -402,8 +400,6 @@ object MsgPack {
       writer.writeB(o.isInObject)
       write_symbolScope(o.scope)
       write_astStmtSpecVar(o.ast)
-      writer.writeOption(o.typedOpt, write_astTyped _)
-      writer.writeOption(o.resOpt, write_astResolvedInfo _)
     }
 
     def write_symbolInfoMethod(o: org.sireum.lang.symbol.Info.Method): Unit = {
@@ -692,7 +688,7 @@ object MsgPack {
       write_astId(o.id)
       writer.writeOption(o.tipeOpt, write_astType _)
       writer.writeOption(o.initOpt, write_astAssignExp _)
-      write_astAttr(o.attr)
+      write_astResolvedAttr(o.attr)
     }
 
     def write_astStmtVarPattern(o: org.sireum.lang.ast.Stmt.VarPattern): Unit = {
@@ -709,7 +705,7 @@ object MsgPack {
       writer.writeB(o.isVal)
       write_astId(o.id)
       write_astType(o.tipe)
-      write_astAttr(o.attr)
+      write_astResolvedAttr(o.attr)
     }
 
     def write_astStmtMethod(o: org.sireum.lang.ast.Stmt.Method): Unit = {
@@ -954,8 +950,6 @@ object MsgPack {
 
     def write_astEnumGenRangeExpr(o: org.sireum.lang.ast.EnumGen.Range.Expr): Unit = {
       writer.writeZ(Constants._astEnumGenRangeExpr)
-      writer.writeB(o.isReverse)
-      writer.writeB(o.isIndices)
       write_astExp(o.exp)
       write_astAttr(o.attr)
     }
@@ -1779,9 +1773,7 @@ object MsgPack {
       val isInObject = reader.readB()
       val scope = read_symbolScope()
       val ast = read_astStmtVar()
-      val typedOpt = reader.readOption(read_astTyped _)
-      val resOpt = reader.readOption(read_astResolvedInfo _)
-      return org.sireum.lang.symbol.Info.Var(owner, isInObject, scope, ast, typedOpt, resOpt)
+      return org.sireum.lang.symbol.Info.Var(owner, isInObject, scope, ast)
     }
 
     def read_symbolInfoSpecVar(): org.sireum.lang.symbol.Info.SpecVar = {
@@ -1797,9 +1789,7 @@ object MsgPack {
       val isInObject = reader.readB()
       val scope = read_symbolScope()
       val ast = read_astStmtSpecVar()
-      val typedOpt = reader.readOption(read_astTyped _)
-      val resOpt = reader.readOption(read_astResolvedInfo _)
-      return org.sireum.lang.symbol.Info.SpecVar(owner, isInObject, scope, ast, typedOpt, resOpt)
+      return org.sireum.lang.symbol.Info.SpecVar(owner, isInObject, scope, ast)
     }
 
     def read_symbolInfoMethod(): org.sireum.lang.symbol.Info.Method = {
@@ -2327,7 +2317,7 @@ object MsgPack {
       val id = read_astId()
       val tipeOpt = reader.readOption(read_astType _)
       val initOpt = reader.readOption(read_astAssignExp _)
-      val attr = read_astAttr()
+      val attr = read_astResolvedAttr()
       return org.sireum.lang.ast.Stmt.Var(isVal, id, tipeOpt, initOpt, attr)
     }
 
@@ -2360,7 +2350,7 @@ object MsgPack {
       val isVal = reader.readB()
       val id = read_astId()
       val tipe = read_astType()
-      val attr = read_astAttr()
+      val attr = read_astResolvedAttr()
       return org.sireum.lang.ast.Stmt.SpecVar(isVal, id, tipe, attr)
     }
 
@@ -2848,11 +2838,9 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astEnumGenRangeExpr)
       }
-      val isReverse = reader.readB()
-      val isIndices = reader.readB()
       val exp = read_astExp()
       val attr = read_astAttr()
-      return org.sireum.lang.ast.EnumGen.Range.Expr(isReverse, isIndices, exp, attr)
+      return org.sireum.lang.ast.EnumGen.Range.Expr(exp, attr)
     }
 
     def read_astEnumGenRangeStep(): org.sireum.lang.ast.EnumGen.Range.Step = {
