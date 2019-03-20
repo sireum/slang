@@ -8,6 +8,7 @@ environment:
 cache:
   - bin\scala
   - bin\win\java
+  - bin\win\z3
 
 build_script:
   - cmd: bin\build.cmd jitpack test
