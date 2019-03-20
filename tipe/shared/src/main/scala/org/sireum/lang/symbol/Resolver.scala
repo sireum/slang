@@ -213,7 +213,7 @@ object Resolver {
     }
     for (ti <- globalTypes) {
       ti match {
-        case ti: TypeInfo.Adt if !ti.ast.isRoot =>
+        case ti: TypeInfo.Adt =>
           for (t <- ti.ast.parents) {
             ti.scope.resolveType(globalTypeMap, AST.Util.ids2strings(t.name.ids)) match {
               case Some(parent: TypeInfo.Adt) if parent.ast.isDatatype == ti.ast.isDatatype =>
