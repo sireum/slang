@@ -2842,10 +2842,11 @@ import Transformer._
       val o2: Body = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: Result[Context, IS[Z, Stmt]] = transformISZ(ctx, o2.stmts, transformStmt _)
-      if (hasChanged || r0.resultOpt.nonEmpty)
-        Result(r0.ctx, Some(o2(stmts = r0.resultOpt.getOrElse(o2.stmts))))
+      val r1: Result[Context, IS[Z, ResolvedInfo.LocalVar]] = transformISZ(r0.ctx, o2.undecls, transformResolvedInfoLocalVar _)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+        Result(r1.ctx, Some(o2(stmts = r0.resultOpt.getOrElse(o2.stmts), undecls = r1.resultOpt.getOrElse(o2.undecls))))
       else
-        Result(r0.ctx, None())
+        Result(r1.ctx, None())
     } else if (preR.resultOpt.nonEmpty) {
       Result(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
     } else {
@@ -3758,6 +3759,40 @@ import Transformer._
      case Result(postCtx, Some(result: Exp.Ident)) => Result(postCtx, Some[Exp.Ident](result))
      case Result(_, Some(_)) => halt("Can only produce object of type Exp.Ident")
      case Result(postCtx, _) => Result(postCtx, None[Exp.Ident]())
+    }
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return Result(postR.ctx, Some(o2))
+    } else {
+      return Result(postR.ctx, None())
+    }
+  }
+
+  @pure def transformResolvedInfoLocalVar(ctx: Context, o: ResolvedInfo.LocalVar): Result[Context, ResolvedInfo.LocalVar] = {
+    val preR: PreResult[Context, ResolvedInfo.LocalVar] = pp.preResolvedInfoLocalVar(ctx, o) match {
+     case PreResult(preCtx, continu, Some(r: ResolvedInfo.LocalVar)) => PreResult(preCtx, continu, Some[ResolvedInfo.LocalVar](r))
+     case PreResult(_, _, Some(_)) => halt("Can only produce object of type ResolvedInfo.LocalVar")
+     case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[ResolvedInfo.LocalVar]())
+    }
+    val r: Result[Context, ResolvedInfo.LocalVar] = if (preR.continu) {
+      val o2: ResolvedInfo.LocalVar = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      if (hasChanged)
+        Result(ctx, Some(o2))
+      else
+        Result(ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      Result(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      Result(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: ResolvedInfo.LocalVar = r.resultOpt.getOrElse(o)
+    val postR: Result[Context, ResolvedInfo.LocalVar] = pp.postResolvedInfoLocalVar(r.ctx, o2) match {
+     case Result(postCtx, Some(result: ResolvedInfo.LocalVar)) => Result(postCtx, Some[ResolvedInfo.LocalVar](result))
+     case Result(_, Some(_)) => halt("Can only produce object of type ResolvedInfo.LocalVar")
+     case Result(postCtx, _) => Result(postCtx, None[ResolvedInfo.LocalVar]())
     }
     if (postR.resultOpt.nonEmpty) {
       return postR

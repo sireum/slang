@@ -1776,7 +1776,7 @@ class SlangParser(
       AST.AdtParam(hasHidden, !isVar, cid(paramname), translateTypeArg(allowByName = false)(atpeopt.get))
   }
 
-  def bodyCheck(stmts: ISZ[AST.Stmt], undecls: ISZ[String]): AST.Body = {
+  def bodyCheck(stmts: ISZ[AST.Stmt], undecls: ISZ[AST.ResolvedInfo.LocalVar]): AST.Body = {
     var i = 0
     for (stmt <- stmts) {
       val (ret, hlt) = stmt match {

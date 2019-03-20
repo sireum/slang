@@ -964,7 +964,7 @@ object Domain {
 
 @datatype class Name(ids: ISZ[Id], @hidden attr: Attr)
 
-@datatype class Body(stmts: ISZ[Stmt], @hidden undecls: ISZ[String])
+@datatype class Body(stmts: ISZ[Stmt], @hidden undecls: ISZ[ResolvedInfo.LocalVar])
 
 @datatype class AdtParam(isHidden: B, isVal: B, id: Id, tipe: Type)
 

@@ -3000,13 +3000,14 @@ import TypeChecker._
     }
     scope = sc(nameMap = scope.nameMap)
     val (newScopeOpt, newStmts) = checkStmts(T, expectedOpt, scope, stmts, reporter)
-    val undecls: ISZ[String] = newScopeOpt match {
+    val undecls: ISZ[AST.ResolvedInfo.LocalVar] = newScopeOpt match {
       case Some(newScope) =>
-        var r = ISZ[String]()
+        var r = ISZ[AST.ResolvedInfo.LocalVar]()
         for (e <- newScope.nameMap.entries) {
           e._2 match {
             case _: Info.Method =>
-            case _ => r = r :+ e._1
+            case Info.LocalVar(_, _, _, _, Some(res: AST.ResolvedInfo.LocalVar)) => r = r :+ res
+            case _ => halt("Infeasible")
           }
         }
         r

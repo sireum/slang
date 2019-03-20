@@ -1314,7 +1314,7 @@ object MsgPack {
     def write_astBody(o: org.sireum.lang.ast.Body): Unit = {
       writer.writeZ(Constants._astBody)
       writer.writeISZ(o.stmts, write_astStmt _)
-      writer.writeISZ(o.undecls, writer.writeString _)
+      writer.writeISZ(o.undecls, write_astResolvedInfoLocalVar _)
     }
 
     def write_astAdtParam(o: org.sireum.lang.ast.AdtParam): Unit = {
@@ -3575,7 +3575,7 @@ object MsgPack {
         reader.expectZ(Constants._astBody)
       }
       val stmts = reader.readISZ(read_astStmt _)
-      val undecls = reader.readISZ(reader.readString _)
+      val undecls = reader.readISZ(read_astResolvedInfoLocalVar _)
       return org.sireum.lang.ast.Body(stmts, undecls)
     }
 

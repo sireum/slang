@@ -3324,8 +3324,9 @@ import MTransformer._
       val o2: Body = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: MOption[IS[Z, Stmt]] = transformISZ(o2.stmts, transformStmt _)
-      if (hasChanged || r0.nonEmpty)
-        MSome(o2(stmts = r0.getOrElse(o2.stmts)))
+      val r1: MOption[IS[Z, ResolvedInfo.LocalVar]] = transformISZ(o2.undecls, transformResolvedInfoLocalVar _)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+        MSome(o2(stmts = r0.getOrElse(o2.stmts), undecls = r1.getOrElse(o2.undecls)))
       else
         MNone()
     } else if (preR.resultOpt.nonEmpty) {
@@ -4240,6 +4241,40 @@ import MTransformer._
      case MSome(result: Exp.Ident) => MSome[Exp.Ident](result)
      case MSome(_) => halt("Can only produce object of type Exp.Ident")
      case _ => MNone[Exp.Ident]()
+    }
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformResolvedInfoLocalVar(o: ResolvedInfo.LocalVar): MOption[ResolvedInfo.LocalVar] = {
+    val preR: PreResult[ResolvedInfo.LocalVar] = preResolvedInfoLocalVar(o) match {
+     case PreResult(continu, MSome(r: ResolvedInfo.LocalVar)) => PreResult(continu, MSome[ResolvedInfo.LocalVar](r))
+     case PreResult(_, MSome(_)) => halt("Can only produce object of type ResolvedInfo.LocalVar")
+     case PreResult(continu, _) => PreResult(continu, MNone[ResolvedInfo.LocalVar]())
+    }
+    val r: MOption[ResolvedInfo.LocalVar] = if (preR.continu) {
+      val o2: ResolvedInfo.LocalVar = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      if (hasChanged)
+        MSome(o2)
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: ResolvedInfo.LocalVar = r.getOrElse(o)
+    val postR: MOption[ResolvedInfo.LocalVar] = postResolvedInfoLocalVar(o2) match {
+     case MSome(result: ResolvedInfo.LocalVar) => MSome[ResolvedInfo.LocalVar](result)
+     case MSome(_) => halt("Can only produce object of type ResolvedInfo.LocalVar")
+     case _ => MNone[ResolvedInfo.LocalVar]()
     }
     if (postR.nonEmpty) {
       return postR

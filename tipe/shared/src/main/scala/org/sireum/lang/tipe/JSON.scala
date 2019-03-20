@@ -1235,7 +1235,7 @@ object JSON {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Body""""),
         ("stmts", printISZ(F, o.stmts, print_astStmt _)),
-        ("undecls", printISZ(T, o.undecls, printString _))
+        ("undecls", printISZ(F, o.undecls, print_astResolvedInfoLocalVar _))
       ))
     }
 
@@ -4377,7 +4377,7 @@ object JSON {
       val stmts = parser.parseISZ(parse_astStmt _)
       parser.parseObjectNext()
       parser.parseObjectKey("undecls")
-      val undecls = parser.parseISZ(parser.parseString _)
+      val undecls = parser.parseISZ(parse_astResolvedInfoLocalVar _)
       parser.parseObjectNext()
       return org.sireum.lang.ast.Body(stmts, undecls)
     }
