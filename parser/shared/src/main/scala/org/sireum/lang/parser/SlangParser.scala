@@ -1947,6 +1947,7 @@ class SlangParser(
 
   def translateWhile(enclosing: Enclosing.Type, stat: Term.While): AST.Stmt = {
     var hasError = stmtCheck(enclosing, stat, "While-statements")
+    var loopIdOpt: Option[AST.Id] = None()
     var invariants: ISZ[AST.NamedExp] = ISZ()
     var mods: ISZ[AST.Exp] = ISZ()
     var stats: Seq[Stat] = Seq()
@@ -1954,7 +1955,8 @@ class SlangParser(
       case body: Term.Block =>
         body.stats match {
           case (l @ Term.Interpolate(Term.Name("l"), Seq(_: Lit.String), Nil)) :: rest =>
-            val (is, ms) = parseLoopContract(l)
+            val (idOpt, is, ms) = parseLoopContract(l)
+            loopIdOpt = idOpt
             invariants = is
             mods = ms
             stats = rest
@@ -1972,6 +1974,7 @@ class SlangParser(
     else
       AST.Stmt.While(
         translateExp(stat.expr),
+        loopIdOpt,
         invariants,
         mods,
         bodyCheck(ISZ(stats.map(translateStat(Enclosing.Block)): _*), ISZ()),
@@ -1981,6 +1984,7 @@ class SlangParser(
 
   def translateDoWhile(enclosing: Enclosing.Type, stat: Term.Do): AST.Stmt = {
     var hasError = stmtCheck(enclosing, stat, "Do-while-statements")
+    var loopIdOpt: Option[AST.Id] = None()
     var modifies: ISZ[AST.Exp] = ISZ()
     var invariants: ISZ[AST.NamedExp] = ISZ()
     var stats: Seq[Stat] = Seq()
@@ -1988,7 +1992,8 @@ class SlangParser(
       case body: Term.Block =>
         body.stats.lastOption match {
           case scala.Some(l @ Term.Interpolate(Term.Name("l"), Seq(_: Lit.String), Nil)) =>
-            val (is, ms) = parseLoopContract(l)
+            val (idOpt, is, ms) = parseLoopContract(l)
+            loopIdOpt = idOpt
             modifies = ms
             invariants = is
             stats = body.stats.dropRight(1)
@@ -2006,6 +2011,7 @@ class SlangParser(
     else
       AST.Stmt.DoWhile(
         translateExp(stat.expr),
+        loopIdOpt,
         invariants,
         modifies,
         bodyCheck(ISZ(stats.map(translateStat(Enclosing.Block)): _*), ISZ()),
@@ -2015,6 +2021,7 @@ class SlangParser(
 
   def translateFor(enclosing: Enclosing.Type, stat: Term.For): AST.Stmt = {
     var hasError = stmtCheck(enclosing, stat, "For-statements")
+    var loopIdOpt: Option[AST.Id] = None()
     var modifies: ISZ[AST.Exp] = ISZ()
     var invariants: ISZ[AST.NamedExp] = ISZ()
     var stats: Seq[Stat] = Seq()
@@ -2022,7 +2029,8 @@ class SlangParser(
       case body: Term.Block =>
         body.stats match {
           case (l @ Term.Interpolate(Term.Name("l"), Seq(_: Lit.String), Nil)) :: rest =>
-            val (is, ms) = parseLoopContract(l)
+            val (idOpt, is, ms) = parseLoopContract(l)
+            loopIdOpt = idOpt
             modifies = ms
             invariants = is
             stats = rest
@@ -2040,6 +2048,7 @@ class SlangParser(
     else
       AST.Stmt.For(
         translateEnumGens(stat.enums),
+        loopIdOpt,
         invariants,
         modifies,
         bodyCheck(ISZ(stats.map(translateStat(Enclosing.Block)): _*), ISZ()),
@@ -2612,10 +2621,10 @@ class SlangParser(
     AST.Stmt.LStmt(clause, attr(exp.pos))
   }
 
-  def parseLoopContract(exp: Term.Interpolate): (ISZ[AST.NamedExp], ISZ[AST.Exp]) = {
-    if (!checkLSyntax(exp)) return (ISZ(), ISZ())
-    val (invs, mods) = lParser(exp)(_.loopInvMode())
-    (ISZ(invs: _*), ISZ(mods: _*))
+  def parseLoopContract(exp: Term.Interpolate): (Option[AST.Id], ISZ[AST.NamedExp], ISZ[AST.Exp]) = {
+    if (!checkLSyntax(exp)) return (None(), ISZ(), ISZ())
+    val (idOpt, invs, mods) = lParser(exp)(_.loopInvMode())
+    (opt(idOpt), ISZ(invs: _*), ISZ(mods: _*))
   }
 
   def checkMemberStmts(stmts: ISZ[AST.Stmt]): ISZ[AST.Stmt] = {

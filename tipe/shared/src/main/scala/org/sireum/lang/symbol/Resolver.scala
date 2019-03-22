@@ -72,7 +72,7 @@ object Resolver {
       scope,
       AST.Stmt.Var(T, id("T"), Some(tname("B", ISZ())), Some(dollarAssignExp),
         AST.ResolvedAttr(None[Position](),
-          Some[AST.ResolvedInfo](AST.ResolvedInfo.Var(T, F, AST.Typed.sireumName, "T")), AST.Typed.bOpt)))
+          Some[AST.ResolvedInfo](AST.ResolvedInfo.Var(T, F, T, AST.Typed.sireumName, "T")), AST.Typed.bOpt)))
 
     val fName = AST.Typed.sireumName :+ "F"
     nm = nm + fName ~> Info.Var(
@@ -81,7 +81,7 @@ object Resolver {
       scope,
       AST.Stmt.Var(T, id("F"), Some(tname("B", ISZ())), Some(dollarAssignExp),
         AST.ResolvedAttr(None[Position](),
-          Some[AST.ResolvedInfo](AST.ResolvedInfo.Var(T, F, AST.Typed.sireumName, "F")), AST.Typed.bOpt)))
+          Some[AST.ResolvedInfo](AST.ResolvedInfo.Var(T, F, T, AST.Typed.sireumName, "F")), AST.Typed.bOpt)))
 
     var tm = typeMap + AST.Typed.iszName ~>
       TypeInfo.TypeAlias(

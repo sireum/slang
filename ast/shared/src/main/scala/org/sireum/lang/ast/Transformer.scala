@@ -182,6 +182,32 @@ object Transformer {
       return PreResult(ctx, T, None())
     }
 
+    @pure def preStmtLoop(ctx: Context, o: Stmt.Loop): PreResult[Context, Stmt.Loop] = {
+      o match {
+        case o: Stmt.While =>
+          val r: PreResult[Context, Stmt.Loop] = preStmtWhile(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Stmt.Loop)) => PreResult(preCtx, continu, Some[Stmt.Loop](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Stmt.Loop")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Stmt.Loop]())
+          }
+          return r
+        case o: Stmt.DoWhile =>
+          val r: PreResult[Context, Stmt.Loop] = preStmtDoWhile(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Stmt.Loop)) => PreResult(preCtx, continu, Some[Stmt.Loop](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Stmt.Loop")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Stmt.Loop]())
+          }
+          return r
+        case o: Stmt.For =>
+          val r: PreResult[Context, Stmt.Loop] = preStmtFor(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Stmt.Loop)) => PreResult(preCtx, continu, Some[Stmt.Loop](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Stmt.Loop")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Stmt.Loop]())
+          }
+          return r
+      }
+    }
+
     @pure def preStmtWhile(ctx: Context, o: Stmt.While): PreResult[Context, Stmt] = {
       return PreResult(ctx, T, None())
     }
@@ -953,6 +979,32 @@ object Transformer {
 
     @pure def postStmtMatch(ctx: Context, o: Stmt.Match): Result[Context, Stmt] = {
       return Result(ctx, None())
+    }
+
+    @pure def postStmtLoop(ctx: Context, o: Stmt.Loop): Result[Context, Stmt.Loop] = {
+      o match {
+        case o: Stmt.While =>
+          val r: Result[Context, Stmt.Loop] = postStmtWhile(ctx, o) match {
+           case Result(postCtx, Some(result: Stmt.Loop)) => Result(postCtx, Some[Stmt.Loop](result))
+           case Result(_, Some(_)) => halt("Can only produce object of type Stmt.Loop")
+           case Result(postCtx, _) => Result(postCtx, None[Stmt.Loop]())
+          }
+          return r
+        case o: Stmt.DoWhile =>
+          val r: Result[Context, Stmt.Loop] = postStmtDoWhile(ctx, o) match {
+           case Result(postCtx, Some(result: Stmt.Loop)) => Result(postCtx, Some[Stmt.Loop](result))
+           case Result(_, Some(_)) => halt("Can only produce object of type Stmt.Loop")
+           case Result(postCtx, _) => Result(postCtx, None[Stmt.Loop]())
+          }
+          return r
+        case o: Stmt.For =>
+          val r: Result[Context, Stmt.Loop] = postStmtFor(ctx, o) match {
+           case Result(postCtx, Some(result: Stmt.Loop)) => Result(postCtx, Some[Stmt.Loop](result))
+           case Result(_, Some(_)) => halt("Can only produce object of type Stmt.Loop")
+           case Result(postCtx, _) => Result(postCtx, None[Stmt.Loop]())
+          }
+          return r
+      }
     }
 
     @pure def postStmtWhile(ctx: Context, o: Stmt.While): Result[Context, Stmt] = {
@@ -1825,34 +1877,37 @@ import Transformer._
             Result(r2.ctx, None())
         case o2: Stmt.While =>
           val r0: Result[Context, Exp] = transformExp(preR.ctx, o2.cond)
-          val r1: Result[Context, IS[Z, NamedExp]] = transformISZ(r0.ctx, o2.invariants, transformNamedExp _)
-          val r2: Result[Context, IS[Z, Exp]] = transformISZ(r1.ctx, o2.modifies, transformExp _)
-          val r3: Result[Context, Body] = transformBody(r2.ctx, o2.body)
-          val r4: Result[Context, Attr] = transformAttr(r3.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty)
-            Result(r4.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), invariants = r1.resultOpt.getOrElse(o2.invariants), modifies = r2.resultOpt.getOrElse(o2.modifies), body = r3.resultOpt.getOrElse(o2.body), attr = r4.resultOpt.getOrElse(o2.attr))))
+          val r1: Result[Context, Option[Id]] = transformOption(r0.ctx, o2.loopIdOpt, transformId _)
+          val r2: Result[Context, IS[Z, NamedExp]] = transformISZ(r1.ctx, o2.invariants, transformNamedExp _)
+          val r3: Result[Context, IS[Z, Exp]] = transformISZ(r2.ctx, o2.modifies, transformExp _)
+          val r4: Result[Context, Body] = transformBody(r3.ctx, o2.body)
+          val r5: Result[Context, Attr] = transformAttr(r4.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty || r5.resultOpt.nonEmpty)
+            Result(r5.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), loopIdOpt = r1.resultOpt.getOrElse(o2.loopIdOpt), invariants = r2.resultOpt.getOrElse(o2.invariants), modifies = r3.resultOpt.getOrElse(o2.modifies), body = r4.resultOpt.getOrElse(o2.body), attr = r5.resultOpt.getOrElse(o2.attr))))
           else
-            Result(r4.ctx, None())
+            Result(r5.ctx, None())
         case o2: Stmt.DoWhile =>
           val r0: Result[Context, Exp] = transformExp(preR.ctx, o2.cond)
-          val r1: Result[Context, IS[Z, NamedExp]] = transformISZ(r0.ctx, o2.invariants, transformNamedExp _)
-          val r2: Result[Context, IS[Z, Exp]] = transformISZ(r1.ctx, o2.modifies, transformExp _)
-          val r3: Result[Context, Body] = transformBody(r2.ctx, o2.body)
-          val r4: Result[Context, Attr] = transformAttr(r3.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty)
-            Result(r4.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), invariants = r1.resultOpt.getOrElse(o2.invariants), modifies = r2.resultOpt.getOrElse(o2.modifies), body = r3.resultOpt.getOrElse(o2.body), attr = r4.resultOpt.getOrElse(o2.attr))))
+          val r1: Result[Context, Option[Id]] = transformOption(r0.ctx, o2.loopIdOpt, transformId _)
+          val r2: Result[Context, IS[Z, NamedExp]] = transformISZ(r1.ctx, o2.invariants, transformNamedExp _)
+          val r3: Result[Context, IS[Z, Exp]] = transformISZ(r2.ctx, o2.modifies, transformExp _)
+          val r4: Result[Context, Body] = transformBody(r3.ctx, o2.body)
+          val r5: Result[Context, Attr] = transformAttr(r4.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty || r5.resultOpt.nonEmpty)
+            Result(r5.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), loopIdOpt = r1.resultOpt.getOrElse(o2.loopIdOpt), invariants = r2.resultOpt.getOrElse(o2.invariants), modifies = r3.resultOpt.getOrElse(o2.modifies), body = r4.resultOpt.getOrElse(o2.body), attr = r5.resultOpt.getOrElse(o2.attr))))
           else
-            Result(r4.ctx, None())
+            Result(r5.ctx, None())
         case o2: Stmt.For =>
           val r0: Result[Context, IS[Z, EnumGen.For]] = transformISZ(preR.ctx, o2.enumGens, transformEnumGenFor _)
-          val r1: Result[Context, IS[Z, NamedExp]] = transformISZ(r0.ctx, o2.invariants, transformNamedExp _)
-          val r2: Result[Context, IS[Z, Exp]] = transformISZ(r1.ctx, o2.modifies, transformExp _)
-          val r3: Result[Context, Body] = transformBody(r2.ctx, o2.body)
-          val r4: Result[Context, Attr] = transformAttr(r3.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty)
-            Result(r4.ctx, Some(o2(enumGens = r0.resultOpt.getOrElse(o2.enumGens), invariants = r1.resultOpt.getOrElse(o2.invariants), modifies = r2.resultOpt.getOrElse(o2.modifies), body = r3.resultOpt.getOrElse(o2.body), attr = r4.resultOpt.getOrElse(o2.attr))))
+          val r1: Result[Context, Option[Id]] = transformOption(r0.ctx, o2.loopIdOpt, transformId _)
+          val r2: Result[Context, IS[Z, NamedExp]] = transformISZ(r1.ctx, o2.invariants, transformNamedExp _)
+          val r3: Result[Context, IS[Z, Exp]] = transformISZ(r2.ctx, o2.modifies, transformExp _)
+          val r4: Result[Context, Body] = transformBody(r3.ctx, o2.body)
+          val r5: Result[Context, Attr] = transformAttr(r4.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty || r5.resultOpt.nonEmpty)
+            Result(r5.ctx, Some(o2(enumGens = r0.resultOpt.getOrElse(o2.enumGens), loopIdOpt = r1.resultOpt.getOrElse(o2.loopIdOpt), invariants = r2.resultOpt.getOrElse(o2.invariants), modifies = r3.resultOpt.getOrElse(o2.modifies), body = r4.resultOpt.getOrElse(o2.body), attr = r5.resultOpt.getOrElse(o2.attr))))
           else
-            Result(r4.ctx, None())
+            Result(r5.ctx, None())
         case o2: Stmt.Return =>
           val r0: Result[Context, Option[Exp]] = transformOption(preR.ctx, o2.expOpt, transformExp _)
           val r1: Result[Context, TypedAttr] = transformTypedAttr(r0.ctx, o2.attr)
@@ -1976,6 +2031,64 @@ import Transformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: Stmt.Import.NamedSelector = r.resultOpt.getOrElse(o)
     val postR: Result[Context, Stmt.Import.NamedSelector] = pp.postStmtImportNamedSelector(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return Result(postR.ctx, Some(o2))
+    } else {
+      return Result(postR.ctx, None())
+    }
+  }
+
+  @pure def transformStmtLoop(ctx: Context, o: Stmt.Loop): Result[Context, Stmt.Loop] = {
+    val preR: PreResult[Context, Stmt.Loop] = pp.preStmtLoop(ctx, o)
+    val r: Result[Context, Stmt.Loop] = if (preR.continu) {
+      val o2: Stmt.Loop = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: Result[Context, Stmt.Loop] = o2 match {
+        case o2: Stmt.While =>
+          val r0: Result[Context, Exp] = transformExp(preR.ctx, o2.cond)
+          val r1: Result[Context, Option[Id]] = transformOption(r0.ctx, o2.loopIdOpt, transformId _)
+          val r2: Result[Context, IS[Z, NamedExp]] = transformISZ(r1.ctx, o2.invariants, transformNamedExp _)
+          val r3: Result[Context, IS[Z, Exp]] = transformISZ(r2.ctx, o2.modifies, transformExp _)
+          val r4: Result[Context, Body] = transformBody(r3.ctx, o2.body)
+          val r5: Result[Context, Attr] = transformAttr(r4.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty || r5.resultOpt.nonEmpty)
+            Result(r5.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), loopIdOpt = r1.resultOpt.getOrElse(o2.loopIdOpt), invariants = r2.resultOpt.getOrElse(o2.invariants), modifies = r3.resultOpt.getOrElse(o2.modifies), body = r4.resultOpt.getOrElse(o2.body), attr = r5.resultOpt.getOrElse(o2.attr))))
+          else
+            Result(r5.ctx, None())
+        case o2: Stmt.DoWhile =>
+          val r0: Result[Context, Exp] = transformExp(preR.ctx, o2.cond)
+          val r1: Result[Context, Option[Id]] = transformOption(r0.ctx, o2.loopIdOpt, transformId _)
+          val r2: Result[Context, IS[Z, NamedExp]] = transformISZ(r1.ctx, o2.invariants, transformNamedExp _)
+          val r3: Result[Context, IS[Z, Exp]] = transformISZ(r2.ctx, o2.modifies, transformExp _)
+          val r4: Result[Context, Body] = transformBody(r3.ctx, o2.body)
+          val r5: Result[Context, Attr] = transformAttr(r4.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty || r5.resultOpt.nonEmpty)
+            Result(r5.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), loopIdOpt = r1.resultOpt.getOrElse(o2.loopIdOpt), invariants = r2.resultOpt.getOrElse(o2.invariants), modifies = r3.resultOpt.getOrElse(o2.modifies), body = r4.resultOpt.getOrElse(o2.body), attr = r5.resultOpt.getOrElse(o2.attr))))
+          else
+            Result(r5.ctx, None())
+        case o2: Stmt.For =>
+          val r0: Result[Context, IS[Z, EnumGen.For]] = transformISZ(preR.ctx, o2.enumGens, transformEnumGenFor _)
+          val r1: Result[Context, Option[Id]] = transformOption(r0.ctx, o2.loopIdOpt, transformId _)
+          val r2: Result[Context, IS[Z, NamedExp]] = transformISZ(r1.ctx, o2.invariants, transformNamedExp _)
+          val r3: Result[Context, IS[Z, Exp]] = transformISZ(r2.ctx, o2.modifies, transformExp _)
+          val r4: Result[Context, Body] = transformBody(r3.ctx, o2.body)
+          val r5: Result[Context, Attr] = transformAttr(r4.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty || r5.resultOpt.nonEmpty)
+            Result(r5.ctx, Some(o2(enumGens = r0.resultOpt.getOrElse(o2.enumGens), loopIdOpt = r1.resultOpt.getOrElse(o2.loopIdOpt), invariants = r2.resultOpt.getOrElse(o2.invariants), modifies = r3.resultOpt.getOrElse(o2.modifies), body = r4.resultOpt.getOrElse(o2.body), attr = r5.resultOpt.getOrElse(o2.attr))))
+          else
+            Result(r5.ctx, None())
+      }
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      Result(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      Result(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: Stmt.Loop = r.resultOpt.getOrElse(o)
+    val postR: Result[Context, Stmt.Loop] = pp.postStmtLoop(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {

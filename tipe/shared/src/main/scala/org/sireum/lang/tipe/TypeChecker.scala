@@ -1093,7 +1093,7 @@ import TypeChecker._
             }
           case _ =>
         }
-        val r = checkInfoOpt(None(), typeHierarchy.nameMap.get(receiverType.name :+ id))
+        val r = checkInfoOpt(None(), typeHierarchy.nameMap.get(receiverType.name :+ normalizeSpecId(id)))
         if (r._1.isEmpty) {
           reporter.error(
             ident.attr.posOpt,
@@ -1136,8 +1136,21 @@ import TypeChecker._
     }
   }
 
+  @pure def normalizeSpecId(id: String): String = {
+    if (!inSpec) {
+      return id
+    }
+    val idOps = ops.StringOps(id)
+    if (idOps.endsWith("_in")) {
+      return idOps.substring(0, id.size - 3)
+    } else if (idOps.endsWith("_old")) {
+      return idOps.substring(0, id.size - 4)
+    }
+    return id
+  }
+
   def checkId(scope: Scope, id: AST.Id, reporter: Reporter): (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
-    val infoOpt = scope.resolveName(typeHierarchy.nameMap, ISZ(id.value))
+    val infoOpt = scope.resolveName(typeHierarchy.nameMap, ISZ(normalizeSpecId(id.value)))
     infoOpt match {
       case Some(info: Info.LocalVar) => return checkInfo(Some(scope), info)
       case _ =>
@@ -3703,8 +3716,9 @@ import TypeChecker._
       val (newScopeOpt, newEnumGens, _, _) = checkEnumGens(F, scope, forStmt.enumGens, reporter)
       newScopeOpt match {
         case Some(newScope) =>
+          val (newInvs, newMods) = this(inSpec = T).checkLoopInv(scope, forStmt.invariants, forStmt.modifies, reporter)
           val newBody = checkBody(None(), newScope, forStmt.body, reporter)
-          return forStmt(enumGens = newEnumGens, body = newBody)
+          return forStmt(enumGens = newEnumGens, invariants = newInvs, modifies = newMods, body = newBody)
         case _ => return forStmt(enumGens = newEnumGens)
       }
     }
@@ -3725,9 +3739,10 @@ import TypeChecker._
         val r = checkBlock(None(), scope, stmt, reporter); return (Some(scope), r)
 
       case stmt: AST.Stmt.DoWhile =>
+        val (newInvs, newMods) = this(inSpec = T).checkLoopInv(scope, stmt.invariants, stmt.modifies, reporter)
         val newBody = checkBody(None(), createNewScope(scope), stmt.body, reporter)
         val (newCond, _) = checkExp(AST.Typed.bOpt, scope, stmt.cond, reporter)
-        return (Some(scope), stmt(cond = newCond, body = newBody))
+        return (Some(scope), stmt(cond = newCond, invariants = newInvs, modifies = newMods, body = newBody))
 
       case stmt: AST.Stmt.Enum => return (Some(scope), stmt)
 
@@ -3806,10 +3821,68 @@ import TypeChecker._
 
       case stmt: AST.Stmt.While =>
         val (newCond, _) = checkExp(AST.Typed.bOpt, scope, stmt.cond, reporter)
+        val (newInvs, newMods) = this(inSpec = T).checkLoopInv(scope, stmt.invariants, stmt.modifies, reporter)
         val newBody = checkBody(None(), createNewScope(scope), stmt.body, reporter)
-        return (Some(scope), stmt(cond = newCond, body = newBody))
+        return (Some(scope), stmt(cond = newCond, invariants = newInvs, modifies = newMods, body = newBody))
 
     }
+  }
+
+  def checkLoopInv(scope: Scope, invs: ISZ[AST.NamedExp], modifies: ISZ[AST.Exp], reporter: Reporter): (ISZ[AST.NamedExp], ISZ[AST.Exp]) = {
+    var newInvs: ISZ[AST.NamedExp] = ISZ()
+    for (inv <- invs) {
+      val newInv = checkNamedExp(AST.Typed.bOpt, scope, inv, reporter)
+      newInvs = newInvs :+ newInv
+    }
+    var newMods: ISZ[AST.Exp] = ISZ()
+    for (mod <- modifies) {
+      val newMod = checkModifyExp(scope, mod, reporter)
+      newMods = newMods :+ newMod
+    }
+    return (newInvs, newMods)
+  }
+
+  def checkNamedExp(expectedOpt: Option[AST.Typed], sc: Scope, namedExp: AST.NamedExp,
+                    reporter: Reporter): AST.NamedExp = {
+    val (newExp, _) = checkExp(expectedOpt, sc, namedExp.exp, reporter)
+    return namedExp(exp = newExp)
+  }
+
+  def checkModifyExp(sc: Scope, exp: AST.Exp, reporter: Reporter): AST.Exp = {
+    def checkLocalVar(res: AST.ResolvedInfo.LocalVar, t: AST.Typed): Unit = {
+      if (!typeHierarchy.isMutable(t, T) && res.isVal) {
+        reporter.error(exp.posOpt, typeCheckerKind, s"Cannot modify variable '${res.id}'")
+      }
+    }
+    def checkVar(res: AST.ResolvedInfo.Var, t: AST.Typed): Unit = {
+      if (!typeHierarchy.isMutable(t, T) && res.isVal) {
+        reporter.error(exp.posOpt, typeCheckerKind, st"Cannot modify field '${(res.owner, ".")}.${res.id}'".render)
+      }
+    }
+    def err(): Unit = {
+      reporter.error(exp.posOpt, typeCheckerKind, "Can only modify a variable or a field")
+    }
+    val (newExp, tOpt) = checkExp(None(), sc, exp, reporter)
+    tOpt match {
+      case Some(t) =>
+        newExp match {
+          case exp: AST.Exp.Ident =>
+            exp.attr.resOpt.get match {
+              case res: AST.ResolvedInfo.LocalVar => checkLocalVar(res, t)
+              case res: AST.ResolvedInfo.Var => checkVar(res, t)
+              case _ => err()
+
+            }
+          case exp: AST.Exp.Select =>
+            exp.attr.resOpt.get match {
+              case res: AST.ResolvedInfo.Var => checkVar(res, t)
+              case _ => err()
+            }
+          case _ => err()
+        }
+      case _ =>
+    }
+    return newExp
   }
 
   def checkMethod(sc: Scope, stmt: AST.Stmt.Method, reporter: Reporter): AST.Stmt = {

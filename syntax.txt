@@ -343,7 +343,8 @@
 <spec-def-cond>    ::=  ⸨ case <pattern> ⸩? if <exp>
                      |  otherwise
 
-<loop-inv-mod>     ::=  ⸨ invariant <named-exps> ⸩?
+<loop-inv-mod>     ::=  ⸨ <ID> : ⸩?
+                        ⸨ invariant <named-exps> ⸩?
                         ⸨ modifies <exp> ⸨ , <exp> ⸩* ⸩?
 
 <l-clause>         ::=  <invariants>

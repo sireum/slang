@@ -287,8 +287,61 @@ object Stmt {
 
   }
 
-  @datatype class While(cond: Exp, invariants: ISZ[NamedExp], modifies: ISZ[Exp], body: Body, @hidden attr: Attr)
-      extends Stmt {
+  @sig trait Loop {
+    @pure def loopIdOpt: Option[Id]
+    @pure def invariants: ISZ[NamedExp]
+    @pure def modifies: ISZ[Exp]
+
+    @pure def modifiedLocalVars: ISZ[ResolvedInfo.LocalVar] = {
+      @pure def filterLocalVar(exp: Exp): ISZ[ResolvedInfo.LocalVar] = {
+        exp match {
+          case exp: Exp.Ident =>
+            exp.attr.resOpt match {
+              case Some(res: ResolvedInfo.LocalVar) => return ISZ(res)
+              case _ =>
+            }
+          case _ =>
+        }
+        return ISZ()
+      }
+      return for (mod <- modifies; res <- filterLocalVar(mod)) yield res
+    }
+
+    def modifiedObjectVars: ISZ[ResolvedInfo.Var] = {
+      @pure def filterObjectVar(exp: Exp): ISZ[ResolvedInfo.Var] = {
+        exp match {
+          case exp: Exp.Ident =>
+            exp.attr.resOpt match {
+              case Some(res: ResolvedInfo.Var) if res.isInObject => return ISZ(res)
+              case _ =>
+            }
+          case _ =>
+        }
+        return ISZ()
+      }
+      return for (mod <- modifies; res <- filterObjectVar(mod)) yield res
+    }
+
+
+    def modifiedRecordVars: ISZ[ResolvedInfo.Var] = {
+      @pure def filterRecordVar(exp: Exp): ISZ[ResolvedInfo.Var] = {
+        exp match {
+          case exp: Exp.Ident =>
+            exp.attr.resOpt match {
+              case Some(res: ResolvedInfo.Var) if !res.isInObject => return ISZ(res)
+              case _ =>
+            }
+          case _ =>
+        }
+        return ISZ()
+      }
+      return for (mod <- modifies; res <- filterRecordVar(mod)) yield res
+    }
+  }
+
+  @datatype class While(cond: Exp, val loopIdOpt: Option[Id], val invariants: ISZ[NamedExp], val modifies: ISZ[Exp],
+                        body: Body, @hidden attr: Attr)
+      extends Stmt with Loop {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -296,8 +349,9 @@ object Stmt {
 
   }
 
-  @datatype class DoWhile(cond: Exp, invariants: ISZ[NamedExp], modifies: ISZ[Exp], body: Body, @hidden attr: Attr)
-      extends Stmt {
+  @datatype class DoWhile(cond: Exp, val loopIdOpt: Option[Id], val invariants: ISZ[NamedExp], val modifies: ISZ[Exp],
+                          body: Body, @hidden attr: Attr)
+      extends Stmt with Loop {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -307,11 +361,12 @@ object Stmt {
 
   @datatype class For(
     enumGens: ISZ[EnumGen.For],
-    invariants: ISZ[NamedExp],
-    modifies: ISZ[Exp],
+    val loopIdOpt: Option[Id],
+    val invariants: ISZ[NamedExp],
+    val modifies: ISZ[Exp],
     body: Body,
     @hidden attr: Attr
-  ) extends Stmt {
+  ) extends Stmt with Loop {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1767,7 +1822,7 @@ object ResolvedInfo {
 
   @datatype class Object(name: ISZ[String]) extends ResolvedInfo
 
-  @datatype class Var(isInObject: B, isSpec: B, owner: ISZ[String], id: String) extends ResolvedInfo
+  @datatype class Var(isInObject: B, isSpec: B, isVal: B, owner: ISZ[String], id: String) extends ResolvedInfo
 
   @datatype class Method(
     isInObject: B,

@@ -563,13 +563,20 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
 
   /** {{{
     *  LoopInvMod     ::= BOF {nl}
+    *                     [ Ident : {nl} ]
     *                     [ Ident<invariant> {nl} NamedExprs ]
     *                     [ Ident<modifies> {nl} Expr {`,' {nl} Expr} ] {nl}
     *                     EOF
     *  }}}
     */
-  def loopInvMode(): (List[AST.NamedExp], List[AST.Exp]) = {
+  def loopInvMode(): (Option[AST.Id], List[AST.NamedExp], List[AST.Exp]) = {
     accept[BOF]
+    val idOpt = if (isIdent && ahead(token.is[Colon])) {
+      val ident = acceptToken[Ident]
+      acceptToken[Colon]
+      newLinesOpt()
+      Some(id(ident))
+    } else None
     val is = if (isIdentOf("invariant")) {
       next()
       newLinesOpt()
@@ -577,7 +584,7 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
     } else List()
     val mods = modifies()
     accept[EOF]
-    (is, mods)
+    (idOpt, is, mods)
   }
 
   /** {{{

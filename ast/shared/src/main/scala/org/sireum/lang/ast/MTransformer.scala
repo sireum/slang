@@ -702,6 +702,32 @@ import MTransformer._
     return PreResultStmtMatch
   }
 
+  def preStmtLoop(o: Stmt.Loop): PreResult[Stmt.Loop] = {
+    o match {
+      case o: Stmt.While =>
+        val r: PreResult[Stmt.Loop] = preStmtWhile(o) match {
+         case PreResult(continu, MSome(r: Stmt.Loop)) => PreResult(continu, MSome[Stmt.Loop](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt.Loop")
+         case PreResult(continu, _) => PreResult(continu, MNone[Stmt.Loop]())
+        }
+        return r
+      case o: Stmt.DoWhile =>
+        val r: PreResult[Stmt.Loop] = preStmtDoWhile(o) match {
+         case PreResult(continu, MSome(r: Stmt.Loop)) => PreResult(continu, MSome[Stmt.Loop](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt.Loop")
+         case PreResult(continu, _) => PreResult(continu, MNone[Stmt.Loop]())
+        }
+        return r
+      case o: Stmt.For =>
+        val r: PreResult[Stmt.Loop] = preStmtFor(o) match {
+         case PreResult(continu, MSome(r: Stmt.Loop)) => PreResult(continu, MSome[Stmt.Loop](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt.Loop")
+         case PreResult(continu, _) => PreResult(continu, MNone[Stmt.Loop]())
+        }
+        return r
+    }
+  }
+
   def preStmtWhile(o: Stmt.While): PreResult[Stmt] = {
     return PreResultStmtWhile
   }
@@ -1473,6 +1499,32 @@ import MTransformer._
 
   def postStmtMatch(o: Stmt.Match): MOption[Stmt] = {
     return PostResultStmtMatch
+  }
+
+  def postStmtLoop(o: Stmt.Loop): MOption[Stmt.Loop] = {
+    o match {
+      case o: Stmt.While =>
+        val r: MOption[Stmt.Loop] = postStmtWhile(o) match {
+         case MSome(result: Stmt.Loop) => MSome[Stmt.Loop](result)
+         case MSome(_) => halt("Can only produce object of type Stmt.Loop")
+         case _ => MNone[Stmt.Loop]()
+        }
+        return r
+      case o: Stmt.DoWhile =>
+        val r: MOption[Stmt.Loop] = postStmtDoWhile(o) match {
+         case MSome(result: Stmt.Loop) => MSome[Stmt.Loop](result)
+         case MSome(_) => halt("Can only produce object of type Stmt.Loop")
+         case _ => MNone[Stmt.Loop]()
+        }
+        return r
+      case o: Stmt.For =>
+        val r: MOption[Stmt.Loop] = postStmtFor(o) match {
+         case MSome(result: Stmt.Loop) => MSome[Stmt.Loop](result)
+         case MSome(_) => halt("Can only produce object of type Stmt.Loop")
+         case _ => MNone[Stmt.Loop]()
+        }
+        return r
+    }
   }
 
   def postStmtWhile(o: Stmt.While): MOption[Stmt] = {
@@ -2307,32 +2359,35 @@ import MTransformer._
             MNone()
         case o2: Stmt.While =>
           val r0: MOption[Exp] = transformExp(o2.cond)
-          val r1: MOption[IS[Z, NamedExp]] = transformISZ(o2.invariants, transformNamedExp _)
-          val r2: MOption[IS[Z, Exp]] = transformISZ(o2.modifies, transformExp _)
-          val r3: MOption[Body] = transformBody(o2.body)
-          val r4: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
-            MSome(o2(cond = r0.getOrElse(o2.cond), invariants = r1.getOrElse(o2.invariants), modifies = r2.getOrElse(o2.modifies), body = r3.getOrElse(o2.body), attr = r4.getOrElse(o2.attr)))
+          val r1: MOption[Option[Id]] = transformOption(o2.loopIdOpt, transformId _)
+          val r2: MOption[IS[Z, NamedExp]] = transformISZ(o2.invariants, transformNamedExp _)
+          val r3: MOption[IS[Z, Exp]] = transformISZ(o2.modifies, transformExp _)
+          val r4: MOption[Body] = transformBody(o2.body)
+          val r5: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty || r5.nonEmpty)
+            MSome(o2(cond = r0.getOrElse(o2.cond), loopIdOpt = r1.getOrElse(o2.loopIdOpt), invariants = r2.getOrElse(o2.invariants), modifies = r3.getOrElse(o2.modifies), body = r4.getOrElse(o2.body), attr = r5.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.DoWhile =>
           val r0: MOption[Exp] = transformExp(o2.cond)
-          val r1: MOption[IS[Z, NamedExp]] = transformISZ(o2.invariants, transformNamedExp _)
-          val r2: MOption[IS[Z, Exp]] = transformISZ(o2.modifies, transformExp _)
-          val r3: MOption[Body] = transformBody(o2.body)
-          val r4: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
-            MSome(o2(cond = r0.getOrElse(o2.cond), invariants = r1.getOrElse(o2.invariants), modifies = r2.getOrElse(o2.modifies), body = r3.getOrElse(o2.body), attr = r4.getOrElse(o2.attr)))
+          val r1: MOption[Option[Id]] = transformOption(o2.loopIdOpt, transformId _)
+          val r2: MOption[IS[Z, NamedExp]] = transformISZ(o2.invariants, transformNamedExp _)
+          val r3: MOption[IS[Z, Exp]] = transformISZ(o2.modifies, transformExp _)
+          val r4: MOption[Body] = transformBody(o2.body)
+          val r5: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty || r5.nonEmpty)
+            MSome(o2(cond = r0.getOrElse(o2.cond), loopIdOpt = r1.getOrElse(o2.loopIdOpt), invariants = r2.getOrElse(o2.invariants), modifies = r3.getOrElse(o2.modifies), body = r4.getOrElse(o2.body), attr = r5.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.For =>
           val r0: MOption[IS[Z, EnumGen.For]] = transformISZ(o2.enumGens, transformEnumGenFor _)
-          val r1: MOption[IS[Z, NamedExp]] = transformISZ(o2.invariants, transformNamedExp _)
-          val r2: MOption[IS[Z, Exp]] = transformISZ(o2.modifies, transformExp _)
-          val r3: MOption[Body] = transformBody(o2.body)
-          val r4: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
-            MSome(o2(enumGens = r0.getOrElse(o2.enumGens), invariants = r1.getOrElse(o2.invariants), modifies = r2.getOrElse(o2.modifies), body = r3.getOrElse(o2.body), attr = r4.getOrElse(o2.attr)))
+          val r1: MOption[Option[Id]] = transformOption(o2.loopIdOpt, transformId _)
+          val r2: MOption[IS[Z, NamedExp]] = transformISZ(o2.invariants, transformNamedExp _)
+          val r3: MOption[IS[Z, Exp]] = transformISZ(o2.modifies, transformExp _)
+          val r4: MOption[Body] = transformBody(o2.body)
+          val r5: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty || r5.nonEmpty)
+            MSome(o2(enumGens = r0.getOrElse(o2.enumGens), loopIdOpt = r1.getOrElse(o2.loopIdOpt), invariants = r2.getOrElse(o2.invariants), modifies = r3.getOrElse(o2.modifies), body = r4.getOrElse(o2.body), attr = r5.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.Return =>
@@ -2458,6 +2513,64 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Stmt.Import.NamedSelector = r.getOrElse(o)
     val postR: MOption[Stmt.Import.NamedSelector] = postStmtImportNamedSelector(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformStmtLoop(o: Stmt.Loop): MOption[Stmt.Loop] = {
+    val preR: PreResult[Stmt.Loop] = preStmtLoop(o)
+    val r: MOption[Stmt.Loop] = if (preR.continu) {
+      val o2: Stmt.Loop = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: MOption[Stmt.Loop] = o2 match {
+        case o2: Stmt.While =>
+          val r0: MOption[Exp] = transformExp(o2.cond)
+          val r1: MOption[Option[Id]] = transformOption(o2.loopIdOpt, transformId _)
+          val r2: MOption[IS[Z, NamedExp]] = transformISZ(o2.invariants, transformNamedExp _)
+          val r3: MOption[IS[Z, Exp]] = transformISZ(o2.modifies, transformExp _)
+          val r4: MOption[Body] = transformBody(o2.body)
+          val r5: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty || r5.nonEmpty)
+            MSome(o2(cond = r0.getOrElse(o2.cond), loopIdOpt = r1.getOrElse(o2.loopIdOpt), invariants = r2.getOrElse(o2.invariants), modifies = r3.getOrElse(o2.modifies), body = r4.getOrElse(o2.body), attr = r5.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Stmt.DoWhile =>
+          val r0: MOption[Exp] = transformExp(o2.cond)
+          val r1: MOption[Option[Id]] = transformOption(o2.loopIdOpt, transformId _)
+          val r2: MOption[IS[Z, NamedExp]] = transformISZ(o2.invariants, transformNamedExp _)
+          val r3: MOption[IS[Z, Exp]] = transformISZ(o2.modifies, transformExp _)
+          val r4: MOption[Body] = transformBody(o2.body)
+          val r5: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty || r5.nonEmpty)
+            MSome(o2(cond = r0.getOrElse(o2.cond), loopIdOpt = r1.getOrElse(o2.loopIdOpt), invariants = r2.getOrElse(o2.invariants), modifies = r3.getOrElse(o2.modifies), body = r4.getOrElse(o2.body), attr = r5.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Stmt.For =>
+          val r0: MOption[IS[Z, EnumGen.For]] = transformISZ(o2.enumGens, transformEnumGenFor _)
+          val r1: MOption[Option[Id]] = transformOption(o2.loopIdOpt, transformId _)
+          val r2: MOption[IS[Z, NamedExp]] = transformISZ(o2.invariants, transformNamedExp _)
+          val r3: MOption[IS[Z, Exp]] = transformISZ(o2.modifies, transformExp _)
+          val r4: MOption[Body] = transformBody(o2.body)
+          val r5: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty || r5.nonEmpty)
+            MSome(o2(enumGens = r0.getOrElse(o2.enumGens), loopIdOpt = r1.getOrElse(o2.loopIdOpt), invariants = r2.getOrElse(o2.invariants), modifies = r3.getOrElse(o2.modifies), body = r4.getOrElse(o2.body), attr = r5.getOrElse(o2.attr)))
+          else
+            MNone()
+      }
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Stmt.Loop = r.getOrElse(o)
+    val postR: MOption[Stmt.Loop] = postStmtLoop(o2)
     if (postR.nonEmpty) {
       return postR
     } else if (hasChanged) {
