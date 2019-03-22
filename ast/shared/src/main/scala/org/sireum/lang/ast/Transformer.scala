@@ -311,6 +311,10 @@ object Transformer {
       return PreResult(ctx, T, None())
     }
 
+    @pure def preOptNamedExp(ctx: Context, o: OptNamedExp): PreResult[Context, OptNamedExp] = {
+      return PreResult(ctx, T, None())
+    }
+
     @pure def preCase(ctx: Context, o: Case): PreResult[Context, Case] = {
       return PreResult(ctx, T, None())
     }
@@ -1110,6 +1114,10 @@ object Transformer {
       return Result(ctx, None())
     }
 
+    @pure def postOptNamedExp(ctx: Context, o: OptNamedExp): Result[Context, OptNamedExp] = {
+      return Result(ctx, None())
+    }
+
     @pure def postCase(ctx: Context, o: Case): Result[Context, Case] = {
       return Result(ctx, None())
     }
@@ -1878,7 +1886,7 @@ import Transformer._
         case o2: Stmt.While =>
           val r0: Result[Context, Exp] = transformExp(preR.ctx, o2.cond)
           val r1: Result[Context, Option[Id]] = transformOption(r0.ctx, o2.loopIdOpt, transformId _)
-          val r2: Result[Context, IS[Z, NamedExp]] = transformISZ(r1.ctx, o2.invariants, transformNamedExp _)
+          val r2: Result[Context, IS[Z, OptNamedExp]] = transformISZ(r1.ctx, o2.invariants, transformOptNamedExp _)
           val r3: Result[Context, IS[Z, Exp]] = transformISZ(r2.ctx, o2.modifies, transformExp _)
           val r4: Result[Context, Body] = transformBody(r3.ctx, o2.body)
           val r5: Result[Context, Attr] = transformAttr(r4.ctx, o2.attr)
@@ -1889,7 +1897,7 @@ import Transformer._
         case o2: Stmt.DoWhile =>
           val r0: Result[Context, Exp] = transformExp(preR.ctx, o2.cond)
           val r1: Result[Context, Option[Id]] = transformOption(r0.ctx, o2.loopIdOpt, transformId _)
-          val r2: Result[Context, IS[Z, NamedExp]] = transformISZ(r1.ctx, o2.invariants, transformNamedExp _)
+          val r2: Result[Context, IS[Z, OptNamedExp]] = transformISZ(r1.ctx, o2.invariants, transformOptNamedExp _)
           val r3: Result[Context, IS[Z, Exp]] = transformISZ(r2.ctx, o2.modifies, transformExp _)
           val r4: Result[Context, Body] = transformBody(r3.ctx, o2.body)
           val r5: Result[Context, Attr] = transformAttr(r4.ctx, o2.attr)
@@ -1900,7 +1908,7 @@ import Transformer._
         case o2: Stmt.For =>
           val r0: Result[Context, IS[Z, EnumGen.For]] = transformISZ(preR.ctx, o2.enumGens, transformEnumGenFor _)
           val r1: Result[Context, Option[Id]] = transformOption(r0.ctx, o2.loopIdOpt, transformId _)
-          val r2: Result[Context, IS[Z, NamedExp]] = transformISZ(r1.ctx, o2.invariants, transformNamedExp _)
+          val r2: Result[Context, IS[Z, OptNamedExp]] = transformISZ(r1.ctx, o2.invariants, transformOptNamedExp _)
           val r3: Result[Context, IS[Z, Exp]] = transformISZ(r2.ctx, o2.modifies, transformExp _)
           val r4: Result[Context, Body] = transformBody(r3.ctx, o2.body)
           val r5: Result[Context, Attr] = transformAttr(r4.ctx, o2.attr)
@@ -2049,7 +2057,7 @@ import Transformer._
         case o2: Stmt.While =>
           val r0: Result[Context, Exp] = transformExp(preR.ctx, o2.cond)
           val r1: Result[Context, Option[Id]] = transformOption(r0.ctx, o2.loopIdOpt, transformId _)
-          val r2: Result[Context, IS[Z, NamedExp]] = transformISZ(r1.ctx, o2.invariants, transformNamedExp _)
+          val r2: Result[Context, IS[Z, OptNamedExp]] = transformISZ(r1.ctx, o2.invariants, transformOptNamedExp _)
           val r3: Result[Context, IS[Z, Exp]] = transformISZ(r2.ctx, o2.modifies, transformExp _)
           val r4: Result[Context, Body] = transformBody(r3.ctx, o2.body)
           val r5: Result[Context, Attr] = transformAttr(r4.ctx, o2.attr)
@@ -2060,7 +2068,7 @@ import Transformer._
         case o2: Stmt.DoWhile =>
           val r0: Result[Context, Exp] = transformExp(preR.ctx, o2.cond)
           val r1: Result[Context, Option[Id]] = transformOption(r0.ctx, o2.loopIdOpt, transformId _)
-          val r2: Result[Context, IS[Z, NamedExp]] = transformISZ(r1.ctx, o2.invariants, transformNamedExp _)
+          val r2: Result[Context, IS[Z, OptNamedExp]] = transformISZ(r1.ctx, o2.invariants, transformOptNamedExp _)
           val r3: Result[Context, IS[Z, Exp]] = transformISZ(r2.ctx, o2.modifies, transformExp _)
           val r4: Result[Context, Body] = transformBody(r3.ctx, o2.body)
           val r5: Result[Context, Attr] = transformAttr(r4.ctx, o2.attr)
@@ -2071,7 +2079,7 @@ import Transformer._
         case o2: Stmt.For =>
           val r0: Result[Context, IS[Z, EnumGen.For]] = transformISZ(preR.ctx, o2.enumGens, transformEnumGenFor _)
           val r1: Result[Context, Option[Id]] = transformOption(r0.ctx, o2.loopIdOpt, transformId _)
-          val r2: Result[Context, IS[Z, NamedExp]] = transformISZ(r1.ctx, o2.invariants, transformNamedExp _)
+          val r2: Result[Context, IS[Z, OptNamedExp]] = transformISZ(r1.ctx, o2.invariants, transformOptNamedExp _)
           val r3: Result[Context, IS[Z, Exp]] = transformISZ(r2.ctx, o2.modifies, transformExp _)
           val r4: Result[Context, Body] = transformBody(r3.ctx, o2.body)
           val r5: Result[Context, Attr] = transformAttr(r4.ctx, o2.attr)
@@ -2245,6 +2253,34 @@ import Transformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: NamedExp = r.resultOpt.getOrElse(o)
     val postR: Result[Context, NamedExp] = pp.postNamedExp(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return Result(postR.ctx, Some(o2))
+    } else {
+      return Result(postR.ctx, None())
+    }
+  }
+
+  @pure def transformOptNamedExp(ctx: Context, o: OptNamedExp): Result[Context, OptNamedExp] = {
+    val preR: PreResult[Context, OptNamedExp] = pp.preOptNamedExp(ctx, o)
+    val r: Result[Context, OptNamedExp] = if (preR.continu) {
+      val o2: OptNamedExp = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: Result[Context, Option[Id]] = transformOption(preR.ctx, o2.idOpt, transformId _)
+      val r1: Result[Context, Exp] = transformExp(r0.ctx, o2.exp)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+        Result(r1.ctx, Some(o2(idOpt = r0.resultOpt.getOrElse(o2.idOpt), exp = r1.resultOpt.getOrElse(o2.exp))))
+      else
+        Result(r1.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      Result(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      Result(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: OptNamedExp = r.resultOpt.getOrElse(o)
+    val postR: Result[Context, OptNamedExp] = pp.postOptNamedExp(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {

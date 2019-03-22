@@ -289,57 +289,68 @@ object Stmt {
 
   @sig trait Loop {
     @pure def loopIdOpt: Option[Id]
-    @pure def invariants: ISZ[NamedExp]
+    @pure def invariants: ISZ[OptNamedExp]
     @pure def modifies: ISZ[Exp]
 
-    @pure def modifiedLocalVars: ISZ[ResolvedInfo.LocalVar] = {
-      @pure def filterLocalVar(exp: Exp): ISZ[ResolvedInfo.LocalVar] = {
+    @pure def modifiedLocalVars: HashSMap[ResolvedInfo.LocalVar, (Typed, Position)] = {
+      @pure def filterLocalVar(exp: Exp): ISZ[(ResolvedInfo.LocalVar, (Typed, Position))] = {
         exp match {
           case exp: Exp.Ident =>
             exp.attr.resOpt match {
-              case Some(res: ResolvedInfo.LocalVar) => return ISZ(res)
+              case Some(res: ResolvedInfo.LocalVar) => return ISZ((res, (exp.typedOpt.get, exp.posOpt.get)))
               case _ =>
             }
           case _ =>
         }
         return ISZ()
       }
-      return for (mod <- modifies; res <- filterLocalVar(mod)) yield res
+      return HashSMap.empty[ResolvedInfo.LocalVar, (Typed, Position)] ++
+        (for (mod <- modifies; res <- filterLocalVar(mod)) yield res)
     }
 
-    def modifiedObjectVars: ISZ[ResolvedInfo.Var] = {
-      @pure def filterObjectVar(exp: Exp): ISZ[ResolvedInfo.Var] = {
+    def modifiedObjectVars: HashSMap[ResolvedInfo.Var, (Typed, Position)] = {
+      @pure def filterObjectVar(exp: Exp): ISZ[(ResolvedInfo.Var, (Typed, Position))] = {
         exp match {
           case exp: Exp.Ident =>
             exp.attr.resOpt match {
-              case Some(res: ResolvedInfo.Var) if res.isInObject => return ISZ(res)
+              case Some(res: ResolvedInfo.Var) if res.isInObject => return ISZ((res, (exp.typedOpt.get, exp.posOpt.get)))
               case _ =>
+            }
+          case exp: Exp.Select =>
+            exp.attr.resOpt match {
+              case Some(res: ResolvedInfo.Var) if res.isInObject => return ISZ((res, (exp.typedOpt.get, exp.posOpt.get)))
             }
           case _ =>
         }
         return ISZ()
       }
-      return for (mod <- modifies; res <- filterObjectVar(mod)) yield res
+      return HashSMap.empty[ResolvedInfo.Var, (Typed, Position)] ++
+        (for (mod <- modifies; res <- filterObjectVar(mod)) yield res)
     }
 
 
-    def modifiedRecordVars: ISZ[ResolvedInfo.Var] = {
-      @pure def filterRecordVar(exp: Exp): ISZ[ResolvedInfo.Var] = {
+    def modifiedRecordVars: HashSMap[ResolvedInfo.Var, (Typed, Position)] = {
+      @pure def filterRecordVar(exp: Exp): ISZ[(ResolvedInfo.Var, (Typed, Position))] = {
         exp match {
           case exp: Exp.Ident =>
             exp.attr.resOpt match {
-              case Some(res: ResolvedInfo.Var) if !res.isInObject => return ISZ(res)
+              case Some(res: ResolvedInfo.Var) if !res.isInObject => return ISZ((res, (exp.typedOpt.get, exp.posOpt.get)))
               case _ =>
+            }
+          case exp: Exp.Select =>
+            exp.attr.resOpt match {
+              case Some(res: ResolvedInfo.Var) if !res.isInObject => return ISZ((res, (exp.typedOpt.get, exp.posOpt.get)))
             }
           case _ =>
         }
         return ISZ()
       }
-      return for (mod <- modifies; res <- filterRecordVar(mod)) yield res
+      return HashSMap.empty[ResolvedInfo.Var, (Typed, Position)] ++
+        (for (mod <- modifies; res <- filterRecordVar(mod)) yield res)
     }
   }
 
-  @datatype class While(cond: Exp, val loopIdOpt: Option[Id], val invariants: ISZ[NamedExp], val modifies: ISZ[Exp],
+  @datatype class While(cond: Exp, val loopIdOpt: Option[Id], val invariants: ISZ[OptNamedExp], val modifies: ISZ[Exp],
                         body: Body, @hidden attr: Attr)
       extends Stmt with Loop {
 
@@ -349,7 +360,7 @@ object Stmt {
 
   }
 
-  @datatype class DoWhile(cond: Exp, val loopIdOpt: Option[Id], val invariants: ISZ[NamedExp], val modifies: ISZ[Exp],
+  @datatype class DoWhile(cond: Exp, val loopIdOpt: Option[Id], val invariants: ISZ[OptNamedExp], val modifies: ISZ[Exp],
                           body: Body, @hidden attr: Attr)
       extends Stmt with Loop {
 
@@ -362,7 +373,7 @@ object Stmt {
   @datatype class For(
     enumGens: ISZ[EnumGen.For],
     val loopIdOpt: Option[Id],
-    val invariants: ISZ[NamedExp],
+    val invariants: ISZ[OptNamedExp],
     val modifies: ISZ[Exp],
     body: Body,
     @hidden attr: Attr
@@ -466,6 +477,8 @@ object LClause {
 }
 
 @datatype class NamedExp(id: Id, exp: Exp)
+
+@datatype class OptNamedExp(idOpt: Option[Id], exp: Exp)
 
 @datatype class Case(pattern: Pattern, condOpt: Option[Exp], body: Body)
 

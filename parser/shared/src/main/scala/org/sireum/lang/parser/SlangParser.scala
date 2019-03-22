@@ -1948,7 +1948,7 @@ class SlangParser(
   def translateWhile(enclosing: Enclosing.Type, stat: Term.While): AST.Stmt = {
     var hasError = stmtCheck(enclosing, stat, "While-statements")
     var loopIdOpt: Option[AST.Id] = None()
-    var invariants: ISZ[AST.NamedExp] = ISZ()
+    var invariants: ISZ[AST.OptNamedExp] = ISZ()
     var mods: ISZ[AST.Exp] = ISZ()
     var stats: Seq[Stat] = Seq()
     stat.body match {
@@ -1986,7 +1986,7 @@ class SlangParser(
     var hasError = stmtCheck(enclosing, stat, "Do-while-statements")
     var loopIdOpt: Option[AST.Id] = None()
     var modifies: ISZ[AST.Exp] = ISZ()
-    var invariants: ISZ[AST.NamedExp] = ISZ()
+    var invariants: ISZ[AST.OptNamedExp] = ISZ()
     var stats: Seq[Stat] = Seq()
     stat.body match {
       case body: Term.Block =>
@@ -2023,7 +2023,7 @@ class SlangParser(
     var hasError = stmtCheck(enclosing, stat, "For-statements")
     var loopIdOpt: Option[AST.Id] = None()
     var modifies: ISZ[AST.Exp] = ISZ()
-    var invariants: ISZ[AST.NamedExp] = ISZ()
+    var invariants: ISZ[AST.OptNamedExp] = ISZ()
     var stats: Seq[Stat] = Seq()
     stat.body match {
       case body: Term.Block =>
@@ -2621,7 +2621,7 @@ class SlangParser(
     AST.Stmt.LStmt(clause, attr(exp.pos))
   }
 
-  def parseLoopContract(exp: Term.Interpolate): (Option[AST.Id], ISZ[AST.NamedExp], ISZ[AST.Exp]) = {
+  def parseLoopContract(exp: Term.Interpolate): (Option[AST.Id], ISZ[AST.OptNamedExp], ISZ[AST.Exp]) = {
     if (!checkLSyntax(exp)) return (None(), ISZ(), ISZ())
     val (idOpt, invs, mods) = lParser(exp)(_.loopInvMode())
     (opt(idOpt), ISZ(invs: _*), ISZ(mods: _*))

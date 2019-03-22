@@ -628,7 +628,7 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.Stmt.While""""),
         ("cond", print_astExp(o.cond)),
         ("loopIdOpt", printOption(F, o.loopIdOpt, print_astId _)),
-        ("invariants", printISZ(F, o.invariants, print_astNamedExp _)),
+        ("invariants", printISZ(F, o.invariants, print_astOptNamedExp _)),
         ("modifies", printISZ(F, o.modifies, print_astExp _)),
         ("body", print_astBody(o.body)),
         ("attr", print_astAttr(o.attr))
@@ -640,7 +640,7 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.Stmt.DoWhile""""),
         ("cond", print_astExp(o.cond)),
         ("loopIdOpt", printOption(F, o.loopIdOpt, print_astId _)),
-        ("invariants", printISZ(F, o.invariants, print_astNamedExp _)),
+        ("invariants", printISZ(F, o.invariants, print_astOptNamedExp _)),
         ("modifies", printISZ(F, o.modifies, print_astExp _)),
         ("body", print_astBody(o.body)),
         ("attr", print_astAttr(o.attr))
@@ -652,7 +652,7 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.Stmt.For""""),
         ("enumGens", printISZ(F, o.enumGens, print_astEnumGenFor _)),
         ("loopIdOpt", printOption(F, o.loopIdOpt, print_astId _)),
-        ("invariants", printISZ(F, o.invariants, print_astNamedExp _)),
+        ("invariants", printISZ(F, o.invariants, print_astOptNamedExp _)),
         ("modifies", printISZ(F, o.modifies, print_astExp _)),
         ("body", print_astBody(o.body)),
         ("attr", print_astAttr(o.attr))
@@ -766,6 +766,14 @@ object JSON {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.NamedExp""""),
         ("id", print_astId(o.id)),
+        ("exp", print_astExp(o.exp))
+      ))
+    }
+
+    @pure def print_astOptNamedExp(o: org.sireum.lang.ast.OptNamedExp): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.OptNamedExp""""),
+        ("idOpt", printOption(F, o.idOpt, print_astId _)),
         ("exp", print_astExp(o.exp))
       ))
     }
@@ -3107,7 +3115,7 @@ object JSON {
       val loopIdOpt = parser.parseOption(parse_astId _)
       parser.parseObjectNext()
       parser.parseObjectKey("invariants")
-      val invariants = parser.parseISZ(parse_astNamedExp _)
+      val invariants = parser.parseISZ(parse_astOptNamedExp _)
       parser.parseObjectNext()
       parser.parseObjectKey("modifies")
       val modifies = parser.parseISZ(parse_astExp _)
@@ -3137,7 +3145,7 @@ object JSON {
       val loopIdOpt = parser.parseOption(parse_astId _)
       parser.parseObjectNext()
       parser.parseObjectKey("invariants")
-      val invariants = parser.parseISZ(parse_astNamedExp _)
+      val invariants = parser.parseISZ(parse_astOptNamedExp _)
       parser.parseObjectNext()
       parser.parseObjectKey("modifies")
       val modifies = parser.parseISZ(parse_astExp _)
@@ -3167,7 +3175,7 @@ object JSON {
       val loopIdOpt = parser.parseOption(parse_astId _)
       parser.parseObjectNext()
       parser.parseObjectKey("invariants")
-      val invariants = parser.parseISZ(parse_astNamedExp _)
+      val invariants = parser.parseISZ(parse_astOptNamedExp _)
       parser.parseObjectNext()
       parser.parseObjectKey("modifies")
       val modifies = parser.parseISZ(parse_astExp _)
@@ -3399,6 +3407,24 @@ object JSON {
       val exp = parse_astExp()
       parser.parseObjectNext()
       return org.sireum.lang.ast.NamedExp(id, exp)
+    }
+
+    def parse_astOptNamedExp(): org.sireum.lang.ast.OptNamedExp = {
+      val r = parse_astOptNamedExpT(F)
+      return r
+    }
+
+    def parse_astOptNamedExpT(typeParsed: B): org.sireum.lang.ast.OptNamedExp = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.OptNamedExp")
+      }
+      parser.parseObjectKey("idOpt")
+      val idOpt = parser.parseOption(parse_astId _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("exp")
+      val exp = parse_astExp()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.OptNamedExp(idOpt, exp)
     }
 
     def parse_astCase(): org.sireum.lang.ast.Case = {
@@ -6626,6 +6652,24 @@ object JSON {
       return r
     }
     val r = to(s, f_astNamedExp _)
+    return r
+  }
+
+  def from_astOptNamedExp(o: org.sireum.lang.ast.OptNamedExp, isCompact: B): String = {
+    val st = Printer.print_astOptNamedExp(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astOptNamedExp(s: String): Either[org.sireum.lang.ast.OptNamedExp, Json.ErrorMsg] = {
+    def f_astOptNamedExp(parser: Parser): org.sireum.lang.ast.OptNamedExp = {
+      val r = parser.parse_astOptNamedExp()
+      return r
+    }
+    val r = to(s, f_astOptNamedExp _)
     return r
   }
 

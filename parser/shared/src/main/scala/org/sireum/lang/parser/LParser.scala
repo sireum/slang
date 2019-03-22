@@ -511,6 +511,16 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
     r.reverse
   }
 
+  def optNamedExprs(continue: => Boolean): List[AST.OptNamedExp] = {
+    var r = List({val (idOpt, e) = optNamedExpr(); AST.OptNamedExp(idOpt, e) })
+    newLinesOpt()
+    while (continue) {
+      r ::= {val (idOpt, e) = optNamedExpr(); AST.OptNamedExp(idOpt, e) }
+      newLinesOpt()
+    }
+    r.reverse
+  }
+
   def exprnls(continue: => Boolean): List[AST.Exp] = {
     var r = List(sparser.translateExp(expr()))
     newLinesOpt()
@@ -564,12 +574,12 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
   /** {{{
     *  LoopInvMod     ::= BOF {nl}
     *                     [ Ident : {nl} ]
-    *                     [ Ident<invariant> {nl} NamedExprs ]
+    *                     [ Ident<invariant> {nl} OptNamedExprs ]
     *                     [ Ident<modifies> {nl} Expr {`,' {nl} Expr} ] {nl}
     *                     EOF
     *  }}}
     */
-  def loopInvMode(): (Option[AST.Id], List[AST.NamedExp], List[AST.Exp]) = {
+  def loopInvMode(): (Option[AST.Id], List[AST.OptNamedExp], List[AST.Exp]) = {
     accept[BOF]
     val idOpt = if (isIdent && ahead(token.is[Colon])) {
       val ident = acceptToken[Ident]
@@ -580,7 +590,7 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
     val is = if (isIdentOf("invariant")) {
       next()
       newLinesOpt()
-      namedExprs(token.isNot[EOF] || !isIdentOf("modifies"))
+      optNamedExprs(token.isNot[EOF] && !isIdentOf("modifies"))
     } else List()
     val mods = modifies()
     accept[EOF]

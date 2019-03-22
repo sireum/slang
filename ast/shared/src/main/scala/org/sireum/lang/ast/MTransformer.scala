@@ -213,6 +213,10 @@ object MTransformer {
 
   val PostResultNamedExp: MOption[NamedExp] = MNone()
 
+  val PreResultOptNamedExp: PreResult[OptNamedExp] = PreResult(T, MNone())
+
+  val PostResultOptNamedExp: MOption[OptNamedExp] = MNone()
+
   val PreResultCase: PreResult[Case] = PreResult(T, MNone())
 
   val PostResultCase: MOption[Case] = MNone()
@@ -829,6 +833,10 @@ import MTransformer._
 
   def preNamedExp(o: NamedExp): PreResult[NamedExp] = {
     return PreResultNamedExp
+  }
+
+  def preOptNamedExp(o: OptNamedExp): PreResult[OptNamedExp] = {
+    return PreResultOptNamedExp
   }
 
   def preCase(o: Case): PreResult[Case] = {
@@ -1630,6 +1638,10 @@ import MTransformer._
     return PostResultNamedExp
   }
 
+  def postOptNamedExp(o: OptNamedExp): MOption[OptNamedExp] = {
+    return PostResultOptNamedExp
+  }
+
   def postCase(o: Case): MOption[Case] = {
     return PostResultCase
   }
@@ -2360,7 +2372,7 @@ import MTransformer._
         case o2: Stmt.While =>
           val r0: MOption[Exp] = transformExp(o2.cond)
           val r1: MOption[Option[Id]] = transformOption(o2.loopIdOpt, transformId _)
-          val r2: MOption[IS[Z, NamedExp]] = transformISZ(o2.invariants, transformNamedExp _)
+          val r2: MOption[IS[Z, OptNamedExp]] = transformISZ(o2.invariants, transformOptNamedExp _)
           val r3: MOption[IS[Z, Exp]] = transformISZ(o2.modifies, transformExp _)
           val r4: MOption[Body] = transformBody(o2.body)
           val r5: MOption[Attr] = transformAttr(o2.attr)
@@ -2371,7 +2383,7 @@ import MTransformer._
         case o2: Stmt.DoWhile =>
           val r0: MOption[Exp] = transformExp(o2.cond)
           val r1: MOption[Option[Id]] = transformOption(o2.loopIdOpt, transformId _)
-          val r2: MOption[IS[Z, NamedExp]] = transformISZ(o2.invariants, transformNamedExp _)
+          val r2: MOption[IS[Z, OptNamedExp]] = transformISZ(o2.invariants, transformOptNamedExp _)
           val r3: MOption[IS[Z, Exp]] = transformISZ(o2.modifies, transformExp _)
           val r4: MOption[Body] = transformBody(o2.body)
           val r5: MOption[Attr] = transformAttr(o2.attr)
@@ -2382,7 +2394,7 @@ import MTransformer._
         case o2: Stmt.For =>
           val r0: MOption[IS[Z, EnumGen.For]] = transformISZ(o2.enumGens, transformEnumGenFor _)
           val r1: MOption[Option[Id]] = transformOption(o2.loopIdOpt, transformId _)
-          val r2: MOption[IS[Z, NamedExp]] = transformISZ(o2.invariants, transformNamedExp _)
+          val r2: MOption[IS[Z, OptNamedExp]] = transformISZ(o2.invariants, transformOptNamedExp _)
           val r3: MOption[IS[Z, Exp]] = transformISZ(o2.modifies, transformExp _)
           val r4: MOption[Body] = transformBody(o2.body)
           val r5: MOption[Attr] = transformAttr(o2.attr)
@@ -2531,7 +2543,7 @@ import MTransformer._
         case o2: Stmt.While =>
           val r0: MOption[Exp] = transformExp(o2.cond)
           val r1: MOption[Option[Id]] = transformOption(o2.loopIdOpt, transformId _)
-          val r2: MOption[IS[Z, NamedExp]] = transformISZ(o2.invariants, transformNamedExp _)
+          val r2: MOption[IS[Z, OptNamedExp]] = transformISZ(o2.invariants, transformOptNamedExp _)
           val r3: MOption[IS[Z, Exp]] = transformISZ(o2.modifies, transformExp _)
           val r4: MOption[Body] = transformBody(o2.body)
           val r5: MOption[Attr] = transformAttr(o2.attr)
@@ -2542,7 +2554,7 @@ import MTransformer._
         case o2: Stmt.DoWhile =>
           val r0: MOption[Exp] = transformExp(o2.cond)
           val r1: MOption[Option[Id]] = transformOption(o2.loopIdOpt, transformId _)
-          val r2: MOption[IS[Z, NamedExp]] = transformISZ(o2.invariants, transformNamedExp _)
+          val r2: MOption[IS[Z, OptNamedExp]] = transformISZ(o2.invariants, transformOptNamedExp _)
           val r3: MOption[IS[Z, Exp]] = transformISZ(o2.modifies, transformExp _)
           val r4: MOption[Body] = transformBody(o2.body)
           val r5: MOption[Attr] = transformAttr(o2.attr)
@@ -2553,7 +2565,7 @@ import MTransformer._
         case o2: Stmt.For =>
           val r0: MOption[IS[Z, EnumGen.For]] = transformISZ(o2.enumGens, transformEnumGenFor _)
           val r1: MOption[Option[Id]] = transformOption(o2.loopIdOpt, transformId _)
-          val r2: MOption[IS[Z, NamedExp]] = transformISZ(o2.invariants, transformNamedExp _)
+          val r2: MOption[IS[Z, OptNamedExp]] = transformISZ(o2.invariants, transformOptNamedExp _)
           val r3: MOption[IS[Z, Exp]] = transformISZ(o2.modifies, transformExp _)
           val r4: MOption[Body] = transformBody(o2.body)
           val r5: MOption[Attr] = transformAttr(o2.attr)
@@ -2727,6 +2739,34 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: NamedExp = r.getOrElse(o)
     val postR: MOption[NamedExp] = postNamedExp(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformOptNamedExp(o: OptNamedExp): MOption[OptNamedExp] = {
+    val preR: PreResult[OptNamedExp] = preOptNamedExp(o)
+    val r: MOption[OptNamedExp] = if (preR.continu) {
+      val o2: OptNamedExp = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[Option[Id]] = transformOption(o2.idOpt, transformId _)
+      val r1: MOption[Exp] = transformExp(o2.exp)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+        MSome(o2(idOpt = r0.getOrElse(o2.idOpt), exp = r1.getOrElse(o2.exp)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: OptNamedExp = r.getOrElse(o)
+    val postR: MOption[OptNamedExp] = postOptNamedExp(o2)
     if (postR.nonEmpty) {
       return postR
     } else if (hasChanged) {

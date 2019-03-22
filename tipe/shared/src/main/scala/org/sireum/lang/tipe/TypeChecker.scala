@@ -3828,10 +3828,11 @@ import TypeChecker._
     }
   }
 
-  def checkLoopInv(scope: Scope, invs: ISZ[AST.NamedExp], modifies: ISZ[AST.Exp], reporter: Reporter): (ISZ[AST.NamedExp], ISZ[AST.Exp]) = {
-    var newInvs: ISZ[AST.NamedExp] = ISZ()
+  def checkLoopInv(scope: Scope, invs: ISZ[AST.OptNamedExp], modifies: ISZ[AST.Exp],
+                   reporter: Reporter): (ISZ[AST.OptNamedExp], ISZ[AST.Exp]) = {
+    var newInvs: ISZ[AST.OptNamedExp] = ISZ()
     for (inv <- invs) {
-      val newInv = checkNamedExp(AST.Typed.bOpt, scope, inv, reporter)
+      val newInv = checkOptNamedExp(AST.Typed.bOpt, scope, inv, reporter)
       newInvs = newInvs :+ newInv
     }
     var newMods: ISZ[AST.Exp] = ISZ()
@@ -3844,6 +3845,12 @@ import TypeChecker._
 
   def checkNamedExp(expectedOpt: Option[AST.Typed], sc: Scope, namedExp: AST.NamedExp,
                     reporter: Reporter): AST.NamedExp = {
+    val (newExp, _) = checkExp(expectedOpt, sc, namedExp.exp, reporter)
+    return namedExp(exp = newExp)
+  }
+
+  def checkOptNamedExp(expectedOpt: Option[AST.Typed], sc: Scope, namedExp: AST.OptNamedExp,
+                    reporter: Reporter): AST.OptNamedExp = {
     val (newExp, _) = checkExp(expectedOpt, sc, namedExp.exp, reporter)
     return namedExp(exp = newExp)
   }
