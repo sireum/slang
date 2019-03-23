@@ -836,6 +836,7 @@ object MsgPack {
 
     def write_astStmtWhile(o: org.sireum.lang.ast.Stmt.While): Unit = {
       writer.writeZ(Constants._astStmtWhile)
+      writer.writeISZ(o.context, writer.writeString _)
       write_astExp(o.cond)
       writer.writeOption(o.loopIdOpt, write_astId _)
       writer.writeISZ(o.invariants, write_astOptNamedExp _)
@@ -846,6 +847,7 @@ object MsgPack {
 
     def write_astStmtDoWhile(o: org.sireum.lang.ast.Stmt.DoWhile): Unit = {
       writer.writeZ(Constants._astStmtDoWhile)
+      writer.writeISZ(o.context, writer.writeString _)
       write_astExp(o.cond)
       writer.writeOption(o.loopIdOpt, write_astId _)
       writer.writeISZ(o.invariants, write_astOptNamedExp _)
@@ -856,6 +858,7 @@ object MsgPack {
 
     def write_astStmtFor(o: org.sireum.lang.ast.Stmt.For): Unit = {
       writer.writeZ(Constants._astStmtFor)
+      writer.writeISZ(o.context, writer.writeString _)
       writer.writeISZ(o.enumGens, write_astEnumGenFor _)
       writer.writeOption(o.loopIdOpt, write_astId _)
       writer.writeISZ(o.invariants, write_astOptNamedExp _)
@@ -2617,13 +2620,14 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astStmtWhile)
       }
+      val context = reader.readISZ(reader.readString _)
       val cond = read_astExp()
       val loopIdOpt = reader.readOption(read_astId _)
       val invariants = reader.readISZ(read_astOptNamedExp _)
       val modifies = reader.readISZ(read_astExp _)
       val body = read_astBody()
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.While(cond, loopIdOpt, invariants, modifies, body, attr)
+      return org.sireum.lang.ast.Stmt.While(context, cond, loopIdOpt, invariants, modifies, body, attr)
     }
 
     def read_astStmtDoWhile(): org.sireum.lang.ast.Stmt.DoWhile = {
@@ -2635,13 +2639,14 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astStmtDoWhile)
       }
+      val context = reader.readISZ(reader.readString _)
       val cond = read_astExp()
       val loopIdOpt = reader.readOption(read_astId _)
       val invariants = reader.readISZ(read_astOptNamedExp _)
       val modifies = reader.readISZ(read_astExp _)
       val body = read_astBody()
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.DoWhile(cond, loopIdOpt, invariants, modifies, body, attr)
+      return org.sireum.lang.ast.Stmt.DoWhile(context, cond, loopIdOpt, invariants, modifies, body, attr)
     }
 
     def read_astStmtFor(): org.sireum.lang.ast.Stmt.For = {
@@ -2653,13 +2658,14 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astStmtFor)
       }
+      val context = reader.readISZ(reader.readString _)
       val enumGens = reader.readISZ(read_astEnumGenFor _)
       val loopIdOpt = reader.readOption(read_astId _)
       val invariants = reader.readISZ(read_astOptNamedExp _)
       val modifies = reader.readISZ(read_astExp _)
       val body = read_astBody()
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.For(enumGens, loopIdOpt, invariants, modifies, body, attr)
+      return org.sireum.lang.ast.Stmt.For(context, enumGens, loopIdOpt, invariants, modifies, body, attr)
     }
 
     def read_astStmtReturn(): org.sireum.lang.ast.Stmt.Return = {

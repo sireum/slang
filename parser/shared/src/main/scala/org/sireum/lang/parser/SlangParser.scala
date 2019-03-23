@@ -1973,6 +1973,7 @@ class SlangParser(
     if (hasError) rStmt
     else
       AST.Stmt.While(
+        ISZ(),
         translateExp(stat.expr),
         loopIdOpt,
         invariants,
@@ -2010,6 +2011,7 @@ class SlangParser(
     if (hasError) rStmt
     else
       AST.Stmt.DoWhile(
+        ISZ(),
         translateExp(stat.expr),
         loopIdOpt,
         invariants,
@@ -2047,6 +2049,7 @@ class SlangParser(
     if (hasError) rStmt
     else
       AST.Stmt.For(
+        ISZ(),
         translateEnumGens(stat.enums),
         loopIdOpt,
         invariants,

@@ -3718,8 +3718,8 @@ import TypeChecker._
         case Some(newScope) =>
           val (newInvs, newMods) = this(inSpec = T).checkLoopInv(scope, forStmt.invariants, forStmt.modifies, reporter)
           val newBody = checkBody(None(), newScope, forStmt.body, reporter)
-          return forStmt(enumGens = newEnumGens, invariants = newInvs, modifies = newMods, body = newBody)
-        case _ => return forStmt(enumGens = newEnumGens)
+          return forStmt(context = context, enumGens = newEnumGens, invariants = newInvs, modifies = newMods, body = newBody)
+        case _ => return forStmt(context = context, enumGens = newEnumGens)
       }
     }
 
@@ -3742,7 +3742,7 @@ import TypeChecker._
         val (newInvs, newMods) = this(inSpec = T).checkLoopInv(scope, stmt.invariants, stmt.modifies, reporter)
         val newBody = checkBody(None(), createNewScope(scope), stmt.body, reporter)
         val (newCond, _) = checkExp(AST.Typed.bOpt, scope, stmt.cond, reporter)
-        return (Some(scope), stmt(cond = newCond, invariants = newInvs, modifies = newMods, body = newBody))
+        return (Some(scope), stmt(context = context, cond = newCond, invariants = newInvs, modifies = newMods, body = newBody))
 
       case stmt: AST.Stmt.Enum => return (Some(scope), stmt)
 
@@ -3823,7 +3823,7 @@ import TypeChecker._
         val (newCond, _) = checkExp(AST.Typed.bOpt, scope, stmt.cond, reporter)
         val (newInvs, newMods) = this(inSpec = T).checkLoopInv(scope, stmt.invariants, stmt.modifies, reporter)
         val newBody = checkBody(None(), createNewScope(scope), stmt.body, reporter)
-        return (Some(scope), stmt(cond = newCond, invariants = newInvs, modifies = newMods, body = newBody))
+        return (Some(scope), stmt(context = context, cond = newCond, invariants = newInvs, modifies = newMods, body = newBody))
 
     }
   }

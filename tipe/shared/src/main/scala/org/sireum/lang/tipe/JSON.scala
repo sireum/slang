@@ -626,6 +626,7 @@ object JSON {
     @pure def print_astStmtWhile(o: org.sireum.lang.ast.Stmt.While): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Stmt.While""""),
+        ("context", printISZ(T, o.context, printString _)),
         ("cond", print_astExp(o.cond)),
         ("loopIdOpt", printOption(F, o.loopIdOpt, print_astId _)),
         ("invariants", printISZ(F, o.invariants, print_astOptNamedExp _)),
@@ -638,6 +639,7 @@ object JSON {
     @pure def print_astStmtDoWhile(o: org.sireum.lang.ast.Stmt.DoWhile): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Stmt.DoWhile""""),
+        ("context", printISZ(T, o.context, printString _)),
         ("cond", print_astExp(o.cond)),
         ("loopIdOpt", printOption(F, o.loopIdOpt, print_astId _)),
         ("invariants", printISZ(F, o.invariants, print_astOptNamedExp _)),
@@ -650,6 +652,7 @@ object JSON {
     @pure def print_astStmtFor(o: org.sireum.lang.ast.Stmt.For): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Stmt.For""""),
+        ("context", printISZ(T, o.context, printString _)),
         ("enumGens", printISZ(F, o.enumGens, print_astEnumGenFor _)),
         ("loopIdOpt", printOption(F, o.loopIdOpt, print_astId _)),
         ("invariants", printISZ(F, o.invariants, print_astOptNamedExp _)),
@@ -3108,6 +3111,9 @@ object JSON {
       if (!typeParsed) {
         parser.parseObjectType("org.sireum.lang.ast.Stmt.While")
       }
+      parser.parseObjectKey("context")
+      val context = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
       parser.parseObjectKey("cond")
       val cond = parse_astExp()
       parser.parseObjectNext()
@@ -3126,7 +3132,7 @@ object JSON {
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.While(cond, loopIdOpt, invariants, modifies, body, attr)
+      return org.sireum.lang.ast.Stmt.While(context, cond, loopIdOpt, invariants, modifies, body, attr)
     }
 
     def parse_astStmtDoWhile(): org.sireum.lang.ast.Stmt.DoWhile = {
@@ -3138,6 +3144,9 @@ object JSON {
       if (!typeParsed) {
         parser.parseObjectType("org.sireum.lang.ast.Stmt.DoWhile")
       }
+      parser.parseObjectKey("context")
+      val context = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
       parser.parseObjectKey("cond")
       val cond = parse_astExp()
       parser.parseObjectNext()
@@ -3156,7 +3165,7 @@ object JSON {
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.DoWhile(cond, loopIdOpt, invariants, modifies, body, attr)
+      return org.sireum.lang.ast.Stmt.DoWhile(context, cond, loopIdOpt, invariants, modifies, body, attr)
     }
 
     def parse_astStmtFor(): org.sireum.lang.ast.Stmt.For = {
@@ -3168,6 +3177,9 @@ object JSON {
       if (!typeParsed) {
         parser.parseObjectType("org.sireum.lang.ast.Stmt.For")
       }
+      parser.parseObjectKey("context")
+      val context = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
       parser.parseObjectKey("enumGens")
       val enumGens = parser.parseISZ(parse_astEnumGenFor _)
       parser.parseObjectNext()
@@ -3186,7 +3198,7 @@ object JSON {
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.For(enumGens, loopIdOpt, invariants, modifies, body, attr)
+      return org.sireum.lang.ast.Stmt.For(context, enumGens, loopIdOpt, invariants, modifies, body, attr)
     }
 
     def parse_astStmtReturn(): org.sireum.lang.ast.Stmt.Return = {

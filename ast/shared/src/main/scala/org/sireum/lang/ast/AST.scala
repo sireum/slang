@@ -288,6 +288,7 @@ object Stmt {
   }
 
   @sig trait Loop {
+    @pure def context: ISZ[String]
     @pure def loopIdOpt: Option[Id]
     @pure def invariants: ISZ[OptNamedExp]
     @pure def modifies: ISZ[Exp]
@@ -350,8 +351,13 @@ object Stmt {
     }
   }
 
-  @datatype class While(cond: Exp, val loopIdOpt: Option[Id], val invariants: ISZ[OptNamedExp], val modifies: ISZ[Exp],
-                        body: Body, @hidden attr: Attr)
+  @datatype class While(val context: ISZ[String],
+                        cond: Exp,
+                        val loopIdOpt: Option[Id],
+                        val invariants: ISZ[OptNamedExp],
+                        val modifies: ISZ[Exp],
+                        body: Body,
+                        @hidden attr: Attr)
       extends Stmt with Loop {
 
     @pure override def posOpt: Option[Position] = {
@@ -360,8 +366,13 @@ object Stmt {
 
   }
 
-  @datatype class DoWhile(cond: Exp, val loopIdOpt: Option[Id], val invariants: ISZ[OptNamedExp], val modifies: ISZ[Exp],
-                          body: Body, @hidden attr: Attr)
+  @datatype class DoWhile(val context: ISZ[String],
+                          cond: Exp,
+                          val loopIdOpt: Option[Id],
+                          val invariants: ISZ[OptNamedExp],
+                          val modifies: ISZ[Exp],
+                          body: Body,
+                          @hidden attr: Attr)
       extends Stmt with Loop {
 
     @pure override def posOpt: Option[Position] = {
@@ -371,6 +382,7 @@ object Stmt {
   }
 
   @datatype class For(
+    val context: ISZ[String],
     enumGens: ISZ[EnumGen.For],
     val loopIdOpt: Option[Id],
     val invariants: ISZ[OptNamedExp],
