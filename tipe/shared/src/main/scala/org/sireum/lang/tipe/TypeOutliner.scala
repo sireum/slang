@@ -357,12 +357,14 @@ object TypeOutliner {
     )
     val (
       TypeInfo.Members(specVars, _, specMethods, methods, invariants, facts, theorems, refinements),
+      parents,
       ancestors,
       newParents
     ) =
       outlineInheritedMembers(info.name, info.ast.parents, scope, members, reporter)
     val newInfo = info(
       outlined = T,
+      parents = parents,
       ancestors = ancestors,
       ast = info.ast(parents = newParents),
       specVars = specVars,
@@ -398,6 +400,7 @@ object TypeOutliner {
     )
     val (
       TypeInfo.Members(specVars, vars, specMethods, methods, invariants, facts, theorems, refinements),
+      parents,
       ancestors,
       newParents
     ) =
@@ -428,6 +431,7 @@ object TypeOutliner {
       if (info.ast.isRoot) {
         info(
           outlined = T,
+          parents = parents,
           ancestors = ancestors,
           ast = info.ast(parents = newParents),
           specVars = specVars,
@@ -618,7 +622,7 @@ object TypeOutliner {
     scope: Scope,
     info: TypeInfo.Members,
     reporter: Reporter
-  ): (TypeInfo.Members, ISZ[AST.Typed.Name], ISZ[AST.Type.Named]) = {
+  ): (TypeInfo.Members, ISZ[AST.Typed.Name], ISZ[AST.Typed.Name], ISZ[AST.Type.Named]) = {
     val vars = info.vars
     var specVars = info.specVars
     var specMethods = info.specMethods
@@ -882,7 +886,8 @@ object TypeOutliner {
       }
     }
 
-    var ancestors = HashSSet.empty[AST.Typed]
+    var typedParents = ISZ[AST.Typed.Name]()
+    var ancestors = HashSSet.empty[AST.Typed.Name]
     var newParents = ISZ[AST.Type.Named]()
     for (parent <- parents) {
       val tipeOpt = typeHierarchy.typed(scope, parent, reporter)
@@ -897,7 +902,9 @@ object TypeOutliner {
                     TypeChecker.buildTypeSubstMap(ti.name, parent.posOpt, ti.ast.typeParams, t.args, reporter)
                   substMapOpt match {
                     case Some(substMap) =>
-                      ancestors = ancestors + ti.tpe.subst(substMap)
+                      val typedParent = ti.tpe.subst(substMap)
+                      typedParents = typedParents :+ typedParent
+                      ancestors = ancestors + typedParent
                       val posOpt = parent.attr.posOpt
                       for (tpe <- ti.ancestors) {
                         ancestors = ancestors + tpe.subst(substMap)
@@ -936,7 +943,9 @@ object TypeOutliner {
                     TypeChecker.buildTypeSubstMap(ti.name, parent.posOpt, ti.ast.typeParams, t.args, reporter)
                   substMapOpt match {
                     case Some(substMap) =>
-                      ancestors = ancestors + ti.tpe.subst(substMap)
+                      val typedParent = ti.tpe.subst(substMap)
+                      typedParents = typedParents :+ typedParent
+                      ancestors = ancestors + typedParent
                       val posOpt = parent.attr.posOpt
                       for (tpe <- ti.ancestors) {
                         ancestors = ancestors + tpe.subst(substMap)
@@ -980,13 +989,8 @@ object TypeOutliner {
     }
     return (
       TypeInfo.Members(specVars, vars, specMethods, methods, invariants, facts, theorems, refinements),
-      ancestors.elements.map(
-        t =>
-          t match {
-            case t: AST.Typed.Name => t
-            case _ => halt("Unexpected situation while outlining types.")
-        }
-      ),
+      typedParents,
+      ancestors.elements,
       newParents,
     )
   }

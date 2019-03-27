@@ -254,6 +254,7 @@ object JSON {
         ("outlined", printB(o.outlined)),
         ("typeChecked", printB(o.typeChecked)),
         ("tpe", print_astTypedName(o.tpe)),
+        ("parents", printISZ(F, o.parents, print_astTypedName _)),
         ("ancestors", printISZ(F, o.ancestors, print_astTypedName _)),
         ("specVars", printHashMap(F, o.specVars, printString _, print_symbolInfoSpecVar _)),
         ("specMethods", printHashMap(F, o.specMethods, printString _, print_symbolInfoSpecMethod _)),
@@ -285,6 +286,7 @@ object JSON {
         ("constructorResOpt", printOption(F, o.constructorResOpt, print_astResolvedInfo _)),
         ("extractorTypeMap", printMap(F, o.extractorTypeMap, printString _, print_astTyped _)),
         ("extractorResOpt", printOption(F, o.extractorResOpt, print_astResolvedInfo _)),
+        ("parents", printISZ(F, o.parents, print_astTypedName _)),
         ("ancestors", printISZ(F, o.ancestors, print_astTypedName _)),
         ("specVars", printHashMap(F, o.specVars, printString _, print_symbolInfoSpecVar _)),
         ("vars", printHashMap(F, o.vars, printString _, print_symbolInfoVar _)),
@@ -2269,6 +2271,9 @@ object JSON {
       parser.parseObjectKey("tpe")
       val tpe = parse_astTypedName()
       parser.parseObjectNext()
+      parser.parseObjectKey("parents")
+      val parents = parser.parseISZ(parse_astTypedName _)
+      parser.parseObjectNext()
       parser.parseObjectKey("ancestors")
       val ancestors = parser.parseISZ(parse_astTypedName _)
       parser.parseObjectNext()
@@ -2299,7 +2304,7 @@ object JSON {
       parser.parseObjectKey("ast")
       val ast = parse_astStmtSig()
       parser.parseObjectNext()
-      return org.sireum.lang.symbol.TypeInfo.Sig(owner, outlined, typeChecked, tpe, ancestors, specVars, specMethods, methods, invariants, facts, theorems, refinements, scope, ast)
+      return org.sireum.lang.symbol.TypeInfo.Sig(owner, outlined, typeChecked, tpe, parents, ancestors, specVars, specMethods, methods, invariants, facts, theorems, refinements, scope, ast)
     }
 
     def parse_symbolTypeInfoName(): org.sireum.lang.symbol.TypeInfo.Name = {
@@ -2350,6 +2355,9 @@ object JSON {
       parser.parseObjectKey("extractorResOpt")
       val extractorResOpt = parser.parseOption(parse_astResolvedInfo _)
       parser.parseObjectNext()
+      parser.parseObjectKey("parents")
+      val parents = parser.parseISZ(parse_astTypedName _)
+      parser.parseObjectNext()
       parser.parseObjectKey("ancestors")
       val ancestors = parser.parseISZ(parse_astTypedName _)
       parser.parseObjectNext()
@@ -2383,7 +2391,7 @@ object JSON {
       parser.parseObjectKey("ast")
       val ast = parse_astStmtAdt()
       parser.parseObjectNext()
-      return org.sireum.lang.symbol.TypeInfo.Adt(owner, outlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, ancestors, specVars, vars, specMethods, methods, invariants, facts, theorems, refinements, scope, ast)
+      return org.sireum.lang.symbol.TypeInfo.Adt(owner, outlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, parents, ancestors, specVars, vars, specMethods, methods, invariants, facts, theorems, refinements, scope, ast)
     }
 
     def parse_symbolTypeInfoTypeAlias(): org.sireum.lang.symbol.TypeInfo.TypeAlias = {
