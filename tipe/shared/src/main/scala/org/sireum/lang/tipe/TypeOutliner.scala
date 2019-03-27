@@ -344,7 +344,7 @@ object TypeOutliner {
       info.name,
       TypeInfo.Members(
         info.specVars,
-        HashMap.empty,
+        HashSMap.empty,
         info.specMethods,
         info.methods,
         info.invariants,
@@ -512,8 +512,8 @@ object TypeOutliner {
     scope: Scope,
     reporter: Reporter
   ): TypeInfo.Members = {
-    var specVars = HashMap.empty[String, Info.SpecVar]
-    var vars = HashMap.empty[String, Info.Var]
+    var specVars = HashSMap.empty[String, Info.SpecVar]
+    var vars = HashSMap.empty[String, Info.Var]
     var specMethods = HashMap.empty[String, Info.SpecMethod]
     var methods = HashMap.empty[String, Info.Method]
 

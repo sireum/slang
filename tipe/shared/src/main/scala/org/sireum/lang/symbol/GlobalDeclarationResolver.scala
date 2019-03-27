@@ -383,7 +383,7 @@ import GlobalDeclarationResolver._
       case stmt: AST.Stmt.Sig =>
         val name = currentName :+ stmt.id.value
         val sc = scope(packageName, currentImports, name)
-        val members = resolveMembers(name, sc, stmt.stmts, HashMap.empty)
+        val members = resolveMembers(name, sc, stmt.stmts, HashSMap.empty)
         assert(members.vars.isEmpty)
         val tpe = AST.Typed.Name(
           name,
@@ -416,7 +416,7 @@ import GlobalDeclarationResolver._
       case stmt: AST.Stmt.Adt =>
         val name = currentName :+ stmt.id.value
         val sc = scope(packageName, currentImports, name)
-        var paramVars = HashMap.empty[String, Info.Var]
+        var paramVars = HashSMap.empty[String, Info.Var]
         var constructorParamVars = ISZ[String]()
         var extractorParamVars = ISZ[String]()
         for (p <- stmt.params) {
@@ -542,9 +542,9 @@ import GlobalDeclarationResolver._
     owner: QName,
     scope: Scope,
     stmts: ISZ[AST.Stmt],
-    vs: HashMap[String, Info.Var]
+    vs: HashSMap[String, Info.Var]
   ): TypeInfo.Members = {
-    var specVars = HashMap.empty[String, Info.SpecVar]
+    var specVars = HashSMap.empty[String, Info.SpecVar]
     var vars = vs
     var specMethods = HashMap.empty[String, Info.SpecMethod]
     var methods = HashMap.empty[String, Info.Method]

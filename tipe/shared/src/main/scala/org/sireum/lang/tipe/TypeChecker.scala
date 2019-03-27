@@ -3949,8 +3949,8 @@ import TypeChecker._
       }
     }
     val (_, newStmts) = checkStmts(F, None(), scope, stmts, reporter)
-    var specVars: HashMap[String, Info.SpecVar] = info.specVars
-    var vars: HashMap[String, Info.Var] = info.vars
+    var specVars: HashSMap[String, Info.SpecVar] = info.specVars
+    var vars: HashSMap[String, Info.Var] = info.vars
     var specMethods: HashMap[String, Info.SpecMethod] = info.specMethods
     var methods: HashMap[String, Info.Method] = info.methods
     for (stmt <- newStmts) {
@@ -4006,7 +4006,7 @@ import TypeChecker._
       }
     }
     val (_, newStmts) = checkStmts(F, None(), scope, stmts, reporter)
-    var specVars: HashMap[String, Info.SpecVar] = info.specVars
+    var specVars: HashSMap[String, Info.SpecVar] = info.specVars
     var specMethods: HashMap[String, Info.SpecMethod] = info.specMethods
     var methods: HashMap[String, Info.Method] = info.methods
     for (stmt <- newStmts) {

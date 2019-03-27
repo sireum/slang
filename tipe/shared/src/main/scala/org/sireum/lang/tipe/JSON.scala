@@ -256,7 +256,7 @@ object JSON {
         ("tpe", print_astTypedName(o.tpe)),
         ("parents", printISZ(F, o.parents, print_astTypedName _)),
         ("ancestors", printISZ(F, o.ancestors, print_astTypedName _)),
-        ("specVars", printHashMap(F, o.specVars, printString _, print_symbolInfoSpecVar _)),
+        ("specVars", printHashSMap(F, o.specVars, printString _, print_symbolInfoSpecVar _)),
         ("specMethods", printHashMap(F, o.specMethods, printString _, print_symbolInfoSpecMethod _)),
         ("methods", printHashMap(F, o.methods, printString _, print_symbolInfoMethod _)),
         ("invariants", printHashMap(F, o.invariants, printString _, print_symbolInfoNamedExp _)),
@@ -288,8 +288,8 @@ object JSON {
         ("extractorResOpt", printOption(F, o.extractorResOpt, print_astResolvedInfo _)),
         ("parents", printISZ(F, o.parents, print_astTypedName _)),
         ("ancestors", printISZ(F, o.ancestors, print_astTypedName _)),
-        ("specVars", printHashMap(F, o.specVars, printString _, print_symbolInfoSpecVar _)),
-        ("vars", printHashMap(F, o.vars, printString _, print_symbolInfoVar _)),
+        ("specVars", printHashSMap(F, o.specVars, printString _, print_symbolInfoSpecVar _)),
+        ("vars", printHashSMap(F, o.vars, printString _, print_symbolInfoVar _)),
         ("specMethods", printHashMap(F, o.specMethods, printString _, print_symbolInfoSpecMethod _)),
         ("methods", printHashMap(F, o.methods, printString _, print_symbolInfoMethod _)),
         ("invariants", printHashMap(F, o.invariants, printString _, print_symbolInfoNamedExp _)),
@@ -321,8 +321,8 @@ object JSON {
     @pure def print_symbolTypeInfoMembers(o: org.sireum.lang.symbol.TypeInfo.Members): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.symbol.TypeInfo.Members""""),
-        ("specVars", printHashMap(F, o.specVars, printString _, print_symbolInfoSpecVar _)),
-        ("vars", printHashMap(F, o.vars, printString _, print_symbolInfoVar _)),
+        ("specVars", printHashSMap(F, o.specVars, printString _, print_symbolInfoSpecVar _)),
+        ("vars", printHashSMap(F, o.vars, printString _, print_symbolInfoVar _)),
         ("specMethods", printHashMap(F, o.specMethods, printString _, print_symbolInfoSpecMethod _)),
         ("methods", printHashMap(F, o.methods, printString _, print_symbolInfoMethod _)),
         ("invariants", printHashMap(F, o.invariants, printString _, print_symbolInfoNamedExp _)),
@@ -2278,7 +2278,7 @@ object JSON {
       val ancestors = parser.parseISZ(parse_astTypedName _)
       parser.parseObjectNext()
       parser.parseObjectKey("specVars")
-      val specVars = parser.parseHashMap(parser.parseString _, parse_symbolInfoSpecVar _)
+      val specVars = parser.parseHashSMap(parser.parseString _, parse_symbolInfoSpecVar _)
       parser.parseObjectNext()
       parser.parseObjectKey("specMethods")
       val specMethods = parser.parseHashMap(parser.parseString _, parse_symbolInfoSpecMethod _)
@@ -2362,10 +2362,10 @@ object JSON {
       val ancestors = parser.parseISZ(parse_astTypedName _)
       parser.parseObjectNext()
       parser.parseObjectKey("specVars")
-      val specVars = parser.parseHashMap(parser.parseString _, parse_symbolInfoSpecVar _)
+      val specVars = parser.parseHashSMap(parser.parseString _, parse_symbolInfoSpecVar _)
       parser.parseObjectNext()
       parser.parseObjectKey("vars")
-      val vars = parser.parseHashMap(parser.parseString _, parse_symbolInfoVar _)
+      val vars = parser.parseHashSMap(parser.parseString _, parse_symbolInfoVar _)
       parser.parseObjectNext()
       parser.parseObjectKey("specMethods")
       val specMethods = parser.parseHashMap(parser.parseString _, parse_symbolInfoSpecMethod _)
@@ -2443,10 +2443,10 @@ object JSON {
         parser.parseObjectType("org.sireum.lang.symbol.TypeInfo.Members")
       }
       parser.parseObjectKey("specVars")
-      val specVars = parser.parseHashMap(parser.parseString _, parse_symbolInfoSpecVar _)
+      val specVars = parser.parseHashSMap(parser.parseString _, parse_symbolInfoSpecVar _)
       parser.parseObjectNext()
       parser.parseObjectKey("vars")
-      val vars = parser.parseHashMap(parser.parseString _, parse_symbolInfoVar _)
+      val vars = parser.parseHashSMap(parser.parseString _, parse_symbolInfoVar _)
       parser.parseObjectNext()
       parser.parseObjectKey("specMethods")
       val specMethods = parser.parseHashMap(parser.parseString _, parse_symbolInfoSpecMethod _)

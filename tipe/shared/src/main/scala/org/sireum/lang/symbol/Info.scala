@@ -683,7 +683,7 @@ object TypeInfo {
     tpe: AST.Typed.Name,
     parents: ISZ[AST.Typed.Name],
     ancestors: ISZ[AST.Typed.Name],
-    specVars: HashMap[String, Info.SpecVar],
+    specVars: HashSMap[String, Info.SpecVar],
     specMethods: HashMap[String, Info.SpecMethod],
     methods: HashMap[String, Info.Method],
     invariants: HashMap[String, Info.NamedExp],
@@ -750,8 +750,8 @@ object TypeInfo {
     extractorResOpt: Option[AST.ResolvedInfo],
     parents: ISZ[AST.Typed.Name],
     ancestors: ISZ[AST.Typed.Name],
-    specVars: HashMap[String, Info.SpecVar],
-    vars: HashMap[String, Info.Var],
+    specVars: HashSMap[String, Info.SpecVar],
+    vars: HashSMap[String, Info.Var],
     specMethods: HashMap[String, Info.SpecMethod],
     methods: HashMap[String, Info.Method],
     invariants: HashMap[String, Info.NamedExp],
@@ -841,8 +841,8 @@ object TypeInfo {
   }
 
   @datatype class Members(
-    specVars: HashMap[String, Info.SpecVar],
-    vars: HashMap[String, Info.Var],
+    specVars: HashSMap[String, Info.SpecVar],
+    vars: HashSMap[String, Info.Var],
     specMethods: HashMap[String, Info.SpecMethod],
     methods: HashMap[String, Info.Method],
     invariants: HashMap[String, Info.NamedExp],
