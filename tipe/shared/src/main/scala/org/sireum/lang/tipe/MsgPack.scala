@@ -524,7 +524,6 @@ object MsgPack {
       writer.writeB(o.outlined)
       writer.writeB(o.typeChecked)
       write_astTypedName(o.tpe)
-      writer.writeISZ(o.parents, write_astTypedName _)
       writer.writeISZ(o.ancestors, write_astTypedName _)
       writer.writeHashSMap(o.specVars, writer.writeString _, write_symbolInfoSpecVar _)
       writer.writeHashMap(o.specMethods, writer.writeString _, write_symbolInfoSpecMethod _)
@@ -552,7 +551,6 @@ object MsgPack {
       writer.writeOption(o.constructorResOpt, write_astResolvedInfo _)
       writer.writeMap(o.extractorTypeMap, writer.writeString _, write_astTyped _)
       writer.writeOption(o.extractorResOpt, write_astResolvedInfo _)
-      writer.writeISZ(o.parents, write_astTypedName _)
       writer.writeISZ(o.ancestors, write_astTypedName _)
       writer.writeHashSMap(o.specVars, writer.writeString _, write_symbolInfoSpecVar _)
       writer.writeHashSMap(o.vars, writer.writeString _, write_symbolInfoVar _)
@@ -2046,7 +2044,6 @@ object MsgPack {
       val outlined = reader.readB()
       val typeChecked = reader.readB()
       val tpe = read_astTypedName()
-      val parents = reader.readISZ(read_astTypedName _)
       val ancestors = reader.readISZ(read_astTypedName _)
       val specVars = reader.readHashSMap(reader.readString _, read_symbolInfoSpecVar _)
       val specMethods = reader.readHashMap(reader.readString _, read_symbolInfoSpecMethod _)
@@ -2057,7 +2054,7 @@ object MsgPack {
       val refinements = reader.readHashMap(reader.readString _, read_symbolTypeInfoName _)
       val scope = read_symbolScopeGlobal()
       val ast = read_astStmtSig()
-      return org.sireum.lang.symbol.TypeInfo.Sig(owner, outlined, typeChecked, tpe, parents, ancestors, specVars, specMethods, methods, invariants, facts, theorems, refinements, scope, ast)
+      return org.sireum.lang.symbol.TypeInfo.Sig(owner, outlined, typeChecked, tpe, ancestors, specVars, specMethods, methods, invariants, facts, theorems, refinements, scope, ast)
     }
 
     def read_symbolTypeInfoName(): org.sireum.lang.symbol.TypeInfo.Name = {
@@ -2090,7 +2087,6 @@ object MsgPack {
       val constructorResOpt = reader.readOption(read_astResolvedInfo _)
       val extractorTypeMap = reader.readMap(reader.readString _, read_astTyped _)
       val extractorResOpt = reader.readOption(read_astResolvedInfo _)
-      val parents = reader.readISZ(read_astTypedName _)
       val ancestors = reader.readISZ(read_astTypedName _)
       val specVars = reader.readHashSMap(reader.readString _, read_symbolInfoSpecVar _)
       val vars = reader.readHashSMap(reader.readString _, read_symbolInfoVar _)
@@ -2102,7 +2098,7 @@ object MsgPack {
       val refinements = reader.readHashMap(reader.readString _, read_symbolTypeInfoName _)
       val scope = read_symbolScopeGlobal()
       val ast = read_astStmtAdt()
-      return org.sireum.lang.symbol.TypeInfo.Adt(owner, outlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, parents, ancestors, specVars, vars, specMethods, methods, invariants, facts, theorems, refinements, scope, ast)
+      return org.sireum.lang.symbol.TypeInfo.Adt(owner, outlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, ancestors, specVars, vars, specMethods, methods, invariants, facts, theorems, refinements, scope, ast)
     }
 
     def read_symbolTypeInfoTypeAlias(): org.sireum.lang.symbol.TypeInfo.TypeAlias = {

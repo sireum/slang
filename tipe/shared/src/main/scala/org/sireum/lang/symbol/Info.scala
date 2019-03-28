@@ -681,7 +681,6 @@ object TypeInfo {
     outlined: B,
     typeChecked: B,
     tpe: AST.Typed.Name,
-    parents: ISZ[AST.Typed.Name],
     ancestors: ISZ[AST.Typed.Name],
     specVars: HashSMap[String, Info.SpecVar],
     specMethods: HashMap[String, Info.SpecMethod],
@@ -735,6 +734,17 @@ object TypeInfo {
 
       return noResult
     }
+
+    @memoize def parents: ISZ[AST.Typed.Name] = {
+      var r = ISZ[AST.Typed.Name]()
+      for (p <- ast.parents) {
+        p.typedOpt match {
+          case Some(t: AST.Typed.Name) => r = r :+ t
+          case _ =>
+        }
+      }
+      return r
+    }
   }
 
   @datatype class Name(ids: ISZ[String])
@@ -748,7 +758,6 @@ object TypeInfo {
     constructorResOpt: Option[AST.ResolvedInfo],
     extractorTypeMap: Map[String, AST.Typed],
     extractorResOpt: Option[AST.ResolvedInfo],
-    parents: ISZ[AST.Typed.Name],
     ancestors: ISZ[AST.Typed.Name],
     specVars: HashSMap[String, Info.SpecVar],
     vars: HashSMap[String, Info.Var],
@@ -807,6 +816,17 @@ object TypeInfo {
       }
 
       return noResult
+    }
+
+    @memoize def parents: ISZ[AST.Typed.Name] = {
+      var r = ISZ[AST.Typed.Name]()
+      for (p <- ast.parents) {
+        p.typedOpt match {
+          case Some(t: AST.Typed.Name) => r = r :+ t
+          case _ =>
+        }
+      }
+      return r
     }
   }
 
