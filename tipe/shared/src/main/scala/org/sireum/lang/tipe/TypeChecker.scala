@@ -2926,7 +2926,7 @@ import TypeChecker._
     return (Some(addImport(scope)), stmt)
   }
 
-  def checkBody(expectedOpt: Option[AST.Typed], sc: Scope.Local, body: AST.Body, reporter: Reporter): AST.Body = {
+  def checkBody(expectedOpt: Option[AST.Typed], sc: Scope.Local, body: AST.Body, reporter: Reporter): (Scope.Local, AST.Body) = {
     val to = TypeOutliner(typeHierarchy)
     var ok = T
     var scope = sc
@@ -2937,7 +2937,7 @@ import TypeChecker._
           val (newScopeOpt, newStmt) = checkImport(scope, stmt, reporter)
           newScopeOpt match {
             case Some(newScope) => scope = newScope
-            case _ => return body
+            case _ => return (scope, body)
           }
           stmts = stmts :+ newStmt
         case stmt: AST.Stmt.Method =>
@@ -3009,7 +3009,7 @@ import TypeChecker._
       }
     }
     if (!ok) {
-      return body
+      return (scope, body)
     }
     scope = sc(nameMap = scope.nameMap)
     val (newScopeOpt, newStmts) = checkStmts(T, expectedOpt, scope, stmts, reporter)
@@ -3026,7 +3026,7 @@ import TypeChecker._
         r
       case _ => body.undecls
     }
-    return body(stmts = newStmts, undecls = undecls)
+    return (scope, body(stmts = newStmts, undecls = undecls))
   }
 
   @pure def createNewScope(scope: Scope): Scope.Local = {
@@ -3384,14 +3384,14 @@ import TypeChecker._
     stmt: AST.Stmt.Block,
     reporter: Reporter
   ): AST.Stmt = {
-    val newBody = checkBody(expectedOpt, createNewScope(scope), stmt.body, reporter)
+    val (_, newBody) = checkBody(expectedOpt, createNewScope(scope), stmt.body, reporter)
     return stmt(body = newBody)
   }
 
   def checkIf(expectedOpt: Option[AST.Typed], scope: Scope.Local, stmt: AST.Stmt.If, reporter: Reporter): AST.Stmt = {
     val (newCond, _) = checkExp(AST.Typed.bOpt, scope, stmt.cond, reporter)
-    val tBody = checkBody(expectedOpt, createNewScope(scope), stmt.thenBody, reporter)
-    val eBody = checkBody(expectedOpt, createNewScope(scope), stmt.elseBody, reporter)
+    val (_, tBody) = checkBody(expectedOpt, createNewScope(scope), stmt.thenBody, reporter)
+    val (_, eBody) = checkBody(expectedOpt, createNewScope(scope), stmt.elseBody, reporter)
     return stmt(cond = newCond, thenBody = tBody, elseBody = eBody)
   }
 
@@ -3476,7 +3476,7 @@ import TypeChecker._
               Some(newCond)
             case o => o
           }
-          val newBody = checkBody(expectedOpt, newScope, c.body, reporter)
+          val (_, newBody) = checkBody(expectedOpt, newScope, c.body, reporter)
           newCases = newCases :+ c(pattern = newPattern, condOpt = newCondOpt, body = newBody)
         case _ => newCases = newCases :+ c(pattern = newPattern)
       }
@@ -3717,7 +3717,7 @@ import TypeChecker._
       newScopeOpt match {
         case Some(newScope) =>
           val (newInvs, newMods) = this(inSpec = T).checkLoopInv(scope, forStmt.invariants, forStmt.modifies, reporter)
-          val newBody = checkBody(None(), newScope, forStmt.body, reporter)
+          val (_, newBody) = checkBody(None(), newScope, forStmt.body, reporter)
           return forStmt(context = context, enumGens = newEnumGens, invariants = newInvs, modifies = newMods, body = newBody)
         case _ => return forStmt(context = context, enumGens = newEnumGens)
       }
@@ -3740,7 +3740,7 @@ import TypeChecker._
 
       case stmt: AST.Stmt.DoWhile =>
         val (newInvs, newMods) = this(inSpec = T).checkLoopInv(scope, stmt.invariants, stmt.modifies, reporter)
-        val newBody = checkBody(None(), createNewScope(scope), stmt.body, reporter)
+        val (_, newBody) = checkBody(None(), createNewScope(scope), stmt.body, reporter)
         val (newCond, _) = checkExp(AST.Typed.bOpt, scope, stmt.cond, reporter)
         return (Some(scope), stmt(context = context, cond = newCond, invariants = newInvs, modifies = newMods, body = newBody))
 
@@ -3822,7 +3822,7 @@ import TypeChecker._
       case stmt: AST.Stmt.While =>
         val (newCond, _) = checkExp(AST.Typed.bOpt, scope, stmt.cond, reporter)
         val (newInvs, newMods) = this(inSpec = T).checkLoopInv(scope, stmt.invariants, stmt.modifies, reporter)
-        val newBody = checkBody(None(), createNewScope(scope), stmt.body, reporter)
+        val (_, newBody) = checkBody(None(), createNewScope(scope), stmt.body, reporter)
         return (Some(scope), stmt(context = context, cond = newCond, invariants = newInvs, modifies = newMods, body = newBody))
 
     }
@@ -3928,7 +3928,7 @@ import TypeChecker._
     if (!ok) {
       return stmt
     }
-    val newBody = checkBody(None(), scope, stmt.bodyOpt.get, reporter)
+    val (_, newBody) = checkBody(None(), scope, stmt.bodyOpt.get, reporter)
     return stmt(bodyOpt = Some(newBody))
   }
 

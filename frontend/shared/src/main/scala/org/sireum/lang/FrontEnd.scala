@@ -171,8 +171,25 @@ object FrontEnd {
 
     val typeChecker = TypeChecker(th4, ISZ(), F)
     val scope = Scope.Local(HashMap.empty, HashMap.empty, None(), None(), Some(Scope.Global(ISZ(), ISZ(), ISZ())))
-    val newBody = typeChecker.checkBody(None(), scope, program.body, reporter)
-    return (th4, program(body = newBody))
+    val (newScope, newBody) = typeChecker.checkBody(None(), scope, program.body, reporter)
+
+    nameMap = typeChecker.nameMap
+
+    for (stmt <- newBody.stmts) {
+      stmt match {
+        case stmt: AST.Stmt.Method =>
+          val id = stmt.sig.id.value
+          val info = newScope.nameMap.get(id).get.asInstanceOf[Info.Method]
+          nameMap = nameMap + ISZ(id) ~> info(ast = stmt)
+        case stmt: AST.Stmt.SpecMethod =>
+          val id = stmt.sig.id.value
+          val info = newScope.nameMap.get(id).get.asInstanceOf[Info.SpecMethod]
+          nameMap = nameMap + ISZ(id) ~> info(ast = stmt)
+        case _ =>
+      }
+    }
+
+    return (typeChecker.typeHierarchy(nameMap = nameMap), program(body = newBody))
   }
 
 }
