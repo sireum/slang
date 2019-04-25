@@ -111,7 +111,7 @@ def compile(): Unit = {
     }
     tipe()
     println("Compiling ...")
-    Os.proc(ISZ(mill.string, "all", "slang.frontend.shared.tests.compile",
+    mill.call(ISZ("all", "slang.frontend.shared.tests.compile",
       "slang.frontend.js.tests.compile")).at(home).console.runCheck()
     println()
   }
@@ -121,7 +121,7 @@ def compile(): Unit = {
 def test(): Unit = {
   compile()
   println("Running shared tests ...")
-  Os.proc(ISZ(mill.string, "all", "slang.parser.shared.tests", "slang.frontend.shared.tests")).at(home).console.runCheck()
+  mill.call(ISZ("all", "slang.parser.shared.tests", "slang.frontend.shared.tests")).at(home).console.runCheck()
   println()
 }
 
@@ -129,14 +129,14 @@ def test(): Unit = {
 def testJs(): Unit = {
   compile()
   println("Running js tests ...")
-  Os.proc(ISZ(mill.string, "all", "slang.parser.js.tests", "slang.frontend.js.tests")).at(home).console.runCheck()
+  mill.call(ISZ("all", "slang.parser.js.tests", "slang.frontend.js.tests")).at(home).console.runCheck()
   println()
 }
 
 
 def jitpack(): Unit = {
   println("Triggering jitpack ...")
-  val r = Os.proc(ISZ(mill.string, "jitPack", "--owner", "sireum", "--repo", "slang", "--lib", "frontend")).
+  val r = mill.call(ISZ("jitPack", "--owner", "sireum", "--repo", "slang", "--lib", "frontend")).
     at(home).console.run()
   r match {
     case r: Os.Proc.Result.Normal =>
