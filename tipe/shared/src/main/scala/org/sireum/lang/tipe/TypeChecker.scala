@@ -3629,7 +3629,7 @@ import TypeChecker._
             val (newRhs, _) = checkAssignExp(None(), scope, assignStmt.rhs, reporter)
             return assignStmt(lhs = lhs(receiverOpt = Some(newReceiver)), rhs = newRhs)
           }
-          def checkSelectAssignH(varInfo: Info.Var): AST.Stmt = {
+          def checkSelectAssignH(varInfo: Info.Var, substMap: HashMap[String, AST.Typed]): AST.Stmt = {
             if (varInfo.ast.isVal) {
               reporter.error(
                 lhs.id.attr.posOpt,
@@ -3637,7 +3637,7 @@ import TypeChecker._
                 st"Cannot assign to val '${lhs.id.value}' of '${(varInfo.owner, ".")}'.".render
               )
             }
-            val (newRhs, _) = checkAssignExp(varInfo.typedOpt, scope, assignStmt.rhs, reporter)
+            val (newRhs, _) = checkAssignExp(Some(varInfo.typedOpt.get.subst(substMap)), scope, assignStmt.rhs, reporter)
             return assignStmt(
               lhs = lhs(
                 receiverOpt = Some(newReceiver),
@@ -3651,7 +3651,12 @@ import TypeChecker._
               typeHierarchy.typeMap.get(t.ids) match {
                 case Some(info: TypeInfo.Adt) =>
                   info.vars.get(lhs.id.value) match {
-                    case Some(varInfo) => val r = checkSelectAssignH(varInfo); return r
+                    case Some(varInfo) =>
+                      val smOpt = buildTypeSubstMap(t.ids, lhs.id.attr.posOpt, info.ast.typeParams, t.args, reporter)
+                      smOpt match {
+                        case Some(sm) => val r = checkSelectAssignH(varInfo, sm); return r
+                        case _ =>
+                      }
                     case _ =>
                       reporter.error(
                         lhs.id.attr.posOpt,
@@ -3665,7 +3670,7 @@ import TypeChecker._
               return r
             case Some(t: AST.Typed.Object) =>
               typeHierarchy.nameMap.get(t.owner :+ t.id :+ lhs.id.value) match {
-                case Some(varInfo: Info.Var) => val r = checkSelectAssignH(varInfo); return r
+                case Some(varInfo: Info.Var) => val r = checkSelectAssignH(varInfo, emptySubstMap); return r
                 case _ =>
                   reporter.error(
                     lhs.id.attr.posOpt,
