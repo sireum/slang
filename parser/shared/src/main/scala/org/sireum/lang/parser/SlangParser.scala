@@ -1813,6 +1813,8 @@ class SlangParser(
             1
           ) =>
         lhs.receiverOpt.foreach(receiver => checkLhs(receiver))
+      case lhs: AST.Exp.Invoke if lhs.receiverOpt.isEmpty && lhs.targs.isEmpty && lhs.args.size == Z(1) =>
+        return AST.Exp.Invoke(Some(lhs.ident), AST.Exp.Ident(AST.Id("apply", lhs.ident.id.attr), lhs.ident.attr), lhs.targs, lhs.args, lhs.attr)
       case _ =>
         reporter.error(lhs.posOpt, SlangParser.messageKind, s"Invalid assignment left-hand-side form in Slang: $lhs")
     }
