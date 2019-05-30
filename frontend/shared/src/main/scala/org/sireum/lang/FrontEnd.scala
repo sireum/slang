@@ -179,12 +179,16 @@ object FrontEnd {
       stmt match {
         case stmt: AST.Stmt.Method =>
           val id = stmt.sig.id.value
-          val info = newScope.nameMap.get(id).get.asInstanceOf[Info.Method]
-          nameMap = nameMap + ISZ(id) ~> info(ast = stmt)
+          newScope.nameMap.get(id) match {
+            case Some(info: Info.Method) => nameMap = nameMap + ISZ(id) ~> info(ast = stmt)
+            case _ =>
+          }
         case stmt: AST.Stmt.SpecMethod =>
           val id = stmt.sig.id.value
-          val info = newScope.nameMap.get(id).get.asInstanceOf[Info.SpecMethod]
-          nameMap = nameMap + ISZ(id) ~> info(ast = stmt)
+          newScope.nameMap.get(id) match {
+            case Some(info: Info.SpecMethod) => nameMap = nameMap + ISZ(id) ~> info(ast = stmt)
+            case _ =>
+          }
         case _ =>
       }
     }
