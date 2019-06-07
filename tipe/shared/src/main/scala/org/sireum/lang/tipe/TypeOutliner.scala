@@ -825,12 +825,20 @@ object TypeOutliner {
         case Some(otherInfo) =>
           if (name != otherInfo.owner) {
             val isEqual = checkMethodEquality(otherInfo, mInfo, substMap, posOpt)
-            if (isEqual) {
-              reporter.error(
-                posOpt,
-                TypeChecker.typeCheckerKind,
-                st"Explicit declaration of $id in ${(name, ".")} is required because it is inherited from ${(otherInfo.owner, ".")} and ${(mInfo.owner, ".")}.".render
-              )
+            if (isEqual && (otherInfo.owner != mInfo.owner || mInfo.methodType.collectTypeVars.nonEmpty)) {
+              if (otherInfo.owner != mInfo.owner) {
+                reporter.error(
+                  posOpt,
+                  TypeChecker.typeCheckerKind,
+                  st"Explicit declaration of $id in ${(name, ".")} is required because it is inherited from ${(otherInfo.owner, ".")} and ${(mInfo.owner, ".")}.".render
+                )
+              } else {
+                reporter.error(
+                  posOpt,
+                  TypeChecker.typeCheckerKind,
+                  st"Explicit declaration of $id in ${(name, ".")} is required because it is polymorphic and it is inherited from ${(otherInfo.owner, ".")} more than once.".render
+                )
+              }
             } else {
               reporter.error(
                 posOpt,
