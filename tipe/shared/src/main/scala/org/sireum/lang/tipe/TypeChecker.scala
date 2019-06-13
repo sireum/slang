@@ -1296,6 +1296,51 @@ import TypeChecker._
     }
 
     def checkBinary(binaryExp: AST.Exp.Binary): (AST.Exp, Option[AST.Typed]) = {
+      def checkAsInvoke(): (AST.Exp, Option[AST.Typed]) = {
+        if (ops.StringOps(binaryExp.op).endsWith(":")) {
+          val (newInvoke, tOpt) = checkInvoke(
+            AST.Exp.Invoke(
+              Some(binaryExp.right),
+              AST.Exp.Ident(
+                AST.Id(binaryExp.op, AST.Attr(binaryExp.posOpt)),
+                AST.ResolvedAttr(binaryExp.posOpt, None(), None())
+              ),
+              ISZ(),
+              ISZ(binaryExp.left),
+              binaryExp.attr
+            )
+          )
+          newInvoke match {
+            case newInvoke: AST.Exp.Invoke =>
+              return (
+                binaryExp(left = newInvoke.args(0), right = newInvoke.receiverOpt.get, attr = newInvoke.attr),
+                tOpt
+              )
+            case _ => halt("Unexpected situation when type checking binary expression.")
+          }
+        } else {
+          val (newInvoke, tOpt) = checkInvoke(
+            AST.Exp.Invoke(
+              Some(binaryExp.left),
+              AST.Exp.Ident(
+                AST.Id(binaryExp.op, AST.Attr(binaryExp.posOpt)),
+                AST.ResolvedAttr(binaryExp.posOpt, None(), None())
+              ),
+              ISZ(),
+              ISZ(binaryExp.right),
+              binaryExp.attr
+            )
+          )
+          newInvoke match {
+            case newInvoke: AST.Exp.Invoke =>
+              return (
+                binaryExp(left = newInvoke.receiverOpt.get, right = newInvoke.args(0), attr = newInvoke.attr),
+                tOpt
+              )
+            case _ => halt("Unexpected situation when type checking binary expression.")
+          }
+        }
+      }
       if (binaryExp.op == AST.Exp.BinaryOp.MapsTo) {
         val r = checkTuple(
           AST.Exp
@@ -1389,9 +1434,7 @@ import TypeChecker._
                     errUndef()
                     None()
                   }
-                case _ =>
-                  errIncompat(rightType)
-                  None()
+                case _ => return checkAsInvoke()
               }
               return (
                 binaryExp(
@@ -1401,53 +1444,9 @@ import TypeChecker._
                 ),
                 tOpt
               )
-
             case _ => return (binaryExp(left = newLeft, right = newRight), None())
           }
-        case _ =>
-          if (ops.StringOps(binaryExp.op).endsWith(":")) {
-            val (newInvoke, tOpt) = checkInvoke(
-              AST.Exp.Invoke(
-                Some(binaryExp.right),
-                AST.Exp.Ident(
-                  AST.Id(binaryExp.op, AST.Attr(binaryExp.posOpt)),
-                  AST.ResolvedAttr(binaryExp.posOpt, None(), None())
-                ),
-                ISZ(),
-                ISZ(binaryExp.left),
-                binaryExp.attr
-              )
-            )
-            newInvoke match {
-              case newInvoke: AST.Exp.Invoke =>
-                return (
-                  binaryExp(left = newInvoke.args(0), right = newInvoke.receiverOpt.get, attr = newInvoke.attr),
-                  tOpt
-                )
-              case _ => halt("Unexpected situation when type checking binary expression.")
-            }
-          } else {
-            val (newInvoke, tOpt) = checkInvoke(
-              AST.Exp.Invoke(
-                Some(binaryExp.left),
-                AST.Exp.Ident(
-                  AST.Id(binaryExp.op, AST.Attr(binaryExp.posOpt)),
-                  AST.ResolvedAttr(binaryExp.posOpt, None(), None())
-                ),
-                ISZ(),
-                ISZ(binaryExp.right),
-                binaryExp.attr
-              )
-            )
-            newInvoke match {
-              case newInvoke: AST.Exp.Invoke =>
-                return (
-                  binaryExp(left = newInvoke.receiverOpt.get, right = newInvoke.args(0), attr = newInvoke.attr),
-                  tOpt
-                )
-              case _ => halt("Unexpected situation when type checking binary expression.")
-            }
-          }
+        case _ => return checkAsInvoke()
       }
     }
 
