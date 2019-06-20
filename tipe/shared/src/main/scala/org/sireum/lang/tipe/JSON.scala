@@ -1160,7 +1160,8 @@ object JSON {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Exp.Fun.Param""""),
         ("id", print_astId(o.id)),
-        ("tipeOpt", printOption(F, o.tipeOpt, print_astType _))
+        ("tipeOpt", printOption(F, o.tipeOpt, print_astType _)),
+        ("typedOpt", printOption(F, o.typedOpt, print_astTyped _))
       ))
     }
 
@@ -4229,7 +4230,10 @@ object JSON {
       parser.parseObjectKey("tipeOpt")
       val tipeOpt = parser.parseOption(parse_astType _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Exp.Fun.Param(id, tipeOpt)
+      parser.parseObjectKey("typedOpt")
+      val typedOpt = parser.parseOption(parse_astTyped _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Exp.Fun.Param(id, tipeOpt, typedOpt)
     }
 
     def parse_astExpFun(): org.sireum.lang.ast.Exp.Fun = {

@@ -1260,6 +1260,7 @@ object MsgPack {
       writer.writeZ(Constants._astExpFunParam)
       write_astId(o.id)
       writer.writeOption(o.tipeOpt, write_astType _)
+      writer.writeOption(o.typedOpt, write_astTyped _)
     }
 
     def write_astExpFun(o: org.sireum.lang.ast.Exp.Fun): Unit = {
@@ -3470,7 +3471,8 @@ object MsgPack {
       }
       val id = read_astId()
       val tipeOpt = reader.readOption(read_astType _)
-      return org.sireum.lang.ast.Exp.Fun.Param(id, tipeOpt)
+      val typedOpt = reader.readOption(read_astTyped _)
+      return org.sireum.lang.ast.Exp.Fun.Param(id, tipeOpt, typedOpt)
     }
 
     def read_astExpFun(): org.sireum.lang.ast.Exp.Fun = {

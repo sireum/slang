@@ -870,7 +870,7 @@ import TypeChecker._
             val p = exp.params(i)
             val expectedType = expected.args(i)
             declId(p.id, Some(expectedType))
-            val newTipeOpt: Option[AST.Type] = p.tipeOpt match {
+            val (newTipeOpt, newTypedOpt): (Option[AST.Type], Option[AST.Typed]) = p.tipeOpt match {
               case Some(tipe) =>
                 val tOpt = typeHierarchy.typed(scope, tipe, reporter)
                 tOpt match {
@@ -882,12 +882,13 @@ import TypeChecker._
                         s"Expecting type '$expectedType', but '${t.typedOpt.get}' found."
                       )
                     }
+                    (tOpt, t.typedOpt)
                   case _ =>
+                    (tOpt, None())
                 }
-                tOpt
-              case _ => None()
+              case _ => (None(), Some(expectedType))
             }
-            newParams = newParams :+ p(tipeOpt = newTipeOpt)
+            newParams = newParams :+ p(tipeOpt = newTipeOpt, typedOpt = newTypedOpt)
             i = i + 1
           }
           if (!ok) {
