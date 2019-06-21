@@ -476,7 +476,7 @@ object TypeOutliner {
         )
       }
     if (newInfo.ast.isDatatype) {
-      for (v <- vars.values) {
+      for (v <- vars.values if !extractorTypeMap.contains(v.ast.id.value)) {
         v.typedOpt match {
           case Some(t) =>
             val r = AST.Transformer(TypeOutliner.TypeFinder(newInfo.name)).transformTyped(F, t)
