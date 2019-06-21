@@ -3994,7 +3994,7 @@ import TypeChecker._
             val r = transformer.transformTyped(F, t)
             if (r.ctx) {
               reporter.error(v.ast.tipeOpt.get.posOpt, TypeChecker.typeCheckerKind,
-                st"@datatype class ${(info.name, ".")} cannot have a non-constructor field whose type contains ${(info.name, ".")}.".render)
+                st"@datatype class ${(info.name, ".")} cannot have a non-constructor field whose type contains ${(info.name, ".")} or its super-type.".render)
             }
           case _ =>
         }
