@@ -155,6 +155,12 @@ object TypeOutliner {
       return th
     }
   }
+
+  @datatype class TypeFinder(tname: QName) extends AST.Transformer.PrePost[B] {
+    override def preTypedName(ctx: B, o: AST.Typed.Name): AST.Transformer.PreResult[B, AST.Typed] = {
+      return if (o.ids == tname) super.preTypedName(T, o) else super.preTypedName(ctx, o)
+    }
+  }
 }
 
 @datatype class TypeOutliner(typeHierarchy: TypeHierarchy) {
@@ -469,6 +475,19 @@ object TypeOutliner {
           ast = info.ast(params = newParams, parents = newParents)
         )
       }
+    if (newInfo.ast.isDatatype) {
+      for (v <- vars.values) {
+        v.typedOpt match {
+          case Some(t) =>
+            val r = AST.Transformer(TypeOutliner.TypeFinder(newInfo.name)).transformTyped(F, t)
+            if (r.ctx) {
+              reporter.error(v.ast.tipeOpt.get.posOpt, TypeChecker.typeCheckerKind,
+                st"@datatype class ${(newInfo.name, ".")} cannot have a non-constructor field whose type contains ${(newInfo.name, ".")}.".render)
+            }
+          case _ =>
+        }
+      }
+    }
     return (th: TypeHierarchy) => (th(typeMap = th.typeMap + info.name ~> newInfo), reporter)
   }
 

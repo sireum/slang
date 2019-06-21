@@ -2635,14 +2635,6 @@ class SlangParser(
   def checkMemberStmts(stmts: ISZ[AST.Stmt]): ISZ[AST.Stmt] = {
     for (stmt <- stmts) stmt match {
       case stmt: AST.Stmt.Method => checkNestedMethods(stmt)
-      case AST.Stmt.Var(_, id, _, Some(assignExp)) =>
-        for (expr <- assignExp.exprs) {
-          expr.exp match {
-            case exp: AST.Exp.This =>
-              reporter.error(exp.posOpt, messageKind, s"Cannot assign 'this' to '${id.value}'.")
-            case _ =>
-          }
-        }
       case _ =>
     }
     stmts
