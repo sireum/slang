@@ -58,6 +58,13 @@ object TypeChecker {
     'Supertype
   }
 
+  @datatype class TypeFinder(th: TypeHierarchy, tname: QName) extends AST.Transformer.PrePost[B] {
+    override def preTypedName(ctx: B, o: AST.Typed.Name): AST.Transformer.PreResult[B, AST.Typed] = {
+      return if (tname == o.ids || th.poset.isChildOf(tname, o.ids)) super.preTypedName(T, o)
+      else super.preTypedName(ctx, o)
+    }
+  }
+
   val typeCheckerKind: String = "Type Checker"
   val errType: AST.Typed = AST.Typed.Name(ISZ(), ISZ())
 
@@ -3977,6 +3984,20 @@ import TypeChecker._
           val smInfo = info.specMethods.get(id).get
           specMethods = specMethods + id ~> smInfo(ast = stmt)
         case _ =>
+      }
+    }
+    if (info.ast.isDatatype) {
+      val transformer = AST.Transformer(TypeChecker.TypeFinder(typeHierarchy, info.name))
+      for (v <- vars.values if !info.extractorTypeMap.contains(v.ast.id.value)) {
+        v.typedOpt match {
+          case Some(t) =>
+            val r = transformer.transformTyped(F, t)
+            if (r.ctx) {
+              reporter.error(v.ast.tipeOpt.get.posOpt, TypeChecker.typeCheckerKind,
+                st"@datatype class ${(info.name, ".")} cannot have a non-constructor field whose type contains ${(info.name, ".")}.".render)
+            }
+          case _ =>
+        }
       }
     }
     return (th: TypeHierarchy) =>
