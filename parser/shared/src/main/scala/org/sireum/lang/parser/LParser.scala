@@ -60,8 +60,8 @@ object LParser {
   val existsTokens = ListSet("∃", "E", "some", "exists")
   val quantTokens: ListSet[String] = forallTokens ++ existsTokens
   val lStmtFirst = ListSet("requires", "theorem", "fact")
-  val impInternalSym = "imp_:"
-  val simpInternalSym = "simp_:"
+  val impInternalSym = "imply_:"
+  val simpInternalSym = "simply_:"
 
   val internalOpMap = Map(
     "→" -> impInternalSym,
