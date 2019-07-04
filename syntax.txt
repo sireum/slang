@@ -52,8 +52,8 @@
                      |  @spec def <ID> <type-params>? <params>? : <type> = $
                      |  @spec def <ID> <type-params>? <params>? : <type> = <spec-ldef>
 
-<def-mod>          ::=  @pure ⸨ override ⸩?
-                     |  ⸨ @pure ⸩? override
+<def-mod>          ::=  ⸨ @pure | @strictpure ⸩ ⸨ override ⸩?
+                     |  ⸨ @pure | @strictpure ⸩? override
                      |  @memoize
 
 <subz-decl>        ::=  @range ( <range-args> ) class <ID>
