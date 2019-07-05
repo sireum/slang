@@ -64,7 +64,7 @@
 
 <bits-args>        ::=  signed = <lit> , width = <lit> ⸨ , min = <lit> ⸩? ⸨ , max = <lit> ⸩? ⸨ , index = <lit> ⸩?
 
-<enum-decl>        ::=  @enum object <ID> { <SYMBOL>* }
+<enum-decl>        ::=  @enum object <ID> { ⸨ <SYMBOL> | <STRING> ⸩* }
 
 <object-decl>      ::=  object <ID> { <stmt>* }
                      |  @ext object <ID> { <stmt>* }
