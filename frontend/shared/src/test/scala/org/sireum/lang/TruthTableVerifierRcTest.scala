@@ -35,10 +35,10 @@ import org.sireum.{None => SNone, Some => SSome}
 import org.sireum.test.SireumRcSpec
 
 class TruthTableVerifierRcTest extends SireumRcSpec {
-  lazy val textResources: scala.collection.Map[scala.Seq[Predef.String], Predef.String] =
-    RC.text(Seq())((p, _) => p.head == "truthtable" && p.last.endsWith(".logika"))
+  lazy val textResources: scala.collection.Map[scala.Vector[Predef.String], Predef.String] =
+    RC.text(Vector())((p, _) => p.head == "truthtable" && p.last.endsWith(".logika"))
 
-  def check(path: scala.Seq[Predef.String], content: Predef.String): Boolean = {
+  def check(path: scala.Vector[Predef.String], content: Predef.String): Boolean = {
     LParser[Boolean](content, Reporter.create) { (p, reporter) =>
       val r = p.truthTable(SNone())
       val status = TestUtil.check(reporter) && r.unitOpt.exists(_.isInstanceOf[TopUnit.TruthTableUnit])

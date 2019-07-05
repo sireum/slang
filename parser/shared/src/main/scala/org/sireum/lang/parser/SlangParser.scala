@@ -1233,8 +1233,9 @@ class SlangParser(
         yield
           stat match {
             case Lit.Symbol(symbol) => scala.Some(cid(symbol.name, stat.pos))
+            case Lit.String(value) => scala.Some(cid(value, stat.pos))
             case _ =>
-              error(stat.pos, s"An @enum element should be a single quote immediately followed by〈ID〉(i.e., a symbol).")
+              error(stat.pos, s"An @enum element should be a String or a single quote immediately followed by〈ID〉(i.e., a symbol).")
               scala.None
           }).flatten
 
@@ -2270,7 +2271,7 @@ class SlangParser(
             AST.Exp.LitR(org.sireum.R.$String("0"), attr(pos))
         }
       case "c" =>
-        val c = StringContext.treatEscapes(value)
+        val c = StringContext.processEscapes(value)
         if (c.length != 1) {
           error(pos, s"Invalid C literal '$value'.")
           AST.Exp.LitC('?', attr(pos))
@@ -2312,7 +2313,7 @@ class SlangParser(
             case _: Throwable => error(lit.pos, s"Invalid R literal '$value'.")
           }
         case "c" =>
-          if ((StringContext.treatEscapes(value)).size != 1) {
+          if ((StringContext.processEscapes(value)).size != 1) {
             error(lit.pos, s"Invalid C literal '$value'.")
           }
         case "f32" =>

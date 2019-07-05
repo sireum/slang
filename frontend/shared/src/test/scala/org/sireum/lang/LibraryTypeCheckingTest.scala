@@ -45,11 +45,11 @@ class LibraryTypeCheckingTest extends TestSuite {
       rep.printMessages()
       assert(!rep.hasIssue)
       def nameInfo(th: TypeHierarchy, name: Predef.String): Resolver.NameMap = {
-        val ids = ISZ(name.split('.').map(s => s: String): _*)
+        val ids = ISZ(name.split('.').toIndexedSeq.map(s => s: String): _*)
         HashMap ++ ISZ((ids, th.nameMap.get(ids).get))
       }
       def typeInfo(th: TypeHierarchy, name: Predef.String): Resolver.TypeMap = {
-        val ids = ISZ(name.split('.').map(s => s: String): _*)
+        val ids = ISZ(name.split('.').toIndexedSeq.map(s => s: String): _*)
         HashMap ++ ISZ((ids, th.typeMap.get(ids).get))
       }
       val reporter = Reporter.create

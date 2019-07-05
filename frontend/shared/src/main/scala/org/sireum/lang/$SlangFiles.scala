@@ -29,13 +29,13 @@ import org.sireum.$internal.{RC, Trie}
 
 object $SlangFiles {
 
-  def map: scala.collection.Map[scala.Seq[Predef.String], Predef.String] =
+  def map: scala.collection.Map[scala.Vector[Predef.String], Predef.String] =
     RC.text({
       val slangRoot = "../../../../../../../.."
-      val slangDirs = for (sub <- Seq("ast", "parser", "tipe", "frontend"))
+      val slangDirs = for (sub <- Vector("ast", "parser", "tipe", "frontend"))
         yield s"$slangRoot/$sub/shared/src/main/scala/org/sireum/lang"
       val toolsDir = slangRoot + "/../tools/shared/src/main/scala/org/sireum"
-      slangDirs ++ Seq(toolsDir)
+      slangDirs ++ Vector(toolsDir)
     }) { (p, f) =>
       val filename = p.last
       if (filename.endsWith(".scala")) {
