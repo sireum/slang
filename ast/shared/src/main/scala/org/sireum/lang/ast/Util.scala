@@ -48,7 +48,7 @@ object Util {
   }
 
   @pure def beginColumn(posOpt: Option[Position]): Z = {
-    l""" requires ∃pos: Position  posOpt == Some(pos) """
+//    l""" requires ∃pos: Position  posOpt == Some(pos) """
     posOpt match {
       case Some(pos) => return pos.beginColumn
       case _ => return 0

@@ -157,7 +157,6 @@ object SlangFrontEndTest {
 import SlangFrontEndTest._
 
 class SlangFrontEndTest extends TestSuite {
-  val tq = "\"\"\""
 
   val tests = Tests {
 
@@ -192,8 +191,6 @@ class SlangFrontEndTest extends TestSuite {
         * - passing("def f(x: Z): Z = {}", isWorksheet = true)
 
         * - passing("@spec def f(x: Z): Z = $", isWorksheet = true)
-
-        * - passing("@spec def f(x: Z): Z = l\"\"\" = 1\"\"\"", isWorksheet = true)
 
         * - passing("@pure def f(x: Z): Z = {}", isWorksheet = true)
 
@@ -249,7 +246,7 @@ class SlangFrontEndTest extends TestSuite {
 
           * - passing("@ext object Foo { @pure def f: Z = $ }")
 
-          * - passing("@ext object Foo { def f: Z = l\"\"\"modifies g\"\"\" }")
+          * - passing("@ext object Foo { def f: Z = Contract.Only(Modifies(g)) }")
         }
       }
 
@@ -266,12 +263,6 @@ class SlangFrontEndTest extends TestSuite {
       * - failing("package a.b.c; object Foo", packageFirstMember, addImport = false)
 
       * - failing("object Foo", "⊢", addImport = false)
-
-      * - failingPos(s"""def foo(x: Z): Unit = {
-                        |  l$tq requires x > -2
-                        |                x = 0 $tq
-                        |}
-       """.stripMargin, (4, 17), (4, 21), isWorksheet = true)
 
       "Val/Var" - {
 

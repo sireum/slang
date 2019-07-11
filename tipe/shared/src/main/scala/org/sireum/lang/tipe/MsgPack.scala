@@ -62,273 +62,255 @@ object MsgPack {
 
     val _symbolInfoQuantVar: Z = -20
 
-    val _symbolInfoNamedExp: Z = -19
+    val _symbolTypeInfoSubZ: Z = -19
 
-    val _symbolInfoTheorem: Z = -18
+    val _symbolTypeInfoEnum: Z = -18
 
-    val _symbolTypeInfoSubZ: Z = -17
+    val _symbolTypeInfoSig: Z = -17
 
-    val _symbolTypeInfoEnum: Z = -16
+    val _symbolTypeInfoName: Z = -16
 
-    val _symbolTypeInfoSig: Z = -15
+    val _symbolTypeInfoAdt: Z = -15
 
-    val _symbolTypeInfoName: Z = -14
+    val _symbolTypeInfoTypeAlias: Z = -14
 
-    val _symbolTypeInfoAdt: Z = -13
+    val _symbolTypeInfoTypeVar: Z = -13
 
-    val _symbolTypeInfoTypeAlias: Z = -12
+    val _symbolTypeInfoMembers: Z = -12
 
-    val _symbolTypeInfoTypeVar: Z = -11
+    val _astTopUnitProgram: Z = -11
 
-    val _symbolTypeInfoMembers: Z = -10
+    val _astTopUnitSequentUnit: Z = -10
 
-    val _astTopUnitProgram: Z = -9
+    val _astTopUnitTruthTableUnit: Z = -9
 
-    val _astTopUnitSequentUnit: Z = -8
+    val _astContractSimple: Z = -8
 
-    val _astTopUnitTruthTableUnit: Z = -7
+    val _astContractCases: Z = -7
 
-    val _astStmtImport: Z = -6
+    val _astContractCase: Z = -6
 
-    val _astStmtImportImporter: Z = -5
+    val _astStmtImport: Z = -5
 
-    val _astStmtImportMultiSelector: Z = -4
+    val _astStmtImportImporter: Z = -4
 
-    val _astStmtImportWildcardSelector: Z = -3
+    val _astStmtImportMultiSelector: Z = -3
 
-    val _astStmtImportNamedSelector: Z = -2
+    val _astStmtImportWildcardSelector: Z = -2
 
-    val _astStmtVar: Z = -1
+    val _astStmtImportNamedSelector: Z = -1
 
-    val _astStmtVarPattern: Z = 0
+    val _astStmtVar: Z = 0
 
-    val _astStmtSpecVar: Z = 1
+    val _astStmtVarPattern: Z = 1
 
-    val _astStmtMethod: Z = 2
+    val _astStmtSpecVar: Z = 2
 
-    val _astStmtExtMethod: Z = 3
+    val _astStmtMethod: Z = 3
 
-    val _astStmtSpecMethod: Z = 4
+    val _astStmtExtMethod: Z = 4
 
-    val _astStmtEnum: Z = 5
+    val _astStmtSpecMethod: Z = 5
 
-    val _astStmtSubZ: Z = 6
+    val _astStmtEnum: Z = 6
 
-    val _astStmtObject: Z = 7
+    val _astStmtSubZ: Z = 7
 
-    val _astStmtSig: Z = 8
+    val _astStmtObject: Z = 8
 
-    val _astStmtAdt: Z = 9
+    val _astStmtSig: Z = 9
 
-    val _astStmtTypeAlias: Z = 10
+    val _astStmtAdt: Z = 10
 
-    val _astStmtAssign: Z = 11
+    val _astStmtTypeAlias: Z = 11
 
-    val _astStmtBlock: Z = 12
+    val _astStmtAssign: Z = 12
 
-    val _astStmtIf: Z = 13
+    val _astStmtBlock: Z = 13
 
-    val _astStmtMatch: Z = 14
+    val _astStmtIf: Z = 14
 
-    val _astStmtWhile: Z = 15
+    val _astStmtMatch: Z = 15
 
-    val _astStmtDoWhile: Z = 16
+    val _astStmtWhile: Z = 16
 
-    val _astStmtFor: Z = 17
+    val _astStmtDoWhile: Z = 17
 
-    val _astStmtReturn: Z = 18
+    val _astStmtFor: Z = 18
 
-    val _astStmtLStmt: Z = 19
+    val _astStmtReturn: Z = 19
 
-    val _astStmtExpr: Z = 20
+    val _astStmtLStmt: Z = 20
 
-    val _astLClauseInvariants: Z = 21
+    val _astStmtExpr: Z = 21
 
-    val _astLClauseFacts: Z = 22
+    val _astLClauseSequent: Z = 22
 
-    val _astLClauseTheorems: Z = 23
+    val _astLClauseProof: Z = 23
 
-    val _astLClauseTheorem: Z = 24
+    val _astCase: Z = 24
 
-    val _astLClauseSequent: Z = 25
+    val _astEnumGenRangeExpr: Z = 25
 
-    val _astLClauseProof: Z = 26
+    val _astEnumGenRangeStep: Z = 26
 
-    val _astNamedExp: Z = 27
+    val _astEnumGenFor: Z = 27
 
-    val _astOptNamedExp: Z = 28
+    val _astTypeNamed: Z = 28
 
-    val _astCase: Z = 29
+    val _astTypeFun: Z = 29
 
-    val _astEnumGenRangeExpr: Z = 30
+    val _astTypeTuple: Z = 30
 
-    val _astEnumGenRangeStep: Z = 31
+    val _astPatternLiteral: Z = 31
 
-    val _astEnumGenFor: Z = 32
+    val _astPatternLitInterpolate: Z = 32
 
-    val _astTypeNamed: Z = 33
+    val _astPatternRef: Z = 33
 
-    val _astTypeFun: Z = 34
+    val _astPatternVarBinding: Z = 34
 
-    val _astTypeTuple: Z = 35
+    val _astPatternWildcard: Z = 35
 
-    val _astPatternLiteral: Z = 36
+    val _astPatternSeqWildcard: Z = 36
 
-    val _astPatternLitInterpolate: Z = 37
+    val _astPatternStructure: Z = 37
 
-    val _astPatternRef: Z = 38
+    val _astExpLitB: Z = 38
 
-    val _astPatternVarBinding: Z = 39
+    val _astExpLitC: Z = 39
 
-    val _astPatternWildcard: Z = 40
+    val _astExpLitZ: Z = 40
 
-    val _astPatternSeqWildcard: Z = 41
+    val _astExpLitF32: Z = 41
 
-    val _astPatternStructure: Z = 42
+    val _astExpLitF64: Z = 42
 
-    val _astExpLitB: Z = 43
+    val _astExpLitR: Z = 43
 
-    val _astExpLitC: Z = 44
+    val _astExpLitString: Z = 44
 
-    val _astExpLitZ: Z = 45
+    val _astExpStringInterpolate: Z = 45
 
-    val _astExpLitF32: Z = 46
+    val _astExpThis: Z = 46
 
-    val _astExpLitF64: Z = 47
+    val _astExpSuper: Z = 47
 
-    val _astExpLitR: Z = 48
+    val _astExpUnary: Z = 48
 
-    val _astExpLitString: Z = 49
+    val _astExpBinary: Z = 49
 
-    val _astExpStringInterpolate: Z = 50
+    val _astExpIdent: Z = 50
 
-    val _astExpThis: Z = 51
+    val _astExpEta: Z = 51
 
-    val _astExpSuper: Z = 52
+    val _astExpTuple: Z = 52
 
-    val _astExpUnary: Z = 53
+    val _astExpSelect: Z = 53
 
-    val _astExpBinary: Z = 54
+    val _astExpInvoke: Z = 54
 
-    val _astExpIdent: Z = 55
+    val _astExpInvokeNamed: Z = 55
 
-    val _astExpEta: Z = 56
+    val _astExpIf: Z = 56
 
-    val _astExpTuple: Z = 57
+    val _astExpFunParam: Z = 57
 
-    val _astExpSelect: Z = 58
+    val _astExpFun: Z = 58
 
-    val _astExpInvoke: Z = 59
+    val _astExpForYield: Z = 59
 
-    val _astExpInvokeNamed: Z = 60
+    val _astExpQuant: Z = 60
 
-    val _astExpIf: Z = 61
+    val _astNamedArg: Z = 61
 
-    val _astExpFunParam: Z = 62
+    val _astVarFragment: Z = 62
 
-    val _astExpFun: Z = 63
+    val _astDomainType: Z = 63
 
-    val _astExpForYield: Z = 64
+    val _astDomainRange: Z = 64
 
-    val _astExpQuant: Z = 65
+    val _astId: Z = 65
 
-    val _astNamedArg: Z = 66
+    val _astName: Z = 66
 
-    val _astVarFragment: Z = 67
+    val _astBody: Z = 67
 
-    val _astDomainType: Z = 68
+    val _astAdtParam: Z = 68
 
-    val _astDomainRange: Z = 69
+    val _astMethodSig: Z = 69
 
-    val _astId: Z = 70
+    val _astParam: Z = 70
 
-    val _astName: Z = 71
+    val _astTypeParam: Z = 71
 
-    val _astBody: Z = 72
+    val _astTypedName: Z = 72
 
-    val _astAdtParam: Z = 73
+    val _astTypedTuple: Z = 73
 
-    val _astMethodSig: Z = 74
+    val _astTypedFun: Z = 74
 
-    val _astParam: Z = 75
+    val _astTypedTypeVar: Z = 75
 
-    val _astTypeParam: Z = 76
+    val _astTypedPackage: Z = 76
 
-    val _astContract: Z = 77
+    val _astTypedObject: Z = 77
 
-    val _astContractCase: Z = 78
+    val _astTypedEnum: Z = 78
 
-    val _astSubContract: Z = 79
+    val _astTypedMethod: Z = 79
 
-    val _astSpecDef: Z = 80
+    val _astTypedMethods: Z = 80
 
-    val _astTypedName: Z = 81
+    val _astAttr: Z = 81
 
-    val _astTypedTuple: Z = 82
+    val _astTypedAttr: Z = 82
 
-    val _astTypedFun: Z = 83
+    val _astResolvedAttr: Z = 83
 
-    val _astTypedTypeVar: Z = 84
+    val _astResolvedInfoBuiltIn: Z = 84
 
-    val _astTypedPackage: Z = 85
+    val _astResolvedInfoPackage: Z = 85
 
-    val _astTypedObject: Z = 86
+    val _astResolvedInfoEnum: Z = 86
 
-    val _astTypedEnum: Z = 87
+    val _astResolvedInfoEnumElement: Z = 87
 
-    val _astTypedMethod: Z = 88
+    val _astResolvedInfoObject: Z = 88
 
-    val _astTypedMethods: Z = 89
+    val _astResolvedInfoVar: Z = 89
 
-    val _astAttr: Z = 90
+    val _astResolvedInfoMethod: Z = 90
 
-    val _astTypedAttr: Z = 91
+    val _astResolvedInfoMethods: Z = 91
 
-    val _astResolvedAttr: Z = 92
+    val _astResolvedInfoTuple: Z = 92
 
-    val _astResolvedInfoBuiltIn: Z = 93
+    val _astResolvedInfoLocalVar: Z = 93
 
-    val _astResolvedInfoPackage: Z = 94
+    val _astProofStepBasic: Z = 94
 
-    val _astResolvedInfoEnum: Z = 95
+    val _astProofStepSubProof: Z = 95
 
-    val _astResolvedInfoEnumElement: Z = 96
+    val _astAssumeProofStepRegular: Z = 96
 
-    val _astResolvedInfoObject: Z = 97
+    val _astAssumeProofStepForallIntroAps: Z = 97
 
-    val _astResolvedInfoVar: Z = 98
+    val _astAssumeProofStepExistsElimAps: Z = 98
 
-    val _astResolvedInfoMethod: Z = 99
+    val _astJust: Z = 99
 
-    val _astResolvedInfoMethods: Z = 100
+    val _astTruthTableRow: Z = 100
 
-    val _astResolvedInfoTuple: Z = 101
+    val _astTruthTableAssignment: Z = 101
 
-    val _astResolvedInfoLocalVar: Z = 102
+    val _astTruthTableConclusionValidity: Z = 102
 
-    val _astProofStepBasic: Z = 103
+    val _astTruthTableConclusionTautology: Z = 103
 
-    val _astProofStepSubProof: Z = 104
+    val _astTruthTableConclusionContradictory: Z = 104
 
-    val _astAssumeProofStepRegular: Z = 105
-
-    val _astAssumeProofStepForallIntroAps: Z = 106
-
-    val _astAssumeProofStepExistsElimAps: Z = 107
-
-    val _astJust: Z = 108
-
-    val _astTruthTableRow: Z = 109
-
-    val _astTruthTableAssignment: Z = 110
-
-    val _astTruthTableConclusionValidity: Z = 111
-
-    val _astTruthTableConclusionTautology: Z = 112
-
-    val _astTruthTableConclusionContradictory: Z = 113
-
-    val _astTruthTableConclusionContingent: Z = 114
+    val _astTruthTableConclusionContingent: Z = 105
 
   }
 
@@ -432,9 +414,6 @@ object MsgPack {
       writer.writeOption(o.typedOpt, write_astTyped _)
       writer.writeOption(o.resOpt, write_astResolvedInfo _)
       write_astResolvedInfoMethod(o.constructorRes)
-      writer.writeHashMap(o.invariants, writer.writeString _, write_symbolInfoNamedExp _)
-      writer.writeHashMap(o.facts, writer.writeString _, write_symbolInfoNamedExp _)
-      writer.writeHashMap(o.theorems, writer.writeString _, write_symbolInfoTheorem _)
     }
 
     def write_symbolInfoExtMethod(o: org.sireum.lang.symbol.Info.ExtMethod): Unit = {
@@ -480,20 +459,6 @@ object MsgPack {
       writer.writeOption(o.resOpt, write_astResolvedInfo _)
     }
 
-    def write_symbolInfoNamedExp(o: org.sireum.lang.symbol.Info.NamedExp): Unit = {
-      writer.writeZ(Constants._symbolInfoNamedExp)
-      writer.writeISZ(o.owner, writer.writeString _)
-      writer.writeString(o.id)
-      write_astNamedExp(o.ast)
-    }
-
-    def write_symbolInfoTheorem(o: org.sireum.lang.symbol.Info.Theorem): Unit = {
-      writer.writeZ(Constants._symbolInfoTheorem)
-      writer.writeISZ(o.owner, writer.writeString _)
-      writer.writeString(o.id)
-      write_astLClauseTheorem(o.ast)
-    }
-
     def write_symbolTypeInfo(o: org.sireum.lang.symbol.TypeInfo): Unit = {
       o match {
         case o: org.sireum.lang.symbol.TypeInfo.SubZ => write_symbolTypeInfoSubZ(o)
@@ -528,9 +493,6 @@ object MsgPack {
       writer.writeHashSMap(o.specVars, writer.writeString _, write_symbolInfoSpecVar _)
       writer.writeHashMap(o.specMethods, writer.writeString _, write_symbolInfoSpecMethod _)
       writer.writeHashMap(o.methods, writer.writeString _, write_symbolInfoMethod _)
-      writer.writeHashMap(o.invariants, writer.writeString _, write_symbolInfoNamedExp _)
-      writer.writeHashMap(o.facts, writer.writeString _, write_symbolInfoNamedExp _)
-      writer.writeHashMap(o.theorems, writer.writeString _, write_symbolInfoTheorem _)
       writer.writeHashMap(o.refinements, writer.writeString _, write_symbolTypeInfoName _)
       write_symbolScopeGlobal(o.scope)
       write_astStmtSig(o.ast)
@@ -556,9 +518,6 @@ object MsgPack {
       writer.writeHashSMap(o.vars, writer.writeString _, write_symbolInfoVar _)
       writer.writeHashMap(o.specMethods, writer.writeString _, write_symbolInfoSpecMethod _)
       writer.writeHashMap(o.methods, writer.writeString _, write_symbolInfoMethod _)
-      writer.writeHashMap(o.invariants, writer.writeString _, write_symbolInfoNamedExp _)
-      writer.writeHashMap(o.facts, writer.writeString _, write_symbolInfoNamedExp _)
-      writer.writeHashMap(o.theorems, writer.writeString _, write_symbolInfoTheorem _)
       writer.writeHashMap(o.refinements, writer.writeString _, write_symbolTypeInfoName _)
       write_symbolScopeGlobal(o.scope)
       write_astStmtAdt(o.ast)
@@ -583,9 +542,6 @@ object MsgPack {
       writer.writeHashSMap(o.vars, writer.writeString _, write_symbolInfoVar _)
       writer.writeHashMap(o.specMethods, writer.writeString _, write_symbolInfoSpecMethod _)
       writer.writeHashMap(o.methods, writer.writeString _, write_symbolInfoMethod _)
-      writer.writeHashMap(o.invariants, writer.writeString _, write_symbolInfoNamedExp _)
-      writer.writeHashMap(o.facts, writer.writeString _, write_symbolInfoNamedExp _)
-      writer.writeHashMap(o.theorems, writer.writeString _, write_symbolInfoTheorem _)
       writer.writeHashMap(o.refinements, writer.writeString _, write_symbolTypeInfoName _)
     }
 
@@ -648,6 +604,35 @@ object MsgPack {
         case o: org.sireum.lang.ast.Stmt.LStmt => write_astStmtLStmt(o)
         case o: org.sireum.lang.ast.Stmt.Expr => write_astStmtExpr(o)
       }
+    }
+
+    def write_astContract(o: org.sireum.lang.ast.Contract): Unit = {
+      o match {
+        case o: org.sireum.lang.ast.Contract.Simple => write_astContractSimple(o)
+        case o: org.sireum.lang.ast.Contract.Cases => write_astContractCases(o)
+      }
+    }
+
+    def write_astContractSimple(o: org.sireum.lang.ast.Contract.Simple): Unit = {
+      writer.writeZ(Constants._astContractSimple)
+      writer.writeISZ(o.reads, write_astExpIdent _)
+      writer.writeISZ(o.requires, write_astExp _)
+      writer.writeISZ(o.modifies, write_astExpIdent _)
+      writer.writeISZ(o.ensures, write_astExp _)
+    }
+
+    def write_astContractCases(o: org.sireum.lang.ast.Contract.Cases): Unit = {
+      writer.writeZ(Constants._astContractCases)
+      writer.writeISZ(o.reads, write_astExpIdent _)
+      writer.writeISZ(o.modifies, write_astExpIdent _)
+      writer.writeISZ(o.cases, write_astContractCase _)
+    }
+
+    def write_astContractCase(o: org.sireum.lang.ast.Contract.Case): Unit = {
+      writer.writeZ(Constants._astContractCase)
+      writer.writeString(o.label)
+      writer.writeISZ(o.requires, write_astExp _)
+      writer.writeISZ(o.ensures, write_astExp _)
     }
 
     def write_astStmtImport(o: org.sireum.lang.ast.Stmt.Import): Unit = {
@@ -732,7 +717,6 @@ object MsgPack {
     def write_astStmtSpecMethod(o: org.sireum.lang.ast.Stmt.SpecMethod): Unit = {
       writer.writeZ(Constants._astStmtSpecMethod)
       write_astMethodSig(o.sig)
-      writer.writeISZ(o.defs, write_astSpecDef _)
       write_astResolvedAttr(o.attr)
     }
 
@@ -838,9 +822,8 @@ object MsgPack {
       writer.writeZ(Constants._astStmtWhile)
       writer.writeISZ(o.context, writer.writeString _)
       write_astExp(o.cond)
-      writer.writeOption(o.loopIdOpt, write_astId _)
-      writer.writeISZ(o.invariants, write_astOptNamedExp _)
-      writer.writeISZ(o.modifies, write_astExp _)
+      writer.writeISZ(o.invariants, write_astExp _)
+      writer.writeISZ(o.modifies, write_astExpIdent _)
       write_astBody(o.body)
       write_astAttr(o.attr)
     }
@@ -849,9 +832,8 @@ object MsgPack {
       writer.writeZ(Constants._astStmtDoWhile)
       writer.writeISZ(o.context, writer.writeString _)
       write_astExp(o.cond)
-      writer.writeOption(o.loopIdOpt, write_astId _)
-      writer.writeISZ(o.invariants, write_astOptNamedExp _)
-      writer.writeISZ(o.modifies, write_astExp _)
+      writer.writeISZ(o.invariants, write_astExp _)
+      writer.writeISZ(o.modifies, write_astExpIdent _)
       write_astBody(o.body)
       write_astAttr(o.attr)
     }
@@ -860,9 +842,8 @@ object MsgPack {
       writer.writeZ(Constants._astStmtFor)
       writer.writeISZ(o.context, writer.writeString _)
       writer.writeISZ(o.enumGens, write_astEnumGenFor _)
-      writer.writeOption(o.loopIdOpt, write_astId _)
-      writer.writeISZ(o.invariants, write_astOptNamedExp _)
-      writer.writeISZ(o.modifies, write_astExp _)
+      writer.writeISZ(o.invariants, write_astExp _)
+      writer.writeISZ(o.modifies, write_astExpIdent _)
       write_astBody(o.body)
       write_astAttr(o.attr)
     }
@@ -901,35 +882,9 @@ object MsgPack {
 
     def write_astLClause(o: org.sireum.lang.ast.LClause): Unit = {
       o match {
-        case o: org.sireum.lang.ast.LClause.Invariants => write_astLClauseInvariants(o)
-        case o: org.sireum.lang.ast.LClause.Facts => write_astLClauseFacts(o)
-        case o: org.sireum.lang.ast.LClause.Theorems => write_astLClauseTheorems(o)
-        case o: org.sireum.lang.ast.LClause.Theorem => write_astLClauseTheorem(o)
         case o: org.sireum.lang.ast.LClause.Sequent => write_astLClauseSequent(o)
         case o: org.sireum.lang.ast.LClause.Proof => write_astLClauseProof(o)
       }
-    }
-
-    def write_astLClauseInvariants(o: org.sireum.lang.ast.LClause.Invariants): Unit = {
-      writer.writeZ(Constants._astLClauseInvariants)
-      writer.writeISZ(o.invariants, write_astNamedExp _)
-    }
-
-    def write_astLClauseFacts(o: org.sireum.lang.ast.LClause.Facts): Unit = {
-      writer.writeZ(Constants._astLClauseFacts)
-      writer.writeISZ(o.facts, write_astNamedExp _)
-    }
-
-    def write_astLClauseTheorems(o: org.sireum.lang.ast.LClause.Theorems): Unit = {
-      writer.writeZ(Constants._astLClauseTheorems)
-      writer.writeISZ(o.theorems, write_astLClauseTheorem _)
-    }
-
-    def write_astLClauseTheorem(o: org.sireum.lang.ast.LClause.Theorem): Unit = {
-      writer.writeZ(Constants._astLClauseTheorem)
-      write_astId(o.id)
-      write_astExp(o.exp)
-      writer.writeOption(o.proofOpt, write_astLClauseProof _)
     }
 
     def write_astLClauseSequent(o: org.sireum.lang.ast.LClause.Sequent): Unit = {
@@ -942,18 +897,6 @@ object MsgPack {
     def write_astLClauseProof(o: org.sireum.lang.ast.LClause.Proof): Unit = {
       writer.writeZ(Constants._astLClauseProof)
       writer.writeISZ(o.steps, write_astProofStep _)
-    }
-
-    def write_astNamedExp(o: org.sireum.lang.ast.NamedExp): Unit = {
-      writer.writeZ(Constants._astNamedExp)
-      write_astId(o.id)
-      write_astExp(o.exp)
-    }
-
-    def write_astOptNamedExp(o: org.sireum.lang.ast.OptNamedExp): Unit = {
-      writer.writeZ(Constants._astOptNamedExp)
-      writer.writeOption(o.idOpt, write_astId _)
-      write_astExp(o.exp)
     }
 
     def write_astCase(o: org.sireum.lang.ast.Case): Unit = {
@@ -1267,7 +1210,6 @@ object MsgPack {
       writer.writeZ(Constants._astExpFun)
       writer.writeISZ(o.context, writer.writeString _)
       writer.writeISZ(o.params, write_astExpFunParam _)
-      write_astContract(o.contract)
       write_astAssignExp(o.exp)
       write_astTypedAttr(o.attr)
     }
@@ -1368,36 +1310,6 @@ object MsgPack {
     def write_astTypeParam(o: org.sireum.lang.ast.TypeParam): Unit = {
       writer.writeZ(Constants._astTypeParam)
       write_astId(o.id)
-    }
-
-    def write_astContract(o: org.sireum.lang.ast.Contract): Unit = {
-      writer.writeZ(Constants._astContract)
-      writer.writeISZ(o.cases, write_astContractCase _)
-      writer.writeISZ(o.subs, write_astSubContract _)
-    }
-
-    def write_astContractCase(o: org.sireum.lang.ast.ContractCase): Unit = {
-      writer.writeZ(Constants._astContractCase)
-      writer.writeOption(o.idOpt, write_astId _)
-      writer.writeISZ(o.requires, write_astExp _)
-      writer.writeISZ(o.modifies, write_astExp _)
-      writer.writeISZ(o.ensures, write_astExp _)
-    }
-
-    def write_astSubContract(o: org.sireum.lang.ast.SubContract): Unit = {
-      writer.writeZ(Constants._astSubContract)
-      write_astId(o.id)
-      writer.writeISZ(o.params, write_astId _)
-      write_astContract(o.contract)
-    }
-
-    def write_astSpecDef(o: org.sireum.lang.ast.SpecDef): Unit = {
-      writer.writeZ(Constants._astSpecDef)
-      writer.writeOption(o.idOpt, write_astId _)
-      write_astExp(o.exp)
-      writer.writeB(o.isOtherwise)
-      writer.writeOption(o.patternOpt, write_astPattern _)
-      writer.writeOption(o.guardOpt, write_astExp _)
     }
 
     def write_astTyped(o: org.sireum.lang.ast.Typed): Unit = {
@@ -1867,10 +1779,7 @@ object MsgPack {
       val typedOpt = reader.readOption(read_astTyped _)
       val resOpt = reader.readOption(read_astResolvedInfo _)
       val constructorRes = read_astResolvedInfoMethod()
-      val invariants = reader.readHashMap(reader.readString _, read_symbolInfoNamedExp _)
-      val facts = reader.readHashMap(reader.readString _, read_symbolInfoNamedExp _)
-      val theorems = reader.readHashMap(reader.readString _, read_symbolInfoTheorem _)
-      return org.sireum.lang.symbol.Info.Object(owner, isSynthetic, scope, outlined, typeChecked, ast, typedOpt, resOpt, constructorRes, invariants, facts, theorems)
+      return org.sireum.lang.symbol.Info.Object(owner, isSynthetic, scope, outlined, typeChecked, ast, typedOpt, resOpt, constructorRes)
     }
 
     def read_symbolInfoExtMethod(): org.sireum.lang.symbol.Info.ExtMethod = {
@@ -1956,36 +1865,6 @@ object MsgPack {
       return org.sireum.lang.symbol.Info.QuantVar(name, ast, typedOpt, resOpt)
     }
 
-    def read_symbolInfoNamedExp(): org.sireum.lang.symbol.Info.NamedExp = {
-      val r = read_symbolInfoNamedExpT(F)
-      return r
-    }
-
-    def read_symbolInfoNamedExpT(typeParsed: B): org.sireum.lang.symbol.Info.NamedExp = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._symbolInfoNamedExp)
-      }
-      val owner = reader.readISZ(reader.readString _)
-      val id = reader.readString()
-      val ast = read_astNamedExp()
-      return org.sireum.lang.symbol.Info.NamedExp(owner, id, ast)
-    }
-
-    def read_symbolInfoTheorem(): org.sireum.lang.symbol.Info.Theorem = {
-      val r = read_symbolInfoTheoremT(F)
-      return r
-    }
-
-    def read_symbolInfoTheoremT(typeParsed: B): org.sireum.lang.symbol.Info.Theorem = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._symbolInfoTheorem)
-      }
-      val owner = reader.readISZ(reader.readString _)
-      val id = reader.readString()
-      val ast = read_astLClauseTheorem()
-      return org.sireum.lang.symbol.Info.Theorem(owner, id, ast)
-    }
-
     def read_symbolTypeInfo(): org.sireum.lang.symbol.TypeInfo = {
       val i = reader.curr
       val t = reader.readZ()
@@ -2049,13 +1928,10 @@ object MsgPack {
       val specVars = reader.readHashSMap(reader.readString _, read_symbolInfoSpecVar _)
       val specMethods = reader.readHashMap(reader.readString _, read_symbolInfoSpecMethod _)
       val methods = reader.readHashMap(reader.readString _, read_symbolInfoMethod _)
-      val invariants = reader.readHashMap(reader.readString _, read_symbolInfoNamedExp _)
-      val facts = reader.readHashMap(reader.readString _, read_symbolInfoNamedExp _)
-      val theorems = reader.readHashMap(reader.readString _, read_symbolInfoTheorem _)
       val refinements = reader.readHashMap(reader.readString _, read_symbolTypeInfoName _)
       val scope = read_symbolScopeGlobal()
       val ast = read_astStmtSig()
-      return org.sireum.lang.symbol.TypeInfo.Sig(owner, outlined, typeChecked, tpe, ancestors, specVars, specMethods, methods, invariants, facts, theorems, refinements, scope, ast)
+      return org.sireum.lang.symbol.TypeInfo.Sig(owner, outlined, typeChecked, tpe, ancestors, specVars, specMethods, methods, refinements, scope, ast)
     }
 
     def read_symbolTypeInfoName(): org.sireum.lang.symbol.TypeInfo.Name = {
@@ -2093,13 +1969,10 @@ object MsgPack {
       val vars = reader.readHashSMap(reader.readString _, read_symbolInfoVar _)
       val specMethods = reader.readHashMap(reader.readString _, read_symbolInfoSpecMethod _)
       val methods = reader.readHashMap(reader.readString _, read_symbolInfoMethod _)
-      val invariants = reader.readHashMap(reader.readString _, read_symbolInfoNamedExp _)
-      val facts = reader.readHashMap(reader.readString _, read_symbolInfoNamedExp _)
-      val theorems = reader.readHashMap(reader.readString _, read_symbolInfoTheorem _)
       val refinements = reader.readHashMap(reader.readString _, read_symbolTypeInfoName _)
       val scope = read_symbolScopeGlobal()
       val ast = read_astStmtAdt()
-      return org.sireum.lang.symbol.TypeInfo.Adt(owner, outlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, ancestors, specVars, vars, specMethods, methods, invariants, facts, theorems, refinements, scope, ast)
+      return org.sireum.lang.symbol.TypeInfo.Adt(owner, outlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, ancestors, specVars, vars, specMethods, methods, refinements, scope, ast)
     }
 
     def read_symbolTypeInfoTypeAlias(): org.sireum.lang.symbol.TypeInfo.TypeAlias = {
@@ -2144,11 +2017,8 @@ object MsgPack {
       val vars = reader.readHashSMap(reader.readString _, read_symbolInfoVar _)
       val specMethods = reader.readHashMap(reader.readString _, read_symbolInfoSpecMethod _)
       val methods = reader.readHashMap(reader.readString _, read_symbolInfoMethod _)
-      val invariants = reader.readHashMap(reader.readString _, read_symbolInfoNamedExp _)
-      val facts = reader.readHashMap(reader.readString _, read_symbolInfoNamedExp _)
-      val theorems = reader.readHashMap(reader.readString _, read_symbolInfoTheorem _)
       val refinements = reader.readHashMap(reader.readString _, read_symbolTypeInfoName _)
-      return org.sireum.lang.symbol.TypeInfo.Members(specVars, vars, specMethods, methods, invariants, facts, theorems, refinements)
+      return org.sireum.lang.symbol.TypeInfo.Members(specVars, vars, specMethods, methods, refinements)
     }
 
     def read_astTopUnit(): org.sireum.lang.ast.TopUnit = {
@@ -2246,6 +2116,65 @@ object MsgPack {
           val r = read_astStmtExprT(T)
           return r
       }
+    }
+
+    def read_astContract(): org.sireum.lang.ast.Contract = {
+      val i = reader.curr
+      val t = reader.readZ()
+      t match {
+        case Constants._astContractSimple => val r = read_astContractSimpleT(T); return r
+        case Constants._astContractCases => val r = read_astContractCasesT(T); return r
+        case _ =>
+          reader.error(i, s"$t is not a valid type of org.sireum.lang.ast.Contract.")
+          val r = read_astContractCasesT(T)
+          return r
+      }
+    }
+
+    def read_astContractSimple(): org.sireum.lang.ast.Contract.Simple = {
+      val r = read_astContractSimpleT(F)
+      return r
+    }
+
+    def read_astContractSimpleT(typeParsed: B): org.sireum.lang.ast.Contract.Simple = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astContractSimple)
+      }
+      val reads = reader.readISZ(read_astExpIdent _)
+      val requires = reader.readISZ(read_astExp _)
+      val modifies = reader.readISZ(read_astExpIdent _)
+      val ensures = reader.readISZ(read_astExp _)
+      return org.sireum.lang.ast.Contract.Simple(reads, requires, modifies, ensures)
+    }
+
+    def read_astContractCases(): org.sireum.lang.ast.Contract.Cases = {
+      val r = read_astContractCasesT(F)
+      return r
+    }
+
+    def read_astContractCasesT(typeParsed: B): org.sireum.lang.ast.Contract.Cases = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astContractCases)
+      }
+      val reads = reader.readISZ(read_astExpIdent _)
+      val modifies = reader.readISZ(read_astExpIdent _)
+      val cases = reader.readISZ(read_astContractCase _)
+      return org.sireum.lang.ast.Contract.Cases(reads, modifies, cases)
+    }
+
+    def read_astContractCase(): org.sireum.lang.ast.Contract.Case = {
+      val r = read_astContractCaseT(F)
+      return r
+    }
+
+    def read_astContractCaseT(typeParsed: B): org.sireum.lang.ast.Contract.Case = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astContractCase)
+      }
+      val label = reader.readString()
+      val requires = reader.readISZ(read_astExp _)
+      val ensures = reader.readISZ(read_astExp _)
+      return org.sireum.lang.ast.Contract.Case(label, requires, ensures)
     }
 
     def read_astStmtImport(): org.sireum.lang.ast.Stmt.Import = {
@@ -2423,9 +2352,8 @@ object MsgPack {
         reader.expectZ(Constants._astStmtSpecMethod)
       }
       val sig = read_astMethodSig()
-      val defs = reader.readISZ(read_astSpecDef _)
       val attr = read_astResolvedAttr()
-      return org.sireum.lang.ast.Stmt.SpecMethod(sig, defs, attr)
+      return org.sireum.lang.ast.Stmt.SpecMethod(sig, attr)
     }
 
     def read_astStmtEnum(): org.sireum.lang.ast.Stmt.Enum = {
@@ -2623,12 +2551,11 @@ object MsgPack {
       }
       val context = reader.readISZ(reader.readString _)
       val cond = read_astExp()
-      val loopIdOpt = reader.readOption(read_astId _)
-      val invariants = reader.readISZ(read_astOptNamedExp _)
-      val modifies = reader.readISZ(read_astExp _)
+      val invariants = reader.readISZ(read_astExp _)
+      val modifies = reader.readISZ(read_astExpIdent _)
       val body = read_astBody()
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.While(context, cond, loopIdOpt, invariants, modifies, body, attr)
+      return org.sireum.lang.ast.Stmt.While(context, cond, invariants, modifies, body, attr)
     }
 
     def read_astStmtDoWhile(): org.sireum.lang.ast.Stmt.DoWhile = {
@@ -2642,12 +2569,11 @@ object MsgPack {
       }
       val context = reader.readISZ(reader.readString _)
       val cond = read_astExp()
-      val loopIdOpt = reader.readOption(read_astId _)
-      val invariants = reader.readISZ(read_astOptNamedExp _)
-      val modifies = reader.readISZ(read_astExp _)
+      val invariants = reader.readISZ(read_astExp _)
+      val modifies = reader.readISZ(read_astExpIdent _)
       val body = read_astBody()
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.DoWhile(context, cond, loopIdOpt, invariants, modifies, body, attr)
+      return org.sireum.lang.ast.Stmt.DoWhile(context, cond, invariants, modifies, body, attr)
     }
 
     def read_astStmtFor(): org.sireum.lang.ast.Stmt.For = {
@@ -2661,12 +2587,11 @@ object MsgPack {
       }
       val context = reader.readISZ(reader.readString _)
       val enumGens = reader.readISZ(read_astEnumGenFor _)
-      val loopIdOpt = reader.readOption(read_astId _)
-      val invariants = reader.readISZ(read_astOptNamedExp _)
-      val modifies = reader.readISZ(read_astExp _)
+      val invariants = reader.readISZ(read_astExp _)
+      val modifies = reader.readISZ(read_astExpIdent _)
       val body = read_astBody()
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.For(context, enumGens, loopIdOpt, invariants, modifies, body, attr)
+      return org.sireum.lang.ast.Stmt.For(context, enumGens, invariants, modifies, body, attr)
     }
 
     def read_astStmtReturn(): org.sireum.lang.ast.Stmt.Return = {
@@ -2736,10 +2661,6 @@ object MsgPack {
       val i = reader.curr
       val t = reader.readZ()
       t match {
-        case Constants._astLClauseInvariants => val r = read_astLClauseInvariantsT(T); return r
-        case Constants._astLClauseFacts => val r = read_astLClauseFactsT(T); return r
-        case Constants._astLClauseTheorems => val r = read_astLClauseTheoremsT(T); return r
-        case Constants._astLClauseTheorem => val r = read_astLClauseTheoremT(T); return r
         case Constants._astLClauseSequent => val r = read_astLClauseSequentT(T); return r
         case Constants._astLClauseProof => val r = read_astLClauseProofT(T); return r
         case _ =>
@@ -2747,60 +2668,6 @@ object MsgPack {
           val r = read_astLClauseProofT(T)
           return r
       }
-    }
-
-    def read_astLClauseInvariants(): org.sireum.lang.ast.LClause.Invariants = {
-      val r = read_astLClauseInvariantsT(F)
-      return r
-    }
-
-    def read_astLClauseInvariantsT(typeParsed: B): org.sireum.lang.ast.LClause.Invariants = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astLClauseInvariants)
-      }
-      val invariants = reader.readISZ(read_astNamedExp _)
-      return org.sireum.lang.ast.LClause.Invariants(invariants)
-    }
-
-    def read_astLClauseFacts(): org.sireum.lang.ast.LClause.Facts = {
-      val r = read_astLClauseFactsT(F)
-      return r
-    }
-
-    def read_astLClauseFactsT(typeParsed: B): org.sireum.lang.ast.LClause.Facts = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astLClauseFacts)
-      }
-      val facts = reader.readISZ(read_astNamedExp _)
-      return org.sireum.lang.ast.LClause.Facts(facts)
-    }
-
-    def read_astLClauseTheorems(): org.sireum.lang.ast.LClause.Theorems = {
-      val r = read_astLClauseTheoremsT(F)
-      return r
-    }
-
-    def read_astLClauseTheoremsT(typeParsed: B): org.sireum.lang.ast.LClause.Theorems = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astLClauseTheorems)
-      }
-      val theorems = reader.readISZ(read_astLClauseTheorem _)
-      return org.sireum.lang.ast.LClause.Theorems(theorems)
-    }
-
-    def read_astLClauseTheorem(): org.sireum.lang.ast.LClause.Theorem = {
-      val r = read_astLClauseTheoremT(F)
-      return r
-    }
-
-    def read_astLClauseTheoremT(typeParsed: B): org.sireum.lang.ast.LClause.Theorem = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astLClauseTheorem)
-      }
-      val id = read_astId()
-      val exp = read_astExp()
-      val proofOpt = reader.readOption(read_astLClauseProof _)
-      return org.sireum.lang.ast.LClause.Theorem(id, exp, proofOpt)
     }
 
     def read_astLClauseSequent(): org.sireum.lang.ast.LClause.Sequent = {
@@ -2829,34 +2696,6 @@ object MsgPack {
       }
       val steps = reader.readISZ(read_astProofStep _)
       return org.sireum.lang.ast.LClause.Proof(steps)
-    }
-
-    def read_astNamedExp(): org.sireum.lang.ast.NamedExp = {
-      val r = read_astNamedExpT(F)
-      return r
-    }
-
-    def read_astNamedExpT(typeParsed: B): org.sireum.lang.ast.NamedExp = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astNamedExp)
-      }
-      val id = read_astId()
-      val exp = read_astExp()
-      return org.sireum.lang.ast.NamedExp(id, exp)
-    }
-
-    def read_astOptNamedExp(): org.sireum.lang.ast.OptNamedExp = {
-      val r = read_astOptNamedExpT(F)
-      return r
-    }
-
-    def read_astOptNamedExpT(typeParsed: B): org.sireum.lang.ast.OptNamedExp = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astOptNamedExp)
-      }
-      val idOpt = reader.readOption(read_astId _)
-      val exp = read_astExp()
-      return org.sireum.lang.ast.OptNamedExp(idOpt, exp)
     }
 
     def read_astCase(): org.sireum.lang.ast.Case = {
@@ -3486,10 +3325,9 @@ object MsgPack {
       }
       val context = reader.readISZ(reader.readString _)
       val params = reader.readISZ(read_astExpFunParam _)
-      val contract = read_astContract()
       val exp = read_astAssignExp()
       val attr = read_astTypedAttr()
-      return org.sireum.lang.ast.Exp.Fun(context, params, contract, exp, attr)
+      return org.sireum.lang.ast.Exp.Fun(context, params, exp, attr)
     }
 
     def read_astExpForYield(): org.sireum.lang.ast.Exp.ForYield = {
@@ -3698,68 +3536,6 @@ object MsgPack {
       }
       val id = read_astId()
       return org.sireum.lang.ast.TypeParam(id)
-    }
-
-    def read_astContract(): org.sireum.lang.ast.Contract = {
-      val r = read_astContractT(F)
-      return r
-    }
-
-    def read_astContractT(typeParsed: B): org.sireum.lang.ast.Contract = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astContract)
-      }
-      val cases = reader.readISZ(read_astContractCase _)
-      val subs = reader.readISZ(read_astSubContract _)
-      return org.sireum.lang.ast.Contract(cases, subs)
-    }
-
-    def read_astContractCase(): org.sireum.lang.ast.ContractCase = {
-      val r = read_astContractCaseT(F)
-      return r
-    }
-
-    def read_astContractCaseT(typeParsed: B): org.sireum.lang.ast.ContractCase = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astContractCase)
-      }
-      val idOpt = reader.readOption(read_astId _)
-      val requires = reader.readISZ(read_astExp _)
-      val modifies = reader.readISZ(read_astExp _)
-      val ensures = reader.readISZ(read_astExp _)
-      return org.sireum.lang.ast.ContractCase(idOpt, requires, modifies, ensures)
-    }
-
-    def read_astSubContract(): org.sireum.lang.ast.SubContract = {
-      val r = read_astSubContractT(F)
-      return r
-    }
-
-    def read_astSubContractT(typeParsed: B): org.sireum.lang.ast.SubContract = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astSubContract)
-      }
-      val id = read_astId()
-      val params = reader.readISZ(read_astId _)
-      val contract = read_astContract()
-      return org.sireum.lang.ast.SubContract(id, params, contract)
-    }
-
-    def read_astSpecDef(): org.sireum.lang.ast.SpecDef = {
-      val r = read_astSpecDefT(F)
-      return r
-    }
-
-    def read_astSpecDefT(typeParsed: B): org.sireum.lang.ast.SpecDef = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astSpecDef)
-      }
-      val idOpt = reader.readOption(read_astId _)
-      val exp = read_astExp()
-      val isOtherwise = reader.readB()
-      val patternOpt = reader.readOption(read_astPattern _)
-      val guardOpt = reader.readOption(read_astExp _)
-      return org.sireum.lang.ast.SpecDef(idOpt, exp, isOtherwise, patternOpt, guardOpt)
     }
 
     def read_astTyped(): org.sireum.lang.ast.Typed = {
@@ -4586,36 +4362,6 @@ object MsgPack {
     return r
   }
 
-  def from_symbolInfoNamedExp(o: org.sireum.lang.symbol.Info.NamedExp, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_symbolInfoNamedExp(o)
-    return w.result
-  }
-
-  def to_symbolInfoNamedExp(data: ISZ[U8]): Either[org.sireum.lang.symbol.Info.NamedExp, MessagePack.ErrorMsg] = {
-    def f_symbolInfoNamedExp(reader: Reader): org.sireum.lang.symbol.Info.NamedExp = {
-      val r = reader.read_symbolInfoNamedExp()
-      return r
-    }
-    val r = to(data, f_symbolInfoNamedExp _)
-    return r
-  }
-
-  def from_symbolInfoTheorem(o: org.sireum.lang.symbol.Info.Theorem, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_symbolInfoTheorem(o)
-    return w.result
-  }
-
-  def to_symbolInfoTheorem(data: ISZ[U8]): Either[org.sireum.lang.symbol.Info.Theorem, MessagePack.ErrorMsg] = {
-    def f_symbolInfoTheorem(reader: Reader): org.sireum.lang.symbol.Info.Theorem = {
-      val r = reader.read_symbolInfoTheorem()
-      return r
-    }
-    val r = to(data, f_symbolInfoTheorem _)
-    return r
-  }
-
   def from_symbolTypeInfo(o: org.sireum.lang.symbol.TypeInfo, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
     w.write_symbolTypeInfo(o)
@@ -4823,6 +4569,66 @@ object MsgPack {
       return r
     }
     val r = to(data, f_astStmt _)
+    return r
+  }
+
+  def from_astContract(o: org.sireum.lang.ast.Contract, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astContract(o)
+    return w.result
+  }
+
+  def to_astContract(data: ISZ[U8]): Either[org.sireum.lang.ast.Contract, MessagePack.ErrorMsg] = {
+    def f_astContract(reader: Reader): org.sireum.lang.ast.Contract = {
+      val r = reader.read_astContract()
+      return r
+    }
+    val r = to(data, f_astContract _)
+    return r
+  }
+
+  def from_astContractSimple(o: org.sireum.lang.ast.Contract.Simple, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astContractSimple(o)
+    return w.result
+  }
+
+  def to_astContractSimple(data: ISZ[U8]): Either[org.sireum.lang.ast.Contract.Simple, MessagePack.ErrorMsg] = {
+    def f_astContractSimple(reader: Reader): org.sireum.lang.ast.Contract.Simple = {
+      val r = reader.read_astContractSimple()
+      return r
+    }
+    val r = to(data, f_astContractSimple _)
+    return r
+  }
+
+  def from_astContractCases(o: org.sireum.lang.ast.Contract.Cases, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astContractCases(o)
+    return w.result
+  }
+
+  def to_astContractCases(data: ISZ[U8]): Either[org.sireum.lang.ast.Contract.Cases, MessagePack.ErrorMsg] = {
+    def f_astContractCases(reader: Reader): org.sireum.lang.ast.Contract.Cases = {
+      val r = reader.read_astContractCases()
+      return r
+    }
+    val r = to(data, f_astContractCases _)
+    return r
+  }
+
+  def from_astContractCase(o: org.sireum.lang.ast.Contract.Case, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astContractCase(o)
+    return w.result
+  }
+
+  def to_astContractCase(data: ISZ[U8]): Either[org.sireum.lang.ast.Contract.Case, MessagePack.ErrorMsg] = {
+    def f_astContractCase(reader: Reader): org.sireum.lang.ast.Contract.Case = {
+      val r = reader.read_astContractCase()
+      return r
+    }
+    val r = to(data, f_astContractCase _)
     return r
   }
 
@@ -5291,66 +5097,6 @@ object MsgPack {
     return r
   }
 
-  def from_astLClauseInvariants(o: org.sireum.lang.ast.LClause.Invariants, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astLClauseInvariants(o)
-    return w.result
-  }
-
-  def to_astLClauseInvariants(data: ISZ[U8]): Either[org.sireum.lang.ast.LClause.Invariants, MessagePack.ErrorMsg] = {
-    def f_astLClauseInvariants(reader: Reader): org.sireum.lang.ast.LClause.Invariants = {
-      val r = reader.read_astLClauseInvariants()
-      return r
-    }
-    val r = to(data, f_astLClauseInvariants _)
-    return r
-  }
-
-  def from_astLClauseFacts(o: org.sireum.lang.ast.LClause.Facts, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astLClauseFacts(o)
-    return w.result
-  }
-
-  def to_astLClauseFacts(data: ISZ[U8]): Either[org.sireum.lang.ast.LClause.Facts, MessagePack.ErrorMsg] = {
-    def f_astLClauseFacts(reader: Reader): org.sireum.lang.ast.LClause.Facts = {
-      val r = reader.read_astLClauseFacts()
-      return r
-    }
-    val r = to(data, f_astLClauseFacts _)
-    return r
-  }
-
-  def from_astLClauseTheorems(o: org.sireum.lang.ast.LClause.Theorems, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astLClauseTheorems(o)
-    return w.result
-  }
-
-  def to_astLClauseTheorems(data: ISZ[U8]): Either[org.sireum.lang.ast.LClause.Theorems, MessagePack.ErrorMsg] = {
-    def f_astLClauseTheorems(reader: Reader): org.sireum.lang.ast.LClause.Theorems = {
-      val r = reader.read_astLClauseTheorems()
-      return r
-    }
-    val r = to(data, f_astLClauseTheorems _)
-    return r
-  }
-
-  def from_astLClauseTheorem(o: org.sireum.lang.ast.LClause.Theorem, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astLClauseTheorem(o)
-    return w.result
-  }
-
-  def to_astLClauseTheorem(data: ISZ[U8]): Either[org.sireum.lang.ast.LClause.Theorem, MessagePack.ErrorMsg] = {
-    def f_astLClauseTheorem(reader: Reader): org.sireum.lang.ast.LClause.Theorem = {
-      val r = reader.read_astLClauseTheorem()
-      return r
-    }
-    val r = to(data, f_astLClauseTheorem _)
-    return r
-  }
-
   def from_astLClauseSequent(o: org.sireum.lang.ast.LClause.Sequent, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
     w.write_astLClauseSequent(o)
@@ -5378,36 +5124,6 @@ object MsgPack {
       return r
     }
     val r = to(data, f_astLClauseProof _)
-    return r
-  }
-
-  def from_astNamedExp(o: org.sireum.lang.ast.NamedExp, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astNamedExp(o)
-    return w.result
-  }
-
-  def to_astNamedExp(data: ISZ[U8]): Either[org.sireum.lang.ast.NamedExp, MessagePack.ErrorMsg] = {
-    def f_astNamedExp(reader: Reader): org.sireum.lang.ast.NamedExp = {
-      val r = reader.read_astNamedExp()
-      return r
-    }
-    val r = to(data, f_astNamedExp _)
-    return r
-  }
-
-  def from_astOptNamedExp(o: org.sireum.lang.ast.OptNamedExp, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astOptNamedExp(o)
-    return w.result
-  }
-
-  def to_astOptNamedExp(data: ISZ[U8]): Either[org.sireum.lang.ast.OptNamedExp, MessagePack.ErrorMsg] = {
-    def f_astOptNamedExp(reader: Reader): org.sireum.lang.ast.OptNamedExp = {
-      val r = reader.read_astOptNamedExp()
-      return r
-    }
-    val r = to(data, f_astOptNamedExp _)
     return r
   }
 
@@ -6233,66 +5949,6 @@ object MsgPack {
       return r
     }
     val r = to(data, f_astTypeParam _)
-    return r
-  }
-
-  def from_astContract(o: org.sireum.lang.ast.Contract, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astContract(o)
-    return w.result
-  }
-
-  def to_astContract(data: ISZ[U8]): Either[org.sireum.lang.ast.Contract, MessagePack.ErrorMsg] = {
-    def f_astContract(reader: Reader): org.sireum.lang.ast.Contract = {
-      val r = reader.read_astContract()
-      return r
-    }
-    val r = to(data, f_astContract _)
-    return r
-  }
-
-  def from_astContractCase(o: org.sireum.lang.ast.ContractCase, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astContractCase(o)
-    return w.result
-  }
-
-  def to_astContractCase(data: ISZ[U8]): Either[org.sireum.lang.ast.ContractCase, MessagePack.ErrorMsg] = {
-    def f_astContractCase(reader: Reader): org.sireum.lang.ast.ContractCase = {
-      val r = reader.read_astContractCase()
-      return r
-    }
-    val r = to(data, f_astContractCase _)
-    return r
-  }
-
-  def from_astSubContract(o: org.sireum.lang.ast.SubContract, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astSubContract(o)
-    return w.result
-  }
-
-  def to_astSubContract(data: ISZ[U8]): Either[org.sireum.lang.ast.SubContract, MessagePack.ErrorMsg] = {
-    def f_astSubContract(reader: Reader): org.sireum.lang.ast.SubContract = {
-      val r = reader.read_astSubContract()
-      return r
-    }
-    val r = to(data, f_astSubContract _)
-    return r
-  }
-
-  def from_astSpecDef(o: org.sireum.lang.ast.SpecDef, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astSpecDef(o)
-    return w.result
-  }
-
-  def to_astSpecDef(data: ISZ[U8]): Either[org.sireum.lang.ast.SpecDef, MessagePack.ErrorMsg] = {
-    def f_astSpecDef(reader: Reader): org.sireum.lang.ast.SpecDef = {
-      val r = reader.read_astSpecDef()
-      return r
-    }
-    val r = to(data, f_astSpecDef _)
     return r
   }
 

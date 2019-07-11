@@ -3840,14 +3840,14 @@ import TypeChecker._
     }
   }
 
-  def checkLoopInv(scope: Scope, invs: ISZ[AST.OptNamedExp], modifies: ISZ[AST.Exp],
-                   reporter: Reporter): (ISZ[AST.OptNamedExp], ISZ[AST.Exp]) = {
-    var newInvs: ISZ[AST.OptNamedExp] = ISZ()
+  def checkLoopInv(scope: Scope, invs: ISZ[AST.Exp], modifies: ISZ[AST.Exp.Ident],
+                   reporter: Reporter): (ISZ[AST.Exp], ISZ[AST.Exp.Ident]) = {
+    var newInvs: ISZ[AST.Exp] = ISZ()
     for (inv <- invs) {
-      val newInv = checkOptNamedExp(AST.Typed.bOpt, scope, inv, reporter)
+      val (newInv, _) = checkExp(AST.Typed.bOpt, scope, inv, reporter)
       newInvs = newInvs :+ newInv
     }
-    var newMods: ISZ[AST.Exp] = ISZ()
+    var newMods: ISZ[AST.Exp.Ident] = ISZ()
     for (mod <- modifies) {
       val newMod = checkModifyExp(scope, mod, reporter)
       newMods = newMods :+ newMod
@@ -3855,19 +3855,7 @@ import TypeChecker._
     return (newInvs, newMods)
   }
 
-  def checkNamedExp(expectedOpt: Option[AST.Typed], sc: Scope, namedExp: AST.NamedExp,
-                    reporter: Reporter): AST.NamedExp = {
-    val (newExp, _) = checkExp(expectedOpt, sc, namedExp.exp, reporter)
-    return namedExp(exp = newExp)
-  }
-
-  def checkOptNamedExp(expectedOpt: Option[AST.Typed], sc: Scope, namedExp: AST.OptNamedExp,
-                    reporter: Reporter): AST.OptNamedExp = {
-    val (newExp, _) = checkExp(expectedOpt, sc, namedExp.exp, reporter)
-    return namedExp(exp = newExp)
-  }
-
-  def checkModifyExp(sc: Scope, exp: AST.Exp, reporter: Reporter): AST.Exp = {
+  def checkModifyExp(sc: Scope, exp: AST.Exp.Ident, reporter: Reporter): AST.Exp.Ident = {
     def checkLocalVar(res: AST.ResolvedInfo.LocalVar, t: AST.Typed): Unit = {
       if (!typeHierarchy.isMutable(t, T) && res.isVal) {
         reporter.error(exp.posOpt, typeCheckerKind, s"Cannot modify variable '${res.id}'")
@@ -3885,23 +3873,18 @@ import TypeChecker._
     tOpt match {
       case Some(t) =>
         newExp match {
-          case exp: AST.Exp.Ident =>
-            exp.attr.resOpt.get match {
+          case newExp: AST.Exp.Ident =>
+            newExp.attr.resOpt.get match {
               case res: AST.ResolvedInfo.LocalVar => checkLocalVar(res, t)
               case res: AST.ResolvedInfo.Var => checkVar(res, t)
               case _ => err()
-
             }
-          case exp: AST.Exp.Select =>
-            exp.attr.resOpt.get match {
-              case res: AST.ResolvedInfo.Var => checkVar(res, t)
-              case _ => err()
-            }
+            return newExp
           case _ => err()
         }
-      case _ =>
+      case _ => err()
     }
-    return newExp
+    return exp
   }
 
   def checkMethod(sc: Scope, stmt: AST.Stmt.Method, reporter: Reporter): AST.Stmt = {

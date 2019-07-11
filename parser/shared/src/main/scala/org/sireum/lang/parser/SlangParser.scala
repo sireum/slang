@@ -173,7 +173,7 @@ object SlangParser {
   private[SlangParser] lazy val rDollarId = AST.Id("$", emptyAttr)
   private[SlangParser] lazy val rExp = AST.Exp.Ident(rDollarId, emptyResolvedAttr)
   private[SlangParser] lazy val rStmt = AST.Stmt.Expr(rExp, emptyTypedAttr)
-  private[SlangParser] lazy val emptyContract = AST.Contract(ISZ(), ISZ())
+  private[SlangParser] lazy val emptyContract = AST.Contract.Simple(ISZ(), ISZ(), ISZ(), ISZ())
 
 }
 
@@ -424,7 +424,6 @@ class SlangParser(
         val term = stat.asInstanceOf[Term]
         stmtCheck(enclosing, term, s"${syntax(stat)}")
         AST.Stmt.Expr(translateExp(term), typedAttr(stat.pos))
-      case stat @ Term.Interpolate(Term.Name("l"), Seq(_: Lit.String), Nil) => parseLStmt(enclosing, stat)
       case _ =>
         errorNotSlang(stat.pos, s"Statement '${stat.syntax}' is")
         rStmt
@@ -886,9 +885,9 @@ class SlangParser(
       exp match {
         case exp: Term.Block =>
           val (mc, bodyOpt) = exp.stats.headOption match {
-            case scala.Some(l @ Term.Interpolate(Term.Name("l"), Seq(_: Lit.String), Nil)) =>
+            case scala.Some(q"Contract(..${exprs: Seq[Term]})") =>
               (
-                parseContract(l),
+                parseContract(exprs),
                 if (isDiet) None[AST.Body]()
                 else Some(bodyCheck(ISZ(exp.stats.tail.map(translateStat(Enclosing.Method)): _*), ISZ()))
               )
@@ -900,16 +899,16 @@ class SlangParser(
               )
           }
           AST.Stmt.Method(purity, hasOverride, isHelper, sig, mc, bodyOpt, resolvedAttr(tree.pos))
-        case l @ Term.Interpolate(Term.Name("l"), Seq(_: Lit.String), Nil) =>
+        case q"Contract(..${exprs: Seq[Term]})" =>
           enclosing match {
             case Enclosing.Sig | Enclosing.DatatypeTrait | Enclosing.RecordTrait =>
               if (isMemoize) {
                 errorInSlang(
                   exp.pos,
-                  "Only the @pure and/or override method modifiers are allowed for method declarations"
+                  "@memoize can only be used for @datatype/@record classes."
                 )
               }
-              AST.Stmt.Method(purity, hasOverride, isHelper, sig, parseContract(l), None(), resolvedAttr(tree.pos))
+              AST.Stmt.Method(purity, hasOverride, isHelper, sig, parseContract(exprs), None(), resolvedAttr(tree.pos))
             case _ => err()
           }
         case _ => err()
@@ -922,13 +921,11 @@ class SlangParser(
       }
       exp match {
         case exp: Term.Name if exp.value == "$" =>
-          AST.Stmt.SpecMethod(sig, ISZ(), resolvedAttr(tree.pos))
-        case exp @ Term.Interpolate(Term.Name("l"), Seq(_: Lit.String), Nil) =>
-          AST.Stmt.SpecMethod(sig, parseDefs(exp), resolvedAttr(tree.pos))
+          AST.Stmt.SpecMethod(sig, resolvedAttr(tree.pos))
         case _ =>
           hasError = true
-          error(exp.pos, "Only '$' or 'l\"\"\"{ ... }\"\"\"' is allowed as Slang @spec method expression.")
-          AST.Stmt.SpecMethod(sig, ISZ(), resolvedAttr(tree.pos))
+          error(exp.pos, "Only '$' is allowed as Slang @spec method expression.")
+          AST.Stmt.SpecMethod(sig, resolvedAttr(tree.pos))
       }
     } else if (enclosing == Enclosing.ExtObject) {
       if (checkSymbol(sig.id.value.value)) {
@@ -943,11 +940,11 @@ class SlangParser(
       exp match {
         case exp: Term.Name if exp.value == "$" =>
           AST.Stmt.ExtMethod(isPure, sig, emptyContract, resolvedAttr(tree.pos))
-        case exp @ Term.Interpolate(Term.Name("l"), Seq(_: Lit.String), Nil) =>
-          AST.Stmt.ExtMethod(isPure, sig, parseContract(exp), resolvedAttr(tree.pos))
+        case q"Contract.Only(..${exprs: Seq[Term]})" =>
+          AST.Stmt.ExtMethod(isPure, sig, parseContract(exprs), resolvedAttr(tree.pos))
         case _ =>
           hasError = true
-          error(exp.pos, "Only '$' or 'l\"\"\"{ ... }\"\"\"' are allowed as Slang extension method expression.")
+          error(exp.pos, "Only '$' or 'Contract.Only(...)' are allowed as Slang extension method expression.")
           AST.Stmt.ExtMethod(isPure, sig, emptyContract, resolvedAttr(tree.pos))
       }
     } else body()
@@ -1950,22 +1947,17 @@ class SlangParser(
 
   def translateWhile(enclosing: Enclosing.Type, stat: Term.While): AST.Stmt = {
     var hasError = stmtCheck(enclosing, stat, "While-statements")
-    var loopIdOpt: Option[AST.Id] = None()
-    var invariants: ISZ[AST.OptNamedExp] = ISZ()
-    var mods: ISZ[AST.Exp] = ISZ()
+    var invariants: ISZ[AST.Exp] = ISZ()
+    var mods: ISZ[AST.Exp.Ident] = ISZ()
     var stats: Seq[Stat] = Seq()
     stat.body match {
       case body: Term.Block =>
         body.stats match {
-          case (l @ Term.Interpolate(Term.Name("l"), Seq(_: Lit.String), Nil)) :: rest =>
-            val (idOpt, is, ms) = parseLoopContract(l)
-            loopIdOpt = idOpt
+          case q"Invariant(..${exprs: Seq[Term]})" :: rest =>
+            val (is, ms) = parseLoopInvariant(exprs, body.stats.head.pos)
             invariants = is
             mods = ms
             stats = rest
-          case (t: Term.Interpolate) :: _ =>
-            hasError = true
-            error(t.pos, "Expecting a Slang while-loop contract l\"\"\"{ ... }\"\"\" but found '" + syntax(t) + "'.")
           case _ =>
             stats = body.stats
         }
@@ -1978,7 +1970,6 @@ class SlangParser(
       AST.Stmt.While(
         ISZ(),
         translateExp(stat.expr),
-        loopIdOpt,
         invariants,
         mods,
         bodyCheck(ISZ(stats.map(translateStat(Enclosing.Block)): _*), ISZ()),
@@ -1988,22 +1979,17 @@ class SlangParser(
 
   def translateDoWhile(enclosing: Enclosing.Type, stat: Term.Do): AST.Stmt = {
     var hasError = stmtCheck(enclosing, stat, "Do-while-statements")
-    var loopIdOpt: Option[AST.Id] = None()
-    var modifies: ISZ[AST.Exp] = ISZ()
-    var invariants: ISZ[AST.OptNamedExp] = ISZ()
+    var modifies: ISZ[AST.Exp.Ident] = ISZ()
+    var invariants: ISZ[AST.Exp] = ISZ()
     var stats: Seq[Stat] = Seq()
     stat.body match {
       case body: Term.Block =>
-        body.stats.lastOption match {
-          case scala.Some(l @ Term.Interpolate(Term.Name("l"), Seq(_: Lit.String), Nil)) =>
-            val (idOpt, is, ms) = parseLoopContract(l)
-            loopIdOpt = idOpt
+        body.stats match {
+          case q"LoopInvariant(..${exprs: Seq[Term]})" :: rest =>
+            val (is, ms) = parseLoopInvariant(exprs, body.stats.head.pos)
             modifies = ms
             invariants = is
-            stats = body.stats.dropRight(1)
-          case scala.Some(t: Term.Interpolate) =>
-            hasError = true
-            error(t.pos, "Expecting a Slang do-while-loop contract l\"\"\"{ ... }\"\"\" but found '" + syntax(t) + "'.")
+            stats = rest
           case _ =>
             stats = body.stats
         }
@@ -2016,7 +2002,6 @@ class SlangParser(
       AST.Stmt.DoWhile(
         ISZ(),
         translateExp(stat.expr),
-        loopIdOpt,
         invariants,
         modifies,
         bodyCheck(ISZ(stats.map(translateStat(Enclosing.Block)): _*), ISZ()),
@@ -2026,22 +2011,17 @@ class SlangParser(
 
   def translateFor(enclosing: Enclosing.Type, stat: Term.For): AST.Stmt = {
     var hasError = stmtCheck(enclosing, stat, "For-statements")
-    var loopIdOpt: Option[AST.Id] = None()
-    var modifies: ISZ[AST.Exp] = ISZ()
-    var invariants: ISZ[AST.OptNamedExp] = ISZ()
+    var modifies: ISZ[AST.Exp.Ident] = ISZ()
+    var invariants: ISZ[AST.Exp] = ISZ()
     var stats: Seq[Stat] = Seq()
     stat.body match {
       case body: Term.Block =>
         body.stats match {
-          case (l @ Term.Interpolate(Term.Name("l"), Seq(_: Lit.String), Nil)) :: rest =>
-            val (idOpt, is, ms) = parseLoopContract(l)
-            loopIdOpt = idOpt
+          case q"LoopInvariant(..${exprs: Seq[Term]})" :: rest =>
+            val (is, ms) = parseLoopInvariant(exprs, body.stats.head.pos)
             modifies = ms
             invariants = is
             stats = rest
-          case (t: Term.Interpolate) :: _ =>
-            hasError = true
-            error(t.pos, "Expecting a Slang for-loop contract l\"\"\"{ ... }\"\"\" but found '" + syntax(t) + "'.")
           case _ =>
             stats = body.stats
         }
@@ -2054,7 +2034,6 @@ class SlangParser(
       AST.Stmt.For(
         ISZ(),
         translateEnumGens(stat.enums),
-        loopIdOpt,
         invariants,
         modifies,
         bodyCheck(ISZ(stats.map(translateStat(Enclosing.Block)): _*), ISZ()),
@@ -2497,18 +2476,8 @@ class SlangParser(
   def translateFun(exp: Term.Function): AST.Exp = {
     val ps = ISZ(exp.params.map(translateFunParam): _*)
 
-    val (mc, body) = exp.body match {
-      case tbody @ Term.Block(stats) =>
-        stats.headOption match {
-          case scala.Some(l @ Term.Interpolate(Term.Name("l"), Seq(_: Lit.String), Nil)) =>
-            val newBlock = tbody.copy(stats = stats.tail)
-            (parseContract(l), translateAssignExp(newBlock))
-          case _ =>
-            (emptyContract, translateAssignExp(tbody))
-        }
-      case _ => (emptyContract, translateAssignExp(exp.body))
-    }
-    AST.Exp.Fun(ISZ(), ps, mc, body, typedAttr(exp.pos))
+    val body = translateAssignExp(exp.body)
+    AST.Exp.Fun(ISZ(), ps, body, typedAttr(exp.pos))
   }
 
   def translateArgs(args: Seq[Term]): Either[ISZ[AST.NamedArg], ISZ[AST.Exp]] = {
@@ -2582,16 +2551,8 @@ class SlangParser(
     } finally lPointOpt = scala.None
   }
 
-  def parseDefs(exp: Term.Interpolate): ISZ[AST.SpecDef] = {
-    if (!checkLSyntax(exp)) return ISZ()
-    lParser(exp) { parser =>
-      ISZ(parser.specDefs(): _*)
-    }
-  }
-
-  def parseContract(exp: Term.Interpolate): AST.Contract = {
-    if (!checkLSyntax(exp)) return emptyContract
-    lParser(exp)(_.defContract())
+  def parseContract(exprs: Seq[Term]): AST.Contract = {
+    emptyContract // TODO
   }
 
   def parseLStmt(enclosing: Enclosing.Type, exp: Term.Interpolate): AST.Stmt = {
@@ -2619,18 +2580,29 @@ class SlangParser(
     clause match {
       case _: AST.LClause.Sequent if !isProofSequentContext => error(exp.pos, "Invalid sequent location.")
       case _: AST.LClause.Proof if !isProofSequentContext => error(exp.pos, "Invalid proof location.")
-      case _: AST.LClause.Invariants if !isInvariantContext => error(exp.pos, "Invalid invariant location.")
-      case _: AST.LClause.Facts if !isFactsTheoremsContext => error(exp.pos, "Invalid fact location.")
-      case _: AST.LClause.Theorems if !isFactsTheoremsContext => error(exp.pos, "Invalid theorem location.")
       case _ =>
     }
     AST.Stmt.LStmt(clause, attr(exp.pos))
   }
 
-  def parseLoopContract(exp: Term.Interpolate): (Option[AST.Id], ISZ[AST.OptNamedExp], ISZ[AST.Exp]) = {
-    if (!checkLSyntax(exp)) return (None(), ISZ(), ISZ())
-    val (idOpt, invs, mods) = lParser(exp)(_.loopInvMode())
-    (opt(idOpt), ISZ(invs: _*), ISZ(mods: _*))
+  def parseLoopInvariant(exprs: Seq[Term], loopPos: Position): (ISZ[AST.Exp], ISZ[AST.Exp.Ident]) = {
+    var mods = ISZ[AST.Exp.Ident]()
+    var invs = ISZ[AST.Exp]()
+    val rest = exprs match {
+      case q"Modifies(..${mexprs: Seq[Term]})" :: tail =>
+        for (mexpr <- mexprs) {
+          mexpr match {
+            case mexpr: Term.Name => mods = mods :+ AST.Exp.Ident(cid(mexpr.value, mexpr.pos), resolvedAttr(mexpr.pos))
+            case _ => error(mexpr.pos, "Modifies argument should be a simple identifier.")
+          }
+        }
+        tail
+      case _ => exprs
+    }
+    for (exp <- rest) {
+      invs = invs :+ translateExp(exp)
+    }
+    return (invs, mods)
   }
 
   def checkMemberStmts(stmts: ISZ[AST.Stmt]): ISZ[AST.Stmt] = {

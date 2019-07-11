@@ -47,16 +47,14 @@ object TopUnit {
 
   @datatype class SequentUnit(val fileUriOpt: Option[String], sequent: LClause.Sequent) extends TopUnit
 
-  @datatype class TruthTableUnit(
-    val fileUriOpt: Option[String],
-    stars: ISZ[Position],
-    vars: ISZ[Id],
-    separator: Position,
-    isSequent: B,
-    sequent: LClause.Sequent,
-    rows: ISZ[TruthTable.Row],
-    conclusionOpt: Option[TruthTable.Conclusion]
-  ) extends TopUnit
+  @datatype class TruthTableUnit(val fileUriOpt: Option[String],
+                                 stars: ISZ[Position],
+                                 vars: ISZ[Id],
+                                 separator: Position,
+                                 isSequent: B,
+                                 sequent: LClause.Sequent,
+                                 rows: ISZ[TruthTable.Row],
+                                 conclusionOpt: Option[TruthTable.Conclusion]) extends TopUnit
 
 }
 
@@ -67,6 +65,25 @@ object TopUnit {
   def asAssignExp: AssignExp = {
     halt(s"Invalid operation 'asAssignExp' on $this.")
   }
+
+}
+
+@datatype trait Contract
+
+object Contract {
+
+  @datatype class Simple(reads: ISZ[Exp.Ident],
+                         requires: ISZ[Exp],
+                         modifies: ISZ[Exp.Ident],
+                         ensures: ISZ[Exp]) extends Contract
+
+  @datatype class Cases(reads: ISZ[Exp.Ident],
+                        modifies: ISZ[Exp.Ident],
+                        cases: ISZ[Case]) extends Contract
+
+  @datatype class Case(label: String,
+                       requires: ISZ[Exp],
+                       ensures: ISZ[Exp])
 
 }
 
@@ -95,7 +112,7 @@ object Stmt {
   }
 
   @datatype class Var(isVal: B, id: Id, tipeOpt: Option[Type], initOpt: Option[AssignExp], @hidden attr: ResolvedAttr)
-      extends Stmt {
+    extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -104,7 +121,7 @@ object Stmt {
   }
 
   @datatype class VarPattern(isVal: B, pattern: Pattern, tipeOpt: Option[Type], init: AssignExp, @hidden attr: Attr)
-      extends Stmt {
+    extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -120,15 +137,13 @@ object Stmt {
 
   }
 
-  @datatype class Method(
-    purity: Purity.Type,
-    hasOverride: B,
-    isHelper: B,
-    sig: MethodSig,
-    contract: Contract,
-    bodyOpt: Option[Body],
-    @hidden attr: ResolvedAttr
-  ) extends Stmt {
+  @datatype class Method(purity: Purity.Type,
+                         hasOverride: B,
+                         isHelper: B,
+                         sig: MethodSig,
+                         contract: Contract,
+                         bodyOpt: Option[Body],
+                         @hidden attr: ResolvedAttr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -144,7 +159,7 @@ object Stmt {
 
   }
 
-  @datatype class SpecMethod(sig: MethodSig, defs: ISZ[SpecDef], @hidden attr: ResolvedAttr) extends Stmt {
+  @datatype class SpecMethod(sig: MethodSig, @hidden attr: ResolvedAttr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -160,19 +175,17 @@ object Stmt {
 
   }
 
-  @datatype class SubZ(
-    id: Id,
-    isSigned: B,
-    isBitVector: B,
-    isWrapped: B,
-    hasMin: B,
-    hasMax: B,
-    bitWidth: Z,
-    min: Z,
-    max: Z,
-    index: Z,
-    @hidden attr: Attr
-  ) extends Stmt {
+  @datatype class SubZ(id: Id,
+                       isSigned: B,
+                       isBitVector: B,
+                       isWrapped: B,
+                       hasMin: B,
+                       hasMax: B,
+                       bitWidth: Z,
+                       min: Z,
+                       max: Z,
+                       index: Z,
+                       @hidden attr: Attr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -191,15 +204,13 @@ object Stmt {
 
   }
 
-  @datatype class Sig(
-    isImmutable: B,
-    isExt: B,
-    id: Id,
-    typeParams: ISZ[TypeParam],
-    parents: ISZ[Type.Named],
-    stmts: ISZ[Stmt],
-    @hidden attr: Attr
-  ) extends Stmt {
+  @datatype class Sig(isImmutable: B,
+                      isExt: B,
+                      id: Id,
+                      typeParams: ISZ[TypeParam],
+                      parents: ISZ[Type.Named],
+                      stmts: ISZ[Stmt],
+                      @hidden attr: Attr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -207,16 +218,14 @@ object Stmt {
 
   }
 
-  @datatype class Adt(
-    isRoot: B,
-    isDatatype: B,
-    id: Id,
-    typeParams: ISZ[TypeParam],
-    params: ISZ[AdtParam],
-    parents: ISZ[Type.Named],
-    stmts: ISZ[Stmt],
-    @hidden attr: Attr
-  ) extends Stmt {
+  @datatype class Adt(isRoot: B,
+                      isDatatype: B,
+                      id: Id,
+                      typeParams: ISZ[TypeParam],
+                      params: ISZ[AdtParam],
+                      parents: ISZ[Type.Named],
+                      stmts: ISZ[Stmt],
+                      @hidden attr: Attr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -289,63 +298,44 @@ object Stmt {
 
   @sig trait Loop {
     @pure def context: ISZ[String]
-    @pure def loopIdOpt: Option[Id]
-    @pure def invariants: ISZ[OptNamedExp]
-    @pure def modifies: ISZ[Exp]
+
+    @pure def invariants: ISZ[Exp]
+
+    @pure def modifies: ISZ[Exp.Ident]
 
     @pure def modifiedLocalVars: HashSMap[ResolvedInfo.LocalVar, (Typed, Position)] = {
-      @pure def filterLocalVar(exp: Exp): ISZ[(ResolvedInfo.LocalVar, (Typed, Position))] = {
-        exp match {
-          case exp: Exp.Ident =>
-            exp.attr.resOpt match {
-              case Some(res: ResolvedInfo.LocalVar) => return ISZ((res, (exp.typedOpt.get, exp.posOpt.get)))
-              case _ =>
-            }
-          case _ =>
+      @pure def filterLocalVar(exp: Exp.Ident): ISZ[(ResolvedInfo.LocalVar, (Typed, Position))] = {
+        exp.attr.resOpt match {
+          case Some(res: ResolvedInfo.LocalVar) => return ISZ((res, (exp.typedOpt.get, exp.posOpt.get)))
+          case _ => return ISZ()
         }
-        return ISZ()
       }
+
       return HashSMap.empty[ResolvedInfo.LocalVar, (Typed, Position)] ++
         (for (mod <- modifies; res <- filterLocalVar(mod)) yield res)
     }
 
     def modifiedObjectVars: HashSMap[ResolvedInfo.Var, (Typed, Position)] = {
-      @pure def filterObjectVar(exp: Exp): ISZ[(ResolvedInfo.Var, (Typed, Position))] = {
-        exp match {
-          case exp: Exp.Ident =>
-            exp.attr.resOpt match {
-              case Some(res: ResolvedInfo.Var) if res.isInObject => return ISZ((res, (exp.typedOpt.get, exp.posOpt.get)))
-              case _ =>
-            }
-          case exp: Exp.Select =>
-            exp.attr.resOpt match {
-              case Some(res: ResolvedInfo.Var) if res.isInObject => return ISZ((res, (exp.typedOpt.get, exp.posOpt.get)))
-            }
-          case _ =>
+      @pure def filterObjectVar(exp: Exp.Ident): ISZ[(ResolvedInfo.Var, (Typed, Position))] = {
+        exp.attr.resOpt match {
+          case Some(res: ResolvedInfo.Var) if res.isInObject => return ISZ((res, (exp.typedOpt.get, exp.posOpt.get)))
+          case _ => return ISZ()
         }
-        return ISZ()
       }
+
       return HashSMap.empty[ResolvedInfo.Var, (Typed, Position)] ++
         (for (mod <- modifies; res <- filterObjectVar(mod)) yield res)
     }
 
 
     def modifiedRecordVars: HashSMap[ResolvedInfo.Var, (Typed, Position)] = {
-      @pure def filterRecordVar(exp: Exp): ISZ[(ResolvedInfo.Var, (Typed, Position))] = {
-        exp match {
-          case exp: Exp.Ident =>
-            exp.attr.resOpt match {
-              case Some(res: ResolvedInfo.Var) if !res.isInObject => return ISZ((res, (exp.typedOpt.get, exp.posOpt.get)))
-              case _ =>
-            }
-          case exp: Exp.Select =>
-            exp.attr.resOpt match {
-              case Some(res: ResolvedInfo.Var) if !res.isInObject => return ISZ((res, (exp.typedOpt.get, exp.posOpt.get)))
-            }
-          case _ =>
+      @pure def filterRecordVar(exp: Exp.Ident): ISZ[(ResolvedInfo.Var, (Typed, Position))] = {
+        exp.attr.resOpt match {
+          case Some(res: ResolvedInfo.Var) if !res.isInObject => return ISZ((res, (exp.typedOpt.get, exp.posOpt.get)))
+          case _ => return ISZ()
         }
-        return ISZ()
       }
+
       return HashSMap.empty[ResolvedInfo.Var, (Typed, Position)] ++
         (for (mod <- modifies; res <- filterRecordVar(mod)) yield res)
     }
@@ -353,12 +343,10 @@ object Stmt {
 
   @datatype class While(val context: ISZ[String],
                         cond: Exp,
-                        val loopIdOpt: Option[Id],
-                        val invariants: ISZ[OptNamedExp],
-                        val modifies: ISZ[Exp],
+                        val invariants: ISZ[Exp],
+                        val modifies: ISZ[Exp.Ident],
                         body: Body,
-                        @hidden attr: Attr)
-      extends Stmt with Loop {
+                        @hidden attr: Attr) extends Stmt with Loop {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -368,12 +356,10 @@ object Stmt {
 
   @datatype class DoWhile(val context: ISZ[String],
                           cond: Exp,
-                          val loopIdOpt: Option[Id],
-                          val invariants: ISZ[OptNamedExp],
-                          val modifies: ISZ[Exp],
+                          val invariants: ISZ[Exp],
+                          val modifies: ISZ[Exp.Ident],
                           body: Body,
-                          @hidden attr: Attr)
-      extends Stmt with Loop {
+                          @hidden attr: Attr) extends Stmt with Loop {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -381,15 +367,12 @@ object Stmt {
 
   }
 
-  @datatype class For(
-    val context: ISZ[String],
-    enumGens: ISZ[EnumGen.For],
-    val loopIdOpt: Option[Id],
-    val invariants: ISZ[OptNamedExp],
-    val modifies: ISZ[Exp],
-    body: Body,
-    @hidden attr: Attr
-  ) extends Stmt with Loop {
+  @datatype class For(val context: ISZ[String],
+                      enumGens: ISZ[EnumGen.For],
+                      val invariants: ISZ[Exp],
+                      val modifies: ISZ[Exp.Ident],
+                      body: Body,
+                      @hidden attr: Attr) extends Stmt with Loop {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -457,7 +440,7 @@ object Stmt {
           ops.ISZOps(stmt.elseBody.stmts).last.asAssignExp.exprs
       case stmt: Stmt.Match =>
         return for (c <- stmt.cases;
-          e <- ops.ISZOps(c.body.stmts).last.asAssignExp.exprs)
+                    e <- ops.ISZOps(c.body.stmts).last.asAssignExp.exprs)
           yield e
       case _: Stmt.Return => return ISZ()
     }
@@ -468,29 +451,18 @@ object Stmt {
   'Impure
   'Pure
   'Memoize
+  'StrictPure
 }
 
 @datatype trait LClause
 
 object LClause {
 
-  @datatype class Invariants(invariants: ISZ[NamedExp]) extends LClause
-
-  @datatype class Facts(facts: ISZ[NamedExp]) extends LClause
-
-  @datatype class Theorems(theorems: ISZ[Theorem]) extends LClause
-
-  @datatype class Theorem(id: Id, exp: Exp, proofOpt: Option[Proof]) extends LClause
-
   @datatype class Sequent(premises: ISZ[Exp], conclusions: ISZ[Exp], proofOpt: Option[Proof]) extends LClause
 
   @datatype class Proof(steps: ISZ[ProofStep]) extends LClause
 
 }
-
-@datatype class NamedExp(id: Id, exp: Exp)
-
-@datatype class OptNamedExp(idOpt: Option[Id], exp: Exp)
 
 @datatype class Case(pattern: Pattern, condOpt: Option[Exp], body: Body)
 
@@ -532,7 +504,7 @@ object Type {
     }
 
     @pure override def typed(t: Typed): Named = {
-      return this(name, typeArgs, attr(typedOpt = Some(t)))
+      return this (name, typeArgs, attr(typedOpt = Some(t)))
     }
 
   }
@@ -548,7 +520,7 @@ object Type {
     }
 
     @pure override def typed(t: Typed): Fun = {
-      return this(isPure, isByName, args, ret, attr(typedOpt = Some(t)))
+      return this (isPure, isByName, args, ret, attr(typedOpt = Some(t)))
     }
 
   }
@@ -564,7 +536,7 @@ object Type {
     }
 
     @pure override def typed(t: Typed): Tuple = {
-      return this(args, attr(typedOpt = Some(t)))
+      return this (args, attr(typedOpt = Some(t)))
     }
 
   }
@@ -626,11 +598,11 @@ object Pattern {
   }
 
   @datatype class Structure(
-    idOpt: Option[Id],
-    nameOpt: Option[Name],
-    patterns: ISZ[Pattern],
-    @hidden attr: ResolvedAttr
-  ) extends Pattern {
+                             idOpt: Option[Id],
+                             nameOpt: Option[Name],
+                             patterns: ISZ[Pattern],
+                             @hidden attr: ResolvedAttr
+                           ) extends Pattern {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -736,7 +708,7 @@ object Exp {
   }
 
   @datatype class StringInterpolate(prefix: String, lits: ISZ[LitString], args: ISZ[Exp], @hidden attr: TypedAttr)
-      extends Exp {
+    extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -907,7 +879,7 @@ object Exp {
   }
 
   @datatype class Select(receiverOpt: Option[Exp], id: Id, val targs: ISZ[Type], @hidden attr: ResolvedAttr)
-      extends Exp with Ref {
+    extends Exp with Ref {
 
     @pure override def asExp: Exp = {
       return this
@@ -932,13 +904,11 @@ object Exp {
 
   }
 
-  @datatype class Invoke(
-    receiverOpt: Option[Exp],
-    ident: Ident,
-    targs: ISZ[Type],
-    args: ISZ[Exp],
-    @hidden attr: ResolvedAttr
-  ) extends Exp {
+  @datatype class Invoke(receiverOpt: Option[Exp],
+                         ident: Ident,
+                         targs: ISZ[Type],
+                         args: ISZ[Exp],
+                         @hidden attr: ResolvedAttr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -949,13 +919,11 @@ object Exp {
     }
   }
 
-  @datatype class InvokeNamed(
-    receiverOpt: Option[Exp],
-    ident: Ident,
-    targs: ISZ[Type],
-    args: ISZ[NamedArg],
-    @hidden attr: ResolvedAttr
-  ) extends Exp {
+  @datatype class InvokeNamed(receiverOpt: Option[Exp],
+                              ident: Ident,
+                              targs: ISZ[Type],
+                              args: ISZ[NamedArg],
+                              @hidden attr: ResolvedAttr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -983,13 +951,10 @@ object Exp {
 
   }
 
-  @datatype class Fun(
-    context: ISZ[String],
-    params: ISZ[Fun.Param],
-    contract: Contract,
-    exp: AssignExp,
-    @hidden attr: TypedAttr
-  ) extends Exp {
+  @datatype class Fun(context: ISZ[String],
+                      params: ISZ[Fun.Param],
+                      exp: AssignExp,
+                      @hidden attr: TypedAttr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1048,14 +1013,12 @@ object Domain {
 
 @datatype class AdtParam(isHidden: B, isVal: B, id: Id, tipe: Type)
 
-@datatype class MethodSig(
-  isPure: B,
-  id: Id,
-  typeParams: ISZ[TypeParam],
-  hasParams: B,
-  params: ISZ[Param],
-  returnType: Type
-) {
+@datatype class MethodSig(isPure: B,
+                          id: Id,
+                          typeParams: ISZ[TypeParam],
+                          hasParams: B,
+                          params: ISZ[Param],
+                          returnType: Type) {
 
   @pure def funType: Typed.Fun = {
     var pts = ISZ[Typed]()
@@ -1069,19 +1032,6 @@ object Domain {
 @datatype class Param(isHidden: B, id: Id, tipe: Type)
 
 @datatype class TypeParam(id: Id)
-
-@datatype class Contract(cases: ISZ[ContractCase], subs: ISZ[SubContract])
-
-@datatype class ContractCase(
-  idOpt: Option[Id],
-  requires: ISZ[Exp],
-  modifies: ISZ[Exp],
-  ensures: ISZ[Exp]
-)
-
-@datatype class SubContract(id: Id, params: ISZ[Id], contract: Contract)
-
-@datatype class SpecDef(idOpt: Option[Id], exp: Exp, isOtherwise: B, patternOpt: Option[Pattern], guardOpt: Option[Exp])
 
 @datatype trait Typed {
 
@@ -1467,15 +1417,13 @@ object Typed {
     }
   }
 
-  @datatype class Method(
-    isInObject: B,
-    mode: MethodMode.Type,
-    typeParams: ISZ[String],
-    owner: ISZ[String],
-    name: String,
-    paramNames: ISZ[String],
-    tpe: Typed.Fun
-  ) extends Typed {
+  @datatype class Method(isInObject: B,
+                         mode: MethodMode.Type,
+                         typeParams: ISZ[String],
+                         owner: ISZ[String],
+                         name: String,
+                         paramNames: ISZ[String],
+                         tpe: Typed.Fun) extends Typed {
 
     @pure override def isPureFun: B = {
       return F
@@ -1523,7 +1471,7 @@ object Typed {
     }
 
     @pure override def subst(m: HashMap[String, Typed]): Typed.Methods = {
-      return this(methods.map(mt => mt.subst(m)))
+      return this (methods.map(mt => mt.subst(m)))
     }
 
     @pure override def collectTypeVars: ISZ[String] = {
@@ -1716,29 +1664,29 @@ object Typed {
 
   val basicConstructorMap: HashMap[ISZ[String], (Option[Typed], Option[ResolvedInfo])] =
     HashMap.emptyInit[ISZ[String], (Option[Typed], Option[ResolvedInfo])](30) ++ ISZ(
-      b.ids   ~> ((bConstructorMethodOpt  , bConstructorResOpt  )),
-      c.ids   ~> ((cConstructorMethodOpt  , cConstructorResOpt  )),
-      z.ids   ~> ((zConstructorMethodOpt  , zConstructorResOpt  )),
-      z8.ids  ~> ((z8ConstructorMethodOpt , z8ConstructorResOpt )),
+      b.ids ~> ((bConstructorMethodOpt, bConstructorResOpt)),
+      c.ids ~> ((cConstructorMethodOpt, cConstructorResOpt)),
+      z.ids ~> ((zConstructorMethodOpt, zConstructorResOpt)),
+      z8.ids ~> ((z8ConstructorMethodOpt, z8ConstructorResOpt)),
       z16.ids ~> ((z16ConstructorMethodOpt, z16ConstructorResOpt)),
       z32.ids ~> ((z32ConstructorMethodOpt, z32ConstructorResOpt)),
       z64.ids ~> ((z64ConstructorMethodOpt, z64ConstructorResOpt)),
-      n.ids   ~> ((nConstructorMethodOpt  , nConstructorResOpt  )),
-      n8.ids  ~> ((n8ConstructorMethodOpt , n8ConstructorResOpt )),
+      n.ids ~> ((nConstructorMethodOpt, nConstructorResOpt)),
+      n8.ids ~> ((n8ConstructorMethodOpt, n8ConstructorResOpt)),
       n16.ids ~> ((n16ConstructorMethodOpt, n16ConstructorResOpt)),
       n32.ids ~> ((n32ConstructorMethodOpt, n32ConstructorResOpt)),
       n64.ids ~> ((n64ConstructorMethodOpt, n64ConstructorResOpt)),
-      s8.ids  ~> ((s8ConstructorMethodOpt , s8ConstructorResOpt )),
+      s8.ids ~> ((s8ConstructorMethodOpt, s8ConstructorResOpt)),
       s16.ids ~> ((s16ConstructorMethodOpt, s16ConstructorResOpt)),
       s32.ids ~> ((s32ConstructorMethodOpt, s32ConstructorResOpt)),
       s64.ids ~> ((s64ConstructorMethodOpt, s64ConstructorResOpt)),
-      u8.ids  ~> ((u8ConstructorMethodOpt , u8ConstructorResOpt )),
+      u8.ids ~> ((u8ConstructorMethodOpt, u8ConstructorResOpt)),
       u16.ids ~> ((u16ConstructorMethodOpt, u16ConstructorResOpt)),
       u32.ids ~> ((u32ConstructorMethodOpt, u32ConstructorResOpt)),
       u64.ids ~> ((u64ConstructorMethodOpt, u64ConstructorResOpt)),
       f32.ids ~> ((f32ConstructorMethodOpt, f32ConstructorResOpt)),
       f64.ids ~> ((f64ConstructorMethodOpt, f64ConstructorResOpt)),
-      r.ids   ~> ((rConstructorMethodOpt  , rConstructorResOpt  ))
+      r.ids ~> ((rConstructorMethodOpt, rConstructorResOpt))
     )
   // @formatter:on
 
@@ -1835,6 +1783,7 @@ object ResolvedInfo {
       'UnaryComplement
       'Update
     }
+
   }
 
   @datatype class BuiltIn(kind: BuiltIn.Kind.Type) extends ResolvedInfo
@@ -1849,15 +1798,13 @@ object ResolvedInfo {
 
   @datatype class Var(isInObject: B, isSpec: B, isVal: B, owner: ISZ[String], id: String) extends ResolvedInfo
 
-  @datatype class Method(
-    isInObject: B,
-    mode: MethodMode.Type,
-    typeParams: ISZ[String],
-    owner: ISZ[String],
-    id: String,
-    paramNames: ISZ[String],
-    tpeOpt: Option[Typed.Fun]
-  ) extends ResolvedInfo {
+  @datatype class Method(isInObject: B,
+                         mode: MethodMode.Type,
+                         typeParams: ISZ[String],
+                         owner: ISZ[String],
+                         id: String,
+                         paramNames: ISZ[String],
+                         tpeOpt: Option[Typed.Fun]) extends ResolvedInfo {
 
     @pure override def subst(substMap: HashMap[String, Typed]): ResolvedInfo = {
       tpeOpt match {
@@ -1879,10 +1826,11 @@ object ResolvedInfo {
       'Outer
       'Closure
     }
+
   }
 
   @datatype class LocalVar(context: ISZ[String], scope: ResolvedInfo.LocalVar.Scope.Type, isVal: B, id: String)
-      extends ResolvedInfo
+    extends ResolvedInfo
 
   @pure def substOpt(resOpt: Option[ResolvedInfo], substMap: HashMap[String, Typed]): Option[ResolvedInfo] = {
     resOpt match {
@@ -1940,11 +1888,9 @@ object TruthTable {
 
     @datatype class Contradictory(@hidden val attr: Attr) extends Conclusion
 
-    @datatype class Contingent(
-      trueAssignments: ISZ[Assignment],
-      falseAssignments: ISZ[Assignment],
-      @hidden val attr: Attr
-    ) extends Conclusion
+    @datatype class Contingent(trueAssignments: ISZ[Assignment],
+                               falseAssignments: ISZ[Assignment],
+                               @hidden val attr: Attr) extends Conclusion
 
   }
 

@@ -449,9 +449,6 @@ object Info {
     typedOpt: Option[AST.Typed],
     resOpt: Option[AST.ResolvedInfo],
     constructorRes: AST.ResolvedInfo.Method,
-    invariants: HashMap[String, Info.NamedExp],
-    facts: HashMap[String, Info.NamedExp],
-    theorems: HashMap[String, Info.Theorem]
   ) extends Info {
 
     @pure override def name: ISZ[String] = {
@@ -611,10 +608,6 @@ object Info {
     }
 
   }
-
-  @datatype class NamedExp(owner: ISZ[String], id: String, ast: AST.NamedExp)
-
-  @datatype class Theorem(owner: ISZ[String], id: String, ast: AST.LClause.Theorem)
 }
 
 @datatype trait TypeInfo {
@@ -685,9 +678,6 @@ object TypeInfo {
     specVars: HashSMap[String, Info.SpecVar],
     specMethods: HashMap[String, Info.SpecMethod],
     methods: HashMap[String, Info.Method],
-    invariants: HashMap[String, Info.NamedExp],
-    facts: HashMap[String, Info.NamedExp],
-    theorems: HashMap[String, Info.Theorem],
     refinements: HashMap[String, Name],
     scope: Scope.Global,
     ast: AST.Stmt.Sig
@@ -763,9 +753,6 @@ object TypeInfo {
     vars: HashSMap[String, Info.Var],
     specMethods: HashMap[String, Info.SpecMethod],
     methods: HashMap[String, Info.Method],
-    invariants: HashMap[String, Info.NamedExp],
-    facts: HashMap[String, Info.NamedExp],
-    theorems: HashMap[String, Info.Theorem],
     refinements: HashMap[String, Name],
     scope: Scope.Global,
     ast: AST.Stmt.Adt
@@ -865,9 +852,6 @@ object TypeInfo {
     vars: HashSMap[String, Info.Var],
     specMethods: HashMap[String, Info.SpecMethod],
     methods: HashMap[String, Info.Method],
-    invariants: HashMap[String, Info.NamedExp],
-    facts: HashMap[String, Info.NamedExp],
-    theorems: HashMap[String, Info.Theorem],
     refinements: HashMap[String, Name]
   )
 

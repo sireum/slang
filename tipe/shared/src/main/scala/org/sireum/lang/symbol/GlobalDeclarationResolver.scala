@@ -120,9 +120,6 @@ import GlobalDeclarationResolver._
               Some(AST.Typed.Object(owner, id)),
               Some(AST.ResolvedInfo.Object(name)),
               AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), owner, id, ISZ(), None()),
-              HashMap.empty,
-              HashMap.empty,
-              HashMap.empty
             )
           }
       }
@@ -283,9 +280,6 @@ import GlobalDeclarationResolver._
             Some(AST.Typed.Object(name, stringInterpolator)),
             Some(AST.ResolvedInfo.Object(stringInterpolatorName)),
             AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), currentName, id, ISZ(), None()),
-            HashMap.empty,
-            HashMap.empty,
-            HashMap.empty
           ),
           stmt.attr.posOpt
         )
@@ -353,8 +347,6 @@ import GlobalDeclarationResolver._
           case _ =>
         }
 
-        val (invariants, facts, theorems) = resolveInvFactTheorems(name, stmt.stmts)
-
         declareName(
           if (stmt.extNameOpt.nonEmpty) "extension object" else "object",
           name,
@@ -368,9 +360,6 @@ import GlobalDeclarationResolver._
             Some(AST.Typed.Object(currentName, stmt.id.value)),
             Some(AST.ResolvedInfo.Object(name)),
             AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), currentName, id, ISZ(), None()),
-            invariants,
-            facts,
-            theorems
           ),
           stmt.attr.posOpt
         )
@@ -390,7 +379,6 @@ import GlobalDeclarationResolver._
           for (tVar <- typeParamMap(stmt.typeParams, reporter).keys)
             yield AST.Typed.TypeVar(tVar)
         )
-        val (invariants, facts, theorems) = resolveInvFactTheorems(name, stmt.stmts)
         declareType(
           "sig",
           name,
@@ -403,9 +391,6 @@ import GlobalDeclarationResolver._
             members.specVars,
             members.specMethods,
             members.methods,
-            invariants,
-            facts,
-            theorems,
             members.refinements,
             sc,
             stmt
@@ -447,7 +432,6 @@ import GlobalDeclarationResolver._
           AST.ResolvedInfo
             .Method(F, AST.MethodMode.Extractor, typeVars, currentName, stmt.id.value, extractorParamVars, None())
         )
-        val (invariants, facts, theorems) = resolveInvFactTheorems(name, stmt.stmts)
         declareType(
           if (stmt.isDatatype) "datatype" else "record",
           name,
@@ -465,9 +449,6 @@ import GlobalDeclarationResolver._
             members.vars,
             members.specMethods,
             members.methods,
-            invariants,
-            facts,
-            theorems,
             members.refinements,
             sc,
             stmt
@@ -486,55 +467,55 @@ import GlobalDeclarationResolver._
     }
   }
 
-  def resolveInvFactTheorems(
-    owner: QName,
-    stmts: ISZ[AST.Stmt]
-  ): (HashMap[String, Info.NamedExp], HashMap[String, Info.NamedExp], HashMap[String, Info.Theorem]) = {
-    def err(posOpt: Option[Position], id: String): Unit = {
-      reporter.error(posOpt, resolverKind, s"Cannot re-declare invariant/fact/theorem '$id'.")
-    }
-    var invariants = HashMap.empty[String, Info.NamedExp]
-    var facts = HashMap.empty[String, Info.NamedExp]
-    var theorems = HashMap.empty[String, Info.Theorem]
-
-    for (s <- stmts) {
-      s match {
-        case s: AST.Stmt.LStmt =>
-          s.clause match {
-            case clause: AST.LClause.Invariants =>
-              for (inv <- clause.invariants) {
-                val id = inv.id.value
-                if (invariants.contains(id) || facts.contains(id) || theorems.contains(id)) {
-                  err(inv.id.attr.posOpt, id)
-                } else {
-                  invariants = invariants + id ~> Info.NamedExp(owner, id, inv)
-                }
-              }
-            case clause: AST.LClause.Facts =>
-              for (fact <- clause.facts) {
-                val id = fact.id.value
-                if (invariants.contains(id) || facts.contains(id) || theorems.contains(id)) {
-                  err(fact.id.attr.posOpt, id)
-                } else {
-                  facts = facts + id ~> Info.NamedExp(owner, id, fact)
-                }
-              }
-            case clause: AST.LClause.Theorems =>
-              for (theorem <- clause.theorems) {
-                val id = theorem.id.value
-                if (invariants.contains(id) || facts.contains(id) || theorems.contains(id)) {
-                  err(theorem.id.attr.posOpt, id)
-                } else {
-                  theorems = theorems + id ~> Info.Theorem(owner, id, theorem)
-                }
-              }
-            case _ =>
-          }
-        case _ =>
-      }
-    }
-    return (invariants, facts, theorems)
-  }
+//  def resolveInvFactTheorems(
+//    owner: QName,
+//    stmts: ISZ[AST.Stmt]
+//  ): (HashMap[String, Info.NamedExp], HashMap[String, Info.NamedExp], HashMap[String, Info.Theorem]) = {
+//    def err(posOpt: Option[Position], id: String): Unit = {
+//      reporter.error(posOpt, resolverKind, s"Cannot re-declare invariant/fact/theorem '$id'.")
+//    }
+//    var invariants = HashMap.empty[String, Info.NamedExp]
+//    var facts = HashMap.empty[String, Info.NamedExp]
+//    var theorems = HashMap.empty[String, Info.Theorem]
+//
+//    for (s <- stmts) {
+//      s match {
+//        case s: AST.Stmt.LStmt =>
+//          s.clause match {
+//            case clause: AST.LClause.Invariants =>
+//              for (inv <- clause.invariants) {
+//                val id = inv.id.value
+//                if (invariants.contains(id) || facts.contains(id) || theorems.contains(id)) {
+//                  err(inv.id.attr.posOpt, id)
+//                } else {
+//                  invariants = invariants + id ~> Info.NamedExp(owner, id, inv)
+//                }
+//              }
+//            case clause: AST.LClause.Facts =>
+//              for (fact <- clause.facts) {
+//                val id = fact.id.value
+//                if (invariants.contains(id) || facts.contains(id) || theorems.contains(id)) {
+//                  err(fact.id.attr.posOpt, id)
+//                } else {
+//                  facts = facts + id ~> Info.NamedExp(owner, id, fact)
+//                }
+//              }
+//            case clause: AST.LClause.Theorems =>
+//              for (theorem <- clause.theorems) {
+//                val id = theorem.id.value
+//                if (invariants.contains(id) || facts.contains(id) || theorems.contains(id)) {
+//                  err(theorem.id.attr.posOpt, id)
+//                } else {
+//                  theorems = theorems + id ~> Info.Theorem(owner, id, theorem)
+//                }
+//              }
+//            case _ =>
+//          }
+//        case _ =>
+//      }
+//    }
+//    return (invariants, facts, theorems)
+//  }
 
   def resolveMembers(
     owner: QName,
@@ -626,8 +607,7 @@ import GlobalDeclarationResolver._
         case _ =>
       }
     }
-    val (invariants, facts, theorems) = resolveInvFactTheorems(owner, stmts)
-    TypeInfo.Members(specVars, vars, specMethods, methods, invariants, facts, theorems, HashMap.empty)
+    TypeInfo.Members(specVars, vars, specMethods, methods, HashMap.empty)
   }
 
   def declareName(entity: String, name: QName, info: Info, posOpt: Option[Position]): Unit = {
