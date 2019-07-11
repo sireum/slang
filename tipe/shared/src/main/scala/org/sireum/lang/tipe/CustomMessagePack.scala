@@ -47,7 +47,7 @@ object CustomMessagePack {
   val TypedPoolExtType: S8 = MessagePack.LastExtType + s8"1"
   val ResolvedInfoPoolExtType: S8 = TypedPoolExtType + s8"1"
   val ScopeGlobalPoolExtType: S8 = ResolvedInfoPoolExtType + s8"1"
-  val emptyContract: AST.Contract = AST.Contract.Simple(ISZ(), ISZ(), ISZ(), ISZ())
+  val emptyContract: AST.MethodContract = AST.MethodContract.Simple(ISZ(), ISZ(), ISZ(), ISZ())
   val emptyAttr: AST.Attr = AST.Attr(None())
 
   @record class Reader(val reader: MessagePack.Reader.Impl) extends MsgPack.Reader {
@@ -131,12 +131,12 @@ object CustomMessagePack {
       reader.pooling = T
     }
 
-    override def read_astContract(): AST.Contract = {
+    override def read_astMethodContract(): AST.MethodContract = {
       val isNil = reader.skipIfNil()
       if (isNil) {
         return emptyContract
       } else {
-        val r = super.read_astContract()
+        val r = super.read_astMethodContract()
         return r
       }
     }
@@ -242,11 +242,11 @@ object CustomMessagePack {
       write_astTyped(o)
     }
 
-    override def write_astContract(o: AST.Contract): Unit = {
+    override def write_astMethodContract(o: AST.MethodContract): Unit = {
       if (o == emptyContract) {
         writer.writeNil()
       } else {
-        super.write_astContract(o)
+        super.write_astMethodContract(o)
       }
     }
 

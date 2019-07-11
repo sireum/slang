@@ -367,16 +367,16 @@ object JSON {
       }
     }
 
-    @pure def print_astContract(o: org.sireum.lang.ast.Contract): ST = {
+    @pure def print_astMethodContract(o: org.sireum.lang.ast.MethodContract): ST = {
       o match {
-        case o: org.sireum.lang.ast.Contract.Simple => return print_astContractSimple(o)
-        case o: org.sireum.lang.ast.Contract.Cases => return print_astContractCases(o)
+        case o: org.sireum.lang.ast.MethodContract.Simple => return print_astMethodContractSimple(o)
+        case o: org.sireum.lang.ast.MethodContract.Cases => return print_astMethodContractCases(o)
       }
     }
 
-    @pure def print_astContractSimple(o: org.sireum.lang.ast.Contract.Simple): ST = {
+    @pure def print_astMethodContractSimple(o: org.sireum.lang.ast.MethodContract.Simple): ST = {
       return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Contract.Simple""""),
+        ("type", st""""org.sireum.lang.ast.MethodContract.Simple""""),
         ("reads", printISZ(F, o.reads, print_astExpIdent _)),
         ("requires", printISZ(F, o.requires, print_astExp _)),
         ("modifies", printISZ(F, o.modifies, print_astExpIdent _)),
@@ -384,18 +384,18 @@ object JSON {
       ))
     }
 
-    @pure def print_astContractCases(o: org.sireum.lang.ast.Contract.Cases): ST = {
+    @pure def print_astMethodContractCases(o: org.sireum.lang.ast.MethodContract.Cases): ST = {
       return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Contract.Cases""""),
+        ("type", st""""org.sireum.lang.ast.MethodContract.Cases""""),
         ("reads", printISZ(F, o.reads, print_astExpIdent _)),
         ("modifies", printISZ(F, o.modifies, print_astExpIdent _)),
-        ("cases", printISZ(F, o.cases, print_astContractCase _))
+        ("cases", printISZ(F, o.cases, print_astMethodContractCase _))
       ))
     }
 
-    @pure def print_astContractCase(o: org.sireum.lang.ast.Contract.Case): ST = {
+    @pure def print_astMethodContractCase(o: org.sireum.lang.ast.MethodContract.Case): ST = {
       return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Contract.Case""""),
+        ("type", st""""org.sireum.lang.ast.MethodContract.Case""""),
         ("label", printString(o.label)),
         ("requires", printISZ(F, o.requires, print_astExp _)),
         ("ensures", printISZ(F, o.ensures, print_astExp _))
@@ -485,7 +485,7 @@ object JSON {
         ("hasOverride", printB(o.hasOverride)),
         ("isHelper", printB(o.isHelper)),
         ("sig", print_astMethodSig(o.sig)),
-        ("contract", print_astContract(o.contract)),
+        ("contract", print_astMethodContract(o.contract)),
         ("bodyOpt", printOption(F, o.bodyOpt, print_astBody _)),
         ("attr", print_astResolvedAttr(o.attr))
       ))
@@ -496,7 +496,7 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.Stmt.ExtMethod""""),
         ("isPure", printB(o.isPure)),
         ("sig", print_astMethodSig(o.sig)),
-        ("contract", print_astContract(o.contract)),
+        ("contract", print_astMethodContract(o.contract)),
         ("attr", print_astResolvedAttr(o.attr))
       ))
     }
@@ -2412,23 +2412,23 @@ object JSON {
       }
     }
 
-    def parse_astContract(): org.sireum.lang.ast.Contract = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Contract.Simple", "org.sireum.lang.ast.Contract.Cases"))
+    def parse_astMethodContract(): org.sireum.lang.ast.MethodContract = {
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.MethodContract.Simple", "org.sireum.lang.ast.MethodContract.Cases"))
       t.native match {
-        case "org.sireum.lang.ast.Contract.Simple" => val r = parse_astContractSimpleT(T); return r
-        case "org.sireum.lang.ast.Contract.Cases" => val r = parse_astContractCasesT(T); return r
-        case _ => val r = parse_astContractCasesT(T); return r
+        case "org.sireum.lang.ast.MethodContract.Simple" => val r = parse_astMethodContractSimpleT(T); return r
+        case "org.sireum.lang.ast.MethodContract.Cases" => val r = parse_astMethodContractCasesT(T); return r
+        case _ => val r = parse_astMethodContractCasesT(T); return r
       }
     }
 
-    def parse_astContractSimple(): org.sireum.lang.ast.Contract.Simple = {
-      val r = parse_astContractSimpleT(F)
+    def parse_astMethodContractSimple(): org.sireum.lang.ast.MethodContract.Simple = {
+      val r = parse_astMethodContractSimpleT(F)
       return r
     }
 
-    def parse_astContractSimpleT(typeParsed: B): org.sireum.lang.ast.Contract.Simple = {
+    def parse_astMethodContractSimpleT(typeParsed: B): org.sireum.lang.ast.MethodContract.Simple = {
       if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Contract.Simple")
+        parser.parseObjectType("org.sireum.lang.ast.MethodContract.Simple")
       }
       parser.parseObjectKey("reads")
       val reads = parser.parseISZ(parse_astExpIdent _)
@@ -2442,17 +2442,17 @@ object JSON {
       parser.parseObjectKey("ensures")
       val ensures = parser.parseISZ(parse_astExp _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Contract.Simple(reads, requires, modifies, ensures)
+      return org.sireum.lang.ast.MethodContract.Simple(reads, requires, modifies, ensures)
     }
 
-    def parse_astContractCases(): org.sireum.lang.ast.Contract.Cases = {
-      val r = parse_astContractCasesT(F)
+    def parse_astMethodContractCases(): org.sireum.lang.ast.MethodContract.Cases = {
+      val r = parse_astMethodContractCasesT(F)
       return r
     }
 
-    def parse_astContractCasesT(typeParsed: B): org.sireum.lang.ast.Contract.Cases = {
+    def parse_astMethodContractCasesT(typeParsed: B): org.sireum.lang.ast.MethodContract.Cases = {
       if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Contract.Cases")
+        parser.parseObjectType("org.sireum.lang.ast.MethodContract.Cases")
       }
       parser.parseObjectKey("reads")
       val reads = parser.parseISZ(parse_astExpIdent _)
@@ -2461,19 +2461,19 @@ object JSON {
       val modifies = parser.parseISZ(parse_astExpIdent _)
       parser.parseObjectNext()
       parser.parseObjectKey("cases")
-      val cases = parser.parseISZ(parse_astContractCase _)
+      val cases = parser.parseISZ(parse_astMethodContractCase _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Contract.Cases(reads, modifies, cases)
+      return org.sireum.lang.ast.MethodContract.Cases(reads, modifies, cases)
     }
 
-    def parse_astContractCase(): org.sireum.lang.ast.Contract.Case = {
-      val r = parse_astContractCaseT(F)
+    def parse_astMethodContractCase(): org.sireum.lang.ast.MethodContract.Case = {
+      val r = parse_astMethodContractCaseT(F)
       return r
     }
 
-    def parse_astContractCaseT(typeParsed: B): org.sireum.lang.ast.Contract.Case = {
+    def parse_astMethodContractCaseT(typeParsed: B): org.sireum.lang.ast.MethodContract.Case = {
       if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Contract.Case")
+        parser.parseObjectType("org.sireum.lang.ast.MethodContract.Case")
       }
       parser.parseObjectKey("label")
       val label = parser.parseString()
@@ -2484,7 +2484,7 @@ object JSON {
       parser.parseObjectKey("ensures")
       val ensures = parser.parseISZ(parse_astExp _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Contract.Case(label, requires, ensures)
+      return org.sireum.lang.ast.MethodContract.Case(label, requires, ensures)
     }
 
     def parse_astStmtImport(): org.sireum.lang.ast.Stmt.Import = {
@@ -2677,7 +2677,7 @@ object JSON {
       val sig = parse_astMethodSig()
       parser.parseObjectNext()
       parser.parseObjectKey("contract")
-      val contract = parse_astContract()
+      val contract = parse_astMethodContract()
       parser.parseObjectNext()
       parser.parseObjectKey("bodyOpt")
       val bodyOpt = parser.parseOption(parse_astBody _)
@@ -2704,7 +2704,7 @@ object JSON {
       val sig = parse_astMethodSig()
       parser.parseObjectNext()
       parser.parseObjectKey("contract")
-      val contract = parse_astContract()
+      val contract = parse_astMethodContract()
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
       val attr = parse_astResolvedAttr()
@@ -5650,8 +5650,8 @@ object JSON {
     return r
   }
 
-  def from_astContract(o: org.sireum.lang.ast.Contract, isCompact: B): String = {
-    val st = Printer.print_astContract(o)
+  def from_astMethodContract(o: org.sireum.lang.ast.MethodContract, isCompact: B): String = {
+    val st = Printer.print_astMethodContract(o)
     if (isCompact) {
       return st.renderCompact
     } else {
@@ -5659,17 +5659,17 @@ object JSON {
     }
   }
 
-  def to_astContract(s: String): Either[org.sireum.lang.ast.Contract, Json.ErrorMsg] = {
-    def f_astContract(parser: Parser): org.sireum.lang.ast.Contract = {
-      val r = parser.parse_astContract()
+  def to_astMethodContract(s: String): Either[org.sireum.lang.ast.MethodContract, Json.ErrorMsg] = {
+    def f_astMethodContract(parser: Parser): org.sireum.lang.ast.MethodContract = {
+      val r = parser.parse_astMethodContract()
       return r
     }
-    val r = to(s, f_astContract _)
+    val r = to(s, f_astMethodContract _)
     return r
   }
 
-  def from_astContractSimple(o: org.sireum.lang.ast.Contract.Simple, isCompact: B): String = {
-    val st = Printer.print_astContractSimple(o)
+  def from_astMethodContractSimple(o: org.sireum.lang.ast.MethodContract.Simple, isCompact: B): String = {
+    val st = Printer.print_astMethodContractSimple(o)
     if (isCompact) {
       return st.renderCompact
     } else {
@@ -5677,17 +5677,17 @@ object JSON {
     }
   }
 
-  def to_astContractSimple(s: String): Either[org.sireum.lang.ast.Contract.Simple, Json.ErrorMsg] = {
-    def f_astContractSimple(parser: Parser): org.sireum.lang.ast.Contract.Simple = {
-      val r = parser.parse_astContractSimple()
+  def to_astMethodContractSimple(s: String): Either[org.sireum.lang.ast.MethodContract.Simple, Json.ErrorMsg] = {
+    def f_astMethodContractSimple(parser: Parser): org.sireum.lang.ast.MethodContract.Simple = {
+      val r = parser.parse_astMethodContractSimple()
       return r
     }
-    val r = to(s, f_astContractSimple _)
+    val r = to(s, f_astMethodContractSimple _)
     return r
   }
 
-  def from_astContractCases(o: org.sireum.lang.ast.Contract.Cases, isCompact: B): String = {
-    val st = Printer.print_astContractCases(o)
+  def from_astMethodContractCases(o: org.sireum.lang.ast.MethodContract.Cases, isCompact: B): String = {
+    val st = Printer.print_astMethodContractCases(o)
     if (isCompact) {
       return st.renderCompact
     } else {
@@ -5695,17 +5695,17 @@ object JSON {
     }
   }
 
-  def to_astContractCases(s: String): Either[org.sireum.lang.ast.Contract.Cases, Json.ErrorMsg] = {
-    def f_astContractCases(parser: Parser): org.sireum.lang.ast.Contract.Cases = {
-      val r = parser.parse_astContractCases()
+  def to_astMethodContractCases(s: String): Either[org.sireum.lang.ast.MethodContract.Cases, Json.ErrorMsg] = {
+    def f_astMethodContractCases(parser: Parser): org.sireum.lang.ast.MethodContract.Cases = {
+      val r = parser.parse_astMethodContractCases()
       return r
     }
-    val r = to(s, f_astContractCases _)
+    val r = to(s, f_astMethodContractCases _)
     return r
   }
 
-  def from_astContractCase(o: org.sireum.lang.ast.Contract.Case, isCompact: B): String = {
-    val st = Printer.print_astContractCase(o)
+  def from_astMethodContractCase(o: org.sireum.lang.ast.MethodContract.Case, isCompact: B): String = {
+    val st = Printer.print_astMethodContractCase(o)
     if (isCompact) {
       return st.renderCompact
     } else {
@@ -5713,12 +5713,12 @@ object JSON {
     }
   }
 
-  def to_astContractCase(s: String): Either[org.sireum.lang.ast.Contract.Case, Json.ErrorMsg] = {
-    def f_astContractCase(parser: Parser): org.sireum.lang.ast.Contract.Case = {
-      val r = parser.parse_astContractCase()
+  def to_astMethodContractCase(s: String): Either[org.sireum.lang.ast.MethodContract.Case, Json.ErrorMsg] = {
+    def f_astMethodContractCase(parser: Parser): org.sireum.lang.ast.MethodContract.Case = {
+      val r = parser.parse_astMethodContractCase()
       return r
     }
-    val r = to(s, f_astContractCase _)
+    val r = to(s, f_astMethodContractCase _)
     return r
   }
 

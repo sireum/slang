@@ -34,7 +34,7 @@ import org.sireum.lang.symbol.Resolver._
 
 object PostTipeAttrChecker {
   val AttrResult: MTransformer.PreResult[Attr] = MTransformer.PreResult[Attr](F, MNone())
-  val ContractResult: MTransformer.PreResult[Contract] = MTransformer.PreResult[Contract](F, MNone()) // TODO: Unskip contract
+  val ContractResult: MTransformer.PreResult[MethodContract] = MTransformer.PreResult[MethodContract](F, MNone()) // TODO: Unskip contract
   val StmtResult: MTransformer.PreResult[Stmt] = MTransformer.PreResult[Stmt](T, MNone())
   val LStmtResult: MTransformer.PreResult[Stmt] = MTransformer.PreResult[Stmt](F, MNone()) // TODO: Unskip contract
   val ResolvedResult: MTransformer.PreResult[ResolvedAttr] = MTransformer.PreResult[ResolvedAttr](F, MNone())
@@ -86,7 +86,7 @@ object PostTipeAttrChecker {
 
 @record class PostTipeAttrChecker(var messages: HashSSet[Message]) extends MTransformer {
 
-  override def preContract(o: Contract): MTransformer.PreResult[Contract] = {
+  override def preMethodContract(o: MethodContract): MTransformer.PreResult[MethodContract] = {
     return PostTipeAttrChecker.ContractResult
   }
 

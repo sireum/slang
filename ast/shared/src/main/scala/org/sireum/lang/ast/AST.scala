@@ -68,18 +68,18 @@ object TopUnit {
 
 }
 
-@datatype trait Contract
+@datatype trait MethodContract
 
-object Contract {
+object MethodContract {
 
   @datatype class Simple(reads: ISZ[Exp.Ident],
                          requires: ISZ[Exp],
                          modifies: ISZ[Exp.Ident],
-                         ensures: ISZ[Exp]) extends Contract
+                         ensures: ISZ[Exp]) extends MethodContract
 
   @datatype class Cases(reads: ISZ[Exp.Ident],
                         modifies: ISZ[Exp.Ident],
-                        cases: ISZ[Case]) extends Contract
+                        cases: ISZ[Case]) extends MethodContract
 
   @datatype class Case(label: String,
                        requires: ISZ[Exp],
@@ -141,7 +141,7 @@ object Stmt {
                          hasOverride: B,
                          isHelper: B,
                          sig: MethodSig,
-                         contract: Contract,
+                         contract: MethodContract,
                          bodyOpt: Option[Body],
                          @hidden attr: ResolvedAttr) extends Stmt {
 
@@ -151,7 +151,7 @@ object Stmt {
 
   }
 
-  @datatype class ExtMethod(isPure: B, sig: MethodSig, contract: Contract, @hidden attr: ResolvedAttr) extends Stmt {
+  @datatype class ExtMethod(isPure: B, sig: MethodSig, contract: MethodContract, @hidden attr: ResolvedAttr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt

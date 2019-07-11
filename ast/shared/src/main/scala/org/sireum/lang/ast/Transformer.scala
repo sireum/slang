@@ -91,22 +91,22 @@ object Transformer {
       }
     }
 
-    @pure def preContract(ctx: Context, o: Contract): PreResult[Context, Contract] = {
+    @pure def preMethodContract(ctx: Context, o: MethodContract): PreResult[Context, MethodContract] = {
       o match {
-        case o: Contract.Simple => return preContractSimple(ctx, o)
-        case o: Contract.Cases => return preContractCases(ctx, o)
+        case o: MethodContract.Simple => return preMethodContractSimple(ctx, o)
+        case o: MethodContract.Cases => return preMethodContractCases(ctx, o)
       }
     }
 
-    @pure def preContractSimple(ctx: Context, o: Contract.Simple): PreResult[Context, Contract] = {
+    @pure def preMethodContractSimple(ctx: Context, o: MethodContract.Simple): PreResult[Context, MethodContract] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preContractCases(ctx: Context, o: Contract.Cases): PreResult[Context, Contract] = {
+    @pure def preMethodContractCases(ctx: Context, o: MethodContract.Cases): PreResult[Context, MethodContract] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preContractCase(ctx: Context, o: Contract.Case): PreResult[Context, Contract.Case] = {
+    @pure def preMethodContractCase(ctx: Context, o: MethodContract.Case): PreResult[Context, MethodContract.Case] = {
       return PreResult(ctx, T, None())
     }
 
@@ -869,22 +869,22 @@ object Transformer {
       }
     }
 
-    @pure def postContract(ctx: Context, o: Contract): TPostResult[Context, Contract] = {
+    @pure def postMethodContract(ctx: Context, o: MethodContract): TPostResult[Context, MethodContract] = {
       o match {
-        case o: Contract.Simple => return postContractSimple(ctx, o)
-        case o: Contract.Cases => return postContractCases(ctx, o)
+        case o: MethodContract.Simple => return postMethodContractSimple(ctx, o)
+        case o: MethodContract.Cases => return postMethodContractCases(ctx, o)
       }
     }
 
-    @pure def postContractSimple(ctx: Context, o: Contract.Simple): TPostResult[Context, Contract] = {
+    @pure def postMethodContractSimple(ctx: Context, o: MethodContract.Simple): TPostResult[Context, MethodContract] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postContractCases(ctx: Context, o: Contract.Cases): TPostResult[Context, Contract] = {
+    @pure def postMethodContractCases(ctx: Context, o: MethodContract.Cases): TPostResult[Context, MethodContract] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postContractCase(ctx: Context, o: Contract.Case): TPostResult[Context, Contract.Case] = {
+    @pure def postMethodContractCase(ctx: Context, o: MethodContract.Case): TPostResult[Context, MethodContract.Case] = {
       return TPostResult(ctx, None())
     }
 
@@ -1725,7 +1725,7 @@ import Transformer._
             TPostResult(r2.ctx, None())
         case o2: Stmt.Method =>
           val r0: TPostResult[Context, MethodSig] = transformMethodSig(preR.ctx, o2.sig)
-          val r1: TPostResult[Context, Contract] = transformContract(r0.ctx, o2.contract)
+          val r1: TPostResult[Context, MethodContract] = transformMethodContract(r0.ctx, o2.contract)
           val r2: TPostResult[Context, Option[Body]] = transformOption(r1.ctx, o2.bodyOpt, transformBody _)
           val r3: TPostResult[Context, ResolvedAttr] = transformResolvedAttr(r2.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
@@ -1734,7 +1734,7 @@ import Transformer._
             TPostResult(r3.ctx, None())
         case o2: Stmt.ExtMethod =>
           val r0: TPostResult[Context, MethodSig] = transformMethodSig(preR.ctx, o2.sig)
-          val r1: TPostResult[Context, Contract] = transformContract(r0.ctx, o2.contract)
+          val r1: TPostResult[Context, MethodContract] = transformMethodContract(r0.ctx, o2.contract)
           val r2: TPostResult[Context, ResolvedAttr] = transformResolvedAttr(r1.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
             TPostResult(r2.ctx, Some(o2(sig = r0.resultOpt.getOrElse(o2.sig), contract = r1.resultOpt.getOrElse(o2.contract), attr = r2.resultOpt.getOrElse(o2.attr))))
@@ -1902,13 +1902,13 @@ import Transformer._
     }
   }
 
-  @pure def transformContract(ctx: Context, o: Contract): TPostResult[Context, Contract] = {
-    val preR: PreResult[Context, Contract] = pp.preContract(ctx, o)
-    val r: TPostResult[Context, Contract] = if (preR.continu) {
-      val o2: Contract = preR.resultOpt.getOrElse(o)
+  @pure def transformMethodContract(ctx: Context, o: MethodContract): TPostResult[Context, MethodContract] = {
+    val preR: PreResult[Context, MethodContract] = pp.preMethodContract(ctx, o)
+    val r: TPostResult[Context, MethodContract] = if (preR.continu) {
+      val o2: MethodContract = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
-      val rOpt: TPostResult[Context, Contract] = o2 match {
-        case o2: Contract.Simple =>
+      val rOpt: TPostResult[Context, MethodContract] = o2 match {
+        case o2: MethodContract.Simple =>
           val r0: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(preR.ctx, o2.reads, transformExpIdent _)
           val r1: TPostResult[Context, IS[Z, Exp]] = transformISZ(r0.ctx, o2.requires, transformExp _)
           val r2: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(r1.ctx, o2.modifies, transformExpIdent _)
@@ -1917,10 +1917,10 @@ import Transformer._
             TPostResult(r3.ctx, Some(o2(reads = r0.resultOpt.getOrElse(o2.reads), requires = r1.resultOpt.getOrElse(o2.requires), modifies = r2.resultOpt.getOrElse(o2.modifies), ensures = r3.resultOpt.getOrElse(o2.ensures))))
           else
             TPostResult(r3.ctx, None())
-        case o2: Contract.Cases =>
+        case o2: MethodContract.Cases =>
           val r0: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(preR.ctx, o2.reads, transformExpIdent _)
           val r1: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(r0.ctx, o2.modifies, transformExpIdent _)
-          val r2: TPostResult[Context, IS[Z, Contract.Case]] = transformISZ(r1.ctx, o2.cases, transformContractCase _)
+          val r2: TPostResult[Context, IS[Z, MethodContract.Case]] = transformISZ(r1.ctx, o2.cases, transformMethodContractCase _)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
             TPostResult(r2.ctx, Some(o2(reads = r0.resultOpt.getOrElse(o2.reads), modifies = r1.resultOpt.getOrElse(o2.modifies), cases = r2.resultOpt.getOrElse(o2.cases))))
           else
@@ -1933,8 +1933,8 @@ import Transformer._
       TPostResult(preR.ctx, None())
     }
     val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: Contract = r.resultOpt.getOrElse(o)
-    val postR: TPostResult[Context, Contract] = pp.postContract(r.ctx, o2)
+    val o2: MethodContract = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, MethodContract] = pp.postMethodContract(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -1944,10 +1944,10 @@ import Transformer._
     }
   }
 
-  @pure def transformContractCase(ctx: Context, o: Contract.Case): TPostResult[Context, Contract.Case] = {
-    val preR: PreResult[Context, Contract.Case] = pp.preContractCase(ctx, o)
-    val r: TPostResult[Context, Contract.Case] = if (preR.continu) {
-      val o2: Contract.Case = preR.resultOpt.getOrElse(o)
+  @pure def transformMethodContractCase(ctx: Context, o: MethodContract.Case): TPostResult[Context, MethodContract.Case] = {
+    val preR: PreResult[Context, MethodContract.Case] = pp.preMethodContractCase(ctx, o)
+    val r: TPostResult[Context, MethodContract.Case] = if (preR.continu) {
+      val o2: MethodContract.Case = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: TPostResult[Context, IS[Z, Exp]] = transformISZ(preR.ctx, o2.requires, transformExp _)
       val r1: TPostResult[Context, IS[Z, Exp]] = transformISZ(r0.ctx, o2.ensures, transformExp _)
@@ -1961,8 +1961,8 @@ import Transformer._
       TPostResult(preR.ctx, None())
     }
     val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: Contract.Case = r.resultOpt.getOrElse(o)
-    val postR: TPostResult[Context, Contract.Case] = pp.postContractCase(r.ctx, o2)
+    val o2: MethodContract.Case = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, MethodContract.Case] = pp.postMethodContractCase(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {

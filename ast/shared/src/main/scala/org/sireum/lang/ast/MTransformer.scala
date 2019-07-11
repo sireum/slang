@@ -77,17 +77,17 @@ object MTransformer {
 
   val PostResultTopUnitTruthTableUnit: MOption[TopUnit] = MNone()
 
-  val PreResultContractSimple: PreResult[Contract] = PreResult(T, MNone())
+  val PreResultMethodContractSimple: PreResult[MethodContract] = PreResult(T, MNone())
 
-  val PostResultContractSimple: MOption[Contract] = MNone()
+  val PostResultMethodContractSimple: MOption[MethodContract] = MNone()
 
-  val PreResultContractCases: PreResult[Contract] = PreResult(T, MNone())
+  val PreResultMethodContractCases: PreResult[MethodContract] = PreResult(T, MNone())
 
-  val PostResultContractCases: MOption[Contract] = MNone()
+  val PostResultMethodContractCases: MOption[MethodContract] = MNone()
 
-  val PreResultContractCase: PreResult[Contract.Case] = PreResult(T, MNone())
+  val PreResultMethodContractCase: PreResult[MethodContract.Case] = PreResult(T, MNone())
 
-  val PostResultContractCase: MOption[Contract.Case] = MNone()
+  val PostResultMethodContractCase: MOption[MethodContract.Case] = MNone()
 
   val PreResultStmtImport: PreResult[Stmt] = PreResult(T, MNone())
 
@@ -587,23 +587,23 @@ import MTransformer._
     }
   }
 
-  def preContract(o: Contract): PreResult[Contract] = {
+  def preMethodContract(o: MethodContract): PreResult[MethodContract] = {
     o match {
-      case o: Contract.Simple => return preContractSimple(o)
-      case o: Contract.Cases => return preContractCases(o)
+      case o: MethodContract.Simple => return preMethodContractSimple(o)
+      case o: MethodContract.Cases => return preMethodContractCases(o)
     }
   }
 
-  def preContractSimple(o: Contract.Simple): PreResult[Contract] = {
-    return PreResultContractSimple
+  def preMethodContractSimple(o: MethodContract.Simple): PreResult[MethodContract] = {
+    return PreResultMethodContractSimple
   }
 
-  def preContractCases(o: Contract.Cases): PreResult[Contract] = {
-    return PreResultContractCases
+  def preMethodContractCases(o: MethodContract.Cases): PreResult[MethodContract] = {
+    return PreResultMethodContractCases
   }
 
-  def preContractCase(o: Contract.Case): PreResult[Contract.Case] = {
-    return PreResultContractCase
+  def preMethodContractCase(o: MethodContract.Case): PreResult[MethodContract.Case] = {
+    return PreResultMethodContractCase
   }
 
   def preStmtImport(o: Stmt.Import): PreResult[Stmt] = {
@@ -1365,23 +1365,23 @@ import MTransformer._
     }
   }
 
-  def postContract(o: Contract): MOption[Contract] = {
+  def postMethodContract(o: MethodContract): MOption[MethodContract] = {
     o match {
-      case o: Contract.Simple => return postContractSimple(o)
-      case o: Contract.Cases => return postContractCases(o)
+      case o: MethodContract.Simple => return postMethodContractSimple(o)
+      case o: MethodContract.Cases => return postMethodContractCases(o)
     }
   }
 
-  def postContractSimple(o: Contract.Simple): MOption[Contract] = {
-    return PostResultContractSimple
+  def postMethodContractSimple(o: MethodContract.Simple): MOption[MethodContract] = {
+    return PostResultMethodContractSimple
   }
 
-  def postContractCases(o: Contract.Cases): MOption[Contract] = {
-    return PostResultContractCases
+  def postMethodContractCases(o: MethodContract.Cases): MOption[MethodContract] = {
+    return PostResultMethodContractCases
   }
 
-  def postContractCase(o: Contract.Case): MOption[Contract.Case] = {
-    return PostResultContractCase
+  def postMethodContractCase(o: MethodContract.Case): MOption[MethodContract.Case] = {
+    return PostResultMethodContractCase
   }
 
   def postStmtImport(o: Stmt.Import): MOption[Stmt] = {
@@ -2183,7 +2183,7 @@ import MTransformer._
             MNone()
         case o2: Stmt.Method =>
           val r0: MOption[MethodSig] = transformMethodSig(o2.sig)
-          val r1: MOption[Contract] = transformContract(o2.contract)
+          val r1: MOption[MethodContract] = transformMethodContract(o2.contract)
           val r2: MOption[Option[Body]] = transformOption(o2.bodyOpt, transformBody _)
           val r3: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
@@ -2192,7 +2192,7 @@ import MTransformer._
             MNone()
         case o2: Stmt.ExtMethod =>
           val r0: MOption[MethodSig] = transformMethodSig(o2.sig)
-          val r1: MOption[Contract] = transformContract(o2.contract)
+          val r1: MOption[MethodContract] = transformMethodContract(o2.contract)
           val r2: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
             MSome(o2(sig = r0.getOrElse(o2.sig), contract = r1.getOrElse(o2.contract), attr = r2.getOrElse(o2.attr)))
@@ -2360,13 +2360,13 @@ import MTransformer._
     }
   }
 
-  def transformContract(o: Contract): MOption[Contract] = {
-    val preR: PreResult[Contract] = preContract(o)
-    val r: MOption[Contract] = if (preR.continu) {
-      val o2: Contract = preR.resultOpt.getOrElse(o)
+  def transformMethodContract(o: MethodContract): MOption[MethodContract] = {
+    val preR: PreResult[MethodContract] = preMethodContract(o)
+    val r: MOption[MethodContract] = if (preR.continu) {
+      val o2: MethodContract = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
-      val rOpt: MOption[Contract] = o2 match {
-        case o2: Contract.Simple =>
+      val rOpt: MOption[MethodContract] = o2 match {
+        case o2: MethodContract.Simple =>
           val r0: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.reads, transformExpIdent _)
           val r1: MOption[IS[Z, Exp]] = transformISZ(o2.requires, transformExp _)
           val r2: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.modifies, transformExpIdent _)
@@ -2375,10 +2375,10 @@ import MTransformer._
             MSome(o2(reads = r0.getOrElse(o2.reads), requires = r1.getOrElse(o2.requires), modifies = r2.getOrElse(o2.modifies), ensures = r3.getOrElse(o2.ensures)))
           else
             MNone()
-        case o2: Contract.Cases =>
+        case o2: MethodContract.Cases =>
           val r0: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.reads, transformExpIdent _)
           val r1: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.modifies, transformExpIdent _)
-          val r2: MOption[IS[Z, Contract.Case]] = transformISZ(o2.cases, transformContractCase _)
+          val r2: MOption[IS[Z, MethodContract.Case]] = transformISZ(o2.cases, transformMethodContractCase _)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
             MSome(o2(reads = r0.getOrElse(o2.reads), modifies = r1.getOrElse(o2.modifies), cases = r2.getOrElse(o2.cases)))
           else
@@ -2391,8 +2391,8 @@ import MTransformer._
       MNone()
     }
     val hasChanged: B = r.nonEmpty
-    val o2: Contract = r.getOrElse(o)
-    val postR: MOption[Contract] = postContract(o2)
+    val o2: MethodContract = r.getOrElse(o)
+    val postR: MOption[MethodContract] = postMethodContract(o2)
     if (postR.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -2402,10 +2402,10 @@ import MTransformer._
     }
   }
 
-  def transformContractCase(o: Contract.Case): MOption[Contract.Case] = {
-    val preR: PreResult[Contract.Case] = preContractCase(o)
-    val r: MOption[Contract.Case] = if (preR.continu) {
-      val o2: Contract.Case = preR.resultOpt.getOrElse(o)
+  def transformMethodContractCase(o: MethodContract.Case): MOption[MethodContract.Case] = {
+    val preR: PreResult[MethodContract.Case] = preMethodContractCase(o)
+    val r: MOption[MethodContract.Case] = if (preR.continu) {
+      val o2: MethodContract.Case = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: MOption[IS[Z, Exp]] = transformISZ(o2.requires, transformExp _)
       val r1: MOption[IS[Z, Exp]] = transformISZ(o2.ensures, transformExp _)
@@ -2419,8 +2419,8 @@ import MTransformer._
       MNone()
     }
     val hasChanged: B = r.nonEmpty
-    val o2: Contract.Case = r.getOrElse(o)
-    val postR: MOption[Contract.Case] = postContractCase(o2)
+    val o2: MethodContract.Case = r.getOrElse(o)
+    val postR: MOption[MethodContract.Case] = postMethodContractCase(o2)
     if (postR.nonEmpty) {
       return postR
     } else if (hasChanged) {

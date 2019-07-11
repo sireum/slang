@@ -84,11 +84,11 @@ object MsgPack {
 
     val _astTopUnitTruthTableUnit: Z = -9
 
-    val _astContractSimple: Z = -8
+    val _astMethodContractSimple: Z = -8
 
-    val _astContractCases: Z = -7
+    val _astMethodContractCases: Z = -7
 
-    val _astContractCase: Z = -6
+    val _astMethodContractCase: Z = -6
 
     val _astStmtImport: Z = -5
 
@@ -606,30 +606,30 @@ object MsgPack {
       }
     }
 
-    def write_astContract(o: org.sireum.lang.ast.Contract): Unit = {
+    def write_astMethodContract(o: org.sireum.lang.ast.MethodContract): Unit = {
       o match {
-        case o: org.sireum.lang.ast.Contract.Simple => write_astContractSimple(o)
-        case o: org.sireum.lang.ast.Contract.Cases => write_astContractCases(o)
+        case o: org.sireum.lang.ast.MethodContract.Simple => write_astMethodContractSimple(o)
+        case o: org.sireum.lang.ast.MethodContract.Cases => write_astMethodContractCases(o)
       }
     }
 
-    def write_astContractSimple(o: org.sireum.lang.ast.Contract.Simple): Unit = {
-      writer.writeZ(Constants._astContractSimple)
+    def write_astMethodContractSimple(o: org.sireum.lang.ast.MethodContract.Simple): Unit = {
+      writer.writeZ(Constants._astMethodContractSimple)
       writer.writeISZ(o.reads, write_astExpIdent _)
       writer.writeISZ(o.requires, write_astExp _)
       writer.writeISZ(o.modifies, write_astExpIdent _)
       writer.writeISZ(o.ensures, write_astExp _)
     }
 
-    def write_astContractCases(o: org.sireum.lang.ast.Contract.Cases): Unit = {
-      writer.writeZ(Constants._astContractCases)
+    def write_astMethodContractCases(o: org.sireum.lang.ast.MethodContract.Cases): Unit = {
+      writer.writeZ(Constants._astMethodContractCases)
       writer.writeISZ(o.reads, write_astExpIdent _)
       writer.writeISZ(o.modifies, write_astExpIdent _)
-      writer.writeISZ(o.cases, write_astContractCase _)
+      writer.writeISZ(o.cases, write_astMethodContractCase _)
     }
 
-    def write_astContractCase(o: org.sireum.lang.ast.Contract.Case): Unit = {
-      writer.writeZ(Constants._astContractCase)
+    def write_astMethodContractCase(o: org.sireum.lang.ast.MethodContract.Case): Unit = {
+      writer.writeZ(Constants._astMethodContractCase)
       writer.writeString(o.label)
       writer.writeISZ(o.requires, write_astExp _)
       writer.writeISZ(o.ensures, write_astExp _)
@@ -701,7 +701,7 @@ object MsgPack {
       writer.writeB(o.hasOverride)
       writer.writeB(o.isHelper)
       write_astMethodSig(o.sig)
-      write_astContract(o.contract)
+      write_astMethodContract(o.contract)
       writer.writeOption(o.bodyOpt, write_astBody _)
       write_astResolvedAttr(o.attr)
     }
@@ -710,7 +710,7 @@ object MsgPack {
       writer.writeZ(Constants._astStmtExtMethod)
       writer.writeB(o.isPure)
       write_astMethodSig(o.sig)
-      write_astContract(o.contract)
+      write_astMethodContract(o.contract)
       write_astResolvedAttr(o.attr)
     }
 
@@ -2118,63 +2118,63 @@ object MsgPack {
       }
     }
 
-    def read_astContract(): org.sireum.lang.ast.Contract = {
+    def read_astMethodContract(): org.sireum.lang.ast.MethodContract = {
       val i = reader.curr
       val t = reader.readZ()
       t match {
-        case Constants._astContractSimple => val r = read_astContractSimpleT(T); return r
-        case Constants._astContractCases => val r = read_astContractCasesT(T); return r
+        case Constants._astMethodContractSimple => val r = read_astMethodContractSimpleT(T); return r
+        case Constants._astMethodContractCases => val r = read_astMethodContractCasesT(T); return r
         case _ =>
-          reader.error(i, s"$t is not a valid type of org.sireum.lang.ast.Contract.")
-          val r = read_astContractCasesT(T)
+          reader.error(i, s"$t is not a valid type of org.sireum.lang.ast.MethodContract.")
+          val r = read_astMethodContractCasesT(T)
           return r
       }
     }
 
-    def read_astContractSimple(): org.sireum.lang.ast.Contract.Simple = {
-      val r = read_astContractSimpleT(F)
+    def read_astMethodContractSimple(): org.sireum.lang.ast.MethodContract.Simple = {
+      val r = read_astMethodContractSimpleT(F)
       return r
     }
 
-    def read_astContractSimpleT(typeParsed: B): org.sireum.lang.ast.Contract.Simple = {
+    def read_astMethodContractSimpleT(typeParsed: B): org.sireum.lang.ast.MethodContract.Simple = {
       if (!typeParsed) {
-        reader.expectZ(Constants._astContractSimple)
+        reader.expectZ(Constants._astMethodContractSimple)
       }
       val reads = reader.readISZ(read_astExpIdent _)
       val requires = reader.readISZ(read_astExp _)
       val modifies = reader.readISZ(read_astExpIdent _)
       val ensures = reader.readISZ(read_astExp _)
-      return org.sireum.lang.ast.Contract.Simple(reads, requires, modifies, ensures)
+      return org.sireum.lang.ast.MethodContract.Simple(reads, requires, modifies, ensures)
     }
 
-    def read_astContractCases(): org.sireum.lang.ast.Contract.Cases = {
-      val r = read_astContractCasesT(F)
+    def read_astMethodContractCases(): org.sireum.lang.ast.MethodContract.Cases = {
+      val r = read_astMethodContractCasesT(F)
       return r
     }
 
-    def read_astContractCasesT(typeParsed: B): org.sireum.lang.ast.Contract.Cases = {
+    def read_astMethodContractCasesT(typeParsed: B): org.sireum.lang.ast.MethodContract.Cases = {
       if (!typeParsed) {
-        reader.expectZ(Constants._astContractCases)
+        reader.expectZ(Constants._astMethodContractCases)
       }
       val reads = reader.readISZ(read_astExpIdent _)
       val modifies = reader.readISZ(read_astExpIdent _)
-      val cases = reader.readISZ(read_astContractCase _)
-      return org.sireum.lang.ast.Contract.Cases(reads, modifies, cases)
+      val cases = reader.readISZ(read_astMethodContractCase _)
+      return org.sireum.lang.ast.MethodContract.Cases(reads, modifies, cases)
     }
 
-    def read_astContractCase(): org.sireum.lang.ast.Contract.Case = {
-      val r = read_astContractCaseT(F)
+    def read_astMethodContractCase(): org.sireum.lang.ast.MethodContract.Case = {
+      val r = read_astMethodContractCaseT(F)
       return r
     }
 
-    def read_astContractCaseT(typeParsed: B): org.sireum.lang.ast.Contract.Case = {
+    def read_astMethodContractCaseT(typeParsed: B): org.sireum.lang.ast.MethodContract.Case = {
       if (!typeParsed) {
-        reader.expectZ(Constants._astContractCase)
+        reader.expectZ(Constants._astMethodContractCase)
       }
       val label = reader.readString()
       val requires = reader.readISZ(read_astExp _)
       val ensures = reader.readISZ(read_astExp _)
-      return org.sireum.lang.ast.Contract.Case(label, requires, ensures)
+      return org.sireum.lang.ast.MethodContract.Case(label, requires, ensures)
     }
 
     def read_astStmtImport(): org.sireum.lang.ast.Stmt.Import = {
@@ -2320,7 +2320,7 @@ object MsgPack {
       val hasOverride = reader.readB()
       val isHelper = reader.readB()
       val sig = read_astMethodSig()
-      val contract = read_astContract()
+      val contract = read_astMethodContract()
       val bodyOpt = reader.readOption(read_astBody _)
       val attr = read_astResolvedAttr()
       return org.sireum.lang.ast.Stmt.Method(purity, hasOverride, isHelper, sig, contract, bodyOpt, attr)
@@ -2337,7 +2337,7 @@ object MsgPack {
       }
       val isPure = reader.readB()
       val sig = read_astMethodSig()
-      val contract = read_astContract()
+      val contract = read_astMethodContract()
       val attr = read_astResolvedAttr()
       return org.sireum.lang.ast.Stmt.ExtMethod(isPure, sig, contract, attr)
     }
@@ -4572,63 +4572,63 @@ object MsgPack {
     return r
   }
 
-  def from_astContract(o: org.sireum.lang.ast.Contract, pooling: B): ISZ[U8] = {
+  def from_astMethodContract(o: org.sireum.lang.ast.MethodContract, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astContract(o)
+    w.write_astMethodContract(o)
     return w.result
   }
 
-  def to_astContract(data: ISZ[U8]): Either[org.sireum.lang.ast.Contract, MessagePack.ErrorMsg] = {
-    def f_astContract(reader: Reader): org.sireum.lang.ast.Contract = {
-      val r = reader.read_astContract()
+  def to_astMethodContract(data: ISZ[U8]): Either[org.sireum.lang.ast.MethodContract, MessagePack.ErrorMsg] = {
+    def f_astMethodContract(reader: Reader): org.sireum.lang.ast.MethodContract = {
+      val r = reader.read_astMethodContract()
       return r
     }
-    val r = to(data, f_astContract _)
+    val r = to(data, f_astMethodContract _)
     return r
   }
 
-  def from_astContractSimple(o: org.sireum.lang.ast.Contract.Simple, pooling: B): ISZ[U8] = {
+  def from_astMethodContractSimple(o: org.sireum.lang.ast.MethodContract.Simple, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astContractSimple(o)
+    w.write_astMethodContractSimple(o)
     return w.result
   }
 
-  def to_astContractSimple(data: ISZ[U8]): Either[org.sireum.lang.ast.Contract.Simple, MessagePack.ErrorMsg] = {
-    def f_astContractSimple(reader: Reader): org.sireum.lang.ast.Contract.Simple = {
-      val r = reader.read_astContractSimple()
+  def to_astMethodContractSimple(data: ISZ[U8]): Either[org.sireum.lang.ast.MethodContract.Simple, MessagePack.ErrorMsg] = {
+    def f_astMethodContractSimple(reader: Reader): org.sireum.lang.ast.MethodContract.Simple = {
+      val r = reader.read_astMethodContractSimple()
       return r
     }
-    val r = to(data, f_astContractSimple _)
+    val r = to(data, f_astMethodContractSimple _)
     return r
   }
 
-  def from_astContractCases(o: org.sireum.lang.ast.Contract.Cases, pooling: B): ISZ[U8] = {
+  def from_astMethodContractCases(o: org.sireum.lang.ast.MethodContract.Cases, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astContractCases(o)
+    w.write_astMethodContractCases(o)
     return w.result
   }
 
-  def to_astContractCases(data: ISZ[U8]): Either[org.sireum.lang.ast.Contract.Cases, MessagePack.ErrorMsg] = {
-    def f_astContractCases(reader: Reader): org.sireum.lang.ast.Contract.Cases = {
-      val r = reader.read_astContractCases()
+  def to_astMethodContractCases(data: ISZ[U8]): Either[org.sireum.lang.ast.MethodContract.Cases, MessagePack.ErrorMsg] = {
+    def f_astMethodContractCases(reader: Reader): org.sireum.lang.ast.MethodContract.Cases = {
+      val r = reader.read_astMethodContractCases()
       return r
     }
-    val r = to(data, f_astContractCases _)
+    val r = to(data, f_astMethodContractCases _)
     return r
   }
 
-  def from_astContractCase(o: org.sireum.lang.ast.Contract.Case, pooling: B): ISZ[U8] = {
+  def from_astMethodContractCase(o: org.sireum.lang.ast.MethodContract.Case, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astContractCase(o)
+    w.write_astMethodContractCase(o)
     return w.result
   }
 
-  def to_astContractCase(data: ISZ[U8]): Either[org.sireum.lang.ast.Contract.Case, MessagePack.ErrorMsg] = {
-    def f_astContractCase(reader: Reader): org.sireum.lang.ast.Contract.Case = {
-      val r = reader.read_astContractCase()
+  def to_astMethodContractCase(data: ISZ[U8]): Either[org.sireum.lang.ast.MethodContract.Case, MessagePack.ErrorMsg] = {
+    def f_astMethodContractCase(reader: Reader): org.sireum.lang.ast.MethodContract.Case = {
+      val r = reader.read_astMethodContractCase()
       return r
     }
-    val r = to(data, f_astContractCase _)
+    val r = to(data, f_astMethodContractCase _)
     return r
   }
 

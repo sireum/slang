@@ -173,7 +173,7 @@ object SlangParser {
   private[SlangParser] lazy val rDollarId = AST.Id("$", emptyAttr)
   private[SlangParser] lazy val rExp = AST.Exp.Ident(rDollarId, emptyResolvedAttr)
   private[SlangParser] lazy val rStmt = AST.Stmt.Expr(rExp, emptyTypedAttr)
-  private[SlangParser] lazy val emptyContract = AST.Contract.Simple(ISZ(), ISZ(), ISZ(), ISZ())
+  private[SlangParser] lazy val emptyContract = AST.MethodContract.Simple(ISZ(), ISZ(), ISZ(), ISZ())
 
 }
 
@@ -2551,7 +2551,7 @@ class SlangParser(
     } finally lPointOpt = scala.None
   }
 
-  def parseContract(exprs: Seq[Term]): AST.Contract = {
+  def parseContract(exprs: Seq[Term]): AST.MethodContract = {
     emptyContract // TODO
   }
 
