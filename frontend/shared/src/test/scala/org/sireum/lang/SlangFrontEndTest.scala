@@ -262,7 +262,7 @@ class SlangFrontEndTest extends TestSuite {
 
       * - failing("package a.b.c; object Foo", packageFirstMember, addImport = false)
 
-      * - failing("object Foo", "⊢", addImport = false)
+      * - failing("object Foo", "first statement", addImport = false)
 
       "Val/Var" - {
 
@@ -321,7 +321,7 @@ class SlangFrontEndTest extends TestSuite {
 
         * - failing("def f: Z = 4", "Only block", isWorksheet = true)
 
-        val mod = "modifier @pure, @memoize, @spec, and/or override"
+        val mod = "modifier @pure"
 
         * - failing("@ext def f(x: Z): Z = {}", mod, isWorksheet = true)
 

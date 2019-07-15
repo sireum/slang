@@ -1,8 +1,7 @@
-q  ⊢  p → q
-{
-  1. {
-       2. p   ... assume
-       3. q   ... premise
-     }
-  4. p → q    ... →i(1)
-}
+(q) |- (p imply_: q) Proof(
+  1 #> SubProof(
+    2 #> Assume(p),
+    3 #> (q)           by "premise",
+  ),
+  4 #> (p imply_: q)   by "imply_:i"(1),
+)

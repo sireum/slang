@@ -38,8 +38,6 @@ import org.sireum._
   'RecordTrait
   'RecordClass
   'Sig
-  'RichTrait
-  'RichClass
   'Method
   'Block
 }

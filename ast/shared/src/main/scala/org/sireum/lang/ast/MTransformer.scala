@@ -77,18 +77,6 @@ object MTransformer {
 
   val PostResultTopUnitTruthTableUnit: MOption[TopUnit] = MNone()
 
-  val PreResultMethodContractSimple: PreResult[MethodContract] = PreResult(T, MNone())
-
-  val PostResultMethodContractSimple: MOption[MethodContract] = MNone()
-
-  val PreResultMethodContractCases: PreResult[MethodContract] = PreResult(T, MNone())
-
-  val PostResultMethodContractCases: MOption[MethodContract] = MNone()
-
-  val PreResultMethodContractCase: PreResult[MethodContract.Case] = PreResult(T, MNone())
-
-  val PostResultMethodContractCase: MOption[MethodContract.Case] = MNone()
-
   val PreResultStmtImport: PreResult[Stmt] = PreResult(T, MNone())
 
   val PostResultStmtImport: MOption[Stmt] = MNone()
@@ -189,21 +177,97 @@ object MTransformer {
 
   val PostResultStmtReturn: MOption[Stmt] = MNone()
 
-  val PreResultStmtLStmt: PreResult[Stmt] = PreResult(T, MNone())
-
-  val PostResultStmtLStmt: MOption[Stmt] = MNone()
-
   val PreResultStmtExpr: PreResult[Stmt] = PreResult(T, MNone())
 
   val PostResultStmtExpr: MOption[Stmt] = MNone()
 
-  val PreResultLClauseSequent: PreResult[LClause] = PreResult(T, MNone())
+  val PreResultStmtFact: PreResult[Stmt.Spec] = PreResult(T, MNone())
 
-  val PostResultLClauseSequent: MOption[LClause] = MNone()
+  val PostResultStmtFact: MOption[Stmt.Spec] = MNone()
 
-  val PreResultLClauseProof: PreResult[LClause] = PreResult(T, MNone())
+  val PreResultStmtInvariant: PreResult[Stmt.Spec] = PreResult(T, MNone())
 
-  val PostResultLClauseProof: MOption[LClause] = MNone()
+  val PostResultStmtInvariant: MOption[Stmt.Spec] = MNone()
+
+  val PreResultStmtTheorem: PreResult[Stmt.Spec] = PreResult(T, MNone())
+
+  val PostResultStmtTheorem: MOption[Stmt.Spec] = MNone()
+
+  val PreResultStmtSpecLabel: PreResult[Stmt.Spec] = PreResult(T, MNone())
+
+  val PostResultStmtSpecLabel: MOption[Stmt.Spec] = MNone()
+
+  val PreResultStmtSpecBlock: PreResult[Stmt.Spec] = PreResult(T, MNone())
+
+  val PostResultStmtSpecBlock: MOption[Stmt.Spec] = MNone()
+
+  val PreResultStmtDeduce: PreResult[Stmt.Spec] = PreResult(T, MNone())
+
+  val PostResultStmtDeduce: MOption[Stmt.Spec] = MNone()
+
+  val PreResultStmtDeduceSteps: PreResult[Stmt.Spec] = PreResult(T, MNone())
+
+  val PostResultStmtDeduceSteps: MOption[Stmt.Spec] = MNone()
+
+  val PreResultMethodContractSimple: PreResult[MethodContract] = PreResult(T, MNone())
+
+  val PostResultMethodContractSimple: MOption[MethodContract] = MNone()
+
+  val PreResultMethodContractCases: PreResult[MethodContract] = PreResult(T, MNone())
+
+  val PostResultMethodContractCases: MOption[MethodContract] = MNone()
+
+  val PreResultMethodContractCase: PreResult[MethodContract.Case] = PreResult(T, MNone())
+
+  val PostResultMethodContractCase: MOption[MethodContract.Case] = MNone()
+
+  val PreResultSequent: PreResult[Sequent] = PreResult(T, MNone())
+
+  val PostResultSequent: MOption[Sequent] = MNone()
+
+  val PreResultProof: PreResult[Proof] = PreResult(T, MNone())
+
+  val PostResultProof: MOption[Proof] = MNone()
+
+  val PreResultProofStepRegular: PreResult[Proof.Step] = PreResult(T, MNone())
+
+  val PostResultProofStepRegular: MOption[Proof.Step] = MNone()
+
+  val PreResultProofStepAssume: PreResult[Proof.Step] = PreResult(T, MNone())
+
+  val PostResultProofStepAssume: MOption[Proof.Step] = MNone()
+
+  val PreResultProofStepAssert: PreResult[Proof.Step] = PreResult(T, MNone())
+
+  val PostResultProofStepAssert: MOption[Proof.Step] = MNone()
+
+  val PreResultProofStepSubProof: PreResult[Proof.Step] = PreResult(T, MNone())
+
+  val PostResultProofStepSubProof: MOption[Proof.Step] = MNone()
+
+  val PreResultProofStepLet: PreResult[Proof.Step] = PreResult(T, MNone())
+
+  val PostResultProofStepLet: MOption[Proof.Step] = MNone()
+
+  val PreResultProofStepLetParam: PreResult[Proof.Step.Let.Param] = PreResult(T, MNone())
+
+  val PostResultProofStepLetParam: MOption[Proof.Step.Let.Param] = MNone()
+
+  val PreResultProofStepStructInduction: PreResult[Proof.Step] = PreResult(T, MNone())
+
+  val PostResultProofStepStructInduction: MOption[Proof.Step] = MNone()
+
+  val PreResultProofStepStructInductionMatchCase: PreResult[Proof.Step.StructInduction.MatchCase] = PreResult(T, MNone())
+
+  val PostResultProofStepStructInductionMatchCase: MOption[Proof.Step.StructInduction.MatchCase] = MNone()
+
+  val PreResultProofStepStructInductionMatchDefault: PreResult[Proof.Step.StructInduction.MatchDefault] = PreResult(T, MNone())
+
+  val PostResultProofStepStructInductionMatchDefault: MOption[Proof.Step.StructInduction.MatchDefault] = MNone()
+
+  val PreResultProofStepJustification: PreResult[Proof.Step.Justification] = PreResult(T, MNone())
+
+  val PostResultProofStepJustification: MOption[Proof.Step.Justification] = MNone()
 
   val PreResultCase: PreResult[Case] = PreResult(T, MNone())
 
@@ -349,9 +413,9 @@ object MTransformer {
 
   val PostResultExpForYield: MOption[Exp] = MNone()
 
-  val PreResultExpQuant: PreResult[Exp] = PreResult(T, MNone())
+  val PreResultExpQuant: PreResult[Exp.Spec] = PreResult(T, MNone())
 
-  val PostResultExpQuant: MOption[Exp] = MNone()
+  val PostResultExpQuant: MOption[Exp.Spec] = MNone()
 
   val PreResultNamedArg: PreResult[NamedArg] = PreResult(T, MNone())
 
@@ -368,6 +432,10 @@ object MTransformer {
   val PreResultDomainRange: PreResult[Domain] = PreResult(T, MNone())
 
   val PostResultDomainRange: MOption[Domain] = MNone()
+
+  val PreResultDomainEach: PreResult[Domain] = PreResult(T, MNone())
+
+  val PostResultDomainEach: MOption[Domain] = MNone()
 
   val PreResultId: PreResult[Id] = PreResult(T, MNone())
 
@@ -485,30 +553,6 @@ object MTransformer {
 
   val PostResultResolvedInfoLocalVar: MOption[ResolvedInfo] = MNone()
 
-  val PreResultProofStepBasic: PreResult[ProofStep] = PreResult(T, MNone())
-
-  val PostResultProofStepBasic: MOption[ProofStep] = MNone()
-
-  val PreResultProofStepSubProof: PreResult[ProofStep] = PreResult(T, MNone())
-
-  val PostResultProofStepSubProof: MOption[ProofStep] = MNone()
-
-  val PreResultAssumeProofStepRegular: PreResult[AssumeProofStep] = PreResult(T, MNone())
-
-  val PostResultAssumeProofStepRegular: MOption[AssumeProofStep] = MNone()
-
-  val PreResultAssumeProofStepForallIntroAps: PreResult[AssumeProofStep] = PreResult(T, MNone())
-
-  val PostResultAssumeProofStepForallIntroAps: MOption[AssumeProofStep] = MNone()
-
-  val PreResultAssumeProofStepExistsElimAps: PreResult[AssumeProofStep] = PreResult(T, MNone())
-
-  val PostResultAssumeProofStepExistsElimAps: MOption[AssumeProofStep] = MNone()
-
-  val PreResultJust: PreResult[Just] = PreResult(T, MNone())
-
-  val PostResultJust: MOption[Just] = MNone()
-
   val PreResultTruthTableRow: PreResult[TruthTable.Row] = PreResult(T, MNone())
 
   val PostResultTruthTableRow: MOption[TruthTable.Row] = MNone()
@@ -582,28 +626,57 @@ import MTransformer._
       case o: Stmt.DoWhile => return preStmtDoWhile(o)
       case o: Stmt.For => return preStmtFor(o)
       case o: Stmt.Return => return preStmtReturn(o)
-      case o: Stmt.LStmt => return preStmtLStmt(o)
       case o: Stmt.Expr => return preStmtExpr(o)
+      case o: Stmt.Fact =>
+        val r: PreResult[Stmt] = preStmtFact(o) match {
+         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
+        }
+        return r
+      case o: Stmt.Invariant =>
+        val r: PreResult[Stmt] = preStmtInvariant(o) match {
+         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
+        }
+        return r
+      case o: Stmt.Theorem =>
+        val r: PreResult[Stmt] = preStmtTheorem(o) match {
+         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
+        }
+        return r
+      case o: Stmt.SpecLabel =>
+        val r: PreResult[Stmt] = preStmtSpecLabel(o) match {
+         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
+        }
+        return r
+      case o: Stmt.SpecBlock =>
+        val r: PreResult[Stmt] = preStmtSpecBlock(o) match {
+         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
+        }
+        return r
+      case o: Stmt.Deduce =>
+        val r: PreResult[Stmt] = preStmtDeduce(o) match {
+         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
+        }
+        return r
+      case o: Stmt.DeduceSteps =>
+        val r: PreResult[Stmt] = preStmtDeduceSteps(o) match {
+         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
+        }
+        return r
     }
-  }
-
-  def preMethodContract(o: MethodContract): PreResult[MethodContract] = {
-    o match {
-      case o: MethodContract.Simple => return preMethodContractSimple(o)
-      case o: MethodContract.Cases => return preMethodContractCases(o)
-    }
-  }
-
-  def preMethodContractSimple(o: MethodContract.Simple): PreResult[MethodContract] = {
-    return PreResultMethodContractSimple
-  }
-
-  def preMethodContractCases(o: MethodContract.Cases): PreResult[MethodContract] = {
-    return PreResultMethodContractCases
-  }
-
-  def preMethodContractCase(o: MethodContract.Case): PreResult[MethodContract.Case] = {
-    return PreResultMethodContractCase
   }
 
   def preStmtImport(o: Stmt.Import): PreResult[Stmt] = {
@@ -739,12 +812,126 @@ import MTransformer._
     return PreResultStmtReturn
   }
 
-  def preStmtLStmt(o: Stmt.LStmt): PreResult[Stmt] = {
-    return PreResultStmtLStmt
-  }
-
   def preStmtExpr(o: Stmt.Expr): PreResult[Stmt] = {
     return PreResultStmtExpr
+  }
+
+  def preStmtSpec(o: Stmt.Spec): PreResult[Stmt.Spec] = {
+    o match {
+      case o: Stmt.Fact => return preStmtFact(o)
+      case o: Stmt.Invariant => return preStmtInvariant(o)
+      case o: Stmt.Theorem => return preStmtTheorem(o)
+      case o: Stmt.SpecLabel => return preStmtSpecLabel(o)
+      case o: Stmt.SpecBlock => return preStmtSpecBlock(o)
+      case o: Stmt.Deduce => return preStmtDeduce(o)
+      case o: Stmt.DeduceSteps => return preStmtDeduceSteps(o)
+    }
+  }
+
+  def preStmtFact(o: Stmt.Fact): PreResult[Stmt.Spec] = {
+    return PreResultStmtFact
+  }
+
+  def preStmtInvariant(o: Stmt.Invariant): PreResult[Stmt.Spec] = {
+    return PreResultStmtInvariant
+  }
+
+  def preStmtTheorem(o: Stmt.Theorem): PreResult[Stmt.Spec] = {
+    return PreResultStmtTheorem
+  }
+
+  def preStmtSpecLabel(o: Stmt.SpecLabel): PreResult[Stmt.Spec] = {
+    return PreResultStmtSpecLabel
+  }
+
+  def preStmtSpecBlock(o: Stmt.SpecBlock): PreResult[Stmt.Spec] = {
+    return PreResultStmtSpecBlock
+  }
+
+  def preStmtDeduce(o: Stmt.Deduce): PreResult[Stmt.Spec] = {
+    return PreResultStmtDeduce
+  }
+
+  def preStmtDeduceSteps(o: Stmt.DeduceSteps): PreResult[Stmt.Spec] = {
+    return PreResultStmtDeduceSteps
+  }
+
+  def preMethodContract(o: MethodContract): PreResult[MethodContract] = {
+    o match {
+      case o: MethodContract.Simple => return preMethodContractSimple(o)
+      case o: MethodContract.Cases => return preMethodContractCases(o)
+    }
+  }
+
+  def preMethodContractSimple(o: MethodContract.Simple): PreResult[MethodContract] = {
+    return PreResultMethodContractSimple
+  }
+
+  def preMethodContractCases(o: MethodContract.Cases): PreResult[MethodContract] = {
+    return PreResultMethodContractCases
+  }
+
+  def preMethodContractCase(o: MethodContract.Case): PreResult[MethodContract.Case] = {
+    return PreResultMethodContractCase
+  }
+
+  def preSequent(o: Sequent): PreResult[Sequent] = {
+    return PreResultSequent
+  }
+
+  def preProof(o: Proof): PreResult[Proof] = {
+    return PreResultProof
+  }
+
+  def preProofStep(o: Proof.Step): PreResult[Proof.Step] = {
+    o match {
+      case o: Proof.Step.Regular => return preProofStepRegular(o)
+      case o: Proof.Step.Assume => return preProofStepAssume(o)
+      case o: Proof.Step.Assert => return preProofStepAssert(o)
+      case o: Proof.Step.SubProof => return preProofStepSubProof(o)
+      case o: Proof.Step.Let => return preProofStepLet(o)
+      case o: Proof.Step.StructInduction => return preProofStepStructInduction(o)
+    }
+  }
+
+  def preProofStepRegular(o: Proof.Step.Regular): PreResult[Proof.Step] = {
+    return PreResultProofStepRegular
+  }
+
+  def preProofStepAssume(o: Proof.Step.Assume): PreResult[Proof.Step] = {
+    return PreResultProofStepAssume
+  }
+
+  def preProofStepAssert(o: Proof.Step.Assert): PreResult[Proof.Step] = {
+    return PreResultProofStepAssert
+  }
+
+  def preProofStepSubProof(o: Proof.Step.SubProof): PreResult[Proof.Step] = {
+    return PreResultProofStepSubProof
+  }
+
+  def preProofStepLet(o: Proof.Step.Let): PreResult[Proof.Step] = {
+    return PreResultProofStepLet
+  }
+
+  def preProofStepLetParam(o: Proof.Step.Let.Param): PreResult[Proof.Step.Let.Param] = {
+    return PreResultProofStepLetParam
+  }
+
+  def preProofStepStructInduction(o: Proof.Step.StructInduction): PreResult[Proof.Step] = {
+    return PreResultProofStepStructInduction
+  }
+
+  def preProofStepStructInductionMatchCase(o: Proof.Step.StructInduction.MatchCase): PreResult[Proof.Step.StructInduction.MatchCase] = {
+    return PreResultProofStepStructInductionMatchCase
+  }
+
+  def preProofStepStructInductionMatchDefault(o: Proof.Step.StructInduction.MatchDefault): PreResult[Proof.Step.StructInduction.MatchDefault] = {
+    return PreResultProofStepStructInductionMatchDefault
+  }
+
+  def preProofStepJustification(o: Proof.Step.Justification): PreResult[Proof.Step.Justification] = {
+    return PreResultProofStepJustification
   }
 
   def preAssignExp(o: AssignExp): PreResult[AssignExp] = {
@@ -785,21 +972,6 @@ import MTransformer._
         }
         return r
     }
-  }
-
-  def preLClause(o: LClause): PreResult[LClause] = {
-    o match {
-      case o: LClause.Sequent => return preLClauseSequent(o)
-      case o: LClause.Proof => return preLClauseProof(o)
-    }
-  }
-
-  def preLClauseSequent(o: LClause.Sequent): PreResult[LClause] = {
-    return PreResultLClauseSequent
-  }
-
-  def preLClauseProof(o: LClause.Proof): PreResult[LClause] = {
-    return PreResultLClauseProof
   }
 
   def preCase(o: Case): PreResult[Case] = {
@@ -908,7 +1080,13 @@ import MTransformer._
       case o: Exp.If => return preExpIf(o)
       case o: Exp.Fun => return preExpFun(o)
       case o: Exp.ForYield => return preExpForYield(o)
-      case o: Exp.Quant => return preExpQuant(o)
+      case o: Exp.Quant =>
+        val r: PreResult[Exp] = preExpQuant(o) match {
+         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
+        }
+        return r
     }
   }
 
@@ -1073,7 +1251,13 @@ import MTransformer._
     return PreResultExpForYield
   }
 
-  def preExpQuant(o: Exp.Quant): PreResult[Exp] = {
+  def preExpSpec(o: Exp.Spec): PreResult[Exp.Spec] = {
+    o match {
+      case o: Exp.Quant => return preExpQuant(o)
+    }
+  }
+
+  def preExpQuant(o: Exp.Quant): PreResult[Exp.Spec] = {
     return PreResultExpQuant
   }
 
@@ -1089,6 +1273,7 @@ import MTransformer._
     o match {
       case o: Domain.Type => return preDomainType(o)
       case o: Domain.Range => return preDomainRange(o)
+      case o: Domain.Each => return preDomainEach(o)
     }
   }
 
@@ -1098,6 +1283,10 @@ import MTransformer._
 
   def preDomainRange(o: Domain.Range): PreResult[Domain] = {
     return PreResultDomainRange
+  }
+
+  def preDomainEach(o: Domain.Each): PreResult[Domain] = {
+    return PreResultDomainEach
   }
 
   def preId(o: Id): PreResult[Id] = {
@@ -1245,45 +1434,6 @@ import MTransformer._
     return PreResultResolvedInfoLocalVar
   }
 
-  def preProofStep(o: ProofStep): PreResult[ProofStep] = {
-    o match {
-      case o: ProofStep.Basic => return preProofStepBasic(o)
-      case o: ProofStep.SubProof => return preProofStepSubProof(o)
-    }
-  }
-
-  def preProofStepBasic(o: ProofStep.Basic): PreResult[ProofStep] = {
-    return PreResultProofStepBasic
-  }
-
-  def preProofStepSubProof(o: ProofStep.SubProof): PreResult[ProofStep] = {
-    return PreResultProofStepSubProof
-  }
-
-  def preAssumeProofStep(o: AssumeProofStep): PreResult[AssumeProofStep] = {
-    o match {
-      case o: AssumeProofStep.Regular => return preAssumeProofStepRegular(o)
-      case o: AssumeProofStep.ForallIntroAps => return preAssumeProofStepForallIntroAps(o)
-      case o: AssumeProofStep.ExistsElimAps => return preAssumeProofStepExistsElimAps(o)
-    }
-  }
-
-  def preAssumeProofStepRegular(o: AssumeProofStep.Regular): PreResult[AssumeProofStep] = {
-    return PreResultAssumeProofStepRegular
-  }
-
-  def preAssumeProofStepForallIntroAps(o: AssumeProofStep.ForallIntroAps): PreResult[AssumeProofStep] = {
-    return PreResultAssumeProofStepForallIntroAps
-  }
-
-  def preAssumeProofStepExistsElimAps(o: AssumeProofStep.ExistsElimAps): PreResult[AssumeProofStep] = {
-    return PreResultAssumeProofStepExistsElimAps
-  }
-
-  def preJust(o: Just): PreResult[Just] = {
-    return PreResultJust
-  }
-
   def preTruthTableRow(o: TruthTable.Row): PreResult[TruthTable.Row] = {
     return PreResultTruthTableRow
   }
@@ -1360,28 +1510,57 @@ import MTransformer._
       case o: Stmt.DoWhile => return postStmtDoWhile(o)
       case o: Stmt.For => return postStmtFor(o)
       case o: Stmt.Return => return postStmtReturn(o)
-      case o: Stmt.LStmt => return postStmtLStmt(o)
       case o: Stmt.Expr => return postStmtExpr(o)
+      case o: Stmt.Fact =>
+        val r: MOption[Stmt] = postStmtFact(o) match {
+         case MSome(result: Stmt) => MSome[Stmt](result)
+         case MSome(_) => halt("Can only produce object of type Stmt")
+         case _ => MNone[Stmt]()
+        }
+        return r
+      case o: Stmt.Invariant =>
+        val r: MOption[Stmt] = postStmtInvariant(o) match {
+         case MSome(result: Stmt) => MSome[Stmt](result)
+         case MSome(_) => halt("Can only produce object of type Stmt")
+         case _ => MNone[Stmt]()
+        }
+        return r
+      case o: Stmt.Theorem =>
+        val r: MOption[Stmt] = postStmtTheorem(o) match {
+         case MSome(result: Stmt) => MSome[Stmt](result)
+         case MSome(_) => halt("Can only produce object of type Stmt")
+         case _ => MNone[Stmt]()
+        }
+        return r
+      case o: Stmt.SpecLabel =>
+        val r: MOption[Stmt] = postStmtSpecLabel(o) match {
+         case MSome(result: Stmt) => MSome[Stmt](result)
+         case MSome(_) => halt("Can only produce object of type Stmt")
+         case _ => MNone[Stmt]()
+        }
+        return r
+      case o: Stmt.SpecBlock =>
+        val r: MOption[Stmt] = postStmtSpecBlock(o) match {
+         case MSome(result: Stmt) => MSome[Stmt](result)
+         case MSome(_) => halt("Can only produce object of type Stmt")
+         case _ => MNone[Stmt]()
+        }
+        return r
+      case o: Stmt.Deduce =>
+        val r: MOption[Stmt] = postStmtDeduce(o) match {
+         case MSome(result: Stmt) => MSome[Stmt](result)
+         case MSome(_) => halt("Can only produce object of type Stmt")
+         case _ => MNone[Stmt]()
+        }
+        return r
+      case o: Stmt.DeduceSteps =>
+        val r: MOption[Stmt] = postStmtDeduceSteps(o) match {
+         case MSome(result: Stmt) => MSome[Stmt](result)
+         case MSome(_) => halt("Can only produce object of type Stmt")
+         case _ => MNone[Stmt]()
+        }
+        return r
     }
-  }
-
-  def postMethodContract(o: MethodContract): MOption[MethodContract] = {
-    o match {
-      case o: MethodContract.Simple => return postMethodContractSimple(o)
-      case o: MethodContract.Cases => return postMethodContractCases(o)
-    }
-  }
-
-  def postMethodContractSimple(o: MethodContract.Simple): MOption[MethodContract] = {
-    return PostResultMethodContractSimple
-  }
-
-  def postMethodContractCases(o: MethodContract.Cases): MOption[MethodContract] = {
-    return PostResultMethodContractCases
-  }
-
-  def postMethodContractCase(o: MethodContract.Case): MOption[MethodContract.Case] = {
-    return PostResultMethodContractCase
   }
 
   def postStmtImport(o: Stmt.Import): MOption[Stmt] = {
@@ -1517,12 +1696,126 @@ import MTransformer._
     return PostResultStmtReturn
   }
 
-  def postStmtLStmt(o: Stmt.LStmt): MOption[Stmt] = {
-    return PostResultStmtLStmt
-  }
-
   def postStmtExpr(o: Stmt.Expr): MOption[Stmt] = {
     return PostResultStmtExpr
+  }
+
+  def postStmtSpec(o: Stmt.Spec): MOption[Stmt.Spec] = {
+    o match {
+      case o: Stmt.Fact => return postStmtFact(o)
+      case o: Stmt.Invariant => return postStmtInvariant(o)
+      case o: Stmt.Theorem => return postStmtTheorem(o)
+      case o: Stmt.SpecLabel => return postStmtSpecLabel(o)
+      case o: Stmt.SpecBlock => return postStmtSpecBlock(o)
+      case o: Stmt.Deduce => return postStmtDeduce(o)
+      case o: Stmt.DeduceSteps => return postStmtDeduceSteps(o)
+    }
+  }
+
+  def postStmtFact(o: Stmt.Fact): MOption[Stmt.Spec] = {
+    return PostResultStmtFact
+  }
+
+  def postStmtInvariant(o: Stmt.Invariant): MOption[Stmt.Spec] = {
+    return PostResultStmtInvariant
+  }
+
+  def postStmtTheorem(o: Stmt.Theorem): MOption[Stmt.Spec] = {
+    return PostResultStmtTheorem
+  }
+
+  def postStmtSpecLabel(o: Stmt.SpecLabel): MOption[Stmt.Spec] = {
+    return PostResultStmtSpecLabel
+  }
+
+  def postStmtSpecBlock(o: Stmt.SpecBlock): MOption[Stmt.Spec] = {
+    return PostResultStmtSpecBlock
+  }
+
+  def postStmtDeduce(o: Stmt.Deduce): MOption[Stmt.Spec] = {
+    return PostResultStmtDeduce
+  }
+
+  def postStmtDeduceSteps(o: Stmt.DeduceSteps): MOption[Stmt.Spec] = {
+    return PostResultStmtDeduceSteps
+  }
+
+  def postMethodContract(o: MethodContract): MOption[MethodContract] = {
+    o match {
+      case o: MethodContract.Simple => return postMethodContractSimple(o)
+      case o: MethodContract.Cases => return postMethodContractCases(o)
+    }
+  }
+
+  def postMethodContractSimple(o: MethodContract.Simple): MOption[MethodContract] = {
+    return PostResultMethodContractSimple
+  }
+
+  def postMethodContractCases(o: MethodContract.Cases): MOption[MethodContract] = {
+    return PostResultMethodContractCases
+  }
+
+  def postMethodContractCase(o: MethodContract.Case): MOption[MethodContract.Case] = {
+    return PostResultMethodContractCase
+  }
+
+  def postSequent(o: Sequent): MOption[Sequent] = {
+    return PostResultSequent
+  }
+
+  def postProof(o: Proof): MOption[Proof] = {
+    return PostResultProof
+  }
+
+  def postProofStep(o: Proof.Step): MOption[Proof.Step] = {
+    o match {
+      case o: Proof.Step.Regular => return postProofStepRegular(o)
+      case o: Proof.Step.Assume => return postProofStepAssume(o)
+      case o: Proof.Step.Assert => return postProofStepAssert(o)
+      case o: Proof.Step.SubProof => return postProofStepSubProof(o)
+      case o: Proof.Step.Let => return postProofStepLet(o)
+      case o: Proof.Step.StructInduction => return postProofStepStructInduction(o)
+    }
+  }
+
+  def postProofStepRegular(o: Proof.Step.Regular): MOption[Proof.Step] = {
+    return PostResultProofStepRegular
+  }
+
+  def postProofStepAssume(o: Proof.Step.Assume): MOption[Proof.Step] = {
+    return PostResultProofStepAssume
+  }
+
+  def postProofStepAssert(o: Proof.Step.Assert): MOption[Proof.Step] = {
+    return PostResultProofStepAssert
+  }
+
+  def postProofStepSubProof(o: Proof.Step.SubProof): MOption[Proof.Step] = {
+    return PostResultProofStepSubProof
+  }
+
+  def postProofStepLet(o: Proof.Step.Let): MOption[Proof.Step] = {
+    return PostResultProofStepLet
+  }
+
+  def postProofStepLetParam(o: Proof.Step.Let.Param): MOption[Proof.Step.Let.Param] = {
+    return PostResultProofStepLetParam
+  }
+
+  def postProofStepStructInduction(o: Proof.Step.StructInduction): MOption[Proof.Step] = {
+    return PostResultProofStepStructInduction
+  }
+
+  def postProofStepStructInductionMatchCase(o: Proof.Step.StructInduction.MatchCase): MOption[Proof.Step.StructInduction.MatchCase] = {
+    return PostResultProofStepStructInductionMatchCase
+  }
+
+  def postProofStepStructInductionMatchDefault(o: Proof.Step.StructInduction.MatchDefault): MOption[Proof.Step.StructInduction.MatchDefault] = {
+    return PostResultProofStepStructInductionMatchDefault
+  }
+
+  def postProofStepJustification(o: Proof.Step.Justification): MOption[Proof.Step.Justification] = {
+    return PostResultProofStepJustification
   }
 
   def postAssignExp(o: AssignExp): MOption[AssignExp] = {
@@ -1563,21 +1856,6 @@ import MTransformer._
         }
         return r
     }
-  }
-
-  def postLClause(o: LClause): MOption[LClause] = {
-    o match {
-      case o: LClause.Sequent => return postLClauseSequent(o)
-      case o: LClause.Proof => return postLClauseProof(o)
-    }
-  }
-
-  def postLClauseSequent(o: LClause.Sequent): MOption[LClause] = {
-    return PostResultLClauseSequent
-  }
-
-  def postLClauseProof(o: LClause.Proof): MOption[LClause] = {
-    return PostResultLClauseProof
   }
 
   def postCase(o: Case): MOption[Case] = {
@@ -1686,7 +1964,13 @@ import MTransformer._
       case o: Exp.If => return postExpIf(o)
       case o: Exp.Fun => return postExpFun(o)
       case o: Exp.ForYield => return postExpForYield(o)
-      case o: Exp.Quant => return postExpQuant(o)
+      case o: Exp.Quant =>
+        val r: MOption[Exp] = postExpQuant(o) match {
+         case MSome(result: Exp) => MSome[Exp](result)
+         case MSome(_) => halt("Can only produce object of type Exp")
+         case _ => MNone[Exp]()
+        }
+        return r
     }
   }
 
@@ -1851,7 +2135,13 @@ import MTransformer._
     return PostResultExpForYield
   }
 
-  def postExpQuant(o: Exp.Quant): MOption[Exp] = {
+  def postExpSpec(o: Exp.Spec): MOption[Exp.Spec] = {
+    o match {
+      case o: Exp.Quant => return postExpQuant(o)
+    }
+  }
+
+  def postExpQuant(o: Exp.Quant): MOption[Exp.Spec] = {
     return PostResultExpQuant
   }
 
@@ -1867,6 +2157,7 @@ import MTransformer._
     o match {
       case o: Domain.Type => return postDomainType(o)
       case o: Domain.Range => return postDomainRange(o)
+      case o: Domain.Each => return postDomainEach(o)
     }
   }
 
@@ -1876,6 +2167,10 @@ import MTransformer._
 
   def postDomainRange(o: Domain.Range): MOption[Domain] = {
     return PostResultDomainRange
+  }
+
+  def postDomainEach(o: Domain.Each): MOption[Domain] = {
+    return PostResultDomainEach
   }
 
   def postId(o: Id): MOption[Id] = {
@@ -2023,45 +2318,6 @@ import MTransformer._
     return PostResultResolvedInfoLocalVar
   }
 
-  def postProofStep(o: ProofStep): MOption[ProofStep] = {
-    o match {
-      case o: ProofStep.Basic => return postProofStepBasic(o)
-      case o: ProofStep.SubProof => return postProofStepSubProof(o)
-    }
-  }
-
-  def postProofStepBasic(o: ProofStep.Basic): MOption[ProofStep] = {
-    return PostResultProofStepBasic
-  }
-
-  def postProofStepSubProof(o: ProofStep.SubProof): MOption[ProofStep] = {
-    return PostResultProofStepSubProof
-  }
-
-  def postAssumeProofStep(o: AssumeProofStep): MOption[AssumeProofStep] = {
-    o match {
-      case o: AssumeProofStep.Regular => return postAssumeProofStepRegular(o)
-      case o: AssumeProofStep.ForallIntroAps => return postAssumeProofStepForallIntroAps(o)
-      case o: AssumeProofStep.ExistsElimAps => return postAssumeProofStepExistsElimAps(o)
-    }
-  }
-
-  def postAssumeProofStepRegular(o: AssumeProofStep.Regular): MOption[AssumeProofStep] = {
-    return PostResultAssumeProofStepRegular
-  }
-
-  def postAssumeProofStepForallIntroAps(o: AssumeProofStep.ForallIntroAps): MOption[AssumeProofStep] = {
-    return PostResultAssumeProofStepForallIntroAps
-  }
-
-  def postAssumeProofStepExistsElimAps(o: AssumeProofStep.ExistsElimAps): MOption[AssumeProofStep] = {
-    return PostResultAssumeProofStepExistsElimAps
-  }
-
-  def postJust(o: Just): MOption[Just] = {
-    return PostResultJust
-  }
-
   def postTruthTableRow(o: TruthTable.Row): MOption[TruthTable.Row] = {
     return PostResultTruthTableRow
   }
@@ -2109,14 +2365,14 @@ import MTransformer._
           else
             MNone()
         case o2: TopUnit.SequentUnit =>
-          val r0: MOption[LClause.Sequent] = transformLClauseSequent(o2.sequent)
+          val r0: MOption[Sequent] = transformSequent(o2.sequent)
           if (hasChanged || r0.nonEmpty)
             MSome(o2(sequent = r0.getOrElse(o2.sequent)))
           else
             MNone()
         case o2: TopUnit.TruthTableUnit =>
           val r0: MOption[IS[Z, Id]] = transformISZ(o2.vars, transformId _)
-          val r1: MOption[LClause.Sequent] = transformLClauseSequent(o2.sequent)
+          val r1: MOption[Sequent] = transformSequent(o2.sequent)
           val r2: MOption[IS[Z, TruthTable.Row]] = transformISZ(o2.rows, transformTruthTableRow _)
           val r3: MOption[Option[TruthTable.Conclusion]] = transformOption(o2.conclusionOpt, transformTruthTableConclusion _)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
@@ -2327,18 +2583,64 @@ import MTransformer._
             MSome(o2(expOpt = r0.getOrElse(o2.expOpt), attr = r1.getOrElse(o2.attr)))
           else
             MNone()
-        case o2: Stmt.LStmt =>
-          val r0: MOption[LClause] = transformLClause(o2.clause)
-          val r1: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(clause = r0.getOrElse(o2.clause), attr = r1.getOrElse(o2.attr)))
-          else
-            MNone()
         case o2: Stmt.Expr =>
           val r0: MOption[Exp] = transformExp(o2.exp)
           val r1: MOption[TypedAttr] = transformTypedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
             MSome(o2(exp = r0.getOrElse(o2.exp), attr = r1.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Stmt.Fact =>
+          val r0: MOption[Id] = transformId(o2.id)
+          val r1: MOption[IS[Z, TypeParam]] = transformISZ(o2.typeArgs, transformTypeParam _)
+          val r2: MOption[IS[Z, Exp]] = transformISZ(o2.claims, transformExp _)
+          val r3: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id), typeArgs = r1.getOrElse(o2.typeArgs), claims = r2.getOrElse(o2.claims), attr = r3.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Stmt.Invariant =>
+          val r0: MOption[Id] = transformId(o2.id)
+          val r1: MOption[IS[Z, Exp]] = transformISZ(o2.claims, transformExp _)
+          val r2: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id), claims = r1.getOrElse(o2.claims), attr = r2.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Stmt.Theorem =>
+          val r0: MOption[Id] = transformId(o2.id)
+          val r1: MOption[IS[Z, TypeParam]] = transformISZ(o2.typeArgs, transformTypeParam _)
+          val r2: MOption[Exp] = transformExp(o2.claim)
+          val r3: MOption[Proof] = transformProof(o2.proof)
+          val r4: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id), typeArgs = r1.getOrElse(o2.typeArgs), claim = r2.getOrElse(o2.claim), proof = r3.getOrElse(o2.proof), attr = r4.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Stmt.SpecLabel =>
+          val r0: MOption[Id] = transformId(o2.id)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id)))
+          else
+            MNone()
+        case o2: Stmt.SpecBlock =>
+          val r0: MOption[Stmt.Block] = transformStmtBlock(o2.block)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(block = r0.getOrElse(o2.block)))
+          else
+            MNone()
+        case o2: Stmt.Deduce =>
+          val r0: MOption[IS[Z, Sequent]] = transformISZ(o2.sequents, transformSequent _)
+          val r1: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(sequents = r0.getOrElse(o2.sequents), attr = r1.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Stmt.DeduceSteps =>
+          val r0: MOption[IS[Z, Proof.Step]] = transformISZ(o2.steps, transformProofStep _)
+          val r1: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(steps = r0.getOrElse(o2.steps), attr = r1.getOrElse(o2.attr)))
           else
             MNone()
       }
@@ -2351,76 +2653,6 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Stmt = r.getOrElse(o)
     val postR: MOption[Stmt] = postStmt(o2)
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
-  def transformMethodContract(o: MethodContract): MOption[MethodContract] = {
-    val preR: PreResult[MethodContract] = preMethodContract(o)
-    val r: MOption[MethodContract] = if (preR.continu) {
-      val o2: MethodContract = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val rOpt: MOption[MethodContract] = o2 match {
-        case o2: MethodContract.Simple =>
-          val r0: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.reads, transformExpIdent _)
-          val r1: MOption[IS[Z, Exp]] = transformISZ(o2.requires, transformExp _)
-          val r2: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.modifies, transformExpIdent _)
-          val r3: MOption[IS[Z, Exp]] = transformISZ(o2.ensures, transformExp _)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-            MSome(o2(reads = r0.getOrElse(o2.reads), requires = r1.getOrElse(o2.requires), modifies = r2.getOrElse(o2.modifies), ensures = r3.getOrElse(o2.ensures)))
-          else
-            MNone()
-        case o2: MethodContract.Cases =>
-          val r0: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.reads, transformExpIdent _)
-          val r1: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.modifies, transformExpIdent _)
-          val r2: MOption[IS[Z, MethodContract.Case]] = transformISZ(o2.cases, transformMethodContractCase _)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(reads = r0.getOrElse(o2.reads), modifies = r1.getOrElse(o2.modifies), cases = r2.getOrElse(o2.cases)))
-          else
-            MNone()
-      }
-      rOpt
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: MethodContract = r.getOrElse(o)
-    val postR: MOption[MethodContract] = postMethodContract(o2)
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
-  def transformMethodContractCase(o: MethodContract.Case): MOption[MethodContract.Case] = {
-    val preR: PreResult[MethodContract.Case] = preMethodContractCase(o)
-    val r: MOption[MethodContract.Case] = if (preR.continu) {
-      val o2: MethodContract.Case = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[IS[Z, Exp]] = transformISZ(o2.requires, transformExp _)
-      val r1: MOption[IS[Z, Exp]] = transformISZ(o2.ensures, transformExp _)
-      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-        MSome(o2(requires = r0.getOrElse(o2.requires), ensures = r1.getOrElse(o2.ensures)))
-      else
-        MNone()
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: MethodContract.Case = r.getOrElse(o)
-    val postR: MOption[MethodContract.Case] = postMethodContractCase(o2)
     if (postR.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -2577,6 +2809,398 @@ import MTransformer._
     }
   }
 
+  def transformStmtSpec(o: Stmt.Spec): MOption[Stmt.Spec] = {
+    val preR: PreResult[Stmt.Spec] = preStmtSpec(o)
+    val r: MOption[Stmt.Spec] = if (preR.continu) {
+      val o2: Stmt.Spec = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: MOption[Stmt.Spec] = o2 match {
+        case o2: Stmt.Fact =>
+          val r0: MOption[Id] = transformId(o2.id)
+          val r1: MOption[IS[Z, TypeParam]] = transformISZ(o2.typeArgs, transformTypeParam _)
+          val r2: MOption[IS[Z, Exp]] = transformISZ(o2.claims, transformExp _)
+          val r3: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id), typeArgs = r1.getOrElse(o2.typeArgs), claims = r2.getOrElse(o2.claims), attr = r3.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Stmt.Invariant =>
+          val r0: MOption[Id] = transformId(o2.id)
+          val r1: MOption[IS[Z, Exp]] = transformISZ(o2.claims, transformExp _)
+          val r2: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id), claims = r1.getOrElse(o2.claims), attr = r2.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Stmt.Theorem =>
+          val r0: MOption[Id] = transformId(o2.id)
+          val r1: MOption[IS[Z, TypeParam]] = transformISZ(o2.typeArgs, transformTypeParam _)
+          val r2: MOption[Exp] = transformExp(o2.claim)
+          val r3: MOption[Proof] = transformProof(o2.proof)
+          val r4: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id), typeArgs = r1.getOrElse(o2.typeArgs), claim = r2.getOrElse(o2.claim), proof = r3.getOrElse(o2.proof), attr = r4.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Stmt.SpecLabel =>
+          val r0: MOption[Id] = transformId(o2.id)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id)))
+          else
+            MNone()
+        case o2: Stmt.SpecBlock =>
+          val r0: MOption[Stmt.Block] = transformStmtBlock(o2.block)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(block = r0.getOrElse(o2.block)))
+          else
+            MNone()
+        case o2: Stmt.Deduce =>
+          val r0: MOption[IS[Z, Sequent]] = transformISZ(o2.sequents, transformSequent _)
+          val r1: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(sequents = r0.getOrElse(o2.sequents), attr = r1.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Stmt.DeduceSteps =>
+          val r0: MOption[IS[Z, Proof.Step]] = transformISZ(o2.steps, transformProofStep _)
+          val r1: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(steps = r0.getOrElse(o2.steps), attr = r1.getOrElse(o2.attr)))
+          else
+            MNone()
+      }
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Stmt.Spec = r.getOrElse(o)
+    val postR: MOption[Stmt.Spec] = postStmtSpec(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformMethodContract(o: MethodContract): MOption[MethodContract] = {
+    val preR: PreResult[MethodContract] = preMethodContract(o)
+    val r: MOption[MethodContract] = if (preR.continu) {
+      val o2: MethodContract = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: MOption[MethodContract] = o2 match {
+        case o2: MethodContract.Simple =>
+          val r0: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.reads, transformExpIdent _)
+          val r1: MOption[IS[Z, Exp]] = transformISZ(o2.requires, transformExp _)
+          val r2: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.modifies, transformExpIdent _)
+          val r3: MOption[IS[Z, Exp]] = transformISZ(o2.ensures, transformExp _)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+            MSome(o2(reads = r0.getOrElse(o2.reads), requires = r1.getOrElse(o2.requires), modifies = r2.getOrElse(o2.modifies), ensures = r3.getOrElse(o2.ensures)))
+          else
+            MNone()
+        case o2: MethodContract.Cases =>
+          val r0: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.reads, transformExpIdent _)
+          val r1: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.modifies, transformExpIdent _)
+          val r2: MOption[IS[Z, MethodContract.Case]] = transformISZ(o2.cases, transformMethodContractCase _)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(reads = r0.getOrElse(o2.reads), modifies = r1.getOrElse(o2.modifies), cases = r2.getOrElse(o2.cases)))
+          else
+            MNone()
+      }
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: MethodContract = r.getOrElse(o)
+    val postR: MOption[MethodContract] = postMethodContract(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformMethodContractCase(o: MethodContract.Case): MOption[MethodContract.Case] = {
+    val preR: PreResult[MethodContract.Case] = preMethodContractCase(o)
+    val r: MOption[MethodContract.Case] = if (preR.continu) {
+      val o2: MethodContract.Case = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[IS[Z, Exp]] = transformISZ(o2.requires, transformExp _)
+      val r1: MOption[IS[Z, Exp]] = transformISZ(o2.ensures, transformExp _)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+        MSome(o2(requires = r0.getOrElse(o2.requires), ensures = r1.getOrElse(o2.ensures)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: MethodContract.Case = r.getOrElse(o)
+    val postR: MOption[MethodContract.Case] = postMethodContractCase(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformSequent(o: Sequent): MOption[Sequent] = {
+    val preR: PreResult[Sequent] = preSequent(o)
+    val r: MOption[Sequent] = if (preR.continu) {
+      val o2: Sequent = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[IS[Z, Exp]] = transformISZ(o2.premises, transformExp _)
+      val r1: MOption[Exp] = transformExp(o2.conclusion)
+      val r2: MOption[IS[Z, Proof.Step]] = transformISZ(o2.steps, transformProofStep _)
+      val r3: MOption[Attr] = transformAttr(o2.attr)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+        MSome(o2(premises = r0.getOrElse(o2.premises), conclusion = r1.getOrElse(o2.conclusion), steps = r2.getOrElse(o2.steps), attr = r3.getOrElse(o2.attr)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Sequent = r.getOrElse(o)
+    val postR: MOption[Sequent] = postSequent(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformProof(o: Proof): MOption[Proof] = {
+    val preR: PreResult[Proof] = preProof(o)
+    val r: MOption[Proof] = if (preR.continu) {
+      val o2: Proof = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[IS[Z, Proof.Step]] = transformISZ(o2.steps, transformProofStep _)
+      val r1: MOption[Attr] = transformAttr(o2.attr)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+        MSome(o2(steps = r0.getOrElse(o2.steps), attr = r1.getOrElse(o2.attr)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Proof = r.getOrElse(o)
+    val postR: MOption[Proof] = postProof(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformProofStep(o: Proof.Step): MOption[Proof.Step] = {
+    val preR: PreResult[Proof.Step] = preProofStep(o)
+    val r: MOption[Proof.Step] = if (preR.continu) {
+      val o2: Proof.Step = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: MOption[Proof.Step] = o2 match {
+        case o2: Proof.Step.Regular =>
+          val r0: MOption[Exp.LitZ] = transformExpLitZ(o2.no)
+          val r1: MOption[Exp] = transformExp(o2.claim)
+          val r2: MOption[Proof.Step.Justification] = transformProofStepJustification(o2.just)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(no = r0.getOrElse(o2.no), claim = r1.getOrElse(o2.claim), just = r2.getOrElse(o2.just)))
+          else
+            MNone()
+        case o2: Proof.Step.Assume =>
+          val r0: MOption[Exp.LitZ] = transformExpLitZ(o2.no)
+          val r1: MOption[Exp] = transformExp(o2.claim)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(no = r0.getOrElse(o2.no), claim = r1.getOrElse(o2.claim)))
+          else
+            MNone()
+        case o2: Proof.Step.Assert =>
+          val r0: MOption[Exp.LitZ] = transformExpLitZ(o2.no)
+          val r1: MOption[Exp] = transformExp(o2.claim)
+          val r2: MOption[IS[Z, Proof.Step]] = transformISZ(o2.steps, transformProofStep _)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(no = r0.getOrElse(o2.no), claim = r1.getOrElse(o2.claim), steps = r2.getOrElse(o2.steps)))
+          else
+            MNone()
+        case o2: Proof.Step.SubProof =>
+          val r0: MOption[Exp.LitZ] = transformExpLitZ(o2.no)
+          val r1: MOption[IS[Z, Proof.Step]] = transformISZ(o2.steps, transformProofStep _)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(no = r0.getOrElse(o2.no), steps = r1.getOrElse(o2.steps)))
+          else
+            MNone()
+        case o2: Proof.Step.Let =>
+          val r0: MOption[Exp.LitZ] = transformExpLitZ(o2.no)
+          val r1: MOption[IS[Z, Proof.Step.Let.Param]] = transformISZ(o2.params, transformProofStepLetParam _)
+          val r2: MOption[IS[Z, Proof.Step]] = transformISZ(o2.steps, transformProofStep _)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(no = r0.getOrElse(o2.no), params = r1.getOrElse(o2.params), steps = r2.getOrElse(o2.steps)))
+          else
+            MNone()
+        case o2: Proof.Step.StructInduction =>
+          val r0: MOption[Exp.LitZ] = transformExpLitZ(o2.no)
+          val r1: MOption[Exp] = transformExp(o2.claim)
+          val r2: MOption[Exp] = transformExp(o2.exp)
+          val r3: MOption[IS[Z, Proof.Step.StructInduction.MatchCase]] = transformISZ(o2.cases, transformProofStepStructInductionMatchCase _)
+          val r4: MOption[Option[Proof.Step.StructInduction.MatchDefault]] = transformOption(o2.defaultOpt, transformProofStepStructInductionMatchDefault _)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
+            MSome(o2(no = r0.getOrElse(o2.no), claim = r1.getOrElse(o2.claim), exp = r2.getOrElse(o2.exp), cases = r3.getOrElse(o2.cases), defaultOpt = r4.getOrElse(o2.defaultOpt)))
+          else
+            MNone()
+      }
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Proof.Step = r.getOrElse(o)
+    val postR: MOption[Proof.Step] = postProofStep(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformProofStepLetParam(o: Proof.Step.Let.Param): MOption[Proof.Step.Let.Param] = {
+    val preR: PreResult[Proof.Step.Let.Param] = preProofStepLetParam(o)
+    val r: MOption[Proof.Step.Let.Param] = if (preR.continu) {
+      val o2: Proof.Step.Let.Param = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[Id] = transformId(o2.id)
+      val r1: MOption[Option[Type]] = transformOption(o2.tipeOpt, transformType _)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+        MSome(o2(id = r0.getOrElse(o2.id), tipeOpt = r1.getOrElse(o2.tipeOpt)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Proof.Step.Let.Param = r.getOrElse(o)
+    val postR: MOption[Proof.Step.Let.Param] = postProofStepLetParam(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformProofStepStructInductionMatchCase(o: Proof.Step.StructInduction.MatchCase): MOption[Proof.Step.StructInduction.MatchCase] = {
+    val preR: PreResult[Proof.Step.StructInduction.MatchCase] = preProofStepStructInductionMatchCase(o)
+    val r: MOption[Proof.Step.StructInduction.MatchCase] = if (preR.continu) {
+      val o2: Proof.Step.StructInduction.MatchCase = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[Pattern.Structure] = transformPatternStructure(o2.pattern)
+      val r1: MOption[Option[Proof.Step.Assume]] = transformOption(o2.hypoOpt, transformProofStepAssume _)
+      val r2: MOption[IS[Z, Proof.Step]] = transformISZ(o2.steps, transformProofStep _)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+        MSome(o2(pattern = r0.getOrElse(o2.pattern), hypoOpt = r1.getOrElse(o2.hypoOpt), steps = r2.getOrElse(o2.steps)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Proof.Step.StructInduction.MatchCase = r.getOrElse(o)
+    val postR: MOption[Proof.Step.StructInduction.MatchCase] = postProofStepStructInductionMatchCase(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformProofStepStructInductionMatchDefault(o: Proof.Step.StructInduction.MatchDefault): MOption[Proof.Step.StructInduction.MatchDefault] = {
+    val preR: PreResult[Proof.Step.StructInduction.MatchDefault] = preProofStepStructInductionMatchDefault(o)
+    val r: MOption[Proof.Step.StructInduction.MatchDefault] = if (preR.continu) {
+      val o2: Proof.Step.StructInduction.MatchDefault = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[Option[Proof.Step.Assume]] = transformOption(o2.hypoOpt, transformProofStepAssume _)
+      val r1: MOption[IS[Z, Proof.Step]] = transformISZ(o2.steps, transformProofStep _)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+        MSome(o2(hypoOpt = r0.getOrElse(o2.hypoOpt), steps = r1.getOrElse(o2.steps)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Proof.Step.StructInduction.MatchDefault = r.getOrElse(o)
+    val postR: MOption[Proof.Step.StructInduction.MatchDefault] = postProofStepStructInductionMatchDefault(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformProofStepJustification(o: Proof.Step.Justification): MOption[Proof.Step.Justification] = {
+    val preR: PreResult[Proof.Step.Justification] = preProofStepJustification(o)
+    val r: MOption[Proof.Step.Justification] = if (preR.continu) {
+      val o2: Proof.Step.Justification = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[Id] = transformId(o2.id)
+      val r1: MOption[IS[Z, Exp]] = transformISZ(o2.args, transformExp _)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+        MSome(o2(id = r0.getOrElse(o2.id), args = r1.getOrElse(o2.args)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Proof.Step.Justification = r.getOrElse(o)
+    val postR: MOption[Proof.Step.Justification] = postProofStepJustification(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
   def transformAssignExp(o: AssignExp): MOption[AssignExp] = {
     val preR: PreResult[AssignExp] = preAssignExp(o)
     val r: MOption[AssignExp] = if (preR.continu) {
@@ -2631,45 +3255,6 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: AssignExp = r.getOrElse(o)
     val postR: MOption[AssignExp] = postAssignExp(o2)
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
-  def transformLClause(o: LClause): MOption[LClause] = {
-    val preR: PreResult[LClause] = preLClause(o)
-    val r: MOption[LClause] = if (preR.continu) {
-      val o2: LClause = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val rOpt: MOption[LClause] = o2 match {
-        case o2: LClause.Sequent =>
-          val r0: MOption[IS[Z, Exp]] = transformISZ(o2.premises, transformExp _)
-          val r1: MOption[IS[Z, Exp]] = transformISZ(o2.conclusions, transformExp _)
-          val r2: MOption[Option[LClause.Proof]] = transformOption(o2.proofOpt, transformLClauseProof _)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(premises = r0.getOrElse(o2.premises), conclusions = r1.getOrElse(o2.conclusions), proofOpt = r2.getOrElse(o2.proofOpt)))
-          else
-            MNone()
-        case o2: LClause.Proof =>
-          val r0: MOption[IS[Z, ProofStep]] = transformISZ(o2.steps, transformProofStep _)
-          if (hasChanged || r0.nonEmpty)
-            MSome(o2(steps = r0.getOrElse(o2.steps)))
-          else
-            MNone()
-      }
-      rOpt
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: LClause = r.getOrElse(o)
-    val postR: MOption[LClause] = postLClause(o2)
     if (postR.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -3223,6 +3808,39 @@ import MTransformer._
     }
   }
 
+  def transformExpSpec(o: Exp.Spec): MOption[Exp.Spec] = {
+    val preR: PreResult[Exp.Spec] = preExpSpec(o)
+    val r: MOption[Exp.Spec] = if (preR.continu) {
+      val o2: Exp.Spec = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: MOption[Exp.Spec] = o2 match {
+        case o2: Exp.Quant =>
+          val r0: MOption[IS[Z, VarFragment]] = transformISZ(o2.varFragments, transformVarFragment _)
+          val r1: MOption[Exp] = transformExp(o2.exp)
+          val r2: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(varFragments = r0.getOrElse(o2.varFragments), exp = r1.getOrElse(o2.exp), attr = r2.getOrElse(o2.attr)))
+          else
+            MNone()
+      }
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Exp.Spec = r.getOrElse(o)
+    val postR: MOption[Exp.Spec] = postExpSpec(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
   def transformNamedArg(o: NamedArg): MOption[NamedArg] = {
     val preR: PreResult[NamedArg] = preNamedArg(o)
     val r: MOption[NamedArg] = if (preR.continu) {
@@ -3256,10 +3874,10 @@ import MTransformer._
     val r: MOption[VarFragment] = if (preR.continu) {
       val o2: VarFragment = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[IS[Z, Id]] = transformISZ(o2.ids, transformId _)
+      val r0: MOption[Id] = transformId(o2.id)
       val r1: MOption[Option[Domain]] = transformOption(o2.domainOpt, transformDomain _)
       if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-        MSome(o2(ids = r0.getOrElse(o2.ids), domainOpt = r1.getOrElse(o2.domainOpt)))
+        MSome(o2(id = r0.getOrElse(o2.id), domainOpt = r1.getOrElse(o2.domainOpt)))
       else
         MNone()
     } else if (preR.resultOpt.nonEmpty) {
@@ -3298,6 +3916,13 @@ import MTransformer._
           val r2: MOption[TypedAttr] = transformTypedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
             MSome(o2(lo = r0.getOrElse(o2.lo), hi = r1.getOrElse(o2.hi), attr = r2.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Domain.Each =>
+          val r0: MOption[Exp] = transformExp(o2.exp)
+          val r1: MOption[TypedAttr] = transformTypedAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp), attr = r1.getOrElse(o2.attr)))
           else
             MNone()
       }
@@ -3749,122 +4374,6 @@ import MTransformer._
     }
   }
 
-  def transformProofStep(o: ProofStep): MOption[ProofStep] = {
-    val preR: PreResult[ProofStep] = preProofStep(o)
-    val r: MOption[ProofStep] = if (preR.continu) {
-      val o2: ProofStep = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val rOpt: MOption[ProofStep] = o2 match {
-        case o2: ProofStep.Basic =>
-          val r0: MOption[Exp.LitZ] = transformExpLitZ(o2.step)
-          val r1: MOption[Exp] = transformExp(o2.exp)
-          val r2: MOption[Just] = transformJust(o2.just)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(step = r0.getOrElse(o2.step), exp = r1.getOrElse(o2.exp), just = r2.getOrElse(o2.just)))
-          else
-            MNone()
-        case o2: ProofStep.SubProof =>
-          val r0: MOption[Exp.LitZ] = transformExpLitZ(o2.step)
-          val r1: MOption[AssumeProofStep] = transformAssumeProofStep(o2.assumeStep)
-          val r2: MOption[IS[Z, ProofStep]] = transformISZ(o2.steps, transformProofStep _)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(step = r0.getOrElse(o2.step), assumeStep = r1.getOrElse(o2.assumeStep), steps = r2.getOrElse(o2.steps)))
-          else
-            MNone()
-      }
-      rOpt
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: ProofStep = r.getOrElse(o)
-    val postR: MOption[ProofStep] = postProofStep(o2)
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
-  def transformAssumeProofStep(o: AssumeProofStep): MOption[AssumeProofStep] = {
-    val preR: PreResult[AssumeProofStep] = preAssumeProofStep(o)
-    val r: MOption[AssumeProofStep] = if (preR.continu) {
-      val o2: AssumeProofStep = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val rOpt: MOption[AssumeProofStep] = o2 match {
-        case o2: AssumeProofStep.Regular =>
-          val r0: MOption[Exp.LitZ] = transformExpLitZ(o2.step)
-          val r1: MOption[Exp] = transformExp(o2.exp)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(step = r0.getOrElse(o2.step), exp = r1.getOrElse(o2.exp)))
-          else
-            MNone()
-        case o2: AssumeProofStep.ForallIntroAps =>
-          val r0: MOption[Exp.LitZ] = transformExpLitZ(o2.step)
-          val r1: MOption[IS[Z, VarFragment]] = transformISZ(o2.varFragments, transformVarFragment _)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(step = r0.getOrElse(o2.step), varFragments = r1.getOrElse(o2.varFragments)))
-          else
-            MNone()
-        case o2: AssumeProofStep.ExistsElimAps =>
-          val r0: MOption[Exp.LitZ] = transformExpLitZ(o2.step)
-          val r1: MOption[IS[Z, VarFragment]] = transformISZ(o2.varFragments, transformVarFragment _)
-          val r2: MOption[Exp] = transformExp(o2.exp)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(step = r0.getOrElse(o2.step), varFragments = r1.getOrElse(o2.varFragments), exp = r2.getOrElse(o2.exp)))
-          else
-            MNone()
-      }
-      rOpt
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: AssumeProofStep = r.getOrElse(o)
-    val postR: MOption[AssumeProofStep] = postAssumeProofStep(o2)
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
-  def transformJust(o: Just): MOption[Just] = {
-    val preR: PreResult[Just] = preJust(o)
-    val r: MOption[Just] = if (preR.continu) {
-      val o2: Just = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[IS[Z, Exp]] = transformISZ(o2.args, transformExp _)
-      val r1: MOption[Attr] = transformAttr(o2.attr)
-      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-        MSome(o2(args = r0.getOrElse(o2.args), attr = r1.getOrElse(o2.attr)))
-      else
-        MNone()
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: Just = r.getOrElse(o)
-    val postR: MOption[Just] = postJust(o2)
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
   def transformTruthTableRow(o: TruthTable.Row): MOption[TruthTable.Row] = {
     val preR: PreResult[TruthTable.Row] = preTruthTableRow(o)
     val r: MOption[TruthTable.Row] = if (preR.continu) {
@@ -3973,78 +4482,6 @@ import MTransformer._
     }
   }
 
-  def transformLClauseProof(o: LClause.Proof): MOption[LClause.Proof] = {
-    val preR: PreResult[LClause.Proof] = preLClauseProof(o) match {
-     case PreResult(continu, MSome(r: LClause.Proof)) => PreResult(continu, MSome[LClause.Proof](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type LClause.Proof")
-     case PreResult(continu, _) => PreResult(continu, MNone[LClause.Proof]())
-    }
-    val r: MOption[LClause.Proof] = if (preR.continu) {
-      val o2: LClause.Proof = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[IS[Z, ProofStep]] = transformISZ(o2.steps, transformProofStep _)
-      if (hasChanged || r0.nonEmpty)
-        MSome(o2(steps = r0.getOrElse(o2.steps)))
-      else
-        MNone()
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: LClause.Proof = r.getOrElse(o)
-    val postR: MOption[LClause.Proof] = postLClauseProof(o2) match {
-     case MSome(result: LClause.Proof) => MSome[LClause.Proof](result)
-     case MSome(_) => halt("Can only produce object of type LClause.Proof")
-     case _ => MNone[LClause.Proof]()
-    }
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
-  def transformLClauseSequent(o: LClause.Sequent): MOption[LClause.Sequent] = {
-    val preR: PreResult[LClause.Sequent] = preLClauseSequent(o) match {
-     case PreResult(continu, MSome(r: LClause.Sequent)) => PreResult(continu, MSome[LClause.Sequent](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type LClause.Sequent")
-     case PreResult(continu, _) => PreResult(continu, MNone[LClause.Sequent]())
-    }
-    val r: MOption[LClause.Sequent] = if (preR.continu) {
-      val o2: LClause.Sequent = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[IS[Z, Exp]] = transformISZ(o2.premises, transformExp _)
-      val r1: MOption[IS[Z, Exp]] = transformISZ(o2.conclusions, transformExp _)
-      val r2: MOption[Option[LClause.Proof]] = transformOption(o2.proofOpt, transformLClauseProof _)
-      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-        MSome(o2(premises = r0.getOrElse(o2.premises), conclusions = r1.getOrElse(o2.conclusions), proofOpt = r2.getOrElse(o2.proofOpt)))
-      else
-        MNone()
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: LClause.Sequent = r.getOrElse(o)
-    val postR: MOption[LClause.Sequent] = postLClauseSequent(o2) match {
-     case MSome(result: LClause.Sequent) => MSome[LClause.Sequent](result)
-     case MSome(_) => halt("Can only produce object of type LClause.Sequent")
-     case _ => MNone[LClause.Sequent]()
-    }
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
   def transformTypeNamed(o: Type.Named): MOption[Type.Named] = {
     val preR: PreResult[Type.Named] = preTypeNamed(o) match {
      case PreResult(continu, MSome(r: Type.Named)) => PreResult(continu, MSome[Type.Named](r))
@@ -4108,6 +4545,151 @@ import MTransformer._
      case MSome(result: Exp.Ident) => MSome[Exp.Ident](result)
      case MSome(_) => halt("Can only produce object of type Exp.Ident")
      case _ => MNone[Exp.Ident]()
+    }
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformStmtBlock(o: Stmt.Block): MOption[Stmt.Block] = {
+    val preR: PreResult[Stmt.Block] = preStmtBlock(o) match {
+     case PreResult(continu, MSome(r: Stmt.Block)) => PreResult(continu, MSome[Stmt.Block](r))
+     case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt.Block")
+     case PreResult(continu, _) => PreResult(continu, MNone[Stmt.Block]())
+    }
+    val r: MOption[Stmt.Block] = if (preR.continu) {
+      val o2: Stmt.Block = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[Body] = transformBody(o2.body)
+      val r1: MOption[Attr] = transformAttr(o2.attr)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+        MSome(o2(body = r0.getOrElse(o2.body), attr = r1.getOrElse(o2.attr)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Stmt.Block = r.getOrElse(o)
+    val postR: MOption[Stmt.Block] = postStmtBlock(o2) match {
+     case MSome(result: Stmt.Block) => MSome[Stmt.Block](result)
+     case MSome(_) => halt("Can only produce object of type Stmt.Block")
+     case _ => MNone[Stmt.Block]()
+    }
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformExpLitZ(o: Exp.LitZ): MOption[Exp.LitZ] = {
+    val preR: PreResult[Exp.LitZ] = preExpLitZ(o) match {
+     case PreResult(continu, MSome(r: Exp.LitZ)) => PreResult(continu, MSome[Exp.LitZ](r))
+     case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp.LitZ")
+     case PreResult(continu, _) => PreResult(continu, MNone[Exp.LitZ]())
+    }
+    val r: MOption[Exp.LitZ] = if (preR.continu) {
+      val o2: Exp.LitZ = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[Attr] = transformAttr(o2.attr)
+      if (hasChanged || r0.nonEmpty)
+        MSome(o2(attr = r0.getOrElse(o2.attr)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Exp.LitZ = r.getOrElse(o)
+    val postR: MOption[Exp.LitZ] = postExpLitZ(o2) match {
+     case MSome(result: Exp.LitZ) => MSome[Exp.LitZ](result)
+     case MSome(_) => halt("Can only produce object of type Exp.LitZ")
+     case _ => MNone[Exp.LitZ]()
+    }
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformPatternStructure(o: Pattern.Structure): MOption[Pattern.Structure] = {
+    val preR: PreResult[Pattern.Structure] = prePatternStructure(o) match {
+     case PreResult(continu, MSome(r: Pattern.Structure)) => PreResult(continu, MSome[Pattern.Structure](r))
+     case PreResult(_, MSome(_)) => halt("Can only produce object of type Pattern.Structure")
+     case PreResult(continu, _) => PreResult(continu, MNone[Pattern.Structure]())
+    }
+    val r: MOption[Pattern.Structure] = if (preR.continu) {
+      val o2: Pattern.Structure = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[Option[Id]] = transformOption(o2.idOpt, transformId _)
+      val r1: MOption[Option[Name]] = transformOption(o2.nameOpt, transformName _)
+      val r2: MOption[IS[Z, Pattern]] = transformISZ(o2.patterns, transformPattern _)
+      val r3: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+        MSome(o2(idOpt = r0.getOrElse(o2.idOpt), nameOpt = r1.getOrElse(o2.nameOpt), patterns = r2.getOrElse(o2.patterns), attr = r3.getOrElse(o2.attr)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Pattern.Structure = r.getOrElse(o)
+    val postR: MOption[Pattern.Structure] = postPatternStructure(o2) match {
+     case MSome(result: Pattern.Structure) => MSome[Pattern.Structure](result)
+     case MSome(_) => halt("Can only produce object of type Pattern.Structure")
+     case _ => MNone[Pattern.Structure]()
+    }
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformProofStepAssume(o: Proof.Step.Assume): MOption[Proof.Step.Assume] = {
+    val preR: PreResult[Proof.Step.Assume] = preProofStepAssume(o) match {
+     case PreResult(continu, MSome(r: Proof.Step.Assume)) => PreResult(continu, MSome[Proof.Step.Assume](r))
+     case PreResult(_, MSome(_)) => halt("Can only produce object of type Proof.Step.Assume")
+     case PreResult(continu, _) => PreResult(continu, MNone[Proof.Step.Assume]())
+    }
+    val r: MOption[Proof.Step.Assume] = if (preR.continu) {
+      val o2: Proof.Step.Assume = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[Exp.LitZ] = transformExpLitZ(o2.no)
+      val r1: MOption[Exp] = transformExp(o2.claim)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+        MSome(o2(no = r0.getOrElse(o2.no), claim = r1.getOrElse(o2.claim)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Proof.Step.Assume = r.getOrElse(o)
+    val postR: MOption[Proof.Step.Assume] = postProofStepAssume(o2) match {
+     case MSome(result: Proof.Step.Assume) => MSome[Proof.Step.Assume](result)
+     case MSome(_) => halt("Can only produce object of type Proof.Step.Assume")
+     case _ => MNone[Proof.Step.Assume]()
     }
     if (postR.nonEmpty) {
       return postR
@@ -4283,41 +4865,6 @@ import MTransformer._
      case MSome(result: ResolvedInfo.Method) => MSome[ResolvedInfo.Method](result)
      case MSome(_) => halt("Can only produce object of type ResolvedInfo.Method")
      case _ => MNone[ResolvedInfo.Method]()
-    }
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
-  def transformExpLitZ(o: Exp.LitZ): MOption[Exp.LitZ] = {
-    val preR: PreResult[Exp.LitZ] = preExpLitZ(o) match {
-     case PreResult(continu, MSome(r: Exp.LitZ)) => PreResult(continu, MSome[Exp.LitZ](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp.LitZ")
-     case PreResult(continu, _) => PreResult(continu, MNone[Exp.LitZ]())
-    }
-    val r: MOption[Exp.LitZ] = if (preR.continu) {
-      val o2: Exp.LitZ = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[Attr] = transformAttr(o2.attr)
-      if (hasChanged || r0.nonEmpty)
-        MSome(o2(attr = r0.getOrElse(o2.attr)))
-      else
-        MNone()
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: Exp.LitZ = r.getOrElse(o)
-    val postR: MOption[Exp.LitZ] = postExpLitZ(o2) match {
-     case MSome(result: Exp.LitZ) => MSome[Exp.LitZ](result)
-     case MSome(_) => halt("Can only produce object of type Exp.LitZ")
-     case _ => MNone[Exp.LitZ]()
     }
     if (postR.nonEmpty) {
       return postR

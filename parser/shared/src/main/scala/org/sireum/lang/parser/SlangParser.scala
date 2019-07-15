@@ -187,6 +187,7 @@ object SlangParser {
   private[SlangParser] lazy val rExp = AST.Exp.Ident(rDollarId, emptyResolvedAttr)
   private[SlangParser] lazy val rStmt = AST.Stmt.Expr(rExp, emptyTypedAttr)
   private[SlangParser] lazy val emptyContract = AST.MethodContract.Simple(ISZ(), ISZ(), ISZ(), ISZ())
+  private[SlangParser] lazy val emptyProofStep = AST.Proof.Step.SubProof(AST.Exp.LitZ(0, emptyAttr), ISZ())
 
 }
 
@@ -233,11 +234,14 @@ class SlangParser(
         parser.newLinesOpt()
         if (parser.isIdentOf("*")) {
           new LParser(input, dialect, this).truthTable(fileUriOpt)
-        } else if (parser.token.is[Token.KwPackage] || parser.token.is[Token.KwImport] || parser.token.is[Token.EOF]) {
-          parser.in = oldIn
-          translateSource(parser.parseSource())
         } else {
-          new LParser(input, dialect, this).sequentFile(fileUriOpt)
+          parser.in = oldIn
+          val source = parser.parseSource()
+          if (source.stats.size == 1 && input.text.contains("|-") && (source.stats.head match {
+            case q"Deduce(..$_)" => false
+            case _ => true
+          })) sequentSource(source)
+          else translateSource(source)
         }
       } else Result(text, hashSireum, None())
     } catch {
@@ -293,6 +297,17 @@ class SlangParser(
 
   def errorInSlang(pos: Position, message: Predef.String): Unit =
     error(pos, message + " in Slang.")
+
+  def sequentSource(source: Source): Result = {
+    source.stats match {
+      case List(term: Term) =>
+        val sequent = translateSequent(term)
+        Result(text, hashSireum, Some(AST.TopUnit.SequentUnit(fileUriOpt, sequent)))
+      case _ =>
+        error(source.pos, "Expecting a sequent.")
+        Result(text, hashSireum, None())
+    }
+  }
 
   def translateSource(source: Source): Result = {
     def topF(rest: List[Stat]): Result = {
@@ -433,6 +448,9 @@ class SlangParser(
       case stat: Term.Do => translateDoWhile(enclosing, stat)
       case stat: Term.For => translateFor(enclosing, stat)
       case stat: Term.Return => translateReturn(enclosing, stat)
+      case q"Contract(${_: Lit.String})" => translateSpecLabel(enclosing, stat)
+      case q"Contract { ..$_ }" => translateSpecBlock(enclosing, stat)
+      case q"Deduce(..$_)" => translateDeduce(enclosing, stat)
       case _: Term.Apply | _: Term.ApplyInfix =>
         val term = stat.asInstanceOf[Term]
         stmtCheck(enclosing, term, s"${syntax(stat)}")
@@ -751,6 +769,7 @@ class SlangParser(
       errorNotSlang(name.pos, "Methods with multiple parameter tuples are")
     }
     var isPure = false
+    var isStrictPure = false
     var hasOverride = false
     var isHelper = false
     for (mod <- mods) mod match {
@@ -760,6 +779,12 @@ class SlangParser(
           error(mod.pos, "Redundant @pure.")
         }
         isPure = true
+      case mod"@strictpure" =>
+        if (isStrictPure) {
+          hasError = true
+          error(mod.pos, "Redundant @strictpure.")
+        }
+        isStrictPure = true
       case mod"@helper" =>
         if (isHelper) {
           hasError = true
@@ -774,7 +799,14 @@ class SlangParser(
         hasOverride = true
       case _ =>
         hasError = true
-        errorInSlang(mod.pos, s"Only the @pure and/or override method modifiers are allowed for method declarations")
+        errorInSlang(mod.pos, s"Only the @pure, @strictpure, @helper and/or override method modifiers are allowed for method declarations")
+    }
+    if (isPure && isStrictPure) {
+      hasError = true
+      errorInSlang(
+        mods.head.pos,
+        s"Methods cannot be annotated with both @strictpure and @pure (@strictpure methods are always @pure)"
+      )
     }
     val (hasParams, params) = paramss.headOption match {
       case scala.Some(ps) => (true, ISZ[AST.Param](ps.map(translateParam(isMemoize = false)): _*))
@@ -786,7 +818,28 @@ class SlangParser(
     AST.Stmt.Method(purity, hasOverride, isHelper, sig, emptyContract, None(), resolvedAttr(stat.pos))
   }
 
+  val specDefn: Set[Predef.String] = Set(
+    "Theorem", "Lemma", "Fact"
+  )
+  val specDefnInv: Set[Predef.String] = specDefn + "Invariant"
+
   def translateDef(enclosing: Enclosing.Type, tree: Defn.Def): AST.Stmt = {
+    tree match {
+      case q"@spec def $_[..$_] = ${id: Term.Name}(..$_)" if specDefn.contains(id.value) =>
+        id.value match {
+          case "Fact" => return translateFact(enclosing, tree)
+          case "Theorem" => return translateTheoremLemma(false, enclosing, tree)
+          case "Lemma" => return translateTheoremLemma(true, enclosing, tree)
+        }
+      case q"@spec def $_ = ${id: Term.Name}(..$_)" if specDefnInv.contains(id.value) =>
+        id.value match {
+          case "Fact" => return translateFact(enclosing, tree)
+          case "Theorem" => return translateTheoremLemma(false, enclosing, tree)
+          case "Lemma" => return translateTheoremLemma(true, enclosing, tree)
+          case "Invariant" => return translateInvariant(enclosing, tree)
+        }
+      case _ =>
+    }
     val mods = tree.mods
     val name = tree.name
     val tparams = tree.tparams
@@ -849,7 +902,7 @@ class SlangParser(
         hasError = true
         errorInSlang(
           mod.pos,
-          s"Only either method modifier @pure, @memoize, @spec, and/or override is allowed for method definitions"
+          s"Only either method modifier @pure, @strictpure, @memoize, @helper, @spec, and/or override is allowed for method definitions"
         )
     }
     if (isPure && isMemoize) {
@@ -932,7 +985,7 @@ class SlangParser(
           val (mc, bodyOpt) = exp.stats.headOption match {
             case scala.Some(q"Contract(..${exprs: Seq[Term]})") =>
               (
-                translateContract(exprs),
+                translateMethodContract(exprs),
                 if (isDiet) None[AST.Body]()
                 else Some(bodyCheck(ISZ(exp.stats.tail.map(translateStat(Enclosing.Method)): _*), ISZ()))
               )
@@ -953,10 +1006,14 @@ class SlangParser(
                   "@memoize can only be used for @datatype/@record classes."
                 )
               }
-              AST.Stmt.Method(purity, hasOverride, isHelper, sig, translateContract(exprs), None(), resolvedAttr(tree.pos))
+              AST.Stmt.Method(purity, hasOverride, isHelper, sig, translateMethodContract(exprs), None(), resolvedAttr(tree.pos))
             case _ => err()
           }
-        case _ => err()
+        case _ =>
+          if (isStrictPure)
+            AST.Stmt.Method(purity, hasOverride, isHelper, sig, emptyContract,
+              Some(AST.Body(ISZ(translateAssignExp(exp)), ISZ())), resolvedAttr(tree.pos))
+          else err()
       }
     }
 
@@ -986,7 +1043,7 @@ class SlangParser(
         case exp: Term.Name if exp.value == "$" =>
           AST.Stmt.ExtMethod(isPure, sig, emptyContract, resolvedAttr(tree.pos))
         case q"Contract.Only(..${exprs: Seq[Term]})" =>
-          AST.Stmt.ExtMethod(isPure, sig, translateContract(exprs), resolvedAttr(tree.pos))
+          AST.Stmt.ExtMethod(isPure, sig, translateMethodContract(exprs), resolvedAttr(tree.pos))
         case _ =>
           hasError = true
           error(exp.pos, "Only '$' or 'Contract.Only(...)' are allowed as Slang extension method expression.")
@@ -1999,7 +2056,7 @@ class SlangParser(
       case body: Term.Block =>
         body.stats match {
           case q"Invariant(..${exprs: Seq[Term]})" :: rest =>
-            val (is, ms) = parseLoopInvariant(exprs, body.stats.head.pos)
+            val (is, ms) = translateLoopInvariant(exprs, body.stats.head.pos)
             invariants = is
             mods = ms
             stats = rest
@@ -2030,8 +2087,8 @@ class SlangParser(
     stat.body match {
       case body: Term.Block =>
         body.stats match {
-          case q"LoopInvariant(..${exprs: Seq[Term]})" :: rest =>
-            val (is, ms) = parseLoopInvariant(exprs, body.stats.head.pos)
+          case q"Invariant(..${exprs: Seq[Term]})" :: rest =>
+            val (is, ms) = translateLoopInvariant(exprs, body.stats.head.pos)
             modifies = ms
             invariants = is
             stats = rest
@@ -2062,8 +2119,8 @@ class SlangParser(
     stat.body match {
       case body: Term.Block =>
         body.stats match {
-          case q"LoopInvariant(..${exprs: Seq[Term]})" :: rest =>
-            val (is, ms) = parseLoopInvariant(exprs, body.stats.head.pos)
+          case q"Invariant(..${exprs: Seq[Term]})" :: rest =>
+            val (is, ms) = translateLoopInvariant(exprs, body.stats.head.pos)
             modifies = ms
             invariants = is
             stats = rest
@@ -2138,6 +2195,21 @@ class SlangParser(
       case t: Term.Name => ISZ(cid(t))
       case t: Term.Tuple => ISZ(t.args.map(arg => cid(arg.asInstanceOf[Term.Name])): _*)
     }
+    def quant(isForall: B, params: Seq[Term.Param], e: Term, pos: Position): AST.Exp.Quant = {
+      var varFragments = ISZ[AST.VarFragment]()
+      for (param <- params) {
+        if (param.default.isEmpty && param.mods.isEmpty) {
+          param.decltpe match {
+            case scala.Some(t) => varFragments = varFragments :+ AST.VarFragment(cid(param.name),
+              Some(AST.Domain.Type(translateType(t), typedAttr(t.pos))))
+            case _ => varFragments = varFragments :+ AST.VarFragment(cid(param.name), None())
+          }
+        } else {
+          errorInSlang(param.pos, "Invalid quantification parameter form")
+        }
+      }
+      AST.Exp.Quant(isForall, varFragments, translateExp(e), attr(pos))
+    }
 
     exp match {
       case exp: Lit => translateLit(exp)
@@ -2169,36 +2241,27 @@ class SlangParser(
         }
         AST.Exp.Eta(ref, typedAttr(exp.pos))
       case exp: Term.Tuple => AST.Exp.Tuple(ISZ(exp.args.map(translateExp): _*), typedAttr(exp.pos))
+      case q"${qid: Term.Name}(${d: Term})((..$params) => $e)" if quantSymbols.contains(qid.value) =>
+        val isForall = qid.value == "All" || qid.value == "∀"
+        val domain = d match {
+          case q"$lo until $hi" => AST.Domain.Range(translateExp(lo), translateExp(hi), false, typedAttr(d.pos))
+          case q"$lo to $hi" => AST.Domain.Range(translateExp(lo), translateExp(hi), true, typedAttr(d.pos))
+          case _ => AST.Domain.Each(translateExp(d), typedAttr(d.pos))
+        }
+        val varFragments = params match {
+          case Seq(p) if p.mods.isEmpty && p.default.isEmpty && p.decltpe.isEmpty =>
+            ISZ(AST.VarFragment(cid(p.name), Some(domain)))
+          case _ =>
+            errorInSlang(exp.pos, "Invalid quantification form")
+            ISZ[AST.VarFragment]()
+        }
+        AST.Exp.Quant(isForall, varFragments, translateExp(e), attr(exp.pos))
+      case q"${qid: Term.Name}{(..$params) => ${e: Term}}" if quantSymbols.contains(qid.value) =>
+        quant(qid.value == "All" || qid.value == "∀", params, e, exp.pos)
+      case q"${qid: Term.Name}((..$params) => $e)" if quantSymbols.contains(qid.value) =>
+        quant(qid.value == "All" || qid.value == "∀", params, e, exp.pos)
       case exp: Term.ApplyUnary => translateUnaryExp(exp)
       case exp: Term.ApplyInfix => translateBinaryExp(exp)
-      case q"L$$Quant(..${args: List[Term]})" =>
-        val es = args
-        es match {
-          case Seq(b: Lit.Boolean, q"$ids: $t", e) =>
-            AST.Exp.Quant(
-              b.value,
-              ISZ(AST.VarFragment(fresh(ids), Some(AST.Domain.Type(translateType(t), typedAttr(t.pos))))),
-              translateExp(e),
-              attr(exp.pos)
-            )
-          case Seq(b: Lit.Boolean, ids, e) =>
-            AST.Exp.Quant(b.value, ISZ(AST.VarFragment(fresh(ids), None())), translateExp(e), attr(exp.pos))
-          case Seq(b: Lit.Boolean, ids, tt @ Term.Tuple(Seq(lo, loExact: Lit.Boolean, hi, hiExact: Lit.Boolean)), e) =>
-            AST.Exp.Quant(
-              b.value,
-              ISZ(
-                AST.VarFragment(
-                  fresh(ids),
-                  Some(
-                    AST.Domain
-                      .Range(translateExp(lo), loExact.value, translateExp(hi), hiExact.value, typedAttr(tt.pos))
-                  )
-                )
-              ),
-              translateExp(e),
-              attr(exp.pos)
-            )
-        }
       case q"$expr.$name[..$tpes](...${aexprssnel: List[List[Term]]})" if tpes.nonEmpty && aexprssnel.nonEmpty =>
         translateInvoke(
           scala.Some(expr),
@@ -2571,15 +2634,6 @@ class SlangParser(
     }
   }
 
-  def checkLSyntax(exp: Term.Interpolate): Boolean = {
-    val startOffset = exp.pos.start
-    val c = text.charAt(startOffset)
-    if (!text.substring(startOffset + 1, exp.pos.end).startsWith("\"\"\"")) {
-      error(exp.pos, "'" + c + "\"\"\"...\"\"\"' should be used instead of '" + c + "\"...\"'.")
-      false
-    } else true
-  }
-
   def lParser[T](exp: Term.Interpolate)(f: LParser => T): T = {
     val pos = exp.pos
     val startOffset = pos.start + 4
@@ -2738,43 +2792,248 @@ class SlangParser(
     AST.MethodContract.Simple(reads, requires, modifies, ensures)
   }
 
-  def translateContract(exprs: Seq[Term]): AST.MethodContract =
+  def translateMethodContract(exprs: Seq[Term]): AST.MethodContract =
     if (exprs.exists({
       case q"Case(..$_)" => true
       case _ => false
     })) translateContractCases(exprs) else translateContractSimple(exprs)
 
-  def parseLStmt(enclosing: Enclosing.Type, exp: Term.Interpolate): AST.Stmt = {
-    def isProofSequentContext: Boolean = enclosing match {
-      case Enclosing.Top | Enclosing.Object | Enclosing.ExtObject | Enclosing.Method | Enclosing.Block |
-          Enclosing.DatatypeClass | Enclosing.RecordClass =>
-        true
-      case _ => false
-    }
-
+  def translateInvariant(enclosing: Enclosing.Type, stat: Defn.Def): AST.Stmt.Invariant = {
     def isInvariantContext: Boolean = enclosing match {
       case Enclosing.Top | Enclosing.Object | Enclosing.ExtObject | Enclosing.DatatypeTrait | Enclosing.DatatypeClass |
-          Enclosing.RecordTrait | Enclosing.RecordClass | Enclosing.Sig =>
+           Enclosing.RecordTrait | Enclosing.RecordClass | Enclosing.Sig =>
         true
       case _ => false
     }
-
-    def isFactsTheoremsContext: Boolean = enclosing match {
-      case Enclosing.Top | Enclosing.Object => true
-      case _ => false
+    if (!isInvariantContext) {
+      error(stat.pos, "Invalid invariant location")
     }
-
-    if (!checkLSyntax(exp)) return rStmt
-    val clause = lParser(exp)(_.lClause())
-    clause match {
-      case _: AST.LClause.Sequent if !isProofSequentContext => error(exp.pos, "Invalid sequent location.")
-      case _: AST.LClause.Proof if !isProofSequentContext => error(exp.pos, "Invalid proof location.")
+    var claims = ISZ[AST.Exp]()
+    stat.body match {
+      case q"Invariant(..${iexprs: Seq[Term]})" =>
+        for (iexpr <- iexprs) {
+          claims = claims :+ translateExp(iexpr)
+        }
       case _ =>
     }
-    AST.Stmt.LStmt(clause, attr(exp.pos))
+    AST.Stmt.Invariant(cid(stat.name), claims, attr(stat.pos))
   }
 
-  def parseLoopInvariant(exprs: Seq[Term], loopPos: Position): (ISZ[AST.Exp], ISZ[AST.Exp.Ident]) = {
+  def translateFact(enclosing: Enclosing.Type, stat: Defn.Def): AST.Stmt.Fact = {
+    def isFactContext: Boolean = enclosing match {
+      case Enclosing.Top | Enclosing.Object | Enclosing.ExtObject => true
+      case _ => false
+    }
+    if (!isFactContext) {
+      if (isWorksheet) error(stat.pos, "Fact can only appear at the top-level, inside objects, or @ext objects.")
+      else error(stat.pos, "Fact can only appear inside objects or @ext objects.")
+    }
+    val typeArgs = ISZ(stat.tparams.map(translateTypeParam): _*)
+    val q"Fact(..${iexprs: Seq[Term]})" = stat.body
+    var claims = ISZ[AST.Exp]()
+    for (iexpr <- iexprs) {
+      claims = claims :+ translateExp(iexpr)
+    }
+    AST.Stmt.Fact(cid(stat.name), typeArgs, claims, attr(stat.pos))
+  }
+
+  def translateDeduce(enclosing: Enclosing.Type, stat: Stat): AST.Stmt.Spec = {
+    def isDeduceContext: Boolean = enclosing match {
+      case Enclosing.Top | Enclosing.Method | Enclosing.Block => true
+      case _ => false
+    }
+    if (!isDeduceContext) {
+      if (isWorksheet) error(stat.pos, "Deduce can only appear at the top-level, inside methods, or code blocks.")
+      else error(stat.pos, "Deduce can only appear inside methods or code blocks.")
+    }
+    val q"Deduce(..${dexprs: Seq[Term]})" = stat
+    val isProofStep = dexprs.headOption match {
+      case scala.Some(head: Term) => head.pos.text.contains("#>")
+      case _ => false
+    }
+    if (isProofStep) AST.Stmt.DeduceSteps(ISZ(dexprs.map(translateProofStep): _*), attr(stat.pos))
+    else AST.Stmt.Deduce(ISZ(dexprs.map(translateSequent): _*), attr(stat.pos))
+  }
+
+  def translateSequent(sequent: Term): AST.Sequent = {
+    sequent match {
+      case q"|- $conclusion Proof(..$pexprs)" =>
+        AST.Sequent(ISZ(), translateExp(conclusion),
+          ISZ(pexprs.map(translateProofStep): _*), attr(sequent.pos))
+      case q"|- $conclusion" =>
+        AST.Sequent(ISZ(), translateExp(conclusion),
+          ISZ(), attr(sequent.pos))
+      case q"|- ($conclusion) Proof(..$pexprs)" =>
+        AST.Sequent(ISZ(), translateExp(conclusion),
+          ISZ(pexprs.map(translateProofStep): _*), attr(sequent.pos))
+      case q"|- ($conclusion)" =>
+        AST.Sequent(ISZ(), translateExp(conclusion),
+          ISZ(), attr(sequent.pos))
+      case q"(..$premises) |- $conclusion Proof(..$pexprs)" =>
+        AST.Sequent(ISZ(premises.map(translateExp): _*), translateExp(conclusion),
+          ISZ(pexprs.map(translateProofStep): _*), attr(sequent.pos))
+      case q"$premise |- $conclusion Proof(..$pexprs)" =>
+        AST.Sequent(ISZ(translateExp(premise)), translateExp(conclusion),
+          ISZ(pexprs.map(translateProofStep): _*), attr(sequent.pos))
+      case q"(..$premises) |- $conclusion" =>
+        AST.Sequent(ISZ(premises.map(translateExp): _*), translateExp(conclusion),
+          ISZ(), attr(sequent.pos))
+      case q"$premise |- $conclusion" =>
+        AST.Sequent(ISZ(translateExp(premise)), translateExp(conclusion),
+          ISZ(), attr(sequent.pos))
+      case q"(..$premises) |- ($conclusion) Proof(..$pexprs)" =>
+        AST.Sequent(ISZ(premises.map(translateExp): _*), translateExp(conclusion),
+          ISZ(pexprs.map(translateProofStep): _*), attr(sequent.pos))
+      case q"$premise |- ($conclusion) Proof(..$pexprs)" =>
+        AST.Sequent(ISZ(translateExp(premise)), translateExp(conclusion),
+          ISZ(pexprs.map(translateProofStep): _*), attr(sequent.pos))
+      case q"(..$premises) |- ($conclusion)" =>
+        AST.Sequent(ISZ(premises.map(translateExp): _*), translateExp(conclusion),
+          ISZ(), attr(sequent.pos))
+      case q"$premise |- ($conclusion)" =>
+        AST.Sequent(ISZ(translateExp(premise)), translateExp(conclusion),
+          ISZ(), attr(sequent.pos))
+      case _ =>
+        error(sequent.pos, "Expecting '... |- ... Proof(...)' or '... |- ...'.")
+        AST.Sequent(ISZ(), AST.Exp.LitB(false, emptyAttr), ISZ(), attr(sequent.pos))
+    }
+  }
+
+  def translateSpecLabel(enclosing: Enclosing.Type, stat: Stat): AST.Stmt.SpecLabel = {
+    def isLabelContext: Boolean = enclosing match {
+      case Enclosing.Top | Enclosing.Method | Enclosing.Block => true
+      case _ => false
+    }
+    if (!isLabelContext) {
+      if (isWorksheet) error(stat.pos, s"Contract label can only appear at the top-level or inside code blocks.")
+      else error(stat.pos, s"Contract label can only appear inside code blocks.")
+    }
+    val q"Contract(${s: Lit.String})" = stat
+    AST.Stmt.SpecLabel(cid(s.value, s.pos))
+  }
+
+  def translateSpecBlock(enclosing: Enclosing.Type, stat: Stat): AST.Stmt.SpecBlock = {
+    val Term.Apply(Term.Name("Contract"), List(b: Term.Block)) = stat
+    AST.Stmt.SpecBlock(translateBlock(enclosing, b, isAssignExp = false))
+  }
+
+  def translateStructuralInduction(n: AST.Exp.LitZ, claim: AST.Exp, m: Term): AST.Proof.Step.StructInduction = {
+    def hypoSteps(steps: Seq[Term]): (Option[AST.Proof.Step.Assume], ISZ[AST.Proof.Step]) = {
+      steps.headOption match {
+        case scala.Some(q"${no: Lit.Int} #> Assume($claim)") =>
+          (Some(AST.Proof.Step.Assume(toLitZ(no), translateExp(claim))),
+            ISZ(steps.tail.map(translateProofStep): _*))
+        case _ =>
+          (None(), ISZ(steps.map(translateProofStep): _*))
+      }
+    }
+    m match {
+      case q"$e match { ..case $cs }" =>
+        var cases = ISZ[AST.Proof.Step.StructInduction.MatchCase]()
+        val (defaultOpt, rest): (Option[AST.Proof.Step.StructInduction.MatchDefault], Seq[Case]) =
+          cs.lastOption match {
+            case scala.Some(p"case _ => SubProof(..$pexprs)") =>
+              val (hypoOpt, proofSteps) = hypoSteps(pexprs)
+              (Some(AST.Proof.Step.StructInduction.MatchDefault(hypoOpt, proofSteps)), cs.dropRight(1))
+            case _ => (None(), cs)
+          }
+        for (c <- rest) {
+          c match {
+            case p"case $ref(..$pats) => SubProof(..${steps: Seq[Term]})" =>
+              var patterns = ISZ[AST.Pattern]()
+              for (pat <- pats) {
+                pat match {
+                  case pat: Pat.Var => patterns = patterns :+ translatePattern(pat)
+                  case _ => error(pat.pos, "Only pattern variable is allowed.")
+                }
+              }
+              val (hypoOpt, proofSteps) = hypoSteps(steps)
+              cases = cases :+ AST.Proof.Step.StructInduction.MatchCase(
+                AST.Pattern.Structure(None(), Some(AST.Name(ref2IS(ref), attr(ref.pos))),
+                  patterns, resolvedAttr(c.pat.pos)), hypoOpt, proofSteps
+              )
+            case _ => error(c.pos, "Expecting 'case ...(...) => SubProof(...)'.")
+          }
+        }
+        AST.Proof.Step.StructInduction(n, claim, translateExp(e), cases, defaultOpt)
+      case _ =>
+        error(m.pos, "Expecting '... match { case ...(...) => SubProof(...) ... }'.")
+        AST.Proof.Step.StructInduction(n, claim, AST.Exp.LitB(false, emptyAttr), ISZ(), None())
+    }
+  }
+
+  def toLitZ(n: Lit.Int): AST.Exp.LitZ = AST.Exp.LitZ(n.value, attr(n.pos))
+
+  def translateProofStep(proofStep: Term): AST.Proof.Step = {
+    def translateLetParam(param: Term.Param): AST.Proof.Step.Let.Param = {
+      if (param.mods.nonEmpty) {
+        for (mod <- param.mods) {
+          error(mod.pos, "Cannot have Let parameter modifier.")
+        }
+      }
+      if (param.default.nonEmpty) {
+        error(param.default.get.pos, "Cannot have Let parameter default value.")
+      }
+      AST.Proof.Step.Let.Param(cid(param.name), opt(param.decltpe.map(translateType)))
+    }
+    proofStep match {
+      case q"${no: Lit.Int} #> $claim by ${jid: Lit.String}(..${jargs: Seq[Term]})" =>
+        AST.Proof.Step.Regular(toLitZ(no), translateExp(claim),
+          AST.Proof.Step.Justification(cid(jid.value, jid.pos),
+            ISZ(jargs.map(translateExp): _*)))
+      case q"${no: Lit.Int} #> $claim by ${jid: Lit.String}" =>
+        AST.Proof.Step.Regular(toLitZ(no), translateExp(claim),
+          AST.Proof.Step.Justification(cid(jid.value, jid.pos), ISZ()))
+      case q"${no: Lit.Int} #> $claim by StructuralInduction($m)" =>
+        translateStructuralInduction(toLitZ(no), translateExp(claim), m)
+      case q"${no: Lit.Int} #> Assume($claim)" =>
+        AST.Proof.Step.Assume(toLitZ(no), translateExp(claim))
+      case q"${no: Lit.Int} #> Assert($claim, SubProof(..${claims: Seq[Term]}))" =>
+        AST.Proof.Step.Assert(toLitZ(no), translateExp(claim), ISZ(claims.map(translateProofStep): _*))
+      case q"${no: Lit.Int} #> SubProof(..${claims: Seq[Term]})" =>
+        AST.Proof.Step.SubProof(toLitZ(no), ISZ(claims.map(translateProofStep): _*))
+      case q"${no: Lit.Int} #> Let ((..$params) => SubProof(..${claims: Seq[Term]}))" =>
+        AST.Proof.Step.Let(toLitZ(no), ISZ(params.map(translateLetParam): _*),
+          ISZ(claims.map(translateProofStep): _*))
+      case q"${no: Lit.Int} #> Let {(..$params) => SubProof(..${claims: Seq[Term]})}" =>
+        AST.Proof.Step.Let(toLitZ(no), ISZ(params.map(translateLetParam): _*),
+          ISZ(claims.map(translateProofStep): _*))
+      case _ =>
+        error(proofStep.pos, s"Invalid proof step form: '$proofStep'.")
+        emptyProofStep
+    }
+  }
+
+  def translateProof(proof: Term): AST.Proof = {
+    proof match {
+      case q"Proof(..${pexprs: Seq[Term]})" =>
+        AST.Proof(ISZ(pexprs.map(translateProofStep): _*), attr(proof.pos))
+      case _ =>
+        error(proof.pos, s"Expecting 'Proof(...)' but found '$proof'.")
+        return AST.Proof(ISZ(), attr(proof.pos))
+    }
+  }
+
+  def translateTheoremLemma(isLemma: B, enclosing: Enclosing.Type, stat: Defn.Def): AST.Stmt.Theorem = {
+    def isTheoremContext: Boolean = enclosing match {
+      case Enclosing.Top | Enclosing.Object | Enclosing.ExtObject => true
+      case _ => false
+    }
+    if (!isTheoremContext) {
+      val desc = if (isLemma) "Lemma" else "Theorem"
+      if (isWorksheet) error(stat.pos, s"$desc can only appear at the top-level, inside object, or @ext object.")
+      else error(stat.pos, s"$desc can only appear inside object or @ext object.")
+    }
+    val typeArgs = ISZ(stat.tparams.map(translateTypeParam): _*)
+    var desc = ""
+    val (claim, proof) = stat.body match {
+      case q"${_: Term.Name}(${d: Lit.String}, $e, $p)" => (translateExp(e), translateProof(p))
+      case q"${_: Term.Name}($e, $p)" => (translateExp(e), translateProof(p))
+    }
+    AST.Stmt.Theorem(isLemma, cid(stat.name), typeArgs, claim, proof, attr(stat.pos))
+  }
+
+  def translateLoopInvariant(exprs: Seq[Term], loopPos: Position): (ISZ[AST.Exp], ISZ[AST.Exp.Ident]) = {
     var mods = ISZ[AST.Exp.Ident]()
     var invs = ISZ[AST.Exp]()
     val rest = exprs match {

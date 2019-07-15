@@ -92,7 +92,7 @@ object PostTipeAttrChecker {
 
   override def preStmt(o: Stmt): MTransformer.PreResult[Stmt] = {
     o match {
-      case _: Stmt.LStmt => return PostTipeAttrChecker.LStmtResult
+      case _: Stmt.Spec => return PostTipeAttrChecker.LStmtResult
       case _ => return PostTipeAttrChecker.StmtResult
     }
   }

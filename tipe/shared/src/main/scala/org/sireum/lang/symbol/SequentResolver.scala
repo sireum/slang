@@ -30,7 +30,7 @@ import org.sireum._
 import org.sireum.message._
 import Resolver._
 import org.sireum.lang.ast.Exp.Quant
-import org.sireum.lang.ast.LClause.Sequent
+import org.sireum.lang.ast.Sequent
 import org.sireum.lang.ast.MTransformer.PreResult
 import org.sireum.lang.ast._
 
@@ -57,7 +57,7 @@ object SequentResolver {
     reporter: Reporter
   ) extends MTransformer {
 
-    override def preExpQuant(o: Quant): MTransformer.PreResult[Exp] = {
+    override def preExpQuant(o: Quant): MTransformer.PreResult[Exp.Spec] = {
       hasQuant = T
       var newScope = QScope(HashMap.empty, Some(scope))
 
@@ -71,19 +71,17 @@ object SequentResolver {
             )
           case _ =>
         }
-        for (id <- vf.ids) {
-          val key = id.value
-          newScope.resolve(key) match {
-            case Some(_) => reporter.error(id.attr.posOpt, resolverKind, s"$key has been previously declared.")
-            case _ => newScope = newScope(nameMap = newScope.nameMap + key ~> id)
-          }
+        val key = vf.id.value
+        newScope.resolve(key) match {
+          case Some(_) => reporter.error(vf.id.attr.posOpt, resolverKind, s"$key has been previously declared.")
+          case _ => newScope = newScope(nameMap = newScope.nameMap + key ~> vf.id)
         }
       }
       scope = newScope
       return PreResult(T, MNone())
     }
 
-    override def postExpQuant(o: Quant): MOption[Exp] = {
+    override def postExpQuant(o: Quant): MOption[Exp.Spec] = {
       scope.outerOpt match {
         case Some(outer) => scope = outer
         case _ =>
@@ -163,11 +161,9 @@ object SequentResolver {
       freeVarMap = fvm
       hasQuant = hasQuant || hq
     }
-    for (e <- sequent.conclusions) {
-      val (hq, fvm) = resolveDeclExp(scope, freeVarMap, reporter, e)
-      freeVarMap = fvm
-      hasQuant = hasQuant || hq
-    }
+    val (hq, fvm) = resolveDeclExp(scope, freeVarMap, reporter, sequent.conclusion)
+    freeVarMap = fvm
+    hasQuant = hasQuant || hq
     return (hasQuant, freeVarMap)
   }
 }

@@ -1,6 +1,6 @@
 // #Sireum
 /*
- Copyright (c) 2017, Robby, Kansas State University
+ Copyright (c) 2019, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -45,14 +45,14 @@ object TopUnit {
 
   @datatype class Program(val fileUriOpt: Option[String], packageName: Name, body: Body) extends TopUnit
 
-  @datatype class SequentUnit(val fileUriOpt: Option[String], sequent: LClause.Sequent) extends TopUnit
+  @datatype class SequentUnit(val fileUriOpt: Option[String], sequent: Sequent) extends TopUnit
 
   @datatype class TruthTableUnit(val fileUriOpt: Option[String],
                                  stars: ISZ[Position],
                                  vars: ISZ[Id],
                                  separator: Position,
                                  isSequent: B,
-                                 sequent: LClause.Sequent,
+                                 sequent: Sequent,
                                  rows: ISZ[TruthTable.Row],
                                  conclusionOpt: Option[TruthTable.Conclusion]) extends TopUnit
 
@@ -65,25 +65,6 @@ object TopUnit {
   def asAssignExp: AssignExp = {
     halt(s"Invalid operation 'asAssignExp' on $this.")
   }
-
-}
-
-@datatype trait MethodContract
-
-object MethodContract {
-
-  @datatype class Simple(reads: ISZ[Exp.Ident],
-                         requires: ISZ[Exp],
-                         modifies: ISZ[Exp.Ident],
-                         ensures: ISZ[Exp]) extends MethodContract
-
-  @datatype class Cases(reads: ISZ[Exp.Ident],
-                        modifies: ISZ[Exp.Ident],
-                        cases: ISZ[Case]) extends MethodContract
-
-  @datatype class Case(label: String,
-                       requires: ISZ[Exp],
-                       ensures: ISZ[Exp])
 
 }
 
@@ -396,14 +377,6 @@ object Stmt {
 
   }
 
-  @datatype class LStmt(clause: LClause, @hidden val attr: Attr) extends Stmt {
-
-    @pure override def posOpt: Option[Position] = {
-      return attr.posOpt
-    }
-
-  }
-
   @datatype class Expr(exp: Exp, @hidden attr: TypedAttr) extends Stmt with AssignExp {
 
     @pure override def posOpt: Option[Position] = {
@@ -421,6 +394,132 @@ object Stmt {
     @pure override def asStmt: Stmt = {
       return this
     }
+
+  }
+
+  @datatype trait Spec extends Stmt
+
+  @datatype class Fact(id: Id,
+                       typeArgs: ISZ[TypeParam],
+                       claims: ISZ[Exp],
+                       @hidden attr: Attr) extends Spec {
+    @pure override def posOpt: Option[Position] = {
+      return attr.posOpt
+    }
+  }
+
+  @datatype class Invariant(id: Id,
+                            claims: ISZ[Exp],
+                            @hidden attr: Attr) extends Spec {
+    @pure override def posOpt: Option[Position] = {
+      return attr.posOpt
+    }
+  }
+
+  @datatype class Theorem(isLemma: B,
+                          id: Id,
+                          typeArgs: ISZ[TypeParam],
+                          claim: Exp,
+                          proof: Proof,
+                          @hidden attr: Attr) extends Spec {
+    @pure override def posOpt: Option[Position] = {
+      return attr.posOpt
+    }
+  }
+
+  @datatype class SpecLabel(id: Id) extends Spec {
+    @pure override def posOpt: Option[Position] = {
+      return id.attr.posOpt
+    }
+  }
+
+  @datatype class SpecBlock(block: Block) extends Spec {
+    @pure override def posOpt: Option[Position] = {
+      return block.posOpt
+    }
+  }
+
+  @datatype class Deduce(sequents: ISZ[Sequent], @hidden attr: Attr) extends Spec {
+    @pure override def posOpt: Option[Position] = {
+      return attr.posOpt
+    }
+  }
+
+  @datatype class DeduceSteps(steps: ISZ[Proof.Step], @hidden attr: Attr) extends Spec {
+    @pure override def posOpt: Option[Position] = {
+      return attr.posOpt
+    }
+  }
+
+}
+
+@datatype trait MethodContract
+
+object MethodContract {
+
+  @datatype class Simple(reads: ISZ[Exp.Ident],
+                         requires: ISZ[Exp],
+                         modifies: ISZ[Exp.Ident],
+                         ensures: ISZ[Exp]) extends MethodContract
+
+  @datatype class Cases(reads: ISZ[Exp.Ident],
+                        modifies: ISZ[Exp.Ident],
+                        cases: ISZ[Case]) extends MethodContract
+
+  @datatype class Case(label: String,
+                       requires: ISZ[Exp],
+                       ensures: ISZ[Exp])
+
+}
+
+@datatype class Sequent(premises: ISZ[Exp],
+                        conclusion: Exp,
+                        steps: ISZ[Proof.Step],
+                        @hidden attr: Attr)
+
+@datatype class Proof(steps: ISZ[Proof.Step], @hidden attr: Attr)
+
+object Proof {
+
+  @datatype trait Step {
+    def no: Exp.LitZ
+  }
+
+  object Step {
+
+    @datatype class Regular(val no: Exp.LitZ, claim: Exp, just: Justification) extends Step
+
+    @datatype class Assume(val no: Exp.LitZ, claim: Exp) extends Step
+
+    @datatype class Assert(val no: Exp.LitZ, claim: Exp, steps: ISZ[Step]) extends Step
+
+    @datatype class SubProof(val no: Exp.LitZ, steps: ISZ[Step]) extends Step
+
+    @datatype class Let(val no: Exp.LitZ, params: ISZ[Let.Param], steps: ISZ[Step]) extends Step
+
+    object Let {
+
+      @datatype class Param(id: Id, tipeOpt: Option[Type])
+
+    }
+
+    @datatype class StructInduction(val no: Exp.LitZ,
+                                    claim: Exp,
+                                    exp: Exp,
+                                    cases: ISZ[StructInduction.MatchCase],
+                                    defaultOpt: Option[StructInduction.MatchDefault]) extends Step
+
+    object StructInduction {
+
+      @datatype class MatchCase(pattern: Pattern.Structure,
+                                hypoOpt: Option[Assume],
+                                steps: ISZ[Step])
+
+      @datatype class MatchDefault(hypoOpt: Option[Assume],
+                                   steps: ISZ[Step])
+    }
+
+    @datatype class Justification(id: Id, args: ISZ[Exp])
 
   }
 
@@ -452,16 +551,6 @@ object Stmt {
   'Pure
   'Memoize
   'StrictPure
-}
-
-@datatype trait LClause
-
-object LClause {
-
-  @datatype class Sequent(premises: ISZ[Exp], conclusions: ISZ[Exp], proofOpt: Option[Proof]) extends LClause
-
-  @datatype class Proof(steps: ISZ[ProofStep]) extends LClause
-
 }
 
 @datatype class Case(pattern: Pattern, condOpt: Option[Exp], body: Body)
@@ -976,7 +1065,9 @@ object Exp {
     }
   }
 
-  @datatype class Quant(isForall: B, varFragments: ISZ[VarFragment], exp: Exp, @hidden attr: Attr) extends Exp {
+  @datatype trait Spec extends Exp
+
+  @datatype class Quant(isForall: B, varFragments: ISZ[VarFragment], exp: Exp, @hidden attr: Attr) extends Spec {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -991,7 +1082,7 @@ object Exp {
 
 @datatype class NamedArg(id: Id, arg: Exp, index: Z)
 
-@datatype class VarFragment(ids: ISZ[Id], domainOpt: Option[Domain])
+@datatype class VarFragment(id: Id, domainOpt: Option[Domain])
 
 @datatype trait Domain {
   def attr: TypedAttr
@@ -1001,8 +1092,9 @@ object Domain {
 
   @datatype class Type(tipe: org.sireum.lang.ast.Type, @hidden val attr: TypedAttr) extends Domain
 
-  @datatype class Range(lo: Exp, loExact: B, hi: Exp, hiExact: B, @hidden val attr: TypedAttr) extends Domain
+  @datatype class Range(lo: Exp, hi: Exp, hiExact: B, @hidden val attr: TypedAttr) extends Domain
 
+  @datatype class Each(exp: Exp, @hidden val attr: TypedAttr) extends Domain
 }
 
 @datatype class Id(value: String, @hidden attr: Attr)
@@ -1841,34 +1933,6 @@ object ResolvedInfo {
     }
   }
 }
-
-@datatype trait ProofStep {
-  def step: Exp.LitZ
-}
-
-object ProofStep {
-
-  @datatype class Basic(val step: Exp.LitZ, exp: Exp, just: Just) extends ProofStep
-
-  @datatype class SubProof(val step: Exp.LitZ, assumeStep: AssumeProofStep, steps: ISZ[ProofStep]) extends ProofStep
-
-}
-
-@datatype trait AssumeProofStep {
-  def step: Exp.LitZ
-}
-
-object AssumeProofStep {
-
-  @datatype class Regular(val step: Exp.LitZ, exp: Exp) extends AssumeProofStep
-
-  @datatype class ForallIntroAps(val step: Exp.LitZ, varFragments: ISZ[VarFragment]) extends AssumeProofStep
-
-  @datatype class ExistsElimAps(val step: Exp.LitZ, varFragments: ISZ[VarFragment], exp: Exp) extends AssumeProofStep
-
-}
-
-@datatype class Just(kind: String, args: ISZ[Exp], @hidden val attr: Attr)
 
 object TruthTable {
 

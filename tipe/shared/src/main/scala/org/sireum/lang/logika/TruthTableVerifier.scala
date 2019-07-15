@@ -85,7 +85,7 @@ object TruthTableVerifier {
 
       var i = 0
       val stars: ISZ[Position] = tt.stars
-      for (e <- tt.sequent.premises ++ tt.sequent.conclusions) {
+      for (e <- tt.sequent.premises :+ tt.sequent.conclusion) {
         if (i < stars.size) {
           val posOpt = Some(stars(i))
           if (!AST.Util.beginColumnEqual(posOpt, e.posOpt)) {
@@ -192,10 +192,7 @@ object TruthTableVerifier {
         for (e <- tt.sequent.premises) {
           p = p & evalExp(e)
         }
-        var c = T
-        for (e <- tt.sequent.conclusions) {
-          c = c & evalExp(e)
-        }
+        val c = evalExp(tt.sequent.conclusion)
         var rowValues: Assignment = ISZ[B]()
         var hasError = F
         for (b <- row.values.values) {

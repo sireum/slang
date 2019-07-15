@@ -1,11 +1,10 @@
-p, q → ¬p  ⊢  ¬q
-{
-  1. p         ... premise
-  2. q → ¬p    ... premise
-  3. {
-       4. q    ... assume
-       5. ¬p   ... →e(2, 4)
-       6. ⊥    ... ¬e(1, 5)
-     }
-  7. ¬q        ... ¬i(3)
-}
+(p, q imply_: !p) |- (!q) Proof(
+  1 #> (p)              by "premise",
+  2 #> (q imply_: !p)   by "premise",
+  3 #> SubProof(
+    4 #> Assume(q),
+    5 #> (!p)           by "imply_:e"(2, 4),
+    6 #> (F)            by "!e"(1, 5),
+  ),
+  7 #> (!q)             by "!i"(3),
+)

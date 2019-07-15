@@ -30,6 +30,7 @@ import org.sireum.lang.ast.TopUnit
 import org.sireum.{None => SNone}
 import org.sireum.test.SireumRcSpec
 import org.sireum.lang.test.TestUtil
+import org.sireum.message.Reporter
 
 class LParserRcTest extends SireumRcSpec {
   lazy val textResources: scala.collection.Map[Vector[Predef.String], Predef.String] =
@@ -38,22 +39,16 @@ class LParserRcTest extends SireumRcSpec {
   def check(path: scala.Vector[Predef.String], content: Predef.String): Boolean = {
     path.head match {
       case "truthtable" => parseTruthTable(content)
-      case "propositional" => parsePropositional(content)
-      case "predicate" => parsePredicate(content)
+      case "propositional" => parse(content)
+      case "predicate" => parse(content)
     }
   }
 
-  def parsePredicate(input: String): Boolean =
-    TestUtil.lparser(input) { (p, reporter) =>
-      val r = p.sequentFile(SNone())
-      TestUtil.check(reporter) && r.unitOpt.exists(_.isInstanceOf[TopUnit.SequentUnit])
-    }
-
-  def parsePropositional(input: String): Boolean =
-    TestUtil.lparser(input) { (p, reporter) =>
-      val r = p.sequentFile(SNone())
-      TestUtil.check(reporter) && r.unitOpt.exists(_.isInstanceOf[TopUnit.SequentUnit])
-    }
+  def parse(input: String): Boolean = {
+    val reporter = Reporter.create
+    val rOpt = parser.Parser.parseTopUnit[TopUnit.SequentUnit](input, false, true, false, SNone(), reporter)
+    TestUtil.check(reporter) && rOpt.exists(_.isInstanceOf[TopUnit.SequentUnit])
+  }
 
   def parseTruthTable(input: String): Boolean =
     TestUtil.lparser(input) { (p, reporter) =>

@@ -1,18 +1,15 @@
-∀x human(x) → mortal(x),  ∀y mortal(y) → soul(y)  ⊢
-  ∀x human(x) → soul(x)
-{
-  1. ∀x human(x) → mortal(x)         ... premise
-  2. ∀y mortal(y) → soul(y)          ... premise
-  3. {
-       4. [ a ]
-       5. {
-            6. human(a)              ... assume
-            7. human(a) → mortal(a)  ... ∀e(1, a)
-            8. mortal(a)             ... →e(7, 6)
-            9. mortal(a) → soul(a)   ... ∀e(2, a)
-           10. soul(a)               ... →e(9, 8)
-          }
-      11. human(a) → soul(a)         ... →i(5)
-     }
- 12. ∀x human(x) → soul(x)           ... ∀i(3)
-}
+(∀{x => human(x) imply_: mortal(x)},  ∀{y => mortal(y) imply_: soul(y)}) |- (∀{x => human(x) imply_: soul(x)}) Proof(
+  1 #> (∀{x => human(x) imply_: mortal(x)})   by "premise",
+  2 #> (∀{y => mortal(y) imply_: soul(y)})    by "premise",
+  3 #> Let { a => SubProof(
+     4 #> SubProof(
+       5 #> Assume(human(a)),
+       6 #> (human(a) imply_: mortal(a))      by "∀e"(1, a),
+       7 #> (mortal(a))                       by "imply_:e"(6, 5),
+       8 #> (mortal(a) imply_: soul(a))       by "∀e"(2, a),
+       9 #> (soul(a))                         by "imply_:e"(8, 7),
+     ),
+    10 #> (human(a) imply_: soul(a))          by "imply_:i"(4),
+  )},
+ 11 #> (∀{x => (human(x) imply_: soul(x))})   by "∀i"(3),
+)

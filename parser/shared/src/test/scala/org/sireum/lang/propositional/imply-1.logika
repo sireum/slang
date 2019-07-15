@@ -1,9 +1,8 @@
-(p ∧ q) → r,  p → q,  p  ⊢  r
-{
-  1. (p ∧ q) → r   ... premise
-  2. p → q         ... premise
-  3. p             ... premise
-  4. q             ... →e(2, 3)
-  5. p ∧ q         ... ∧i(3, 4)
-  6. r             ... →e(1, 5)
-}
+((p & q) imply_: r, p imply_: q, p) |- (r) Proof(
+  1 #> ((p & q) imply_: r)   by "premise",
+  2 #> (p imply_: q)         by "premise",
+  3 #> (p)                   by "premise",
+  4 #> (q)                   by "imply_:e"(2, 3),
+  5 #> (p ∧ q)               by "&i"(3, 4),
+  6 #> (r)                   by "imply_:e"(1, 5),
+)

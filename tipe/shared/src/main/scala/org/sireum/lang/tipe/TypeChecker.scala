@@ -3737,7 +3737,7 @@ import TypeChecker._
 
     stmt match {
 
-      case stmt: AST.Stmt.LStmt => return (Some(scope), stmt) // TODO
+      case stmt: AST.Stmt.Spec => return (Some(scope), stmt) // TODO
 
       case stmt: AST.Stmt.Adt =>
         typeHierarchy.typeMap.get(context :+ stmt.id.value) match {

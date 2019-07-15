@@ -53,10 +53,6 @@ import org.sireum.lang.{ast => AST}
 
 object LParser {
 
-  val forallTokens = ListSet("∀", "A", "all", "forall")
-  val existsTokens = ListSet("∃", "E", "some", "exists")
-  val quantTokens: ListSet[String] = forallTokens ++ existsTokens
-  val lStmtFirst = ListSet("requires", "theorem", "fact")
   val impInternalSym = "imply_:"
   val simpInternalSym = "simply_:"
 
@@ -142,46 +138,6 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
   @inline def tokenCurrOrAfterNl(p: => Boolean): Boolean =
     p || TokensHelper.isNl(token) && ahead(p)
 
-  val justOps: List[() => Option[(String, Int)]] = List(
-    () => {
-      var text = ""
-      val r = (isIdentOf(impInternalSym) || isIdentOf("&") || isIdentOf("|") ||
-        isIdentOf("!") || isIdentOf("¬") || isIdentOf("~") || isIdentOf("∀") ||
-        isIdentOf("∃") || isIdentOf("F")) && {
-        text = token.asInstanceOf[Ident].value.
-          replaceAllLiterally("!", "¬").
-          replaceAllLiterally("~", "¬").
-          replaceAllLiterally("&", "∧").
-          replaceAllLiterally("|", "∨").
-          replaceAllLiterally("F", "⊥").
-          replaceAllLiterally(impInternalSym, "→")
-        ahead {
-          text += token.text
-          token.is[Ident]
-        }
-      }
-      if (r) Some((text, 5)) else None
-    },
-    () => {
-      var text = "⊥"
-      val r = {
-        val t1 = token
-        isIdentOf("_") && ahead {
-          val t2 = token
-          isIdentOf("|") && t2.pos.start == t1.pos.start + 1 && aheadNF {
-            val t3 = token
-            isIdentOf("_") && t3.pos.start == t2.pos.start + 1 &&
-            aheadNF {
-              text += token.text
-              token.is[Ident]
-            }
-          }
-        }
-      }
-      if (r) Some((text, 7)) else None
-    }
-  )
-
   {
     in = new LimitingTokenIterator(0, parserTokens.length - 1)
 
@@ -211,44 +167,6 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
     case _ => false
   }
 
-  def findJust(): (Int, String, Int) = {
-    def continue: Boolean =
-      if (token.is[RightBrace] || token.is[EOF]) false
-      else if (TokensHelper.isNl(token) && ahead(token.is[Token.Constant.Int] && aheadNF(token.is[Dot]))) false
-      else true
-
-    def find(): Option[(String, Int)] = {
-      for (jp <- justOps) {
-        val r = jp()
-        if (r.isDefined)
-          return r
-      }
-      token match {
-        case Ident(value) => Some((value, 4))
-        case _ => None
-      }
-    }
-
-    val oldIn = in
-    try {
-      in = oldIn.fork
-      var just: Option[(String, Int)] = None
-      while (continue && just.isEmpty) {
-        next()
-        if (token.is[Dot] & ahead(token.is[Dot] && aheadNF(token.is[Dot]))) {
-          ahead {
-            aheadNF {
-              aheadNF {
-                just = find()
-              }
-            }
-          }
-        }
-      }
-      if (just.isDefined) (in.asInstanceOf[LimitingTokenIterator].i, just.get._1, just.get._2) else (-1, "", 0)
-    } finally in = oldIn
-  }
-
   def acceptToken[T <: Token: TokenInfo]: T = {
     val t = token
     accept[T]
@@ -272,98 +190,6 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
     case Ident(value) if value.forall(Character.isJavaIdentifierPart) || value == "∀" || value == "∃" => false
     case Ident(_) => true
     case _ => false
-  }
-
-  /** {{{
-    *  SimplExpr      ::= QuantExpr
-    *                    |  ... super.simpleExpr()
-    *  }}}
-    */
-  override def simpleExpr(allowRepeated: Boolean): Term = token match {
-    case Ident(value) if quantTokens.contains(value) => quantExpr()
-    case _ => super.simpleExpr(allowRepeated)
-  }
-
-  /** {{{
-    *  QuantExpr      ::= QuantOp Idents [ `:' Domain ] [nl] PostfixExpr
-    *
-    *  Idents         ::= Ident { `,' Ident }
-    *
-    *  QuantOp        ::= Ident<∀> | Ident<A> | Ident<all> | Ident<forall> | Ident<∃> | Ident<E> | Ident<some> | Ident<exists>
-    *
-    *  Domain         ::= ( `(' | `<' | `[' ) Expr ',' Expr ( `)' | `>' | `]' )
-    *                   |  Type
-    *  }}}
-    */
-  private def quantExpr(): Term = autoPos {
-    def acceptKw(kws: ListSet[String]): String = token match {
-      case Ident(value) if kws.contains(value) =>
-        next()
-        value
-      case _ =>
-        reporter
-          .syntaxError(s"Either ${kws.mkString(" or ")} expected but ${TokensHelper.name(token)} found", at = token)
-    }
-
-    val isForAll = forallTokens.contains(acceptKw(quantTokens))
-
-    val ids: Term = {
-      var r = List[Term.Name](autoPos {
-        Term.Name(acceptToken[Ident].value)
-      })
-
-      while (token.is[Comma]) {
-        accept[Comma]
-        r ::= autoPos {
-          Term.Name(acceptToken[Ident].value)
-        }
-      }
-      if (r.size > 1) Term.Tuple(r.reverse) else r.head
-    }
-
-    if (token.isNot[Colon]) {
-      newLineOpt()
-      val e = expr()
-      Term.Apply(Term.Name("L$Quant"), List[Term](Lit.Boolean(isForAll), ids, e))
-    } else {
-      next()
-      domainRaw() match {
-        case Left(t) =>
-          newLineOpt()
-          val e = expr()
-          Term.Apply(Term.Name("L$Quant"), List[Term](Lit.Boolean(isForAll), Term.Ascribe(ids, t), e))
-        case Right(q) =>
-          newLineOpt()
-          val e = expr()
-          Term.Apply(Term.Name("L$Quant"), List[Term](Lit.Boolean(isForAll), ids, q, e))
-      }
-    }
-  }
-
-  def domainRaw(): Either[Type, Term.Tuple] =
-    if (token.is[LeftParen] || token.is[LeftBracket])
-      Right(autoPos {
-        val loExact = token.is[LeftBracket]
-        next()
-        val lo = expr()
-        accept[Comma]
-        val hi = expr()
-        val hiExact = token.is[RightBracket]
-        if (hiExact) next() else accept[RightParen]
-        Term.Tuple(List(lo, Lit.Boolean(loExact), hi, Lit.Boolean(hiExact)))
-      })
-    else Left(loutPattern.typ())
-
-  def domain(): AST.Domain = domainRaw() match {
-    case Left(t) => AST.Domain.Type(sparser.translateType(t), sparser.typedAttr(t.pos))
-    case Right(tt @ Term.Tuple(Seq(lo, loExact: Lit.Boolean, hi, hiExact: Lit.Boolean, _))) =>
-      AST.Domain.Range(
-        sparser.translateExp(lo),
-        if (loExact.value) T else F,
-        sparser.translateExp(hi),
-        if (hiExact.value) T else F,
-        sparser.typedAttr(tt.pos)
-      )
   }
 
   def idents(): List[Ident] = {
@@ -390,28 +216,7 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
   }
 
   /** {{{
-    *  LClause        ::= BOF {nl}
-    *                     ( Sequent
-    *                     | Proof
-    *                     ) EOF
-    *  }}}
-    */
-  def lClause(): AST.LClause = {
-    accept[BOF]
-    newLinesOpt()
-    val r: AST.LClause =
-      if (token.is[LeftBrace]) proof()
-      else {
-        val i = findTokenPos(isSequentToken, t => t.isNot[LeftBrace])
-        if (i < 0) reporter.syntaxError(s"Either { ... } or ... ⊢ ... expected", at = token)
-        sequent(i)
-      }
-    accept[EOF]
-    r
-  }
-
-  /** {{{
-    *  Sequent       ::= [ Exprs ] {nl} ( Ident<|-> | Ident<⊢> ) {nl} Exprs {nl} [ Proof ]
+    *  Sequent       ::= [ Exprs ] {nl} ( Ident<|-> | Ident<⊢> ) {nl} Exprs {nl}
     *
     *  Exprs         ::= Expr {`,' {nl} Expr}
     *  }}}
@@ -419,11 +224,11 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
   def sequent(
     sequentIndex: Int = findTokenPos(isSequentToken, t => t.isNot[LeftBrace]),
     noProof: Boolean = false
-  ): AST.LClause.Sequent = {
+  ): AST.Sequent = {
     if (sequentIndex < 0) reporter.syntaxError(s"... ⊢ ... expected", at = token)
     val emptyPremises = tokenCurrOrAfterNl(isSequentToken(token))
     val oldIn = in.asInstanceOf[LimitingTokenIterator]
-    val premises =
+    val premises: List[AST.Exp] =
       if (emptyPremises) List()
       else {
         in = new LimitingTokenIterator(oldIn.i, sequentIndex - 1)
@@ -431,17 +236,9 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
       }
     in = new LimitingTokenIterator(sequentIndex + 1, oldIn.end)
     newLinesOpt()
-    val proofIndex = if (noProof) -1 else findTokenPos(t => t.is[LeftBrace], _ => true)
-    if (proofIndex < 0) {
-      val conclusions = exprs()
-      newLinesOpt()
-      AST.LClause.Sequent(isz(premises), isz(conclusions), SNone())
-    } else {
-      in = new LimitingTokenIterator(oldIn.i, proofIndex - 1)
-      val conclusions = exprs()
-      in = new LimitingTokenIterator(proofIndex, oldIn.end)
-      AST.LClause.Sequent(isz(premises), isz(conclusions), SSome(proof()))
-    }
+    val conclusion = sparser.translateExp(expr())
+    newLinesOpt()
+    AST.Sequent(isz(premises), conclusion, ISZ(), AST.Attr(SNone()))
   }
 
   def exprs(): List[AST.Exp] = {
@@ -462,160 +259,6 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
       found = p(lti.token)
     }
     if (found) lti.i else -1
-  }
-
-  /** {{{
-    *  Proof          ::= `{' { {nl} ProofStep } {nl} `}' {nl}
-    *
-    *  ProofStep      ::= Int `.' Expr `.' `.' `.' Just
-    *                   |  Int `.' SubProof
-    *
-    *  SubProof       ::= `{' {nl} AssumeStep { {nl} ProofStep } {nl} `}'
-    *
-    *  AssumeStep     ::= Int `.' {nl} Expr {nl} `.' `.' `.' Ident<assume>
-    *                   |  Int `.' {nl} [ {nl} Idents {nl} ]
-    *                   |  Int `.' {nl} [ {nl} Idents `:' Domain { {nl} Idents `:' Domain } {nl} ]
-    *                   |  Int `.' {nl} [ {nl} Idents {nl} ] {nl} Expr {nl} `.' `.' `.' Ident<assume>
-    *                   |  Int `.' {nl} [ {nl} Idents `:' Domain { {nl} Idents `:' Domain } {nl} ] {nl} Expr {nl} `.' `.' `.' Ident<assume>
-    *
-    *  Just           ::= [ JustOp ] Ident [ `(' {nl} Expr { {nl} `,' {nl} Expr } {nl} `)' ]
-    *
-    *  JustOp         ::= `∧' | `^' | `&' | `∨' | `|' | `⊻' | `|^' | `→' | `->'
-    *                   | `¬` | `~' | `!' | `⊥' | `_' `|' `_' | `∀' | `∃'
-    *  }}}
-    */
-  private def proof(): AST.LClause.Proof = {
-    def just(kind: String, offset: Int): AST.Just = {
-      val input = token.pos.input
-      next()
-      next()
-      next()
-      val startPoint = token.pos.start
-      (0 until offset - 4).foreach(_ => next())
-      val endPoint = token.pos.end
-      next()
-      if (token.is[LeftParen]) {
-        var args = List[AST.Exp]()
-        acceptToken[LeftParen]
-        newLinesOpt()
-        args ::= sparser.translateExp(expr())
-        newLinesOpt()
-        while (token.is[Comma]) {
-          next()
-          newLinesOpt()
-          args ::= sparser.translateExp(expr())
-          newLinesOpt()
-        }
-        val t = acceptToken[RightParen]
-        AST.Just(kind, isz(args.reverse), sparser.attr(Position.Range(input, startPoint, t.pos.end)))
-      } else {
-        AST.Just(kind, ISZ(), sparser.attr(Position.Range(input, startPoint, endPoint)))
-      }
-    }
-
-    def exprJustH(justPos: Int, justKind: String, justOffset: Int): (AST.Exp, AST.Just) = {
-      in = new LimitingTokenIterator(in.asInstanceOf[LimitingTokenIterator].i, justPos - 1)
-      val ex = expr()
-      val e = try {
-        sparser.translateExp(ex)
-      } catch {
-        case exc: ArrayIndexOutOfBoundsException =>
-          println(ex.syntax)
-          throw exc
-      }
-      in = new LimitingTokenIterator(justPos, parserTokens.length - 1)
-      (e, just(justKind, justOffset))
-    }
-
-    def exprJust(stepNo: AST.Exp.LitZ): (AST.Exp, AST.Just) = {
-      val (justPos, justKind, justOffset) = findJust()
-      if (justPos == -1) reporter.syntaxError(s"No justification found for proof step ${stepNo.value}.", at = token)
-      exprJustH(justPos, justKind, justOffset)
-    }
-
-    def assumeStep(): AST.AssumeProofStep = {
-      def varFragments(): ISZ[AST.VarFragment] = {
-        acceptToken[LeftBracket]
-        newLinesOpt()
-        val ids = idents().map(id)
-        newLinesOpt()
-        val r = if (token.is[Colon]) {
-          next()
-          var fresh = List(AST.VarFragment(isz(ids), SSome(domain())))
-          while (tokenCurrOrAfterNl(token.is[Ident] && aheadNF(token.is[Comma] || token.is[Colon]))) {
-            newLinesOpt()
-            fresh ::= AST.VarFragment(isz(idents().map(id)), SSome(domain()))
-          }
-          isz(fresh.reverse)
-        } else {
-          ISZ(AST.VarFragment(isz(ids), SNone()))
-        }
-        newLinesOpt()
-        acceptToken[RightBracket]
-        newLinesOpt()
-        r
-      }
-
-      val n = acceptInt
-      accept[Dot]
-      val (justPos, justKind, _) = findJust()
-
-      newLinesOpt()
-
-      if (justPos < 0) {
-        AST.AssumeProofStep.ForallIntroAps(n, varFragments())
-      } else if ("assume" != justKind)
-        reporter.syntaxError(s"Expected assume but $justKind found", at = parserTokens(justPos))
-      else {
-        val oldIn = in.asInstanceOf[LimitingTokenIterator]
-        in = new LimitingTokenIterator(oldIn.i, justPos - 1)
-        val r =
-          if (token.is[LeftBracket]) AST.AssumeProofStep.ExistsElimAps(n, varFragments(), sparser.translateExp(expr()))
-          else AST.AssumeProofStep.Regular(n, sparser.translateExp(expr()))
-        in = new LimitingTokenIterator(justPos, oldIn.end)
-        acceptToken[Dot]
-        acceptToken[Dot]
-        acceptToken[Dot]
-        acceptIdent("assume")
-        r
-      }
-    }
-
-    def subProof(step: AST.Exp.LitZ): AST.ProofStep.SubProof = {
-      next()
-      newLinesOpt()
-      val as = assumeStep()
-      var pss = List[AST.ProofStep]()
-      while (tokenCurrOrAfterNl(token.isNot[RightBrace]) && token.isNot[EOF]) {
-        newLinesOpt()
-        pss ::= proofStep()
-      }
-      newLinesOpt()
-      accept[RightBrace]
-      AST.ProofStep.SubProof(step, as, isz(pss.reverse))
-    }
-
-    def proofStep(): AST.ProofStep = {
-      val n = acceptInt
-      accept[Dot]
-      if (token.is[LeftBrace]) {
-        subProof(n)
-      } else {
-        val (e, j) = exprJust(n)
-        AST.ProofStep.Basic(n, e, j)
-      }
-    }
-
-    accept[LeftBrace]
-    var pss = List[AST.ProofStep]()
-    while (tokenCurrOrAfterNl(token.isNot[RightBrace]) && token.isNot[EOF]) {
-      newLinesOpt()
-      pss ::= proofStep()
-    }
-    newLinesOpt()
-    accept[RightBrace]
-    newLinesOpt()
-    AST.LClause.Proof(isz(pss.reverse))
   }
 
   /** {{{
@@ -742,7 +385,7 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
 
     var vars = List[AST.Id]()
     var sep: message.Position = null
-    var formula: AST.LClause.Sequent = null
+    var formula: AST.Sequent = null
     var isSequent: B = F
 
     def header(): Unit = {
@@ -754,7 +397,7 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
       acceptIdent("|")
       val i = findTokenPos(isSequentToken, t => !isHLine(t))
       formula =
-        if (i < 0) AST.LClause.Sequent(ISZ(), ISZ(sparser.translateExp(expr())), SNone())
+        if (i < 0) AST.Sequent(ISZ(), sparser.translateExp(expr()), ISZ(), AST.Attr(SNone()))
         else {
           isSequent = T
           sequent(noProof = true)
@@ -808,13 +451,5 @@ final class LParser(input: Input, dialect: Dialect, sparser: SlangParser)
     newLinesOpt()
     accept[EOF]
     SlangParser.Result(input.text, hashSireum = false, SSome(r))
-  }
-
-  def sequentFile(fileUriOpt: SOption[SString]): SlangParser.Result = {
-    accept[BOF]
-    newLinesOpt()
-    val r = sequent()
-    accept[EOF]
-    SlangParser.Result(input.text, hashSireum = false, SSome(AST.TopUnit.SequentUnit(fileUriOpt, r)))
   }
 }

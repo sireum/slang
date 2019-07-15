@@ -1,16 +1,15 @@
-p ∨ q, r  ⊢  (p ∧ r) ∨ (q ∧ r)
-{
-  1. p ∨ q                   ... premise
-  2. r                       ... premise
-  3. {
-       4. p                  ... assume
-       5. p ∧ r              ... ∧i(4, 2)
-       6. (p ∧ r) ∨ (q ∧ r)  ... ∨i1(5)
-     }
-  7. {
-       8. q                  ... assume
-       9. q ∧ r              ... ∧i(8, 2)
-      10. (p ∧ r) ∨ (q ∧ r)  ... ∨i2(9)
-     }
- 11. (p ∧ r) ∨ (q ∧ r)       ... ∨e(1, 3, 7)
-}
+(p | q, r) |- ((p & r) | (q & r)) Proof(
+  1 #> (p | q)                   by "premise",
+  2 #> (r)                       by "premise",
+  3 #> SubProof(
+     4 #> Assume(p),
+     5 #> (p & r)                by "&i"(4, 2),
+     6 #> ((p & r) | (q & r))    by "|i1"(5),
+  ),
+  7 #> SubProof(
+      8 #> Assume(q),
+      9 #> (q & r)               by "&i"(8, 2),
+     10 #> ((p & r) | (q & r))   by "|i2"(9),
+  ),
+ 11 #> ((p & r) | (q & r))       by "|e"(1, 3, 7),
+)
