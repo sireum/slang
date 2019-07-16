@@ -667,6 +667,7 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.Stmt.Fact""""),
         ("id", print_astId(o.id)),
         ("typeArgs", printISZ(F, o.typeArgs, print_astTypeParam _)),
+        ("descOpt", printOption(F, o.descOpt, print_astExpLitString _)),
         ("claims", printISZ(F, o.claims, print_astExp _)),
         ("attr", print_astAttr(o.attr))
       ))
@@ -687,6 +688,7 @@ object JSON {
         ("isLemma", printB(o.isLemma)),
         ("id", print_astId(o.id)),
         ("typeArgs", printISZ(F, o.typeArgs, print_astTypeParam _)),
+        ("descOpt", printOption(F, o.descOpt, print_astExpLitString _)),
         ("claim", print_astExp(o.claim)),
         ("proof", print_astProof(o.proof)),
         ("attr", print_astAttr(o.attr))
@@ -3207,13 +3209,16 @@ object JSON {
       parser.parseObjectKey("typeArgs")
       val typeArgs = parser.parseISZ(parse_astTypeParam _)
       parser.parseObjectNext()
+      parser.parseObjectKey("descOpt")
+      val descOpt = parser.parseOption(parse_astExpLitString _)
+      parser.parseObjectNext()
       parser.parseObjectKey("claims")
       val claims = parser.parseISZ(parse_astExp _)
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.Fact(id, typeArgs, claims, attr)
+      return org.sireum.lang.ast.Stmt.Fact(id, typeArgs, descOpt, claims, attr)
     }
 
     def parse_astStmtInvariant(): org.sireum.lang.ast.Stmt.Invariant = {
@@ -3255,6 +3260,9 @@ object JSON {
       parser.parseObjectKey("typeArgs")
       val typeArgs = parser.parseISZ(parse_astTypeParam _)
       parser.parseObjectNext()
+      parser.parseObjectKey("descOpt")
+      val descOpt = parser.parseOption(parse_astExpLitString _)
+      parser.parseObjectNext()
       parser.parseObjectKey("claim")
       val claim = parse_astExp()
       parser.parseObjectNext()
@@ -3264,7 +3272,7 @@ object JSON {
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.Theorem(isLemma, id, typeArgs, claim, proof, attr)
+      return org.sireum.lang.ast.Stmt.Theorem(isLemma, id, typeArgs, descOpt, claim, proof, attr)
     }
 
     def parse_astStmtSpecLabel(): org.sireum.lang.ast.Stmt.SpecLabel = {

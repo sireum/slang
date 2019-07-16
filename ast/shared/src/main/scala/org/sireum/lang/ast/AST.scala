@@ -401,6 +401,7 @@ object Stmt {
 
   @datatype class Fact(id: Id,
                        typeArgs: ISZ[TypeParam],
+                       descOpt: Option[Exp.LitString],
                        claims: ISZ[Exp],
                        @hidden attr: Attr) extends Spec {
     @pure override def posOpt: Option[Position] = {
@@ -419,6 +420,7 @@ object Stmt {
   @datatype class Theorem(isLemma: B,
                           id: Id,
                           typeArgs: ISZ[TypeParam],
+                          descOpt: Option[Exp.LitString],
                           claim: Exp,
                           proof: Proof,
                           @hidden attr: Attr) extends Spec {

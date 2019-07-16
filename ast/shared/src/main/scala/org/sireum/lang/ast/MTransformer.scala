@@ -2593,10 +2593,11 @@ import MTransformer._
         case o2: Stmt.Fact =>
           val r0: MOption[Id] = transformId(o2.id)
           val r1: MOption[IS[Z, TypeParam]] = transformISZ(o2.typeArgs, transformTypeParam _)
-          val r2: MOption[IS[Z, Exp]] = transformISZ(o2.claims, transformExp _)
-          val r3: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-            MSome(o2(id = r0.getOrElse(o2.id), typeArgs = r1.getOrElse(o2.typeArgs), claims = r2.getOrElse(o2.claims), attr = r3.getOrElse(o2.attr)))
+          val r2: MOption[Option[Exp.LitString]] = transformOption(o2.descOpt, transformExpLitString _)
+          val r3: MOption[IS[Z, Exp]] = transformISZ(o2.claims, transformExp _)
+          val r4: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id), typeArgs = r1.getOrElse(o2.typeArgs), descOpt = r2.getOrElse(o2.descOpt), claims = r3.getOrElse(o2.claims), attr = r4.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.Invariant =>
@@ -2610,11 +2611,12 @@ import MTransformer._
         case o2: Stmt.Theorem =>
           val r0: MOption[Id] = transformId(o2.id)
           val r1: MOption[IS[Z, TypeParam]] = transformISZ(o2.typeArgs, transformTypeParam _)
-          val r2: MOption[Exp] = transformExp(o2.claim)
-          val r3: MOption[Proof] = transformProof(o2.proof)
-          val r4: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
-            MSome(o2(id = r0.getOrElse(o2.id), typeArgs = r1.getOrElse(o2.typeArgs), claim = r2.getOrElse(o2.claim), proof = r3.getOrElse(o2.proof), attr = r4.getOrElse(o2.attr)))
+          val r2: MOption[Option[Exp.LitString]] = transformOption(o2.descOpt, transformExpLitString _)
+          val r3: MOption[Exp] = transformExp(o2.claim)
+          val r4: MOption[Proof] = transformProof(o2.proof)
+          val r5: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty || r5.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id), typeArgs = r1.getOrElse(o2.typeArgs), descOpt = r2.getOrElse(o2.descOpt), claim = r3.getOrElse(o2.claim), proof = r4.getOrElse(o2.proof), attr = r5.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.SpecLabel =>
@@ -2818,10 +2820,11 @@ import MTransformer._
         case o2: Stmt.Fact =>
           val r0: MOption[Id] = transformId(o2.id)
           val r1: MOption[IS[Z, TypeParam]] = transformISZ(o2.typeArgs, transformTypeParam _)
-          val r2: MOption[IS[Z, Exp]] = transformISZ(o2.claims, transformExp _)
-          val r3: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-            MSome(o2(id = r0.getOrElse(o2.id), typeArgs = r1.getOrElse(o2.typeArgs), claims = r2.getOrElse(o2.claims), attr = r3.getOrElse(o2.attr)))
+          val r2: MOption[Option[Exp.LitString]] = transformOption(o2.descOpt, transformExpLitString _)
+          val r3: MOption[IS[Z, Exp]] = transformISZ(o2.claims, transformExp _)
+          val r4: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id), typeArgs = r1.getOrElse(o2.typeArgs), descOpt = r2.getOrElse(o2.descOpt), claims = r3.getOrElse(o2.claims), attr = r4.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.Invariant =>
@@ -2835,11 +2838,12 @@ import MTransformer._
         case o2: Stmt.Theorem =>
           val r0: MOption[Id] = transformId(o2.id)
           val r1: MOption[IS[Z, TypeParam]] = transformISZ(o2.typeArgs, transformTypeParam _)
-          val r2: MOption[Exp] = transformExp(o2.claim)
-          val r3: MOption[Proof] = transformProof(o2.proof)
-          val r4: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
-            MSome(o2(id = r0.getOrElse(o2.id), typeArgs = r1.getOrElse(o2.typeArgs), claim = r2.getOrElse(o2.claim), proof = r3.getOrElse(o2.proof), attr = r4.getOrElse(o2.attr)))
+          val r2: MOption[Option[Exp.LitString]] = transformOption(o2.descOpt, transformExpLitString _)
+          val r3: MOption[Exp] = transformExp(o2.claim)
+          val r4: MOption[Proof] = transformProof(o2.proof)
+          val r5: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty || r5.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id), typeArgs = r1.getOrElse(o2.typeArgs), descOpt = r2.getOrElse(o2.descOpt), claim = r3.getOrElse(o2.claim), proof = r4.getOrElse(o2.proof), attr = r5.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.SpecLabel =>
@@ -4555,6 +4559,41 @@ import MTransformer._
     }
   }
 
+  def transformExpLitString(o: Exp.LitString): MOption[Exp.LitString] = {
+    val preR: PreResult[Exp.LitString] = preExpLitString(o) match {
+     case PreResult(continu, MSome(r: Exp.LitString)) => PreResult(continu, MSome[Exp.LitString](r))
+     case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp.LitString")
+     case PreResult(continu, _) => PreResult(continu, MNone[Exp.LitString]())
+    }
+    val r: MOption[Exp.LitString] = if (preR.continu) {
+      val o2: Exp.LitString = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[Attr] = transformAttr(o2.attr)
+      if (hasChanged || r0.nonEmpty)
+        MSome(o2(attr = r0.getOrElse(o2.attr)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Exp.LitString = r.getOrElse(o)
+    val postR: MOption[Exp.LitString] = postExpLitString(o2) match {
+     case MSome(result: Exp.LitString) => MSome[Exp.LitString](result)
+     case MSome(_) => halt("Can only produce object of type Exp.LitString")
+     case _ => MNone[Exp.LitString]()
+    }
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
   def transformStmtBlock(o: Stmt.Block): MOption[Stmt.Block] = {
     val preR: PreResult[Stmt.Block] = preStmtBlock(o) match {
      case PreResult(continu, MSome(r: Stmt.Block)) => PreResult(continu, MSome[Stmt.Block](r))
@@ -4690,41 +4729,6 @@ import MTransformer._
      case MSome(result: Proof.Step.Assume) => MSome[Proof.Step.Assume](result)
      case MSome(_) => halt("Can only produce object of type Proof.Step.Assume")
      case _ => MNone[Proof.Step.Assume]()
-    }
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
-  def transformExpLitString(o: Exp.LitString): MOption[Exp.LitString] = {
-    val preR: PreResult[Exp.LitString] = preExpLitString(o) match {
-     case PreResult(continu, MSome(r: Exp.LitString)) => PreResult(continu, MSome[Exp.LitString](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp.LitString")
-     case PreResult(continu, _) => PreResult(continu, MNone[Exp.LitString]())
-    }
-    val r: MOption[Exp.LitString] = if (preR.continu) {
-      val o2: Exp.LitString = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[Attr] = transformAttr(o2.attr)
-      if (hasChanged || r0.nonEmpty)
-        MSome(o2(attr = r0.getOrElse(o2.attr)))
-      else
-        MNone()
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: Exp.LitString = r.getOrElse(o)
-    val postR: MOption[Exp.LitString] = postExpLitString(o2) match {
-     case MSome(result: Exp.LitString) => MSome[Exp.LitString](result)
-     case MSome(_) => halt("Can only produce object of type Exp.LitString")
-     case _ => MNone[Exp.LitString]()
     }
     if (postR.nonEmpty) {
       return postR

@@ -824,21 +824,22 @@ class SlangParser(
   val specDefnInv: Set[Predef.String] = specDefn + "Invariant"
 
   def translateDef(enclosing: Enclosing.Type, tree: Defn.Def): AST.Stmt = {
-    tree match {
-      case q"@spec def $_[..$_] = ${id: Term.Name}(..$_)" if specDefn.contains(id.value) =>
-        id.value match {
-          case "Fact" => return translateFact(enclosing, tree)
-          case "Theorem" => return translateTheoremLemma(false, enclosing, tree)
-          case "Lemma" => return translateTheoremLemma(true, enclosing, tree)
-        }
-      case q"@spec def $_ = ${id: Term.Name}(..$_)" if specDefnInv.contains(id.value) =>
-        id.value match {
-          case "Fact" => return translateFact(enclosing, tree)
-          case "Theorem" => return translateTheoremLemma(false, enclosing, tree)
-          case "Lemma" => return translateTheoremLemma(true, enclosing, tree)
-          case "Invariant" => return translateInvariant(enclosing, tree)
-        }
-      case _ =>
+    if (tree.paramss.size <= 1 && tree.mods.exists({
+      case mod"@spec" => true
+      case _ => false
+    })) {
+      tree.body match {
+        case q"${id: Term.Name}(..$_)" if specDefnInv.contains(id.value) =>
+          id.value match {
+            case "Fact" => return translateFact(enclosing, tree)
+            case "Theorem" => return translateTheoremLemma(false, enclosing, tree)
+            case "Lemma" => return translateTheoremLemma(true, enclosing, tree)
+            case "Invariant" if tree.tparams.isEmpty && tree.paramss.isEmpty =>
+              return translateInvariant(enclosing, tree)
+            case _ =>
+          }
+        case _ =>
+      }
     }
     val mods = tree.mods
     val name = tree.name
@@ -2190,25 +2191,29 @@ class SlangParser(
     }
   }
 
+  def translateVarFragments(params: Seq[Term.Param]): ISZ[AST.VarFragment] = {
+    var varFragments = ISZ[AST.VarFragment]()
+    for (param <- params) {
+      if (param.default.isEmpty && param.mods.isEmpty) {
+        param.decltpe match {
+          case scala.Some(t) => varFragments = varFragments :+ AST.VarFragment(cid(param.name),
+            Some(AST.Domain.Type(translateType(t), typedAttr(t.pos))))
+          case _ => varFragments = varFragments :+ AST.VarFragment(cid(param.name), None())
+        }
+      } else {
+        errorInSlang(param.pos, "Invalid quantification parameter form")
+      }
+    }
+    varFragments
+  }
+
   def translateExp(exp: Term): AST.Exp = {
     def fresh(t: Term): ISZ[AST.Id] = t match {
       case t: Term.Name => ISZ(cid(t))
       case t: Term.Tuple => ISZ(t.args.map(arg => cid(arg.asInstanceOf[Term.Name])): _*)
     }
     def quant(isForall: B, params: Seq[Term.Param], e: Term, pos: Position): AST.Exp.Quant = {
-      var varFragments = ISZ[AST.VarFragment]()
-      for (param <- params) {
-        if (param.default.isEmpty && param.mods.isEmpty) {
-          param.decltpe match {
-            case scala.Some(t) => varFragments = varFragments :+ AST.VarFragment(cid(param.name),
-              Some(AST.Domain.Type(translateType(t), typedAttr(t.pos))))
-            case _ => varFragments = varFragments :+ AST.VarFragment(cid(param.name), None())
-          }
-        } else {
-          errorInSlang(param.pos, "Invalid quantification parameter form")
-        }
-      }
-      AST.Exp.Quant(isForall, varFragments, translateExp(e), attr(pos))
+      AST.Exp.Quant(isForall, translateVarFragments(params), translateExp(e), attr(pos))
     }
 
     exp match {
@@ -2829,12 +2834,20 @@ class SlangParser(
       else error(stat.pos, "Fact can only appear inside objects or @ext objects.")
     }
     val typeArgs = ISZ(stat.tparams.map(translateTypeParam): _*)
-    val q"Fact(..${iexprs: Seq[Term]})" = stat.body
-    var claims = ISZ[AST.Exp]()
-    for (iexpr <- iexprs) {
-      claims = claims :+ translateExp(iexpr)
+    val q"Fact(..${fexprs: Seq[Term]})" = stat.body
+    val (descOpt, exprs) = fexprs.headOption match {
+      case scala.Some(lit: Lit.String) => (Some(translateLit(lit).asInstanceOf[AST.Exp.LitString]), fexprs.tail)
+      case _ => (None[AST.Exp.LitString](), fexprs)
     }
-    AST.Stmt.Fact(cid(stat.name), typeArgs, claims, attr(stat.pos))
+    var claims = ISZ[AST.Exp]()
+    val varFragments = if (stat.paramss.isEmpty) ISZ[AST.VarFragment]() else translateVarFragments(stat.paramss.head)
+    for (iexpr <- exprs) {
+      val claim = translateExp(iexpr)
+      claims = claims :+ (
+        if (varFragments.nonEmpty) AST.Exp.Quant(true, varFragments, claim, attr(stat.name.pos))
+        else claim)
+    }
+    AST.Stmt.Fact(cid(stat.name), typeArgs, descOpt, claims, attr(stat.pos))
   }
 
   def translateDeduce(enclosing: Enclosing.Type, stat: Stat): AST.Stmt.Spec = {
@@ -3025,12 +3038,18 @@ class SlangParser(
       else error(stat.pos, s"$desc can only appear inside object or @ext object.")
     }
     val typeArgs = ISZ(stat.tparams.map(translateTypeParam): _*)
-    var desc = ""
-    val (claim, proof) = stat.body match {
-      case q"${_: Term.Name}(${d: Lit.String}, $e, $p)" => (translateExp(e), translateProof(p))
-      case q"${_: Term.Name}($e, $p)" => (translateExp(e), translateProof(p))
+    val (descOpt, claim, proof) = stat.body match {
+      case q"${_: Term.Name}(${d: Lit.String}, $e, $p)" =>
+        (Some(translateLit(d).asInstanceOf[AST.Exp.LitString]), translateExp(e), translateProof(p))
+      case q"${_: Term.Name}($e, $p)" => (None[AST.Exp.LitString](), translateExp(e), translateProof(p))
     }
-    AST.Stmt.Theorem(isLemma, cid(stat.name), typeArgs, claim, proof, attr(stat.pos))
+    val body = stat.paramss.headOption match {
+      case scala.Some(head) =>
+        val varFragments = translateVarFragments(head)
+        AST.Exp.Quant(true, varFragments, claim, attr(stat.name.pos))
+      case _ => claim
+    }
+    AST.Stmt.Theorem(isLemma, cid(stat.name), typeArgs, descOpt, body, proof, attr(stat.pos))
   }
 
   def translateLoopInvariant(exprs: Seq[Term], loopPos: Position): (ISZ[AST.Exp], ISZ[AST.Exp.Ident]) = {

@@ -875,6 +875,7 @@ object MsgPack {
       writer.writeZ(Constants._astStmtFact)
       write_astId(o.id)
       writer.writeISZ(o.typeArgs, write_astTypeParam _)
+      writer.writeOption(o.descOpt, write_astExpLitString _)
       writer.writeISZ(o.claims, write_astExp _)
       write_astAttr(o.attr)
     }
@@ -891,6 +892,7 @@ object MsgPack {
       writer.writeB(o.isLemma)
       write_astId(o.id)
       writer.writeISZ(o.typeArgs, write_astTypeParam _)
+      writer.writeOption(o.descOpt, write_astExpLitString _)
       write_astExp(o.claim)
       write_astProof(o.proof)
       write_astAttr(o.attr)
@@ -2709,9 +2711,10 @@ object MsgPack {
       }
       val id = read_astId()
       val typeArgs = reader.readISZ(read_astTypeParam _)
+      val descOpt = reader.readOption(read_astExpLitString _)
       val claims = reader.readISZ(read_astExp _)
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.Fact(id, typeArgs, claims, attr)
+      return org.sireum.lang.ast.Stmt.Fact(id, typeArgs, descOpt, claims, attr)
     }
 
     def read_astStmtInvariant(): org.sireum.lang.ast.Stmt.Invariant = {
@@ -2741,10 +2744,11 @@ object MsgPack {
       val isLemma = reader.readB()
       val id = read_astId()
       val typeArgs = reader.readISZ(read_astTypeParam _)
+      val descOpt = reader.readOption(read_astExpLitString _)
       val claim = read_astExp()
       val proof = read_astProof()
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.Theorem(isLemma, id, typeArgs, claim, proof, attr)
+      return org.sireum.lang.ast.Stmt.Theorem(isLemma, id, typeArgs, descOpt, claim, proof, attr)
     }
 
     def read_astStmtSpecLabel(): org.sireum.lang.ast.Stmt.SpecLabel = {
