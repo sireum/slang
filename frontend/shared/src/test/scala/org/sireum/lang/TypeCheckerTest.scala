@@ -201,17 +201,17 @@ class TypeCheckerTest extends TestSuite {
                                |""".stripMargin)
 
         * - passingWorksheet("""import org.sireum._
-                               |val poset = Poset[String](HashMap.empty, ISZ(), HashMap.empty, HashMap.empty)
+                               |val poset = Poset[String](HashSMap.empty, ISZ(), HashSMap.empty, HashSMap.empty)
                                |val Poset(_, _, parents, children) = poset
-                               |val parentsTyped: HashMap[Z, HashSet[Z]] = parents
-                               |val childrenTyped: HashMap[Z, HashSet[Z]] = children
+                               |val parentsTyped: HashSMap[Z, HashSSet[Z]] = parents
+                               |val childrenTyped: HashSMap[Z, HashSSet[Z]] = children
                                |""".stripMargin)
 
         * - passingWorksheet("""import org.sireum._
-                               |val poset = Poset[String](HashMap.empty, ISZ(), HashMap.empty, HashMap.empty)
+                               |val poset = Poset[String](HashSMap.empty, ISZ(), HashSMap.empty, HashSMap.empty)
                                |poset match {
                                |  case Poset(_, _, parents, _) if parents.nonEmpty =>
-                               |    val psTyped: HashMap[Z, HashSet[Z]] = parents
+                               |    val psTyped: HashSMap[Z, HashSSet[Z]] = parents
                                |  case _ =>
                                |}
                                |""".stripMargin)
@@ -254,14 +254,14 @@ class TypeCheckerTest extends TestSuite {
                                |""".stripMargin)
 
         * - passingWorksheet("""import org.sireum._
-                               |val poset = Poset[String](HashMap.empty, ISZ(), HashMap.empty, HashMap.empty)
-                               |val upPoset = poset(parents = poset.parents + 3 ~> (HashSet ++ ISZ(1, 2, 3)))
+                               |val poset = Poset[String](HashSMap.empty, ISZ(), HashSMap.empty, HashSMap.empty)
+                               |val upPoset = poset(parents = poset.parents + 3 ~> (HashSSet ++ ISZ(1, 2, 3)))
                                |val upPosetTyped: Poset[String] = upPoset
                                |""".stripMargin)
 
         * - passingWorksheet("""import org.sireum._
-                               |val poset = Poset[String](HashMap.empty, ISZ(), HashMap.empty, HashMap.empty)
-                               |val upPoset = poset(parents = poset.parents + 3 ~> HashSet.empty[Z])
+                               |val poset = Poset[String](HashSMap.empty, ISZ(), HashSMap.empty, HashSMap.empty)
+                               |val upPoset = poset(parents = poset.parents + 3 ~> HashSSet.empty[Z])
                                |val upPosetTyped: Poset[String] = upPoset
                                |""".stripMargin)
 
@@ -415,8 +415,8 @@ class TypeCheckerTest extends TestSuite {
                                |""".stripMargin, "Unnecessary")
 
         * - failingWorksheet("""import org.sireum._
-                               |val poset = Poset[String](HashMap.empty, ISZ(), HashMap.empty, HashMap.empty)
-                               |val upPoset = poset(parents = poset.parents + 3 ~> (HashSet.empty ++ ISZ(1, 2, 3)))
+                               |val poset = Poset[String](HashSMap.empty, ISZ(), HashSMap.empty, HashSMap.empty)
+                               |val upPoset = poset(parents = poset.parents + 3 ~> (HashSSet.empty ++ ISZ(1, 2, 3)))
                                |val upPosetTyped: Poset[String] = upPoset
                                |""".stripMargin, "Explicit type")
 
