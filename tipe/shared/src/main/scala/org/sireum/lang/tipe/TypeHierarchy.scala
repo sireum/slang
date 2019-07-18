@@ -334,7 +334,7 @@ object TypeHierarchy {
   }
 
   def checkCyclic(reporter: Reporter): Unit = {
-    var cache = HashMap.empty[Poset.Index, HashSet[Poset.Index]]
+    var cache = HashSMap.empty[Poset.Index, HashSSet[Poset.Index]]
     for (t <- rootTypeNames()) {
       val n = poset.nodes.get(t).get
       val r = Poset.Internal.descendantsCache(poset, n, cache)
