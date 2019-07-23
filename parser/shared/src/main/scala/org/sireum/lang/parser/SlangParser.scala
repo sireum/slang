@@ -977,12 +977,16 @@ class SlangParser(
 
     def body(): AST.Stmt.Method = {
       def err(): AST.Stmt.Method = {
-        errorInSlang(exp.pos, "Only block '{ ... }' is allowed for a method body")
+        if (isStrictPure) {
+          errorInSlang(exp.pos, "Ill-formed @strictpure method body")
+        } else {
+          errorInSlang(exp.pos, "Only block '{ ... }' is allowed for a method body")
+        }
         AST.Stmt.Method(purity, hasOverride, isHelper, sig, emptyContract, None(), resolvedAttr(tree.pos))
       }
 
       exp match {
-        case exp: Term.Block =>
+        case exp: Term.Block if !isStrictPure =>
           val (mc, bodyOpt) = exp.stats.headOption match {
             case scala.Some(q"Contract(..${exprs: Seq[Term]})") =>
               (
