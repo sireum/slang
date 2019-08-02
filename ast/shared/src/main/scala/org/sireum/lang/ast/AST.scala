@@ -1091,6 +1091,17 @@ object Exp {
     }
   }
 
+  @datatype class OldVal(exp: Exp, @hidden attr: Attr) extends Spec {
+
+    @pure override def posOpt: Option[Position] = {
+      return attr.posOpt
+    }
+
+    @pure override def typedOpt: Option[Typed] = {
+      return exp.typedOpt
+    }
+  }
+
   @datatype class AtLoc(line: Z, idOpt: Option[Id], exp: Exp, @hidden attr: Attr) extends Spec {
 
     @pure override def posOpt: Option[Position] = {
@@ -1116,7 +1127,7 @@ object Exp {
 
   object StateSeq {
 
-    @datatype class Fragment(id: Id, stmt: Stmt)
+    @datatype class Fragment(id: Id, exp: Exp)
 
   }
 

@@ -53,9 +53,14 @@ object SlangParser {
     "Contract",
     "Deduce",
     "Invariant",
+    "Old",
     "In",
     "At",
-    "Res"
+    "Res",
+    "All",
+    "Exists",
+    "∀",
+    "∃"
   )
 
   val disallowedMethodIds: Seq[String] = Seq(
@@ -70,35 +75,25 @@ object SlangParser {
     "apply",
     "unapply",
     "unapplySeq",
-    "~>",
-    "==",
-    "!=",
-    "->",
-    "→",
-    "==>",
-    "⟹",
-    "∧",
-    "^",
-    "∨",
-    "¬",
-    "≠",
-    "≤",
-    "≥",
-    "⊤",
-    "⊥",
-    "≡",
-    "⊻",
-    "⊢",
     "Contract",
     "Deduce",
     "Invariant",
     "In",
+    "Old",
     "At",
-    "Res"
+    "Res",
+    "All",
+    "Exists",
+    "∀",
+    "∃",
+    "~>",
+    "~",
+    "==",
+    "!=",
+    "^",
   )
 
-  val disallowedMethodIdEndings: Seq[String] =
-    Seq("old", "result", "reads", "modifies", "pre", "requires", "post", "ensures", "=", "in")
+  val disallowedMethodIdEndings: Seq[String] = Seq()
 
   val unaryMethods: Seq[String] = Seq("unary_!", "unary_+", "unary_-", "unary_~")
 
@@ -2238,15 +2233,11 @@ class SlangParser(
         if (builtinPrefix.contains(prefix)) translateLit(exp)
         else translateStringInterpolate(exp)
       case exp: Term.Name =>
-        if (exp.value.forall(c => c == '¬' || c == '~' || c == '!')) {
-          val l = exp.value.toList.reverse
-          var s = s"${l.head}..."
-          for (c <- l.tail) {
-            s = s"$c($s)"
-          }
-          error(exp.pos, s"'${exp.value}' should be written as '$s'.")
-          rExp
-        } else AST.Exp.Ident(cid(exp), resolvedAttr(exp.pos))
+        if (exp.value == "Res") {
+          AST.Exp.Result(typedAttr(exp.pos))
+        } else {
+          AST.Exp.Ident(cid(exp), resolvedAttr(exp.pos))
+        }
       case exp: Term.This => AST.Exp.This(typedAttr(exp.pos))
       case exp: Term.Super if exp.thisp.value == "" =>
         if (exp.superp.value != "") AST.Exp.Super(Some(cid(exp.superp)), typedAttr(exp.pos))
@@ -2282,6 +2273,10 @@ class SlangParser(
         quant(qid.value == "All" || qid.value == "∀", params, e, exp.pos)
       case exp: Term.ApplyUnary => translateUnaryExp(exp)
       case exp: Term.ApplyInfix => translateBinaryExp(exp)
+      case q"In($arg)" => AST.Exp.Input(translateExp(arg), attr(exp.pos))
+      case q"Old($arg)" => AST.Exp.OldVal(translateExp(arg), attr(exp.pos))
+      case q"At(${label: Lit.String}, $arg)" =>
+        AST.Exp.AtLoc(exp.pos.startLine, Some(cidNoCheck(label.value, label.pos)), translateExp(arg), attr(exp.pos))
       case q"$expr.$name[..$tpes](...${aexprssnel: List[List[Term]]})" if tpes.nonEmpty && aexprssnel.nonEmpty =>
         translateInvoke(
           scala.Some(expr),
@@ -2482,25 +2477,46 @@ class SlangParser(
   }
 
   def translateBinaryExp(t: Term.ApplyInfix): AST.Exp = {
-    if (t.targs.nonEmpty)
-      errorInSlang(t.targs.head.pos, "Binary operations cannot have type arguments")
-
-    val id = t.op.value
-    if (!checkSymbol(id) && !infixSymbols.contains(id)) {
-      error(
-        t.op.pos,
-        s"Cannot use infix expression notation to invoke '${t.op.value}' in Slang (use dot invoke notation instead: $t)."
-      )
-    }
-    t.args match {
-      case List(right) => AST.Exp.Binary(translateExp(t.lhs), id, translateExp(right), resolvedAttr(t.op.pos))
+    t match {
+      case q"${left: Term.Name} ~ $term ~ $right" =>
+        def rexp(term: Term): AST.Exp = {
+          val e = translateExp(term)
+          e match {
+            case _: AST.Exp.Invoke =>
+            case _: AST.Exp.InvokeNamed =>
+            case _ => error(term.pos, "Expecting an invocation for state sequencing.")
+          }
+          return e
+        }
+        def rec(rt: Term, rr: Term): ISZ[AST.Exp.StateSeq.Fragment] = {
+          rr match {
+            case r: Term.Name => return ISZ(AST.Exp.StateSeq.Fragment(cid(r), rexp(rt)))
+            case q"${rleft: Term.Name} ~ $re ~ $rright" =>
+              return AST.Exp.StateSeq.Fragment(cid(rleft), rexp(re)) +: rec(re, rright)
+          }
+        }
+        AST.Exp.StateSeq(cid(left), rec(term, right), attr(t.pos))
       case _ =>
-        import org.sireum._
-        error(
-          t.op.pos,
-          st"Invalid righ-hand-side for '$id': '(${(t.args.map(_.syntax), ", ")})'".render.value
-        )
-        rExp
+        if (t.targs.nonEmpty)
+          errorInSlang(t.targs.head.pos, "Binary operations cannot have type arguments")
+
+        val id = t.op.value
+        if (!checkSymbol(id) && !infixSymbols.contains(id)) {
+          error(
+            t.op.pos,
+            s"Cannot use infix expression notation to invoke '${t.op.value}' in Slang (use dot invoke notation instead: $t)."
+          )
+        }
+        t.args match {
+          case List(right) => AST.Exp.Binary(translateExp(t.lhs), id, translateExp(right), resolvedAttr(t.op.pos))
+          case _ =>
+            import org.sireum._
+            error(
+              t.op.pos,
+              st"Invalid righ-hand-side for '$id': '(${(t.args.map(_.syntax), ", ")})'".render.value
+            )
+            rExp
+        }
     }
   }
 

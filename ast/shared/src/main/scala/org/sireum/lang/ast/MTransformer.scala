@@ -421,6 +421,10 @@ object MTransformer {
 
   val PostResultExpInput: MOption[Exp.Spec] = MNone()
 
+  val PreResultExpOldVal: PreResult[Exp.Spec] = PreResult(T, MNone())
+
+  val PostResultExpOldVal: MOption[Exp.Spec] = MNone()
+
   val PreResultExpAtLoc: PreResult[Exp.Spec] = PreResult(T, MNone())
 
   val PostResultExpAtLoc: MOption[Exp.Spec] = MNone()
@@ -1114,6 +1118,13 @@ import MTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
         }
         return r
+      case o: Exp.OldVal =>
+        val r: PreResult[Exp] = preExpOldVal(o) match {
+         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
+        }
+        return r
       case o: Exp.AtLoc =>
         val r: PreResult[Exp] = preExpAtLoc(o) match {
          case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
@@ -1303,6 +1314,7 @@ import MTransformer._
     o match {
       case o: Exp.Quant => return preExpQuant(o)
       case o: Exp.Input => return preExpInput(o)
+      case o: Exp.OldVal => return preExpOldVal(o)
       case o: Exp.AtLoc => return preExpAtLoc(o)
       case o: Exp.StateSeq => return preExpStateSeq(o)
       case o: Exp.Result => return preExpResult(o)
@@ -1315,6 +1327,10 @@ import MTransformer._
 
   def preExpInput(o: Exp.Input): PreResult[Exp.Spec] = {
     return PreResultExpInput
+  }
+
+  def preExpOldVal(o: Exp.OldVal): PreResult[Exp.Spec] = {
+    return PreResultExpOldVal
   }
 
   def preExpAtLoc(o: Exp.AtLoc): PreResult[Exp.Spec] = {
@@ -2050,6 +2066,13 @@ import MTransformer._
          case _ => MNone[Exp]()
         }
         return r
+      case o: Exp.OldVal =>
+        val r: MOption[Exp] = postExpOldVal(o) match {
+         case MSome(result: Exp) => MSome[Exp](result)
+         case MSome(_) => halt("Can only produce object of type Exp")
+         case _ => MNone[Exp]()
+        }
+        return r
       case o: Exp.AtLoc =>
         val r: MOption[Exp] = postExpAtLoc(o) match {
          case MSome(result: Exp) => MSome[Exp](result)
@@ -2239,6 +2262,7 @@ import MTransformer._
     o match {
       case o: Exp.Quant => return postExpQuant(o)
       case o: Exp.Input => return postExpInput(o)
+      case o: Exp.OldVal => return postExpOldVal(o)
       case o: Exp.AtLoc => return postExpAtLoc(o)
       case o: Exp.StateSeq => return postExpStateSeq(o)
       case o: Exp.Result => return postExpResult(o)
@@ -2251,6 +2275,10 @@ import MTransformer._
 
   def postExpInput(o: Exp.Input): MOption[Exp.Spec] = {
     return PostResultExpInput
+  }
+
+  def postExpOldVal(o: Exp.OldVal): MOption[Exp.Spec] = {
+    return PostResultExpOldVal
   }
 
   def postExpAtLoc(o: Exp.AtLoc): MOption[Exp.Spec] = {
@@ -3787,6 +3815,13 @@ import MTransformer._
             MSome(o2(exp = r0.getOrElse(o2.exp), attr = r1.getOrElse(o2.attr)))
           else
             MNone()
+        case o2: Exp.OldVal =>
+          val r0: MOption[Exp] = transformExp(o2.exp)
+          val r1: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp), attr = r1.getOrElse(o2.attr)))
+          else
+            MNone()
         case o2: Exp.AtLoc =>
           val r0: MOption[Option[Id]] = transformOption(o2.idOpt, transformId _)
           val r1: MOption[Exp] = transformExp(o2.exp)
@@ -3986,6 +4021,13 @@ import MTransformer._
             MSome(o2(exp = r0.getOrElse(o2.exp), attr = r1.getOrElse(o2.attr)))
           else
             MNone()
+        case o2: Exp.OldVal =>
+          val r0: MOption[Exp] = transformExp(o2.exp)
+          val r1: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp), attr = r1.getOrElse(o2.attr)))
+          else
+            MNone()
         case o2: Exp.AtLoc =>
           val r0: MOption[Option[Id]] = transformOption(o2.idOpt, transformId _)
           val r1: MOption[Exp] = transformExp(o2.exp)
@@ -4033,9 +4075,9 @@ import MTransformer._
       val o2: Exp.StateSeq.Fragment = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: MOption[Id] = transformId(o2.id)
-      val r1: MOption[Stmt] = transformStmt(o2.stmt)
+      val r1: MOption[Exp] = transformExp(o2.exp)
       if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-        MSome(o2(id = r0.getOrElse(o2.id), stmt = r1.getOrElse(o2.stmt)))
+        MSome(o2(id = r0.getOrElse(o2.id), exp = r1.getOrElse(o2.exp)))
       else
         MNone()
     } else if (preR.resultOpt.nonEmpty) {

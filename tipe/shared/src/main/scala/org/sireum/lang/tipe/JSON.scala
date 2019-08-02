@@ -1074,6 +1074,7 @@ object JSON {
         case o: org.sireum.lang.ast.Exp.ForYield => return print_astExpForYield(o)
         case o: org.sireum.lang.ast.Exp.Quant => return print_astExpQuant(o)
         case o: org.sireum.lang.ast.Exp.Input => return print_astExpInput(o)
+        case o: org.sireum.lang.ast.Exp.OldVal => return print_astExpOldVal(o)
         case o: org.sireum.lang.ast.Exp.AtLoc => return print_astExpAtLoc(o)
         case o: org.sireum.lang.ast.Exp.StateSeq => return print_astExpStateSeq(o)
         case o: org.sireum.lang.ast.Exp.Result => return print_astExpResult(o)
@@ -1310,6 +1311,7 @@ object JSON {
       o match {
         case o: org.sireum.lang.ast.Exp.Quant => return print_astExpQuant(o)
         case o: org.sireum.lang.ast.Exp.Input => return print_astExpInput(o)
+        case o: org.sireum.lang.ast.Exp.OldVal => return print_astExpOldVal(o)
         case o: org.sireum.lang.ast.Exp.AtLoc => return print_astExpAtLoc(o)
         case o: org.sireum.lang.ast.Exp.StateSeq => return print_astExpStateSeq(o)
         case o: org.sireum.lang.ast.Exp.Result => return print_astExpResult(o)
@@ -1329,6 +1331,14 @@ object JSON {
     @pure def print_astExpInput(o: org.sireum.lang.ast.Exp.Input): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Exp.Input""""),
+        ("exp", print_astExp(o.exp)),
+        ("attr", print_astAttr(o.attr))
+      ))
+    }
+
+    @pure def print_astExpOldVal(o: org.sireum.lang.ast.Exp.OldVal): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.Exp.OldVal""""),
         ("exp", print_astExp(o.exp)),
         ("attr", print_astAttr(o.attr))
       ))
@@ -1357,7 +1367,7 @@ object JSON {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Exp.StateSeq.Fragment""""),
         ("id", print_astId(o.id)),
-        ("stmt", print_astStmt(o.stmt))
+        ("exp", print_astExp(o.exp))
       ))
     }
 
@@ -4074,7 +4084,7 @@ object JSON {
     }
 
     def parse_astExp(): org.sireum.lang.ast.Exp = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Exp.LitB", "org.sireum.lang.ast.Exp.LitC", "org.sireum.lang.ast.Exp.LitZ", "org.sireum.lang.ast.Exp.LitF32", "org.sireum.lang.ast.Exp.LitF64", "org.sireum.lang.ast.Exp.LitR", "org.sireum.lang.ast.Exp.LitString", "org.sireum.lang.ast.Exp.StringInterpolate", "org.sireum.lang.ast.Exp.This", "org.sireum.lang.ast.Exp.Super", "org.sireum.lang.ast.Exp.Unary", "org.sireum.lang.ast.Exp.Binary", "org.sireum.lang.ast.Exp.Ident", "org.sireum.lang.ast.Exp.Eta", "org.sireum.lang.ast.Exp.Tuple", "org.sireum.lang.ast.Exp.Select", "org.sireum.lang.ast.Exp.Invoke", "org.sireum.lang.ast.Exp.InvokeNamed", "org.sireum.lang.ast.Exp.If", "org.sireum.lang.ast.Exp.Fun", "org.sireum.lang.ast.Exp.ForYield", "org.sireum.lang.ast.Exp.Quant", "org.sireum.lang.ast.Exp.Input", "org.sireum.lang.ast.Exp.AtLoc", "org.sireum.lang.ast.Exp.StateSeq", "org.sireum.lang.ast.Exp.Result"))
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Exp.LitB", "org.sireum.lang.ast.Exp.LitC", "org.sireum.lang.ast.Exp.LitZ", "org.sireum.lang.ast.Exp.LitF32", "org.sireum.lang.ast.Exp.LitF64", "org.sireum.lang.ast.Exp.LitR", "org.sireum.lang.ast.Exp.LitString", "org.sireum.lang.ast.Exp.StringInterpolate", "org.sireum.lang.ast.Exp.This", "org.sireum.lang.ast.Exp.Super", "org.sireum.lang.ast.Exp.Unary", "org.sireum.lang.ast.Exp.Binary", "org.sireum.lang.ast.Exp.Ident", "org.sireum.lang.ast.Exp.Eta", "org.sireum.lang.ast.Exp.Tuple", "org.sireum.lang.ast.Exp.Select", "org.sireum.lang.ast.Exp.Invoke", "org.sireum.lang.ast.Exp.InvokeNamed", "org.sireum.lang.ast.Exp.If", "org.sireum.lang.ast.Exp.Fun", "org.sireum.lang.ast.Exp.ForYield", "org.sireum.lang.ast.Exp.Quant", "org.sireum.lang.ast.Exp.Input", "org.sireum.lang.ast.Exp.OldVal", "org.sireum.lang.ast.Exp.AtLoc", "org.sireum.lang.ast.Exp.StateSeq", "org.sireum.lang.ast.Exp.Result"))
       t.native match {
         case "org.sireum.lang.ast.Exp.LitB" => val r = parse_astExpLitBT(T); return r
         case "org.sireum.lang.ast.Exp.LitC" => val r = parse_astExpLitCT(T); return r
@@ -4099,6 +4109,7 @@ object JSON {
         case "org.sireum.lang.ast.Exp.ForYield" => val r = parse_astExpForYieldT(T); return r
         case "org.sireum.lang.ast.Exp.Quant" => val r = parse_astExpQuantT(T); return r
         case "org.sireum.lang.ast.Exp.Input" => val r = parse_astExpInputT(T); return r
+        case "org.sireum.lang.ast.Exp.OldVal" => val r = parse_astExpOldValT(T); return r
         case "org.sireum.lang.ast.Exp.AtLoc" => val r = parse_astExpAtLocT(T); return r
         case "org.sireum.lang.ast.Exp.StateSeq" => val r = parse_astExpStateSeqT(T); return r
         case "org.sireum.lang.ast.Exp.Result" => val r = parse_astExpResultT(T); return r
@@ -4601,10 +4612,11 @@ object JSON {
     }
 
     def parse_astExpSpec(): org.sireum.lang.ast.Exp.Spec = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Exp.Quant", "org.sireum.lang.ast.Exp.Input", "org.sireum.lang.ast.Exp.AtLoc", "org.sireum.lang.ast.Exp.StateSeq", "org.sireum.lang.ast.Exp.Result"))
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Exp.Quant", "org.sireum.lang.ast.Exp.Input", "org.sireum.lang.ast.Exp.OldVal", "org.sireum.lang.ast.Exp.AtLoc", "org.sireum.lang.ast.Exp.StateSeq", "org.sireum.lang.ast.Exp.Result"))
       t.native match {
         case "org.sireum.lang.ast.Exp.Quant" => val r = parse_astExpQuantT(T); return r
         case "org.sireum.lang.ast.Exp.Input" => val r = parse_astExpInputT(T); return r
+        case "org.sireum.lang.ast.Exp.OldVal" => val r = parse_astExpOldValT(T); return r
         case "org.sireum.lang.ast.Exp.AtLoc" => val r = parse_astExpAtLocT(T); return r
         case "org.sireum.lang.ast.Exp.StateSeq" => val r = parse_astExpStateSeqT(T); return r
         case "org.sireum.lang.ast.Exp.Result" => val r = parse_astExpResultT(T); return r
@@ -4652,6 +4664,24 @@ object JSON {
       val attr = parse_astAttr()
       parser.parseObjectNext()
       return org.sireum.lang.ast.Exp.Input(exp, attr)
+    }
+
+    def parse_astExpOldVal(): org.sireum.lang.ast.Exp.OldVal = {
+      val r = parse_astExpOldValT(F)
+      return r
+    }
+
+    def parse_astExpOldValT(typeParsed: B): org.sireum.lang.ast.Exp.OldVal = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Exp.OldVal")
+      }
+      parser.parseObjectKey("exp")
+      val exp = parse_astExp()
+      parser.parseObjectNext()
+      parser.parseObjectKey("attr")
+      val attr = parse_astAttr()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Exp.OldVal(exp, attr)
     }
 
     def parse_astExpAtLoc(): org.sireum.lang.ast.Exp.AtLoc = {
@@ -4711,10 +4741,10 @@ object JSON {
       parser.parseObjectKey("id")
       val id = parse_astId()
       parser.parseObjectNext()
-      parser.parseObjectKey("stmt")
-      val stmt = parse_astStmt()
+      parser.parseObjectKey("exp")
+      val exp = parse_astExp()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Exp.StateSeq.Fragment(id, stmt)
+      return org.sireum.lang.ast.Exp.StateSeq.Fragment(id, exp)
     }
 
     def parse_astExpResult(): org.sireum.lang.ast.Exp.Result = {
@@ -7941,6 +7971,24 @@ object JSON {
       return r
     }
     val r = to(s, f_astExpInput _)
+    return r
+  }
+
+  def from_astExpOldVal(o: org.sireum.lang.ast.Exp.OldVal, isCompact: B): String = {
+    val st = Printer.print_astExpOldVal(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astExpOldVal(s: String): Either[org.sireum.lang.ast.Exp.OldVal, Json.ErrorMsg] = {
+    def f_astExpOldVal(parser: Parser): org.sireum.lang.ast.Exp.OldVal = {
+      val r = parser.parse_astExpOldVal()
+      return r
+    }
+    val r = to(s, f_astExpOldVal _)
     return r
   }
 

@@ -2809,6 +2809,8 @@ import TypeChecker._
 
         case _: AST.Exp.AtLoc => halt("Unimplemented") // TODO
 
+        case _: AST.Exp.OldVal => halt("Unimplemented") // TODO
+
         case _: AST.Exp.StateSeq => halt("Unimplemented") // TODO
 
         case _: AST.Exp.Result => halt("Unimplemented") // TODO
