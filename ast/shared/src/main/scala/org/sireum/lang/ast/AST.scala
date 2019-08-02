@@ -409,9 +409,9 @@ object Stmt {
     }
   }
 
-  @datatype class Invariant(id: Id,
-                            claims: ISZ[Exp],
-                            @hidden attr: Attr) extends Spec {
+  @datatype class Inv(id: Id,
+                      claims: ISZ[Exp],
+                      @hidden attr: Attr) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
@@ -441,7 +441,7 @@ object Stmt {
     }
   }
 
-  @datatype class Deduce(sequents: ISZ[Sequent], @hidden attr: Attr) extends Spec {
+  @datatype class DeduceSequent(sequents: ISZ[Sequent], @hidden attr: Attr) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
@@ -1077,6 +1077,57 @@ object Exp {
 
     @pure override def typedOpt: Option[Typed] = {
       return Typed.bOpt
+    }
+  }
+
+  @datatype class Input(exp: Exp, @hidden attr: Attr) extends Spec {
+
+    @pure override def posOpt: Option[Position] = {
+      return attr.posOpt
+    }
+
+    @pure override def typedOpt: Option[Typed] = {
+      return exp.typedOpt
+    }
+  }
+
+  @datatype class AtLoc(line: Z, idOpt: Option[Id], exp: Exp, @hidden attr: Attr) extends Spec {
+
+    @pure override def posOpt: Option[Position] = {
+      return attr.posOpt
+    }
+
+    @pure override def typedOpt: Option[Typed] = {
+      return exp.typedOpt
+    }
+  }
+
+  @datatype class StateSeq(id: Id, fragments: ISZ[StateSeq.Fragment], @hidden attr: Attr) extends Spec {
+
+    @pure override def posOpt: Option[Position] = {
+      return attr.posOpt
+    }
+
+    @pure override def typedOpt: Option[Typed] = {
+      return Typed.bOpt
+    }
+
+  }
+
+  object StateSeq {
+
+    @datatype class Fragment(id: Id, stmt: Stmt)
+
+  }
+
+  @datatype class Result(@hidden attr: TypedAttr) extends Spec {
+
+    @pure override def posOpt: Option[Position] = {
+      return attr.posOpt
+    }
+
+    @pure override def typedOpt: Option[Typed] = {
+      return attr.typedOpt
     }
   }
 

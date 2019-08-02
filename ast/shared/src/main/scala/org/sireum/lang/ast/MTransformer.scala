@@ -185,9 +185,9 @@ object MTransformer {
 
   val PostResultStmtFact: MOption[Stmt.Spec] = MNone()
 
-  val PreResultStmtInvariant: PreResult[Stmt.Spec] = PreResult(T, MNone())
+  val PreResultStmtInv: PreResult[Stmt.Spec] = PreResult(T, MNone())
 
-  val PostResultStmtInvariant: MOption[Stmt.Spec] = MNone()
+  val PostResultStmtInv: MOption[Stmt.Spec] = MNone()
 
   val PreResultStmtTheorem: PreResult[Stmt.Spec] = PreResult(T, MNone())
 
@@ -201,9 +201,9 @@ object MTransformer {
 
   val PostResultStmtSpecBlock: MOption[Stmt.Spec] = MNone()
 
-  val PreResultStmtDeduce: PreResult[Stmt.Spec] = PreResult(T, MNone())
+  val PreResultStmtDeduceSequent: PreResult[Stmt.Spec] = PreResult(T, MNone())
 
-  val PostResultStmtDeduce: MOption[Stmt.Spec] = MNone()
+  val PostResultStmtDeduceSequent: MOption[Stmt.Spec] = MNone()
 
   val PreResultStmtDeduceSteps: PreResult[Stmt.Spec] = PreResult(T, MNone())
 
@@ -416,6 +416,26 @@ object MTransformer {
   val PreResultExpQuant: PreResult[Exp.Spec] = PreResult(T, MNone())
 
   val PostResultExpQuant: MOption[Exp.Spec] = MNone()
+
+  val PreResultExpInput: PreResult[Exp.Spec] = PreResult(T, MNone())
+
+  val PostResultExpInput: MOption[Exp.Spec] = MNone()
+
+  val PreResultExpAtLoc: PreResult[Exp.Spec] = PreResult(T, MNone())
+
+  val PostResultExpAtLoc: MOption[Exp.Spec] = MNone()
+
+  val PreResultExpStateSeq: PreResult[Exp.Spec] = PreResult(T, MNone())
+
+  val PostResultExpStateSeq: MOption[Exp.Spec] = MNone()
+
+  val PreResultExpStateSeqFragment: PreResult[Exp.StateSeq.Fragment] = PreResult(T, MNone())
+
+  val PostResultExpStateSeqFragment: MOption[Exp.StateSeq.Fragment] = MNone()
+
+  val PreResultExpResult: PreResult[Exp.Spec] = PreResult(T, MNone())
+
+  val PostResultExpResult: MOption[Exp.Spec] = MNone()
 
   val PreResultNamedArg: PreResult[NamedArg] = PreResult(T, MNone())
 
@@ -634,8 +654,8 @@ import MTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
         }
         return r
-      case o: Stmt.Invariant =>
-        val r: PreResult[Stmt] = preStmtInvariant(o) match {
+      case o: Stmt.Inv =>
+        val r: PreResult[Stmt] = preStmtInv(o) match {
          case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
          case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
          case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
@@ -662,8 +682,8 @@ import MTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
         }
         return r
-      case o: Stmt.Deduce =>
-        val r: PreResult[Stmt] = preStmtDeduce(o) match {
+      case o: Stmt.DeduceSequent =>
+        val r: PreResult[Stmt] = preStmtDeduceSequent(o) match {
          case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
          case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
          case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
@@ -819,11 +839,11 @@ import MTransformer._
   def preStmtSpec(o: Stmt.Spec): PreResult[Stmt.Spec] = {
     o match {
       case o: Stmt.Fact => return preStmtFact(o)
-      case o: Stmt.Invariant => return preStmtInvariant(o)
+      case o: Stmt.Inv => return preStmtInv(o)
       case o: Stmt.Theorem => return preStmtTheorem(o)
       case o: Stmt.SpecLabel => return preStmtSpecLabel(o)
       case o: Stmt.SpecBlock => return preStmtSpecBlock(o)
-      case o: Stmt.Deduce => return preStmtDeduce(o)
+      case o: Stmt.DeduceSequent => return preStmtDeduceSequent(o)
       case o: Stmt.DeduceSteps => return preStmtDeduceSteps(o)
     }
   }
@@ -832,8 +852,8 @@ import MTransformer._
     return PreResultStmtFact
   }
 
-  def preStmtInvariant(o: Stmt.Invariant): PreResult[Stmt.Spec] = {
-    return PreResultStmtInvariant
+  def preStmtInv(o: Stmt.Inv): PreResult[Stmt.Spec] = {
+    return PreResultStmtInv
   }
 
   def preStmtTheorem(o: Stmt.Theorem): PreResult[Stmt.Spec] = {
@@ -848,8 +868,8 @@ import MTransformer._
     return PreResultStmtSpecBlock
   }
 
-  def preStmtDeduce(o: Stmt.Deduce): PreResult[Stmt.Spec] = {
-    return PreResultStmtDeduce
+  def preStmtDeduceSequent(o: Stmt.DeduceSequent): PreResult[Stmt.Spec] = {
+    return PreResultStmtDeduceSequent
   }
 
   def preStmtDeduceSteps(o: Stmt.DeduceSteps): PreResult[Stmt.Spec] = {
@@ -1087,6 +1107,34 @@ import MTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
         }
         return r
+      case o: Exp.Input =>
+        val r: PreResult[Exp] = preExpInput(o) match {
+         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
+        }
+        return r
+      case o: Exp.AtLoc =>
+        val r: PreResult[Exp] = preExpAtLoc(o) match {
+         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
+        }
+        return r
+      case o: Exp.StateSeq =>
+        val r: PreResult[Exp] = preExpStateSeq(o) match {
+         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
+        }
+        return r
+      case o: Exp.Result =>
+        val r: PreResult[Exp] = preExpResult(o) match {
+         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
+        }
+        return r
     }
   }
 
@@ -1254,11 +1302,35 @@ import MTransformer._
   def preExpSpec(o: Exp.Spec): PreResult[Exp.Spec] = {
     o match {
       case o: Exp.Quant => return preExpQuant(o)
+      case o: Exp.Input => return preExpInput(o)
+      case o: Exp.AtLoc => return preExpAtLoc(o)
+      case o: Exp.StateSeq => return preExpStateSeq(o)
+      case o: Exp.Result => return preExpResult(o)
     }
   }
 
   def preExpQuant(o: Exp.Quant): PreResult[Exp.Spec] = {
     return PreResultExpQuant
+  }
+
+  def preExpInput(o: Exp.Input): PreResult[Exp.Spec] = {
+    return PreResultExpInput
+  }
+
+  def preExpAtLoc(o: Exp.AtLoc): PreResult[Exp.Spec] = {
+    return PreResultExpAtLoc
+  }
+
+  def preExpStateSeq(o: Exp.StateSeq): PreResult[Exp.Spec] = {
+    return PreResultExpStateSeq
+  }
+
+  def preExpStateSeqFragment(o: Exp.StateSeq.Fragment): PreResult[Exp.StateSeq.Fragment] = {
+    return PreResultExpStateSeqFragment
+  }
+
+  def preExpResult(o: Exp.Result): PreResult[Exp.Spec] = {
+    return PreResultExpResult
   }
 
   def preNamedArg(o: NamedArg): PreResult[NamedArg] = {
@@ -1518,8 +1590,8 @@ import MTransformer._
          case _ => MNone[Stmt]()
         }
         return r
-      case o: Stmt.Invariant =>
-        val r: MOption[Stmt] = postStmtInvariant(o) match {
+      case o: Stmt.Inv =>
+        val r: MOption[Stmt] = postStmtInv(o) match {
          case MSome(result: Stmt) => MSome[Stmt](result)
          case MSome(_) => halt("Can only produce object of type Stmt")
          case _ => MNone[Stmt]()
@@ -1546,8 +1618,8 @@ import MTransformer._
          case _ => MNone[Stmt]()
         }
         return r
-      case o: Stmt.Deduce =>
-        val r: MOption[Stmt] = postStmtDeduce(o) match {
+      case o: Stmt.DeduceSequent =>
+        val r: MOption[Stmt] = postStmtDeduceSequent(o) match {
          case MSome(result: Stmt) => MSome[Stmt](result)
          case MSome(_) => halt("Can only produce object of type Stmt")
          case _ => MNone[Stmt]()
@@ -1703,11 +1775,11 @@ import MTransformer._
   def postStmtSpec(o: Stmt.Spec): MOption[Stmt.Spec] = {
     o match {
       case o: Stmt.Fact => return postStmtFact(o)
-      case o: Stmt.Invariant => return postStmtInvariant(o)
+      case o: Stmt.Inv => return postStmtInv(o)
       case o: Stmt.Theorem => return postStmtTheorem(o)
       case o: Stmt.SpecLabel => return postStmtSpecLabel(o)
       case o: Stmt.SpecBlock => return postStmtSpecBlock(o)
-      case o: Stmt.Deduce => return postStmtDeduce(o)
+      case o: Stmt.DeduceSequent => return postStmtDeduceSequent(o)
       case o: Stmt.DeduceSteps => return postStmtDeduceSteps(o)
     }
   }
@@ -1716,8 +1788,8 @@ import MTransformer._
     return PostResultStmtFact
   }
 
-  def postStmtInvariant(o: Stmt.Invariant): MOption[Stmt.Spec] = {
-    return PostResultStmtInvariant
+  def postStmtInv(o: Stmt.Inv): MOption[Stmt.Spec] = {
+    return PostResultStmtInv
   }
 
   def postStmtTheorem(o: Stmt.Theorem): MOption[Stmt.Spec] = {
@@ -1732,8 +1804,8 @@ import MTransformer._
     return PostResultStmtSpecBlock
   }
 
-  def postStmtDeduce(o: Stmt.Deduce): MOption[Stmt.Spec] = {
-    return PostResultStmtDeduce
+  def postStmtDeduceSequent(o: Stmt.DeduceSequent): MOption[Stmt.Spec] = {
+    return PostResultStmtDeduceSequent
   }
 
   def postStmtDeduceSteps(o: Stmt.DeduceSteps): MOption[Stmt.Spec] = {
@@ -1971,6 +2043,34 @@ import MTransformer._
          case _ => MNone[Exp]()
         }
         return r
+      case o: Exp.Input =>
+        val r: MOption[Exp] = postExpInput(o) match {
+         case MSome(result: Exp) => MSome[Exp](result)
+         case MSome(_) => halt("Can only produce object of type Exp")
+         case _ => MNone[Exp]()
+        }
+        return r
+      case o: Exp.AtLoc =>
+        val r: MOption[Exp] = postExpAtLoc(o) match {
+         case MSome(result: Exp) => MSome[Exp](result)
+         case MSome(_) => halt("Can only produce object of type Exp")
+         case _ => MNone[Exp]()
+        }
+        return r
+      case o: Exp.StateSeq =>
+        val r: MOption[Exp] = postExpStateSeq(o) match {
+         case MSome(result: Exp) => MSome[Exp](result)
+         case MSome(_) => halt("Can only produce object of type Exp")
+         case _ => MNone[Exp]()
+        }
+        return r
+      case o: Exp.Result =>
+        val r: MOption[Exp] = postExpResult(o) match {
+         case MSome(result: Exp) => MSome[Exp](result)
+         case MSome(_) => halt("Can only produce object of type Exp")
+         case _ => MNone[Exp]()
+        }
+        return r
     }
   }
 
@@ -2138,11 +2238,35 @@ import MTransformer._
   def postExpSpec(o: Exp.Spec): MOption[Exp.Spec] = {
     o match {
       case o: Exp.Quant => return postExpQuant(o)
+      case o: Exp.Input => return postExpInput(o)
+      case o: Exp.AtLoc => return postExpAtLoc(o)
+      case o: Exp.StateSeq => return postExpStateSeq(o)
+      case o: Exp.Result => return postExpResult(o)
     }
   }
 
   def postExpQuant(o: Exp.Quant): MOption[Exp.Spec] = {
     return PostResultExpQuant
+  }
+
+  def postExpInput(o: Exp.Input): MOption[Exp.Spec] = {
+    return PostResultExpInput
+  }
+
+  def postExpAtLoc(o: Exp.AtLoc): MOption[Exp.Spec] = {
+    return PostResultExpAtLoc
+  }
+
+  def postExpStateSeq(o: Exp.StateSeq): MOption[Exp.Spec] = {
+    return PostResultExpStateSeq
+  }
+
+  def postExpStateSeqFragment(o: Exp.StateSeq.Fragment): MOption[Exp.StateSeq.Fragment] = {
+    return PostResultExpStateSeqFragment
+  }
+
+  def postExpResult(o: Exp.Result): MOption[Exp.Spec] = {
+    return PostResultExpResult
   }
 
   def postNamedArg(o: NamedArg): MOption[NamedArg] = {
@@ -2600,7 +2724,7 @@ import MTransformer._
             MSome(o2(id = r0.getOrElse(o2.id), typeArgs = r1.getOrElse(o2.typeArgs), descOpt = r2.getOrElse(o2.descOpt), claims = r3.getOrElse(o2.claims), attr = r4.getOrElse(o2.attr)))
           else
             MNone()
-        case o2: Stmt.Invariant =>
+        case o2: Stmt.Inv =>
           val r0: MOption[Id] = transformId(o2.id)
           val r1: MOption[IS[Z, Exp]] = transformISZ(o2.claims, transformExp _)
           val r2: MOption[Attr] = transformAttr(o2.attr)
@@ -2631,7 +2755,7 @@ import MTransformer._
             MSome(o2(block = r0.getOrElse(o2.block)))
           else
             MNone()
-        case o2: Stmt.Deduce =>
+        case o2: Stmt.DeduceSequent =>
           val r0: MOption[IS[Z, Sequent]] = transformISZ(o2.sequents, transformSequent _)
           val r1: MOption[Attr] = transformAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
@@ -2827,7 +2951,7 @@ import MTransformer._
             MSome(o2(id = r0.getOrElse(o2.id), typeArgs = r1.getOrElse(o2.typeArgs), descOpt = r2.getOrElse(o2.descOpt), claims = r3.getOrElse(o2.claims), attr = r4.getOrElse(o2.attr)))
           else
             MNone()
-        case o2: Stmt.Invariant =>
+        case o2: Stmt.Inv =>
           val r0: MOption[Id] = transformId(o2.id)
           val r1: MOption[IS[Z, Exp]] = transformISZ(o2.claims, transformExp _)
           val r2: MOption[Attr] = transformAttr(o2.attr)
@@ -2858,7 +2982,7 @@ import MTransformer._
             MSome(o2(block = r0.getOrElse(o2.block)))
           else
             MNone()
-        case o2: Stmt.Deduce =>
+        case o2: Stmt.DeduceSequent =>
           val r0: MOption[IS[Z, Sequent]] = transformISZ(o2.sequents, transformSequent _)
           val r1: MOption[Attr] = transformAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
@@ -3656,6 +3780,35 @@ import MTransformer._
             MSome(o2(varFragments = r0.getOrElse(o2.varFragments), exp = r1.getOrElse(o2.exp), attr = r2.getOrElse(o2.attr)))
           else
             MNone()
+        case o2: Exp.Input =>
+          val r0: MOption[Exp] = transformExp(o2.exp)
+          val r1: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp), attr = r1.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Exp.AtLoc =>
+          val r0: MOption[Option[Id]] = transformOption(o2.idOpt, transformId _)
+          val r1: MOption[Exp] = transformExp(o2.exp)
+          val r2: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(idOpt = r0.getOrElse(o2.idOpt), exp = r1.getOrElse(o2.exp), attr = r2.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Exp.StateSeq =>
+          val r0: MOption[Id] = transformId(o2.id)
+          val r1: MOption[IS[Z, Exp.StateSeq.Fragment]] = transformISZ(o2.fragments, transformExpStateSeqFragment _)
+          val r2: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id), fragments = r1.getOrElse(o2.fragments), attr = r2.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Exp.Result =>
+          val r0: MOption[TypedAttr] = transformTypedAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(attr = r0.getOrElse(o2.attr)))
+          else
+            MNone()
       }
       rOpt
     } else if (preR.resultOpt.nonEmpty) {
@@ -3826,6 +3979,35 @@ import MTransformer._
             MSome(o2(varFragments = r0.getOrElse(o2.varFragments), exp = r1.getOrElse(o2.exp), attr = r2.getOrElse(o2.attr)))
           else
             MNone()
+        case o2: Exp.Input =>
+          val r0: MOption[Exp] = transformExp(o2.exp)
+          val r1: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp), attr = r1.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Exp.AtLoc =>
+          val r0: MOption[Option[Id]] = transformOption(o2.idOpt, transformId _)
+          val r1: MOption[Exp] = transformExp(o2.exp)
+          val r2: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(idOpt = r0.getOrElse(o2.idOpt), exp = r1.getOrElse(o2.exp), attr = r2.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Exp.StateSeq =>
+          val r0: MOption[Id] = transformId(o2.id)
+          val r1: MOption[IS[Z, Exp.StateSeq.Fragment]] = transformISZ(o2.fragments, transformExpStateSeqFragment _)
+          val r2: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id), fragments = r1.getOrElse(o2.fragments), attr = r2.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Exp.Result =>
+          val r0: MOption[TypedAttr] = transformTypedAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(attr = r0.getOrElse(o2.attr)))
+          else
+            MNone()
       }
       rOpt
     } else if (preR.resultOpt.nonEmpty) {
@@ -3836,6 +4018,34 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Exp.Spec = r.getOrElse(o)
     val postR: MOption[Exp.Spec] = postExpSpec(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformExpStateSeqFragment(o: Exp.StateSeq.Fragment): MOption[Exp.StateSeq.Fragment] = {
+    val preR: PreResult[Exp.StateSeq.Fragment] = preExpStateSeqFragment(o)
+    val r: MOption[Exp.StateSeq.Fragment] = if (preR.continu) {
+      val o2: Exp.StateSeq.Fragment = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[Id] = transformId(o2.id)
+      val r1: MOption[Stmt] = transformStmt(o2.stmt)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+        MSome(o2(id = r0.getOrElse(o2.id), stmt = r1.getOrElse(o2.stmt)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Exp.StateSeq.Fragment = r.getOrElse(o)
+    val postR: MOption[Exp.StateSeq.Fragment] = postExpStateSeqFragment(o2)
     if (postR.nonEmpty) {
       return postR
     } else if (hasChanged) {

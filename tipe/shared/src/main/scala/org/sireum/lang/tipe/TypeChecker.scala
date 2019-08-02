@@ -58,6 +58,12 @@ object TypeChecker {
     'Supertype
   }
 
+  @enum object ModeContext {
+    'Code
+    'Spec
+    'SpecPost
+  }
+
   @datatype class TypeFinder(th: TypeHierarchy, tname: QName) extends AST.Transformer.PrePost[B] {
     override def preTypedName(ctx: B, o: AST.Typed.Name): AST.Transformer.PreResult[B, AST.Typed] = {
       return if (tname == o.ids || th.poset.isChildOf(tname, o.ids)) super.preTypedName(T, o)
@@ -213,16 +219,16 @@ object TypeChecker {
     for (info <- typeMap.values) {
       info match {
         case info: TypeInfo.Sig if !info.typeChecked =>
-          jobs = jobs :+ (() => TypeChecker(th, info.name, F).checkSig(info))
+          jobs = jobs :+ (() => TypeChecker(th, info.name, TypeChecker.ModeContext.Code).checkSig(info))
         case info: TypeInfo.Adt if !info.typeChecked =>
-          jobs = jobs :+ (() => TypeChecker(th, info.name, F).checkAdt(info))
+          jobs = jobs :+ (() => TypeChecker(th, info.name, TypeChecker.ModeContext.Code).checkAdt(info))
         case _ =>
       }
     }
     for (info <- nameMap.values) {
       info match {
         case info: Info.Object if !info.ast.extNameOpt.nonEmpty =>
-          jobs = jobs :+ (() => TypeChecker(th, info.name, F).checkObject(info))
+          jobs = jobs :+ (() => TypeChecker(th, info.name, TypeChecker.ModeContext.Code).checkObject(info))
         case _ =>
       }
     }
@@ -515,7 +521,15 @@ object TypeChecker {
 
 import TypeChecker._
 
-@datatype class TypeChecker(typeHierarchy: TypeHierarchy, context: QName, inSpec: B) {
+@datatype class TypeChecker(typeHierarchy: TypeHierarchy, context: QName, mode: TypeChecker.ModeContext.Type) {
+
+  @pure def inSpec: B = {
+    mode match {
+      case TypeChecker.ModeContext.Code => return F
+      case TypeChecker.ModeContext.Spec => return T
+      case TypeChecker.ModeContext.SpecPost => return T
+    }
+  }
 
   def basicKind(scope: Scope, tpe: AST.Typed, posOpt: Option[Position], reporter: Reporter): Option[BasicKind.Type] = {
     tpe match {
@@ -2713,7 +2727,7 @@ import TypeChecker._
               )
               return (exp, None())
           }
-          val r = this(typeHierarchy, context :+ s"$$${pos.beginLine}_${pos.beginColumn}", inSpec)
+          val r = this(typeHierarchy, context :+ s"$$${pos.beginLine}_${pos.beginColumn}", mode)
             .checkFun(expectedOpt, scope, exp, reporter)
           return r
 
@@ -2777,8 +2791,6 @@ import TypeChecker._
 
         case exp: AST.Exp.LitZ => return (exp, exp.typedOpt)
 
-        case _: AST.Exp.Quant => halt("Unimplemented") // TODO
-
         case exp: AST.Exp.Select => val r = checkSelect(exp, None()); return r
 
         case exp: AST.Exp.StringInterpolate => val r = checkStringInterpolate(exp); return r
@@ -2790,6 +2802,16 @@ import TypeChecker._
         case exp: AST.Exp.Tuple => val r = checkTuple(exp); return r
 
         case exp: AST.Exp.Unary => val r = checkUnary(exp); return r
+
+        case _: AST.Exp.Quant => halt("Unimplemented") // TODO
+
+        case _: AST.Exp.Input => halt("Unimplemented") // TODO
+
+        case _: AST.Exp.AtLoc => halt("Unimplemented") // TODO
+
+        case _: AST.Exp.StateSeq => halt("Unimplemented") // TODO
+
+        case _: AST.Exp.Result => halt("Unimplemented") // TODO
       }
     }
 
@@ -3728,7 +3750,8 @@ import TypeChecker._
       val (newScopeOpt, newEnumGens, _, _) = checkEnumGens(F, scope, forStmt.enumGens, reporter)
       newScopeOpt match {
         case Some(newScope) =>
-          val (newInvs, newMods) = this(inSpec = T).checkLoopInv(scope, forStmt.invariants, forStmt.modifies, reporter)
+          val (newInvs, newMods) = this(mode = TypeChecker.ModeContext.Spec).
+            checkLoopInv(scope, forStmt.invariants, forStmt.modifies, reporter)
           val (_, newBody) = checkBody(None(), newScope, forStmt.body, reporter)
           return forStmt(context = context, enumGens = newEnumGens, invariants = newInvs, modifies = newMods, body = newBody)
         case _ => return forStmt(context = context, enumGens = newEnumGens)
@@ -3751,7 +3774,8 @@ import TypeChecker._
         val r = checkBlock(None(), scope, stmt, reporter); return (Some(scope), r)
 
       case stmt: AST.Stmt.DoWhile =>
-        val (newInvs, newMods) = this(inSpec = T).checkLoopInv(scope, stmt.invariants, stmt.modifies, reporter)
+        val (newInvs, newMods) = this(mode = TypeChecker.ModeContext.Spec).
+          checkLoopInv(scope, stmt.invariants, stmt.modifies, reporter)
         val (_, newBody) = checkBody(None(), createNewScope(scope), stmt.body, reporter)
         val (newCond, _) = checkExp(AST.Typed.bOpt, scope, stmt.cond, reporter)
         return (Some(scope), stmt(context = context, cond = newCond, invariants = newInvs, modifies = newMods, body = newBody))
@@ -3772,7 +3796,7 @@ import TypeChecker._
       case stmt: AST.Stmt.Match => val r = checkMatch(None(), scope, stmt, reporter); return (Some(scope), r)
 
       case stmt: AST.Stmt.Method =>
-        val tc = TypeChecker(typeHierarchy, context :+ stmt.sig.id.value, inSpec)
+        val tc = TypeChecker(typeHierarchy, context :+ stmt.sig.id.value, mode)
         val r = tc.checkMethod(scope, stmt, reporter)
         return (Some(scope), r)
 
@@ -3833,7 +3857,8 @@ import TypeChecker._
 
       case stmt: AST.Stmt.While =>
         val (newCond, _) = checkExp(AST.Typed.bOpt, scope, stmt.cond, reporter)
-        val (newInvs, newMods) = this(inSpec = T).checkLoopInv(scope, stmt.invariants, stmt.modifies, reporter)
+        val (newInvs, newMods) = this(mode = TypeChecker.ModeContext.Spec).
+          checkLoopInv(scope, stmt.invariants, stmt.modifies, reporter)
         val (_, newBody) = checkBody(None(), createNewScope(scope), stmt.body, reporter)
         return (Some(scope), stmt(context = context, cond = newCond, invariants = newInvs, modifies = newMods, body = newBody))
 

@@ -94,8 +94,8 @@ object Transformer {
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Stmt]())
           }
           return r
-        case o: Stmt.Invariant =>
-          val r: PreResult[Context, Stmt] = preStmtInvariant(ctx, o) match {
+        case o: Stmt.Inv =>
+          val r: PreResult[Context, Stmt] = preStmtInv(ctx, o) match {
            case PreResult(preCtx, continu, Some(r: Stmt)) => PreResult(preCtx, continu, Some[Stmt](r))
            case PreResult(_, _, Some(_)) => halt("Can only produce object of type Stmt")
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Stmt]())
@@ -122,8 +122,8 @@ object Transformer {
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Stmt]())
           }
           return r
-        case o: Stmt.Deduce =>
-          val r: PreResult[Context, Stmt] = preStmtDeduce(ctx, o) match {
+        case o: Stmt.DeduceSequent =>
+          val r: PreResult[Context, Stmt] = preStmtDeduceSequent(ctx, o) match {
            case PreResult(preCtx, continu, Some(r: Stmt)) => PreResult(preCtx, continu, Some[Stmt](r))
            case PreResult(_, _, Some(_)) => halt("Can only produce object of type Stmt")
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Stmt]())
@@ -279,11 +279,11 @@ object Transformer {
     @pure def preStmtSpec(ctx: Context, o: Stmt.Spec): PreResult[Context, Stmt.Spec] = {
       o match {
         case o: Stmt.Fact => return preStmtFact(ctx, o)
-        case o: Stmt.Invariant => return preStmtInvariant(ctx, o)
+        case o: Stmt.Inv => return preStmtInv(ctx, o)
         case o: Stmt.Theorem => return preStmtTheorem(ctx, o)
         case o: Stmt.SpecLabel => return preStmtSpecLabel(ctx, o)
         case o: Stmt.SpecBlock => return preStmtSpecBlock(ctx, o)
-        case o: Stmt.Deduce => return preStmtDeduce(ctx, o)
+        case o: Stmt.DeduceSequent => return preStmtDeduceSequent(ctx, o)
         case o: Stmt.DeduceSteps => return preStmtDeduceSteps(ctx, o)
       }
     }
@@ -292,7 +292,7 @@ object Transformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preStmtInvariant(ctx: Context, o: Stmt.Invariant): PreResult[Context, Stmt.Spec] = {
+    @pure def preStmtInv(ctx: Context, o: Stmt.Inv): PreResult[Context, Stmt.Spec] = {
       return PreResult(ctx, T, None())
     }
 
@@ -308,7 +308,7 @@ object Transformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preStmtDeduce(ctx: Context, o: Stmt.Deduce): PreResult[Context, Stmt.Spec] = {
+    @pure def preStmtDeduceSequent(ctx: Context, o: Stmt.DeduceSequent): PreResult[Context, Stmt.Spec] = {
       return PreResult(ctx, T, None())
     }
 
@@ -547,6 +547,34 @@ object Transformer {
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp]())
           }
           return r
+        case o: Exp.Input =>
+          val r: PreResult[Context, Exp] = preExpInput(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Exp)) => PreResult(preCtx, continu, Some[Exp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Exp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp]())
+          }
+          return r
+        case o: Exp.AtLoc =>
+          val r: PreResult[Context, Exp] = preExpAtLoc(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Exp)) => PreResult(preCtx, continu, Some[Exp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Exp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp]())
+          }
+          return r
+        case o: Exp.StateSeq =>
+          val r: PreResult[Context, Exp] = preExpStateSeq(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Exp)) => PreResult(preCtx, continu, Some[Exp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Exp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp]())
+          }
+          return r
+        case o: Exp.Result =>
+          val r: PreResult[Context, Exp] = preExpResult(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Exp)) => PreResult(preCtx, continu, Some[Exp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Exp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp]())
+          }
+          return r
       }
     }
 
@@ -714,10 +742,34 @@ object Transformer {
     @pure def preExpSpec(ctx: Context, o: Exp.Spec): PreResult[Context, Exp.Spec] = {
       o match {
         case o: Exp.Quant => return preExpQuant(ctx, o)
+        case o: Exp.Input => return preExpInput(ctx, o)
+        case o: Exp.AtLoc => return preExpAtLoc(ctx, o)
+        case o: Exp.StateSeq => return preExpStateSeq(ctx, o)
+        case o: Exp.Result => return preExpResult(ctx, o)
       }
     }
 
     @pure def preExpQuant(ctx: Context, o: Exp.Quant): PreResult[Context, Exp.Spec] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preExpInput(ctx: Context, o: Exp.Input): PreResult[Context, Exp.Spec] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preExpAtLoc(ctx: Context, o: Exp.AtLoc): PreResult[Context, Exp.Spec] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preExpStateSeq(ctx: Context, o: Exp.StateSeq): PreResult[Context, Exp.Spec] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preExpStateSeqFragment(ctx: Context, o: Exp.StateSeq.Fragment): PreResult[Context, Exp.StateSeq.Fragment] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preExpResult(ctx: Context, o: Exp.Result): PreResult[Context, Exp.Spec] = {
       return PreResult(ctx, T, None())
     }
 
@@ -978,8 +1030,8 @@ object Transformer {
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[Stmt]())
           }
           return r
-        case o: Stmt.Invariant =>
-          val r: TPostResult[Context, Stmt] = postStmtInvariant(ctx, o) match {
+        case o: Stmt.Inv =>
+          val r: TPostResult[Context, Stmt] = postStmtInv(ctx, o) match {
            case TPostResult(postCtx, Some(result: Stmt)) => TPostResult(postCtx, Some[Stmt](result))
            case TPostResult(_, Some(_)) => halt("Can only produce object of type Stmt")
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[Stmt]())
@@ -1006,8 +1058,8 @@ object Transformer {
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[Stmt]())
           }
           return r
-        case o: Stmt.Deduce =>
-          val r: TPostResult[Context, Stmt] = postStmtDeduce(ctx, o) match {
+        case o: Stmt.DeduceSequent =>
+          val r: TPostResult[Context, Stmt] = postStmtDeduceSequent(ctx, o) match {
            case TPostResult(postCtx, Some(result: Stmt)) => TPostResult(postCtx, Some[Stmt](result))
            case TPostResult(_, Some(_)) => halt("Can only produce object of type Stmt")
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[Stmt]())
@@ -1163,11 +1215,11 @@ object Transformer {
     @pure def postStmtSpec(ctx: Context, o: Stmt.Spec): TPostResult[Context, Stmt.Spec] = {
       o match {
         case o: Stmt.Fact => return postStmtFact(ctx, o)
-        case o: Stmt.Invariant => return postStmtInvariant(ctx, o)
+        case o: Stmt.Inv => return postStmtInv(ctx, o)
         case o: Stmt.Theorem => return postStmtTheorem(ctx, o)
         case o: Stmt.SpecLabel => return postStmtSpecLabel(ctx, o)
         case o: Stmt.SpecBlock => return postStmtSpecBlock(ctx, o)
-        case o: Stmt.Deduce => return postStmtDeduce(ctx, o)
+        case o: Stmt.DeduceSequent => return postStmtDeduceSequent(ctx, o)
         case o: Stmt.DeduceSteps => return postStmtDeduceSteps(ctx, o)
       }
     }
@@ -1176,7 +1228,7 @@ object Transformer {
       return TPostResult(ctx, None())
     }
 
-    @pure def postStmtInvariant(ctx: Context, o: Stmt.Invariant): TPostResult[Context, Stmt.Spec] = {
+    @pure def postStmtInv(ctx: Context, o: Stmt.Inv): TPostResult[Context, Stmt.Spec] = {
       return TPostResult(ctx, None())
     }
 
@@ -1192,7 +1244,7 @@ object Transformer {
       return TPostResult(ctx, None())
     }
 
-    @pure def postStmtDeduce(ctx: Context, o: Stmt.Deduce): TPostResult[Context, Stmt.Spec] = {
+    @pure def postStmtDeduceSequent(ctx: Context, o: Stmt.DeduceSequent): TPostResult[Context, Stmt.Spec] = {
       return TPostResult(ctx, None())
     }
 
@@ -1431,6 +1483,34 @@ object Transformer {
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp]())
           }
           return r
+        case o: Exp.Input =>
+          val r: TPostResult[Context, Exp] = postExpInput(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Exp)) => TPostResult(postCtx, Some[Exp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp]())
+          }
+          return r
+        case o: Exp.AtLoc =>
+          val r: TPostResult[Context, Exp] = postExpAtLoc(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Exp)) => TPostResult(postCtx, Some[Exp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp]())
+          }
+          return r
+        case o: Exp.StateSeq =>
+          val r: TPostResult[Context, Exp] = postExpStateSeq(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Exp)) => TPostResult(postCtx, Some[Exp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp]())
+          }
+          return r
+        case o: Exp.Result =>
+          val r: TPostResult[Context, Exp] = postExpResult(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Exp)) => TPostResult(postCtx, Some[Exp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp]())
+          }
+          return r
       }
     }
 
@@ -1598,10 +1678,34 @@ object Transformer {
     @pure def postExpSpec(ctx: Context, o: Exp.Spec): TPostResult[Context, Exp.Spec] = {
       o match {
         case o: Exp.Quant => return postExpQuant(ctx, o)
+        case o: Exp.Input => return postExpInput(ctx, o)
+        case o: Exp.AtLoc => return postExpAtLoc(ctx, o)
+        case o: Exp.StateSeq => return postExpStateSeq(ctx, o)
+        case o: Exp.Result => return postExpResult(ctx, o)
       }
     }
 
     @pure def postExpQuant(ctx: Context, o: Exp.Quant): TPostResult[Context, Exp.Spec] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postExpInput(ctx: Context, o: Exp.Input): TPostResult[Context, Exp.Spec] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postExpAtLoc(ctx: Context, o: Exp.AtLoc): TPostResult[Context, Exp.Spec] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postExpStateSeq(ctx: Context, o: Exp.StateSeq): TPostResult[Context, Exp.Spec] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postExpStateSeqFragment(ctx: Context, o: Exp.StateSeq.Fragment): TPostResult[Context, Exp.StateSeq.Fragment] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postExpResult(ctx: Context, o: Exp.Result): TPostResult[Context, Exp.Spec] = {
       return TPostResult(ctx, None())
     }
 
@@ -2098,7 +2202,7 @@ import Transformer._
             TPostResult(r4.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), typeArgs = r1.resultOpt.getOrElse(o2.typeArgs), descOpt = r2.resultOpt.getOrElse(o2.descOpt), claims = r3.resultOpt.getOrElse(o2.claims), attr = r4.resultOpt.getOrElse(o2.attr))))
           else
             TPostResult(r4.ctx, None())
-        case o2: Stmt.Invariant =>
+        case o2: Stmt.Inv =>
           val r0: TPostResult[Context, Id] = transformId(preR.ctx, o2.id)
           val r1: TPostResult[Context, IS[Z, Exp]] = transformISZ(r0.ctx, o2.claims, transformExp _)
           val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
@@ -2129,7 +2233,7 @@ import Transformer._
             TPostResult(r0.ctx, Some(o2(block = r0.resultOpt.getOrElse(o2.block))))
           else
             TPostResult(r0.ctx, None())
-        case o2: Stmt.Deduce =>
+        case o2: Stmt.DeduceSequent =>
           val r0: TPostResult[Context, IS[Z, Sequent]] = transformISZ(preR.ctx, o2.sequents, transformSequent _)
           val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
@@ -2325,7 +2429,7 @@ import Transformer._
             TPostResult(r4.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), typeArgs = r1.resultOpt.getOrElse(o2.typeArgs), descOpt = r2.resultOpt.getOrElse(o2.descOpt), claims = r3.resultOpt.getOrElse(o2.claims), attr = r4.resultOpt.getOrElse(o2.attr))))
           else
             TPostResult(r4.ctx, None())
-        case o2: Stmt.Invariant =>
+        case o2: Stmt.Inv =>
           val r0: TPostResult[Context, Id] = transformId(preR.ctx, o2.id)
           val r1: TPostResult[Context, IS[Z, Exp]] = transformISZ(r0.ctx, o2.claims, transformExp _)
           val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
@@ -2356,7 +2460,7 @@ import Transformer._
             TPostResult(r0.ctx, Some(o2(block = r0.resultOpt.getOrElse(o2.block))))
           else
             TPostResult(r0.ctx, None())
-        case o2: Stmt.Deduce =>
+        case o2: Stmt.DeduceSequent =>
           val r0: TPostResult[Context, IS[Z, Sequent]] = transformISZ(preR.ctx, o2.sequents, transformSequent _)
           val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
@@ -3154,6 +3258,35 @@ import Transformer._
             TPostResult(r2.ctx, Some(o2(varFragments = r0.resultOpt.getOrElse(o2.varFragments), exp = r1.resultOpt.getOrElse(o2.exp), attr = r2.resultOpt.getOrElse(o2.attr))))
           else
             TPostResult(r2.ctx, None())
+        case o2: Exp.Input =>
+          val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.exp)
+          val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), attr = r1.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: Exp.AtLoc =>
+          val r0: TPostResult[Context, Option[Id]] = transformOption(preR.ctx, o2.idOpt, transformId _)
+          val r1: TPostResult[Context, Exp] = transformExp(r0.ctx, o2.exp)
+          val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(idOpt = r0.resultOpt.getOrElse(o2.idOpt), exp = r1.resultOpt.getOrElse(o2.exp), attr = r2.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r2.ctx, None())
+        case o2: Exp.StateSeq =>
+          val r0: TPostResult[Context, Id] = transformId(preR.ctx, o2.id)
+          val r1: TPostResult[Context, IS[Z, Exp.StateSeq.Fragment]] = transformISZ(r0.ctx, o2.fragments, transformExpStateSeqFragment _)
+          val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), fragments = r1.resultOpt.getOrElse(o2.fragments), attr = r2.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r2.ctx, None())
+        case o2: Exp.Result =>
+          val r0: TPostResult[Context, TypedAttr] = transformTypedAttr(preR.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(attr = r0.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r0.ctx, None())
       }
       rOpt
     } else if (preR.resultOpt.nonEmpty) {
@@ -3324,6 +3457,35 @@ import Transformer._
             TPostResult(r2.ctx, Some(o2(varFragments = r0.resultOpt.getOrElse(o2.varFragments), exp = r1.resultOpt.getOrElse(o2.exp), attr = r2.resultOpt.getOrElse(o2.attr))))
           else
             TPostResult(r2.ctx, None())
+        case o2: Exp.Input =>
+          val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.exp)
+          val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), attr = r1.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: Exp.AtLoc =>
+          val r0: TPostResult[Context, Option[Id]] = transformOption(preR.ctx, o2.idOpt, transformId _)
+          val r1: TPostResult[Context, Exp] = transformExp(r0.ctx, o2.exp)
+          val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(idOpt = r0.resultOpt.getOrElse(o2.idOpt), exp = r1.resultOpt.getOrElse(o2.exp), attr = r2.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r2.ctx, None())
+        case o2: Exp.StateSeq =>
+          val r0: TPostResult[Context, Id] = transformId(preR.ctx, o2.id)
+          val r1: TPostResult[Context, IS[Z, Exp.StateSeq.Fragment]] = transformISZ(r0.ctx, o2.fragments, transformExpStateSeqFragment _)
+          val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), fragments = r1.resultOpt.getOrElse(o2.fragments), attr = r2.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r2.ctx, None())
+        case o2: Exp.Result =>
+          val r0: TPostResult[Context, TypedAttr] = transformTypedAttr(preR.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(attr = r0.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r0.ctx, None())
       }
       rOpt
     } else if (preR.resultOpt.nonEmpty) {
@@ -3334,6 +3496,34 @@ import Transformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: Exp.Spec = r.resultOpt.getOrElse(o)
     val postR: TPostResult[Context, Exp.Spec] = pp.postExpSpec(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformExpStateSeqFragment(ctx: Context, o: Exp.StateSeq.Fragment): TPostResult[Context, Exp.StateSeq.Fragment] = {
+    val preR: PreResult[Context, Exp.StateSeq.Fragment] = pp.preExpStateSeqFragment(ctx, o)
+    val r: TPostResult[Context, Exp.StateSeq.Fragment] = if (preR.continu) {
+      val o2: Exp.StateSeq.Fragment = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: TPostResult[Context, Id] = transformId(preR.ctx, o2.id)
+      val r1: TPostResult[Context, Stmt] = transformStmt(r0.ctx, o2.stmt)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+        TPostResult(r1.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), stmt = r1.resultOpt.getOrElse(o2.stmt))))
+      else
+        TPostResult(r1.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: Exp.StateSeq.Fragment = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, Exp.StateSeq.Fragment] = pp.postExpStateSeqFragment(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {

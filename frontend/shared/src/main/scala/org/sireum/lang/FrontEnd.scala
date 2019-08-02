@@ -77,7 +77,7 @@ object FrontEnd {
     val th =
       TypeHierarchy.build(TypeHierarchy(nameMap, typeMap, Poset.empty, HashMap.empty), reporter)
     val thOutlined = TypeOutliner.checkOutline(th, reporter)
-    val tc = TypeChecker(thOutlined, ISZ(), F)
+    val tc = TypeChecker(thOutlined, ISZ(), TypeChecker.ModeContext.Code)
     val r = (tc, reporter)
     return r
   }
@@ -86,7 +86,7 @@ object FrontEnd {
     val (tc, reporter) = libraryReporter
     val th = tc.typeHierarchy
     val th2 = TypeChecker.checkComponents(th, th.nameMap, th.typeMap, reporter)
-    return (TypeChecker(th2, ISZ(), F), reporter)
+    return (TypeChecker(th2, ISZ(), TypeChecker.ModeContext.Code), reporter)
   }
 
   def checkWorksheet(
@@ -169,7 +169,7 @@ object FrontEnd {
       return (th4, program)
     }
 
-    val typeChecker = TypeChecker(th4, ISZ(), F)
+    val typeChecker = TypeChecker(th4, ISZ(), TypeChecker.ModeContext.Code)
     val scope = Scope.Local(HashMap.empty, HashMap.empty, None(), None(), Some(Scope.Global(ISZ(), ISZ(), ISZ())))
     val (newScope, newBody) = typeChecker.checkBody(None(), scope, program.body, reporter)
 
