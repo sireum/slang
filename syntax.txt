@@ -19,8 +19,10 @@
                      |  <while-stmt>
                      |  <for-stmt>
                      |  <return-stmt>
+                     |  Deduce (...)          // for ..., see https://github.com/sireum/runtime/blob/master/library/shared/src/main/scala/org/sireum/contract.scala
+                     |  Contract ( <STRING> )
+                     |  Contract { <stmt>* }
                      |  <exp>
-                     |  <proof-stmt>
 
 <import-stmt>      ::=  import <name> ⸨ . { <import-sel> ⸨ , <import-sel> ⸩* } ⸩?
                      |  import <name> . _
@@ -38,6 +40,10 @@
                      |  <datatype-decl>
                      |  <record-decl>
                      |  <type-decl>
+                     |  @spec def <ID> = Invariant(...)
+                     |  @spec def <ID> <type-params>? = Theorem(...)
+                     |  @spec def <ID> <type-params>? = Lemma(...)
+                     |  @spec def <ID> <type-params>? = Fact(...)
 
 <val-decl>         ::=  val <pattern> ⸨ : <type> ⸩? = <assign-exp>
                      |  @spec val <ID> : <type> = $
@@ -48,9 +54,8 @@
 <def-decl>         ::=  ⸨ @helper ⸩? ⸨ @pure ⸩? def <ID> <type-params>? <params>? : <type>
                      |  ⸨ @helper ⸩? <def-mod> def <ID> <type-params>? <params>? : <type> = <def-body>
                      |  ⸨ @pure ⸩? def <ID> <type-params>? <params>? : <type> = $
-                     |  ⸨ @pure ⸩? def <ID> <type-params>? <params>? : <type> = <ldef-contract>
+                     |  ⸨ @pure ⸩? def <ID> <type-params>? <params>? : <type> = Contract.Only(...)
                      |  @spec def <ID> <type-params>? <params>? : <type> = $
-                     |  @spec def <ID> <type-params>? <params>? : <type> = <spec-ldef>
 
 <def-mod>          ::=  ⸨ @pure | @strictpure ⸩ ⸨ override ⸩?
                      |  ⸨ @pure | @strictpure ⸩? override
@@ -121,7 +126,7 @@
                      |  => <type>
 
 <def-body>         ::=  {
-                          <ldef-contract>?
+                          ⸨ Contract(...) ⸩?
                           <stmt>*
                         }
 
@@ -150,16 +155,16 @@
 <match-case>       ::=  case <pattern> ⸨ if <exp> ⸩? => <stmt>*
 
 <while-stmt>       ::=  while ( <exp> ) {
-                          <loop-contract>?
+                          ⸨ Invariant(Modifies(...), ...) ⸩?
                           <stmt>*
                         }
                      |  do {
+                          ⸨ Invariant(Modifies(...), ...) ⸩?
                           <stmt>*
-                          <loop-contract>?
                         } while ( <exp> )
 
 <for-stmt>         ::=  for ( <for-enum-gen> ) {
-                          <loop-contract>?
+                          ⸨ Invariant(Modifies(...), ...) ⸩?
                           <stmt>*
                         }
 
@@ -170,8 +175,6 @@
                      |  <exp> to <exp> ⸨ by <exp> ⸩?
 
 <return-stmt>      ::=  return <exp>?
-
-<proof-stmt>       ::=  l""" <l-clause> """
 
 <block-assign-exp> ::=  { <stmt>* <assign-exp> }
 
@@ -195,31 +198,19 @@
                      |  if ( <exp> ) <exp> else <exp>
                      |  for ( <for-enum-gen> ⸨ ; <for-enum-gen> ⸩* ) yield <exp>
                      |  ( <params> ) => <exp>
-                     |  {
-                          ( <params> ) =>
-                          l""" <def-contract> """
-                          <stmt>*
-                          <exp>
-                        }
-                     |  <quant-op> <ID> ⸨ , <ID> ⸩* : <domain> <exp>  // only in the proof context
+                     |  { ( <params> ) => <stmt>* <exp> }
+                     |  <quant-op> ( <exp> ) ( ( <params> ) => <exp> )
+                     |  <quant-op> { ( <params> ) => <stmt>* <exp> }   // only in contract context
+                     |  At(...)                                        // only in contract context
+                     |  Old(...)                                       // only in contract context
+                     |  In(...)                                        // only in contract context
+                     |  Res                                            // only in contract ensures context
+                     |  <ID> ~ <exp> ⸨ ~ <exp> ⸩*                      // only in contract context
 
 <quant-op>         ::=  ∀
-                     |  A
-                     |  all
-                     |  forall
+                     |  All
                      |  ∃
-                     |  E
-                     |  some
-                     |  exists
-
-<domain>           ::=  <type>
-                     |  <lrange> <exp> , <exp> <rrange>
-
-<lrange>           ::=  [
-                     |  (
-
-<rrange>           ::=  ]
-                     |  )
+                     |  Exists
 
 <lit>              ::=  true
                      |  false
@@ -257,36 +248,32 @@
                      |  <exp> -> <exp>
                      |  <ID> = <exp>
 
-// Note: Unicode operators are only available in the proof context
-
 <unary-op>         ::=  +
                      |  -
-                     |  <neg-op>
+                     |  !
+                     |  ~
 
 <binary-op>        ::=  +
                      |  -
                      |  *
                      |  /
                      |  %
-                     |  ≡
                      |  ==
-                     |  ≠
                      |  !=
                      |  <<
                      |  >>
                      |  >>>
                      |  <
-                     |  ≤
                      |  <=
                      |  >
-                     |  ≥
                      |  >=
                      |  &&
                      |  ||
-                     |  <and-op>
-                     |  <or-op>
-                     |  <xor-op>
-                     |  <imply-op>  // right-associative
+                     |  simply_:    // right-associative
+                     |  &
+                     |  |
+                     |  |^
+                     |  imply_:     // right-associative
                      |  :+          // append
                      |  +:          // prepend, right-associative
                      |  ++          // append all
@@ -294,167 +281,11 @@
                      |  <SYMID>     // an identifier whose characters are all symbols (except a single colon)
                                     // right associative if it ends with a colon
 
-<and-op>           ::=  ∧
-                     |  ^
-                     |  &
-
-<or-op>            ::=  ∨
-                     |  V   // (i.e., capital V)
-                     |  |
-
-<xor-op>           ::=  ⊻
-                     |  |^
-
-<imply-op>         ::=  →
-                     |  ->  // only in the proof context
-
-<neg-op>           ::=  ¬
-                     |  ~
-                     |  !
-
-<ldef-contract>    ::=  l""" <def-contract> """
-
-<loop-contract>    ::=  l""" <loop-inv-mod> """
-
-<spec-ldef>        ::=  l""" <spec-defs> """
-
-<def-contract>     ::=  ⸨ requires <opt-named-exps> ⸩?
-                        ⸨ modifies <exp> ⸨ , <exp> ⸩* ⸩?
-                        ⸨ ensures <opt-named-exps> ⸩?
-                        <sub-contract>*
-                     |  ⸨ <contract-case> ⸩+  // newline separated
-                        <sub-contract>*
-
-<contract-case>    ::=  case <ID> :
-                        ⸨ requires <opt-named-exps> ⸩?
-                        ⸨ modifies <exp> ⸨ , <exp> ⸩* ⸩?
-                        ⸨ ensures <opt-named-exps> ⸩?
-
-<sub-contract>     ::=  def <ID> ( <ID> ⸨ , <ID> ⸩* ) <def-contract>
-
-<named-exps>       ::=  ⸨ <ID> : <exp> ⸩+       // newline separated
-
-<opt-named-exps>   ::=  ⸨ ⸨ <ID> : ⸩? <exp> ⸩+  // newline separated
-
-<spec-defs>        ::=  <spec-def>+            // newline separated
-
-<spec-def>         ::=  = <named-exp> ⸨ , <spec-def-cond> ⸩?
-
-<spec-def-cond>    ::=  ⸨ case <pattern> ⸩? if <exp>
-                     |  otherwise
-
-<loop-inv-mod>     ::=  ⸨ <ID> : ⸩?
-                        ⸨ invariant <named-exps> ⸩?
-                        ⸨ modifies <exp> ⸨ , <exp> ⸩* ⸩?
-
-<l-clause>         ::=  <invariants>
-                     |  <facts>
-                     |  <theorems>
-                     |  <sequent>
-                     |  <proof>
-
-<invariants>       ::=  invariant <named-exps>
-
-<facts>            ::=  fact <named-exps>   // newline separated
-
-<theorems>         ::=  theorem ⸨ <ID> : <exp> <proof> ⸩+   // newline separated
-
-<sequent>          ::=  ⸨ <exp> ⸨  , <exp> ⸩* ⸩? <sequent-op> <exp> ⸨  , <exp> ⸩* <proof>?
-
-<sequent-op>       ::=  ⊢
-                     |  |-
-
-<proof>            ::=  {
-                        <proof-step>+            // newline separated
-                        }
-
-<proof-step>       ::=  <NUM> . <exp> ... <just>
-                     |  <NUM> . <sub-proof>
-
-<sub-proof>        ::=  {
-                        <assume-step>            // newline separated
-                        <proof-step>+            // newline separated
-                        }
-
-<assume-step>      ::=  <NUM> . <exp> ... assume
-                     |  <NUM> . [ ID ⸨ , <ID> ⸩* ] ⸨ <exp> ... assume ⸩?
-                     |  <NUM> . [ ID ⸨ , <ID> ⸩* : <domain> ⸨ ID ⸨ , <ID> ⸩* : <domain> ⸩* ] ⸨ <exp> ... assume ⸩?
-
-<just>             ::=  ⸨ <just-op> ⸩? <ID> ⸨ ( <exp> ⸨ , <exp> ⸩* ) ⸩?
-
-<just-sym>         ::= <and-op>
-                     | <or-op>
-                     | <imply-op>
-                     | <neg-op>
-                     | <bottom>
-                     | ∀
-                     | ∃
-
-/*
-<just>             ::=  premise
-                     |  <and-op> i      ( <NUM> ⸨ , <NUM> ⸩+ )
-                     |  <and-op> e1     <NUM>
-                     |  <and-op> e2     <NUM>
-                     |  <or-intro1>     <NUM>
-                     |  <or-intro2>     <NUM>
-                     |  <or-elim>       <NUM>
-                     |  <imply-op> i    <NUM>
-                     |  <imply-op> e    ( <NUM> ⸨ , <NUM> ⸩+ )
-                     |  <neg-op> i      <NUM>
-                     |  <neg-op> e      ( <NUM> , <NUM> )
-                     |  <bottom> e      <NUM>
-                     |  pbc             <NUM>
-                     |  <forall-intro>  <NUM>
-                     |  <forall-elim>   ( <NUM> ⸨ , <exp> ⸩+ )
-                     |  <exists-intro>  ( <NUM> ⸨ , <exp> ⸩+ )
-                     |  <exists-elim>   ( <NUM> , <NUM> )
-                     |  fact            <ID> ⸨ . <ID> ⸩*
-                     |  invariant       ⸨ <ID> ⸨ . <ID> ⸩* ⸩?
-                     |  substl          ( <NUM> , <NUM> )
-                     |  substr          ( <NUM> , <NUM> )
-                     |  algebra         <NUM>
-                     |  auto            <NUM>
-                     |  algebra         ⸨ ( <NUM> ⸨ , <NUM> ⸩+ ) ⸩?
-                     |  auto            ⸨ ( <NUM> ⸨ , <NUM> ⸩+ ) ⸩?
-                     |  coq             <STRING>
-                     |  coq             ( <STRING> ⸨ , <NUM> ⸩+ )
-
-<or-intro1>        ::=  <or-op> i1
-                     |  Vi1
-
-<or-intro2>        ::=  <or-op> i2
-                     |  Vi2
-
-<or-elim>          ::=  <or-op> e
-                     |  Ve
-
-<bottom>           ::=  ⊥
-                     |  _|_
-
-<forall-intro>     ::=  ∀ i
-                     |  Ai
-                     |  alli
-                     |  foralli
-
-<forall-elim>      ::=  ∀ e
-                     |  Ae
-                     |  alle
-                     |  foralle
-
-<exists-intro>     ::=  ∃ i
-                     |  Ei
-                     |  somei
-                     |  existsi
-
-<exists-elim>      ::=  ∃ e
-                     |  Ee
-                     |  somee
-                     |  existse
-*/
+<sequent>          ::=  ⸨ <exp> ⸨  , <exp> ⸩* ⸩? |- <exp> <proof>?
 
 <truth-table>      ::=  ⸨ * ⸩*
                         <hline>
-                        <ID>* | <sequent-or-exp>     // sequent without proof
+                        <ID>* | <sequent>            // sequent without proof
                         <hline>
                         <truth-table-row>*           // newline separated
                         <hline>
