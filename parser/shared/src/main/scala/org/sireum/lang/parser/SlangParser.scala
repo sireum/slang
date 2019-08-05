@@ -2201,29 +2201,10 @@ class SlangParser(
     }
   }
 
-  def translateVarFragments(params: Seq[Term.Param]): ISZ[AST.VarFragment] = {
-    var varFragments = ISZ[AST.VarFragment]()
-    for (param <- params) {
-      if (param.default.isEmpty && param.mods.isEmpty) {
-        param.decltpe match {
-          case scala.Some(t) => varFragments = varFragments :+ AST.VarFragment(cid(param.name),
-            Some(AST.Domain.Type(translateType(t), typedAttr(t.pos))))
-          case _ => varFragments = varFragments :+ AST.VarFragment(cid(param.name), None())
-        }
-      } else {
-        errorInSlang(param.pos, "Invalid quantification parameter form")
-      }
-    }
-    varFragments
-  }
-
   def translateExp(exp: Term): AST.Exp = {
     def fresh(t: Term): ISZ[AST.Id] = t match {
       case t: Term.Name => ISZ(cid(t))
       case t: Term.Tuple => ISZ(t.args.map(arg => cid(arg.asInstanceOf[Term.Name])): _*)
-    }
-    def quant(isForall: B, params: Seq[Term.Param], e: Term, pos: Position): AST.Exp.Quant = {
-      AST.Exp.Quant(isForall, translateVarFragments(params), translateExp(e), attr(pos))
     }
 
     exp match {
@@ -2252,25 +2233,25 @@ class SlangParser(
         }
         AST.Exp.Eta(ref, typedAttr(exp.pos))
       case exp: Term.Tuple => AST.Exp.Tuple(ISZ(exp.args.map(translateExp): _*), typedAttr(exp.pos))
-      case q"${qid: Term.Name}(${d: Term})((..$params) => $e)" if quantSymbols.contains(qid.value) =>
+      case q"${qid: Term.Name}(${d: Term})((..$_) => ${_: Term})" if quantSymbols.contains(qid.value) =>
         val isForall = qid.value == "All" || qid.value == "∀"
-        val domain = d match {
-          case q"$lo until $hi" => AST.Domain.Range(translateExp(lo), translateExp(hi), false, typedAttr(d.pos))
-          case q"$lo to $hi" => AST.Domain.Range(translateExp(lo), translateExp(hi), true, typedAttr(d.pos))
-          case _ => AST.Domain.Each(translateExp(d), typedAttr(d.pos))
+        val q"$_($_)($f)" = exp
+        d match {
+          case q"$lo until $hi" => AST.Exp.QuantRange(isForall, translateExp(lo), translateExp(hi), false,
+            translateExp(f).asInstanceOf[AST.Exp.Fun], attr(exp.pos))
+          case q"$lo to $hi" => AST.Exp.QuantRange(isForall, translateExp(lo), translateExp(hi), true,
+            translateExp(f).asInstanceOf[AST.Exp.Fun], attr(exp.pos))
+          case _ => AST.Exp.QuantEach(isForall, translateExp(d),
+            translateExp(f).asInstanceOf[AST.Exp.Fun], attr(exp.pos))
         }
-        val varFragments = params match {
-          case Seq(p) if p.mods.isEmpty && p.default.isEmpty && p.decltpe.isEmpty =>
-            ISZ(AST.VarFragment(cid(p.name), Some(domain)))
-          case _ =>
-            errorInSlang(exp.pos, "Invalid quantification form")
-            ISZ[AST.VarFragment]()
-        }
-        AST.Exp.Quant(isForall, varFragments, translateExp(e), attr(exp.pos))
-      case q"${qid: Term.Name}{(..$params) => ${e: Term}}" if quantSymbols.contains(qid.value) =>
-        quant(qid.value == "All" || qid.value == "∀", params, e, exp.pos)
-      case q"${qid: Term.Name}((..$params) => $e)" if quantSymbols.contains(qid.value) =>
-        quant(qid.value == "All" || qid.value == "∀", params, e, exp.pos)
+      case q"${qid: Term.Name}{(..$_) => ${_: Term}}" if quantSymbols.contains(qid.value) =>
+        val isForall = qid.value == "All" || qid.value == "∀"
+        val f = exp.asInstanceOf[Term.Apply].args.head
+        AST.Exp.QuantType(isForall, translateExp(f).asInstanceOf[AST.Exp.Fun], attr(exp.pos))
+      case q"${qid: Term.Name}((..$_) => ${_: Term})" if quantSymbols.contains(qid.value) =>
+        val isForall = qid.value == "All" || qid.value == "∀"
+        val f = exp.asInstanceOf[Term.Apply].args.head
+        AST.Exp.QuantType(isForall, translateExp(f).asInstanceOf[AST.Exp.Fun], attr(exp.pos))
       case exp: Term.ApplyUnary => translateUnaryExp(exp)
       case exp: Term.ApplyInfix => translateBinaryExp(exp)
       case q"In($arg)" => AST.Exp.Input(translateExp(arg), attr(exp.pos))
@@ -2871,11 +2852,21 @@ class SlangParser(
       case _ => (None[AST.Exp.LitString](), fexprs)
     }
     var claims = ISZ[AST.Exp]()
-    val varFragments = if (stat.paramss.isEmpty) ISZ[AST.VarFragment]() else translateVarFragments(stat.paramss.head)
+    var params = ISZ[AST.Exp.Fun.Param]()
+    stat.paramss.size match {
+      case 0 =>
+      case 1 =>
+        for (p <- stat.paramss.head) {
+          params = params :+ translateFunParam(p)
+        }
+      case _ => error(stat.pos, "Cannot have more than one list of parameters")
+    }
     for (iexpr <- exprs) {
       val claim = translateExp(iexpr)
+      val tattr = typedAttr(iexpr.pos)
       claims = claims :+ (
-        if (varFragments.nonEmpty) AST.Exp.Quant(true, varFragments, claim, attr(stat.name.pos))
+        if (params.nonEmpty) AST.Exp.QuantType(true, AST.Exp.Fun(ISZ(), params,
+          AST.Stmt.Expr(claim, tattr), tattr), attr(stat.name.pos))
         else claim)
     }
     AST.Stmt.Fact(cid(stat.name), typeArgs, descOpt, claims, attr(stat.pos))
@@ -3074,12 +3065,18 @@ class SlangParser(
         (Some(translateLit(d).asInstanceOf[AST.Exp.LitString]), translateExp(e), translateProof(p))
       case q"${_: Term.Name}($e, $p)" => (None[AST.Exp.LitString](), translateExp(e), translateProof(p))
     }
-    val body = stat.paramss.headOption match {
-      case scala.Some(head) =>
-        val varFragments = translateVarFragments(head)
-        AST.Exp.Quant(true, varFragments, claim, attr(stat.name.pos))
-      case _ => claim
+    var params = ISZ[AST.Exp.Fun.Param]()
+    stat.paramss.size match {
+      case 0 =>
+      case 1 =>
+        for (p <- stat.paramss.head) {
+          params = params :+ translateFunParam(p)
+        }
+      case _ => error(stat.pos, "Cannot have more than one list of parameters")
     }
+    val tattr = typedAttr(stat.body.pos)
+    val body: AST.Exp = if (params.isEmpty) claim else AST.Exp.QuantType(true,
+      AST.Exp.Fun(ISZ(), params, AST.Stmt.Expr(claim, tattr), tattr), attr(stat.body.pos))
     AST.Stmt.Theorem(isLemma, cid(stat.name), typeArgs, descOpt, body, proof, attr(stat.pos))
   }
 

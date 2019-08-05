@@ -1072,7 +1072,9 @@ object JSON {
         case o: org.sireum.lang.ast.Exp.If => return print_astExpIf(o)
         case o: org.sireum.lang.ast.Exp.Fun => return print_astExpFun(o)
         case o: org.sireum.lang.ast.Exp.ForYield => return print_astExpForYield(o)
-        case o: org.sireum.lang.ast.Exp.Quant => return print_astExpQuant(o)
+        case o: org.sireum.lang.ast.Exp.QuantType => return print_astExpQuantType(o)
+        case o: org.sireum.lang.ast.Exp.QuantRange => return print_astExpQuantRange(o)
+        case o: org.sireum.lang.ast.Exp.QuantEach => return print_astExpQuantEach(o)
         case o: org.sireum.lang.ast.Exp.Input => return print_astExpInput(o)
         case o: org.sireum.lang.ast.Exp.OldVal => return print_astExpOldVal(o)
         case o: org.sireum.lang.ast.Exp.AtLoc => return print_astExpAtLoc(o)
@@ -1309,7 +1311,9 @@ object JSON {
 
     @pure def print_astExpSpec(o: org.sireum.lang.ast.Exp.Spec): ST = {
       o match {
-        case o: org.sireum.lang.ast.Exp.Quant => return print_astExpQuant(o)
+        case o: org.sireum.lang.ast.Exp.QuantType => return print_astExpQuantType(o)
+        case o: org.sireum.lang.ast.Exp.QuantRange => return print_astExpQuantRange(o)
+        case o: org.sireum.lang.ast.Exp.QuantEach => return print_astExpQuantEach(o)
         case o: org.sireum.lang.ast.Exp.Input => return print_astExpInput(o)
         case o: org.sireum.lang.ast.Exp.OldVal => return print_astExpOldVal(o)
         case o: org.sireum.lang.ast.Exp.AtLoc => return print_astExpAtLoc(o)
@@ -1318,12 +1322,33 @@ object JSON {
       }
     }
 
-    @pure def print_astExpQuant(o: org.sireum.lang.ast.Exp.Quant): ST = {
+    @pure def print_astExpQuantType(o: org.sireum.lang.ast.Exp.QuantType): ST = {
       return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Exp.Quant""""),
+        ("type", st""""org.sireum.lang.ast.Exp.QuantType""""),
         ("isForall", printB(o.isForall)),
-        ("varFragments", printISZ(F, o.varFragments, print_astVarFragment _)),
-        ("exp", print_astExp(o.exp)),
+        ("fun", print_astExpFun(o.fun)),
+        ("attr", print_astAttr(o.attr))
+      ))
+    }
+
+    @pure def print_astExpQuantRange(o: org.sireum.lang.ast.Exp.QuantRange): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.Exp.QuantRange""""),
+        ("isForall", printB(o.isForall)),
+        ("lo", print_astExp(o.lo)),
+        ("hi", print_astExp(o.hi)),
+        ("hiExact", printB(o.hiExact)),
+        ("fun", print_astExpFun(o.fun)),
+        ("attr", print_astAttr(o.attr))
+      ))
+    }
+
+    @pure def print_astExpQuantEach(o: org.sireum.lang.ast.Exp.QuantEach): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.Exp.QuantEach""""),
+        ("isForall", printB(o.isForall)),
+        ("seq", print_astExp(o.seq)),
+        ("fun", print_astExpFun(o.fun)),
         ("attr", print_astAttr(o.attr))
       ))
     }
@@ -1384,48 +1409,6 @@ object JSON {
         ("id", print_astId(o.id)),
         ("arg", print_astExp(o.arg)),
         ("index", printZ(o.index))
-      ))
-    }
-
-    @pure def print_astVarFragment(o: org.sireum.lang.ast.VarFragment): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.VarFragment""""),
-        ("id", print_astId(o.id)),
-        ("domainOpt", printOption(F, o.domainOpt, print_astDomain _))
-      ))
-    }
-
-    @pure def print_astDomain(o: org.sireum.lang.ast.Domain): ST = {
-      o match {
-        case o: org.sireum.lang.ast.Domain.Type => return print_astDomainType(o)
-        case o: org.sireum.lang.ast.Domain.Range => return print_astDomainRange(o)
-        case o: org.sireum.lang.ast.Domain.Each => return print_astDomainEach(o)
-      }
-    }
-
-    @pure def print_astDomainType(o: org.sireum.lang.ast.Domain.Type): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Domain.Type""""),
-        ("tipe", print_astType(o.tipe)),
-        ("attr", print_astTypedAttr(o.attr))
-      ))
-    }
-
-    @pure def print_astDomainRange(o: org.sireum.lang.ast.Domain.Range): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Domain.Range""""),
-        ("lo", print_astExp(o.lo)),
-        ("hi", print_astExp(o.hi)),
-        ("hiExact", printB(o.hiExact)),
-        ("attr", print_astTypedAttr(o.attr))
-      ))
-    }
-
-    @pure def print_astDomainEach(o: org.sireum.lang.ast.Domain.Each): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Domain.Each""""),
-        ("exp", print_astExp(o.exp)),
-        ("attr", print_astTypedAttr(o.attr))
       ))
     }
 
@@ -4084,7 +4067,7 @@ object JSON {
     }
 
     def parse_astExp(): org.sireum.lang.ast.Exp = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Exp.LitB", "org.sireum.lang.ast.Exp.LitC", "org.sireum.lang.ast.Exp.LitZ", "org.sireum.lang.ast.Exp.LitF32", "org.sireum.lang.ast.Exp.LitF64", "org.sireum.lang.ast.Exp.LitR", "org.sireum.lang.ast.Exp.LitString", "org.sireum.lang.ast.Exp.StringInterpolate", "org.sireum.lang.ast.Exp.This", "org.sireum.lang.ast.Exp.Super", "org.sireum.lang.ast.Exp.Unary", "org.sireum.lang.ast.Exp.Binary", "org.sireum.lang.ast.Exp.Ident", "org.sireum.lang.ast.Exp.Eta", "org.sireum.lang.ast.Exp.Tuple", "org.sireum.lang.ast.Exp.Select", "org.sireum.lang.ast.Exp.Invoke", "org.sireum.lang.ast.Exp.InvokeNamed", "org.sireum.lang.ast.Exp.If", "org.sireum.lang.ast.Exp.Fun", "org.sireum.lang.ast.Exp.ForYield", "org.sireum.lang.ast.Exp.Quant", "org.sireum.lang.ast.Exp.Input", "org.sireum.lang.ast.Exp.OldVal", "org.sireum.lang.ast.Exp.AtLoc", "org.sireum.lang.ast.Exp.StateSeq", "org.sireum.lang.ast.Exp.Result"))
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Exp.LitB", "org.sireum.lang.ast.Exp.LitC", "org.sireum.lang.ast.Exp.LitZ", "org.sireum.lang.ast.Exp.LitF32", "org.sireum.lang.ast.Exp.LitF64", "org.sireum.lang.ast.Exp.LitR", "org.sireum.lang.ast.Exp.LitString", "org.sireum.lang.ast.Exp.StringInterpolate", "org.sireum.lang.ast.Exp.This", "org.sireum.lang.ast.Exp.Super", "org.sireum.lang.ast.Exp.Unary", "org.sireum.lang.ast.Exp.Binary", "org.sireum.lang.ast.Exp.Ident", "org.sireum.lang.ast.Exp.Eta", "org.sireum.lang.ast.Exp.Tuple", "org.sireum.lang.ast.Exp.Select", "org.sireum.lang.ast.Exp.Invoke", "org.sireum.lang.ast.Exp.InvokeNamed", "org.sireum.lang.ast.Exp.If", "org.sireum.lang.ast.Exp.Fun", "org.sireum.lang.ast.Exp.ForYield", "org.sireum.lang.ast.Exp.QuantType", "org.sireum.lang.ast.Exp.QuantRange", "org.sireum.lang.ast.Exp.QuantEach", "org.sireum.lang.ast.Exp.Input", "org.sireum.lang.ast.Exp.OldVal", "org.sireum.lang.ast.Exp.AtLoc", "org.sireum.lang.ast.Exp.StateSeq", "org.sireum.lang.ast.Exp.Result"))
       t.native match {
         case "org.sireum.lang.ast.Exp.LitB" => val r = parse_astExpLitBT(T); return r
         case "org.sireum.lang.ast.Exp.LitC" => val r = parse_astExpLitCT(T); return r
@@ -4107,7 +4090,9 @@ object JSON {
         case "org.sireum.lang.ast.Exp.If" => val r = parse_astExpIfT(T); return r
         case "org.sireum.lang.ast.Exp.Fun" => val r = parse_astExpFunT(T); return r
         case "org.sireum.lang.ast.Exp.ForYield" => val r = parse_astExpForYieldT(T); return r
-        case "org.sireum.lang.ast.Exp.Quant" => val r = parse_astExpQuantT(T); return r
+        case "org.sireum.lang.ast.Exp.QuantType" => val r = parse_astExpQuantTypeT(T); return r
+        case "org.sireum.lang.ast.Exp.QuantRange" => val r = parse_astExpQuantRangeT(T); return r
+        case "org.sireum.lang.ast.Exp.QuantEach" => val r = parse_astExpQuantEachT(T); return r
         case "org.sireum.lang.ast.Exp.Input" => val r = parse_astExpInputT(T); return r
         case "org.sireum.lang.ast.Exp.OldVal" => val r = parse_astExpOldValT(T); return r
         case "org.sireum.lang.ast.Exp.AtLoc" => val r = parse_astExpAtLocT(T); return r
@@ -4612,9 +4597,11 @@ object JSON {
     }
 
     def parse_astExpSpec(): org.sireum.lang.ast.Exp.Spec = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Exp.Quant", "org.sireum.lang.ast.Exp.Input", "org.sireum.lang.ast.Exp.OldVal", "org.sireum.lang.ast.Exp.AtLoc", "org.sireum.lang.ast.Exp.StateSeq", "org.sireum.lang.ast.Exp.Result"))
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Exp.QuantType", "org.sireum.lang.ast.Exp.QuantRange", "org.sireum.lang.ast.Exp.QuantEach", "org.sireum.lang.ast.Exp.Input", "org.sireum.lang.ast.Exp.OldVal", "org.sireum.lang.ast.Exp.AtLoc", "org.sireum.lang.ast.Exp.StateSeq", "org.sireum.lang.ast.Exp.Result"))
       t.native match {
-        case "org.sireum.lang.ast.Exp.Quant" => val r = parse_astExpQuantT(T); return r
+        case "org.sireum.lang.ast.Exp.QuantType" => val r = parse_astExpQuantTypeT(T); return r
+        case "org.sireum.lang.ast.Exp.QuantRange" => val r = parse_astExpQuantRangeT(T); return r
+        case "org.sireum.lang.ast.Exp.QuantEach" => val r = parse_astExpQuantEachT(T); return r
         case "org.sireum.lang.ast.Exp.Input" => val r = parse_astExpInputT(T); return r
         case "org.sireum.lang.ast.Exp.OldVal" => val r = parse_astExpOldValT(T); return r
         case "org.sireum.lang.ast.Exp.AtLoc" => val r = parse_astExpAtLocT(T); return r
@@ -4624,28 +4611,79 @@ object JSON {
       }
     }
 
-    def parse_astExpQuant(): org.sireum.lang.ast.Exp.Quant = {
-      val r = parse_astExpQuantT(F)
+    def parse_astExpQuantType(): org.sireum.lang.ast.Exp.QuantType = {
+      val r = parse_astExpQuantTypeT(F)
       return r
     }
 
-    def parse_astExpQuantT(typeParsed: B): org.sireum.lang.ast.Exp.Quant = {
+    def parse_astExpQuantTypeT(typeParsed: B): org.sireum.lang.ast.Exp.QuantType = {
       if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Exp.Quant")
+        parser.parseObjectType("org.sireum.lang.ast.Exp.QuantType")
       }
       parser.parseObjectKey("isForall")
       val isForall = parser.parseB()
       parser.parseObjectNext()
-      parser.parseObjectKey("varFragments")
-      val varFragments = parser.parseISZ(parse_astVarFragment _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("exp")
-      val exp = parse_astExp()
+      parser.parseObjectKey("fun")
+      val fun = parse_astExpFun()
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Exp.Quant(isForall, varFragments, exp, attr)
+      return org.sireum.lang.ast.Exp.QuantType(isForall, fun, attr)
+    }
+
+    def parse_astExpQuantRange(): org.sireum.lang.ast.Exp.QuantRange = {
+      val r = parse_astExpQuantRangeT(F)
+      return r
+    }
+
+    def parse_astExpQuantRangeT(typeParsed: B): org.sireum.lang.ast.Exp.QuantRange = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Exp.QuantRange")
+      }
+      parser.parseObjectKey("isForall")
+      val isForall = parser.parseB()
+      parser.parseObjectNext()
+      parser.parseObjectKey("lo")
+      val lo = parse_astExp()
+      parser.parseObjectNext()
+      parser.parseObjectKey("hi")
+      val hi = parse_astExp()
+      parser.parseObjectNext()
+      parser.parseObjectKey("hiExact")
+      val hiExact = parser.parseB()
+      parser.parseObjectNext()
+      parser.parseObjectKey("fun")
+      val fun = parse_astExpFun()
+      parser.parseObjectNext()
+      parser.parseObjectKey("attr")
+      val attr = parse_astAttr()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Exp.QuantRange(isForall, lo, hi, hiExact, fun, attr)
+    }
+
+    def parse_astExpQuantEach(): org.sireum.lang.ast.Exp.QuantEach = {
+      val r = parse_astExpQuantEachT(F)
+      return r
+    }
+
+    def parse_astExpQuantEachT(typeParsed: B): org.sireum.lang.ast.Exp.QuantEach = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Exp.QuantEach")
+      }
+      parser.parseObjectKey("isForall")
+      val isForall = parser.parseB()
+      parser.parseObjectNext()
+      parser.parseObjectKey("seq")
+      val seq = parse_astExp()
+      parser.parseObjectNext()
+      parser.parseObjectKey("fun")
+      val fun = parse_astExpFun()
+      parser.parseObjectNext()
+      parser.parseObjectKey("attr")
+      val attr = parse_astAttr()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Exp.QuantEach(isForall, seq, fun, attr)
     }
 
     def parse_astExpInput(): org.sireum.lang.ast.Exp.Input = {
@@ -4781,94 +4819,6 @@ object JSON {
       val index = parser.parseZ()
       parser.parseObjectNext()
       return org.sireum.lang.ast.NamedArg(id, arg, index)
-    }
-
-    def parse_astVarFragment(): org.sireum.lang.ast.VarFragment = {
-      val r = parse_astVarFragmentT(F)
-      return r
-    }
-
-    def parse_astVarFragmentT(typeParsed: B): org.sireum.lang.ast.VarFragment = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.VarFragment")
-      }
-      parser.parseObjectKey("id")
-      val id = parse_astId()
-      parser.parseObjectNext()
-      parser.parseObjectKey("domainOpt")
-      val domainOpt = parser.parseOption(parse_astDomain _)
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.VarFragment(id, domainOpt)
-    }
-
-    def parse_astDomain(): org.sireum.lang.ast.Domain = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Domain.Type", "org.sireum.lang.ast.Domain.Range", "org.sireum.lang.ast.Domain.Each"))
-      t.native match {
-        case "org.sireum.lang.ast.Domain.Type" => val r = parse_astDomainTypeT(T); return r
-        case "org.sireum.lang.ast.Domain.Range" => val r = parse_astDomainRangeT(T); return r
-        case "org.sireum.lang.ast.Domain.Each" => val r = parse_astDomainEachT(T); return r
-        case _ => val r = parse_astDomainEachT(T); return r
-      }
-    }
-
-    def parse_astDomainType(): org.sireum.lang.ast.Domain.Type = {
-      val r = parse_astDomainTypeT(F)
-      return r
-    }
-
-    def parse_astDomainTypeT(typeParsed: B): org.sireum.lang.ast.Domain.Type = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Domain.Type")
-      }
-      parser.parseObjectKey("tipe")
-      val tipe = parse_astType()
-      parser.parseObjectNext()
-      parser.parseObjectKey("attr")
-      val attr = parse_astTypedAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Domain.Type(tipe, attr)
-    }
-
-    def parse_astDomainRange(): org.sireum.lang.ast.Domain.Range = {
-      val r = parse_astDomainRangeT(F)
-      return r
-    }
-
-    def parse_astDomainRangeT(typeParsed: B): org.sireum.lang.ast.Domain.Range = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Domain.Range")
-      }
-      parser.parseObjectKey("lo")
-      val lo = parse_astExp()
-      parser.parseObjectNext()
-      parser.parseObjectKey("hi")
-      val hi = parse_astExp()
-      parser.parseObjectNext()
-      parser.parseObjectKey("hiExact")
-      val hiExact = parser.parseB()
-      parser.parseObjectNext()
-      parser.parseObjectKey("attr")
-      val attr = parse_astTypedAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Domain.Range(lo, hi, hiExact, attr)
-    }
-
-    def parse_astDomainEach(): org.sireum.lang.ast.Domain.Each = {
-      val r = parse_astDomainEachT(F)
-      return r
-    }
-
-    def parse_astDomainEachT(typeParsed: B): org.sireum.lang.ast.Domain.Each = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Domain.Each")
-      }
-      parser.parseObjectKey("exp")
-      val exp = parse_astExp()
-      parser.parseObjectNext()
-      parser.parseObjectKey("attr")
-      val attr = parse_astTypedAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Domain.Each(exp, attr)
     }
 
     def parse_astId(): org.sireum.lang.ast.Id = {
@@ -7938,8 +7888,8 @@ object JSON {
     return r
   }
 
-  def from_astExpQuant(o: org.sireum.lang.ast.Exp.Quant, isCompact: B): String = {
-    val st = Printer.print_astExpQuant(o)
+  def from_astExpQuantType(o: org.sireum.lang.ast.Exp.QuantType, isCompact: B): String = {
+    val st = Printer.print_astExpQuantType(o)
     if (isCompact) {
       return st.renderCompact
     } else {
@@ -7947,12 +7897,48 @@ object JSON {
     }
   }
 
-  def to_astExpQuant(s: String): Either[org.sireum.lang.ast.Exp.Quant, Json.ErrorMsg] = {
-    def f_astExpQuant(parser: Parser): org.sireum.lang.ast.Exp.Quant = {
-      val r = parser.parse_astExpQuant()
+  def to_astExpQuantType(s: String): Either[org.sireum.lang.ast.Exp.QuantType, Json.ErrorMsg] = {
+    def f_astExpQuantType(parser: Parser): org.sireum.lang.ast.Exp.QuantType = {
+      val r = parser.parse_astExpQuantType()
       return r
     }
-    val r = to(s, f_astExpQuant _)
+    val r = to(s, f_astExpQuantType _)
+    return r
+  }
+
+  def from_astExpQuantRange(o: org.sireum.lang.ast.Exp.QuantRange, isCompact: B): String = {
+    val st = Printer.print_astExpQuantRange(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astExpQuantRange(s: String): Either[org.sireum.lang.ast.Exp.QuantRange, Json.ErrorMsg] = {
+    def f_astExpQuantRange(parser: Parser): org.sireum.lang.ast.Exp.QuantRange = {
+      val r = parser.parse_astExpQuantRange()
+      return r
+    }
+    val r = to(s, f_astExpQuantRange _)
+    return r
+  }
+
+  def from_astExpQuantEach(o: org.sireum.lang.ast.Exp.QuantEach, isCompact: B): String = {
+    val st = Printer.print_astExpQuantEach(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astExpQuantEach(s: String): Either[org.sireum.lang.ast.Exp.QuantEach, Json.ErrorMsg] = {
+    def f_astExpQuantEach(parser: Parser): org.sireum.lang.ast.Exp.QuantEach = {
+      val r = parser.parse_astExpQuantEach()
+      return r
+    }
+    val r = to(s, f_astExpQuantEach _)
     return r
   }
 
@@ -8079,96 +8065,6 @@ object JSON {
       return r
     }
     val r = to(s, f_astNamedArg _)
-    return r
-  }
-
-  def from_astVarFragment(o: org.sireum.lang.ast.VarFragment, isCompact: B): String = {
-    val st = Printer.print_astVarFragment(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astVarFragment(s: String): Either[org.sireum.lang.ast.VarFragment, Json.ErrorMsg] = {
-    def f_astVarFragment(parser: Parser): org.sireum.lang.ast.VarFragment = {
-      val r = parser.parse_astVarFragment()
-      return r
-    }
-    val r = to(s, f_astVarFragment _)
-    return r
-  }
-
-  def from_astDomain(o: org.sireum.lang.ast.Domain, isCompact: B): String = {
-    val st = Printer.print_astDomain(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astDomain(s: String): Either[org.sireum.lang.ast.Domain, Json.ErrorMsg] = {
-    def f_astDomain(parser: Parser): org.sireum.lang.ast.Domain = {
-      val r = parser.parse_astDomain()
-      return r
-    }
-    val r = to(s, f_astDomain _)
-    return r
-  }
-
-  def from_astDomainType(o: org.sireum.lang.ast.Domain.Type, isCompact: B): String = {
-    val st = Printer.print_astDomainType(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astDomainType(s: String): Either[org.sireum.lang.ast.Domain.Type, Json.ErrorMsg] = {
-    def f_astDomainType(parser: Parser): org.sireum.lang.ast.Domain.Type = {
-      val r = parser.parse_astDomainType()
-      return r
-    }
-    val r = to(s, f_astDomainType _)
-    return r
-  }
-
-  def from_astDomainRange(o: org.sireum.lang.ast.Domain.Range, isCompact: B): String = {
-    val st = Printer.print_astDomainRange(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astDomainRange(s: String): Either[org.sireum.lang.ast.Domain.Range, Json.ErrorMsg] = {
-    def f_astDomainRange(parser: Parser): org.sireum.lang.ast.Domain.Range = {
-      val r = parser.parse_astDomainRange()
-      return r
-    }
-    val r = to(s, f_astDomainRange _)
-    return r
-  }
-
-  def from_astDomainEach(o: org.sireum.lang.ast.Domain.Each, isCompact: B): String = {
-    val st = Printer.print_astDomainEach(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astDomainEach(s: String): Either[org.sireum.lang.ast.Domain.Each, Json.ErrorMsg] = {
-    def f_astDomainEach(parser: Parser): org.sireum.lang.ast.Domain.Each = {
-      val r = parser.parse_astDomainEach()
-      return r
-    }
-    val r = to(s, f_astDomainEach _)
     return r
   }
 

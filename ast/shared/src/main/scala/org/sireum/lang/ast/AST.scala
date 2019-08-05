@@ -1069,7 +1069,31 @@ object Exp {
 
   @datatype trait Spec extends Exp
 
-  @datatype class Quant(isForall: B, varFragments: ISZ[VarFragment], exp: Exp, @hidden attr: Attr) extends Spec {
+  @datatype class QuantType(isForall: B, fun: Exp.Fun, @hidden attr: Attr) extends Spec {
+
+    @pure override def posOpt: Option[Position] = {
+      return attr.posOpt
+    }
+
+    @pure override def typedOpt: Option[Typed] = {
+      return Typed.bOpt
+    }
+
+  }
+
+  @datatype class QuantRange(isForall: B, lo: Exp, hi: Exp, hiExact: B, fun: Exp.Fun, @hidden attr: Attr) extends Spec {
+
+    @pure override def posOpt: Option[Position] = {
+      return attr.posOpt
+    }
+
+    @pure override def typedOpt: Option[Typed] = {
+      return Typed.bOpt
+    }
+
+  }
+
+  @datatype class QuantEach(isForall: B, seq: Exp, fun: Exp.Fun, @hidden attr: Attr) extends Spec {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1145,21 +1169,6 @@ object Exp {
 }
 
 @datatype class NamedArg(id: Id, arg: Exp, index: Z)
-
-@datatype class VarFragment(id: Id, domainOpt: Option[Domain])
-
-@datatype trait Domain {
-  def attr: TypedAttr
-}
-
-object Domain {
-
-  @datatype class Type(tipe: org.sireum.lang.ast.Type, @hidden val attr: TypedAttr) extends Domain
-
-  @datatype class Range(lo: Exp, hi: Exp, hiExact: B, @hidden val attr: TypedAttr) extends Domain
-
-  @datatype class Each(exp: Exp, @hidden val attr: TypedAttr) extends Domain
-}
 
 @datatype class Id(value: String, @hidden attr: Attr)
 

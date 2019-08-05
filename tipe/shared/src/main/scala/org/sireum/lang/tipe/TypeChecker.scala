@@ -2803,7 +2803,11 @@ import TypeChecker._
 
         case exp: AST.Exp.Unary => val r = checkUnary(exp); return r
 
-        case _: AST.Exp.Quant => halt("Unimplemented") // TODO
+        case _: AST.Exp.QuantType => halt("Unimplemented") // TODO
+
+        case _: AST.Exp.QuantRange => halt("Unimplemented") // TODO
+
+        case _: AST.Exp.QuantEach => halt("Unimplemented") // TODO
 
         case _: AST.Exp.Input => halt("Unimplemented") // TODO
 

@@ -252,99 +252,95 @@ object MsgPack {
 
     val _astExpForYield: Z = 75
 
-    val _astExpQuant: Z = 76
+    val _astExpQuantType: Z = 76
 
-    val _astExpInput: Z = 77
+    val _astExpQuantRange: Z = 77
 
-    val _astExpOldVal: Z = 78
+    val _astExpQuantEach: Z = 78
 
-    val _astExpAtLoc: Z = 79
+    val _astExpInput: Z = 79
 
-    val _astExpStateSeq: Z = 80
+    val _astExpOldVal: Z = 80
 
-    val _astExpStateSeqFragment: Z = 81
+    val _astExpAtLoc: Z = 81
 
-    val _astExpResult: Z = 82
+    val _astExpStateSeq: Z = 82
 
-    val _astNamedArg: Z = 83
+    val _astExpStateSeqFragment: Z = 83
 
-    val _astVarFragment: Z = 84
+    val _astExpResult: Z = 84
 
-    val _astDomainType: Z = 85
+    val _astNamedArg: Z = 85
 
-    val _astDomainRange: Z = 86
+    val _astId: Z = 86
 
-    val _astDomainEach: Z = 87
+    val _astName: Z = 87
 
-    val _astId: Z = 88
+    val _astBody: Z = 88
 
-    val _astName: Z = 89
+    val _astAdtParam: Z = 89
 
-    val _astBody: Z = 90
+    val _astMethodSig: Z = 90
 
-    val _astAdtParam: Z = 91
+    val _astParam: Z = 91
 
-    val _astMethodSig: Z = 92
+    val _astTypeParam: Z = 92
 
-    val _astParam: Z = 93
+    val _astTypedName: Z = 93
 
-    val _astTypeParam: Z = 94
+    val _astTypedTuple: Z = 94
 
-    val _astTypedName: Z = 95
+    val _astTypedFun: Z = 95
 
-    val _astTypedTuple: Z = 96
+    val _astTypedTypeVar: Z = 96
 
-    val _astTypedFun: Z = 97
+    val _astTypedPackage: Z = 97
 
-    val _astTypedTypeVar: Z = 98
+    val _astTypedObject: Z = 98
 
-    val _astTypedPackage: Z = 99
+    val _astTypedEnum: Z = 99
 
-    val _astTypedObject: Z = 100
+    val _astTypedMethod: Z = 100
 
-    val _astTypedEnum: Z = 101
+    val _astTypedMethods: Z = 101
 
-    val _astTypedMethod: Z = 102
+    val _astAttr: Z = 102
 
-    val _astTypedMethods: Z = 103
+    val _astTypedAttr: Z = 103
 
-    val _astAttr: Z = 104
+    val _astResolvedAttr: Z = 104
 
-    val _astTypedAttr: Z = 105
+    val _astResolvedInfoBuiltIn: Z = 105
 
-    val _astResolvedAttr: Z = 106
+    val _astResolvedInfoPackage: Z = 106
 
-    val _astResolvedInfoBuiltIn: Z = 107
+    val _astResolvedInfoEnum: Z = 107
 
-    val _astResolvedInfoPackage: Z = 108
+    val _astResolvedInfoEnumElement: Z = 108
 
-    val _astResolvedInfoEnum: Z = 109
+    val _astResolvedInfoObject: Z = 109
 
-    val _astResolvedInfoEnumElement: Z = 110
+    val _astResolvedInfoVar: Z = 110
 
-    val _astResolvedInfoObject: Z = 111
+    val _astResolvedInfoMethod: Z = 111
 
-    val _astResolvedInfoVar: Z = 112
+    val _astResolvedInfoMethods: Z = 112
 
-    val _astResolvedInfoMethod: Z = 113
+    val _astResolvedInfoTuple: Z = 113
 
-    val _astResolvedInfoMethods: Z = 114
+    val _astResolvedInfoLocalVar: Z = 114
 
-    val _astResolvedInfoTuple: Z = 115
+    val _astTruthTableRow: Z = 115
 
-    val _astResolvedInfoLocalVar: Z = 116
+    val _astTruthTableAssignment: Z = 116
 
-    val _astTruthTableRow: Z = 117
+    val _astTruthTableConclusionValidity: Z = 117
 
-    val _astTruthTableAssignment: Z = 118
+    val _astTruthTableConclusionTautology: Z = 118
 
-    val _astTruthTableConclusionValidity: Z = 119
+    val _astTruthTableConclusionContradictory: Z = 119
 
-    val _astTruthTableConclusionTautology: Z = 120
-
-    val _astTruthTableConclusionContradictory: Z = 121
-
-    val _astTruthTableConclusionContingent: Z = 122
+    val _astTruthTableConclusionContingent: Z = 120
 
   }
 
@@ -1212,7 +1208,9 @@ object MsgPack {
         case o: org.sireum.lang.ast.Exp.If => write_astExpIf(o)
         case o: org.sireum.lang.ast.Exp.Fun => write_astExpFun(o)
         case o: org.sireum.lang.ast.Exp.ForYield => write_astExpForYield(o)
-        case o: org.sireum.lang.ast.Exp.Quant => write_astExpQuant(o)
+        case o: org.sireum.lang.ast.Exp.QuantType => write_astExpQuantType(o)
+        case o: org.sireum.lang.ast.Exp.QuantRange => write_astExpQuantRange(o)
+        case o: org.sireum.lang.ast.Exp.QuantEach => write_astExpQuantEach(o)
         case o: org.sireum.lang.ast.Exp.Input => write_astExpInput(o)
         case o: org.sireum.lang.ast.Exp.OldVal => write_astExpOldVal(o)
         case o: org.sireum.lang.ast.Exp.AtLoc => write_astExpAtLoc(o)
@@ -1396,7 +1394,9 @@ object MsgPack {
 
     def write_astExpSpec(o: org.sireum.lang.ast.Exp.Spec): Unit = {
       o match {
-        case o: org.sireum.lang.ast.Exp.Quant => write_astExpQuant(o)
+        case o: org.sireum.lang.ast.Exp.QuantType => write_astExpQuantType(o)
+        case o: org.sireum.lang.ast.Exp.QuantRange => write_astExpQuantRange(o)
+        case o: org.sireum.lang.ast.Exp.QuantEach => write_astExpQuantEach(o)
         case o: org.sireum.lang.ast.Exp.Input => write_astExpInput(o)
         case o: org.sireum.lang.ast.Exp.OldVal => write_astExpOldVal(o)
         case o: org.sireum.lang.ast.Exp.AtLoc => write_astExpAtLoc(o)
@@ -1405,11 +1405,28 @@ object MsgPack {
       }
     }
 
-    def write_astExpQuant(o: org.sireum.lang.ast.Exp.Quant): Unit = {
-      writer.writeZ(Constants._astExpQuant)
+    def write_astExpQuantType(o: org.sireum.lang.ast.Exp.QuantType): Unit = {
+      writer.writeZ(Constants._astExpQuantType)
       writer.writeB(o.isForall)
-      writer.writeISZ(o.varFragments, write_astVarFragment _)
-      write_astExp(o.exp)
+      write_astExpFun(o.fun)
+      write_astAttr(o.attr)
+    }
+
+    def write_astExpQuantRange(o: org.sireum.lang.ast.Exp.QuantRange): Unit = {
+      writer.writeZ(Constants._astExpQuantRange)
+      writer.writeB(o.isForall)
+      write_astExp(o.lo)
+      write_astExp(o.hi)
+      writer.writeB(o.hiExact)
+      write_astExpFun(o.fun)
+      write_astAttr(o.attr)
+    }
+
+    def write_astExpQuantEach(o: org.sireum.lang.ast.Exp.QuantEach): Unit = {
+      writer.writeZ(Constants._astExpQuantEach)
+      writer.writeB(o.isForall)
+      write_astExp(o.seq)
+      write_astExpFun(o.fun)
       write_astAttr(o.attr)
     }
 
@@ -1456,40 +1473,6 @@ object MsgPack {
       write_astId(o.id)
       write_astExp(o.arg)
       writer.writeZ(o.index)
-    }
-
-    def write_astVarFragment(o: org.sireum.lang.ast.VarFragment): Unit = {
-      writer.writeZ(Constants._astVarFragment)
-      write_astId(o.id)
-      writer.writeOption(o.domainOpt, write_astDomain _)
-    }
-
-    def write_astDomain(o: org.sireum.lang.ast.Domain): Unit = {
-      o match {
-        case o: org.sireum.lang.ast.Domain.Type => write_astDomainType(o)
-        case o: org.sireum.lang.ast.Domain.Range => write_astDomainRange(o)
-        case o: org.sireum.lang.ast.Domain.Each => write_astDomainEach(o)
-      }
-    }
-
-    def write_astDomainType(o: org.sireum.lang.ast.Domain.Type): Unit = {
-      writer.writeZ(Constants._astDomainType)
-      write_astType(o.tipe)
-      write_astTypedAttr(o.attr)
-    }
-
-    def write_astDomainRange(o: org.sireum.lang.ast.Domain.Range): Unit = {
-      writer.writeZ(Constants._astDomainRange)
-      write_astExp(o.lo)
-      write_astExp(o.hi)
-      writer.writeB(o.hiExact)
-      write_astTypedAttr(o.attr)
-    }
-
-    def write_astDomainEach(o: org.sireum.lang.ast.Domain.Each): Unit = {
-      writer.writeZ(Constants._astDomainEach)
-      write_astExp(o.exp)
-      write_astTypedAttr(o.attr)
     }
 
     def write_astId(o: org.sireum.lang.ast.Id): Unit = {
@@ -3416,7 +3399,9 @@ object MsgPack {
         case Constants._astExpIf => val r = read_astExpIfT(T); return r
         case Constants._astExpFun => val r = read_astExpFunT(T); return r
         case Constants._astExpForYield => val r = read_astExpForYieldT(T); return r
-        case Constants._astExpQuant => val r = read_astExpQuantT(T); return r
+        case Constants._astExpQuantType => val r = read_astExpQuantTypeT(T); return r
+        case Constants._astExpQuantRange => val r = read_astExpQuantRangeT(T); return r
+        case Constants._astExpQuantEach => val r = read_astExpQuantEachT(T); return r
         case Constants._astExpInput => val r = read_astExpInputT(T); return r
         case Constants._astExpOldVal => val r = read_astExpOldValT(T); return r
         case Constants._astExpAtLoc => val r = read_astExpAtLocT(T); return r
@@ -3795,7 +3780,9 @@ object MsgPack {
       val i = reader.curr
       val t = reader.readZ()
       t match {
-        case Constants._astExpQuant => val r = read_astExpQuantT(T); return r
+        case Constants._astExpQuantType => val r = read_astExpQuantTypeT(T); return r
+        case Constants._astExpQuantRange => val r = read_astExpQuantRangeT(T); return r
+        case Constants._astExpQuantEach => val r = read_astExpQuantEachT(T); return r
         case Constants._astExpInput => val r = read_astExpInputT(T); return r
         case Constants._astExpOldVal => val r = read_astExpOldValT(T); return r
         case Constants._astExpAtLoc => val r = read_astExpAtLocT(T); return r
@@ -3808,20 +3795,53 @@ object MsgPack {
       }
     }
 
-    def read_astExpQuant(): org.sireum.lang.ast.Exp.Quant = {
-      val r = read_astExpQuantT(F)
+    def read_astExpQuantType(): org.sireum.lang.ast.Exp.QuantType = {
+      val r = read_astExpQuantTypeT(F)
       return r
     }
 
-    def read_astExpQuantT(typeParsed: B): org.sireum.lang.ast.Exp.Quant = {
+    def read_astExpQuantTypeT(typeParsed: B): org.sireum.lang.ast.Exp.QuantType = {
       if (!typeParsed) {
-        reader.expectZ(Constants._astExpQuant)
+        reader.expectZ(Constants._astExpQuantType)
       }
       val isForall = reader.readB()
-      val varFragments = reader.readISZ(read_astVarFragment _)
-      val exp = read_astExp()
+      val fun = read_astExpFun()
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Exp.Quant(isForall, varFragments, exp, attr)
+      return org.sireum.lang.ast.Exp.QuantType(isForall, fun, attr)
+    }
+
+    def read_astExpQuantRange(): org.sireum.lang.ast.Exp.QuantRange = {
+      val r = read_astExpQuantRangeT(F)
+      return r
+    }
+
+    def read_astExpQuantRangeT(typeParsed: B): org.sireum.lang.ast.Exp.QuantRange = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astExpQuantRange)
+      }
+      val isForall = reader.readB()
+      val lo = read_astExp()
+      val hi = read_astExp()
+      val hiExact = reader.readB()
+      val fun = read_astExpFun()
+      val attr = read_astAttr()
+      return org.sireum.lang.ast.Exp.QuantRange(isForall, lo, hi, hiExact, fun, attr)
+    }
+
+    def read_astExpQuantEach(): org.sireum.lang.ast.Exp.QuantEach = {
+      val r = read_astExpQuantEachT(F)
+      return r
+    }
+
+    def read_astExpQuantEachT(typeParsed: B): org.sireum.lang.ast.Exp.QuantEach = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astExpQuantEach)
+      }
+      val isForall = reader.readB()
+      val seq = read_astExp()
+      val fun = read_astExpFun()
+      val attr = read_astAttr()
+      return org.sireum.lang.ast.Exp.QuantEach(isForall, seq, fun, attr)
     }
 
     def read_astExpInput(): org.sireum.lang.ast.Exp.Input = {
@@ -3923,78 +3943,6 @@ object MsgPack {
       val arg = read_astExp()
       val index = reader.readZ()
       return org.sireum.lang.ast.NamedArg(id, arg, index)
-    }
-
-    def read_astVarFragment(): org.sireum.lang.ast.VarFragment = {
-      val r = read_astVarFragmentT(F)
-      return r
-    }
-
-    def read_astVarFragmentT(typeParsed: B): org.sireum.lang.ast.VarFragment = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astVarFragment)
-      }
-      val id = read_astId()
-      val domainOpt = reader.readOption(read_astDomain _)
-      return org.sireum.lang.ast.VarFragment(id, domainOpt)
-    }
-
-    def read_astDomain(): org.sireum.lang.ast.Domain = {
-      val i = reader.curr
-      val t = reader.readZ()
-      t match {
-        case Constants._astDomainType => val r = read_astDomainTypeT(T); return r
-        case Constants._astDomainRange => val r = read_astDomainRangeT(T); return r
-        case Constants._astDomainEach => val r = read_astDomainEachT(T); return r
-        case _ =>
-          reader.error(i, s"$t is not a valid type of org.sireum.lang.ast.Domain.")
-          val r = read_astDomainEachT(T)
-          return r
-      }
-    }
-
-    def read_astDomainType(): org.sireum.lang.ast.Domain.Type = {
-      val r = read_astDomainTypeT(F)
-      return r
-    }
-
-    def read_astDomainTypeT(typeParsed: B): org.sireum.lang.ast.Domain.Type = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astDomainType)
-      }
-      val tipe = read_astType()
-      val attr = read_astTypedAttr()
-      return org.sireum.lang.ast.Domain.Type(tipe, attr)
-    }
-
-    def read_astDomainRange(): org.sireum.lang.ast.Domain.Range = {
-      val r = read_astDomainRangeT(F)
-      return r
-    }
-
-    def read_astDomainRangeT(typeParsed: B): org.sireum.lang.ast.Domain.Range = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astDomainRange)
-      }
-      val lo = read_astExp()
-      val hi = read_astExp()
-      val hiExact = reader.readB()
-      val attr = read_astTypedAttr()
-      return org.sireum.lang.ast.Domain.Range(lo, hi, hiExact, attr)
-    }
-
-    def read_astDomainEach(): org.sireum.lang.ast.Domain.Each = {
-      val r = read_astDomainEachT(F)
-      return r
-    }
-
-    def read_astDomainEachT(typeParsed: B): org.sireum.lang.ast.Domain.Each = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astDomainEach)
-      }
-      val exp = read_astExp()
-      val attr = read_astTypedAttr()
-      return org.sireum.lang.ast.Domain.Each(exp, attr)
     }
 
     def read_astId(): org.sireum.lang.ast.Id = {
@@ -6475,18 +6423,48 @@ object MsgPack {
     return r
   }
 
-  def from_astExpQuant(o: org.sireum.lang.ast.Exp.Quant, pooling: B): ISZ[U8] = {
+  def from_astExpQuantType(o: org.sireum.lang.ast.Exp.QuantType, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astExpQuant(o)
+    w.write_astExpQuantType(o)
     return w.result
   }
 
-  def to_astExpQuant(data: ISZ[U8]): Either[org.sireum.lang.ast.Exp.Quant, MessagePack.ErrorMsg] = {
-    def f_astExpQuant(reader: Reader): org.sireum.lang.ast.Exp.Quant = {
-      val r = reader.read_astExpQuant()
+  def to_astExpQuantType(data: ISZ[U8]): Either[org.sireum.lang.ast.Exp.QuantType, MessagePack.ErrorMsg] = {
+    def f_astExpQuantType(reader: Reader): org.sireum.lang.ast.Exp.QuantType = {
+      val r = reader.read_astExpQuantType()
       return r
     }
-    val r = to(data, f_astExpQuant _)
+    val r = to(data, f_astExpQuantType _)
+    return r
+  }
+
+  def from_astExpQuantRange(o: org.sireum.lang.ast.Exp.QuantRange, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astExpQuantRange(o)
+    return w.result
+  }
+
+  def to_astExpQuantRange(data: ISZ[U8]): Either[org.sireum.lang.ast.Exp.QuantRange, MessagePack.ErrorMsg] = {
+    def f_astExpQuantRange(reader: Reader): org.sireum.lang.ast.Exp.QuantRange = {
+      val r = reader.read_astExpQuantRange()
+      return r
+    }
+    val r = to(data, f_astExpQuantRange _)
+    return r
+  }
+
+  def from_astExpQuantEach(o: org.sireum.lang.ast.Exp.QuantEach, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astExpQuantEach(o)
+    return w.result
+  }
+
+  def to_astExpQuantEach(data: ISZ[U8]): Either[org.sireum.lang.ast.Exp.QuantEach, MessagePack.ErrorMsg] = {
+    def f_astExpQuantEach(reader: Reader): org.sireum.lang.ast.Exp.QuantEach = {
+      val r = reader.read_astExpQuantEach()
+      return r
+    }
+    val r = to(data, f_astExpQuantEach _)
     return r
   }
 
@@ -6592,81 +6570,6 @@ object MsgPack {
       return r
     }
     val r = to(data, f_astNamedArg _)
-    return r
-  }
-
-  def from_astVarFragment(o: org.sireum.lang.ast.VarFragment, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astVarFragment(o)
-    return w.result
-  }
-
-  def to_astVarFragment(data: ISZ[U8]): Either[org.sireum.lang.ast.VarFragment, MessagePack.ErrorMsg] = {
-    def f_astVarFragment(reader: Reader): org.sireum.lang.ast.VarFragment = {
-      val r = reader.read_astVarFragment()
-      return r
-    }
-    val r = to(data, f_astVarFragment _)
-    return r
-  }
-
-  def from_astDomain(o: org.sireum.lang.ast.Domain, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astDomain(o)
-    return w.result
-  }
-
-  def to_astDomain(data: ISZ[U8]): Either[org.sireum.lang.ast.Domain, MessagePack.ErrorMsg] = {
-    def f_astDomain(reader: Reader): org.sireum.lang.ast.Domain = {
-      val r = reader.read_astDomain()
-      return r
-    }
-    val r = to(data, f_astDomain _)
-    return r
-  }
-
-  def from_astDomainType(o: org.sireum.lang.ast.Domain.Type, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astDomainType(o)
-    return w.result
-  }
-
-  def to_astDomainType(data: ISZ[U8]): Either[org.sireum.lang.ast.Domain.Type, MessagePack.ErrorMsg] = {
-    def f_astDomainType(reader: Reader): org.sireum.lang.ast.Domain.Type = {
-      val r = reader.read_astDomainType()
-      return r
-    }
-    val r = to(data, f_astDomainType _)
-    return r
-  }
-
-  def from_astDomainRange(o: org.sireum.lang.ast.Domain.Range, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astDomainRange(o)
-    return w.result
-  }
-
-  def to_astDomainRange(data: ISZ[U8]): Either[org.sireum.lang.ast.Domain.Range, MessagePack.ErrorMsg] = {
-    def f_astDomainRange(reader: Reader): org.sireum.lang.ast.Domain.Range = {
-      val r = reader.read_astDomainRange()
-      return r
-    }
-    val r = to(data, f_astDomainRange _)
-    return r
-  }
-
-  def from_astDomainEach(o: org.sireum.lang.ast.Domain.Each, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astDomainEach(o)
-    return w.result
-  }
-
-  def to_astDomainEach(data: ISZ[U8]): Either[org.sireum.lang.ast.Domain.Each, MessagePack.ErrorMsg] = {
-    def f_astDomainEach(reader: Reader): org.sireum.lang.ast.Domain.Each = {
-      val r = reader.read_astDomainEach()
-      return r
-    }
-    val r = to(data, f_astDomainEach _)
     return r
   }
 

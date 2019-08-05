@@ -29,9 +29,7 @@ package org.sireum.lang.symbol
 import org.sireum._
 import org.sireum.message._
 import Resolver._
-import org.sireum.lang.ast.Exp.Quant
 import org.sireum.lang.ast.Sequent
-import org.sireum.lang.ast.MTransformer.PreResult
 import org.sireum.lang.ast._
 
 object SequentResolver {
@@ -57,31 +55,31 @@ object SequentResolver {
     reporter: Reporter
   ) extends MTransformer {
 
-    override def preExpQuant(o: Quant): MTransformer.PreResult[Exp.Spec] = {
+    override def preExpQuantType(o: Exp.QuantType): MTransformer.PreResult[Exp.Spec] = {
       hasQuant = T
       var newScope = QScope(HashMap.empty, Some(scope))
-
-      for (vf <- o.varFragments) {
-        vf.domainOpt match {
-          case Some(domain) =>
+      for (p <- o.fun.params) {
+        p.tipeOpt match {
+          case Some(t) =>
             reporter.error(
-              domain.attr.posOpt,
+              t.posOpt,
               resolverKind,
               s"Predicate logic sequents cannot have quantified variable domains."
             )
           case _ =>
         }
-        val key = vf.id.value
+        val key = p.id.value
         newScope.resolve(key) match {
-          case Some(_) => reporter.error(vf.id.attr.posOpt, resolverKind, s"$key has been previously declared.")
-          case _ => newScope = newScope(nameMap = newScope.nameMap + key ~> vf.id)
+          case Some(_) => reporter.error(p.id.attr.posOpt, resolverKind, s"$key has been previously declared.")
+          case _ => newScope = newScope(nameMap = newScope.nameMap + key ~> p.id)
         }
       }
+
       scope = newScope
-      return PreResult(T, MNone())
+      return MTransformer.PreResult(T, MNone())
     }
 
-    override def postExpQuant(o: Quant): MOption[Exp.Spec] = {
+    override def postExpQuantType(o: Exp.QuantType): MOption[Exp.Spec] = {
       scope.outerOpt match {
         case Some(outer) => scope = outer
         case _ =>
@@ -91,7 +89,7 @@ object SequentResolver {
       return MNone()
     }
 
-    override def preExpInvoke(o: Exp.Invoke): PreResult[Exp] = {
+    override def preExpInvoke(o: Exp.Invoke): MTransformer.PreResult[Exp] = {
       val id = o.ident.id
       val k = id.value
       scope.resolve(k) match {
@@ -116,10 +114,10 @@ object SequentResolver {
         hasQuant = hasQuant || p._1
         freeVarMap = p._2
       }
-      return PreResult(F, MNone())
+      return MTransformer.PreResult(F, MNone())
     }
 
-    override def preExpIdent(o: Exp.Ident): PreResult[Exp] = {
+    override def preExpIdent(o: Exp.Ident): MTransformer.PreResult[Exp] = {
       val id = o.id
       val k = id.value
       scope.resolve(k) match {
@@ -137,7 +135,7 @@ object SequentResolver {
             case _ => freeVarMap = freeVarMap + k ~> ((id, 0))
           }
       }
-      return PreResult(F, MNone())
+      return MTransformer.PreResult(F, MNone())
     }
   }
 
