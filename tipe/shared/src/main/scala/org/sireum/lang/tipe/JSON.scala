@@ -1322,6 +1322,14 @@ object JSON {
       }
     }
 
+    @pure def print_astExpQuant(o: org.sireum.lang.ast.Exp.Quant): ST = {
+      o match {
+        case o: org.sireum.lang.ast.Exp.QuantType => return print_astExpQuantType(o)
+        case o: org.sireum.lang.ast.Exp.QuantRange => return print_astExpQuantRange(o)
+        case o: org.sireum.lang.ast.Exp.QuantEach => return print_astExpQuantEach(o)
+      }
+    }
+
     @pure def print_astExpQuantType(o: org.sireum.lang.ast.Exp.QuantType): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Exp.QuantType""""),
@@ -4611,6 +4619,16 @@ object JSON {
       }
     }
 
+    def parse_astExpQuant(): org.sireum.lang.ast.Exp.Quant = {
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Exp.QuantType", "org.sireum.lang.ast.Exp.QuantRange", "org.sireum.lang.ast.Exp.QuantEach"))
+      t.native match {
+        case "org.sireum.lang.ast.Exp.QuantType" => val r = parse_astExpQuantTypeT(T); return r
+        case "org.sireum.lang.ast.Exp.QuantRange" => val r = parse_astExpQuantRangeT(T); return r
+        case "org.sireum.lang.ast.Exp.QuantEach" => val r = parse_astExpQuantEachT(T); return r
+        case _ => val r = parse_astExpQuantEachT(T); return r
+      }
+    }
+
     def parse_astExpQuantType(): org.sireum.lang.ast.Exp.QuantType = {
       val r = parse_astExpQuantTypeT(F)
       return r
@@ -7885,6 +7903,24 @@ object JSON {
       return r
     }
     val r = to(s, f_astExpSpec _)
+    return r
+  }
+
+  def from_astExpQuant(o: org.sireum.lang.ast.Exp.Quant, isCompact: B): String = {
+    val st = Printer.print_astExpQuant(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astExpQuant(s: String): Either[org.sireum.lang.ast.Exp.Quant, Json.ErrorMsg] = {
+    def f_astExpQuant(parser: Parser): org.sireum.lang.ast.Exp.Quant = {
+      val r = parser.parse_astExpQuant()
+      return r
+    }
+    val r = to(s, f_astExpQuant _)
     return r
   }
 

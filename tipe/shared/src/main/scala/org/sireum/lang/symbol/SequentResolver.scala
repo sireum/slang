@@ -1,6 +1,6 @@
 // #Sireum
 /*
- Copyright (c) 2017, Robby, Kansas State University
+ Copyright (c) 2019, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -55,7 +55,7 @@ object SequentResolver {
     reporter: Reporter
   ) extends MTransformer {
 
-    override def preExpQuantType(o: Exp.QuantType): MTransformer.PreResult[Exp.Spec] = {
+    override def preExpQuantType(o: Exp.QuantType): MTransformer.PreResult[Exp.Quant] = {
       hasQuant = T
       var newScope = QScope(HashMap.empty, Some(scope))
       for (p <- o.fun.params) {
@@ -79,7 +79,7 @@ object SequentResolver {
       return MTransformer.PreResult(T, MNone())
     }
 
-    override def postExpQuantType(o: Exp.QuantType): MOption[Exp.Spec] = {
+    override def postExpQuantType(o: Exp.QuantType): MOption[Exp.Quant] = {
       scope.outerOpt match {
         case Some(outer) => scope = outer
         case _ =>

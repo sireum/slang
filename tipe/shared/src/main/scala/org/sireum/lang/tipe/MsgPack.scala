@@ -1405,6 +1405,14 @@ object MsgPack {
       }
     }
 
+    def write_astExpQuant(o: org.sireum.lang.ast.Exp.Quant): Unit = {
+      o match {
+        case o: org.sireum.lang.ast.Exp.QuantType => write_astExpQuantType(o)
+        case o: org.sireum.lang.ast.Exp.QuantRange => write_astExpQuantRange(o)
+        case o: org.sireum.lang.ast.Exp.QuantEach => write_astExpQuantEach(o)
+      }
+    }
+
     def write_astExpQuantType(o: org.sireum.lang.ast.Exp.QuantType): Unit = {
       writer.writeZ(Constants._astExpQuantType)
       writer.writeB(o.isForall)
@@ -3791,6 +3799,20 @@ object MsgPack {
         case _ =>
           reader.error(i, s"$t is not a valid type of org.sireum.lang.ast.Exp.Spec.")
           val r = read_astExpResultT(T)
+          return r
+      }
+    }
+
+    def read_astExpQuant(): org.sireum.lang.ast.Exp.Quant = {
+      val i = reader.curr
+      val t = reader.readZ()
+      t match {
+        case Constants._astExpQuantType => val r = read_astExpQuantTypeT(T); return r
+        case Constants._astExpQuantRange => val r = read_astExpQuantRangeT(T); return r
+        case Constants._astExpQuantEach => val r = read_astExpQuantEachT(T); return r
+        case _ =>
+          reader.error(i, s"$t is not a valid type of org.sireum.lang.ast.Exp.Quant.")
+          val r = read_astExpQuantEachT(T)
           return r
       }
     }
@@ -6420,6 +6442,21 @@ object MsgPack {
       return r
     }
     val r = to(data, f_astExpSpec _)
+    return r
+  }
+
+  def from_astExpQuant(o: org.sireum.lang.ast.Exp.Quant, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astExpQuant(o)
+    return w.result
+  }
+
+  def to_astExpQuant(data: ISZ[U8]): Either[org.sireum.lang.ast.Exp.Quant, MessagePack.ErrorMsg] = {
+    def f_astExpQuant(reader: Reader): org.sireum.lang.ast.Exp.Quant = {
+      val r = reader.read_astExpQuant()
+      return r
+    }
+    val r = to(data, f_astExpQuant _)
     return r
   }
 

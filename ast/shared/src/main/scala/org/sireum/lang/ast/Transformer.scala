@@ -762,9 +762,27 @@ object Transformer {
 
     @pure def preExpSpec(ctx: Context, o: Exp.Spec): PreResult[Context, Exp.Spec] = {
       o match {
-        case o: Exp.QuantType => return preExpQuantType(ctx, o)
-        case o: Exp.QuantRange => return preExpQuantRange(ctx, o)
-        case o: Exp.QuantEach => return preExpQuantEach(ctx, o)
+        case o: Exp.QuantType =>
+          val r: PreResult[Context, Exp.Spec] = preExpQuantType(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Exp.Spec)) => PreResult(preCtx, continu, Some[Exp.Spec](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Exp.Spec")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp.Spec]())
+          }
+          return r
+        case o: Exp.QuantRange =>
+          val r: PreResult[Context, Exp.Spec] = preExpQuantRange(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Exp.Spec)) => PreResult(preCtx, continu, Some[Exp.Spec](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Exp.Spec")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp.Spec]())
+          }
+          return r
+        case o: Exp.QuantEach =>
+          val r: PreResult[Context, Exp.Spec] = preExpQuantEach(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Exp.Spec)) => PreResult(preCtx, continu, Some[Exp.Spec](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Exp.Spec")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp.Spec]())
+          }
+          return r
         case o: Exp.Input => return preExpInput(ctx, o)
         case o: Exp.OldVal => return preExpOldVal(ctx, o)
         case o: Exp.AtLoc => return preExpAtLoc(ctx, o)
@@ -773,15 +791,23 @@ object Transformer {
       }
     }
 
-    @pure def preExpQuantType(ctx: Context, o: Exp.QuantType): PreResult[Context, Exp.Spec] = {
+    @pure def preExpQuant(ctx: Context, o: Exp.Quant): PreResult[Context, Exp.Quant] = {
+      o match {
+        case o: Exp.QuantType => return preExpQuantType(ctx, o)
+        case o: Exp.QuantRange => return preExpQuantRange(ctx, o)
+        case o: Exp.QuantEach => return preExpQuantEach(ctx, o)
+      }
+    }
+
+    @pure def preExpQuantType(ctx: Context, o: Exp.QuantType): PreResult[Context, Exp.Quant] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preExpQuantRange(ctx: Context, o: Exp.QuantRange): PreResult[Context, Exp.Spec] = {
+    @pure def preExpQuantRange(ctx: Context, o: Exp.QuantRange): PreResult[Context, Exp.Quant] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preExpQuantEach(ctx: Context, o: Exp.QuantEach): PreResult[Context, Exp.Spec] = {
+    @pure def preExpQuantEach(ctx: Context, o: Exp.QuantEach): PreResult[Context, Exp.Quant] = {
       return PreResult(ctx, T, None())
     }
 
@@ -1710,9 +1736,27 @@ object Transformer {
 
     @pure def postExpSpec(ctx: Context, o: Exp.Spec): TPostResult[Context, Exp.Spec] = {
       o match {
-        case o: Exp.QuantType => return postExpQuantType(ctx, o)
-        case o: Exp.QuantRange => return postExpQuantRange(ctx, o)
-        case o: Exp.QuantEach => return postExpQuantEach(ctx, o)
+        case o: Exp.QuantType =>
+          val r: TPostResult[Context, Exp.Spec] = postExpQuantType(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Exp.Spec)) => TPostResult(postCtx, Some[Exp.Spec](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp.Spec")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp.Spec]())
+          }
+          return r
+        case o: Exp.QuantRange =>
+          val r: TPostResult[Context, Exp.Spec] = postExpQuantRange(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Exp.Spec)) => TPostResult(postCtx, Some[Exp.Spec](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp.Spec")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp.Spec]())
+          }
+          return r
+        case o: Exp.QuantEach =>
+          val r: TPostResult[Context, Exp.Spec] = postExpQuantEach(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Exp.Spec)) => TPostResult(postCtx, Some[Exp.Spec](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp.Spec")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp.Spec]())
+          }
+          return r
         case o: Exp.Input => return postExpInput(ctx, o)
         case o: Exp.OldVal => return postExpOldVal(ctx, o)
         case o: Exp.AtLoc => return postExpAtLoc(ctx, o)
@@ -1721,15 +1765,23 @@ object Transformer {
       }
     }
 
-    @pure def postExpQuantType(ctx: Context, o: Exp.QuantType): TPostResult[Context, Exp.Spec] = {
+    @pure def postExpQuant(ctx: Context, o: Exp.Quant): TPostResult[Context, Exp.Quant] = {
+      o match {
+        case o: Exp.QuantType => return postExpQuantType(ctx, o)
+        case o: Exp.QuantRange => return postExpQuantRange(ctx, o)
+        case o: Exp.QuantEach => return postExpQuantEach(ctx, o)
+      }
+    }
+
+    @pure def postExpQuantType(ctx: Context, o: Exp.QuantType): TPostResult[Context, Exp.Quant] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postExpQuantRange(ctx: Context, o: Exp.QuantRange): TPostResult[Context, Exp.Spec] = {
+    @pure def postExpQuantRange(ctx: Context, o: Exp.QuantRange): TPostResult[Context, Exp.Quant] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postExpQuantEach(ctx: Context, o: Exp.QuantEach): TPostResult[Context, Exp.Spec] = {
+    @pure def postExpQuantEach(ctx: Context, o: Exp.QuantEach): TPostResult[Context, Exp.Quant] = {
       return TPostResult(ctx, None())
     }
 
@@ -3566,6 +3618,55 @@ import Transformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: Exp.Spec = r.resultOpt.getOrElse(o)
     val postR: TPostResult[Context, Exp.Spec] = pp.postExpSpec(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformExpQuant(ctx: Context, o: Exp.Quant): TPostResult[Context, Exp.Quant] = {
+    val preR: PreResult[Context, Exp.Quant] = pp.preExpQuant(ctx, o)
+    val r: TPostResult[Context, Exp.Quant] = if (preR.continu) {
+      val o2: Exp.Quant = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: TPostResult[Context, Exp.Quant] = o2 match {
+        case o2: Exp.QuantType =>
+          val r0: TPostResult[Context, Exp.Fun] = transformExpFun(preR.ctx, o2.fun)
+          val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(fun = r0.resultOpt.getOrElse(o2.fun), attr = r1.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: Exp.QuantRange =>
+          val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.lo)
+          val r1: TPostResult[Context, Exp] = transformExp(r0.ctx, o2.hi)
+          val r2: TPostResult[Context, Exp.Fun] = transformExpFun(r1.ctx, o2.fun)
+          val r3: TPostResult[Context, Attr] = transformAttr(r2.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+            TPostResult(r3.ctx, Some(o2(lo = r0.resultOpt.getOrElse(o2.lo), hi = r1.resultOpt.getOrElse(o2.hi), fun = r2.resultOpt.getOrElse(o2.fun), attr = r3.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r3.ctx, None())
+        case o2: Exp.QuantEach =>
+          val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.seq)
+          val r1: TPostResult[Context, Exp.Fun] = transformExpFun(r0.ctx, o2.fun)
+          val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(seq = r0.resultOpt.getOrElse(o2.seq), fun = r1.resultOpt.getOrElse(o2.fun), attr = r2.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r2.ctx, None())
+      }
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: Exp.Quant = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, Exp.Quant] = pp.postExpQuant(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {

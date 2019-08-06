@@ -413,17 +413,17 @@ object MTransformer {
 
   val PostResultExpForYield: MOption[Exp] = MNone()
 
-  val PreResultExpQuantType: PreResult[Exp.Spec] = PreResult(T, MNone())
+  val PreResultExpQuantType: PreResult[Exp.Quant] = PreResult(T, MNone())
 
-  val PostResultExpQuantType: MOption[Exp.Spec] = MNone()
+  val PostResultExpQuantType: MOption[Exp.Quant] = MNone()
 
-  val PreResultExpQuantRange: PreResult[Exp.Spec] = PreResult(T, MNone())
+  val PreResultExpQuantRange: PreResult[Exp.Quant] = PreResult(T, MNone())
 
-  val PostResultExpQuantRange: MOption[Exp.Spec] = MNone()
+  val PostResultExpQuantRange: MOption[Exp.Quant] = MNone()
 
-  val PreResultExpQuantEach: PreResult[Exp.Spec] = PreResult(T, MNone())
+  val PreResultExpQuantEach: PreResult[Exp.Quant] = PreResult(T, MNone())
 
-  val PostResultExpQuantEach: MOption[Exp.Spec] = MNone()
+  val PostResultExpQuantEach: MOption[Exp.Quant] = MNone()
 
   val PreResultExpInput: PreResult[Exp.Spec] = PreResult(T, MNone())
 
@@ -1318,9 +1318,27 @@ import MTransformer._
 
   def preExpSpec(o: Exp.Spec): PreResult[Exp.Spec] = {
     o match {
-      case o: Exp.QuantType => return preExpQuantType(o)
-      case o: Exp.QuantRange => return preExpQuantRange(o)
-      case o: Exp.QuantEach => return preExpQuantEach(o)
+      case o: Exp.QuantType =>
+        val r: PreResult[Exp.Spec] = preExpQuantType(o) match {
+         case PreResult(continu, MSome(r: Exp.Spec)) => PreResult(continu, MSome[Exp.Spec](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp.Spec")
+         case PreResult(continu, _) => PreResult(continu, MNone[Exp.Spec]())
+        }
+        return r
+      case o: Exp.QuantRange =>
+        val r: PreResult[Exp.Spec] = preExpQuantRange(o) match {
+         case PreResult(continu, MSome(r: Exp.Spec)) => PreResult(continu, MSome[Exp.Spec](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp.Spec")
+         case PreResult(continu, _) => PreResult(continu, MNone[Exp.Spec]())
+        }
+        return r
+      case o: Exp.QuantEach =>
+        val r: PreResult[Exp.Spec] = preExpQuantEach(o) match {
+         case PreResult(continu, MSome(r: Exp.Spec)) => PreResult(continu, MSome[Exp.Spec](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp.Spec")
+         case PreResult(continu, _) => PreResult(continu, MNone[Exp.Spec]())
+        }
+        return r
       case o: Exp.Input => return preExpInput(o)
       case o: Exp.OldVal => return preExpOldVal(o)
       case o: Exp.AtLoc => return preExpAtLoc(o)
@@ -1329,15 +1347,23 @@ import MTransformer._
     }
   }
 
-  def preExpQuantType(o: Exp.QuantType): PreResult[Exp.Spec] = {
+  def preExpQuant(o: Exp.Quant): PreResult[Exp.Quant] = {
+    o match {
+      case o: Exp.QuantType => return preExpQuantType(o)
+      case o: Exp.QuantRange => return preExpQuantRange(o)
+      case o: Exp.QuantEach => return preExpQuantEach(o)
+    }
+  }
+
+  def preExpQuantType(o: Exp.QuantType): PreResult[Exp.Quant] = {
     return PreResultExpQuantType
   }
 
-  def preExpQuantRange(o: Exp.QuantRange): PreResult[Exp.Spec] = {
+  def preExpQuantRange(o: Exp.QuantRange): PreResult[Exp.Quant] = {
     return PreResultExpQuantRange
   }
 
-  def preExpQuantEach(o: Exp.QuantEach): PreResult[Exp.Spec] = {
+  def preExpQuantEach(o: Exp.QuantEach): PreResult[Exp.Quant] = {
     return PreResultExpQuantEach
   }
 
@@ -2266,9 +2292,27 @@ import MTransformer._
 
   def postExpSpec(o: Exp.Spec): MOption[Exp.Spec] = {
     o match {
-      case o: Exp.QuantType => return postExpQuantType(o)
-      case o: Exp.QuantRange => return postExpQuantRange(o)
-      case o: Exp.QuantEach => return postExpQuantEach(o)
+      case o: Exp.QuantType =>
+        val r: MOption[Exp.Spec] = postExpQuantType(o) match {
+         case MSome(result: Exp.Spec) => MSome[Exp.Spec](result)
+         case MSome(_) => halt("Can only produce object of type Exp.Spec")
+         case _ => MNone[Exp.Spec]()
+        }
+        return r
+      case o: Exp.QuantRange =>
+        val r: MOption[Exp.Spec] = postExpQuantRange(o) match {
+         case MSome(result: Exp.Spec) => MSome[Exp.Spec](result)
+         case MSome(_) => halt("Can only produce object of type Exp.Spec")
+         case _ => MNone[Exp.Spec]()
+        }
+        return r
+      case o: Exp.QuantEach =>
+        val r: MOption[Exp.Spec] = postExpQuantEach(o) match {
+         case MSome(result: Exp.Spec) => MSome[Exp.Spec](result)
+         case MSome(_) => halt("Can only produce object of type Exp.Spec")
+         case _ => MNone[Exp.Spec]()
+        }
+        return r
       case o: Exp.Input => return postExpInput(o)
       case o: Exp.OldVal => return postExpOldVal(o)
       case o: Exp.AtLoc => return postExpAtLoc(o)
@@ -2277,15 +2321,23 @@ import MTransformer._
     }
   }
 
-  def postExpQuantType(o: Exp.QuantType): MOption[Exp.Spec] = {
+  def postExpQuant(o: Exp.Quant): MOption[Exp.Quant] = {
+    o match {
+      case o: Exp.QuantType => return postExpQuantType(o)
+      case o: Exp.QuantRange => return postExpQuantRange(o)
+      case o: Exp.QuantEach => return postExpQuantEach(o)
+    }
+  }
+
+  def postExpQuantType(o: Exp.QuantType): MOption[Exp.Quant] = {
     return PostResultExpQuantType
   }
 
-  def postExpQuantRange(o: Exp.QuantRange): MOption[Exp.Spec] = {
+  def postExpQuantRange(o: Exp.QuantRange): MOption[Exp.Quant] = {
     return PostResultExpQuantRange
   }
 
-  def postExpQuantEach(o: Exp.QuantEach): MOption[Exp.Spec] = {
+  def postExpQuantEach(o: Exp.QuantEach): MOption[Exp.Quant] = {
     return PostResultExpQuantEach
   }
 
@@ -4084,6 +4136,55 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Exp.Spec = r.getOrElse(o)
     val postR: MOption[Exp.Spec] = postExpSpec(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformExpQuant(o: Exp.Quant): MOption[Exp.Quant] = {
+    val preR: PreResult[Exp.Quant] = preExpQuant(o)
+    val r: MOption[Exp.Quant] = if (preR.continu) {
+      val o2: Exp.Quant = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: MOption[Exp.Quant] = o2 match {
+        case o2: Exp.QuantType =>
+          val r0: MOption[Exp.Fun] = transformExpFun(o2.fun)
+          val r1: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(fun = r0.getOrElse(o2.fun), attr = r1.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Exp.QuantRange =>
+          val r0: MOption[Exp] = transformExp(o2.lo)
+          val r1: MOption[Exp] = transformExp(o2.hi)
+          val r2: MOption[Exp.Fun] = transformExpFun(o2.fun)
+          val r3: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+            MSome(o2(lo = r0.getOrElse(o2.lo), hi = r1.getOrElse(o2.hi), fun = r2.getOrElse(o2.fun), attr = r3.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Exp.QuantEach =>
+          val r0: MOption[Exp] = transformExp(o2.seq)
+          val r1: MOption[Exp.Fun] = transformExpFun(o2.fun)
+          val r2: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(seq = r0.getOrElse(o2.seq), fun = r1.getOrElse(o2.fun), attr = r2.getOrElse(o2.attr)))
+          else
+            MNone()
+      }
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Exp.Quant = r.getOrElse(o)
+    val postR: MOption[Exp.Quant] = postExpQuant(o2)
     if (postR.nonEmpty) {
       return postR
     } else if (hasChanged) {
