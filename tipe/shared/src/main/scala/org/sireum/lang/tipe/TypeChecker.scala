@@ -1,6 +1,6 @@
 // #Sireum
 /*
- Copyright (c) 2017, Robby, Kansas State University
+ Copyright (c) 2019, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -2803,21 +2803,68 @@ import TypeChecker._
 
         case exp: AST.Exp.Unary => val r = checkUnary(exp); return r
 
-        case _: AST.Exp.QuantType => halt("Unimplemented") // TODO
+        case exp: AST.Exp.QuantType =>
+          if (inSpec) {
+            val (newFun, ftOpt) = checkExp(None(), scope, exp.fun, reporter)
+            ftOpt match {
+              case Some(ft: AST.Typed.Fun) =>
+                if (ft.ret != AST.Typed.b) {
+                  reporter.error(exp.fun.exp.asStmt.posOpt, typeCheckerKind, s"Expecting type 'B' but '${ft.ret}' found.")
+                }
+              case _ =>
+            }
+            return (exp(fun = newFun.asInstanceOf[AST.Exp.Fun]), Some(AST.Typed.b))
+          } else {
+            reporter.error(exp.posOpt, typeCheckerKind, "Quantifications over types are only available in contracts.")
+            return (exp, None())
+          }
 
-        case _: AST.Exp.QuantRange => halt("Unimplemented") // TODO
+        case exp: AST.Exp.QuantRange =>
+          val (newLo, tLoOpt) = checkExp(None(), scope, exp.lo, reporter)
+          val (newHi, _) = checkExp(tLoOpt, scope, exp.hi, reporter)
+          tLoOpt match {
+            case Some(tLo) =>
+              val (newFun, _) = checkExp(Some(AST.Typed.Fun(F, F, ISZ(tLo), AST.Typed.b)), scope, exp.fun, reporter)
+              checkIndexType(exp.lo.posOpt, tLo, reporter)
+              return (exp(lo = newLo, hi = newHi, fun = newFun.asInstanceOf[AST.Exp.Fun]), Some(AST.Typed.b))
+            case _ => return (exp(lo = newLo, hi = newHi), Some(AST.Typed.b))
+          }
 
-        case _: AST.Exp.QuantEach => halt("Unimplemented") // TODO
+        case exp: AST.Exp.QuantEach =>
+          val (newSeq, stOpt) = checkExp(None(), scope, exp.seq, reporter)
+          stOpt match {
+            case Some(st) =>
+              st match {
+                case st: AST.Typed.Name if st.ids == AST.Typed.isName || st.ids == AST.Typed.msName =>
+                  val (newFun, _) = checkExp(Some(AST.Typed.Fun(F, F, ISZ(st.args(1)), AST.Typed.b)), scope, exp.fun, reporter)
+                  return (exp(seq = newSeq, fun = newFun.asInstanceOf[AST.Exp.Fun]), Some(AST.Typed.b))
+                case st =>
+                  reporter.error(exp.seq.posOpt, typeCheckerKind, s"Expecting an IS or MS, but '$st' found.")
+              }
+            case _ =>
+          }
+          return (exp(seq = newSeq), Some(AST.Typed.b))
 
-        case _: AST.Exp.Input => halt("Unimplemented") // TODO
+        case exp: AST.Exp.Input => val r = checkExp(expectedOpt, scope, exp.exp, reporter); return r
 
-        case _: AST.Exp.AtLoc => halt("Unimplemented") // TODO
+        case exp: AST.Exp.AtLoc => val r = checkExp(expectedOpt, scope, exp.exp, reporter); return r
 
-        case _: AST.Exp.OldVal => halt("Unimplemented") // TODO
+        case exp: AST.Exp.OldVal => val r = checkExp(expectedOpt, scope, exp.exp, reporter); return r
 
         case _: AST.Exp.StateSeq => halt("Unimplemented") // TODO
 
-        case _: AST.Exp.Result => halt("Unimplemented") // TODO
+        case exp: AST.Exp.Result =>
+          if (mode == TypeChecker.ModeContext.SpecPost) {
+            val r = scope.returnOpt
+            r match {
+              case Some(_) => return (exp(attr = exp.attr(typedOpt = r)), r)
+              case _ =>
+                reporter.error(exp.posOpt, typeCheckerKind, "Expected a return type for Res, but none found.")
+            }
+          } else {
+            reporter.error(exp.posOpt, typeCheckerKind, "Res can only be used inside Ensures (post-condition).")
+          }
+          return (exp, None())
       }
     }
 
@@ -3757,7 +3804,7 @@ import TypeChecker._
       newScopeOpt match {
         case Some(newScope) =>
           val (newInvs, newMods) = this(mode = TypeChecker.ModeContext.Spec).
-            checkLoopInv(scope, forStmt.invariants, forStmt.modifies, reporter)
+            checkLoopInv(newScope, forStmt.invariants, forStmt.modifies, reporter)
           val (_, newBody) = checkBody(None(), newScope, forStmt.body, reporter)
           return forStmt(context = context, enumGens = newEnumGens, invariants = newInvs, modifies = newMods, body = newBody)
         case _ => return forStmt(context = context, enumGens = newEnumGens)
