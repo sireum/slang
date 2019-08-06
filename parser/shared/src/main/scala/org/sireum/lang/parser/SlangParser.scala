@@ -2236,13 +2236,14 @@ class SlangParser(
       case q"${qid: Term.Name}(${d: Term})((..$_) => ${_: Term})" if quantSymbols.contains(qid.value) =>
         val isForall = qid.value == "All" || qid.value == "∀"
         val q"$_($_)($f)" = exp
+        val fExp = translateExp(f).asInstanceOf[AST.Exp.Fun]
+        if (fExp.params.size != 1) {
+          error(exp.pos, s"Expecting a single parameter, but ${fExp.params.size} found.")
+        }
         d match {
-          case q"$lo until $hi" => AST.Exp.QuantRange(isForall, translateExp(lo), translateExp(hi), false,
-            translateExp(f).asInstanceOf[AST.Exp.Fun], attr(exp.pos))
-          case q"$lo to $hi" => AST.Exp.QuantRange(isForall, translateExp(lo), translateExp(hi), true,
-            translateExp(f).asInstanceOf[AST.Exp.Fun], attr(exp.pos))
-          case _ => AST.Exp.QuantEach(isForall, translateExp(d),
-            translateExp(f).asInstanceOf[AST.Exp.Fun], attr(exp.pos))
+          case q"$lo until $hi" => AST.Exp.QuantRange(isForall, translateExp(lo), translateExp(hi), false, fExp, attr(exp.pos))
+          case q"$lo to $hi" => AST.Exp.QuantRange(isForall, translateExp(lo), translateExp(hi), true, fExp, attr(exp.pos))
+          case _ => AST.Exp.QuantEach(isForall, translateExp(d), fExp, attr(exp.pos))
         }
       case q"${qid: Term.Name}{(..$_) => ${_: Term}}" if quantSymbols.contains(qid.value) =>
         val isForall = qid.value == "All" || qid.value == "∀"
