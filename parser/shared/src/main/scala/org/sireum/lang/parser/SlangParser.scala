@@ -2279,9 +2279,11 @@ class SlangParser(
           Position.Range(expr.pos.input, name.pos.start, exp.pos.end)
         )
       case q"${name: Term.Name}[..$tpes](...${aexprssnel: List[List[Term]]})" if aexprssnel.nonEmpty =>
-        translateInvoke(scala.None, cid(name), name.pos, tpes, aexprssnel, exp.pos)
+        if (name.value == "Res") translateInvoke(scala.Some(name), AST.Id("apply", attr(name.pos)), name.pos, tpes, aexprssnel, exp.pos)
+        else translateInvoke(scala.None, cid(name), name.pos, tpes, aexprssnel, exp.pos)
       case q"${name: Term.Name}(...${aexprssnel: List[List[Term]]})" if aexprssnel.nonEmpty =>
-        translateInvoke(scala.None, cid(name), name.pos, List(), aexprssnel, exp.pos)
+        if (name.value == "Res") translateInvoke(scala.Some(name), AST.Id("apply", attr(name.pos)), name.pos, List(), aexprssnel, exp.pos)
+        else translateInvoke(scala.None, cid(name), name.pos, List(), aexprssnel, exp.pos)
       case q"${fun @ q"this"}(...${aexprssnel: List[List[Term]]})" if aexprssnel.nonEmpty =>
         translateInvoke(scala.Some(fun), cidNoCheck("apply", fun.pos), fun.pos, List(), aexprssnel, exp.pos)
       case q"$expr.$name[..$tpes]" if tpes.nonEmpty =>
