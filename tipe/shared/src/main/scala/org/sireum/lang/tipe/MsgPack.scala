@@ -952,7 +952,7 @@ object MsgPack {
 
     def write_astMethodContractCase(o: org.sireum.lang.ast.MethodContract.Case): Unit = {
       writer.writeZ(Constants._astMethodContractCase)
-      writer.writeString(o.label)
+      write_astExpLitString(o.label)
       writer.writeISZ(o.requires, write_astExp _)
       writer.writeISZ(o.ensures, write_astExp _)
     }
@@ -1473,6 +1473,7 @@ object MsgPack {
 
     def write_astExpResult(o: org.sireum.lang.ast.Exp.Result): Unit = {
       writer.writeZ(Constants._astExpResult)
+      writer.writeOption(o.tipeOpt, write_astType _)
       write_astTypedAttr(o.attr)
     }
 
@@ -2909,7 +2910,7 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astMethodContractCase)
       }
-      val label = reader.readString()
+      val label = read_astExpLitString()
       val requires = reader.readISZ(read_astExp _)
       val ensures = reader.readISZ(read_astExp _)
       return org.sireum.lang.ast.MethodContract.Case(label, requires, ensures)
@@ -3948,8 +3949,9 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astExpResult)
       }
+      val tipeOpt = reader.readOption(read_astType _)
       val attr = read_astTypedAttr()
-      return org.sireum.lang.ast.Exp.Result(attr)
+      return org.sireum.lang.ast.Exp.Result(tipeOpt, attr)
     }
 
     def read_astNamedArg(): org.sireum.lang.ast.NamedArg = {

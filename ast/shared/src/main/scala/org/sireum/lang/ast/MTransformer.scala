@@ -3134,10 +3134,11 @@ import MTransformer._
     val r: MOption[MethodContract.Case] = if (preR.continu) {
       val o2: MethodContract.Case = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[IS[Z, Exp]] = transformISZ(o2.requires, transformExp _)
-      val r1: MOption[IS[Z, Exp]] = transformISZ(o2.ensures, transformExp _)
-      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-        MSome(o2(requires = r0.getOrElse(o2.requires), ensures = r1.getOrElse(o2.ensures)))
+      val r0: MOption[Exp.LitString] = transformExpLitString(o2.label)
+      val r1: MOption[IS[Z, Exp]] = transformISZ(o2.requires, transformExp _)
+      val r2: MOption[IS[Z, Exp]] = transformISZ(o2.ensures, transformExp _)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+        MSome(o2(label = r0.getOrElse(o2.label), requires = r1.getOrElse(o2.requires), ensures = r2.getOrElse(o2.ensures)))
       else
         MNone()
     } else if (preR.resultOpt.nonEmpty) {
@@ -3899,9 +3900,10 @@ import MTransformer._
           else
             MNone()
         case o2: Exp.Result =>
-          val r0: MOption[TypedAttr] = transformTypedAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty)
-            MSome(o2(attr = r0.getOrElse(o2.attr)))
+          val r0: MOption[Option[Type]] = transformOption(o2.tipeOpt, transformType _)
+          val r1: MOption[TypedAttr] = transformTypedAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(tipeOpt = r0.getOrElse(o2.tipeOpt), attr = r1.getOrElse(o2.attr)))
           else
             MNone()
       }
@@ -4121,9 +4123,10 @@ import MTransformer._
           else
             MNone()
         case o2: Exp.Result =>
-          val r0: MOption[TypedAttr] = transformTypedAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty)
-            MSome(o2(attr = r0.getOrElse(o2.attr)))
+          val r0: MOption[Option[Type]] = transformOption(o2.tipeOpt, transformType _)
+          val r1: MOption[TypedAttr] = transformTypedAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(tipeOpt = r0.getOrElse(o2.tipeOpt), attr = r1.getOrElse(o2.attr)))
           else
             MNone()
       }

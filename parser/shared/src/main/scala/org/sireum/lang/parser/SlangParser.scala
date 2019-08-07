@@ -2215,7 +2215,7 @@ class SlangParser(
         else translateStringInterpolate(exp)
       case exp: Term.Name =>
         if (exp.value == "Res") {
-          AST.Exp.Result(typedAttr(exp.pos))
+          AST.Exp.Result(None(), typedAttr(exp.pos))
         } else {
           AST.Exp.Ident(cid(exp), resolvedAttr(exp.pos))
         }
@@ -2233,6 +2233,7 @@ class SlangParser(
         }
         AST.Exp.Eta(ref, typedAttr(exp.pos))
       case exp: Term.Tuple => AST.Exp.Tuple(ISZ(exp.args.map(translateExp): _*), typedAttr(exp.pos))
+      case q"Res[$t]" => AST.Exp.Result(Some(translateType(t)), typedAttr(exp.pos))
       case q"${qid: Term.Name}(${d: Term})((..$_) => ${_: Term})" if quantSymbols.contains(qid.value) =>
         val isForall = qid.value == "All" || qid.value == "∀"
         val q"$_($_)($f)" = exp
@@ -2698,13 +2699,13 @@ class SlangParser(
   }
 
   def translateContractCase(exprs: Seq[Term]): AST.MethodContract.Case = {
-    var label = ""
+    var label: AST.Exp.LitString = AST.Exp.LitString("", emptyAttr)
     var i = 0
     val length = exprs.length
     if (i < length) {
       exprs(i) match {
         case expr: Lit.String =>
-          label = expr.value
+          label = AST.Exp.LitString(expr.value, attr(expr.pos))
           i += 1
         case _ =>
       }

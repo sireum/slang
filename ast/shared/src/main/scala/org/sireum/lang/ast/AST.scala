@@ -468,7 +468,7 @@ object MethodContract {
                         modifies: ISZ[Exp.Ident],
                         cases: ISZ[Case]) extends MethodContract
 
-  @datatype class Case(label: String,
+  @datatype class Case(label: Exp.LitString,
                        requires: ISZ[Exp],
                        ensures: ISZ[Exp])
 
@@ -1160,7 +1160,7 @@ object Exp {
 
   }
 
-  @datatype class Result(@hidden attr: TypedAttr) extends Spec {
+  @datatype class Result(tipeOpt: Option[Type], @hidden attr: TypedAttr) extends Spec {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt

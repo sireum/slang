@@ -754,7 +754,7 @@ object JSON {
     @pure def print_astMethodContractCase(o: org.sireum.lang.ast.MethodContract.Case): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.MethodContract.Case""""),
-        ("label", printString(o.label)),
+        ("label", print_astExpLitString(o.label)),
         ("requires", printISZ(F, o.requires, print_astExp _)),
         ("ensures", printISZ(F, o.ensures, print_astExp _))
       ))
@@ -1407,6 +1407,7 @@ object JSON {
     @pure def print_astExpResult(o: org.sireum.lang.ast.Exp.Result): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Exp.Result""""),
+        ("tipeOpt", printOption(F, o.tipeOpt, print_astType _)),
         ("attr", print_astTypedAttr(o.attr))
       ))
     }
@@ -3456,7 +3457,7 @@ object JSON {
         parser.parseObjectType("org.sireum.lang.ast.MethodContract.Case")
       }
       parser.parseObjectKey("label")
-      val label = parser.parseString()
+      val label = parse_astExpLitString()
       parser.parseObjectNext()
       parser.parseObjectKey("requires")
       val requires = parser.parseISZ(parse_astExp _)
@@ -4812,10 +4813,13 @@ object JSON {
       if (!typeParsed) {
         parser.parseObjectType("org.sireum.lang.ast.Exp.Result")
       }
+      parser.parseObjectKey("tipeOpt")
+      val tipeOpt = parser.parseOption(parse_astType _)
+      parser.parseObjectNext()
       parser.parseObjectKey("attr")
       val attr = parse_astTypedAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Exp.Result(attr)
+      return org.sireum.lang.ast.Exp.Result(tipeOpt, attr)
     }
 
     def parse_astNamedArg(): org.sireum.lang.ast.NamedArg = {
