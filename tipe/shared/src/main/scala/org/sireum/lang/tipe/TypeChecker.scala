@@ -521,13 +521,13 @@ object TypeChecker {
 
 import TypeChecker._
 
-@datatype class TypeChecker(typeHierarchy: TypeHierarchy, context: QName, mode: TypeChecker.ModeContext.Type) {
+@datatype class TypeChecker(typeHierarchy: TypeHierarchy, context: QName, mode: ModeContext.Type) {
 
   @pure def inSpec: B = {
     mode match {
-      case TypeChecker.ModeContext.Code => return F
-      case TypeChecker.ModeContext.Spec => return T
-      case TypeChecker.ModeContext.SpecPost => return T
+      case ModeContext.Code => return F
+      case ModeContext.Spec => return T
+      case ModeContext.SpecPost => return T
     }
   }
 
@@ -2747,6 +2747,31 @@ import TypeChecker._
       }
     }
 
+    def checkResult(res: AST.Exp.Result): (AST.Exp, Option[AST.Typed]) = {
+      if (mode == ModeContext.SpecPost) {
+        val r = scope.returnOpt
+        r match {
+          case Some(t) =>
+            res.tipeOpt match {
+              case Some(tipe) =>
+                typeHierarchy.typed(scope, tipe, reporter) match {
+                  case Some(newTipe) if newTipe.typedOpt.nonEmpty && t != newTipe.typedOpt.get =>
+                    reporter.error(tipe.posOpt, typeCheckerKind, s"Expecting type '$t', but '${newTipe.typedOpt.get}' found.")
+                  case newTipeOpt =>
+                    return (res(tipeOpt = newTipeOpt, attr = res.attr(typedOpt = r)), r)
+                }
+              case _ =>
+            }
+            return (res(attr = res.attr(typedOpt = r)), r)
+          case _ =>
+            reporter.error(res.posOpt, typeCheckerKind, "Expected a return type for Res, but none found.")
+        }
+      } else {
+        reporter.error(res.posOpt, typeCheckerKind, "Res can only be used inside Ensures (post-condition).")
+      }
+      return (res, None())
+    }
+
     def checkExpH(): (AST.Exp, Option[AST.Typed]) = {
       exp match {
 
@@ -2856,18 +2881,7 @@ import TypeChecker._
 
         case _: AST.Exp.StateSeq => halt("Unimplemented") // TODO
 
-        case exp: AST.Exp.Result =>
-          if (mode == TypeChecker.ModeContext.SpecPost) {
-            val r = scope.returnOpt
-            r match {
-              case Some(_) => return (exp(attr = exp.attr(typedOpt = r)), r)
-              case _ =>
-                reporter.error(exp.posOpt, typeCheckerKind, "Expected a return type for Res, but none found.")
-            }
-          } else {
-            reporter.error(exp.posOpt, typeCheckerKind, "Res can only be used inside Ensures (post-condition).")
-          }
-          return (exp, None())
+        case exp: AST.Exp.Result => return checkResult(exp)
       }
     }
 
@@ -3802,7 +3816,7 @@ import TypeChecker._
       val (newScopeOpt, newEnumGens, _, _) = checkEnumGens(F, scope, forStmt.enumGens, reporter)
       newScopeOpt match {
         case Some(newScope) =>
-          val (newInvs, newMods) = this(mode = TypeChecker.ModeContext.Spec).
+          val (newInvs, newMods) = this(mode = ModeContext.Spec).
             checkLoopInv(newScope, forStmt.invariants, forStmt.modifies, reporter)
           val (_, newBody) = checkBody(None(), newScope, forStmt.body, reporter)
           return forStmt(context = context, enumGens = newEnumGens, invariants = newInvs, modifies = newMods, body = newBody)
@@ -3811,7 +3825,7 @@ import TypeChecker._
     }
 
     def checkDoWhile(doWhileStmt: AST.Stmt.DoWhile): AST.Stmt = {
-      val (newInvs, newMods) = this(mode = TypeChecker.ModeContext.Spec).
+      val (newInvs, newMods) = this(mode = ModeContext.Spec).
         checkLoopInv(scope, doWhileStmt.invariants, doWhileStmt.modifies, reporter)
       val (_, newBody) = checkBody(None(), createNewScope(scope), doWhileStmt.body, reporter)
       val (newCond, _) = checkExp(AST.Typed.bOpt, scope, doWhileStmt.cond, reporter)
@@ -3820,7 +3834,7 @@ import TypeChecker._
 
     def checkWhile(whileStmt: AST.Stmt.While): AST.Stmt = {
       val (newCond, _) = checkExp(AST.Typed.bOpt, scope, whileStmt.cond, reporter)
-      val (newInvs, newMods) = this(mode = TypeChecker.ModeContext.Spec).
+      val (newInvs, newMods) = this(mode = ModeContext.Spec).
         checkLoopInv(scope, whileStmt.invariants, whileStmt.modifies, reporter)
       val (_, newBody) = checkBody(None(), createNewScope(scope), whileStmt.body, reporter)
       return whileStmt(context = context, cond = newCond, invariants = newInvs, modifies = newMods, body = newBody)
@@ -3878,7 +3892,14 @@ import TypeChecker._
 
       case stmt: AST.Stmt.Expr => return (Some(scope), checkExpr(None(), scope, stmt, reporter))
 
-      case stmt: AST.Stmt.ExtMethod => return (Some(scope), stmt)
+      case stmt: AST.Stmt.ExtMethod =>
+        val tc = TypeChecker(typeHierarchy, context :+ stmt.sig.id.value, mode)
+        val (ok, sc) = tc.methodScope(scope, stmt.sig, reporter)
+        if (ok) {
+          return (Some(scope), stmt(contract = tc(mode = ModeContext.Spec).checkMethodContract(sc, stmt.contract, reporter)))
+        } else {
+          return (Some(scope), stmt)
+        }
 
       case stmt: AST.Stmt.For => return (Some(scope), checkFor(stmt))
 
@@ -3907,7 +3928,7 @@ import TypeChecker._
           case _ => halt("Unexpected situation when type checking statement.")
         }
 
-      case stmt: AST.Stmt.SpecMethod => return (Some(scope), stmt) // TODO
+      case stmt: AST.Stmt.SpecMethod => return (Some(scope), stmt)
 
       case stmt: AST.Stmt.SpecVar => return (Some(scope), stmt)
 
@@ -3924,19 +3945,60 @@ import TypeChecker._
     }
   }
 
+  def checkMethodContract(scope: Scope, contract: AST.MethodContract, reporter: Reporter): AST.MethodContract = {
+    assert(inSpec)
+    def checkReads(reads: ISZ[AST.Exp.Ident]): ISZ[AST.Exp.Ident] = {
+      return for (read <- reads) yield checkExp(None(), scope, read, reporter)._1.asInstanceOf[AST.Exp.Ident]
+    }
+    def checkRequires(requires: ISZ[AST.Exp]): ISZ[AST.Exp] = {
+      return for (require <- requires) yield checkExp(Some(AST.Typed.b), scope, require, reporter)._1
+    }
+    def checkEnsures(requires: ISZ[AST.Exp]): ISZ[AST.Exp] = {
+      val tc = TypeChecker(typeHierarchy, context, ModeContext.SpecPost)
+      return for (require <- requires) yield tc.checkExp(Some(AST.Typed.b), scope, require, reporter)._1
+    }
+    def checkCase(cas: AST.MethodContract.Case): AST.MethodContract.Case = {
+      return AST.MethodContract.Case(cas.label, checkRequires(cas.requires), checkEnsures(cas.ensures))
+    }
+    contract match {
+      case contract: AST.MethodContract.Simple =>
+        return AST.MethodContract.Simple(
+          checkReads(contract.reads), checkRequires(contract.requires),
+          checkModifies(scope, contract.modifies, reporter), checkEnsures(contract.ensures)
+        )
+      case contract: AST.MethodContract.Cases =>
+        val newReads = checkReads(contract.reads)
+        val newModifies = checkModifies(scope, contract.modifies, reporter)
+        var newCases = ISZ[AST.MethodContract.Case]()
+        var labelMap = HashMap.empty[String, Option[Position]]
+        for (cas <- contract.cases) {
+          newCases = newCases :+ checkCase(cas)
+          val label = cas.label.value
+          if (label != "") {
+            labelMap.get(label) match {
+              case Some(Some(pos)) =>
+                reporter.error(cas.label.attr.posOpt, typeCheckerKind,
+                  s"Contract case with label '$label' was previously defined at [${pos.beginLine}, ${pos.beginColumn}].")
+              case Some(_) =>
+                reporter.error(cas.label.attr.posOpt, typeCheckerKind,
+                  s"Contract case with label '$label' was previously defined.")
+              case _ =>
+                labelMap = labelMap + label ~> cas.label.attr.posOpt
+            }
+          }
+        }
+        return AST.MethodContract.Cases(newReads, newModifies, newCases)
+    }
+  }
+
   def checkLoopInv(scope: Scope, invs: ISZ[AST.Exp], modifies: ISZ[AST.Exp.Ident],
                    reporter: Reporter): (ISZ[AST.Exp], ISZ[AST.Exp.Ident]) = {
-    var newInvs: ISZ[AST.Exp] = ISZ()
-    for (inv <- invs) {
-      val (newInv, _) = checkExp(AST.Typed.bOpt, scope, inv, reporter)
-      newInvs = newInvs :+ newInv
-    }
-    var newMods: ISZ[AST.Exp.Ident] = ISZ()
-    for (mod <- modifies) {
-      val newMod = checkModifyExp(scope, mod, reporter)
-      newMods = newMods :+ newMod
-    }
-    return (newInvs, newMods)
+    val newInvs: ISZ[AST.Exp] = for (inv <- invs) yield checkExp(AST.Typed.bOpt, scope, inv, reporter)._1
+    return (newInvs, checkModifies(scope, modifies, reporter))
+  }
+
+  def checkModifies(scope: Scope, modifies: ISZ[AST.Exp.Ident], reporter: Reporter): ISZ[AST.Exp.Ident] = {
+    return for (modify <- modifies) yield checkModifyExp(scope, modify, reporter)
   }
 
   def checkModifyExp(sc: Scope, exp: AST.Exp.Ident, reporter: Reporter): AST.Exp.Ident = {
@@ -3971,18 +4033,15 @@ import TypeChecker._
     return exp
   }
 
-  def checkMethod(sc: Scope, stmt: AST.Stmt.Method, reporter: Reporter): AST.Stmt = {
-    if (stmt.bodyOpt.isEmpty) {
-      return stmt
-    }
-    val typeParams = typeParamMap(stmt.sig.typeParams, reporter)
+  def methodScope(sc: Scope, sig: AST.MethodSig, reporter: Reporter): (B, Scope.Local) = {
+    val typeParams = typeParamMap(sig.typeParams, reporter)
     var scope = localTypeScope(typeParams.map, sc)
-    stmt.sig.returnType.typedOpt match {
+    sig.returnType.typedOpt match {
       case tOpt @ Some(_) => scope = scope(methodReturnOpt = tOpt)
       case _ => halt("Unexpected situation when type checking method.")
     }
     var ok = T
-    for (p <- stmt.sig.params) {
+    for (p <- sig.params) {
       val id = p.id.value
       scope.resolveName(typeHierarchy.nameMap, ISZ(id)) match {
         case Some(_: Info.LocalVar) =>
@@ -4004,11 +4063,22 @@ import TypeChecker._
           )
       }
     }
-    if (!ok) {
+    return (ok, scope)
+  }
+
+  def checkMethod(sc: Scope, stmt: AST.Stmt.Method, reporter: Reporter): AST.Stmt = {
+    val (ok, scope) = methodScope(sc, stmt.sig, reporter)
+    if (ok) {
+      val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
+      val newContract = tc.checkMethodContract(scope, stmt.contract, reporter)
+      if (stmt.bodyOpt.isEmpty) {
+        return stmt(contract = newContract)
+      }
+      val (_, newBody) = checkBody(None(), scope, stmt.bodyOpt.get, reporter)
+      return stmt(contract = newContract, bodyOpt = Some(newBody))
+    } else {
       return stmt
     }
-    val (_, newBody) = checkBody(None(), scope, stmt.bodyOpt.get, reporter)
-    return stmt(bodyOpt = Some(newBody))
   }
 
   def checkAdt(info: TypeInfo.Adt): TypeHierarchy => (TypeHierarchy, Reporter) @pure = {
