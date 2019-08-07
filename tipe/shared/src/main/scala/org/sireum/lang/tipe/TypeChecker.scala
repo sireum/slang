@@ -227,7 +227,7 @@ object TypeChecker {
     }
     for (info <- nameMap.values) {
       info match {
-        case info: Info.Object if !info.ast.extNameOpt.nonEmpty =>
+        case info: Info.Object =>
           jobs = jobs :+ (() => TypeChecker(th, info.name, TypeChecker.ModeContext.Code).checkObject(info))
         case _ =>
       }
@@ -3689,6 +3689,13 @@ import TypeChecker._
             val r = checkAssignH(info.typedOpt, info.resOpt)
             return r
           }
+          def checkSpecVarInfo(info: Info.SpecVar): AST.Stmt = {
+            if (info.ast.isVal) {
+              reporter.error(lhs.posOpt, typeCheckerKind, s"Cannot assign to read-only variable '${lhs.id.value}'.")
+            }
+            val r = checkAssignH(info.typedOpt, info.resOpt)
+            return r
+          }
           scope.resolveName(typeHierarchy.nameMap, ISZ(lhs.id.value)) match {
             case Some(info: Info.LocalVar) =>
               if (info.isVal) {
@@ -3696,7 +3703,8 @@ import TypeChecker._
               }
               val r = checkAssignH(info.typedOpt, info.resOpt)
               return r
-            case Some(info: Info.Var) => val r = checkVarInfo(info); return r
+            case Some(info: Info.Var) if !inSpec => return checkVarInfo(info)
+            case Some(info: Info.SpecVar) if inSpec => return checkSpecVarInfo(info)
             case Some(info) =>
               reporter.error(lhs.posOpt, typeCheckerKind, st"Cannot assign to '${(info.name, ".")}'.".render)
               val (newRhs, _) = checkAssignExp(None(), scope, assignStmt.rhs, reporter)
@@ -3874,8 +3882,6 @@ import TypeChecker._
 
     stmt match {
 
-      case stmt: AST.Stmt.Spec => return (Some(scope), stmt) // TODO
-
       case stmt: AST.Stmt.Adt =>
         typeHierarchy.typeMap.get(context :+ stmt.id.value) match {
           case Some(info: TypeInfo.Adt) => return (Some(scope), info.ast)
@@ -3903,7 +3909,7 @@ import TypeChecker._
 
       case stmt: AST.Stmt.For => return (Some(scope), checkFor(stmt))
 
-      case stmt: AST.Stmt.If =>return (Some(scope), checkIf(None(), scope, stmt, reporter))
+      case stmt: AST.Stmt.If => return (Some(scope), checkIf(None(), scope, stmt, reporter))
 
       case stmt: AST.Stmt.Import => return checkImport(scope, stmt, reporter)
 
@@ -3942,6 +3948,130 @@ import TypeChecker._
 
       case stmt: AST.Stmt.While => return (Some(scope), checkWhile(stmt))
 
+      case stmt: AST.Stmt.SpecLabel => return (Some(scope), stmt)
+
+      case stmt: AST.Stmt.SpecBlock =>
+        val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
+        return tc.checkStmt(scope, stmt.block, reporter)
+
+      case stmt: AST.Stmt.DeduceSequent =>
+        val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
+        return (Some(scope), stmt(sequents = for (sequent <- stmt.sequents) yield tc.checkSequent(scope, sequent, reporter)))
+
+      case stmt: AST.Stmt.DeduceSteps =>
+        val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
+        return (Some(scope), stmt(steps = for (step <- stmt.steps) yield tc.checkStep(scope, step, reporter)))
+
+      case stmt: AST.Stmt.Spec => return (Some(scope), stmt) // TODO
+
+    }
+  }
+
+  def checkSequent(scope: Scope.Local, sequent: AST.Sequent, reporter: Reporter): AST.Sequent = {
+    val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
+    return sequent(
+      premises = for (premise <- sequent.premises) yield checkExp(bExpectedOpt, scope, premise, reporter)._1,
+      conclusion = checkExp(bExpectedOpt, scope, sequent.conclusion, reporter)._1,
+      steps = for (step <- sequent.steps) yield checkStep(scope, step, reporter)
+    )
+  }
+
+  def checkStep(scope: Scope.Local, step: AST.Proof.Step, reporter: Reporter): AST.Proof.Step = {
+    def checkJustification(just: AST.Proof.Step.Justification): AST.Proof.Step.Justification = {
+      return just(args = for (arg <- just.args) yield checkExp(None(), scope, arg, reporter)._1)
+    }
+    val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
+    step match {
+      case step: AST.Proof.Step.Regular =>
+        return step(claim = checkExp(bExpectedOpt, scope, step.claim, reporter)._1,
+          just = checkJustification(step.just))
+      case step: AST.Proof.Step.SubProof =>
+        return step(steps = for (s <- step.steps) yield checkStep(scope, s, reporter))
+      case step: AST.Proof.Step.Let =>
+        var ok = T
+        var sc = createNewScope(scope)
+        def declId(id: AST.Id, tOpt: Option[AST.Typed]): Unit = {
+          val key = id.value
+          if (sc.nameMap.contains(key)) {
+            reporter.error(
+              id.attr.posOpt,
+              typeCheckerKind,
+              s"Cannot declare '$key' because the identifier has already been previously declared."
+            )
+            ok = F
+          } else {
+            sc = sc(
+              nameMap = sc.nameMap + key ~> Info.LocalVar(
+                context :+ key,
+                F,
+                id,
+                tOpt,
+                Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, T, key))
+              )
+            )
+          }
+        }
+        var newParams = ISZ[AST.Proof.Step.Let.Param]()
+        for (p <- step.params) {
+          val typedOpt: Option[AST.Typed] = p.tipeOpt match {
+            case Some(tipe) =>
+              val ntOpt = typeHierarchy.typed(scope, tipe, reporter)
+              newParams = newParams :+ p(tipeOpt = ntOpt)
+              if (ntOpt.isEmpty) None() else ntOpt.get.typedOpt
+            case _ =>
+              newParams = newParams :+ p
+              None()
+          }
+          declId(p.id, typedOpt)
+        }
+        return step(params = newParams, steps = for (s <- step.steps) yield checkStep(sc, s, reporter))
+      case step: AST.Proof.Step.Assume =>
+        return step(claim = checkExp(bExpectedOpt, scope, step.claim, reporter)._1)
+      case step: AST.Proof.Step.Assert =>
+        return step(claim = checkExp(bExpectedOpt, scope, step.claim, reporter)._1,
+          steps = for (s <- step.steps) yield checkStep(scope, s, reporter))
+      case step: AST.Proof.Step.StructInduction =>
+        val newClaim = checkExp(bExpectedOpt, scope, step.claim, reporter)._1
+        val (newExp, tOpt) = checkExp(None(), scope, step.exp, reporter)
+        tOpt match {
+          case Some(t) =>
+            val unrefinedIdOpt: Option[AST.Id] = newExp match {
+              case newExp: AST.Exp.Ident => Some(newExp.id)
+              case _ => None()
+            }
+            var newCases = ISZ[AST.Proof.Step.StructInduction.MatchCase]()
+            for (cas <- step.cases) {
+              val (scOpt, newPattern) = checkPattern(unrefinedIdOpt, t, scope, cas.pattern, reporter)
+              scOpt match {
+                case Some(sc) =>
+                  val newHypoOpt: Option[AST.Proof.Step.Assume] = cas.hypoOpt match {
+                    case Some(hypo) => Some(checkStep(sc, hypo, reporter).asInstanceOf[AST.Proof.Step.Assume])
+                    case _ => None()
+                  }
+                  newCases = newCases :+ cas(
+                    pattern = newPattern.asInstanceOf[AST.Pattern.Structure],
+                    hypoOpt = newHypoOpt,
+                    steps = for (s <- cas.steps) yield checkStep(sc, s, reporter)
+                  )
+                case _ =>
+                  newCases = newCases :+ cas(
+                    pattern = newPattern.asInstanceOf[AST.Pattern.Structure]
+                  )
+              }
+            }
+            val newDefaultOpt: Option[AST.Proof.Step.StructInduction.MatchDefault] = step.defaultOpt match {
+              case Some(default) =>
+                val newHypoOpt: Option[AST.Proof.Step.Assume] = default.hypoOpt match {
+                  case Some(hypo) => Some(checkStep(scope, hypo, reporter).asInstanceOf[AST.Proof.Step.Assume])
+                  case _ => None()
+                }
+                Some(default(hypoOpt = newHypoOpt, steps = for (s <- default.steps) yield checkStep(scope, s, reporter)))
+              case _ => None()
+            }
+            return step(claim = newClaim, exp = newExp, cases = newCases, defaultOpt = newDefaultOpt)
+          case _ =>
+            return step(claim = newClaim, exp = newExp)
+        }
     }
   }
 
@@ -4212,11 +4342,11 @@ import TypeChecker._
     }
     @pure def getStmt(id: String): Option[AST.Stmt] = {
       getInfo(id) match {
-        case info: Info.Var => return Some(info.ast)
-        case info: Info.SpecVar => return Some(info.ast)
-        case info: Info.SpecMethod => return Some(info.ast)
-        case info: Info.Method => return Some(info.ast)
-        case info: Info.ExtMethod => return Some(info.ast)
+        case sinfo: Info.Var => return if (info.ast.extNameOpt.nonEmpty) None() else Some(sinfo.ast)
+        case sinfo: Info.SpecVar => return Some(sinfo.ast)
+        case sinfo: Info.SpecMethod => return Some(sinfo.ast)
+        case sinfo: Info.Method => return Some(sinfo.ast)
+        case sinfo: Info.ExtMethod => return Some(sinfo.ast)
         case _ => halt("Unexpected situation when type checking object.")
       }
     }

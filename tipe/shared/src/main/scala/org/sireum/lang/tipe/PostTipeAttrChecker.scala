@@ -34,9 +34,8 @@ import org.sireum.lang.symbol.Resolver._
 
 object PostTipeAttrChecker {
   val AttrResult: MTransformer.PreResult[Attr] = MTransformer.PreResult[Attr](F, MNone())
-  val ContractResult: MTransformer.PreResult[MethodContract] = MTransformer.PreResult[MethodContract](F, MNone()) // TODO: Unskip contract
   val StmtResult: MTransformer.PreResult[Stmt] = MTransformer.PreResult[Stmt](T, MNone())
-  val LStmtResult: MTransformer.PreResult[Stmt] = MTransformer.PreResult[Stmt](F, MNone()) // TODO: Unskip contract
+  val SkipStmtResult: MTransformer.PreResult[Stmt] = MTransformer.PreResult[Stmt](F, MNone())
   val ResolvedResult: MTransformer.PreResult[ResolvedAttr] = MTransformer.PreResult[ResolvedAttr](F, MNone())
   val TypedResult: MTransformer.PreResult[TypedAttr] = MTransformer.PreResult[TypedAttr](F, MNone())
   val avoidCheckNames: HashSet[QName] = HashSet ++ ISZ(
@@ -86,13 +85,11 @@ object PostTipeAttrChecker {
 
 @record class PostTipeAttrChecker(var messages: HashSSet[Message]) extends MTransformer {
 
-  override def preMethodContract(o: MethodContract): MTransformer.PreResult[MethodContract] = {
-    return PostTipeAttrChecker.ContractResult
-  }
-
   override def preStmt(o: Stmt): MTransformer.PreResult[Stmt] = {
     o match {
-      case _: Stmt.Spec => return PostTipeAttrChecker.LStmtResult
+      case _: Stmt.Fact => return PostTipeAttrChecker.SkipStmtResult // TODO
+      case _: Stmt.Inv => return PostTipeAttrChecker.SkipStmtResult // TODO
+      case _: Stmt.Theorem => return PostTipeAttrChecker.SkipStmtResult // TODO
       case _ => return PostTipeAttrChecker.StmtResult
     }
   }

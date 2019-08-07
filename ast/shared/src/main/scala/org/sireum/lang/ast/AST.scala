@@ -455,18 +455,31 @@ object Stmt {
 
 }
 
-@datatype trait MethodContract
+@datatype trait MethodContract {
+  @pure def isEmpty: B
+  @pure def nonEmpty: B = {
+    return !isEmpty
+  }
+}
 
 object MethodContract {
 
   @datatype class Simple(reads: ISZ[Exp.Ident],
                          requires: ISZ[Exp],
                          modifies: ISZ[Exp.Ident],
-                         ensures: ISZ[Exp]) extends MethodContract
+                         ensures: ISZ[Exp]) extends MethodContract {
+    @pure override def isEmpty: B = {
+      return reads.isEmpty && requires.isEmpty && modifies.isEmpty && ensures.isEmpty
+    }
+  }
 
   @datatype class Cases(reads: ISZ[Exp.Ident],
                         modifies: ISZ[Exp.Ident],
-                        cases: ISZ[Case]) extends MethodContract
+                        cases: ISZ[Case]) extends MethodContract {
+    @pure override def isEmpty: B = {
+      return reads.isEmpty && modifies.isEmpty && cases.isEmpty
+    }
+  }
 
   @datatype class Case(label: Exp.LitString,
                        requires: ISZ[Exp],
