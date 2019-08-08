@@ -458,6 +458,7 @@ class SlangParser(
       case q"Contract(${_: Lit.String})" => translateSpecLabel(enclosing, stat)
       case q"Contract { ..$_ }" => translateSpecBlock(enclosing, stat)
       case q"Deduce(..$_)" => translateDeduce(enclosing, stat)
+      case q"Contract.Havoc(..$args)" => translateHavoc(enclosing, stat)
       case _: Term.Apply | _: Term.ApplyInfix =>
         val term = stat.asInstanceOf[Term]
         stmtCheck(enclosing, term, s"${syntax(stat)}")
@@ -2895,6 +2896,19 @@ class SlangParser(
     }
     if (isProofStep) AST.Stmt.DeduceSteps(ISZ(dexprs.map(translateProofStep): _*), attr(stat.pos))
     else AST.Stmt.DeduceSequent(ISZ(dexprs.map(translateSequent): _*), attr(stat.pos))
+  }
+
+  def translateHavoc(enclosing: Enclosing.Type, stat: Stat): AST.Stmt.Spec = {
+    def isHavocContext: Boolean = enclosing match {
+      case Enclosing.Top | Enclosing.Method | Enclosing.Block => true
+      case _ => false
+    }
+    if (!isHavocContext) {
+      if (isWorksheet) error(stat.pos, "Contract.Havoc can only appear at the top-level, inside methods, or code blocks.")
+      else error(stat.pos, "Contract.Havoc can only appear inside methods or code blocks.")
+    }
+    val q"Contract.Havoc(..${hexprs: Seq[Term]})" = stat
+    AST.Stmt.Havoc(translateIdents("Contract.Havoc", hexprs), attr(stat.pos))
   }
 
   def translateSequent(sequent: Term): AST.Sequent = {

@@ -454,6 +454,12 @@ object Stmt {
     }
   }
 
+  @datatype class Havoc(args: ISZ[Exp.Ident], @hidden attr: Attr) extends Spec {
+    @pure override def posOpt: Option[Position] = {
+      return attr.posOpt
+    }
+  }
+
 }
 
 @datatype trait MethodContract {

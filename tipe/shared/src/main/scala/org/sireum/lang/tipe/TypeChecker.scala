@@ -4108,6 +4108,10 @@ import TypeChecker._
         val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
         return (Some(scope), stmt(steps = for (step <- stmt.steps) yield tc.checkStep(scope, step, reporter)))
 
+      case stmt: AST.Stmt.Havoc =>
+        val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
+        return (Some(scope), stmt(args = tc.checkModifies(scope, stmt.args, reporter)))
+
       case stmt: AST.Stmt.Fact =>
         val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
         val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)

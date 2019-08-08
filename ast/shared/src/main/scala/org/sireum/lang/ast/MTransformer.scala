@@ -209,6 +209,10 @@ object MTransformer {
 
   val PostResultStmtDeduceSteps: MOption[Stmt.Spec] = MNone()
 
+  val PreResultStmtHavoc: PreResult[Stmt.Spec] = PreResult(T, MNone())
+
+  val PostResultStmtHavoc: MOption[Stmt.Spec] = MNone()
+
   val PreResultMethodContractSimple: PreResult[MethodContract] = PreResult(T, MNone())
 
   val PostResultMethodContractSimple: MOption[MethodContract] = MNone()
@@ -716,6 +720,13 @@ import MTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
         }
         return r
+      case o: Stmt.Havoc =>
+        val r: PreResult[Stmt] = preStmtHavoc(o) match {
+         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
+        }
+        return r
     }
   }
 
@@ -865,6 +876,7 @@ import MTransformer._
       case o: Stmt.SpecBlock => return preStmtSpecBlock(o)
       case o: Stmt.DeduceSequent => return preStmtDeduceSequent(o)
       case o: Stmt.DeduceSteps => return preStmtDeduceSteps(o)
+      case o: Stmt.Havoc => return preStmtHavoc(o)
     }
   }
 
@@ -894,6 +906,10 @@ import MTransformer._
 
   def preStmtDeduceSteps(o: Stmt.DeduceSteps): PreResult[Stmt.Spec] = {
     return PreResultStmtDeduceSteps
+  }
+
+  def preStmtHavoc(o: Stmt.Havoc): PreResult[Stmt.Spec] = {
+    return PreResultStmtHavoc
   }
 
   def preMethodContract(o: MethodContract): PreResult[MethodContract] = {
@@ -1720,6 +1736,13 @@ import MTransformer._
          case _ => MNone[Stmt]()
         }
         return r
+      case o: Stmt.Havoc =>
+        val r: MOption[Stmt] = postStmtHavoc(o) match {
+         case MSome(result: Stmt) => MSome[Stmt](result)
+         case MSome(_) => halt("Can only produce object of type Stmt")
+         case _ => MNone[Stmt]()
+        }
+        return r
     }
   }
 
@@ -1869,6 +1892,7 @@ import MTransformer._
       case o: Stmt.SpecBlock => return postStmtSpecBlock(o)
       case o: Stmt.DeduceSequent => return postStmtDeduceSequent(o)
       case o: Stmt.DeduceSteps => return postStmtDeduceSteps(o)
+      case o: Stmt.Havoc => return postStmtHavoc(o)
     }
   }
 
@@ -1898,6 +1922,10 @@ import MTransformer._
 
   def postStmtDeduceSteps(o: Stmt.DeduceSteps): MOption[Stmt.Spec] = {
     return PostResultStmtDeduceSteps
+  }
+
+  def postStmtHavoc(o: Stmt.Havoc): MOption[Stmt.Spec] = {
+    return PostResultStmtHavoc
   }
 
   def postMethodContract(o: MethodContract): MOption[MethodContract] = {
@@ -2925,6 +2953,13 @@ import MTransformer._
             MSome(o2(steps = r0.getOrElse(o2.steps), attr = r1.getOrElse(o2.attr)))
           else
             MNone()
+        case o2: Stmt.Havoc =>
+          val r0: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.args, transformExpIdent _)
+          val r1: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(args = r0.getOrElse(o2.args), attr = r1.getOrElse(o2.attr)))
+          else
+            MNone()
       }
       rOpt
     } else if (preR.resultOpt.nonEmpty) {
@@ -3150,6 +3185,13 @@ import MTransformer._
           val r1: MOption[Attr] = transformAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
             MSome(o2(steps = r0.getOrElse(o2.steps), attr = r1.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Stmt.Havoc =>
+          val r0: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.args, transformExpIdent _)
+          val r1: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(args = r0.getOrElse(o2.args), attr = r1.getOrElse(o2.attr)))
           else
             MNone()
       }

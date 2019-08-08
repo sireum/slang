@@ -136,6 +136,13 @@ object Transformer {
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Stmt]())
           }
           return r
+        case o: Stmt.Havoc =>
+          val r: PreResult[Context, Stmt] = preStmtHavoc(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Stmt)) => PreResult(preCtx, continu, Some[Stmt](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Stmt")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Stmt]())
+          }
+          return r
       }
     }
 
@@ -285,6 +292,7 @@ object Transformer {
         case o: Stmt.SpecBlock => return preStmtSpecBlock(ctx, o)
         case o: Stmt.DeduceSequent => return preStmtDeduceSequent(ctx, o)
         case o: Stmt.DeduceSteps => return preStmtDeduceSteps(ctx, o)
+        case o: Stmt.Havoc => return preStmtHavoc(ctx, o)
       }
     }
 
@@ -313,6 +321,10 @@ object Transformer {
     }
 
     @pure def preStmtDeduceSteps(ctx: Context, o: Stmt.DeduceSteps): PreResult[Context, Stmt.Spec] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preStmtHavoc(ctx: Context, o: Stmt.Havoc): PreResult[Context, Stmt.Spec] = {
       return PreResult(ctx, T, None())
     }
 
@@ -1140,6 +1152,13 @@ object Transformer {
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[Stmt]())
           }
           return r
+        case o: Stmt.Havoc =>
+          val r: TPostResult[Context, Stmt] = postStmtHavoc(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Stmt)) => TPostResult(postCtx, Some[Stmt](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Stmt")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Stmt]())
+          }
+          return r
       }
     }
 
@@ -1289,6 +1308,7 @@ object Transformer {
         case o: Stmt.SpecBlock => return postStmtSpecBlock(ctx, o)
         case o: Stmt.DeduceSequent => return postStmtDeduceSequent(ctx, o)
         case o: Stmt.DeduceSteps => return postStmtDeduceSteps(ctx, o)
+        case o: Stmt.Havoc => return postStmtHavoc(ctx, o)
       }
     }
 
@@ -1317,6 +1337,10 @@ object Transformer {
     }
 
     @pure def postStmtDeduceSteps(ctx: Context, o: Stmt.DeduceSteps): TPostResult[Context, Stmt.Spec] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postStmtHavoc(ctx: Context, o: Stmt.Havoc): TPostResult[Context, Stmt.Spec] = {
       return TPostResult(ctx, None())
     }
 
@@ -2383,6 +2407,13 @@ import Transformer._
             TPostResult(r1.ctx, Some(o2(steps = r0.resultOpt.getOrElse(o2.steps), attr = r1.resultOpt.getOrElse(o2.attr))))
           else
             TPostResult(r1.ctx, None())
+        case o2: Stmt.Havoc =>
+          val r0: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(preR.ctx, o2.args, transformExpIdent _)
+          val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args), attr = r1.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r1.ctx, None())
       }
       rOpt
     } else if (preR.resultOpt.nonEmpty) {
@@ -2608,6 +2639,13 @@ import Transformer._
           val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
             TPostResult(r1.ctx, Some(o2(steps = r0.resultOpt.getOrElse(o2.steps), attr = r1.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: Stmt.Havoc =>
+          val r0: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(preR.ctx, o2.args, transformExpIdent _)
+          val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args), attr = r1.resultOpt.getOrElse(o2.attr))))
           else
             TPostResult(r1.ctx, None())
       }
