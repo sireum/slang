@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2018, Robby, Kansas State University
+ Copyright (c) 2019, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,12 @@ class TypeCheckerTest extends TestSuite {
     "Passing" - {
 
       "Worksheet" - {
+
+        * - passingWorksheet("""import org.sireum._
+                               |@spec def bar(x: Z): Z = $
+                               |@spec def barAx1 = Fact(
+                               |  ∀{x: Z => (x >= 0) imply_: (bar(x) >= 0)}
+                               |)""".stripMargin)
 
         * - passingWorksheet("""import org.sireum._
                                |@msig trait F

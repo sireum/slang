@@ -1,6 +1,6 @@
 // #Sireum
 /*
- Copyright (c) 2018, Robby, Kansas State University
+ Copyright (c) 2019, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -34,8 +34,8 @@ import org.sireum.lang.symbol.Resolver._
 
 object PostTipeAttrChecker {
   val AttrResult: MTransformer.PreResult[Attr] = MTransformer.PreResult[Attr](F, MNone())
-  val StmtResult: MTransformer.PreResult[Stmt] = MTransformer.PreResult[Stmt](T, MNone())
-  val SkipStmtResult: MTransformer.PreResult[Stmt] = MTransformer.PreResult[Stmt](F, MNone())
+  val ExpResult: MTransformer.PreResult[Exp] = MTransformer.PreResult[Exp](T, MNone())
+  val SkipExpResult: MTransformer.PreResult[Exp] = MTransformer.PreResult[Exp](F, MNone())
   val ResolvedResult: MTransformer.PreResult[ResolvedAttr] = MTransformer.PreResult[ResolvedAttr](F, MNone())
   val TypedResult: MTransformer.PreResult[TypedAttr] = MTransformer.PreResult[TypedAttr](F, MNone())
   val avoidCheckNames: HashSet[QName] = HashSet ++ ISZ(
@@ -85,12 +85,10 @@ object PostTipeAttrChecker {
 
 @record class PostTipeAttrChecker(var messages: HashSSet[Message]) extends MTransformer {
 
-  override def preStmt(o: Stmt): MTransformer.PreResult[Stmt] = {
+  override def preExp(o: Exp): MTransformer.PreResult[Exp] = {
     o match {
-      case _: Stmt.Fact => return PostTipeAttrChecker.SkipStmtResult // TODO
-      case _: Stmt.Inv => return PostTipeAttrChecker.SkipStmtResult // TODO
-      case _: Stmt.Theorem => return PostTipeAttrChecker.SkipStmtResult // TODO
-      case _ => return PostTipeAttrChecker.StmtResult
+      case _: Exp.StateSeq => return PostTipeAttrChecker.SkipExpResult // TODO
+      case _ => return PostTipeAttrChecker.ExpResult
     }
   }
 

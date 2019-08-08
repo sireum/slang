@@ -1,6 +1,6 @@
 // #Sireum
 /*
- Copyright (c) 2017, Robby, Kansas State University
+ Copyright (c) 2019, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -619,6 +619,9 @@ object TypeHierarchy {
         case _: AST.Typed.Methods => return None()
         case _: AST.Typed.Object => return None()
         case _: AST.Typed.Package => return None()
+        case _: AST.Typed.Fact => return None()
+        case _: AST.Typed.Theorem => return None()
+        case _: AST.Typed.Inv => return None()
       }
     }
 

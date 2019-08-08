@@ -76,7 +76,9 @@ object JSON {
         case o: org.sireum.lang.symbol.Info.Enum => return print_symbolInfoEnum(o)
         case o: org.sireum.lang.symbol.Info.EnumElement => return print_symbolInfoEnumElement(o)
         case o: org.sireum.lang.symbol.Info.LocalVar => return print_symbolInfoLocalVar(o)
-        case o: org.sireum.lang.symbol.Info.QuantVar => return print_symbolInfoQuantVar(o)
+        case o: org.sireum.lang.symbol.Info.Fact => return print_symbolInfoFact(o)
+        case o: org.sireum.lang.symbol.Info.Theorem => return print_symbolInfoTheorem(o)
+        case o: org.sireum.lang.symbol.Info.Inv => return print_symbolInfoInv(o)
       }
     }
 
@@ -188,13 +190,33 @@ object JSON {
       ))
     }
 
-    @pure def print_symbolInfoQuantVar(o: org.sireum.lang.symbol.Info.QuantVar): ST = {
+    @pure def print_symbolInfoFact(o: org.sireum.lang.symbol.Info.Fact): ST = {
       return printObject(ISZ(
-        ("type", st""""org.sireum.lang.symbol.Info.QuantVar""""),
-        ("name", printISZ(T, o.name, printString _)),
-        ("ast", print_astId(o.ast)),
-        ("typedOpt", printOption(F, o.typedOpt, print_astTyped _)),
-        ("resOpt", printOption(F, o.resOpt, print_astResolvedInfo _))
+        ("type", st""""org.sireum.lang.symbol.Info.Fact""""),
+        ("owner", printISZ(T, o.owner, printString _)),
+        ("id", printString(o.id)),
+        ("scope", print_symbolScopeGlobal(o.scope)),
+        ("ast", print_astStmtFact(o.ast))
+      ))
+    }
+
+    @pure def print_symbolInfoTheorem(o: org.sireum.lang.symbol.Info.Theorem): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.symbol.Info.Theorem""""),
+        ("owner", printISZ(T, o.owner, printString _)),
+        ("id", printString(o.id)),
+        ("scope", print_symbolScopeGlobal(o.scope)),
+        ("ast", print_astStmtTheorem(o.ast))
+      ))
+    }
+
+    @pure def print_symbolInfoInv(o: org.sireum.lang.symbol.Info.Inv): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.symbol.Info.Inv""""),
+        ("owner", printISZ(T, o.owner, printString _)),
+        ("id", printString(o.id)),
+        ("scope", print_symbolScope(o.scope)),
+        ("ast", print_astStmtInv(o.ast))
       ))
     }
 
@@ -238,6 +260,7 @@ object JSON {
         ("specMethods", printHashMap(F, o.specMethods, printString _, print_symbolInfoSpecMethod _)),
         ("methods", printHashMap(F, o.methods, printString _, print_symbolInfoMethod _)),
         ("refinements", printHashMap(F, o.refinements, printString _, print_symbolTypeInfoName _)),
+        ("invariants", printHashMap(F, o.invariants, printString _, print_symbolInfoInv _)),
         ("scope", print_symbolScopeGlobal(o.scope)),
         ("ast", print_astStmtSig(o.ast))
       ))
@@ -267,6 +290,7 @@ object JSON {
         ("specMethods", printHashMap(F, o.specMethods, printString _, print_symbolInfoSpecMethod _)),
         ("methods", printHashMap(F, o.methods, printString _, print_symbolInfoMethod _)),
         ("refinements", printHashMap(F, o.refinements, printString _, print_symbolTypeInfoName _)),
+        ("invariants", printHashMap(F, o.invariants, printString _, print_symbolInfoInv _)),
         ("scope", print_symbolScopeGlobal(o.scope)),
         ("ast", print_astStmtAdt(o.ast))
       ))
@@ -296,7 +320,8 @@ object JSON {
         ("vars", printHashSMap(F, o.vars, printString _, print_symbolInfoVar _)),
         ("specMethods", printHashMap(F, o.specMethods, printString _, print_symbolInfoSpecMethod _)),
         ("methods", printHashMap(F, o.methods, printString _, print_symbolInfoMethod _)),
-        ("refinements", printHashMap(F, o.refinements, printString _, print_symbolTypeInfoName _))
+        ("refinements", printHashMap(F, o.refinements, printString _, print_symbolTypeInfoName _)),
+        ("invariants", printHashMap(F, o.invariants, printString _, print_symbolInfoInv _))
       ))
     }
 
@@ -666,10 +691,10 @@ object JSON {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Stmt.Fact""""),
         ("id", print_astId(o.id)),
-        ("typeArgs", printISZ(F, o.typeArgs, print_astTypeParam _)),
+        ("typeParams", printISZ(F, o.typeParams, print_astTypeParam _)),
         ("descOpt", printOption(F, o.descOpt, print_astExpLitString _)),
         ("claims", printISZ(F, o.claims, print_astExp _)),
-        ("attr", print_astAttr(o.attr))
+        ("attr", print_astResolvedAttr(o.attr))
       ))
     }
 
@@ -678,7 +703,7 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.Stmt.Inv""""),
         ("id", print_astId(o.id)),
         ("claims", printISZ(F, o.claims, print_astExp _)),
-        ("attr", print_astAttr(o.attr))
+        ("attr", print_astResolvedAttr(o.attr))
       ))
     }
 
@@ -687,11 +712,12 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.Stmt.Theorem""""),
         ("isLemma", printB(o.isLemma)),
         ("id", print_astId(o.id)),
-        ("typeArgs", printISZ(F, o.typeArgs, print_astTypeParam _)),
+        ("typeParams", printISZ(F, o.typeParams, print_astTypeParam _)),
         ("descOpt", printOption(F, o.descOpt, print_astExpLitString _)),
         ("claim", print_astExp(o.claim)),
+        ("isFun", printB(o.isFun)),
         ("proof", print_astProof(o.proof)),
-        ("attr", print_astAttr(o.attr))
+        ("attr", print_astResolvedAttr(o.attr))
       ))
     }
 
@@ -1494,6 +1520,9 @@ object JSON {
         case o: org.sireum.lang.ast.Typed.Enum => return print_astTypedEnum(o)
         case o: org.sireum.lang.ast.Typed.Method => return print_astTypedMethod(o)
         case o: org.sireum.lang.ast.Typed.Methods => return print_astTypedMethods(o)
+        case o: org.sireum.lang.ast.Typed.Fact => return print_astTypedFact(o)
+        case o: org.sireum.lang.ast.Typed.Theorem => return print_astTypedTheorem(o)
+        case o: org.sireum.lang.ast.Typed.Inv => return print_astTypedInv(o)
       }
     }
 
@@ -1589,6 +1618,31 @@ object JSON {
       ))
     }
 
+    @pure def print_astTypedFact(o: org.sireum.lang.ast.Typed.Fact): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.Typed.Fact""""),
+        ("owner", printISZ(T, o.owner, printString _)),
+        ("id", printString(o.id))
+      ))
+    }
+
+    @pure def print_astTypedTheorem(o: org.sireum.lang.ast.Typed.Theorem): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.Typed.Theorem""""),
+        ("owner", printISZ(T, o.owner, printString _)),
+        ("id", printString(o.id))
+      ))
+    }
+
+    @pure def print_astTypedInv(o: org.sireum.lang.ast.Typed.Inv): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.Typed.Inv""""),
+        ("isInObject", printB(o.isInObject)),
+        ("owner", printISZ(T, o.owner, printString _)),
+        ("id", printString(o.id))
+      ))
+    }
+
     @pure def print_astAttr(o: org.sireum.lang.ast.Attr): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Attr""""),
@@ -1625,6 +1679,9 @@ object JSON {
         case o: org.sireum.lang.ast.ResolvedInfo.Methods => return print_astResolvedInfoMethods(o)
         case o: org.sireum.lang.ast.ResolvedInfo.Tuple => return print_astResolvedInfoTuple(o)
         case o: org.sireum.lang.ast.ResolvedInfo.LocalVar => return print_astResolvedInfoLocalVar(o)
+        case o: org.sireum.lang.ast.ResolvedInfo.Fact => return print_astResolvedInfoFact(o)
+        case o: org.sireum.lang.ast.ResolvedInfo.Theorem => return print_astResolvedInfoTheorem(o)
+        case o: org.sireum.lang.ast.ResolvedInfo.Inv => return print_astResolvedInfoInv(o)
       }
     }
 
@@ -1794,6 +1851,29 @@ object JSON {
       ))
     }
 
+    @pure def print_astResolvedInfoFact(o: org.sireum.lang.ast.ResolvedInfo.Fact): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.ResolvedInfo.Fact""""),
+        ("name", printISZ(T, o.name, printString _))
+      ))
+    }
+
+    @pure def print_astResolvedInfoTheorem(o: org.sireum.lang.ast.ResolvedInfo.Theorem): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.ResolvedInfo.Theorem""""),
+        ("name", printISZ(T, o.name, printString _))
+      ))
+    }
+
+    @pure def print_astResolvedInfoInv(o: org.sireum.lang.ast.ResolvedInfo.Inv): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.ResolvedInfo.Inv""""),
+        ("isInObject", printB(o.isInObject)),
+        ("owner", printISZ(T, o.owner, printString _)),
+        ("id", printString(o.id))
+      ))
+    }
+
     @pure def print_astTruthTableRow(o: org.sireum.lang.ast.TruthTable.Row): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.TruthTable.Row""""),
@@ -1919,7 +1999,7 @@ object JSON {
     }
 
     def parse_symbolInfo(): org.sireum.lang.symbol.Info = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.symbol.Info.Package", "org.sireum.lang.symbol.Info.Var", "org.sireum.lang.symbol.Info.SpecVar", "org.sireum.lang.symbol.Info.Method", "org.sireum.lang.symbol.Info.SpecMethod", "org.sireum.lang.symbol.Info.Object", "org.sireum.lang.symbol.Info.ExtMethod", "org.sireum.lang.symbol.Info.Enum", "org.sireum.lang.symbol.Info.EnumElement", "org.sireum.lang.symbol.Info.LocalVar", "org.sireum.lang.symbol.Info.QuantVar"))
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.symbol.Info.Package", "org.sireum.lang.symbol.Info.Var", "org.sireum.lang.symbol.Info.SpecVar", "org.sireum.lang.symbol.Info.Method", "org.sireum.lang.symbol.Info.SpecMethod", "org.sireum.lang.symbol.Info.Object", "org.sireum.lang.symbol.Info.ExtMethod", "org.sireum.lang.symbol.Info.Enum", "org.sireum.lang.symbol.Info.EnumElement", "org.sireum.lang.symbol.Info.LocalVar", "org.sireum.lang.symbol.Info.Fact", "org.sireum.lang.symbol.Info.Theorem", "org.sireum.lang.symbol.Info.Inv"))
       t.native match {
         case "org.sireum.lang.symbol.Info.Package" => val r = parse_symbolInfoPackageT(T); return r
         case "org.sireum.lang.symbol.Info.Var" => val r = parse_symbolInfoVarT(T); return r
@@ -1931,8 +2011,10 @@ object JSON {
         case "org.sireum.lang.symbol.Info.Enum" => val r = parse_symbolInfoEnumT(T); return r
         case "org.sireum.lang.symbol.Info.EnumElement" => val r = parse_symbolInfoEnumElementT(T); return r
         case "org.sireum.lang.symbol.Info.LocalVar" => val r = parse_symbolInfoLocalVarT(T); return r
-        case "org.sireum.lang.symbol.Info.QuantVar" => val r = parse_symbolInfoQuantVarT(T); return r
-        case _ => val r = parse_symbolInfoQuantVarT(T); return r
+        case "org.sireum.lang.symbol.Info.Fact" => val r = parse_symbolInfoFactT(T); return r
+        case "org.sireum.lang.symbol.Info.Theorem" => val r = parse_symbolInfoTheoremT(T); return r
+        case "org.sireum.lang.symbol.Info.Inv" => val r = parse_symbolInfoInvT(T); return r
+        case _ => val r = parse_symbolInfoInvT(T); return r
       }
     }
 
@@ -2200,28 +2282,76 @@ object JSON {
       return org.sireum.lang.symbol.Info.LocalVar(name, isVal, ast, typedOpt, resOpt)
     }
 
-    def parse_symbolInfoQuantVar(): org.sireum.lang.symbol.Info.QuantVar = {
-      val r = parse_symbolInfoQuantVarT(F)
+    def parse_symbolInfoFact(): org.sireum.lang.symbol.Info.Fact = {
+      val r = parse_symbolInfoFactT(F)
       return r
     }
 
-    def parse_symbolInfoQuantVarT(typeParsed: B): org.sireum.lang.symbol.Info.QuantVar = {
+    def parse_symbolInfoFactT(typeParsed: B): org.sireum.lang.symbol.Info.Fact = {
       if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.symbol.Info.QuantVar")
+        parser.parseObjectType("org.sireum.lang.symbol.Info.Fact")
       }
-      parser.parseObjectKey("name")
-      val name = parser.parseISZ(parser.parseString _)
+      parser.parseObjectKey("owner")
+      val owner = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("id")
+      val id = parser.parseString()
+      parser.parseObjectNext()
+      parser.parseObjectKey("scope")
+      val scope = parse_symbolScopeGlobal()
       parser.parseObjectNext()
       parser.parseObjectKey("ast")
-      val ast = parse_astId()
+      val ast = parse_astStmtFact()
       parser.parseObjectNext()
-      parser.parseObjectKey("typedOpt")
-      val typedOpt = parser.parseOption(parse_astTyped _)
+      return org.sireum.lang.symbol.Info.Fact(owner, id, scope, ast)
+    }
+
+    def parse_symbolInfoTheorem(): org.sireum.lang.symbol.Info.Theorem = {
+      val r = parse_symbolInfoTheoremT(F)
+      return r
+    }
+
+    def parse_symbolInfoTheoremT(typeParsed: B): org.sireum.lang.symbol.Info.Theorem = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.symbol.Info.Theorem")
+      }
+      parser.parseObjectKey("owner")
+      val owner = parser.parseISZ(parser.parseString _)
       parser.parseObjectNext()
-      parser.parseObjectKey("resOpt")
-      val resOpt = parser.parseOption(parse_astResolvedInfo _)
+      parser.parseObjectKey("id")
+      val id = parser.parseString()
       parser.parseObjectNext()
-      return org.sireum.lang.symbol.Info.QuantVar(name, ast, typedOpt, resOpt)
+      parser.parseObjectKey("scope")
+      val scope = parse_symbolScopeGlobal()
+      parser.parseObjectNext()
+      parser.parseObjectKey("ast")
+      val ast = parse_astStmtTheorem()
+      parser.parseObjectNext()
+      return org.sireum.lang.symbol.Info.Theorem(owner, id, scope, ast)
+    }
+
+    def parse_symbolInfoInv(): org.sireum.lang.symbol.Info.Inv = {
+      val r = parse_symbolInfoInvT(F)
+      return r
+    }
+
+    def parse_symbolInfoInvT(typeParsed: B): org.sireum.lang.symbol.Info.Inv = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.symbol.Info.Inv")
+      }
+      parser.parseObjectKey("owner")
+      val owner = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("id")
+      val id = parser.parseString()
+      parser.parseObjectNext()
+      parser.parseObjectKey("scope")
+      val scope = parse_symbolScope()
+      parser.parseObjectNext()
+      parser.parseObjectKey("ast")
+      val ast = parse_astStmtInv()
+      parser.parseObjectNext()
+      return org.sireum.lang.symbol.Info.Inv(owner, id, scope, ast)
     }
 
     def parse_symbolTypeInfo(): org.sireum.lang.symbol.TypeInfo = {
@@ -2312,13 +2442,16 @@ object JSON {
       parser.parseObjectKey("refinements")
       val refinements = parser.parseHashMap(parser.parseString _, parse_symbolTypeInfoName _)
       parser.parseObjectNext()
+      parser.parseObjectKey("invariants")
+      val invariants = parser.parseHashMap(parser.parseString _, parse_symbolInfoInv _)
+      parser.parseObjectNext()
       parser.parseObjectKey("scope")
       val scope = parse_symbolScopeGlobal()
       parser.parseObjectNext()
       parser.parseObjectKey("ast")
       val ast = parse_astStmtSig()
       parser.parseObjectNext()
-      return org.sireum.lang.symbol.TypeInfo.Sig(owner, outlined, typeChecked, tpe, ancestors, specVars, specMethods, methods, refinements, scope, ast)
+      return org.sireum.lang.symbol.TypeInfo.Sig(owner, outlined, typeChecked, tpe, ancestors, specVars, specMethods, methods, refinements, invariants, scope, ast)
     }
 
     def parse_symbolTypeInfoName(): org.sireum.lang.symbol.TypeInfo.Name = {
@@ -2387,13 +2520,16 @@ object JSON {
       parser.parseObjectKey("refinements")
       val refinements = parser.parseHashMap(parser.parseString _, parse_symbolTypeInfoName _)
       parser.parseObjectNext()
+      parser.parseObjectKey("invariants")
+      val invariants = parser.parseHashMap(parser.parseString _, parse_symbolInfoInv _)
+      parser.parseObjectNext()
       parser.parseObjectKey("scope")
       val scope = parse_symbolScopeGlobal()
       parser.parseObjectNext()
       parser.parseObjectKey("ast")
       val ast = parse_astStmtAdt()
       parser.parseObjectNext()
-      return org.sireum.lang.symbol.TypeInfo.Adt(owner, outlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, ancestors, specVars, vars, specMethods, methods, refinements, scope, ast)
+      return org.sireum.lang.symbol.TypeInfo.Adt(owner, outlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, ancestors, specVars, vars, specMethods, methods, refinements, invariants, scope, ast)
     }
 
     def parse_symbolTypeInfoTypeAlias(): org.sireum.lang.symbol.TypeInfo.TypeAlias = {
@@ -2459,7 +2595,10 @@ object JSON {
       parser.parseObjectKey("refinements")
       val refinements = parser.parseHashMap(parser.parseString _, parse_symbolTypeInfoName _)
       parser.parseObjectNext()
-      return org.sireum.lang.symbol.TypeInfo.Members(specVars, vars, specMethods, methods, refinements)
+      parser.parseObjectKey("invariants")
+      val invariants = parser.parseHashMap(parser.parseString _, parse_symbolInfoInv _)
+      parser.parseObjectNext()
+      return org.sireum.lang.symbol.TypeInfo.Members(specVars, vars, specMethods, methods, refinements, invariants)
     }
 
     def parse_astTopUnit(): org.sireum.lang.ast.TopUnit = {
@@ -3258,8 +3397,8 @@ object JSON {
       parser.parseObjectKey("id")
       val id = parse_astId()
       parser.parseObjectNext()
-      parser.parseObjectKey("typeArgs")
-      val typeArgs = parser.parseISZ(parse_astTypeParam _)
+      parser.parseObjectKey("typeParams")
+      val typeParams = parser.parseISZ(parse_astTypeParam _)
       parser.parseObjectNext()
       parser.parseObjectKey("descOpt")
       val descOpt = parser.parseOption(parse_astExpLitString _)
@@ -3268,9 +3407,9 @@ object JSON {
       val claims = parser.parseISZ(parse_astExp _)
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
+      val attr = parse_astResolvedAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.Fact(id, typeArgs, descOpt, claims, attr)
+      return org.sireum.lang.ast.Stmt.Fact(id, typeParams, descOpt, claims, attr)
     }
 
     def parse_astStmtInv(): org.sireum.lang.ast.Stmt.Inv = {
@@ -3289,7 +3428,7 @@ object JSON {
       val claims = parser.parseISZ(parse_astExp _)
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
+      val attr = parse_astResolvedAttr()
       parser.parseObjectNext()
       return org.sireum.lang.ast.Stmt.Inv(id, claims, attr)
     }
@@ -3309,8 +3448,8 @@ object JSON {
       parser.parseObjectKey("id")
       val id = parse_astId()
       parser.parseObjectNext()
-      parser.parseObjectKey("typeArgs")
-      val typeArgs = parser.parseISZ(parse_astTypeParam _)
+      parser.parseObjectKey("typeParams")
+      val typeParams = parser.parseISZ(parse_astTypeParam _)
       parser.parseObjectNext()
       parser.parseObjectKey("descOpt")
       val descOpt = parser.parseOption(parse_astExpLitString _)
@@ -3318,13 +3457,16 @@ object JSON {
       parser.parseObjectKey("claim")
       val claim = parse_astExp()
       parser.parseObjectNext()
+      parser.parseObjectKey("isFun")
+      val isFun = parser.parseB()
+      parser.parseObjectNext()
       parser.parseObjectKey("proof")
       val proof = parse_astProof()
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
+      val attr = parse_astResolvedAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.Theorem(isLemma, id, typeArgs, descOpt, claim, proof, attr)
+      return org.sireum.lang.ast.Stmt.Theorem(isLemma, id, typeParams, descOpt, claim, isFun, proof, attr)
     }
 
     def parse_astStmtSpecLabel(): org.sireum.lang.ast.Stmt.SpecLabel = {
@@ -4988,7 +5130,7 @@ object JSON {
     }
 
     def parse_astTyped(): org.sireum.lang.ast.Typed = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Typed.Name", "org.sireum.lang.ast.Typed.Tuple", "org.sireum.lang.ast.Typed.Fun", "org.sireum.lang.ast.Typed.TypeVar", "org.sireum.lang.ast.Typed.Package", "org.sireum.lang.ast.Typed.Object", "org.sireum.lang.ast.Typed.Enum", "org.sireum.lang.ast.Typed.Method", "org.sireum.lang.ast.Typed.Methods"))
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Typed.Name", "org.sireum.lang.ast.Typed.Tuple", "org.sireum.lang.ast.Typed.Fun", "org.sireum.lang.ast.Typed.TypeVar", "org.sireum.lang.ast.Typed.Package", "org.sireum.lang.ast.Typed.Object", "org.sireum.lang.ast.Typed.Enum", "org.sireum.lang.ast.Typed.Method", "org.sireum.lang.ast.Typed.Methods", "org.sireum.lang.ast.Typed.Fact", "org.sireum.lang.ast.Typed.Theorem", "org.sireum.lang.ast.Typed.Inv"))
       t.native match {
         case "org.sireum.lang.ast.Typed.Name" => val r = parse_astTypedNameT(T); return r
         case "org.sireum.lang.ast.Typed.Tuple" => val r = parse_astTypedTupleT(T); return r
@@ -4999,7 +5141,10 @@ object JSON {
         case "org.sireum.lang.ast.Typed.Enum" => val r = parse_astTypedEnumT(T); return r
         case "org.sireum.lang.ast.Typed.Method" => val r = parse_astTypedMethodT(T); return r
         case "org.sireum.lang.ast.Typed.Methods" => val r = parse_astTypedMethodsT(T); return r
-        case _ => val r = parse_astTypedMethodsT(T); return r
+        case "org.sireum.lang.ast.Typed.Fact" => val r = parse_astTypedFactT(T); return r
+        case "org.sireum.lang.ast.Typed.Theorem" => val r = parse_astTypedTheoremT(T); return r
+        case "org.sireum.lang.ast.Typed.Inv" => val r = parse_astTypedInvT(T); return r
+        case _ => val r = parse_astTypedInvT(T); return r
       }
     }
 
@@ -5192,6 +5337,63 @@ object JSON {
       return org.sireum.lang.ast.Typed.Methods(methods)
     }
 
+    def parse_astTypedFact(): org.sireum.lang.ast.Typed.Fact = {
+      val r = parse_astTypedFactT(F)
+      return r
+    }
+
+    def parse_astTypedFactT(typeParsed: B): org.sireum.lang.ast.Typed.Fact = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Typed.Fact")
+      }
+      parser.parseObjectKey("owner")
+      val owner = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("id")
+      val id = parser.parseString()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Typed.Fact(owner, id)
+    }
+
+    def parse_astTypedTheorem(): org.sireum.lang.ast.Typed.Theorem = {
+      val r = parse_astTypedTheoremT(F)
+      return r
+    }
+
+    def parse_astTypedTheoremT(typeParsed: B): org.sireum.lang.ast.Typed.Theorem = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Typed.Theorem")
+      }
+      parser.parseObjectKey("owner")
+      val owner = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("id")
+      val id = parser.parseString()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Typed.Theorem(owner, id)
+    }
+
+    def parse_astTypedInv(): org.sireum.lang.ast.Typed.Inv = {
+      val r = parse_astTypedInvT(F)
+      return r
+    }
+
+    def parse_astTypedInvT(typeParsed: B): org.sireum.lang.ast.Typed.Inv = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Typed.Inv")
+      }
+      parser.parseObjectKey("isInObject")
+      val isInObject = parser.parseB()
+      parser.parseObjectNext()
+      parser.parseObjectKey("owner")
+      val owner = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("id")
+      val id = parser.parseString()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Typed.Inv(isInObject, owner, id)
+    }
+
     def parse_astAttr(): org.sireum.lang.ast.Attr = {
       val r = parse_astAttrT(F)
       return r
@@ -5247,7 +5449,7 @@ object JSON {
     }
 
     def parse_astResolvedInfo(): org.sireum.lang.ast.ResolvedInfo = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.ResolvedInfo.BuiltIn", "org.sireum.lang.ast.ResolvedInfo.Package", "org.sireum.lang.ast.ResolvedInfo.Enum", "org.sireum.lang.ast.ResolvedInfo.EnumElement", "org.sireum.lang.ast.ResolvedInfo.Object", "org.sireum.lang.ast.ResolvedInfo.Var", "org.sireum.lang.ast.ResolvedInfo.Method", "org.sireum.lang.ast.ResolvedInfo.Methods", "org.sireum.lang.ast.ResolvedInfo.Tuple", "org.sireum.lang.ast.ResolvedInfo.LocalVar"))
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.ResolvedInfo.BuiltIn", "org.sireum.lang.ast.ResolvedInfo.Package", "org.sireum.lang.ast.ResolvedInfo.Enum", "org.sireum.lang.ast.ResolvedInfo.EnumElement", "org.sireum.lang.ast.ResolvedInfo.Object", "org.sireum.lang.ast.ResolvedInfo.Var", "org.sireum.lang.ast.ResolvedInfo.Method", "org.sireum.lang.ast.ResolvedInfo.Methods", "org.sireum.lang.ast.ResolvedInfo.Tuple", "org.sireum.lang.ast.ResolvedInfo.LocalVar", "org.sireum.lang.ast.ResolvedInfo.Fact", "org.sireum.lang.ast.ResolvedInfo.Theorem", "org.sireum.lang.ast.ResolvedInfo.Inv"))
       t.native match {
         case "org.sireum.lang.ast.ResolvedInfo.BuiltIn" => val r = parse_astResolvedInfoBuiltInT(T); return r
         case "org.sireum.lang.ast.ResolvedInfo.Package" => val r = parse_astResolvedInfoPackageT(T); return r
@@ -5259,7 +5461,10 @@ object JSON {
         case "org.sireum.lang.ast.ResolvedInfo.Methods" => val r = parse_astResolvedInfoMethodsT(T); return r
         case "org.sireum.lang.ast.ResolvedInfo.Tuple" => val r = parse_astResolvedInfoTupleT(T); return r
         case "org.sireum.lang.ast.ResolvedInfo.LocalVar" => val r = parse_astResolvedInfoLocalVarT(T); return r
-        case _ => val r = parse_astResolvedInfoLocalVarT(T); return r
+        case "org.sireum.lang.ast.ResolvedInfo.Fact" => val r = parse_astResolvedInfoFactT(T); return r
+        case "org.sireum.lang.ast.ResolvedInfo.Theorem" => val r = parse_astResolvedInfoTheoremT(T); return r
+        case "org.sireum.lang.ast.ResolvedInfo.Inv" => val r = parse_astResolvedInfoInvT(T); return r
+        case _ => val r = parse_astResolvedInfoInvT(T); return r
       }
     }
 
@@ -5501,6 +5706,57 @@ object JSON {
       val id = parser.parseString()
       parser.parseObjectNext()
       return org.sireum.lang.ast.ResolvedInfo.LocalVar(context, scope, isVal, id)
+    }
+
+    def parse_astResolvedInfoFact(): org.sireum.lang.ast.ResolvedInfo.Fact = {
+      val r = parse_astResolvedInfoFactT(F)
+      return r
+    }
+
+    def parse_astResolvedInfoFactT(typeParsed: B): org.sireum.lang.ast.ResolvedInfo.Fact = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.ResolvedInfo.Fact")
+      }
+      parser.parseObjectKey("name")
+      val name = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.ResolvedInfo.Fact(name)
+    }
+
+    def parse_astResolvedInfoTheorem(): org.sireum.lang.ast.ResolvedInfo.Theorem = {
+      val r = parse_astResolvedInfoTheoremT(F)
+      return r
+    }
+
+    def parse_astResolvedInfoTheoremT(typeParsed: B): org.sireum.lang.ast.ResolvedInfo.Theorem = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.ResolvedInfo.Theorem")
+      }
+      parser.parseObjectKey("name")
+      val name = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.ResolvedInfo.Theorem(name)
+    }
+
+    def parse_astResolvedInfoInv(): org.sireum.lang.ast.ResolvedInfo.Inv = {
+      val r = parse_astResolvedInfoInvT(F)
+      return r
+    }
+
+    def parse_astResolvedInfoInvT(typeParsed: B): org.sireum.lang.ast.ResolvedInfo.Inv = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.ResolvedInfo.Inv")
+      }
+      parser.parseObjectKey("isInObject")
+      val isInObject = parser.parseB()
+      parser.parseObjectNext()
+      parser.parseObjectKey("owner")
+      val owner = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("id")
+      val id = parser.parseString()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.ResolvedInfo.Inv(isInObject, owner, id)
     }
 
     def parse_astTruthTableRow(): org.sireum.lang.ast.TruthTable.Row = {
@@ -5894,8 +6150,8 @@ object JSON {
     return r
   }
 
-  def from_symbolInfoQuantVar(o: org.sireum.lang.symbol.Info.QuantVar, isCompact: B): String = {
-    val st = Printer.print_symbolInfoQuantVar(o)
+  def from_symbolInfoFact(o: org.sireum.lang.symbol.Info.Fact, isCompact: B): String = {
+    val st = Printer.print_symbolInfoFact(o)
     if (isCompact) {
       return st.renderCompact
     } else {
@@ -5903,12 +6159,48 @@ object JSON {
     }
   }
 
-  def to_symbolInfoQuantVar(s: String): Either[org.sireum.lang.symbol.Info.QuantVar, Json.ErrorMsg] = {
-    def f_symbolInfoQuantVar(parser: Parser): org.sireum.lang.symbol.Info.QuantVar = {
-      val r = parser.parse_symbolInfoQuantVar()
+  def to_symbolInfoFact(s: String): Either[org.sireum.lang.symbol.Info.Fact, Json.ErrorMsg] = {
+    def f_symbolInfoFact(parser: Parser): org.sireum.lang.symbol.Info.Fact = {
+      val r = parser.parse_symbolInfoFact()
       return r
     }
-    val r = to(s, f_symbolInfoQuantVar _)
+    val r = to(s, f_symbolInfoFact _)
+    return r
+  }
+
+  def from_symbolInfoTheorem(o: org.sireum.lang.symbol.Info.Theorem, isCompact: B): String = {
+    val st = Printer.print_symbolInfoTheorem(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_symbolInfoTheorem(s: String): Either[org.sireum.lang.symbol.Info.Theorem, Json.ErrorMsg] = {
+    def f_symbolInfoTheorem(parser: Parser): org.sireum.lang.symbol.Info.Theorem = {
+      val r = parser.parse_symbolInfoTheorem()
+      return r
+    }
+    val r = to(s, f_symbolInfoTheorem _)
+    return r
+  }
+
+  def from_symbolInfoInv(o: org.sireum.lang.symbol.Info.Inv, isCompact: B): String = {
+    val st = Printer.print_symbolInfoInv(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_symbolInfoInv(s: String): Either[org.sireum.lang.symbol.Info.Inv, Json.ErrorMsg] = {
+    def f_symbolInfoInv(parser: Parser): org.sireum.lang.symbol.Info.Inv = {
+      val r = parser.parse_symbolInfoInv()
+      return r
+    }
+    val r = to(s, f_symbolInfoInv _)
     return r
   }
 
@@ -8414,6 +8706,60 @@ object JSON {
     return r
   }
 
+  def from_astTypedFact(o: org.sireum.lang.ast.Typed.Fact, isCompact: B): String = {
+    val st = Printer.print_astTypedFact(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astTypedFact(s: String): Either[org.sireum.lang.ast.Typed.Fact, Json.ErrorMsg] = {
+    def f_astTypedFact(parser: Parser): org.sireum.lang.ast.Typed.Fact = {
+      val r = parser.parse_astTypedFact()
+      return r
+    }
+    val r = to(s, f_astTypedFact _)
+    return r
+  }
+
+  def from_astTypedTheorem(o: org.sireum.lang.ast.Typed.Theorem, isCompact: B): String = {
+    val st = Printer.print_astTypedTheorem(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astTypedTheorem(s: String): Either[org.sireum.lang.ast.Typed.Theorem, Json.ErrorMsg] = {
+    def f_astTypedTheorem(parser: Parser): org.sireum.lang.ast.Typed.Theorem = {
+      val r = parser.parse_astTypedTheorem()
+      return r
+    }
+    val r = to(s, f_astTypedTheorem _)
+    return r
+  }
+
+  def from_astTypedInv(o: org.sireum.lang.ast.Typed.Inv, isCompact: B): String = {
+    val st = Printer.print_astTypedInv(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astTypedInv(s: String): Either[org.sireum.lang.ast.Typed.Inv, Json.ErrorMsg] = {
+    def f_astTypedInv(parser: Parser): org.sireum.lang.ast.Typed.Inv = {
+      val r = parser.parse_astTypedInv()
+      return r
+    }
+    val r = to(s, f_astTypedInv _)
+    return r
+  }
+
   def from_astAttr(o: org.sireum.lang.ast.Attr, isCompact: B): String = {
     val st = Printer.print_astAttr(o)
     if (isCompact) {
@@ -8663,6 +9009,60 @@ object JSON {
       return r
     }
     val r = to(s, f_astResolvedInfoLocalVar _)
+    return r
+  }
+
+  def from_astResolvedInfoFact(o: org.sireum.lang.ast.ResolvedInfo.Fact, isCompact: B): String = {
+    val st = Printer.print_astResolvedInfoFact(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astResolvedInfoFact(s: String): Either[org.sireum.lang.ast.ResolvedInfo.Fact, Json.ErrorMsg] = {
+    def f_astResolvedInfoFact(parser: Parser): org.sireum.lang.ast.ResolvedInfo.Fact = {
+      val r = parser.parse_astResolvedInfoFact()
+      return r
+    }
+    val r = to(s, f_astResolvedInfoFact _)
+    return r
+  }
+
+  def from_astResolvedInfoTheorem(o: org.sireum.lang.ast.ResolvedInfo.Theorem, isCompact: B): String = {
+    val st = Printer.print_astResolvedInfoTheorem(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astResolvedInfoTheorem(s: String): Either[org.sireum.lang.ast.ResolvedInfo.Theorem, Json.ErrorMsg] = {
+    def f_astResolvedInfoTheorem(parser: Parser): org.sireum.lang.ast.ResolvedInfo.Theorem = {
+      val r = parser.parse_astResolvedInfoTheorem()
+      return r
+    }
+    val r = to(s, f_astResolvedInfoTheorem _)
+    return r
+  }
+
+  def from_astResolvedInfoInv(o: org.sireum.lang.ast.ResolvedInfo.Inv, isCompact: B): String = {
+    val st = Printer.print_astResolvedInfoInv(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astResolvedInfoInv(s: String): Either[org.sireum.lang.ast.ResolvedInfo.Inv, Json.ErrorMsg] = {
+    def f_astResolvedInfoInv(parser: Parser): org.sireum.lang.ast.ResolvedInfo.Inv = {
+      val r = parser.parse_astResolvedInfoInv()
+      return r
+    }
+    val r = to(s, f_astResolvedInfoInv _)
     return r
   }
 

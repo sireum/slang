@@ -1,6 +1,6 @@
 // #Sireum
 /*
- Copyright (c) 2017, Robby, Kansas State University
+ Copyright (c) 2019, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -45,17 +45,15 @@ import org.sireum.lang.{ast => AST}
 
 object Scope {
 
-  @datatype class Local(
-    nameMap: HashMap[String, Info],
-    typeMap: HashMap[String, TypeInfo],
-    localThisOpt: Option[AST.Typed],
-    methodReturnOpt: Option[AST.Typed],
-    val outerOpt: Option[Scope]
-  ) extends Scope {
+  @datatype class Local(nameMap: HashMap[String, Info],
+                        typeMap: HashMap[String, TypeInfo],
+                        localThisOpt: Option[AST.Typed],
+                        methodReturnOpt: Option[AST.Typed],
+                        val outerOpt: Option[Scope]) extends Scope {
 
     @pure override def thisOpt: Option[AST.Typed] = {
       localThisOpt match {
-        case r @ Some(_) => return r
+        case r@Some(_) => return r
         case _ =>
           outerOpt match {
             case Some(outer) => return outer.thisOpt
@@ -66,7 +64,7 @@ object Scope {
 
     @pure override def returnOpt: Option[AST.Typed] = {
       methodReturnOpt match {
-        case r @ Some(_) => return r
+        case r@Some(_) => return r
         case _ =>
           outerOpt match {
             case Some(outer) => return outer.returnOpt
@@ -89,9 +87,9 @@ object Scope {
     }
 
     @pure override def resolveType(
-      globalTypeMap: HashMap[ISZ[String], TypeInfo],
-      name: ISZ[String]
-    ): Option[TypeInfo] = {
+                                    globalTypeMap: HashMap[ISZ[String], TypeInfo],
+                                    name: ISZ[String]
+                                  ): Option[TypeInfo] = {
       if (name.size == z"1") {
         val typeInfoOpt = typeMap.get(name(0))
         if (typeInfoOpt.nonEmpty) {
@@ -106,7 +104,7 @@ object Scope {
   }
 
   @datatype class Global(packageName: ISZ[String], imports: ISZ[AST.Stmt.Import], enclosingName: ISZ[String])
-      extends Scope {
+    extends Scope {
 
     @pure override def outerOpt: Option[Scope] = {
       return None()
@@ -135,7 +133,7 @@ object Scope {
             case Some(selector: AST.Stmt.Import.MultiSelector) =>
               val nss = selector.selectors
               val name0 = name(0)
-              for (k <- nss.size -1 to 0 by -1) {
+              for (k <- nss.size - 1 to 0 by -1) {
                 val ns = nss(k)
                 if (name0 == ns.to.value) {
                   val n = (contextName :+ ns.from.value) ++ ops.ISZOps(name).drop(1)
@@ -179,17 +177,13 @@ object Scope {
       return None()
     }
 
-    @pure override def resolveType(
-      globalTypeMap: HashMap[ISZ[String], TypeInfo],
-      name: ISZ[String]
-    ): Option[TypeInfo] = {
+    @pure override def resolveType(globalTypeMap: HashMap[ISZ[String], TypeInfo],
+                                   name: ISZ[String]): Option[TypeInfo] = {
       return resolveTypeMemoized(globalTypeMap, name)
     }
 
-    @pure def resolveImportedType(
-      globalTypeMap: HashMap[ISZ[String], TypeInfo],
-      name: ISZ[String]
-    ): Option[TypeInfo] = {
+    @pure def resolveImportedType(globalTypeMap: HashMap[ISZ[String], TypeInfo],
+                                  name: ISZ[String]): Option[TypeInfo] = {
       for (i <- imports.size - 1 to 0 by -1) {
         val impor = imports(i)
         val importers = impor.importers
@@ -244,10 +238,8 @@ object Scope {
       return None()
     }
 
-    @memoize def resolveNameMemoized(
-      @hidden globalNameMap: HashMap[ISZ[String], Info],
-      name: ISZ[String]
-    ): Option[Info] = {
+    @memoize def resolveNameMemoized(@hidden globalNameMap: HashMap[ISZ[String], Info],
+                                     name: ISZ[String]): Option[Info] = {
       val globalOpt = globalNameMap.get(name)
       if (globalOpt.nonEmpty) {
         return globalOpt
@@ -270,10 +262,8 @@ object Scope {
       return globalNameMap.get(packageName ++ name)
     }
 
-    @memoize def resolveTypeMemoized(
-      @hidden globalTypeMap: HashMap[ISZ[String], TypeInfo],
-      name: ISZ[String]
-    ): Option[TypeInfo] = {
+    @memoize def resolveTypeMemoized(@hidden globalTypeMap: HashMap[ISZ[String], TypeInfo],
+                                     name: ISZ[String]): Option[TypeInfo] = {
       val globalTypeOpt = globalTypeMap.get(name)
       if (globalTypeOpt.nonEmpty) {
         return globalTypeOpt
@@ -308,19 +298,17 @@ object Scope {
 object Info {
 
   @datatype class Package(val name: ISZ[String], typedOpt: Option[AST.Typed], resOpt: Option[AST.ResolvedInfo])
-      extends Info {
+    extends Info {
 
     @pure override def posOpt: Option[Position] = {
       return None[Position]()
     }
   }
 
-  @datatype class Var(
-    owner: ISZ[String],
-    isInObject: B,
-    scope: Scope,
-    ast: AST.Stmt.Var
-  ) extends Info {
+  @datatype class Var(owner: ISZ[String],
+                      isInObject: B,
+                      scope: Scope,
+                      ast: AST.Stmt.Var) extends Info {
 
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
@@ -346,12 +334,10 @@ object Info {
     }
   }
 
-  @datatype class SpecVar(
-    owner: ISZ[String],
-    isInObject: B,
-    scope: Scope,
-    ast: AST.Stmt.SpecVar
-  ) extends Info {
+  @datatype class SpecVar(owner: ISZ[String],
+                          isInObject: B,
+                          scope: Scope,
+                          ast: AST.Stmt.SpecVar) extends Info {
 
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
@@ -375,7 +361,7 @@ object Info {
   }
 
   @datatype class Method(owner: ISZ[String], isInObject: B, scope: Scope, hasBody: B, ast: AST.Stmt.Method)
-      extends Info {
+    extends Info {
 
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
@@ -412,7 +398,7 @@ object Info {
   }
 
   @datatype class SpecMethod(val owner: ISZ[String], isInObject: B, scope: Scope, ast: AST.Stmt.SpecMethod)
-      extends Info {
+    extends Info {
 
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
@@ -439,17 +425,15 @@ object Info {
     }
   }
 
-  @datatype class Object(
-    owner: ISZ[String],
-    isSynthetic: B,
-    scope: Scope.Global,
-    outlined: B,
-    typeChecked: B,
-    ast: AST.Stmt.Object,
-    typedOpt: Option[AST.Typed],
-    resOpt: Option[AST.ResolvedInfo],
-    constructorRes: AST.ResolvedInfo.Method,
-  ) extends Info {
+  @datatype class Object(owner: ISZ[String],
+                         isSynthetic: B,
+                         scope: Scope.Global,
+                         outlined: B,
+                         typeChecked: B,
+                         ast: AST.Stmt.Object,
+                         typedOpt: Option[AST.Typed],
+                         resOpt: Option[AST.ResolvedInfo],
+                         constructorRes: AST.ResolvedInfo.Method) extends Info {
 
     @pure override def name: ISZ[String] = {
       return owner :+ ast.id.value
@@ -510,14 +494,12 @@ object Info {
 
   }
 
-  @datatype class Enum(
-    val name: ISZ[String],
-    elements: Map[String, AST.ResolvedInfo],
-    typedOpt: Option[AST.Typed],
-    resOpt: Option[AST.ResolvedInfo],
-    elementTypedOpt: Option[AST.Typed],
-    val posOpt: Option[Position]
-  ) extends Info {
+  @datatype class Enum(val name: ISZ[String],
+                       elements: Map[String, AST.ResolvedInfo],
+                       typedOpt: Option[AST.Typed],
+                       resOpt: Option[AST.ResolvedInfo],
+                       elementTypedOpt: Option[AST.Typed],
+                       val posOpt: Option[Position]) extends Info {
 
     val byNameTypedOpt: Option[AST.Typed] = Some(
       AST.Typed.Method(
@@ -568,13 +550,11 @@ object Info {
     )
   }
 
-  @datatype class EnumElement(
-    owner: ISZ[String],
-    id: String,
-    typedOpt: Option[AST.Typed],
-    resOpt: Option[AST.ResolvedInfo],
-    val posOpt: Option[Position]
-  ) extends Info {
+  @datatype class EnumElement(owner: ISZ[String],
+                              id: String,
+                              typedOpt: Option[AST.Typed],
+                              resOpt: Option[AST.ResolvedInfo],
+                              val posOpt: Option[Position]) extends Info {
 
     @pure override def name: ISZ[String] = {
       return owner :+ id
@@ -582,13 +562,11 @@ object Info {
 
   }
 
-  @datatype class LocalVar(
-    val name: ISZ[String],
-    isVal: B,
-    ast: AST.Id,
-    typedOpt: Option[AST.Typed],
-    resOpt: Option[AST.ResolvedInfo]
-  ) extends Info {
+  @datatype class LocalVar(val name: ISZ[String],
+                           isVal: B,
+                           ast: AST.Id,
+                           typedOpt: Option[AST.Typed],
+                           resOpt: Option[AST.ResolvedInfo]) extends Info {
 
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
@@ -596,18 +574,66 @@ object Info {
 
   }
 
-  @datatype class QuantVar(
-    val name: ISZ[String],
-    ast: AST.Id,
-    typedOpt: Option[AST.Typed],
-    resOpt: Option[AST.ResolvedInfo]
-  ) extends Info {
+  @datatype class Fact(owner: ISZ[String],
+                       id: String,
+                       scope: Scope.Global,
+                       ast: AST.Stmt.Fact) extends Info {
+
+    val typedOpt: Option[AST.Typed] = Some(AST.Typed.Fact(owner, id))
+
+    @pure def resOpt: Option[AST.ResolvedInfo] = {
+      return ast.attr.resOpt
+    }
+
+    @pure override def name: ISZ[String] = {
+      return owner :+ id
+    }
 
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
     }
-
   }
+
+  @datatype class Theorem(owner: ISZ[String],
+                          id: String,
+                          scope: Scope.Global,
+                          ast: AST.Stmt.Theorem) extends Info {
+
+    val typedOpt: Option[AST.Typed] = Some(AST.Typed.Theorem(owner, id))
+
+    @pure def resOpt: Option[AST.ResolvedInfo] = {
+      return ast.attr.resOpt
+    }
+
+    @pure override def name: ISZ[String] = {
+      return owner :+ id
+    }
+
+    @pure override def posOpt: Option[Position] = {
+      return ast.attr.posOpt
+    }
+  }
+
+  @datatype class Inv(owner: ISZ[String],
+                      id: String,
+                      scope: Scope,
+                      ast: AST.Stmt.Inv) extends Info {
+
+    val typedOpt: Option[AST.Typed] = Some(AST.Typed.Inv(ast.attr.resOpt.get.asInstanceOf[AST.ResolvedInfo.Inv].isInObject, owner, id))
+
+    @pure def resOpt: Option[AST.ResolvedInfo] = {
+      return ast.attr.resOpt
+    }
+
+    @pure override def name: ISZ[String] = {
+      return owner :+ id
+    }
+
+    @pure override def posOpt: Option[Position] = {
+      return ast.attr.posOpt
+    }
+  }
+
 }
 
 @datatype trait TypeInfo {
@@ -649,7 +675,7 @@ object TypeInfo {
   }
 
   @datatype class Enum(owner: ISZ[String], elements: Map[String, AST.ResolvedInfo], val posOpt: Option[Position])
-      extends TypeInfo {
+    extends TypeInfo {
 
     val nameTypedOpt: Option[AST.Typed] = Some(
       AST.Typed
@@ -669,19 +695,18 @@ object TypeInfo {
     }
   }
 
-  @datatype class Sig(
-    owner: ISZ[String],
-    outlined: B,
-    typeChecked: B,
-    tpe: AST.Typed.Name,
-    ancestors: ISZ[AST.Typed.Name],
-    specVars: HashSMap[String, Info.SpecVar],
-    specMethods: HashMap[String, Info.SpecMethod],
-    methods: HashMap[String, Info.Method],
-    refinements: HashMap[String, Name],
-    scope: Scope.Global,
-    ast: AST.Stmt.Sig
-  ) extends TypeInfo {
+  @datatype class Sig(owner: ISZ[String],
+                      outlined: B,
+                      typeChecked: B,
+                      tpe: AST.Typed.Name,
+                      ancestors: ISZ[AST.Typed.Name],
+                      specVars: HashSMap[String, Info.SpecVar],
+                      specMethods: HashMap[String, Info.SpecMethod],
+                      methods: HashMap[String, Info.Method],
+                      refinements: HashMap[String, Name],
+                      invariants: HashMap[String, Info.Inv],
+                      scope: Scope.Global,
+                      ast: AST.Stmt.Sig) extends TypeInfo {
 
     @pure override def name: ISZ[String] = {
       return owner :+ ast.id.value
@@ -739,24 +764,23 @@ object TypeInfo {
 
   @datatype class Name(ids: ISZ[String])
 
-  @datatype class Adt(
-    owner: ISZ[String],
-    outlined: B,
-    typeChecked: B,
-    tpe: AST.Typed.Name,
-    constructorTypeOpt: Option[AST.Typed],
-    constructorResOpt: Option[AST.ResolvedInfo],
-    extractorTypeMap: Map[String, AST.Typed],
-    extractorResOpt: Option[AST.ResolvedInfo],
-    ancestors: ISZ[AST.Typed.Name],
-    specVars: HashSMap[String, Info.SpecVar],
-    vars: HashSMap[String, Info.Var],
-    specMethods: HashMap[String, Info.SpecMethod],
-    methods: HashMap[String, Info.Method],
-    refinements: HashMap[String, Name],
-    scope: Scope.Global,
-    ast: AST.Stmt.Adt
-  ) extends TypeInfo {
+  @datatype class Adt(owner: ISZ[String],
+                      outlined: B,
+                      typeChecked: B,
+                      tpe: AST.Typed.Name,
+                      constructorTypeOpt: Option[AST.Typed],
+                      constructorResOpt: Option[AST.ResolvedInfo],
+                      extractorTypeMap: Map[String, AST.Typed],
+                      extractorResOpt: Option[AST.ResolvedInfo],
+                      ancestors: ISZ[AST.Typed.Name],
+                      specVars: HashSMap[String, Info.SpecVar],
+                      vars: HashSMap[String, Info.Var],
+                      specMethods: HashMap[String, Info.SpecMethod],
+                      methods: HashMap[String, Info.Method],
+                      refinements: HashMap[String, Name],
+                      invariants: HashMap[String, Info.Inv],
+                      scope: Scope.Global,
+                      ast: AST.Stmt.Adt) extends TypeInfo {
 
     @pure override def canHaveCompanion: B = {
       return T
@@ -799,6 +823,11 @@ object TypeInfo {
 
       specVars.get(id) match {
         case Some(sv) => return (sv.typedOpt, sv.resOpt)
+        case _ =>
+      }
+
+      invariants.get(id) match {
+        case Some(inv) => return (inv.typedOpt, inv.resOpt)
         case _ =>
       }
 
@@ -847,12 +876,11 @@ object TypeInfo {
     }
   }
 
-  @datatype class Members(
-    specVars: HashSMap[String, Info.SpecVar],
-    vars: HashSMap[String, Info.Var],
-    specMethods: HashMap[String, Info.SpecMethod],
-    methods: HashMap[String, Info.Method],
-    refinements: HashMap[String, Name]
-  )
+  @datatype class Members(specVars: HashSMap[String, Info.SpecVar],
+                          vars: HashSMap[String, Info.Var],
+                          specMethods: HashMap[String, Info.SpecMethod],
+                          methods: HashMap[String, Info.Method],
+                          refinements: HashMap[String, Name],
+                          invariants: HashMap[String, Info.Inv])
 
 }

@@ -400,10 +400,10 @@ object Stmt {
   @datatype trait Spec extends Stmt
 
   @datatype class Fact(id: Id,
-                       typeArgs: ISZ[TypeParam],
+                       typeParams: ISZ[TypeParam],
                        descOpt: Option[Exp.LitString],
                        claims: ISZ[Exp],
-                       @hidden attr: Attr) extends Spec {
+                       @hidden attr: ResolvedAttr) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
@@ -411,7 +411,7 @@ object Stmt {
 
   @datatype class Inv(id: Id,
                       claims: ISZ[Exp],
-                      @hidden attr: Attr) extends Spec {
+                      @hidden attr: ResolvedAttr) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
@@ -419,11 +419,12 @@ object Stmt {
 
   @datatype class Theorem(isLemma: B,
                           id: Id,
-                          typeArgs: ISZ[TypeParam],
+                          typeParams: ISZ[TypeParam],
                           descOpt: Option[Exp.LitString],
                           claim: Exp,
+                          isFun: B,
                           proof: Proof,
-                          @hidden attr: Attr) extends Spec {
+                          @hidden attr: ResolvedAttr) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
@@ -1233,6 +1234,9 @@ object Exp {
       case t: Typed.Methods => return t.methods.hash
       case t: Typed.Package => return t.name.hash
       case t: Typed.Fun => return (t.args, t.ret).hash
+      case t: Typed.Fact => return t.name.hash
+      case t: Typed.Theorem => return t.name.hash
+      case t: Typed.Inv => return t.name.hash
     }
   }
 
@@ -1370,6 +1374,9 @@ object Exp {
             newMethods = newMethods :+ newM
           }
           return t(newMethods)
+        case t: Typed.Fact => return t
+        case t: Typed.Theorem => return t
+        case t: Typed.Inv => return t
       }
     }
 
@@ -1665,6 +1672,88 @@ object Typed {
       for (m <- methods if m.hasTypeVars) {
         return T
       }
+      return F
+    }
+  }
+
+  @datatype class Fact(owner: ISZ[String], id: String) extends Typed {
+
+    @pure def name: ISZ[String] = {
+      return owner :+ id
+    }
+
+    @pure override def isPureFun: B = {
+      return F
+    }
+
+    @pure override def string: String = {
+      return st"Fact ${(name, ".")}".render
+    }
+
+    @pure override def subst(m: HashMap[String, Typed]): Typed.Fact = {
+      return this
+    }
+
+    @pure override def collectTypeVars: ISZ[String] = {
+      return ISZ()
+    }
+
+    @pure override def hasTypeVars: B = {
+      return F
+    }
+  }
+
+
+  @datatype class Theorem(owner: ISZ[String], id: String) extends Typed {
+
+    @pure def name: ISZ[String] = {
+      return owner :+ id
+    }
+
+    @pure override def isPureFun: B = {
+      return F
+    }
+
+    @pure override def string: String = {
+      return st"Theorem ${(name, ".")}".render
+    }
+
+    @pure override def subst(m: HashMap[String, Typed]): Typed.Theorem = {
+      return this
+    }
+
+    @pure override def collectTypeVars: ISZ[String] = {
+      return ISZ()
+    }
+
+    @pure override def hasTypeVars: B = {
+      return F
+    }
+  }
+
+  @datatype class Inv(isInObject: B, owner: ISZ[String], id: String) extends Typed {
+
+    @pure def name: ISZ[String] = {
+      return owner :+ id
+    }
+
+    @pure override def isPureFun: B = {
+      return F
+    }
+
+    @pure override def string: String = {
+      return st"Inv ${(owner, ".")}#$id".render
+    }
+
+    @pure override def subst(m: HashMap[String, Typed]): Typed.Inv = {
+      return this
+    }
+
+    @pure override def collectTypeVars: ISZ[String] = {
+      return ISZ()
+    }
+
+    @pure override def hasTypeVars: B = {
       return F
     }
   }
@@ -2014,6 +2103,12 @@ object ResolvedInfo {
 
   @datatype class LocalVar(context: ISZ[String], scope: ResolvedInfo.LocalVar.Scope.Type, isVal: B, id: String)
     extends ResolvedInfo
+
+  @datatype class Fact(name: ISZ[String]) extends ResolvedInfo
+
+  @datatype class Theorem(name: ISZ[String]) extends ResolvedInfo
+
+  @datatype class Inv(isInObject: B, owner: ISZ[String], id: String) extends ResolvedInfo
 
   @pure def substOpt(resOpt: Option[ResolvedInfo], substMap: HashMap[String, Typed]): Option[ResolvedInfo] = {
     resOpt match {

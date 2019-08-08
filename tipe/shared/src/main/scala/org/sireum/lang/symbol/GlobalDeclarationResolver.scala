@@ -279,7 +279,7 @@ import GlobalDeclarationResolver._
             AST.Stmt.Object(F, None(), AST.Id(stringInterpolator, stmt.id.attr), ISZ(), stmt.attr),
             Some(AST.Typed.Object(name, stringInterpolator)),
             Some(AST.ResolvedInfo.Object(stringInterpolatorName)),
-            AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), currentName, id, ISZ(), None()),
+            AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), currentName, id, ISZ(), None())
           ),
           stmt.attr.posOpt
         )
@@ -359,7 +359,7 @@ import GlobalDeclarationResolver._
             stmt,
             Some(AST.Typed.Object(currentName, stmt.id.value)),
             Some(AST.ResolvedInfo.Object(name)),
-            AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), currentName, id, ISZ(), None()),
+            AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), currentName, id, ISZ(), None())
           ),
           stmt.attr.posOpt
         )
@@ -392,6 +392,7 @@ import GlobalDeclarationResolver._
             members.specMethods,
             members.methods,
             members.refinements,
+            members.invariants,
             sc,
             stmt
           ),
@@ -450,6 +451,7 @@ import GlobalDeclarationResolver._
             members.specMethods,
             members.methods,
             members.refinements,
+            members.invariants,
             sc,
             stmt
           ),
@@ -463,59 +465,51 @@ import GlobalDeclarationResolver._
           TypeInfo.TypeAlias(name, scope(packageName, currentImports, name), stmt),
           stmt.attr.posOpt
         )
+      case stmt: AST.Stmt.Fact =>
+        val name = currentName :+ stmt.id.value
+        declareName(
+          "Fact",
+          name,
+          Info.Fact(
+            currentName,
+            stmt.id.value,
+            scope(packageName, currentImports, name),
+            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Fact(name)),
+              typedOpt = Some(AST.Typed.Fact(currentName, stmt.id.value))))
+          ),
+          stmt.attr.posOpt
+        )
+      case stmt: AST.Stmt.Theorem =>
+        val name = currentName :+ stmt.id.value
+        declareName(
+          if (stmt.isLemma) "Lemma" else "Theorem",
+          name,
+          Info.Theorem(
+            currentName,
+            stmt.id.value,
+            scope(packageName, currentImports, name),
+            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Theorem(name)),
+              typedOpt = Some(AST.Typed.Theorem(currentName, stmt.id.value))))
+          ),
+          stmt.attr.posOpt
+        )
+      case stmt: AST.Stmt.Inv =>
+        val name = currentName :+ stmt.id.value
+        declareName(
+          "Invariant",
+          name,
+          Info.Inv(
+            currentName,
+            stmt.id.value,
+            scope(packageName, currentImports, name),
+            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Inv(T, currentName, stmt.id.value)),
+              typedOpt = Some(AST.Typed.Inv(T, currentName, stmt.id.value))))
+          ),
+          stmt.attr.posOpt
+        )
       case _ =>
     }
   }
-
-//  def resolveInvFactTheorems(
-//    owner: QName,
-//    stmts: ISZ[AST.Stmt]
-//  ): (HashMap[String, Info.NamedExp], HashMap[String, Info.NamedExp], HashMap[String, Info.Theorem]) = {
-//    def err(posOpt: Option[Position], id: String): Unit = {
-//      reporter.error(posOpt, resolverKind, s"Cannot re-declare invariant/fact/theorem '$id'.")
-//    }
-//    var invariants = HashMap.empty[String, Info.NamedExp]
-//    var facts = HashMap.empty[String, Info.NamedExp]
-//    var theorems = HashMap.empty[String, Info.Theorem]
-//
-//    for (s <- stmts) {
-//      s match {
-//        case s: AST.Stmt.LStmt =>
-//          s.clause match {
-//            case clause: AST.LClause.Invariants =>
-//              for (inv <- clause.invariants) {
-//                val id = inv.id.value
-//                if (invariants.contains(id) || facts.contains(id) || theorems.contains(id)) {
-//                  err(inv.id.attr.posOpt, id)
-//                } else {
-//                  invariants = invariants + id ~> Info.NamedExp(owner, id, inv)
-//                }
-//              }
-//            case clause: AST.LClause.Facts =>
-//              for (fact <- clause.facts) {
-//                val id = fact.id.value
-//                if (invariants.contains(id) || facts.contains(id) || theorems.contains(id)) {
-//                  err(fact.id.attr.posOpt, id)
-//                } else {
-//                  facts = facts + id ~> Info.NamedExp(owner, id, fact)
-//                }
-//              }
-//            case clause: AST.LClause.Theorems =>
-//              for (theorem <- clause.theorems) {
-//                val id = theorem.id.value
-//                if (invariants.contains(id) || facts.contains(id) || theorems.contains(id)) {
-//                  err(theorem.id.attr.posOpt, id)
-//                } else {
-//                  theorems = theorems + id ~> Info.Theorem(owner, id, theorem)
-//                }
-//              }
-//            case _ =>
-//          }
-//        case _ =>
-//      }
-//    }
-//    return (invariants, facts, theorems)
-//  }
 
   def resolveMembers(
     owner: QName,
@@ -527,6 +521,7 @@ import GlobalDeclarationResolver._
     var vars = vs
     var specMethods = HashMap.empty[String, Info.SpecMethod]
     var methods = HashMap.empty[String, Info.Method]
+    var invs = HashMap.empty[String, Info.Inv]
 
     @pure def checkId(id: AST.Id): Unit = {
       val name = id.value
@@ -604,10 +599,21 @@ import GlobalDeclarationResolver._
               )
             )
           )
+        case stmt: AST.Stmt.Inv =>
+          checkId(stmt.id)
+          val id = stmt.id.value
+          invs = invs + id ~> Info.Inv(
+            owner,
+            id,
+            scope,
+            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Inv(F, owner, id)),
+              typedOpt = Some(AST.Typed.Inv(F, owner, id))))
+          )
+
         case _ =>
       }
     }
-    TypeInfo.Members(specVars, vars, specMethods, methods, HashMap.empty)
+    TypeInfo.Members(specVars, vars, specMethods, methods, HashMap.empty, invs)
   }
 
   def declareName(entity: String, name: QName, info: Info, posOpt: Option[Position]): Unit = {

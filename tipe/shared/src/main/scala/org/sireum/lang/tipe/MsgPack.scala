@@ -60,287 +60,303 @@ object MsgPack {
 
     val _symbolInfoLocalVar: Z = -21
 
-    val _symbolInfoQuantVar: Z = -20
+    val _symbolInfoFact: Z = -20
 
-    val _symbolTypeInfoSubZ: Z = -19
+    val _symbolInfoTheorem: Z = -19
 
-    val _symbolTypeInfoEnum: Z = -18
+    val _symbolInfoInv: Z = -18
 
-    val _symbolTypeInfoSig: Z = -17
+    val _symbolTypeInfoSubZ: Z = -17
 
-    val _symbolTypeInfoName: Z = -16
+    val _symbolTypeInfoEnum: Z = -16
 
-    val _symbolTypeInfoAdt: Z = -15
+    val _symbolTypeInfoSig: Z = -15
 
-    val _symbolTypeInfoTypeAlias: Z = -14
+    val _symbolTypeInfoName: Z = -14
 
-    val _symbolTypeInfoTypeVar: Z = -13
+    val _symbolTypeInfoAdt: Z = -13
 
-    val _symbolTypeInfoMembers: Z = -12
+    val _symbolTypeInfoTypeAlias: Z = -12
 
-    val _astTopUnitProgram: Z = -11
+    val _symbolTypeInfoTypeVar: Z = -11
 
-    val _astTopUnitSequentUnit: Z = -10
+    val _symbolTypeInfoMembers: Z = -10
 
-    val _astTopUnitTruthTableUnit: Z = -9
+    val _astTopUnitProgram: Z = -9
 
-    val _astStmtImport: Z = -8
+    val _astTopUnitSequentUnit: Z = -8
 
-    val _astStmtImportImporter: Z = -7
+    val _astTopUnitTruthTableUnit: Z = -7
 
-    val _astStmtImportMultiSelector: Z = -6
+    val _astStmtImport: Z = -6
 
-    val _astStmtImportWildcardSelector: Z = -5
+    val _astStmtImportImporter: Z = -5
 
-    val _astStmtImportNamedSelector: Z = -4
+    val _astStmtImportMultiSelector: Z = -4
 
-    val _astStmtVar: Z = -3
+    val _astStmtImportWildcardSelector: Z = -3
 
-    val _astStmtVarPattern: Z = -2
+    val _astStmtImportNamedSelector: Z = -2
 
-    val _astStmtSpecVar: Z = -1
+    val _astStmtVar: Z = -1
 
-    val _astStmtMethod: Z = 0
+    val _astStmtVarPattern: Z = 0
 
-    val _astStmtExtMethod: Z = 1
+    val _astStmtSpecVar: Z = 1
 
-    val _astStmtSpecMethod: Z = 2
+    val _astStmtMethod: Z = 2
 
-    val _astStmtEnum: Z = 3
+    val _astStmtExtMethod: Z = 3
 
-    val _astStmtSubZ: Z = 4
+    val _astStmtSpecMethod: Z = 4
 
-    val _astStmtObject: Z = 5
+    val _astStmtEnum: Z = 5
 
-    val _astStmtSig: Z = 6
+    val _astStmtSubZ: Z = 6
 
-    val _astStmtAdt: Z = 7
+    val _astStmtObject: Z = 7
 
-    val _astStmtTypeAlias: Z = 8
+    val _astStmtSig: Z = 8
 
-    val _astStmtAssign: Z = 9
+    val _astStmtAdt: Z = 9
 
-    val _astStmtBlock: Z = 10
+    val _astStmtTypeAlias: Z = 10
 
-    val _astStmtIf: Z = 11
+    val _astStmtAssign: Z = 11
 
-    val _astStmtMatch: Z = 12
+    val _astStmtBlock: Z = 12
 
-    val _astStmtWhile: Z = 13
+    val _astStmtIf: Z = 13
 
-    val _astStmtDoWhile: Z = 14
+    val _astStmtMatch: Z = 14
 
-    val _astStmtFor: Z = 15
+    val _astStmtWhile: Z = 15
 
-    val _astStmtReturn: Z = 16
+    val _astStmtDoWhile: Z = 16
 
-    val _astStmtExpr: Z = 17
+    val _astStmtFor: Z = 17
 
-    val _astStmtFact: Z = 18
+    val _astStmtReturn: Z = 18
 
-    val _astStmtInv: Z = 19
+    val _astStmtExpr: Z = 19
 
-    val _astStmtTheorem: Z = 20
+    val _astStmtFact: Z = 20
 
-    val _astStmtSpecLabel: Z = 21
+    val _astStmtInv: Z = 21
 
-    val _astStmtSpecBlock: Z = 22
+    val _astStmtTheorem: Z = 22
 
-    val _astStmtDeduceSequent: Z = 23
+    val _astStmtSpecLabel: Z = 23
 
-    val _astStmtDeduceSteps: Z = 24
+    val _astStmtSpecBlock: Z = 24
 
-    val _astMethodContractSimple: Z = 25
+    val _astStmtDeduceSequent: Z = 25
 
-    val _astMethodContractCases: Z = 26
+    val _astStmtDeduceSteps: Z = 26
 
-    val _astMethodContractCase: Z = 27
+    val _astMethodContractSimple: Z = 27
 
-    val _astSequent: Z = 28
+    val _astMethodContractCases: Z = 28
 
-    val _astProof: Z = 29
+    val _astMethodContractCase: Z = 29
 
-    val _astProofStepRegular: Z = 30
+    val _astSequent: Z = 30
 
-    val _astProofStepAssume: Z = 31
+    val _astProof: Z = 31
 
-    val _astProofStepAssert: Z = 32
+    val _astProofStepRegular: Z = 32
 
-    val _astProofStepSubProof: Z = 33
+    val _astProofStepAssume: Z = 33
 
-    val _astProofStepLet: Z = 34
+    val _astProofStepAssert: Z = 34
 
-    val _astProofStepLetParam: Z = 35
+    val _astProofStepSubProof: Z = 35
 
-    val _astProofStepStructInduction: Z = 36
+    val _astProofStepLet: Z = 36
 
-    val _astProofStepStructInductionMatchCase: Z = 37
+    val _astProofStepLetParam: Z = 37
 
-    val _astProofStepStructInductionMatchDefault: Z = 38
+    val _astProofStepStructInduction: Z = 38
 
-    val _astProofStepJustification: Z = 39
+    val _astProofStepStructInductionMatchCase: Z = 39
 
-    val _astCase: Z = 40
+    val _astProofStepStructInductionMatchDefault: Z = 40
 
-    val _astEnumGenRangeExpr: Z = 41
+    val _astProofStepJustification: Z = 41
 
-    val _astEnumGenRangeStep: Z = 42
+    val _astCase: Z = 42
 
-    val _astEnumGenFor: Z = 43
+    val _astEnumGenRangeExpr: Z = 43
 
-    val _astTypeNamed: Z = 44
+    val _astEnumGenRangeStep: Z = 44
 
-    val _astTypeFun: Z = 45
+    val _astEnumGenFor: Z = 45
 
-    val _astTypeTuple: Z = 46
+    val _astTypeNamed: Z = 46
 
-    val _astPatternLiteral: Z = 47
+    val _astTypeFun: Z = 47
 
-    val _astPatternLitInterpolate: Z = 48
+    val _astTypeTuple: Z = 48
 
-    val _astPatternRef: Z = 49
+    val _astPatternLiteral: Z = 49
 
-    val _astPatternVarBinding: Z = 50
+    val _astPatternLitInterpolate: Z = 50
 
-    val _astPatternWildcard: Z = 51
+    val _astPatternRef: Z = 51
 
-    val _astPatternSeqWildcard: Z = 52
+    val _astPatternVarBinding: Z = 52
 
-    val _astPatternStructure: Z = 53
+    val _astPatternWildcard: Z = 53
 
-    val _astExpLitB: Z = 54
+    val _astPatternSeqWildcard: Z = 54
 
-    val _astExpLitC: Z = 55
+    val _astPatternStructure: Z = 55
 
-    val _astExpLitZ: Z = 56
+    val _astExpLitB: Z = 56
 
-    val _astExpLitF32: Z = 57
+    val _astExpLitC: Z = 57
 
-    val _astExpLitF64: Z = 58
+    val _astExpLitZ: Z = 58
 
-    val _astExpLitR: Z = 59
+    val _astExpLitF32: Z = 59
 
-    val _astExpLitString: Z = 60
+    val _astExpLitF64: Z = 60
 
-    val _astExpStringInterpolate: Z = 61
+    val _astExpLitR: Z = 61
 
-    val _astExpThis: Z = 62
+    val _astExpLitString: Z = 62
 
-    val _astExpSuper: Z = 63
+    val _astExpStringInterpolate: Z = 63
 
-    val _astExpUnary: Z = 64
+    val _astExpThis: Z = 64
 
-    val _astExpBinary: Z = 65
+    val _astExpSuper: Z = 65
 
-    val _astExpIdent: Z = 66
+    val _astExpUnary: Z = 66
 
-    val _astExpEta: Z = 67
+    val _astExpBinary: Z = 67
 
-    val _astExpTuple: Z = 68
+    val _astExpIdent: Z = 68
 
-    val _astExpSelect: Z = 69
+    val _astExpEta: Z = 69
 
-    val _astExpInvoke: Z = 70
+    val _astExpTuple: Z = 70
 
-    val _astExpInvokeNamed: Z = 71
+    val _astExpSelect: Z = 71
 
-    val _astExpIf: Z = 72
+    val _astExpInvoke: Z = 72
 
-    val _astExpFunParam: Z = 73
+    val _astExpInvokeNamed: Z = 73
 
-    val _astExpFun: Z = 74
+    val _astExpIf: Z = 74
 
-    val _astExpForYield: Z = 75
+    val _astExpFunParam: Z = 75
 
-    val _astExpQuantType: Z = 76
+    val _astExpFun: Z = 76
 
-    val _astExpQuantRange: Z = 77
+    val _astExpForYield: Z = 77
 
-    val _astExpQuantEach: Z = 78
+    val _astExpQuantType: Z = 78
 
-    val _astExpInput: Z = 79
+    val _astExpQuantRange: Z = 79
 
-    val _astExpOldVal: Z = 80
+    val _astExpQuantEach: Z = 80
 
-    val _astExpAtLoc: Z = 81
+    val _astExpInput: Z = 81
 
-    val _astExpStateSeq: Z = 82
+    val _astExpOldVal: Z = 82
 
-    val _astExpStateSeqFragment: Z = 83
+    val _astExpAtLoc: Z = 83
 
-    val _astExpResult: Z = 84
+    val _astExpStateSeq: Z = 84
 
-    val _astNamedArg: Z = 85
+    val _astExpStateSeqFragment: Z = 85
 
-    val _astId: Z = 86
+    val _astExpResult: Z = 86
 
-    val _astName: Z = 87
+    val _astNamedArg: Z = 87
 
-    val _astBody: Z = 88
+    val _astId: Z = 88
 
-    val _astAdtParam: Z = 89
+    val _astName: Z = 89
 
-    val _astMethodSig: Z = 90
+    val _astBody: Z = 90
 
-    val _astParam: Z = 91
+    val _astAdtParam: Z = 91
 
-    val _astTypeParam: Z = 92
+    val _astMethodSig: Z = 92
 
-    val _astTypedName: Z = 93
+    val _astParam: Z = 93
 
-    val _astTypedTuple: Z = 94
+    val _astTypeParam: Z = 94
 
-    val _astTypedFun: Z = 95
+    val _astTypedName: Z = 95
 
-    val _astTypedTypeVar: Z = 96
+    val _astTypedTuple: Z = 96
 
-    val _astTypedPackage: Z = 97
+    val _astTypedFun: Z = 97
 
-    val _astTypedObject: Z = 98
+    val _astTypedTypeVar: Z = 98
 
-    val _astTypedEnum: Z = 99
+    val _astTypedPackage: Z = 99
 
-    val _astTypedMethod: Z = 100
+    val _astTypedObject: Z = 100
 
-    val _astTypedMethods: Z = 101
+    val _astTypedEnum: Z = 101
 
-    val _astAttr: Z = 102
+    val _astTypedMethod: Z = 102
 
-    val _astTypedAttr: Z = 103
+    val _astTypedMethods: Z = 103
 
-    val _astResolvedAttr: Z = 104
+    val _astTypedFact: Z = 104
 
-    val _astResolvedInfoBuiltIn: Z = 105
+    val _astTypedTheorem: Z = 105
 
-    val _astResolvedInfoPackage: Z = 106
+    val _astTypedInv: Z = 106
 
-    val _astResolvedInfoEnum: Z = 107
+    val _astAttr: Z = 107
 
-    val _astResolvedInfoEnumElement: Z = 108
+    val _astTypedAttr: Z = 108
 
-    val _astResolvedInfoObject: Z = 109
+    val _astResolvedAttr: Z = 109
 
-    val _astResolvedInfoVar: Z = 110
+    val _astResolvedInfoBuiltIn: Z = 110
 
-    val _astResolvedInfoMethod: Z = 111
+    val _astResolvedInfoPackage: Z = 111
 
-    val _astResolvedInfoMethods: Z = 112
+    val _astResolvedInfoEnum: Z = 112
 
-    val _astResolvedInfoTuple: Z = 113
+    val _astResolvedInfoEnumElement: Z = 113
 
-    val _astResolvedInfoLocalVar: Z = 114
+    val _astResolvedInfoObject: Z = 114
 
-    val _astTruthTableRow: Z = 115
+    val _astResolvedInfoVar: Z = 115
 
-    val _astTruthTableAssignment: Z = 116
+    val _astResolvedInfoMethod: Z = 116
 
-    val _astTruthTableConclusionValidity: Z = 117
+    val _astResolvedInfoMethods: Z = 117
 
-    val _astTruthTableConclusionTautology: Z = 118
+    val _astResolvedInfoTuple: Z = 118
 
-    val _astTruthTableConclusionContradictory: Z = 119
+    val _astResolvedInfoLocalVar: Z = 119
 
-    val _astTruthTableConclusionContingent: Z = 120
+    val _astResolvedInfoFact: Z = 120
+
+    val _astResolvedInfoTheorem: Z = 121
+
+    val _astResolvedInfoInv: Z = 122
+
+    val _astTruthTableRow: Z = 123
+
+    val _astTruthTableAssignment: Z = 124
+
+    val _astTruthTableConclusionValidity: Z = 125
+
+    val _astTruthTableConclusionTautology: Z = 126
+
+    val _astTruthTableConclusionContradictory: Z = 127
+
+    val _astTruthTableConclusionContingent: Z = 128
 
   }
 
@@ -389,7 +405,9 @@ object MsgPack {
         case o: org.sireum.lang.symbol.Info.Enum => write_symbolInfoEnum(o)
         case o: org.sireum.lang.symbol.Info.EnumElement => write_symbolInfoEnumElement(o)
         case o: org.sireum.lang.symbol.Info.LocalVar => write_symbolInfoLocalVar(o)
-        case o: org.sireum.lang.symbol.Info.QuantVar => write_symbolInfoQuantVar(o)
+        case o: org.sireum.lang.symbol.Info.Fact => write_symbolInfoFact(o)
+        case o: org.sireum.lang.symbol.Info.Theorem => write_symbolInfoTheorem(o)
+        case o: org.sireum.lang.symbol.Info.Inv => write_symbolInfoInv(o)
       }
     }
 
@@ -481,12 +499,28 @@ object MsgPack {
       writer.writeOption(o.resOpt, write_astResolvedInfo _)
     }
 
-    def write_symbolInfoQuantVar(o: org.sireum.lang.symbol.Info.QuantVar): Unit = {
-      writer.writeZ(Constants._symbolInfoQuantVar)
-      writer.writeISZ(o.name, writer.writeString _)
-      write_astId(o.ast)
-      writer.writeOption(o.typedOpt, write_astTyped _)
-      writer.writeOption(o.resOpt, write_astResolvedInfo _)
+    def write_symbolInfoFact(o: org.sireum.lang.symbol.Info.Fact): Unit = {
+      writer.writeZ(Constants._symbolInfoFact)
+      writer.writeISZ(o.owner, writer.writeString _)
+      writer.writeString(o.id)
+      write_symbolScopeGlobal(o.scope)
+      write_astStmtFact(o.ast)
+    }
+
+    def write_symbolInfoTheorem(o: org.sireum.lang.symbol.Info.Theorem): Unit = {
+      writer.writeZ(Constants._symbolInfoTheorem)
+      writer.writeISZ(o.owner, writer.writeString _)
+      writer.writeString(o.id)
+      write_symbolScopeGlobal(o.scope)
+      write_astStmtTheorem(o.ast)
+    }
+
+    def write_symbolInfoInv(o: org.sireum.lang.symbol.Info.Inv): Unit = {
+      writer.writeZ(Constants._symbolInfoInv)
+      writer.writeISZ(o.owner, writer.writeString _)
+      writer.writeString(o.id)
+      write_symbolScope(o.scope)
+      write_astStmtInv(o.ast)
     }
 
     def write_symbolTypeInfo(o: org.sireum.lang.symbol.TypeInfo): Unit = {
@@ -524,6 +558,7 @@ object MsgPack {
       writer.writeHashMap(o.specMethods, writer.writeString _, write_symbolInfoSpecMethod _)
       writer.writeHashMap(o.methods, writer.writeString _, write_symbolInfoMethod _)
       writer.writeHashMap(o.refinements, writer.writeString _, write_symbolTypeInfoName _)
+      writer.writeHashMap(o.invariants, writer.writeString _, write_symbolInfoInv _)
       write_symbolScopeGlobal(o.scope)
       write_astStmtSig(o.ast)
     }
@@ -549,6 +584,7 @@ object MsgPack {
       writer.writeHashMap(o.specMethods, writer.writeString _, write_symbolInfoSpecMethod _)
       writer.writeHashMap(o.methods, writer.writeString _, write_symbolInfoMethod _)
       writer.writeHashMap(o.refinements, writer.writeString _, write_symbolTypeInfoName _)
+      writer.writeHashMap(o.invariants, writer.writeString _, write_symbolInfoInv _)
       write_symbolScopeGlobal(o.scope)
       write_astStmtAdt(o.ast)
     }
@@ -573,6 +609,7 @@ object MsgPack {
       writer.writeHashMap(o.specMethods, writer.writeString _, write_symbolInfoSpecMethod _)
       writer.writeHashMap(o.methods, writer.writeString _, write_symbolInfoMethod _)
       writer.writeHashMap(o.refinements, writer.writeString _, write_symbolTypeInfoName _)
+      writer.writeHashMap(o.invariants, writer.writeString _, write_symbolInfoInv _)
     }
 
     def write_astTopUnit(o: org.sireum.lang.ast.TopUnit): Unit = {
@@ -882,28 +919,29 @@ object MsgPack {
     def write_astStmtFact(o: org.sireum.lang.ast.Stmt.Fact): Unit = {
       writer.writeZ(Constants._astStmtFact)
       write_astId(o.id)
-      writer.writeISZ(o.typeArgs, write_astTypeParam _)
+      writer.writeISZ(o.typeParams, write_astTypeParam _)
       writer.writeOption(o.descOpt, write_astExpLitString _)
       writer.writeISZ(o.claims, write_astExp _)
-      write_astAttr(o.attr)
+      write_astResolvedAttr(o.attr)
     }
 
     def write_astStmtInv(o: org.sireum.lang.ast.Stmt.Inv): Unit = {
       writer.writeZ(Constants._astStmtInv)
       write_astId(o.id)
       writer.writeISZ(o.claims, write_astExp _)
-      write_astAttr(o.attr)
+      write_astResolvedAttr(o.attr)
     }
 
     def write_astStmtTheorem(o: org.sireum.lang.ast.Stmt.Theorem): Unit = {
       writer.writeZ(Constants._astStmtTheorem)
       writer.writeB(o.isLemma)
       write_astId(o.id)
-      writer.writeISZ(o.typeArgs, write_astTypeParam _)
+      writer.writeISZ(o.typeParams, write_astTypeParam _)
       writer.writeOption(o.descOpt, write_astExpLitString _)
       write_astExp(o.claim)
+      writer.writeB(o.isFun)
       write_astProof(o.proof)
-      write_astAttr(o.attr)
+      write_astResolvedAttr(o.attr)
     }
 
     def write_astStmtSpecLabel(o: org.sireum.lang.ast.Stmt.SpecLabel): Unit = {
@@ -1543,6 +1581,9 @@ object MsgPack {
         case o: org.sireum.lang.ast.Typed.Enum => write_astTypedEnum(o)
         case o: org.sireum.lang.ast.Typed.Method => write_astTypedMethod(o)
         case o: org.sireum.lang.ast.Typed.Methods => write_astTypedMethods(o)
+        case o: org.sireum.lang.ast.Typed.Fact => write_astTypedFact(o)
+        case o: org.sireum.lang.ast.Typed.Theorem => write_astTypedTheorem(o)
+        case o: org.sireum.lang.ast.Typed.Inv => write_astTypedInv(o)
       }
     }
 
@@ -1606,6 +1647,25 @@ object MsgPack {
       writer.writeISZ(o.methods, write_astTypedMethod _)
     }
 
+    def write_astTypedFact(o: org.sireum.lang.ast.Typed.Fact): Unit = {
+      writer.writeZ(Constants._astTypedFact)
+      writer.writeISZ(o.owner, writer.writeString _)
+      writer.writeString(o.id)
+    }
+
+    def write_astTypedTheorem(o: org.sireum.lang.ast.Typed.Theorem): Unit = {
+      writer.writeZ(Constants._astTypedTheorem)
+      writer.writeISZ(o.owner, writer.writeString _)
+      writer.writeString(o.id)
+    }
+
+    def write_astTypedInv(o: org.sireum.lang.ast.Typed.Inv): Unit = {
+      writer.writeZ(Constants._astTypedInv)
+      writer.writeB(o.isInObject)
+      writer.writeISZ(o.owner, writer.writeString _)
+      writer.writeString(o.id)
+    }
+
     def write_astAttr(o: org.sireum.lang.ast.Attr): Unit = {
       writer.writeZ(Constants._astAttr)
       writer.writeOption(o.posOpt, writer.writePosition _)
@@ -1636,6 +1696,9 @@ object MsgPack {
         case o: org.sireum.lang.ast.ResolvedInfo.Methods => write_astResolvedInfoMethods(o)
         case o: org.sireum.lang.ast.ResolvedInfo.Tuple => write_astResolvedInfoTuple(o)
         case o: org.sireum.lang.ast.ResolvedInfo.LocalVar => write_astResolvedInfoLocalVar(o)
+        case o: org.sireum.lang.ast.ResolvedInfo.Fact => write_astResolvedInfoFact(o)
+        case o: org.sireum.lang.ast.ResolvedInfo.Theorem => write_astResolvedInfoTheorem(o)
+        case o: org.sireum.lang.ast.ResolvedInfo.Inv => write_astResolvedInfoInv(o)
       }
     }
 
@@ -1710,6 +1773,23 @@ object MsgPack {
       writer.writeISZ(o.context, writer.writeString _)
       write_astResolvedInfoLocalVarScopeType(o.scope)
       writer.writeB(o.isVal)
+      writer.writeString(o.id)
+    }
+
+    def write_astResolvedInfoFact(o: org.sireum.lang.ast.ResolvedInfo.Fact): Unit = {
+      writer.writeZ(Constants._astResolvedInfoFact)
+      writer.writeISZ(o.name, writer.writeString _)
+    }
+
+    def write_astResolvedInfoTheorem(o: org.sireum.lang.ast.ResolvedInfo.Theorem): Unit = {
+      writer.writeZ(Constants._astResolvedInfoTheorem)
+      writer.writeISZ(o.name, writer.writeString _)
+    }
+
+    def write_astResolvedInfoInv(o: org.sireum.lang.ast.ResolvedInfo.Inv): Unit = {
+      writer.writeZ(Constants._astResolvedInfoInv)
+      writer.writeB(o.isInObject)
+      writer.writeISZ(o.owner, writer.writeString _)
       writer.writeString(o.id)
     }
 
@@ -1838,10 +1918,12 @@ object MsgPack {
         case Constants._symbolInfoEnum => val r = read_symbolInfoEnumT(T); return r
         case Constants._symbolInfoEnumElement => val r = read_symbolInfoEnumElementT(T); return r
         case Constants._symbolInfoLocalVar => val r = read_symbolInfoLocalVarT(T); return r
-        case Constants._symbolInfoQuantVar => val r = read_symbolInfoQuantVarT(T); return r
+        case Constants._symbolInfoFact => val r = read_symbolInfoFactT(T); return r
+        case Constants._symbolInfoTheorem => val r = read_symbolInfoTheoremT(T); return r
+        case Constants._symbolInfoInv => val r = read_symbolInfoInvT(T); return r
         case _ =>
           reader.error(i, s"$t is not a valid type of org.sireum.lang.symbol.Info.")
-          val r = read_symbolInfoQuantVarT(T)
+          val r = read_symbolInfoInvT(T)
           return r
       }
     }
@@ -2014,20 +2096,52 @@ object MsgPack {
       return org.sireum.lang.symbol.Info.LocalVar(name, isVal, ast, typedOpt, resOpt)
     }
 
-    def read_symbolInfoQuantVar(): org.sireum.lang.symbol.Info.QuantVar = {
-      val r = read_symbolInfoQuantVarT(F)
+    def read_symbolInfoFact(): org.sireum.lang.symbol.Info.Fact = {
+      val r = read_symbolInfoFactT(F)
       return r
     }
 
-    def read_symbolInfoQuantVarT(typeParsed: B): org.sireum.lang.symbol.Info.QuantVar = {
+    def read_symbolInfoFactT(typeParsed: B): org.sireum.lang.symbol.Info.Fact = {
       if (!typeParsed) {
-        reader.expectZ(Constants._symbolInfoQuantVar)
+        reader.expectZ(Constants._symbolInfoFact)
       }
-      val name = reader.readISZ(reader.readString _)
-      val ast = read_astId()
-      val typedOpt = reader.readOption(read_astTyped _)
-      val resOpt = reader.readOption(read_astResolvedInfo _)
-      return org.sireum.lang.symbol.Info.QuantVar(name, ast, typedOpt, resOpt)
+      val owner = reader.readISZ(reader.readString _)
+      val id = reader.readString()
+      val scope = read_symbolScopeGlobal()
+      val ast = read_astStmtFact()
+      return org.sireum.lang.symbol.Info.Fact(owner, id, scope, ast)
+    }
+
+    def read_symbolInfoTheorem(): org.sireum.lang.symbol.Info.Theorem = {
+      val r = read_symbolInfoTheoremT(F)
+      return r
+    }
+
+    def read_symbolInfoTheoremT(typeParsed: B): org.sireum.lang.symbol.Info.Theorem = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._symbolInfoTheorem)
+      }
+      val owner = reader.readISZ(reader.readString _)
+      val id = reader.readString()
+      val scope = read_symbolScopeGlobal()
+      val ast = read_astStmtTheorem()
+      return org.sireum.lang.symbol.Info.Theorem(owner, id, scope, ast)
+    }
+
+    def read_symbolInfoInv(): org.sireum.lang.symbol.Info.Inv = {
+      val r = read_symbolInfoInvT(F)
+      return r
+    }
+
+    def read_symbolInfoInvT(typeParsed: B): org.sireum.lang.symbol.Info.Inv = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._symbolInfoInv)
+      }
+      val owner = reader.readISZ(reader.readString _)
+      val id = reader.readString()
+      val scope = read_symbolScope()
+      val ast = read_astStmtInv()
+      return org.sireum.lang.symbol.Info.Inv(owner, id, scope, ast)
     }
 
     def read_symbolTypeInfo(): org.sireum.lang.symbol.TypeInfo = {
@@ -2094,9 +2208,10 @@ object MsgPack {
       val specMethods = reader.readHashMap(reader.readString _, read_symbolInfoSpecMethod _)
       val methods = reader.readHashMap(reader.readString _, read_symbolInfoMethod _)
       val refinements = reader.readHashMap(reader.readString _, read_symbolTypeInfoName _)
+      val invariants = reader.readHashMap(reader.readString _, read_symbolInfoInv _)
       val scope = read_symbolScopeGlobal()
       val ast = read_astStmtSig()
-      return org.sireum.lang.symbol.TypeInfo.Sig(owner, outlined, typeChecked, tpe, ancestors, specVars, specMethods, methods, refinements, scope, ast)
+      return org.sireum.lang.symbol.TypeInfo.Sig(owner, outlined, typeChecked, tpe, ancestors, specVars, specMethods, methods, refinements, invariants, scope, ast)
     }
 
     def read_symbolTypeInfoName(): org.sireum.lang.symbol.TypeInfo.Name = {
@@ -2135,9 +2250,10 @@ object MsgPack {
       val specMethods = reader.readHashMap(reader.readString _, read_symbolInfoSpecMethod _)
       val methods = reader.readHashMap(reader.readString _, read_symbolInfoMethod _)
       val refinements = reader.readHashMap(reader.readString _, read_symbolTypeInfoName _)
+      val invariants = reader.readHashMap(reader.readString _, read_symbolInfoInv _)
       val scope = read_symbolScopeGlobal()
       val ast = read_astStmtAdt()
-      return org.sireum.lang.symbol.TypeInfo.Adt(owner, outlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, ancestors, specVars, vars, specMethods, methods, refinements, scope, ast)
+      return org.sireum.lang.symbol.TypeInfo.Adt(owner, outlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, ancestors, specVars, vars, specMethods, methods, refinements, invariants, scope, ast)
     }
 
     def read_symbolTypeInfoTypeAlias(): org.sireum.lang.symbol.TypeInfo.TypeAlias = {
@@ -2183,7 +2299,8 @@ object MsgPack {
       val specMethods = reader.readHashMap(reader.readString _, read_symbolInfoSpecMethod _)
       val methods = reader.readHashMap(reader.readString _, read_symbolInfoMethod _)
       val refinements = reader.readHashMap(reader.readString _, read_symbolTypeInfoName _)
-      return org.sireum.lang.symbol.TypeInfo.Members(specVars, vars, specMethods, methods, refinements)
+      val invariants = reader.readHashMap(reader.readString _, read_symbolInfoInv _)
+      return org.sireum.lang.symbol.TypeInfo.Members(specVars, vars, specMethods, methods, refinements, invariants)
     }
 
     def read_astTopUnit(): org.sireum.lang.ast.TopUnit = {
@@ -2762,11 +2879,11 @@ object MsgPack {
         reader.expectZ(Constants._astStmtFact)
       }
       val id = read_astId()
-      val typeArgs = reader.readISZ(read_astTypeParam _)
+      val typeParams = reader.readISZ(read_astTypeParam _)
       val descOpt = reader.readOption(read_astExpLitString _)
       val claims = reader.readISZ(read_astExp _)
-      val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.Fact(id, typeArgs, descOpt, claims, attr)
+      val attr = read_astResolvedAttr()
+      return org.sireum.lang.ast.Stmt.Fact(id, typeParams, descOpt, claims, attr)
     }
 
     def read_astStmtInv(): org.sireum.lang.ast.Stmt.Inv = {
@@ -2780,7 +2897,7 @@ object MsgPack {
       }
       val id = read_astId()
       val claims = reader.readISZ(read_astExp _)
-      val attr = read_astAttr()
+      val attr = read_astResolvedAttr()
       return org.sireum.lang.ast.Stmt.Inv(id, claims, attr)
     }
 
@@ -2795,12 +2912,13 @@ object MsgPack {
       }
       val isLemma = reader.readB()
       val id = read_astId()
-      val typeArgs = reader.readISZ(read_astTypeParam _)
+      val typeParams = reader.readISZ(read_astTypeParam _)
       val descOpt = reader.readOption(read_astExpLitString _)
       val claim = read_astExp()
+      val isFun = reader.readB()
       val proof = read_astProof()
-      val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.Theorem(isLemma, id, typeArgs, descOpt, claim, proof, attr)
+      val attr = read_astResolvedAttr()
+      return org.sireum.lang.ast.Stmt.Theorem(isLemma, id, typeParams, descOpt, claim, isFun, proof, attr)
     }
 
     def read_astStmtSpecLabel(): org.sireum.lang.ast.Stmt.SpecLabel = {
@@ -4086,9 +4204,12 @@ object MsgPack {
         case Constants._astTypedEnum => val r = read_astTypedEnumT(T); return r
         case Constants._astTypedMethod => val r = read_astTypedMethodT(T); return r
         case Constants._astTypedMethods => val r = read_astTypedMethodsT(T); return r
+        case Constants._astTypedFact => val r = read_astTypedFactT(T); return r
+        case Constants._astTypedTheorem => val r = read_astTypedTheoremT(T); return r
+        case Constants._astTypedInv => val r = read_astTypedInvT(T); return r
         case _ =>
           reader.error(i, s"$t is not a valid type of org.sireum.lang.ast.Typed.")
-          val r = read_astTypedMethodsT(T)
+          val r = read_astTypedInvT(T)
           return r
       }
     }
@@ -4226,6 +4347,49 @@ object MsgPack {
       return org.sireum.lang.ast.Typed.Methods(methods)
     }
 
+    def read_astTypedFact(): org.sireum.lang.ast.Typed.Fact = {
+      val r = read_astTypedFactT(F)
+      return r
+    }
+
+    def read_astTypedFactT(typeParsed: B): org.sireum.lang.ast.Typed.Fact = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astTypedFact)
+      }
+      val owner = reader.readISZ(reader.readString _)
+      val id = reader.readString()
+      return org.sireum.lang.ast.Typed.Fact(owner, id)
+    }
+
+    def read_astTypedTheorem(): org.sireum.lang.ast.Typed.Theorem = {
+      val r = read_astTypedTheoremT(F)
+      return r
+    }
+
+    def read_astTypedTheoremT(typeParsed: B): org.sireum.lang.ast.Typed.Theorem = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astTypedTheorem)
+      }
+      val owner = reader.readISZ(reader.readString _)
+      val id = reader.readString()
+      return org.sireum.lang.ast.Typed.Theorem(owner, id)
+    }
+
+    def read_astTypedInv(): org.sireum.lang.ast.Typed.Inv = {
+      val r = read_astTypedInvT(F)
+      return r
+    }
+
+    def read_astTypedInvT(typeParsed: B): org.sireum.lang.ast.Typed.Inv = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astTypedInv)
+      }
+      val isInObject = reader.readB()
+      val owner = reader.readISZ(reader.readString _)
+      val id = reader.readString()
+      return org.sireum.lang.ast.Typed.Inv(isInObject, owner, id)
+    }
+
     def read_astAttr(): org.sireum.lang.ast.Attr = {
       val r = read_astAttrT(F)
       return r
@@ -4282,9 +4446,12 @@ object MsgPack {
         case Constants._astResolvedInfoMethods => val r = read_astResolvedInfoMethodsT(T); return r
         case Constants._astResolvedInfoTuple => val r = read_astResolvedInfoTupleT(T); return r
         case Constants._astResolvedInfoLocalVar => val r = read_astResolvedInfoLocalVarT(T); return r
+        case Constants._astResolvedInfoFact => val r = read_astResolvedInfoFactT(T); return r
+        case Constants._astResolvedInfoTheorem => val r = read_astResolvedInfoTheoremT(T); return r
+        case Constants._astResolvedInfoInv => val r = read_astResolvedInfoInvT(T); return r
         case _ =>
           reader.error(i, s"$t is not a valid type of org.sireum.lang.ast.ResolvedInfo.")
-          val r = read_astResolvedInfoLocalVarT(T)
+          val r = read_astResolvedInfoInvT(T)
           return r
       }
     }
@@ -4443,6 +4610,47 @@ object MsgPack {
       val isVal = reader.readB()
       val id = reader.readString()
       return org.sireum.lang.ast.ResolvedInfo.LocalVar(context, scope, isVal, id)
+    }
+
+    def read_astResolvedInfoFact(): org.sireum.lang.ast.ResolvedInfo.Fact = {
+      val r = read_astResolvedInfoFactT(F)
+      return r
+    }
+
+    def read_astResolvedInfoFactT(typeParsed: B): org.sireum.lang.ast.ResolvedInfo.Fact = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astResolvedInfoFact)
+      }
+      val name = reader.readISZ(reader.readString _)
+      return org.sireum.lang.ast.ResolvedInfo.Fact(name)
+    }
+
+    def read_astResolvedInfoTheorem(): org.sireum.lang.ast.ResolvedInfo.Theorem = {
+      val r = read_astResolvedInfoTheoremT(F)
+      return r
+    }
+
+    def read_astResolvedInfoTheoremT(typeParsed: B): org.sireum.lang.ast.ResolvedInfo.Theorem = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astResolvedInfoTheorem)
+      }
+      val name = reader.readISZ(reader.readString _)
+      return org.sireum.lang.ast.ResolvedInfo.Theorem(name)
+    }
+
+    def read_astResolvedInfoInv(): org.sireum.lang.ast.ResolvedInfo.Inv = {
+      val r = read_astResolvedInfoInvT(F)
+      return r
+    }
+
+    def read_astResolvedInfoInvT(typeParsed: B): org.sireum.lang.ast.ResolvedInfo.Inv = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astResolvedInfoInv)
+      }
+      val isInObject = reader.readB()
+      val owner = reader.readISZ(reader.readString _)
+      val id = reader.readString()
+      return org.sireum.lang.ast.ResolvedInfo.Inv(isInObject, owner, id)
     }
 
     def read_astTruthTableRow(): org.sireum.lang.ast.TruthTable.Row = {
@@ -4767,18 +4975,48 @@ object MsgPack {
     return r
   }
 
-  def from_symbolInfoQuantVar(o: org.sireum.lang.symbol.Info.QuantVar, pooling: B): ISZ[U8] = {
+  def from_symbolInfoFact(o: org.sireum.lang.symbol.Info.Fact, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_symbolInfoQuantVar(o)
+    w.write_symbolInfoFact(o)
     return w.result
   }
 
-  def to_symbolInfoQuantVar(data: ISZ[U8]): Either[org.sireum.lang.symbol.Info.QuantVar, MessagePack.ErrorMsg] = {
-    def f_symbolInfoQuantVar(reader: Reader): org.sireum.lang.symbol.Info.QuantVar = {
-      val r = reader.read_symbolInfoQuantVar()
+  def to_symbolInfoFact(data: ISZ[U8]): Either[org.sireum.lang.symbol.Info.Fact, MessagePack.ErrorMsg] = {
+    def f_symbolInfoFact(reader: Reader): org.sireum.lang.symbol.Info.Fact = {
+      val r = reader.read_symbolInfoFact()
       return r
     }
-    val r = to(data, f_symbolInfoQuantVar _)
+    val r = to(data, f_symbolInfoFact _)
+    return r
+  }
+
+  def from_symbolInfoTheorem(o: org.sireum.lang.symbol.Info.Theorem, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_symbolInfoTheorem(o)
+    return w.result
+  }
+
+  def to_symbolInfoTheorem(data: ISZ[U8]): Either[org.sireum.lang.symbol.Info.Theorem, MessagePack.ErrorMsg] = {
+    def f_symbolInfoTheorem(reader: Reader): org.sireum.lang.symbol.Info.Theorem = {
+      val r = reader.read_symbolInfoTheorem()
+      return r
+    }
+    val r = to(data, f_symbolInfoTheorem _)
+    return r
+  }
+
+  def from_symbolInfoInv(o: org.sireum.lang.symbol.Info.Inv, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_symbolInfoInv(o)
+    return w.result
+  }
+
+  def to_symbolInfoInv(data: ISZ[U8]): Either[org.sireum.lang.symbol.Info.Inv, MessagePack.ErrorMsg] = {
+    def f_symbolInfoInv(reader: Reader): org.sireum.lang.symbol.Info.Inv = {
+      val r = reader.read_symbolInfoInv()
+      return r
+    }
+    val r = to(data, f_symbolInfoInv _)
     return r
   }
 
@@ -6867,6 +7105,51 @@ object MsgPack {
     return r
   }
 
+  def from_astTypedFact(o: org.sireum.lang.ast.Typed.Fact, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astTypedFact(o)
+    return w.result
+  }
+
+  def to_astTypedFact(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Fact, MessagePack.ErrorMsg] = {
+    def f_astTypedFact(reader: Reader): org.sireum.lang.ast.Typed.Fact = {
+      val r = reader.read_astTypedFact()
+      return r
+    }
+    val r = to(data, f_astTypedFact _)
+    return r
+  }
+
+  def from_astTypedTheorem(o: org.sireum.lang.ast.Typed.Theorem, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astTypedTheorem(o)
+    return w.result
+  }
+
+  def to_astTypedTheorem(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Theorem, MessagePack.ErrorMsg] = {
+    def f_astTypedTheorem(reader: Reader): org.sireum.lang.ast.Typed.Theorem = {
+      val r = reader.read_astTypedTheorem()
+      return r
+    }
+    val r = to(data, f_astTypedTheorem _)
+    return r
+  }
+
+  def from_astTypedInv(o: org.sireum.lang.ast.Typed.Inv, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astTypedInv(o)
+    return w.result
+  }
+
+  def to_astTypedInv(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Inv, MessagePack.ErrorMsg] = {
+    def f_astTypedInv(reader: Reader): org.sireum.lang.ast.Typed.Inv = {
+      val r = reader.read_astTypedInv()
+      return r
+    }
+    val r = to(data, f_astTypedInv _)
+    return r
+  }
+
   def from_astAttr(o: org.sireum.lang.ast.Attr, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
     w.write_astAttr(o)
@@ -7074,6 +7357,51 @@ object MsgPack {
       return r
     }
     val r = to(data, f_astResolvedInfoLocalVar _)
+    return r
+  }
+
+  def from_astResolvedInfoFact(o: org.sireum.lang.ast.ResolvedInfo.Fact, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astResolvedInfoFact(o)
+    return w.result
+  }
+
+  def to_astResolvedInfoFact(data: ISZ[U8]): Either[org.sireum.lang.ast.ResolvedInfo.Fact, MessagePack.ErrorMsg] = {
+    def f_astResolvedInfoFact(reader: Reader): org.sireum.lang.ast.ResolvedInfo.Fact = {
+      val r = reader.read_astResolvedInfoFact()
+      return r
+    }
+    val r = to(data, f_astResolvedInfoFact _)
+    return r
+  }
+
+  def from_astResolvedInfoTheorem(o: org.sireum.lang.ast.ResolvedInfo.Theorem, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astResolvedInfoTheorem(o)
+    return w.result
+  }
+
+  def to_astResolvedInfoTheorem(data: ISZ[U8]): Either[org.sireum.lang.ast.ResolvedInfo.Theorem, MessagePack.ErrorMsg] = {
+    def f_astResolvedInfoTheorem(reader: Reader): org.sireum.lang.ast.ResolvedInfo.Theorem = {
+      val r = reader.read_astResolvedInfoTheorem()
+      return r
+    }
+    val r = to(data, f_astResolvedInfoTheorem _)
+    return r
+  }
+
+  def from_astResolvedInfoInv(o: org.sireum.lang.ast.ResolvedInfo.Inv, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astResolvedInfoInv(o)
+    return w.result
+  }
+
+  def to_astResolvedInfoInv(data: ISZ[U8]): Either[org.sireum.lang.ast.ResolvedInfo.Inv, MessagePack.ErrorMsg] = {
+    def f_astResolvedInfoInv(reader: Reader): org.sireum.lang.ast.ResolvedInfo.Inv = {
+      val r = reader.read_astResolvedInfoInv()
+      return r
+    }
+    val r = to(data, f_astResolvedInfoInv _)
     return r
   }
 

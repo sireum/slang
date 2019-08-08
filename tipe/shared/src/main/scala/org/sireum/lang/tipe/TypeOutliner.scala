@@ -32,8 +32,30 @@ import org.sireum.ops._
 import org.sireum.lang.{ast => AST}
 import org.sireum.lang.symbol._
 import org.sireum.lang.symbol.Resolver._
+import org.sireum.lang.tipe.TypeOutliner.ExpTypedSubst
 
 object TypeOutliner {
+
+  @datatype class ExpTypedSubst(substMap: HashMap[String, AST.Typed]) extends AST.Transformer.PrePost[B] {
+    override def preTypedTypeVar(ctx: B, o: AST.Typed.TypeVar): AST.Transformer.PreResult[B, AST.Typed] = {
+      val id = o.id
+      substMap.get(id) match {
+        case Some(t) => return AST.Transformer.PreResult(T, F, Some(t.subst(substMap)))
+        case _ => return AST.Transformer.PreResult(T, F, None())
+      }
+    }
+
+    override def preTypeNamed(ctx: B, o: AST.Type.Named): AST.Transformer.PreResult[B, AST.Type] = {
+      if (o.name.ids.size == 1) {
+        val id = o.name.ids(0).value
+        substMap.get(id) match {
+          case Some(t) => return AST.Transformer.PreResult(T, F, Some(o.typed(t)))
+          case _ =>
+        }
+      }
+      return AST.Transformer.PreResult(T, F, None())
+    }
+  }
 
   def checkOutline(typeHierarchy: TypeHierarchy, reporter: Reporter): TypeHierarchy = {
     def parentsOutlined(name: QName, typeMap: TypeMap): B = {
@@ -347,17 +369,18 @@ object TypeOutliner {
         HashSMap.empty,
         info.specMethods,
         info.methods,
-        info.refinements
+        info.refinements,
+        info.invariants
       ),
       scope,
       reporter
     )
     val (
-      TypeInfo.Members(specVars, _, specMethods, methods, refinements),
+      TypeInfo.Members(specVars, _, specMethods, methods, refinements, invariants),
       ancestors,
       newParents
     ) =
-      outlineInheritedMembers(info.name, info.ast.parents, scope, members, reporter)
+      outlineInheritedMembers(info.owner, info.ast.id.value, info.name, info.ast.parents, scope, members, reporter)
     val newInfo = info(
       outlined = T,
       ancestors = ancestors,
@@ -365,7 +388,8 @@ object TypeOutliner {
       specVars = specVars,
       specMethods = specMethods,
       methods = methods,
-      refinements = refinements
+      refinements = refinements,
+      invariants = invariants
     )
     return (th: TypeHierarchy) => (th(typeMap = th.typeMap + info.name ~> newInfo), reporter)
   }
@@ -382,17 +406,18 @@ object TypeOutliner {
         info.vars,
         info.specMethods,
         info.methods,
-        info.refinements
+        info.refinements,
+        info.invariants
       ),
       scope,
       reporter
     )
     val (
-      TypeInfo.Members(specVars, vars, specMethods, methods, refinements),
+      TypeInfo.Members(specVars, vars, specMethods, methods, refinements, invariants),
       ancestors,
       newParents
     ) =
-      outlineInheritedMembers(info.name, info.ast.parents, scope, members, reporter)
+      outlineInheritedMembers(info.owner, info.ast.id.value, info.name, info.ast.parents, scope, members, reporter)
     var newParams = ISZ[AST.AdtParam]()
     var paramTypes = ISZ[AST.Typed]()
     var extractorTypeMap = Map.empty[String, AST.Typed]
@@ -425,7 +450,8 @@ object TypeOutliner {
           vars = vars,
           specMethods = specMethods,
           methods = methods,
-          refinements = refinements
+          refinements = refinements,
+          invariants = invariants
         )
       } else {
         val constructorFun = AST.Typed.Fun(T, F, paramTypes, info.tpe)
@@ -451,6 +477,7 @@ object TypeOutliner {
           specMethods = specMethods,
           methods = methods,
           refinements = refinements,
+          invariants = invariants,
           ast = info.ast(params = newParams, parents = newParents)
         )
       }
@@ -497,9 +524,10 @@ object TypeOutliner {
     var vars = HashSMap.empty[String, Info.Var]
     var specMethods = HashMap.empty[String, Info.SpecMethod]
     var methods = HashMap.empty[String, Info.Method]
+    var invariants = HashMap.empty[String, Info.Inv]
 
     def isDeclared(id: String): B = {
-      return specVars.contains(id) || vars.contains(id) || specMethods.contains(id) || methods.contains(id)
+      return specVars.contains(id) || vars.contains(id) || specMethods.contains(id) || methods.contains(id) || invariants.contains(id)
     }
 
     def checkSpecVar(svInfo: Info.SpecVar): Unit = {
@@ -577,6 +605,16 @@ object TypeOutliner {
       }
     }
 
+    def checkInv(invInfo: Info.Inv): Unit = {
+      val v = invInfo.ast
+      val id = v.id.value
+      if (isDeclared(id)) {
+        reporter.error(v.attr.posOpt, TypeChecker.typeCheckerKind, s"Cannot redeclare $id.")
+        return
+      }
+      invariants = invariants + id ~> invInfo
+    }
+
     for (p <- info.specVars.values) {
       checkSpecVar(p)
     }
@@ -593,11 +631,17 @@ object TypeOutliner {
       checkMethod(p)
     }
 
+    for (p <- info.invariants.values) {
+      checkInv(p)
+    }
+
     return TypeInfo
-      .Members(specVars, vars, specMethods, methods, HashMap.empty)
+      .Members(specVars, vars, specMethods, methods, HashMap.empty, invariants)
   }
 
   def outlineInheritedMembers(
+    nameOwner: QName,
+    nameId: String,
     name: QName,
     parents: ISZ[AST.Type.Named],
     scope: Scope,
@@ -609,6 +653,7 @@ object TypeOutliner {
     var specMethods = info.specMethods
     var methods = info.methods
     var refinements = info.refinements
+    var invariants = info.invariants
 
     def checkSpecInherit(id: String, tname: QName, posOpt: Option[Position]): B = {
       specVars.get(id) match {
@@ -737,14 +782,29 @@ object TypeOutliner {
       }
     }
 
-//    def checkInheritInvFactTheorem(id: String, posOpt: Option[Position]): B = {
-//      if (invariants.contains(id) || facts.contains(id) || theorems.contains(id)) {
-//        reporter
-//          .error(posOpt, TypeChecker.typeCheckerKind, s"Cannot inherit $id because it has been previously declared.")
-//        return F
-//      }
-//      return T
-//    }
+    def inheritInv(invInfo: Info.Inv, posOpt: Option[Position], substMap: HashMap[String, AST.Typed]): Unit = {
+      val transformer = AST.Transformer[B](ExpTypedSubst(substMap))
+      @pure def transform(exp: AST.Exp): AST.Exp = {
+        transformer.transformExp(T, exp).resultOpt match {
+          case Some(result) => return result
+          case _ => return exp
+        }
+      }
+      val owner = invInfo.owner
+      val inv = invInfo.ast
+      val id = inv.id.value
+      val ok = checkInherit(id, owner, posOpt)
+      if (ok) {
+        if (substMap.isEmpty) {
+          invariants = invariants + id ~> invInfo
+        } else {
+          val newAst = invInfo.ast(claims = for (claim <- invInfo.ast.claims) yield transform(claim),
+            attr = invInfo.ast.attr(resOpt = Some(AST.ResolvedInfo.Inv(F, nameOwner, nameId)),
+              typedOpt = Some(AST.Typed.Inv(F, nameOwner, nameId))))
+          invariants = invariants + id ~> invInfo(ast = newAst)
+        }
+      }
+    }
 
     def checkMethodEquality(
       m1: Info.Method,
@@ -899,24 +959,9 @@ object TypeOutliner {
                       for (p <- ti.methods.values) {
                         inheritMethod(p, posOpt, substMap)
                       }
-//                      for (p <- ti.invariants.values) {
-//                        val id = p.id
-//                        if (checkInheritInvFactTheorem(id, posOpt)) {
-//                          invariants = invariants + id ~> p
-//                        }
-//                      }
-//                      for (p <- ti.facts.values) {
-//                        val id = p.id
-//                        if (checkInheritInvFactTheorem(id, posOpt)) {
-//                          facts = facts + id ~> p
-//                        }
-//                      }
-//                      for (p <- ti.theorems.values) {
-//                        val id = p.id
-//                        if (checkInheritInvFactTheorem(id, posOpt)) {
-//                          theorems = theorems + id ~> p(ast = p.ast(proofOpt = None()))
-//                        }
-//                      }
+                      for (p <- ti.invariants.values) {
+                        inheritInv(p, posOpt, substMap)
+                      }
                     case _ =>
                   }
                 case Some(ti: TypeInfo.Adt) =>
@@ -939,24 +984,9 @@ object TypeOutliner {
                       for (p <- ti.methods.values) {
                         inheritMethod(p, posOpt, substMap)
                       }
-//                      for (p <- ti.invariants.values) {
-//                        val id = p.id
-//                        if (checkInheritInvFactTheorem(id, posOpt)) {
-//                          invariants = invariants + id ~> p
-//                        }
-//                      }
-//                      for (p <- ti.facts.values) {
-//                        val id = p.id
-//                        if (checkInheritInvFactTheorem(id, posOpt)) {
-//                          facts = facts + id ~> p
-//                        }
-//                      }
-//                      for (p <- ti.theorems.values) {
-//                        val id = p.id
-//                        if (checkInheritInvFactTheorem(id, posOpt)) {
-//                          theorems = theorems + id ~> p(ast = p.ast(proofOpt = None()))
-//                        }
-//                      }
+                      for (p <- ti.invariants.values) {
+                        inheritInv(p, posOpt, substMap)
+                      }
                     case _ =>
                   }
                 case _ =>
@@ -968,7 +998,7 @@ object TypeOutliner {
       }
     }
     return (
-      TypeInfo.Members(specVars, vars, specMethods, methods, refinements),
+      TypeInfo.Members(specVars, vars, specMethods, methods, refinements, invariants),
       ancestors.elements,
       newParents,
     )

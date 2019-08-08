@@ -820,8 +820,8 @@ class SlangParser(
       case _ => (false, ISZ[AST.Param]())
     }
     val sig =
-      AST.MethodSig(isPure, cid(name), ISZ(tparams.map(translateTypeParam): _*), hasParams, params, translateType(tpe))
-    val purity = if (isPure) AST.Purity.Pure else AST.Purity.Impure
+      AST.MethodSig(isPure || isStrictPure, cid(name), ISZ(tparams.map(translateTypeParam): _*), hasParams, params, translateType(tpe))
+    val purity = if (isStrictPure) AST.Purity.StrictPure else if (isPure) AST.Purity.Pure else AST.Purity.Impure
     AST.Stmt.Method(purity, hasOverride, isHelper, sig, emptyContract, None(), resolvedAttr(stat.pos))
   }
 
@@ -2207,6 +2207,25 @@ class SlangParser(
       case t: Term.Tuple => ISZ(t.args.map(arg => cid(arg.asInstanceOf[Term.Name])): _*)
     }
 
+    def quantType(qid: Predef.String, f: Term.Function): AST.Exp.QuantType = {
+      val isForall = qid == "All" || qid == "∀"
+      val f = exp.asInstanceOf[Term.Apply].args.head
+      AST.Exp.QuantType(isForall, translateExp(f).asInstanceOf[AST.Exp.Fun], attr(exp.pos))
+    }
+
+    def quant(qid: Predef.String, d: Term, f: Term.Function): AST.Exp.Quant = {
+      val isForall = qid == "All" || qid == "∀"
+      val fExp = translateExp(f).asInstanceOf[AST.Exp.Fun]
+      if (fExp.params.size != 1) {
+        error(exp.pos, s"Expecting a single parameter, but ${fExp.params.size} found.")
+      }
+      d match {
+        case q"$lo until $hi" => AST.Exp.QuantRange(isForall, translateExp(lo), translateExp(hi), false, fExp, attr(exp.pos))
+        case q"$lo to $hi" => AST.Exp.QuantRange(isForall, translateExp(lo), translateExp(hi), true, fExp, attr(exp.pos))
+        case _ => AST.Exp.QuantEach(isForall, translateExp(d), fExp, attr(exp.pos))
+      }
+    }
+
     exp match {
       case exp: Lit => translateLit(exp)
       case exp: Term.Interpolate =>
@@ -2234,26 +2253,10 @@ class SlangParser(
         AST.Exp.Eta(ref, typedAttr(exp.pos))
       case exp: Term.Tuple => AST.Exp.Tuple(ISZ(exp.args.map(translateExp): _*), typedAttr(exp.pos))
       case q"Res[$t]" => AST.Exp.Result(Some(translateType(t)), typedAttr(exp.pos))
-      case q"${qid: Term.Name}(${d: Term})((..$_) => ${_: Term})" if quantSymbols.contains(qid.value) =>
-        val isForall = qid.value == "All" || qid.value == "∀"
-        val q"$_($_)($f)" = exp
-        val fExp = translateExp(f).asInstanceOf[AST.Exp.Fun]
-        if (fExp.params.size != 1) {
-          error(exp.pos, s"Expecting a single parameter, but ${fExp.params.size} found.")
-        }
-        d match {
-          case q"$lo until $hi" => AST.Exp.QuantRange(isForall, translateExp(lo), translateExp(hi), false, fExp, attr(exp.pos))
-          case q"$lo to $hi" => AST.Exp.QuantRange(isForall, translateExp(lo), translateExp(hi), true, fExp, attr(exp.pos))
-          case _ => AST.Exp.QuantEach(isForall, translateExp(d), fExp, attr(exp.pos))
-        }
-      case q"${qid: Term.Name}{(..$_) => ${_: Term}}" if quantSymbols.contains(qid.value) =>
-        val isForall = qid.value == "All" || qid.value == "∀"
-        val f = exp.asInstanceOf[Term.Apply].args.head
-        AST.Exp.QuantType(isForall, translateExp(f).asInstanceOf[AST.Exp.Fun], attr(exp.pos))
-      case q"${qid: Term.Name}((..$_) => ${_: Term})" if quantSymbols.contains(qid.value) =>
-        val isForall = qid.value == "All" || qid.value == "∀"
-        val f = exp.asInstanceOf[Term.Apply].args.head
-        AST.Exp.QuantType(isForall, translateExp(f).asInstanceOf[AST.Exp.Fun], attr(exp.pos))
+      case Term.Apply(Term.Apply(Term.Name(qid), List(d)), List(f: Term.Function)) if quantSymbols.contains(qid) => quant(qid, d, f)
+      case Term.Apply(Term.Apply(Term.Name(qid), List(d)), List(Term.Block(List(f: Term.Function)))) if quantSymbols.contains(qid) => quant(qid, d, f)
+      case Term.Apply(Term.Name(qid), List(Term.Block(List(f: Term.Function)))) if quantSymbols.contains(qid) => quantType(qid, f)
+      case Term.Apply(Term.Name(qid), List(f: Term.Function)) if quantSymbols.contains(qid) => quantType(qid, f)
       case exp: Term.ApplyUnary => translateUnaryExp(exp)
       case exp: Term.ApplyInfix => translateBinaryExp(exp)
       case q"In($arg)" => AST.Exp.Input(translateExp(arg), attr(exp.pos))
@@ -2837,7 +2840,7 @@ class SlangParser(
         }
       case _ =>
     }
-    AST.Stmt.Inv(cid(stat.name), claims, attr(stat.pos))
+    AST.Stmt.Inv(cid(stat.name), claims, resolvedAttr(stat.pos))
   }
 
   def translateFact(enclosing: Enclosing.Type, stat: Defn.Def): AST.Stmt.Fact = {
@@ -2873,7 +2876,7 @@ class SlangParser(
           AST.Stmt.Expr(claim, tattr), tattr), attr(stat.name.pos))
         else claim)
     }
-    AST.Stmt.Fact(cid(stat.name), typeArgs, descOpt, claims, attr(stat.pos))
+    AST.Stmt.Fact(cid(stat.name), typeArgs, descOpt, claims, resolvedAttr(stat.pos))
   }
 
   def translateDeduce(enclosing: Enclosing.Type, stat: Stat): AST.Stmt.Spec = {
@@ -3079,9 +3082,10 @@ class SlangParser(
       case _ => error(stat.pos, "Cannot have more than one list of parameters")
     }
     val tattr = typedAttr(stat.body.pos)
-    val body: AST.Exp = if (params.isEmpty) claim else AST.Exp.QuantType(true,
-      AST.Exp.Fun(ISZ(), params, AST.Stmt.Expr(claim, tattr), tattr), attr(stat.body.pos))
-    AST.Stmt.Theorem(isLemma, cid(stat.name), typeArgs, descOpt, body, proof, attr(stat.pos))
+    val (isFun, body): (B, AST.Exp) =
+      if (params.isEmpty) (false, claim)
+      else (true, AST.Exp.QuantType(true, AST.Exp.Fun(ISZ(), params, AST.Stmt.Expr(claim, tattr), tattr), attr(stat.body.pos)))
+    AST.Stmt.Theorem(isLemma, cid(stat.name), typeArgs, descOpt, body, isFun, proof, resolvedAttr(stat.pos))
   }
 
   def translateLoopInvariant(exprs: Seq[Term], loopPos: Position): (ISZ[AST.Exp], ISZ[AST.Exp.Ident]) = {

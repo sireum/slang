@@ -517,6 +517,18 @@ object MTransformer {
 
   val PostResultTypedMethods: MOption[Typed] = MNone()
 
+  val PreResultTypedFact: PreResult[Typed] = PreResult(T, MNone())
+
+  val PostResultTypedFact: MOption[Typed] = MNone()
+
+  val PreResultTypedTheorem: PreResult[Typed] = PreResult(T, MNone())
+
+  val PostResultTypedTheorem: MOption[Typed] = MNone()
+
+  val PreResultTypedInv: PreResult[Typed] = PreResult(T, MNone())
+
+  val PostResultTypedInv: MOption[Typed] = MNone()
+
   val PreResultAttr: PreResult[Attr] = PreResult(T, MNone())
 
   val PostResultAttr: MOption[Attr] = MNone()
@@ -568,6 +580,18 @@ object MTransformer {
   val PreResultResolvedInfoLocalVar: PreResult[ResolvedInfo] = PreResult(T, MNone())
 
   val PostResultResolvedInfoLocalVar: MOption[ResolvedInfo] = MNone()
+
+  val PreResultResolvedInfoFact: PreResult[ResolvedInfo] = PreResult(T, MNone())
+
+  val PostResultResolvedInfoFact: MOption[ResolvedInfo] = MNone()
+
+  val PreResultResolvedInfoTheorem: PreResult[ResolvedInfo] = PreResult(T, MNone())
+
+  val PostResultResolvedInfoTheorem: MOption[ResolvedInfo] = MNone()
+
+  val PreResultResolvedInfoInv: PreResult[ResolvedInfo] = PreResult(T, MNone())
+
+  val PostResultResolvedInfoInv: MOption[ResolvedInfo] = MNone()
 
   val PreResultTruthTableRow: PreResult[TruthTable.Row] = PreResult(T, MNone())
 
@@ -1434,6 +1458,9 @@ import MTransformer._
       case o: Typed.Enum => return preTypedEnum(o)
       case o: Typed.Method => return preTypedMethod(o)
       case o: Typed.Methods => return preTypedMethods(o)
+      case o: Typed.Fact => return preTypedFact(o)
+      case o: Typed.Theorem => return preTypedTheorem(o)
+      case o: Typed.Inv => return preTypedInv(o)
     }
   }
 
@@ -1473,6 +1500,18 @@ import MTransformer._
     return PreResultTypedMethods
   }
 
+  def preTypedFact(o: Typed.Fact): PreResult[Typed] = {
+    return PreResultTypedFact
+  }
+
+  def preTypedTheorem(o: Typed.Theorem): PreResult[Typed] = {
+    return PreResultTypedTheorem
+  }
+
+  def preTypedInv(o: Typed.Inv): PreResult[Typed] = {
+    return PreResultTypedInv
+  }
+
   def preAttr(o: Attr): PreResult[Attr] = {
     return PreResultAttr
   }
@@ -1497,6 +1536,9 @@ import MTransformer._
       case o: ResolvedInfo.Methods => return preResolvedInfoMethods(o)
       case o: ResolvedInfo.Tuple => return preResolvedInfoTuple(o)
       case o: ResolvedInfo.LocalVar => return preResolvedInfoLocalVar(o)
+      case o: ResolvedInfo.Fact => return preResolvedInfoFact(o)
+      case o: ResolvedInfo.Theorem => return preResolvedInfoTheorem(o)
+      case o: ResolvedInfo.Inv => return preResolvedInfoInv(o)
     }
   }
 
@@ -1538,6 +1580,18 @@ import MTransformer._
 
   def preResolvedInfoLocalVar(o: ResolvedInfo.LocalVar): PreResult[ResolvedInfo] = {
     return PreResultResolvedInfoLocalVar
+  }
+
+  def preResolvedInfoFact(o: ResolvedInfo.Fact): PreResult[ResolvedInfo] = {
+    return PreResultResolvedInfoFact
+  }
+
+  def preResolvedInfoTheorem(o: ResolvedInfo.Theorem): PreResult[ResolvedInfo] = {
+    return PreResultResolvedInfoTheorem
+  }
+
+  def preResolvedInfoInv(o: ResolvedInfo.Inv): PreResult[ResolvedInfo] = {
+    return PreResultResolvedInfoInv
   }
 
   def preTruthTableRow(o: TruthTable.Row): PreResult[TruthTable.Row] = {
@@ -2408,6 +2462,9 @@ import MTransformer._
       case o: Typed.Enum => return postTypedEnum(o)
       case o: Typed.Method => return postTypedMethod(o)
       case o: Typed.Methods => return postTypedMethods(o)
+      case o: Typed.Fact => return postTypedFact(o)
+      case o: Typed.Theorem => return postTypedTheorem(o)
+      case o: Typed.Inv => return postTypedInv(o)
     }
   }
 
@@ -2447,6 +2504,18 @@ import MTransformer._
     return PostResultTypedMethods
   }
 
+  def postTypedFact(o: Typed.Fact): MOption[Typed] = {
+    return PostResultTypedFact
+  }
+
+  def postTypedTheorem(o: Typed.Theorem): MOption[Typed] = {
+    return PostResultTypedTheorem
+  }
+
+  def postTypedInv(o: Typed.Inv): MOption[Typed] = {
+    return PostResultTypedInv
+  }
+
   def postAttr(o: Attr): MOption[Attr] = {
     return PostResultAttr
   }
@@ -2471,6 +2540,9 @@ import MTransformer._
       case o: ResolvedInfo.Methods => return postResolvedInfoMethods(o)
       case o: ResolvedInfo.Tuple => return postResolvedInfoTuple(o)
       case o: ResolvedInfo.LocalVar => return postResolvedInfoLocalVar(o)
+      case o: ResolvedInfo.Fact => return postResolvedInfoFact(o)
+      case o: ResolvedInfo.Theorem => return postResolvedInfoTheorem(o)
+      case o: ResolvedInfo.Inv => return postResolvedInfoInv(o)
     }
   }
 
@@ -2512,6 +2584,18 @@ import MTransformer._
 
   def postResolvedInfoLocalVar(o: ResolvedInfo.LocalVar): MOption[ResolvedInfo] = {
     return PostResultResolvedInfoLocalVar
+  }
+
+  def postResolvedInfoFact(o: ResolvedInfo.Fact): MOption[ResolvedInfo] = {
+    return PostResultResolvedInfoFact
+  }
+
+  def postResolvedInfoTheorem(o: ResolvedInfo.Theorem): MOption[ResolvedInfo] = {
+    return PostResultResolvedInfoTheorem
+  }
+
+  def postResolvedInfoInv(o: ResolvedInfo.Inv): MOption[ResolvedInfo] = {
+    return PostResultResolvedInfoInv
   }
 
   def postTruthTableRow(o: TruthTable.Row): MOption[TruthTable.Row] = {
@@ -2788,31 +2872,31 @@ import MTransformer._
             MNone()
         case o2: Stmt.Fact =>
           val r0: MOption[Id] = transformId(o2.id)
-          val r1: MOption[IS[Z, TypeParam]] = transformISZ(o2.typeArgs, transformTypeParam _)
+          val r1: MOption[IS[Z, TypeParam]] = transformISZ(o2.typeParams, transformTypeParam _)
           val r2: MOption[Option[Exp.LitString]] = transformOption(o2.descOpt, transformExpLitString _)
           val r3: MOption[IS[Z, Exp]] = transformISZ(o2.claims, transformExp _)
-          val r4: MOption[Attr] = transformAttr(o2.attr)
+          val r4: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
-            MSome(o2(id = r0.getOrElse(o2.id), typeArgs = r1.getOrElse(o2.typeArgs), descOpt = r2.getOrElse(o2.descOpt), claims = r3.getOrElse(o2.claims), attr = r4.getOrElse(o2.attr)))
+            MSome(o2(id = r0.getOrElse(o2.id), typeParams = r1.getOrElse(o2.typeParams), descOpt = r2.getOrElse(o2.descOpt), claims = r3.getOrElse(o2.claims), attr = r4.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.Inv =>
           val r0: MOption[Id] = transformId(o2.id)
           val r1: MOption[IS[Z, Exp]] = transformISZ(o2.claims, transformExp _)
-          val r2: MOption[Attr] = transformAttr(o2.attr)
+          val r2: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
             MSome(o2(id = r0.getOrElse(o2.id), claims = r1.getOrElse(o2.claims), attr = r2.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.Theorem =>
           val r0: MOption[Id] = transformId(o2.id)
-          val r1: MOption[IS[Z, TypeParam]] = transformISZ(o2.typeArgs, transformTypeParam _)
+          val r1: MOption[IS[Z, TypeParam]] = transformISZ(o2.typeParams, transformTypeParam _)
           val r2: MOption[Option[Exp.LitString]] = transformOption(o2.descOpt, transformExpLitString _)
           val r3: MOption[Exp] = transformExp(o2.claim)
           val r4: MOption[Proof] = transformProof(o2.proof)
-          val r5: MOption[Attr] = transformAttr(o2.attr)
+          val r5: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty || r5.nonEmpty)
-            MSome(o2(id = r0.getOrElse(o2.id), typeArgs = r1.getOrElse(o2.typeArgs), descOpt = r2.getOrElse(o2.descOpt), claim = r3.getOrElse(o2.claim), proof = r4.getOrElse(o2.proof), attr = r5.getOrElse(o2.attr)))
+            MSome(o2(id = r0.getOrElse(o2.id), typeParams = r1.getOrElse(o2.typeParams), descOpt = r2.getOrElse(o2.descOpt), claim = r3.getOrElse(o2.claim), proof = r4.getOrElse(o2.proof), attr = r5.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.SpecLabel =>
@@ -3015,31 +3099,31 @@ import MTransformer._
       val rOpt: MOption[Stmt.Spec] = o2 match {
         case o2: Stmt.Fact =>
           val r0: MOption[Id] = transformId(o2.id)
-          val r1: MOption[IS[Z, TypeParam]] = transformISZ(o2.typeArgs, transformTypeParam _)
+          val r1: MOption[IS[Z, TypeParam]] = transformISZ(o2.typeParams, transformTypeParam _)
           val r2: MOption[Option[Exp.LitString]] = transformOption(o2.descOpt, transformExpLitString _)
           val r3: MOption[IS[Z, Exp]] = transformISZ(o2.claims, transformExp _)
-          val r4: MOption[Attr] = transformAttr(o2.attr)
+          val r4: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
-            MSome(o2(id = r0.getOrElse(o2.id), typeArgs = r1.getOrElse(o2.typeArgs), descOpt = r2.getOrElse(o2.descOpt), claims = r3.getOrElse(o2.claims), attr = r4.getOrElse(o2.attr)))
+            MSome(o2(id = r0.getOrElse(o2.id), typeParams = r1.getOrElse(o2.typeParams), descOpt = r2.getOrElse(o2.descOpt), claims = r3.getOrElse(o2.claims), attr = r4.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.Inv =>
           val r0: MOption[Id] = transformId(o2.id)
           val r1: MOption[IS[Z, Exp]] = transformISZ(o2.claims, transformExp _)
-          val r2: MOption[Attr] = transformAttr(o2.attr)
+          val r2: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
             MSome(o2(id = r0.getOrElse(o2.id), claims = r1.getOrElse(o2.claims), attr = r2.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.Theorem =>
           val r0: MOption[Id] = transformId(o2.id)
-          val r1: MOption[IS[Z, TypeParam]] = transformISZ(o2.typeArgs, transformTypeParam _)
+          val r1: MOption[IS[Z, TypeParam]] = transformISZ(o2.typeParams, transformTypeParam _)
           val r2: MOption[Option[Exp.LitString]] = transformOption(o2.descOpt, transformExpLitString _)
           val r3: MOption[Exp] = transformExp(o2.claim)
           val r4: MOption[Proof] = transformProof(o2.proof)
-          val r5: MOption[Attr] = transformAttr(o2.attr)
+          val r5: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty || r5.nonEmpty)
-            MSome(o2(id = r0.getOrElse(o2.id), typeArgs = r1.getOrElse(o2.typeArgs), descOpt = r2.getOrElse(o2.descOpt), claim = r3.getOrElse(o2.claim), proof = r4.getOrElse(o2.proof), attr = r5.getOrElse(o2.attr)))
+            MSome(o2(id = r0.getOrElse(o2.id), typeParams = r1.getOrElse(o2.typeParams), descOpt = r2.getOrElse(o2.descOpt), claim = r3.getOrElse(o2.claim), proof = r4.getOrElse(o2.proof), attr = r5.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.SpecLabel =>
@@ -4506,6 +4590,21 @@ import MTransformer._
             MSome(o2(methods = r0.getOrElse(o2.methods)))
           else
             MNone()
+        case o2: Typed.Fact =>
+          if (hasChanged)
+            MSome(o2)
+          else
+            MNone()
+        case o2: Typed.Theorem =>
+          if (hasChanged)
+            MSome(o2)
+          else
+            MNone()
+        case o2: Typed.Inv =>
+          if (hasChanged)
+            MSome(o2)
+          else
+            MNone()
       }
       rOpt
     } else if (preR.resultOpt.nonEmpty) {
@@ -4660,6 +4759,21 @@ import MTransformer._
           else
             MNone()
         case o2: ResolvedInfo.LocalVar =>
+          if (hasChanged)
+            MSome(o2)
+          else
+            MNone()
+        case o2: ResolvedInfo.Fact =>
+          if (hasChanged)
+            MSome(o2)
+          else
+            MNone()
+        case o2: ResolvedInfo.Theorem =>
+          if (hasChanged)
+            MSome(o2)
+          else
+            MNone()
+        case o2: ResolvedInfo.Inv =>
           if (hasChanged)
             MSome(o2)
           else

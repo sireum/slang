@@ -1,6 +1,6 @@
 // #Sireum
 /*
- Copyright (c) 2018, Robby, Kansas State University
+ Copyright (c) 2019, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -175,6 +175,7 @@ object FrontEnd {
 
     nameMap = typeChecker.nameMap
 
+    var newStmts = ISZ[AST.Stmt]()
     for (stmt <- newBody.stmts) {
       stmt match {
         case stmt: AST.Stmt.Method =>
@@ -183,17 +184,46 @@ object FrontEnd {
             case Some(info: Info.Method) => nameMap = nameMap + ISZ(id) ~> info(ast = stmt)
             case _ =>
           }
+          newStmts = newStmts :+ stmt
         case stmt: AST.Stmt.SpecMethod =>
           val id = stmt.sig.id.value
           newScope.nameMap.get(id) match {
             case Some(info: Info.SpecMethod) => nameMap = nameMap + ISZ(id) ~> info(ast = stmt)
             case _ =>
           }
-        case _ =>
+          newStmts = newStmts :+ stmt
+        case stmt: AST.Stmt.Fact =>
+          val id = stmt.id.value
+          gdr.globalNameMap.get(ISZ(id)) match {
+            case Some(info: Info.Fact) =>
+              val newStmt = stmt(attr = stmt.attr(resOpt = info.ast.attr.resOpt))
+              nameMap = nameMap + ISZ(id) ~> info(ast = newStmt)
+            case _ =>
+              newStmts = newStmts :+ stmt
+          }
+        case stmt: AST.Stmt.Theorem =>
+          val id = stmt.id.value
+          gdr.globalNameMap.get(ISZ(id)) match {
+            case Some(info: Info.Theorem) =>
+              val newStmt = stmt(attr = stmt.attr(resOpt = info.ast.attr.resOpt))
+              nameMap = nameMap + ISZ(id) ~> info(ast = newStmt)
+            case _ =>
+              newStmts = newStmts :+ stmt
+          }
+        case stmt: AST.Stmt.Inv =>
+          val id = stmt.id.value
+          gdr.globalNameMap.get(ISZ(id)) match {
+            case Some(info: Info.Inv) =>
+              val newStmt = stmt(attr = stmt.attr(resOpt = info.ast.attr.resOpt))
+              nameMap = nameMap + ISZ(id) ~> info(ast = newStmt)
+            case _ =>
+              newStmts = newStmts :+ stmt
+          }
+        case _ => newStmts = newStmts :+ stmt
       }
     }
 
-    return (typeChecker.typeHierarchy(nameMap = nameMap), program(body = newBody))
+    return (typeChecker.typeHierarchy(nameMap = nameMap), program(body = newBody(stmts = newStmts)))
   }
 
 }
