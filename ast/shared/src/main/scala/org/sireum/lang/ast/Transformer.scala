@@ -2394,12 +2394,13 @@ import Transformer._
           else
             TPostResult(r0.ctx, None())
         case o2: Stmt.DeduceSequent =>
-          val r0: TPostResult[Context, IS[Z, Sequent]] = transformISZ(preR.ctx, o2.sequents, transformSequent _)
-          val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(sequents = r0.resultOpt.getOrElse(o2.sequents), attr = r1.resultOpt.getOrElse(o2.attr))))
+          val r0: TPostResult[Context, Option[Exp.LitString]] = transformOption(preR.ctx, o2.justOpt, transformExpLitString _)
+          val r1: TPostResult[Context, IS[Z, Sequent]] = transformISZ(r0.ctx, o2.sequents, transformSequent _)
+          val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(justOpt = r0.resultOpt.getOrElse(o2.justOpt), sequents = r1.resultOpt.getOrElse(o2.sequents), attr = r2.resultOpt.getOrElse(o2.attr))))
           else
-            TPostResult(r1.ctx, None())
+            TPostResult(r2.ctx, None())
         case o2: Stmt.DeduceSteps =>
           val r0: TPostResult[Context, IS[Z, Proof.Step]] = transformISZ(preR.ctx, o2.steps, transformProofStep _)
           val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
@@ -2628,12 +2629,13 @@ import Transformer._
           else
             TPostResult(r0.ctx, None())
         case o2: Stmt.DeduceSequent =>
-          val r0: TPostResult[Context, IS[Z, Sequent]] = transformISZ(preR.ctx, o2.sequents, transformSequent _)
-          val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(sequents = r0.resultOpt.getOrElse(o2.sequents), attr = r1.resultOpt.getOrElse(o2.attr))))
+          val r0: TPostResult[Context, Option[Exp.LitString]] = transformOption(preR.ctx, o2.justOpt, transformExpLitString _)
+          val r1: TPostResult[Context, IS[Z, Sequent]] = transformISZ(r0.ctx, o2.sequents, transformSequent _)
+          val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(justOpt = r0.resultOpt.getOrElse(o2.justOpt), sequents = r1.resultOpt.getOrElse(o2.sequents), attr = r2.resultOpt.getOrElse(o2.attr))))
           else
-            TPostResult(r1.ctx, None())
+            TPostResult(r2.ctx, None())
         case o2: Stmt.DeduceSteps =>
           val r0: TPostResult[Context, IS[Z, Proof.Step]] = transformISZ(preR.ctx, o2.steps, transformProofStep _)
           val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)

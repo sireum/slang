@@ -2894,8 +2894,15 @@ class SlangParser(
       case scala.Some(head: Term) => head.pos.text.contains("#>")
       case _ => false
     }
-    if (isProofStep) AST.Stmt.DeduceSteps(ISZ(dexprs.map(translateProofStep): _*), attr(stat.pos))
-    else AST.Stmt.DeduceSequent(ISZ(dexprs.map(translateSequent): _*), attr(stat.pos))
+    if (isProofStep) {
+      AST.Stmt.DeduceSteps(ISZ(dexprs.map(translateProofStep): _*), attr(stat.pos))
+    } else {
+      val (justOpt, args): (Option[AST.Exp.LitString], Seq[Term]) = dexprs.headOption match {
+        case scala.Some(s: Lit.String) => (Some(translateLit(s).asInstanceOf[AST.Exp.LitString]), dexprs.tail)
+        case _ => (None(), dexprs)
+      }
+      AST.Stmt.DeduceSequent(justOpt, ISZ(args.map(translateSequent): _*), attr(stat.pos))
+    }
   }
 
   def translateHavoc(enclosing: Enclosing.Type, stat: Stat): AST.Stmt.Spec = {

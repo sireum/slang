@@ -442,7 +442,7 @@ object Stmt {
     }
   }
 
-  @datatype class DeduceSequent(sequents: ISZ[Sequent], @hidden attr: Attr) extends Spec {
+  @datatype class DeduceSequent(justOpt: Option[Exp.LitString], sequents: ISZ[Sequent], @hidden attr: Attr) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }

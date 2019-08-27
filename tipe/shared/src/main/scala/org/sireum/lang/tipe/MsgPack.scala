@@ -960,6 +960,7 @@ object MsgPack {
 
     def write_astStmtDeduceSequent(o: org.sireum.lang.ast.Stmt.DeduceSequent): Unit = {
       writer.writeZ(Constants._astStmtDeduceSequent)
+      writer.writeOption(o.justOpt, write_astExpLitString _)
       writer.writeISZ(o.sequents, write_astSequent _)
       write_astAttr(o.attr)
     }
@@ -2968,9 +2969,10 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astStmtDeduceSequent)
       }
+      val justOpt = reader.readOption(read_astExpLitString _)
       val sequents = reader.readISZ(read_astSequent _)
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.DeduceSequent(sequents, attr)
+      return org.sireum.lang.ast.Stmt.DeduceSequent(justOpt, sequents, attr)
     }
 
     def read_astStmtDeduceSteps(): org.sireum.lang.ast.Stmt.DeduceSteps = {

@@ -740,6 +740,7 @@ object JSON {
     @pure def print_astStmtDeduceSequent(o: org.sireum.lang.ast.Stmt.DeduceSequent): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Stmt.DeduceSequent""""),
+        ("justOpt", printOption(F, o.justOpt, print_astExpLitString _)),
         ("sequents", printISZ(F, o.sequents, print_astSequent _)),
         ("attr", print_astAttr(o.attr))
       ))
@@ -3520,13 +3521,16 @@ object JSON {
       if (!typeParsed) {
         parser.parseObjectType("org.sireum.lang.ast.Stmt.DeduceSequent")
       }
+      parser.parseObjectKey("justOpt")
+      val justOpt = parser.parseOption(parse_astExpLitString _)
+      parser.parseObjectNext()
       parser.parseObjectKey("sequents")
       val sequents = parser.parseISZ(parse_astSequent _)
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.DeduceSequent(sequents, attr)
+      return org.sireum.lang.ast.Stmt.DeduceSequent(justOpt, sequents, attr)
     }
 
     def parse_astStmtDeduceSteps(): org.sireum.lang.ast.Stmt.DeduceSteps = {

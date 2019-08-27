@@ -2940,10 +2940,11 @@ import MTransformer._
           else
             MNone()
         case o2: Stmt.DeduceSequent =>
-          val r0: MOption[IS[Z, Sequent]] = transformISZ(o2.sequents, transformSequent _)
-          val r1: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(sequents = r0.getOrElse(o2.sequents), attr = r1.getOrElse(o2.attr)))
+          val r0: MOption[Option[Exp.LitString]] = transformOption(o2.justOpt, transformExpLitString _)
+          val r1: MOption[IS[Z, Sequent]] = transformISZ(o2.sequents, transformSequent _)
+          val r2: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(justOpt = r0.getOrElse(o2.justOpt), sequents = r1.getOrElse(o2.sequents), attr = r2.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.DeduceSteps =>
@@ -3174,10 +3175,11 @@ import MTransformer._
           else
             MNone()
         case o2: Stmt.DeduceSequent =>
-          val r0: MOption[IS[Z, Sequent]] = transformISZ(o2.sequents, transformSequent _)
-          val r1: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(sequents = r0.getOrElse(o2.sequents), attr = r1.getOrElse(o2.attr)))
+          val r0: MOption[Option[Exp.LitString]] = transformOption(o2.justOpt, transformExpLitString _)
+          val r1: MOption[IS[Z, Sequent]] = transformISZ(o2.sequents, transformSequent _)
+          val r2: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(justOpt = r0.getOrElse(o2.justOpt), sequents = r1.getOrElse(o2.sequents), attr = r2.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.DeduceSteps =>
