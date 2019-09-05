@@ -68,10 +68,14 @@ object SequentResolver {
             )
           case _ =>
         }
-        val key = p.id.value
-        newScope.resolve(key) match {
-          case Some(_) => reporter.error(p.id.attr.posOpt, resolverKind, s"$key has been previously declared.")
-          case _ => newScope = newScope(nameMap = newScope.nameMap + key ~> p.id)
+        p.idOpt match {
+          case Some(id) =>
+            val key = id.value
+            newScope.resolve(key) match {
+              case Some(_) => reporter.error(id.attr.posOpt, resolverKind, s"$key has been previously declared.")
+              case _ => newScope = newScope(nameMap = newScope.nameMap + key ~> id)
+            }
+          case _ =>
         }
       }
 

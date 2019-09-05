@@ -1818,8 +1818,8 @@ class SlangParser(
       errorInSlang(tp.pos, s"The parameter should have the form '〈ID〉⸨ :〈type〉⸩?'")
     }
     atpeopt
-      .map(ta => AST.Exp.Fun.Param(cid(tp.name), Some(translateTypeArg(allowByName = false)(ta)), None()))
-      .getOrElse(AST.Exp.Fun.Param(cid(tp.name), None(), None()))
+      .map(ta => AST.Exp.Fun.Param(if ("" == tp.name.value) None() else Some(cid(tp.name)), Some(translateTypeArg(allowByName = false)(ta)), None()))
+      .getOrElse(AST.Exp.Fun.Param(if ("" == tp.name.value) None() else Some(cid(tp.name)), None(), None()))
   }
 
   def translateBlock(enclosing: Enclosing.Type, stat: Term.Block, isAssignExp: Boolean): AST.Stmt.Block = {

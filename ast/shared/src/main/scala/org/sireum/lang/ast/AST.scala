@@ -1058,7 +1058,7 @@ object Exp {
 
   object Fun {
 
-    @datatype class Param(id: Id, tipeOpt: Option[Type], typedOpt: Option[Typed])
+    @datatype class Param(idOpt: Option[Id], tipeOpt: Option[Type], typedOpt: Option[Typed])
 
   }
 

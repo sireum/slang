@@ -4166,11 +4166,11 @@ import MTransformer._
     val r: MOption[Exp.Fun.Param] = if (preR.continu) {
       val o2: Exp.Fun.Param = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[Id] = transformId(o2.id)
+      val r0: MOption[Option[Id]] = transformOption(o2.idOpt, transformId _)
       val r1: MOption[Option[Type]] = transformOption(o2.tipeOpt, transformType _)
       val r2: MOption[Option[Typed]] = transformOption(o2.typedOpt, transformTyped _)
       if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-        MSome(o2(id = r0.getOrElse(o2.id), tipeOpt = r1.getOrElse(o2.tipeOpt), typedOpt = r2.getOrElse(o2.typedOpt)))
+        MSome(o2(idOpt = r0.getOrElse(o2.idOpt), tipeOpt = r1.getOrElse(o2.tipeOpt), typedOpt = r2.getOrElse(o2.typedOpt)))
       else
         MNone()
     } else if (preR.resultOpt.nonEmpty) {

@@ -896,25 +896,29 @@ import TypeChecker._
     var scope = createNewScope(sc)
     var ok = T
 
-    def declId(id: AST.Id, tOpt: Option[AST.Typed]): Unit = {
-      val key = id.value
-      if (scope.nameMap.contains(key)) {
-        reporter.error(
-          id.attr.posOpt,
-          typeCheckerKind,
-          s"Cannot declare '$key' because the identifier has already been previously declared."
-        )
-        ok = F
-      } else {
-        scope = scope(
-          nameMap = scope.nameMap + key ~> Info.LocalVar(
-            context :+ key,
-            F,
-            id,
-            tOpt,
-            Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, T, key))
-          )
-        )
+    def declId(idOpt: Option[AST.Id], tOpt: Option[AST.Typed]): Unit = {
+      idOpt match {
+        case Some(id) =>
+          val key = id.value
+          if (scope.nameMap.contains(key)) {
+            reporter.error(
+              id.attr.posOpt,
+              typeCheckerKind,
+              s"Cannot declare '$key' because the identifier has already been previously declared."
+            )
+            ok = F
+          } else {
+            scope = scope(
+              nameMap = scope.nameMap + key ~> Info.LocalVar(
+                context :+ key,
+                F,
+                id,
+                tOpt,
+                Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, T, key))
+              )
+            )
+          }
+        case _ =>
       }
     }
 
@@ -933,7 +937,7 @@ import TypeChecker._
           while (ok && i < size) {
             val p = exp.params(i)
             val expectedType = expected.args(i)
-            declId(p.id, Some(expectedType))
+            declId(p.idOpt, Some(expectedType))
             val (newTipeOpt, newTypedOpt): (Option[AST.Type], Option[AST.Typed]) = p.tipeOpt match {
               case Some(tipe) =>
                 val tOpt = typeHierarchy.typed(scope, tipe, reporter)
@@ -963,7 +967,8 @@ import TypeChecker._
           return (exp(context = context, params = newParams, exp = newExp, attr = exp.attr(typedOpt = tOpt)), tOpt, scope)
         case _ =>
           for (p <- exp.params if p.tipeOpt.isEmpty) {
-            reporter.error(p.id.attr.posOpt, typeCheckerKind, "Explicit type for the lambda expression is required.")
+            val posOpt: Option[Position] = if (p.idOpt.isEmpty) None() else p.idOpt.get.attr.posOpt
+            reporter.error(posOpt, typeCheckerKind, "Explicit type for the lambda expression is required.")
           }
           return (exp, None(), scope)
       }
@@ -986,7 +991,7 @@ import TypeChecker._
             val tOpt = newTipe.typedOpt
             val t = tOpt.get
             paramTypes = paramTypes :+ t
-            declId(p.id, tOpt)
+            declId(p.idOpt, tOpt)
           case _ => ok = F
         }
         newParams = newParams :+ p(tipeOpt = newTipeOpt)

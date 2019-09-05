@@ -1421,7 +1421,7 @@ object MsgPack {
 
     def write_astExpFunParam(o: org.sireum.lang.ast.Exp.Fun.Param): Unit = {
       writer.writeZ(Constants._astExpFunParam)
-      write_astId(o.id)
+      writer.writeOption(o.idOpt, write_astId _)
       writer.writeOption(o.tipeOpt, write_astType _)
       writer.writeOption(o.typedOpt, write_astTyped _)
     }
@@ -3894,10 +3894,10 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astExpFunParam)
       }
-      val id = read_astId()
+      val idOpt = reader.readOption(read_astId _)
       val tipeOpt = reader.readOption(read_astType _)
       val typedOpt = reader.readOption(read_astTyped _)
-      return org.sireum.lang.ast.Exp.Fun.Param(id, tipeOpt, typedOpt)
+      return org.sireum.lang.ast.Exp.Fun.Param(idOpt, tipeOpt, typedOpt)
     }
 
     def read_astExpFun(): org.sireum.lang.ast.Exp.Fun = {

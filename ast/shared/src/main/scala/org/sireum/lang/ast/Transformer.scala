@@ -3620,11 +3620,11 @@ import Transformer._
     val r: TPostResult[Context, Exp.Fun.Param] = if (preR.continu) {
       val o2: Exp.Fun.Param = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: TPostResult[Context, Id] = transformId(preR.ctx, o2.id)
+      val r0: TPostResult[Context, Option[Id]] = transformOption(preR.ctx, o2.idOpt, transformId _)
       val r1: TPostResult[Context, Option[Type]] = transformOption(r0.ctx, o2.tipeOpt, transformType _)
       val r2: TPostResult[Context, Option[Typed]] = transformOption(r1.ctx, o2.typedOpt, transformTyped _)
       if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-        TPostResult(r2.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), tipeOpt = r1.resultOpt.getOrElse(o2.tipeOpt), typedOpt = r2.resultOpt.getOrElse(o2.typedOpt))))
+        TPostResult(r2.ctx, Some(o2(idOpt = r0.resultOpt.getOrElse(o2.idOpt), tipeOpt = r1.resultOpt.getOrElse(o2.tipeOpt), typedOpt = r2.resultOpt.getOrElse(o2.typedOpt))))
       else
         TPostResult(r2.ctx, None())
     } else if (preR.resultOpt.nonEmpty) {
