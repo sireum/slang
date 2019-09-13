@@ -130,6 +130,7 @@ object Resolver {
       HashMap.empty,
       HashMap.empty,
       HashMap.empty,
+      ISZ(),
       scope,
       AST.Stmt.Adt(T, T, AST.Id("Unit", emptyAttr), ISZ(), ISZ(), ISZ(), ISZ(), emptyAttr)
     )
@@ -150,6 +151,7 @@ object Resolver {
       HashMap.empty,
       HashMap.empty,
       HashMap.empty,
+      ISZ(),
       scope,
       AST.Stmt.Adt(T, T, AST.Id("Nothing", emptyAttr), ISZ(), ISZ(), ISZ(), ISZ(), emptyAttr)
     )

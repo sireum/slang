@@ -147,7 +147,9 @@ object TypeChecker {
     string"/" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryDiv)),
     string"%" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryRem)),
     string"==" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEq)),
+    string"===" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEq)),
     string"!=" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryNe)),
+    string"=!=" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryNe)),
     string"<<" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryShl)),
     string">>" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryShr)),
     string">>>" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryUshr)),
@@ -1498,27 +1500,36 @@ import TypeChecker._
                 )
               }
 
+              def normOp(op: String): String = {
+                op match {
+                  case AST.Exp.BinaryOp.Eq3 => return AST.Exp.BinaryOp.Eq
+                  case AST.Exp.BinaryOp.Ne3 => return AST.Exp.BinaryOp.Ne
+                  case _ => return op
+                }
+              }
+
               val rOpt = basicKind(scope, rightType, binaryExp.right.posOpt, reporter)
-              val tOpt: Option[AST.Typed] = rOpt match {
+              val (op, tOpt): (String, Option[AST.Typed]) = rOpt match {
                 case Some(rightKind) =>
                   if (leftKind != rightKind) {
                     errIncompat(rightType)
-                    None()
+                    (binaryExp.op, None())
                   } else if ((leftKind == BasicKind.B && AST.Util.isBoolBinop(binaryExp.op)) ||
                     (AST.Util.isArithBinop(binaryExp.op) && leftKind != BasicKind.B) ||
                     (AST.Util.isBitsBinop(binaryExp.op) && (leftKind == BasicKind.Bits || leftKind == BasicKind.C))) {
-                    Some(leftType)
+                    (normOp(binaryExp.op), Some(leftType))
                   } else if (AST.Util.isCompareBinop(binaryExp.op) && leftKind != BasicKind.B) {
-                    Some(AST.Typed.b)
+                    (normOp(binaryExp.op), Some(AST.Typed.b))
                   } else {
                     errUndef()
-                    None()
+                    (binaryExp.op, None())
                   }
                 case _ => return checkAsInvoke()
               }
               return (
                 binaryExp(
                   left = newLeft,
+                  op = op,
                   right = newRight,
                   attr = binaryExp.attr(resOpt = binopResOpt.get(binaryExp.op).getOrElse(None()), typedOpt = tOpt)
                 ),
@@ -4115,7 +4126,7 @@ import TypeChecker._
 
       case stmt: AST.Stmt.Havoc =>
         val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
-        return (Some(scope), stmt(args = tc.checkModifies(scope, stmt.args, reporter)))
+        return (Some(scope), stmt(args = tc.checkModifies("havoc", scope, stmt.args, reporter)))
 
       case stmt: AST.Stmt.Fact =>
         val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
@@ -4148,6 +4159,8 @@ import TypeChecker._
         val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
         val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
         return (Some(scope), stmt(claims = for (claim <- stmt.claims) yield tc.checkExp(bExpectedOpt, scope, claim, reporter)._1))
+
+      case stmt: AST.Stmt.DataRefinement => return (Some(scope), stmt)
     }
   }
 
@@ -4267,9 +4280,9 @@ import TypeChecker._
     def checkRequires(requires: ISZ[AST.Exp]): ISZ[AST.Exp] = {
       return for (require <- requires) yield checkExp(Some(AST.Typed.b), scope, require, reporter)._1
     }
-    def checkEnsures(requires: ISZ[AST.Exp]): ISZ[AST.Exp] = {
+    def checkEnsures(ensures: ISZ[AST.Exp]): ISZ[AST.Exp] = {
       val tc = TypeChecker(typeHierarchy, context, ModeContext.SpecPost)
-      return for (require <- requires) yield tc.checkExp(Some(AST.Typed.b), scope, require, reporter)._1
+      return for (ensure <- ensures) yield tc.checkExp(Some(AST.Typed.b), scope, ensure, reporter)._1
     }
     def checkCase(cas: AST.MethodContract.Case): AST.MethodContract.Case = {
       return AST.MethodContract.Case(cas.label, checkRequires(cas.requires), checkEnsures(cas.ensures))
@@ -4278,11 +4291,11 @@ import TypeChecker._
       case contract: AST.MethodContract.Simple =>
         return AST.MethodContract.Simple(
           checkReads(contract.reads), checkRequires(contract.requires),
-          checkModifies(scope, contract.modifies, reporter), checkEnsures(contract.ensures)
+          checkModifies("modify", scope, contract.modifies, reporter), checkEnsures(contract.ensures)
         )
       case contract: AST.MethodContract.Cases =>
         val newReads = checkReads(contract.reads)
-        val newModifies = checkModifies(scope, contract.modifies, reporter)
+        val newModifies = checkModifies("modify", scope, contract.modifies, reporter)
         var newCases = ISZ[AST.MethodContract.Case]()
         var labelMap = HashMap.empty[String, Option[Position]]
         for (cas <- contract.cases) {
@@ -4308,26 +4321,26 @@ import TypeChecker._
   def checkLoopInv(scope: Scope, invs: ISZ[AST.Exp], modifies: ISZ[AST.Exp.Ident],
                    reporter: Reporter): (ISZ[AST.Exp], ISZ[AST.Exp.Ident]) = {
     val newInvs: ISZ[AST.Exp] = for (inv <- invs) yield checkExp(AST.Typed.bOpt, scope, inv, reporter)._1
-    return (newInvs, checkModifies(scope, modifies, reporter))
+    return (newInvs, checkModifies("modify", scope, modifies, reporter))
   }
 
-  def checkModifies(scope: Scope, modifies: ISZ[AST.Exp.Ident], reporter: Reporter): ISZ[AST.Exp.Ident] = {
-    return for (modify <- modifies) yield checkModifyExp(scope, modify, reporter)
+  def checkModifies(title: String, scope: Scope, modifies: ISZ[AST.Exp.Ident], reporter: Reporter): ISZ[AST.Exp.Ident] = {
+    return for (modify <- modifies) yield checkModifyExp(title, scope, modify, reporter)
   }
 
-  def checkModifyExp(sc: Scope, exp: AST.Exp.Ident, reporter: Reporter): AST.Exp.Ident = {
+  def checkModifyExp(title: String, sc: Scope, exp: AST.Exp.Ident, reporter: Reporter): AST.Exp.Ident = {
     def checkLocalVar(res: AST.ResolvedInfo.LocalVar, t: AST.Typed): Unit = {
       if (!typeHierarchy.isMutable(t, T) && res.isVal) {
-        reporter.error(exp.posOpt, typeCheckerKind, s"Cannot modify variable '${res.id}'")
+        reporter.error(exp.posOpt, typeCheckerKind, s"Cannot $title variable '${res.id}'")
       }
     }
     def checkVar(res: AST.ResolvedInfo.Var, t: AST.Typed): Unit = {
       if (!typeHierarchy.isMutable(t, T) && res.isVal) {
-        reporter.error(exp.posOpt, typeCheckerKind, st"Cannot modify field '${(res.owner, ".")}.${res.id}'".render)
+        reporter.error(exp.posOpt, typeCheckerKind, st"Cannot $title field '${(res.owner, ".")}.${res.id}'".render)
       }
     }
     def err(): Unit = {
-      reporter.error(exp.posOpt, typeCheckerKind, "Can only modify a variable or a field")
+      reporter.error(exp.posOpt, typeCheckerKind, s"Can only $title a variable or a field")
     }
     val (newExp, tOpt) = checkExp(None(), sc, exp, reporter)
     tOpt match {
@@ -4395,6 +4408,18 @@ import TypeChecker._
     }
   }
 
+  def checkDataRefinement(scope: Scope, stmt: AST.Stmt.DataRefinement, reporter: Reporter): AST.Stmt.DataRefinement = {
+    val rep = checkModifyExp("represent data using", scope, stmt.rep, reporter)
+    val refs = checkModifies("refine data using", scope, stmt.refs, reporter)
+    var claims = ISZ[AST.Exp]()
+    val expectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
+    for (claim <- stmt.claims) {
+      val (newClaim, _) = checkExp(expectedOpt, scope, claim, reporter)
+      claims = claims :+ newClaim
+    }
+    return stmt(rep = rep, refs = refs, claims = claims)
+  }
+
   def checkAdt(info: TypeInfo.Adt): TypeHierarchy => (TypeHierarchy, Reporter) @pure = {
     assert(info.outlined, st"${(info.name, ".")} is not outlined".render)
     val reporter = Reporter.create
@@ -4402,6 +4427,8 @@ import TypeChecker._
     var scope = localTypeScope(typeParams.map, info.scope)
     scope = scope(localThisOpt = Some(info.tpe))
     var stmts = ISZ[AST.Stmt]()
+    var dataRefinements = ISZ[AST.Stmt.DataRefinement]()
+    val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
     for (stmt <- info.ast.stmts) {
       stmt match {
         case stmt: AST.Stmt.Var => stmts = stmts :+ info.vars.get(stmt.id.value).get.ast
@@ -4409,6 +4436,10 @@ import TypeChecker._
         case stmt: AST.Stmt.Method => stmts = stmts :+ info.methods.get(stmt.sig.id.value).get.ast
         case stmt: AST.Stmt.SpecMethod => stmts = stmts :+ info.specMethods.get(stmt.sig.id.value).get.ast
         case stmt: AST.Stmt.Inv => stmts = stmts :+ info.invariants.get(stmt.id.value).get.ast
+        case stmt: AST.Stmt.DataRefinement =>
+          val newStmt = tc.checkDataRefinement(scope, stmt, reporter)
+          dataRefinements = dataRefinements :+ newStmt
+          stmts = stmts :+ newStmt
         case _ => stmts = stmts :+ stmt
       }
     }
@@ -4467,7 +4498,8 @@ import TypeChecker._
             specVars = specVars,
             methods = methods,
             specMethods = specMethods,
-            invariants = invariants
+            invariants = invariants,
+            dataRefinements = dataRefinements
           )
         ),
         reporter
@@ -4495,6 +4527,7 @@ import TypeChecker._
     var specMethods: HashMap[String, Info.SpecMethod] = info.specMethods
     var methods: HashMap[String, Info.Method] = info.methods
     var invariants: HashMap[String, Info.Inv] = info.invariants
+    var dataRefinements = ISZ[AST.Stmt.DataRefinement]()
     for (stmt <- newStmts) {
       stmt match {
         case stmt: AST.Stmt.SpecVar =>
@@ -4513,6 +4546,8 @@ import TypeChecker._
           val id = stmt.id.value
           val invInfo = info.invariants.get(id).get
           invariants = invariants + id ~> invInfo(ast = stmt)
+        case stmt: AST.Stmt.DataRefinement =>
+          dataRefinements = dataRefinements :+ checkDataRefinement(scope, stmt, reporter)
         case _ =>
       }
     }
@@ -4525,7 +4560,8 @@ import TypeChecker._
             specVars = specVars,
             methods = methods,
             specMethods = specMethods,
-            invariants = invariants
+            invariants = invariants,
+            dataRefinements = dataRefinements
           )
         ),
         reporter

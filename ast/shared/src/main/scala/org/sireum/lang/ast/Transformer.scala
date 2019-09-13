@@ -108,6 +108,13 @@ object Transformer {
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Stmt]())
           }
           return r
+        case o: Stmt.DataRefinement =>
+          val r: PreResult[Context, Stmt] = preStmtDataRefinement(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Stmt)) => PreResult(preCtx, continu, Some[Stmt](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Stmt")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Stmt]())
+          }
+          return r
         case o: Stmt.SpecLabel =>
           val r: PreResult[Context, Stmt] = preStmtSpecLabel(ctx, o) match {
            case PreResult(preCtx, continu, Some(r: Stmt)) => PreResult(preCtx, continu, Some[Stmt](r))
@@ -288,6 +295,7 @@ object Transformer {
         case o: Stmt.Fact => return preStmtFact(ctx, o)
         case o: Stmt.Inv => return preStmtInv(ctx, o)
         case o: Stmt.Theorem => return preStmtTheorem(ctx, o)
+        case o: Stmt.DataRefinement => return preStmtDataRefinement(ctx, o)
         case o: Stmt.SpecLabel => return preStmtSpecLabel(ctx, o)
         case o: Stmt.SpecBlock => return preStmtSpecBlock(ctx, o)
         case o: Stmt.DeduceSequent => return preStmtDeduceSequent(ctx, o)
@@ -305,6 +313,10 @@ object Transformer {
     }
 
     @pure def preStmtTheorem(ctx: Context, o: Stmt.Theorem): PreResult[Context, Stmt.Spec] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preStmtDataRefinement(ctx: Context, o: Stmt.DataRefinement): PreResult[Context, Stmt.Spec] = {
       return PreResult(ctx, T, None())
     }
 
@@ -1124,6 +1136,13 @@ object Transformer {
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[Stmt]())
           }
           return r
+        case o: Stmt.DataRefinement =>
+          val r: TPostResult[Context, Stmt] = postStmtDataRefinement(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Stmt)) => TPostResult(postCtx, Some[Stmt](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Stmt")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Stmt]())
+          }
+          return r
         case o: Stmt.SpecLabel =>
           val r: TPostResult[Context, Stmt] = postStmtSpecLabel(ctx, o) match {
            case TPostResult(postCtx, Some(result: Stmt)) => TPostResult(postCtx, Some[Stmt](result))
@@ -1304,6 +1323,7 @@ object Transformer {
         case o: Stmt.Fact => return postStmtFact(ctx, o)
         case o: Stmt.Inv => return postStmtInv(ctx, o)
         case o: Stmt.Theorem => return postStmtTheorem(ctx, o)
+        case o: Stmt.DataRefinement => return postStmtDataRefinement(ctx, o)
         case o: Stmt.SpecLabel => return postStmtSpecLabel(ctx, o)
         case o: Stmt.SpecBlock => return postStmtSpecBlock(ctx, o)
         case o: Stmt.DeduceSequent => return postStmtDeduceSequent(ctx, o)
@@ -1321,6 +1341,10 @@ object Transformer {
     }
 
     @pure def postStmtTheorem(ctx: Context, o: Stmt.Theorem): TPostResult[Context, Stmt.Spec] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postStmtDataRefinement(ctx: Context, o: Stmt.DataRefinement): TPostResult[Context, Stmt.Spec] = {
       return TPostResult(ctx, None())
     }
 
@@ -2381,6 +2405,15 @@ import Transformer._
             TPostResult(r5.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), typeParams = r1.resultOpt.getOrElse(o2.typeParams), descOpt = r2.resultOpt.getOrElse(o2.descOpt), claim = r3.resultOpt.getOrElse(o2.claim), proof = r4.resultOpt.getOrElse(o2.proof), attr = r5.resultOpt.getOrElse(o2.attr))))
           else
             TPostResult(r5.ctx, None())
+        case o2: Stmt.DataRefinement =>
+          val r0: TPostResult[Context, Exp.Ident] = transformExpIdent(preR.ctx, o2.rep)
+          val r1: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(r0.ctx, o2.refs, transformExpIdent _)
+          val r2: TPostResult[Context, IS[Z, Exp]] = transformISZ(r1.ctx, o2.claims, transformExp _)
+          val r3: TPostResult[Context, Attr] = transformAttr(r2.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+            TPostResult(r3.ctx, Some(o2(rep = r0.resultOpt.getOrElse(o2.rep), refs = r1.resultOpt.getOrElse(o2.refs), claims = r2.resultOpt.getOrElse(o2.claims), attr = r3.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r3.ctx, None())
         case o2: Stmt.SpecLabel =>
           val r0: TPostResult[Context, Id] = transformId(preR.ctx, o2.id)
           if (hasChanged || r0.resultOpt.nonEmpty)
@@ -2616,6 +2649,15 @@ import Transformer._
             TPostResult(r5.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), typeParams = r1.resultOpt.getOrElse(o2.typeParams), descOpt = r2.resultOpt.getOrElse(o2.descOpt), claim = r3.resultOpt.getOrElse(o2.claim), proof = r4.resultOpt.getOrElse(o2.proof), attr = r5.resultOpt.getOrElse(o2.attr))))
           else
             TPostResult(r5.ctx, None())
+        case o2: Stmt.DataRefinement =>
+          val r0: TPostResult[Context, Exp.Ident] = transformExpIdent(preR.ctx, o2.rep)
+          val r1: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(r0.ctx, o2.refs, transformExpIdent _)
+          val r2: TPostResult[Context, IS[Z, Exp]] = transformISZ(r1.ctx, o2.claims, transformExp _)
+          val r3: TPostResult[Context, Attr] = transformAttr(r2.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+            TPostResult(r3.ctx, Some(o2(rep = r0.resultOpt.getOrElse(o2.rep), refs = r1.resultOpt.getOrElse(o2.refs), claims = r2.resultOpt.getOrElse(o2.claims), attr = r3.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r3.ctx, None())
         case o2: Stmt.SpecLabel =>
           val r0: TPostResult[Context, Id] = transformId(preR.ctx, o2.id)
           if (hasChanged || r0.resultOpt.nonEmpty)

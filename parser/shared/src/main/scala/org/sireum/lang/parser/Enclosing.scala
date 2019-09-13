@@ -38,6 +38,7 @@ import org.sireum._
   'RecordTrait
   'RecordClass
   'Sig
+  'MSig
   'Method
   'Block
 }

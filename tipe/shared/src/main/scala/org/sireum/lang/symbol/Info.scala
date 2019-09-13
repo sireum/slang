@@ -705,6 +705,7 @@ object TypeInfo {
                       methods: HashMap[String, Info.Method],
                       refinements: HashMap[String, Name],
                       invariants: HashMap[String, Info.Inv],
+                      dataRefinements: ISZ[AST.Stmt.DataRefinement],
                       scope: Scope.Global,
                       ast: AST.Stmt.Sig) extends TypeInfo {
 
@@ -779,6 +780,7 @@ object TypeInfo {
                       methods: HashMap[String, Info.Method],
                       refinements: HashMap[String, Name],
                       invariants: HashMap[String, Info.Inv],
+                      dataRefinements: ISZ[AST.Stmt.DataRefinement],
                       scope: Scope.Global,
                       ast: AST.Stmt.Adt) extends TypeInfo {
 

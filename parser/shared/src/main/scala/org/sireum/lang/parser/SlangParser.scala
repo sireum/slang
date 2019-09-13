@@ -292,7 +292,7 @@ class SlangParser(
     r
   }
 
-  def posOpt(pos: Position): Option[message.Position] = Some(posInfo(pos))
+  def posOpt(pos: Position): Option[message.Position] = if (pos == Position.None) None() else Some(posInfo(pos))
 
   def error(pos: Position, message: Predef.String): Unit =
     reporter.error(posOpt(pos), SlangParser.messageKind, message)
@@ -458,6 +458,7 @@ class SlangParser(
       case q"Contract(${_: Lit.String})" => translateSpecLabel(enclosing, stat)
       case q"Contract { ..$_ }" => translateSpecBlock(enclosing, stat)
       case q"Deduce(..$_)" => translateDeduce(enclosing, stat)
+      case q"Contract(DataRefinement($_)(..$_)(..$_))" => translateDataRefinement(enclosing, stat)
       case q"Contract.Havoc(..$args)" => translateHavoc(enclosing, stat)
       case _: Term.Apply | _: Term.ApplyInfix =>
         val term = stat.asInstanceOf[Term]
@@ -564,7 +565,7 @@ class SlangParser(
     enclosing match {
       case Enclosing.Top | Enclosing.Object | Enclosing.ExtObject | Enclosing.DatatypeClass | Enclosing.RecordClass |
           Enclosing.Method | Enclosing.Block =>
-      case Enclosing.Sig | Enclosing.DatatypeTrait | Enclosing.RecordTrait if hasSpec =>
+      case Enclosing.Sig | Enclosing.MSig | Enclosing.DatatypeTrait | Enclosing.RecordTrait if hasSpec =>
       case _ =>
         hasError = true
         if (isWorksheet)
@@ -655,7 +656,7 @@ class SlangParser(
     enclosing match {
       case Enclosing.Top | Enclosing.Object | Enclosing.ExtObject | Enclosing.RecordClass | Enclosing.Method |
           Enclosing.Block =>
-      case Enclosing.Sig | Enclosing.DatatypeTrait | Enclosing.RecordTrait if hasSpec =>
+      case Enclosing.Sig | Enclosing.MSig | Enclosing.DatatypeTrait | Enclosing.RecordTrait if hasSpec =>
       case _ =>
         hasError = true
         if (isWorksheet)
@@ -763,7 +764,7 @@ class SlangParser(
 
   def translateDef(enclosing: Enclosing.Type, stat: Decl.Def): AST.Stmt = {
     enclosing match {
-      case Enclosing.DatatypeTrait | Enclosing.RecordTrait | Enclosing.Sig =>
+      case Enclosing.DatatypeTrait | Enclosing.RecordTrait | Enclosing.Sig | Enclosing.MSig =>
       case _ => errorInSlang(stat.pos, "Method declarations without a body can only appear inside traits")
     }
     val mods = stat.mods
@@ -1012,7 +1013,7 @@ class SlangParser(
           AST.Stmt.Method(purity, hasOverride, isHelper, sig, mc, bodyOpt, resolvedAttr(tree.pos))
         case q"Contract.Only(..${exprs: Seq[Term]})" =>
           enclosing match {
-            case Enclosing.Sig | Enclosing.DatatypeTrait | Enclosing.RecordTrait =>
+            case Enclosing.Sig | Enclosing.MSig | Enclosing.DatatypeTrait | Enclosing.RecordTrait =>
               if (isMemoize) {
                 errorInSlang(
                   exp.pos,
@@ -1023,10 +1024,12 @@ class SlangParser(
             case _ => err()
           }
         case _ =>
-          if (isStrictPure)
+          if (isStrictPure && !hasError) {
             AST.Stmt.Method(purity, hasOverride, isHelper, sig, emptyContract,
-              Some(AST.Body(ISZ(translateAssignExp(exp)), ISZ())), resolvedAttr(tree.pos))
-          else err()
+              Some(AST.Body(ISZ(
+                translateStat(Enclosing.Block)(q"val r: ${tpeopt.get} = $exp"),
+                translateStat(Enclosing.Block)(q"return r")), ISZ())), resolvedAttr(tree.pos))
+          } else err()
       }
     }
 
@@ -1430,7 +1433,7 @@ class SlangParser(
       cid(tname),
       ISZ(tparams.map(translateTypeParam): _*),
       ISZ(ctorcalls.map(translateExtend): _*),
-      checkMemberStmts(ISZ(stats.map(translateStat(Enclosing.Sig)): _*)),
+      checkMemberStmts(ISZ(stats.map(translateStat(if (hasSig) Enclosing.Sig else Enclosing.MSig)): _*)),
       attr(stat.pos)
     )
   }
@@ -2260,10 +2263,13 @@ class SlangParser(
       case Term.Apply(Term.Name(qid), List(f: Term.Function)) if quantSymbols.contains(qid) => quantType(qid, f)
       case exp: Term.ApplyUnary => translateUnaryExp(exp)
       case exp: Term.ApplyInfix => translateBinaryExp(exp)
-      case q"In($arg)" => AST.Exp.Input(translateExp(arg), attr(exp.pos))
-      case q"Old($arg)" => AST.Exp.OldVal(translateExp(arg), attr(exp.pos))
-      case q"At(${label: Lit.String}, $arg)" =>
-        AST.Exp.AtLoc(exp.pos.startLine, Some(cidNoCheck(label.value, label.pos)), translateExp(arg), attr(exp.pos))
+      case q"${name: Term.Name}($arg)" if name.value == "In" =>
+        AST.Exp.Input(translateExp(arg), attr(if (exp.pos == Position.None) name.pos else exp.pos))
+      case q"${name: Term.Name}($arg)" if name.value == "Old" =>
+        AST.Exp.OldVal(translateExp(arg), attr(if (exp.pos == Position.None) name.pos else exp.pos))
+      case q"${name: Term.Name}(${label: Lit.String}, $arg)" if name.value == "At" =>
+        AST.Exp.AtLoc(exp.pos.startLine, Some(cidNoCheck(label.value, label.pos)), translateExp(arg),
+          attr(if (exp.pos == Position.None) name.pos else exp.pos))
       case q"$expr.$name[..$tpes](...${aexprssnel: List[List[Term]]})" if tpes.nonEmpty && aexprssnel.nonEmpty =>
         translateInvoke(
           scala.Some(expr),
@@ -2286,8 +2292,13 @@ class SlangParser(
         if (name.value == "Res") translateInvoke(scala.Some(name), AST.Id("apply", attr(name.pos)), name.pos, tpes, aexprssnel, exp.pos)
         else translateInvoke(scala.None, cid(name), name.pos, tpes, aexprssnel, exp.pos)
       case q"${name: Term.Name}(...${aexprssnel: List[List[Term]]})" if aexprssnel.nonEmpty =>
-        if (name.value == "Res") translateInvoke(scala.Some(name), AST.Id("apply", attr(name.pos)), name.pos, List(), aexprssnel, exp.pos)
-        else translateInvoke(scala.None, cid(name), name.pos, List(), aexprssnel, exp.pos)
+        name.value match {
+          case "Res" => translateInvoke(scala.Some(name), AST.Id("apply", attr(name.pos)), name.pos, List(), aexprssnel, exp.pos)
+          case "In" | "Old" | "At" =>
+            val receiver = q"$name(..${aexprssnel.head})"
+            translateInvoke(scala.Some(receiver), AST.Id("apply", attr(name.pos)), name.pos, List(), aexprssnel.tail, exp.pos)
+          case _ => translateInvoke(scala.None, cid(name), name.pos, List(), aexprssnel, exp.pos)
+        }
       case q"${fun @ q"this"}(...${aexprssnel: List[List[Term]]})" if aexprssnel.nonEmpty =>
         translateInvoke(scala.Some(fun), cidNoCheck("apply", fun.pos), fun.pos, List(), aexprssnel, exp.pos)
       case q"$expr.$name[..$tpes]" if tpes.nonEmpty =>
@@ -2826,7 +2837,7 @@ class SlangParser(
   def translateInvariant(enclosing: Enclosing.Type, stat: Defn.Def): AST.Stmt.Inv = {
     def isInvariantContext: Boolean = enclosing match {
       case Enclosing.Top | Enclosing.Object | Enclosing.ExtObject | Enclosing.DatatypeTrait | Enclosing.DatatypeClass |
-           Enclosing.RecordTrait | Enclosing.RecordClass | Enclosing.Sig =>
+           Enclosing.RecordTrait | Enclosing.RecordClass | Enclosing.Sig | Enclosing.MSig =>
         true
       case _ => false
     }
@@ -2903,6 +2914,23 @@ class SlangParser(
       }
       AST.Stmt.DeduceSequent(justOpt, ISZ(args.map(translateSequent): _*), attr(stat.pos))
     }
+  }
+
+  def translateDataRefinement(enclosing: Enclosing.Type, stat: Stat): AST.Stmt.DataRefinement = {
+    def isDataRefinementContext: Boolean = enclosing match {
+      case Enclosing.MSig | Enclosing.RecordTrait | Enclosing.RecordClass => true
+      case _ => false
+    }
+    if (!isDataRefinementContext) {
+      error(stat.pos, "DataRefinement can only appear inside @msig traits, @record traits, or @record classes.")
+    }
+    val q"Contract(DataRefinement($rep)(..$refs)(..${claims: Seq[Term]}))" = stat
+    AST.Stmt.DataRefinement(
+      translateIdent("DataRefinement", rep).getOrElse(rExp),
+      ISZ(refs.map(ref => translateIdent("DataRefinement", ref).getOrElse(rExp)): _*),
+      ISZ(claims.map(translateExp): _*),
+      attr(stat.pos)
+    )
   }
 
   def translateHavoc(enclosing: Enclosing.Type, stat: Stat): AST.Stmt.Spec = {

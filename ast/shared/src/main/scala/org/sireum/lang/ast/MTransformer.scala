@@ -193,6 +193,10 @@ object MTransformer {
 
   val PostResultStmtTheorem: MOption[Stmt.Spec] = MNone()
 
+  val PreResultStmtDataRefinement: PreResult[Stmt.Spec] = PreResult(T, MNone())
+
+  val PostResultStmtDataRefinement: MOption[Stmt.Spec] = MNone()
+
   val PreResultStmtSpecLabel: PreResult[Stmt.Spec] = PreResult(T, MNone())
 
   val PostResultStmtSpecLabel: MOption[Stmt.Spec] = MNone()
@@ -692,6 +696,13 @@ import MTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
         }
         return r
+      case o: Stmt.DataRefinement =>
+        val r: PreResult[Stmt] = preStmtDataRefinement(o) match {
+         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
+        }
+        return r
       case o: Stmt.SpecLabel =>
         val r: PreResult[Stmt] = preStmtSpecLabel(o) match {
          case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
@@ -872,6 +883,7 @@ import MTransformer._
       case o: Stmt.Fact => return preStmtFact(o)
       case o: Stmt.Inv => return preStmtInv(o)
       case o: Stmt.Theorem => return preStmtTheorem(o)
+      case o: Stmt.DataRefinement => return preStmtDataRefinement(o)
       case o: Stmt.SpecLabel => return preStmtSpecLabel(o)
       case o: Stmt.SpecBlock => return preStmtSpecBlock(o)
       case o: Stmt.DeduceSequent => return preStmtDeduceSequent(o)
@@ -890,6 +902,10 @@ import MTransformer._
 
   def preStmtTheorem(o: Stmt.Theorem): PreResult[Stmt.Spec] = {
     return PreResultStmtTheorem
+  }
+
+  def preStmtDataRefinement(o: Stmt.DataRefinement): PreResult[Stmt.Spec] = {
+    return PreResultStmtDataRefinement
   }
 
   def preStmtSpecLabel(o: Stmt.SpecLabel): PreResult[Stmt.Spec] = {
@@ -1708,6 +1724,13 @@ import MTransformer._
          case _ => MNone[Stmt]()
         }
         return r
+      case o: Stmt.DataRefinement =>
+        val r: MOption[Stmt] = postStmtDataRefinement(o) match {
+         case MSome(result: Stmt) => MSome[Stmt](result)
+         case MSome(_) => halt("Can only produce object of type Stmt")
+         case _ => MNone[Stmt]()
+        }
+        return r
       case o: Stmt.SpecLabel =>
         val r: MOption[Stmt] = postStmtSpecLabel(o) match {
          case MSome(result: Stmt) => MSome[Stmt](result)
@@ -1888,6 +1911,7 @@ import MTransformer._
       case o: Stmt.Fact => return postStmtFact(o)
       case o: Stmt.Inv => return postStmtInv(o)
       case o: Stmt.Theorem => return postStmtTheorem(o)
+      case o: Stmt.DataRefinement => return postStmtDataRefinement(o)
       case o: Stmt.SpecLabel => return postStmtSpecLabel(o)
       case o: Stmt.SpecBlock => return postStmtSpecBlock(o)
       case o: Stmt.DeduceSequent => return postStmtDeduceSequent(o)
@@ -1906,6 +1930,10 @@ import MTransformer._
 
   def postStmtTheorem(o: Stmt.Theorem): MOption[Stmt.Spec] = {
     return PostResultStmtTheorem
+  }
+
+  def postStmtDataRefinement(o: Stmt.DataRefinement): MOption[Stmt.Spec] = {
+    return PostResultStmtDataRefinement
   }
 
   def postStmtSpecLabel(o: Stmt.SpecLabel): MOption[Stmt.Spec] = {
@@ -2927,6 +2955,15 @@ import MTransformer._
             MSome(o2(id = r0.getOrElse(o2.id), typeParams = r1.getOrElse(o2.typeParams), descOpt = r2.getOrElse(o2.descOpt), claim = r3.getOrElse(o2.claim), proof = r4.getOrElse(o2.proof), attr = r5.getOrElse(o2.attr)))
           else
             MNone()
+        case o2: Stmt.DataRefinement =>
+          val r0: MOption[Exp.Ident] = transformExpIdent(o2.rep)
+          val r1: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.refs, transformExpIdent _)
+          val r2: MOption[IS[Z, Exp]] = transformISZ(o2.claims, transformExp _)
+          val r3: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+            MSome(o2(rep = r0.getOrElse(o2.rep), refs = r1.getOrElse(o2.refs), claims = r2.getOrElse(o2.claims), attr = r3.getOrElse(o2.attr)))
+          else
+            MNone()
         case o2: Stmt.SpecLabel =>
           val r0: MOption[Id] = transformId(o2.id)
           if (hasChanged || r0.nonEmpty)
@@ -3160,6 +3197,15 @@ import MTransformer._
           val r5: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty || r5.nonEmpty)
             MSome(o2(id = r0.getOrElse(o2.id), typeParams = r1.getOrElse(o2.typeParams), descOpt = r2.getOrElse(o2.descOpt), claim = r3.getOrElse(o2.claim), proof = r4.getOrElse(o2.proof), attr = r5.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Stmt.DataRefinement =>
+          val r0: MOption[Exp.Ident] = transformExpIdent(o2.rep)
+          val r1: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.refs, transformExpIdent _)
+          val r2: MOption[IS[Z, Exp]] = transformISZ(o2.claims, transformExp _)
+          val r3: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+            MSome(o2(rep = r0.getOrElse(o2.rep), refs = r1.getOrElse(o2.refs), claims = r2.getOrElse(o2.claims), attr = r3.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.SpecLabel =>

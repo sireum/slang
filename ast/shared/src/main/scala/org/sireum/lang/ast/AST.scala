@@ -430,6 +430,15 @@ object Stmt {
     }
   }
 
+  @datatype class DataRefinement(rep: Exp.Ident,
+                                 refs: ISZ[Exp.Ident],
+                                 claims: ISZ[Exp],
+                                 @hidden attr: Attr) extends Spec {
+    @pure override def posOpt: Option[Position] = {
+      return attr.posOpt
+    }
+  }
+
   @datatype class SpecLabel(id: Id) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return id.attr.posOpt
@@ -877,7 +886,9 @@ object Exp {
     val Div: String = "/"
     val Rem: String = "%"
     val Eq: String = "=="
+    val Eq3: String = "==="
     val Ne: String = "!="
+    val Ne3: String = "=!="
     val Shl: String = "<<"
     val Shr: String = ">>"
     val Ushr: String = ">>>"

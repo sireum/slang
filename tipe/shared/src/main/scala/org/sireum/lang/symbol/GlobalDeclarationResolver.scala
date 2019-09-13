@@ -393,6 +393,7 @@ import GlobalDeclarationResolver._
             members.methods,
             members.refinements,
             members.invariants,
+            ISZ(),
             sc,
             stmt
           ),
@@ -452,6 +453,7 @@ import GlobalDeclarationResolver._
             members.methods,
             members.refinements,
             members.invariants,
+            ISZ(),
             sc,
             stmt
           ),
