@@ -71,7 +71,10 @@ object cli {
       Opt(name = "verbose", longKey = "verbose", shortKey = None(),
         tpe = Type.Flag(F), description = "Enable verbose mode"),
       Opt(name = "noRuntime", longKey = "no-runtime", shortKey = Some('r'),
-        tpe = Type.Flag(F), description = "Do not use built-in runtime (use runtime in sourcepath)")
+        tpe = Type.Flag(F), description = "Do not use built-in runtime (use runtime in sourcepath)"),
+      Opt(name = "exclude", longKey = "exclude", shortKey = Some('x'),
+        tpe = Type.Str(Some(','), None()),
+        description = "Sourcepath exclusion as URI segment"),
     ),
     groups = ISZ(OptGroup(name = "Persistence", opts = ISZ(
       Opt(name = "save", longKey = "save", shortKey = None(), tpe = Type.Path(F, None()),
