@@ -2970,11 +2970,17 @@ import TypeChecker._
 
         case exp: AST.Exp.Quant => return checkQuant(exp)
 
-        case exp: AST.Exp.Input => return checkExp(expectedOpt, scope, exp.exp, reporter)
+        case exp: AST.Exp.Input =>
+          val (e, tOpt) = checkExp(expectedOpt, scope, exp.exp, reporter)
+          return (exp(exp = e), tOpt)
 
-        case exp: AST.Exp.AtLoc => return checkExp(expectedOpt, scope, exp.exp, reporter)
+        case exp: AST.Exp.AtLoc =>
+          val (e, tOpt) = checkExp(expectedOpt, scope, exp.exp, reporter)
+          return (exp(exp = e), tOpt)
 
-        case exp: AST.Exp.OldVal => return checkExp(expectedOpt, scope, exp.exp, reporter)
+        case exp: AST.Exp.OldVal =>
+          val (e, tOpt) = checkExp(expectedOpt, scope, exp.exp, reporter)
+          return (exp(exp = e), tOpt)
 
         case _: AST.Exp.StateSeq => halt("Unimplemented") // TODO
 
