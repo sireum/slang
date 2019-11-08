@@ -1770,7 +1770,6 @@ object JSON {
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.UnaryMinus => "UnaryMinus"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.UnaryNot => "UnaryNot"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.UnaryComplement => "UnaryComplement"
-        case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.Update => "Update"
       }
       return printObject(ISZ(
         ("type", printString("org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind")),

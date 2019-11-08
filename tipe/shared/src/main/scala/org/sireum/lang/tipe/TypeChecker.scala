@@ -3965,7 +3965,7 @@ import TypeChecker._
               val (newArg, _) = checkExp(Some(args(0)), scope, lhs.args(0), reporter)
               val (newRhs, _) = checkAssignExp(Some(args(1)), scope, assignStmt.rhs, reporter)
               val resOpt: Option[AST.ResolvedInfo] = Some(
-                AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Update)
+                AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Apply)
               )
               return assignStmt(
                 lhs = lhs(

@@ -2070,7 +2070,6 @@ object ResolvedInfo {
       'UnaryMinus
       'UnaryNot
       'UnaryComplement
-      'Update
     }
 
   }
