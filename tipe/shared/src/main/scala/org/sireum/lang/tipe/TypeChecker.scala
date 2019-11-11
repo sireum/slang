@@ -988,15 +988,18 @@ import TypeChecker._
             tOpt
           case _ => None()
         }
-        newTipeOpt match {
+        val typedOpt: Option[AST.Typed] = newTipeOpt match {
           case Some(newTipe) if newTipe.typedOpt.nonEmpty =>
             val tOpt = newTipe.typedOpt
             val t = tOpt.get
             paramTypes = paramTypes :+ t
             declId(p.idOpt, tOpt)
-          case _ => ok = F
+            tOpt
+          case _ =>
+            ok = F
+            None()
         }
-        newParams = newParams :+ p(tipeOpt = newTipeOpt)
+        newParams = newParams :+ p(tipeOpt = newTipeOpt, typedOpt = typedOpt)
       }
       if (!ok) {
         return (exp, None(), scope)
