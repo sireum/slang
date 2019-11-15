@@ -66,6 +66,9 @@ object TopUnit {
     halt(s"Invalid operation 'asAssignExp' on $this.")
   }
 
+  @pure def leaves: ISZ[Option[Stmt]] = {
+    return ISZ(Some(this))
+  }
 }
 
 object Stmt {
@@ -244,6 +247,9 @@ object Stmt {
       return this
     }
 
+    @pure override def leaves: ISZ[Option[Stmt]] = {
+      return body.leaves
+    }
   }
 
   @datatype class If(cond: Exp, thenBody: Body, elseBody: Body, @hidden attr: Attr) extends Stmt with AssignExp {
@@ -259,6 +265,10 @@ object Stmt {
     @pure override def asStmt: Stmt = {
       return this
     }
+
+    @pure override def leaves: ISZ[Option[Stmt]] = {
+      return thenBody.leaves ++ elseBody.leaves
+    }
   }
 
   @datatype class Match(exp: Exp, cases: ISZ[Case], @hidden attr: Attr) extends Stmt with AssignExp {
@@ -273,6 +283,10 @@ object Stmt {
 
     @pure override def asStmt: Stmt = {
       return this
+    }
+
+    @pure override def leaves: ISZ[Option[Stmt]] = {
+      return for (c <- cases; leaf <- c.body.leaves) yield leaf
     }
 
   }
@@ -1210,7 +1224,12 @@ object Exp {
 
 @datatype class Name(ids: ISZ[Id], @hidden attr: Attr)
 
-@datatype class Body(stmts: ISZ[Stmt], @hidden undecls: ISZ[ResolvedInfo.LocalVar])
+@datatype class Body(stmts: ISZ[Stmt], @hidden undecls: ISZ[ResolvedInfo.LocalVar]) {
+
+  @pure def leaves: ISZ[Option[Stmt]] = {
+    return if (stmts.isEmpty) ISZ(None()) else stmts(stmts.size - 1).leaves
+  }
+}
 
 @datatype class AdtParam(isHidden: B, isVal: B, id: Id, tipe: Type)
 
