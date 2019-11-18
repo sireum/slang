@@ -43,4 +43,3 @@ to run it under Node.js after the above
   set NODEJS_MAX_HEAP=4096
   bin\build.cmd test-js
   ```
-
