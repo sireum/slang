@@ -107,8 +107,8 @@ object SlangParser {
   val quantSymbols: Set[String] = Set(
     "∀",
     "All",
-    "Some",
-    "∃"
+    "∃",
+    "Exists"
   )
 
   def scalaDialect(isWorksheet: Boolean): Dialect =
