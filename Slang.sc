@@ -67,7 +67,7 @@ object Module {
 
     final override def description: String = "Slang AST"
 
-    final override def artifactName = "ast"
+    final override def artifactName = s"$subUrl-ast"
 
     final override def ivyDeps =
       if (isSourceDep) Agg.empty
@@ -83,7 +83,7 @@ object Module {
 
     final override def description: String = "Slang Parser"
 
-    final override def artifactName = "parser"
+    final override def artifactName = s"$subUrl-parser"
 
     final override def ivyDeps = Agg(
       ivy"org.scalameta::scalameta::$scalaMetaVersion"
@@ -100,7 +100,7 @@ object Module {
 
     final override def description: String = "Slang Type Checker"
 
-    final override def artifactName = "tipe"
+    final override def artifactName = s"$subUrl-tipe"
 
     final override def ivyDeps = Agg.empty
 
@@ -114,7 +114,7 @@ object Module {
 
     final override def description: String = "Slang Front-End"
 
-    final override def artifactName = "frontend"
+    final override def artifactName = s"$subUrl-frontend"
 
     final override def ivyDeps = Agg.empty
 
