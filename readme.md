@@ -1,6 +1,6 @@
 # The Sireum Programming Language (Slang)
 
-[![Actions Status](https://github.com/sireum/runtime/workflows/CI/badge.svg)](https://github.com/sireum/runtime/actions) [![shippable](https://api.shippable.com/projects/5a968ae33ec8c406005b1ccd/badge?branch=master)](https://app.shippable.com/github/sireum/slang/dashboard)
+[![Actions Status](https://github.com/sireum/slang/workflows/CI/badge.svg)](https://github.com/sireum/slang/actions) [![shippable](https://api.shippable.com/projects/5a968ae33ec8c406005b1ccd/badge?branch=master)](https://app.shippable.com/github/sireum/slang/dashboard)
 
 This repository holds the [Slang](https://github.com/sireum/kekinian) 
 front-end components (i.e., parser, symbol resolver, and type checker).
