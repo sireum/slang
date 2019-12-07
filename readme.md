@@ -1,8 +1,6 @@
 # The Sireum Programming Language (Slang)
 
-| CI Status | macOS | Linux | Windows | JitPack |
-| :----: | :---: | :---: | :---: | :---: |
-| master | [![travis](https://travis-ci.org/sireum/slang.svg?branch=master)](https://travis-ci.org/sireum/slang) | [![shippable](https://api.shippable.com/projects/5a968ae33ec8c406005b1ccd/badge?branch=master)](https://app.shippable.com/github/sireum/slang/dashboard) | [![appveyor](https://ci.appveyor.com/api/projects/status/gwgebh7ti9i2ql46?svg=true)](https://ci.appveyor.com/project/robby-phd/slang) |  [![](https://jitpack.io/v/org.sireum/slang.svg)](https://jitpack.io/#org.sireum/slang) |
+[![Actions Status](https://github.com/sireum/runtime/workflows/CI/badge.svg)](https://github.com/sireum/runtime/actions) [![shippable](https://api.shippable.com/projects/5a968ae33ec8c406005b1ccd/badge?branch=master)](https://app.shippable.com/github/sireum/slang/dashboard)
 
 This repository holds the [Slang](https://github.com/sireum/kekinian) 
 front-end components (i.e., parser, symbol resolver, and type checker).
