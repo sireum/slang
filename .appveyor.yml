@@ -11,4 +11,4 @@ cache:
   - bin\win\z3
 
 build_script:
-  - cmd: bin\build.cmd jitpack test
+  - cmd: bin\build.cmd test
