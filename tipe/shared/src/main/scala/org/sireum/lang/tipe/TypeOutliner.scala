@@ -811,10 +811,10 @@ object TypeOutliner {
       m2: Info.Method,
       substMap: HashMap[String, AST.Typed],
       posOpt: Option[Position]
-    ): B = {
-      val t1 = m1.typedOpt.get.deBruijn
-      val t2 = m2.typedOpt.get.subst(substMap).deBruijn
-      return t1 == t2
+    ): (B, AST.Typed, AST.Typed) = {
+      val t1 = m1.typedOpt.get.asInstanceOf[AST.Typed.Method].tpe.deBruijn
+      val t2 = m2.typedOpt.get.asInstanceOf[AST.Typed.Method].tpe.subst(substMap).deBruijn
+      return (t1 == t2, t1, t2)
     }
 
     def checkMethodRefinement(
@@ -822,10 +822,10 @@ object TypeOutliner {
       supM: Info.Method,
       substMap: HashMap[String, AST.Typed],
       posOpt: Option[Position]
-    ): B = {
+    ): (B, AST.Typed, AST.Typed) = {
       val t1 = m.typedOpt.get.deBruijn
       val t2 = supM.typedOpt.get.subst(substMap).deBruijn
-      return typeHierarchy.isRefinement(t1, t2)
+      return (typeHierarchy.isRefinement(t1, t2), t1, t2)
     }
 
     def inheritMethod(mInfo: Info.Method, posOpt: Option[Position], substMap: HashMap[String, AST.Typed]): Unit = {
@@ -860,41 +860,68 @@ object TypeOutliner {
           return
         case _ =>
       }
+      def inherit(): Unit = {
+        if (substMap.isEmpty) {
+          methods = methods + id ~>
+            (if (mInfo.ast.bodyOpt.nonEmpty) mInfo(ast = mInfo.ast(bodyOpt = None())) else mInfo)
+        } else {
+          var m = pm
+          var params = ISZ[AST.Param]()
+          for (param <- m.sig.params) {
+            params = params :+ param(tipe = param.tipe.typed(param.tipe.typedOpt.get.subst(substMap)))
+          }
+          m = m(
+            bodyOpt = None(),
+            sig = m.sig(
+              params = params,
+              returnType = m.sig.returnType.typed(m.sig.returnType.typedOpt.get.subst(substMap))
+            )
+          )
+          methods = methods + id ~> mInfo(ast = m(attr = m.attr(typedOpt = Some(mInfo.typedOpt.get.subst(substMap)))))
+        }
+      }
       methods.get(id) match {
         case Some(otherInfo) =>
           if (name != otherInfo.owner) {
-            val isEqual = checkMethodEquality(otherInfo, mInfo, substMap, posOpt)
-            if (isEqual && (otherInfo.owner != mInfo.owner || mInfo.methodType.collectTypeVars.nonEmpty)) {
-              if (otherInfo.owner != mInfo.owner) {
-                reporter.error(
-                  posOpt,
-                  TypeChecker.typeCheckerKind,
-                  st"Explicit declaration of $id in ${(name, ".")} is required because it is inherited from ${(otherInfo.owner, ".")} and ${(mInfo.owner, ".")}.".render
-                )
+            val (isEqual, t1, t2) = checkMethodEquality(otherInfo, mInfo, substMap, posOpt)
+            if (isEqual) {
+              if (otherInfo.ast.bodyOpt.nonEmpty && mInfo.ast.bodyOpt.nonEmpty) {
+                if (otherInfo.owner != mInfo.owner) {
+                  reporter.error(
+                    posOpt,
+                    TypeChecker.typeCheckerKind,
+                    st"Explicit declaration of $id in ${(name, ".")} is required because it is inherited from ${(otherInfo.owner, ".")} and ${(mInfo.owner, ".")}.".render
+                  )
+                } else if (mInfo.methodType.collectTypeVars.nonEmpty) {
+                  reporter.error(
+                    posOpt,
+                    TypeChecker.typeCheckerKind,
+                    st"Explicit declaration of $id in ${(name, ".")} is required because it is polymorphic and it is inherited from ${(otherInfo.owner, ".")} more than once.".render
+                  )
+                }
               } else {
-                reporter.error(
-                  posOpt,
-                  TypeChecker.typeCheckerKind,
-                  st"Explicit declaration of $id in ${(name, ".")} is required because it is polymorphic and it is inherited from ${(otherInfo.owner, ".")} more than once.".render
-                )
+                if (mInfo.ast.bodyOpt.nonEmpty) {
+                  inherit()
+                }
               }
             } else {
               reporter.error(
                 posOpt,
                 TypeChecker.typeCheckerKind,
-                st"Cannot inherit $id from ${(tname, ".")} because it has been previously inherited from ${(otherInfo.owner, ".")} with differing type.".render
+                st"Cannot inherit $id from ${(tname, ".")} because it has been previously inherited from ${(otherInfo.owner, ".")} with differing type ($t1 != $t2).".render
               )
             }
             return
           } else {
-            ok = checkMethodRefinement(otherInfo, mInfo, substMap, posOpt)
+            val (refined, t1, t2) = checkMethodRefinement(otherInfo, mInfo, substMap, posOpt)
+            ok = refined
             if (ok) {
               refinements = refinements + id ~> TypeInfo.Name(mInfo.owner)
             } else {
               reporter.error(
                 posOpt,
                 TypeChecker.typeCheckerKind,
-                st"Cannot inherit $id from ${(tname, ".")} because it is declared with incompatible type.".render
+                st"Cannot inherit $id from ${(tname, ".")} because it is declared with incompatible type ($t2 does not refine $t1).".render
               )
               return
             }
@@ -908,24 +935,7 @@ object TypeOutliner {
             }
           }
         case _ =>
-          if (substMap.isEmpty) {
-            methods = methods + id ~>
-              (if (mInfo.ast.bodyOpt.nonEmpty) mInfo(ast = mInfo.ast(bodyOpt = None())) else mInfo)
-          } else {
-            var m = pm
-            var params = ISZ[AST.Param]()
-            for (param <- m.sig.params) {
-              params = params :+ param(tipe = param.tipe.typed(param.tipe.typedOpt.get.subst(substMap)))
-            }
-            m = m(
-              bodyOpt = None(),
-              sig = m.sig(
-                params = params,
-                returnType = m.sig.returnType.typed(m.sig.returnType.typedOpt.get.subst(substMap))
-              )
-            )
-            methods = methods + id ~> mInfo(ast = m(attr = m.attr(typedOpt = Some(mInfo.typedOpt.get.subst(substMap)))))
-          }
+          inherit()
       }
     }
 
