@@ -17,5 +17,6 @@ target
 /bin/scala
 /lib
 /runtime
+/cache
 *.cmd.jar
 *.cmd.com

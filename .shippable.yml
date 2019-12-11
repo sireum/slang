@@ -12,7 +12,7 @@ build:
   ci:
     - >
       if [[ ! `git show -s HEAD | grep -F -q "[skip shippable]"` ]]; then
-        mkdir -p $HOME/.coursier &&
+        export COURSIER_CACHE=$SHIPPABLE_BUILD_DIR/cache/coursier &&
         git submodule update --init --recursive &&
         bin/build.cmd test;
       fi
@@ -23,5 +23,6 @@ build:
   cache: true
   cache_dir_list:
     - $SHIPPABLE_BUILD_DIR/bin/linux/java
-    - $SHIPPABLE_BUILD_DIR/bin/scala
     - $SHIPPABLE_BUILD_DIR/bin/linux/z3
+    - $SHIPPABLE_BUILD_DIR/bin/scala
+    - $SHIPPABLE_BUILD_DIR/cache/coursier
