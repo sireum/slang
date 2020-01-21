@@ -1,6 +1,6 @@
 // #Sireum
 /*
- Copyright (c) 2019, Robby, Kansas State University
+ Copyright (c) 2020, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -69,6 +69,49 @@ object TopUnit {
   @pure def leaves: ISZ[Option[Stmt]] = {
     return ISZ(Some(this))
   }
+}
+
+@sig trait HasModifies {
+
+  @pure def modifies: ISZ[Exp.Ident]
+
+  @pure def modifiedLocalVars: HashSMap[ResolvedInfo.LocalVar, (Typed, Position)] = {
+    @pure def filterLocalVar(exp: Exp.Ident): ISZ[(ResolvedInfo.LocalVar, (Typed, Position))] = {
+      exp.attr.resOpt match {
+        case Some(res: ResolvedInfo.LocalVar) => return ISZ((res, (exp.typedOpt.get, exp.posOpt.get)))
+        case _ => return ISZ()
+      }
+    }
+
+    return HashSMap.empty[ResolvedInfo.LocalVar, (Typed, Position)] ++
+      (for (mod <- modifies; res <- filterLocalVar(mod)) yield res)
+  }
+
+  @pure def modifiedObjectVars: HashSMap[ResolvedInfo.Var, (Typed, Position)] = {
+    @pure def filterObjectVar(exp: Exp.Ident): ISZ[(ResolvedInfo.Var, (Typed, Position))] = {
+      exp.attr.resOpt match {
+        case Some(res: ResolvedInfo.Var) if res.isInObject => return ISZ((res, (exp.typedOpt.get, exp.posOpt.get)))
+        case _ => return ISZ()
+      }
+    }
+
+    return HashSMap.empty[ResolvedInfo.Var, (Typed, Position)] ++
+      (for (mod <- modifies; res <- filterObjectVar(mod)) yield res)
+  }
+
+
+  @pure def modifiedRecordVars: HashSMap[ResolvedInfo.Var, (Typed, Position)] = {
+    @pure def filterRecordVar(exp: Exp.Ident): ISZ[(ResolvedInfo.Var, (Typed, Position))] = {
+      exp.attr.resOpt match {
+        case Some(res: ResolvedInfo.Var) if !res.isInObject => return ISZ((res, (exp.typedOpt.get, exp.posOpt.get)))
+        case _ => return ISZ()
+      }
+    }
+
+    return HashSMap.empty[ResolvedInfo.Var, (Typed, Position)] ++
+      (for (mod <- modifies; res <- filterRecordVar(mod)) yield res)
+  }
+
 }
 
 object Stmt {
@@ -291,49 +334,10 @@ object Stmt {
 
   }
 
-  @sig trait Loop {
+  @sig trait Loop extends HasModifies {
     @pure def context: ISZ[String]
 
     @pure def invariants: ISZ[Exp]
-
-    @pure def modifies: ISZ[Exp.Ident]
-
-    @pure def modifiedLocalVars: HashSMap[ResolvedInfo.LocalVar, (Typed, Position)] = {
-      @pure def filterLocalVar(exp: Exp.Ident): ISZ[(ResolvedInfo.LocalVar, (Typed, Position))] = {
-        exp.attr.resOpt match {
-          case Some(res: ResolvedInfo.LocalVar) => return ISZ((res, (exp.typedOpt.get, exp.posOpt.get)))
-          case _ => return ISZ()
-        }
-      }
-
-      return HashSMap.empty[ResolvedInfo.LocalVar, (Typed, Position)] ++
-        (for (mod <- modifies; res <- filterLocalVar(mod)) yield res)
-    }
-
-    def modifiedObjectVars: HashSMap[ResolvedInfo.Var, (Typed, Position)] = {
-      @pure def filterObjectVar(exp: Exp.Ident): ISZ[(ResolvedInfo.Var, (Typed, Position))] = {
-        exp.attr.resOpt match {
-          case Some(res: ResolvedInfo.Var) if res.isInObject => return ISZ((res, (exp.typedOpt.get, exp.posOpt.get)))
-          case _ => return ISZ()
-        }
-      }
-
-      return HashSMap.empty[ResolvedInfo.Var, (Typed, Position)] ++
-        (for (mod <- modifies; res <- filterObjectVar(mod)) yield res)
-    }
-
-
-    def modifiedRecordVars: HashSMap[ResolvedInfo.Var, (Typed, Position)] = {
-      @pure def filterRecordVar(exp: Exp.Ident): ISZ[(ResolvedInfo.Var, (Typed, Position))] = {
-        exp.attr.resOpt match {
-          case Some(res: ResolvedInfo.Var) if !res.isInObject => return ISZ((res, (exp.typedOpt.get, exp.posOpt.get)))
-          case _ => return ISZ()
-        }
-      }
-
-      return HashSMap.empty[ResolvedInfo.Var, (Typed, Position)] ++
-        (for (mod <- modifies; res <- filterRecordVar(mod)) yield res)
-    }
   }
 
   @datatype class While(val context: ISZ[String],
@@ -485,7 +489,7 @@ object Stmt {
 
 }
 
-@datatype trait MethodContract {
+@datatype trait MethodContract extends HasModifies {
   @pure def isEmpty: B
   @pure def nonEmpty: B = {
     return !isEmpty
@@ -496,7 +500,7 @@ object MethodContract {
 
   @datatype class Simple(reads: ISZ[Exp.Ident],
                          requires: ISZ[Exp],
-                         modifies: ISZ[Exp.Ident],
+                         val modifies: ISZ[Exp.Ident],
                          ensures: ISZ[Exp]) extends MethodContract {
     @pure override def isEmpty: B = {
       return reads.isEmpty && requires.isEmpty && modifies.isEmpty && ensures.isEmpty
@@ -504,7 +508,7 @@ object MethodContract {
   }
 
   @datatype class Cases(reads: ISZ[Exp.Ident],
-                        modifies: ISZ[Exp.Ident],
+                        val modifies: ISZ[Exp.Ident],
                         cases: ISZ[Case]) extends MethodContract {
     @pure override def isEmpty: B = {
       return reads.isEmpty && modifies.isEmpty && cases.isEmpty

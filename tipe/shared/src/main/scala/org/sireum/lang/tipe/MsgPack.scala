@@ -2,7 +2,7 @@
 // @formatter:off
 
 /*
- Copyright (c) 2019, Robby, Kansas State University
+ Copyright (c) 2020, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -684,6 +684,16 @@ object MsgPack {
         case o: org.sireum.lang.ast.Stmt.DeduceSequent => write_astStmtDeduceSequent(o)
         case o: org.sireum.lang.ast.Stmt.DeduceSteps => write_astStmtDeduceSteps(o)
         case o: org.sireum.lang.ast.Stmt.Havoc => write_astStmtHavoc(o)
+      }
+    }
+
+    def write_astHasModifies(o: org.sireum.lang.ast.HasModifies): Unit = {
+      o match {
+        case o: org.sireum.lang.ast.Stmt.While => write_astStmtWhile(o)
+        case o: org.sireum.lang.ast.Stmt.DoWhile => write_astStmtDoWhile(o)
+        case o: org.sireum.lang.ast.Stmt.For => write_astStmtFor(o)
+        case o: org.sireum.lang.ast.MethodContract.Simple => write_astMethodContractSimple(o)
+        case o: org.sireum.lang.ast.MethodContract.Cases => write_astMethodContractCases(o)
       }
     }
 
@@ -2431,6 +2441,22 @@ object MsgPack {
         case _ =>
           reader.error(i, s"$t is not a valid type of org.sireum.lang.ast.Stmt.")
           val r = read_astStmtHavocT(T)
+          return r
+      }
+    }
+
+    def read_astHasModifies(): org.sireum.lang.ast.HasModifies = {
+      val i = reader.curr
+      val t = reader.readZ()
+      t match {
+        case Constants._astStmtWhile => val r = read_astStmtWhileT(T); return r
+        case Constants._astStmtDoWhile => val r = read_astStmtDoWhileT(T); return r
+        case Constants._astStmtFor => val r = read_astStmtForT(T); return r
+        case Constants._astMethodContractSimple => val r = read_astMethodContractSimpleT(T); return r
+        case Constants._astMethodContractCases => val r = read_astMethodContractCasesT(T); return r
+        case _ =>
+          reader.error(i, s"$t is not a valid type of org.sireum.lang.ast.HasModifies.")
+          val r = read_astMethodContractCasesT(T)
           return r
       }
     }
@@ -5289,6 +5315,21 @@ object MsgPack {
       return r
     }
     val r = to(data, f_astStmt _)
+    return r
+  }
+
+  def from_astHasModifies(o: org.sireum.lang.ast.HasModifies, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astHasModifies(o)
+    return w.result
+  }
+
+  def to_astHasModifies(data: ISZ[U8]): Either[org.sireum.lang.ast.HasModifies, MessagePack.ErrorMsg] = {
+    def f_astHasModifies(reader: Reader): org.sireum.lang.ast.HasModifies = {
+      val r = reader.read_astHasModifies()
+      return r
+    }
+    val r = to(data, f_astHasModifies _)
     return r
   }
 

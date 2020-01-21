@@ -2,7 +2,7 @@
 // @formatter:off
 
 /*
- Copyright (c) 2019, Robby, Kansas State University
+ Copyright (c) 2020, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -399,6 +399,16 @@ object JSON {
         case o: org.sireum.lang.ast.Stmt.DeduceSequent => return print_astStmtDeduceSequent(o)
         case o: org.sireum.lang.ast.Stmt.DeduceSteps => return print_astStmtDeduceSteps(o)
         case o: org.sireum.lang.ast.Stmt.Havoc => return print_astStmtHavoc(o)
+      }
+    }
+
+    @pure def print_astHasModifies(o: org.sireum.lang.ast.HasModifies): ST = {
+      o match {
+        case o: org.sireum.lang.ast.Stmt.While => return print_astStmtWhile(o)
+        case o: org.sireum.lang.ast.Stmt.DoWhile => return print_astStmtDoWhile(o)
+        case o: org.sireum.lang.ast.Stmt.For => return print_astStmtFor(o)
+        case o: org.sireum.lang.ast.MethodContract.Simple => return print_astMethodContractSimple(o)
+        case o: org.sireum.lang.ast.MethodContract.Cases => return print_astMethodContractCases(o)
       }
     }
 
@@ -2751,6 +2761,18 @@ object JSON {
         case "org.sireum.lang.ast.Stmt.DeduceSteps" => val r = parse_astStmtDeduceStepsT(T); return r
         case "org.sireum.lang.ast.Stmt.Havoc" => val r = parse_astStmtHavocT(T); return r
         case _ => val r = parse_astStmtHavocT(T); return r
+      }
+    }
+
+    def parse_astHasModifies(): org.sireum.lang.ast.HasModifies = {
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Stmt.While", "org.sireum.lang.ast.Stmt.DoWhile", "org.sireum.lang.ast.Stmt.For", "org.sireum.lang.ast.MethodContract.Simple", "org.sireum.lang.ast.MethodContract.Cases"))
+      t.native match {
+        case "org.sireum.lang.ast.Stmt.While" => val r = parse_astStmtWhileT(T); return r
+        case "org.sireum.lang.ast.Stmt.DoWhile" => val r = parse_astStmtDoWhileT(T); return r
+        case "org.sireum.lang.ast.Stmt.For" => val r = parse_astStmtForT(T); return r
+        case "org.sireum.lang.ast.MethodContract.Simple" => val r = parse_astMethodContractSimpleT(T); return r
+        case "org.sireum.lang.ast.MethodContract.Cases" => val r = parse_astMethodContractCasesT(T); return r
+        case _ => val r = parse_astMethodContractCasesT(T); return r
       }
     }
 
@@ -6532,6 +6554,24 @@ object JSON {
       return r
     }
     val r = to(s, f_astStmt _)
+    return r
+  }
+
+  def from_astHasModifies(o: org.sireum.lang.ast.HasModifies, isCompact: B): String = {
+    val st = Printer.print_astHasModifies(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astHasModifies(s: String): Either[org.sireum.lang.ast.HasModifies, Json.ErrorMsg] = {
+    def f_astHasModifies(parser: Parser): org.sireum.lang.ast.HasModifies = {
+      val r = parser.parse_astHasModifies()
+      return r
+    }
+    val r = to(s, f_astHasModifies _)
     return r
   }
 

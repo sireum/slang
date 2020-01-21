@@ -2,7 +2,7 @@
 // @formatter:off
 
 /*
- Copyright (c) 2019, Robby, Kansas State University
+ Copyright (c) 2020, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -736,6 +736,46 @@ import MTransformer._
          case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
          case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
          case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
+        }
+        return r
+    }
+  }
+
+  def preHasModifies(o: HasModifies): PreResult[HasModifies] = {
+    o match {
+      case o: Stmt.While =>
+        val r: PreResult[HasModifies] = preStmtWhile(o) match {
+         case PreResult(continu, MSome(r: HasModifies)) => PreResult(continu, MSome[HasModifies](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type HasModifies")
+         case PreResult(continu, _) => PreResult(continu, MNone[HasModifies]())
+        }
+        return r
+      case o: Stmt.DoWhile =>
+        val r: PreResult[HasModifies] = preStmtDoWhile(o) match {
+         case PreResult(continu, MSome(r: HasModifies)) => PreResult(continu, MSome[HasModifies](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type HasModifies")
+         case PreResult(continu, _) => PreResult(continu, MNone[HasModifies]())
+        }
+        return r
+      case o: Stmt.For =>
+        val r: PreResult[HasModifies] = preStmtFor(o) match {
+         case PreResult(continu, MSome(r: HasModifies)) => PreResult(continu, MSome[HasModifies](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type HasModifies")
+         case PreResult(continu, _) => PreResult(continu, MNone[HasModifies]())
+        }
+        return r
+      case o: MethodContract.Simple =>
+        val r: PreResult[HasModifies] = preMethodContractSimple(o) match {
+         case PreResult(continu, MSome(r: HasModifies)) => PreResult(continu, MSome[HasModifies](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type HasModifies")
+         case PreResult(continu, _) => PreResult(continu, MNone[HasModifies]())
+        }
+        return r
+      case o: MethodContract.Cases =>
+        val r: PreResult[HasModifies] = preMethodContractCases(o) match {
+         case PreResult(continu, MSome(r: HasModifies)) => PreResult(continu, MSome[HasModifies](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type HasModifies")
+         case PreResult(continu, _) => PreResult(continu, MNone[HasModifies]())
         }
         return r
     }
@@ -1764,6 +1804,46 @@ import MTransformer._
          case MSome(result: Stmt) => MSome[Stmt](result)
          case MSome(_) => halt("Can only produce object of type Stmt")
          case _ => MNone[Stmt]()
+        }
+        return r
+    }
+  }
+
+  def postHasModifies(o: HasModifies): MOption[HasModifies] = {
+    o match {
+      case o: Stmt.While =>
+        val r: MOption[HasModifies] = postStmtWhile(o) match {
+         case MSome(result: HasModifies) => MSome[HasModifies](result)
+         case MSome(_) => halt("Can only produce object of type HasModifies")
+         case _ => MNone[HasModifies]()
+        }
+        return r
+      case o: Stmt.DoWhile =>
+        val r: MOption[HasModifies] = postStmtDoWhile(o) match {
+         case MSome(result: HasModifies) => MSome[HasModifies](result)
+         case MSome(_) => halt("Can only produce object of type HasModifies")
+         case _ => MNone[HasModifies]()
+        }
+        return r
+      case o: Stmt.For =>
+        val r: MOption[HasModifies] = postStmtFor(o) match {
+         case MSome(result: HasModifies) => MSome[HasModifies](result)
+         case MSome(_) => halt("Can only produce object of type HasModifies")
+         case _ => MNone[HasModifies]()
+        }
+        return r
+      case o: MethodContract.Simple =>
+        val r: MOption[HasModifies] = postMethodContractSimple(o) match {
+         case MSome(result: HasModifies) => MSome[HasModifies](result)
+         case MSome(_) => halt("Can only produce object of type HasModifies")
+         case _ => MNone[HasModifies]()
+        }
+        return r
+      case o: MethodContract.Cases =>
+        val r: MOption[HasModifies] = postMethodContractCases(o) match {
+         case MSome(result: HasModifies) => MSome[HasModifies](result)
+         case MSome(_) => halt("Can only produce object of type HasModifies")
+         case _ => MNone[HasModifies]()
         }
         return r
     }
@@ -3008,6 +3088,78 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Stmt = r.getOrElse(o)
     val postR: MOption[Stmt] = postStmt(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformHasModifies(o: HasModifies): MOption[HasModifies] = {
+    val preR: PreResult[HasModifies] = preHasModifies(o)
+    val r: MOption[HasModifies] = if (preR.continu) {
+      val o2: HasModifies = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: MOption[HasModifies] = o2 match {
+        case o2: Stmt.While =>
+          val r0: MOption[Exp] = transformExp(o2.cond)
+          val r1: MOption[IS[Z, Exp]] = transformISZ(o2.invariants, transformExp _)
+          val r2: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.modifies, transformExpIdent _)
+          val r3: MOption[Body] = transformBody(o2.body)
+          val r4: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
+            MSome(o2(cond = r0.getOrElse(o2.cond), invariants = r1.getOrElse(o2.invariants), modifies = r2.getOrElse(o2.modifies), body = r3.getOrElse(o2.body), attr = r4.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Stmt.DoWhile =>
+          val r0: MOption[Exp] = transformExp(o2.cond)
+          val r1: MOption[IS[Z, Exp]] = transformISZ(o2.invariants, transformExp _)
+          val r2: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.modifies, transformExpIdent _)
+          val r3: MOption[Body] = transformBody(o2.body)
+          val r4: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
+            MSome(o2(cond = r0.getOrElse(o2.cond), invariants = r1.getOrElse(o2.invariants), modifies = r2.getOrElse(o2.modifies), body = r3.getOrElse(o2.body), attr = r4.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Stmt.For =>
+          val r0: MOption[IS[Z, EnumGen.For]] = transformISZ(o2.enumGens, transformEnumGenFor _)
+          val r1: MOption[IS[Z, Exp]] = transformISZ(o2.invariants, transformExp _)
+          val r2: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.modifies, transformExpIdent _)
+          val r3: MOption[Body] = transformBody(o2.body)
+          val r4: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
+            MSome(o2(enumGens = r0.getOrElse(o2.enumGens), invariants = r1.getOrElse(o2.invariants), modifies = r2.getOrElse(o2.modifies), body = r3.getOrElse(o2.body), attr = r4.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: MethodContract.Simple =>
+          val r0: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.reads, transformExpIdent _)
+          val r1: MOption[IS[Z, Exp]] = transformISZ(o2.requires, transformExp _)
+          val r2: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.modifies, transformExpIdent _)
+          val r3: MOption[IS[Z, Exp]] = transformISZ(o2.ensures, transformExp _)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+            MSome(o2(reads = r0.getOrElse(o2.reads), requires = r1.getOrElse(o2.requires), modifies = r2.getOrElse(o2.modifies), ensures = r3.getOrElse(o2.ensures)))
+          else
+            MNone()
+        case o2: MethodContract.Cases =>
+          val r0: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.reads, transformExpIdent _)
+          val r1: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.modifies, transformExpIdent _)
+          val r2: MOption[IS[Z, MethodContract.Case]] = transformISZ(o2.cases, transformMethodContractCase _)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(reads = r0.getOrElse(o2.reads), modifies = r1.getOrElse(o2.modifies), cases = r2.getOrElse(o2.cases)))
+          else
+            MNone()
+      }
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: HasModifies = r.getOrElse(o)
+    val postR: MOption[HasModifies] = postHasModifies(o2)
     if (postR.nonEmpty) {
       return postR
     } else if (hasChanged) {
