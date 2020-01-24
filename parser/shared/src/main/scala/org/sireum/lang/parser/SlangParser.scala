@@ -3245,13 +3245,6 @@ class SlangParser(
         val ending: String = idv.substring(i + 1)
         if (disallowedMethodIdEndings.contains(ending)) {
           err()
-        } else {
-          try {
-            BigInt(ending.value)
-            err()
-          } catch {
-            case _: Throwable =>
-          }
         }
       }
     }
