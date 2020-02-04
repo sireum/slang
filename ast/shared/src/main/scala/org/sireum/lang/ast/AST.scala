@@ -211,6 +211,7 @@ object Stmt {
                        bitWidth: Z,
                        min: Z,
                        max: Z,
+                       isIndex: B,
                        index: Z,
                        @hidden attr: Attr) extends Stmt {
 

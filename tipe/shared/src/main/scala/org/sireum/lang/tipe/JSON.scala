@@ -540,6 +540,7 @@ object JSON {
         ("bitWidth", printZ(o.bitWidth)),
         ("min", printZ(o.min)),
         ("max", printZ(o.max)),
+        ("isIndex", printB(o.isIndex)),
         ("index", printZ(o.index)),
         ("attr", print_astAttr(o.attr))
       ))
@@ -3076,13 +3077,16 @@ object JSON {
       parser.parseObjectKey("max")
       val max = parser.parseZ()
       parser.parseObjectNext()
+      parser.parseObjectKey("isIndex")
+      val isIndex = parser.parseB()
+      parser.parseObjectNext()
       parser.parseObjectKey("index")
       val index = parser.parseZ()
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.SubZ(id, isSigned, isBitVector, isWrapped, hasMin, hasMax, bitWidth, min, max, index, attr)
+      return org.sireum.lang.ast.Stmt.SubZ(id, isSigned, isBitVector, isWrapped, hasMin, hasMax, bitWidth, min, max, isIndex, index, attr)
     }
 
     def parse_astStmtObject(): org.sireum.lang.ast.Stmt.Object = {

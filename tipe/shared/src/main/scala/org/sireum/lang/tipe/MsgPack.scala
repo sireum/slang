@@ -800,6 +800,7 @@ object MsgPack {
       writer.writeZ(o.bitWidth)
       writer.writeZ(o.min)
       writer.writeZ(o.max)
+      writer.writeB(o.isIndex)
       writer.writeZ(o.index)
       write_astAttr(o.attr)
     }
@@ -2673,9 +2674,10 @@ object MsgPack {
       val bitWidth = reader.readZ()
       val min = reader.readZ()
       val max = reader.readZ()
+      val isIndex = reader.readB()
       val index = reader.readZ()
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.SubZ(id, isSigned, isBitVector, isWrapped, hasMin, hasMax, bitWidth, min, max, index, attr)
+      return org.sireum.lang.ast.Stmt.SubZ(id, isSigned, isBitVector, isWrapped, hasMin, hasMax, bitWidth, min, max, isIndex, index, attr)
     }
 
     def read_astStmtObject(): org.sireum.lang.ast.Stmt.Object = {

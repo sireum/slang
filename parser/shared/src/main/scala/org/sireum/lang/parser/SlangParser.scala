@@ -1149,6 +1149,7 @@ class SlangParser(
       bitWidth,
       min,
       max,
+      index,
       if (index) min else 0,
       attr(stat.pos)
     )
@@ -1263,6 +1264,7 @@ class SlangParser(
       width,
       min,
       max,
+      index,
       if (index) min else 0,
       attr(stat.pos)
     )
