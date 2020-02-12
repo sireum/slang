@@ -3797,7 +3797,11 @@ import TypeChecker._
       }
       val (rhsOpt, tOpt): (Option[AST.AssignExp], Option[AST.Typed]) = varStmt.initOpt match {
         case Some(init) =>
-          val (rhs, to) = checkAssignExp(expectedOpt, scope, init, reporter)
+          var tc = this
+          if (varStmt.isSpec) {
+            tc = tc(mode = ModeContext.Spec)
+          }
+          val (rhs, to) = tc.checkAssignExp(expectedOpt, scope, init, reporter)
           (Some(rhs), to)
         case _ => (None(), expectedOpt)
       }
@@ -3828,7 +3832,11 @@ import TypeChecker._
           }
         case _ => None()
       }
-      val (newInit, initTypeOpt) = checkAssignExp(expectedOpt, scope, vpStmt.init, reporter)
+      var tc = this
+      if (vpStmt.isSpec) {
+        tc = tc(mode = ModeContext.Spec)
+      }
+      val (newInit, initTypeOpt) = tc.checkAssignExp(expectedOpt, scope, vpStmt.init, reporter)
       initTypeOpt match {
         case Some(initType) =>
           val expected: AST.Typed = if (expectedOpt.nonEmpty) expectedOpt.get else initType

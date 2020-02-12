@@ -599,10 +599,10 @@ class SlangParser(
     } else if (patsnel.size != 1) {
       hasError = true
       errorInSlang(stat.pos, "Cannot define multiple vals in a single statement")
-    } else if (isDollarExpr && !(hasSpec || enclosing == Enclosing.ExtObject)) {
+    } else if (isDollarExpr && !((hasSpec && !isLocal) || enclosing == Enclosing.ExtObject)) {
       hasError = true
-      error(stat.pos, "'$' is only allowed in a Slang @ext object or @spec val/var expression.")
-    } else if (hasSpec && !isLocal && (!isDollar(expr) || !patsnel.head.isInstanceOf[Pat.Var] || tpeopt.isEmpty)) {
+      error(stat.pos, "'$' is only allowed in a Slang @ext object or @spec val/var field expression.")
+    } else if (hasSpec && !isLocal && (!isDollarExpr || !patsnel.head.isInstanceOf[Pat.Var] || tpeopt.isEmpty)) {
       hasError = true
       errorInSlang(stat.pos, "@spec val field declarations should have the form: '@spec val〈ID〉:〈type〉= $'")
     }
@@ -701,9 +701,9 @@ class SlangParser(
     } else if (patsnel.size != 1) {
       hasError = true
       errorInSlang(stat.pos, "Cannot define multiple vars in a single statement")
-    } else if (isDollarExpr && !(hasSpec || enclosing == Enclosing.ExtObject)) {
+    } else if (isDollarExpr && !((hasSpec && !isLocal) || enclosing == Enclosing.ExtObject)) {
       hasError = true
-      error(stat.pos, "'$' is only allowed in a Slang @ext object or @spec val/var expression.")
+      error(stat.pos, "'$' is only allowed in a Slang @ext object or @spec val/var field expression.")
     } else if (hasSpec && !isLocal && (!isDollarExpr || !patsnel.head.isInstanceOf[Pat.Var] || tpeopt.isEmpty)) {
       hasError = true
       errorInSlang(stat.pos, "Non-local @spec val declarations should have the form: '@spec var〈ID〉:〈type〉= $'")

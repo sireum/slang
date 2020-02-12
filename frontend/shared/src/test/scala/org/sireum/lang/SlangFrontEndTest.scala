@@ -174,9 +174,9 @@ class SlangFrontEndTest extends TestSuite {
 
         * - passing("var x: Z = 4", isWorksheet = true)
 
-        * - passing("@spec val x: Z = $", isWorksheet = true)
+        * - passing("object Foo { @spec val x: Z = $ }", isWorksheet = true)
 
-        * - passing("@spec var x: Z = $", isWorksheet = true)
+        * - passing("object Foo { @spec var x: Z = $ }", isWorksheet = true)
 
         * - passing("@ext object Foo { var x: Z = 4 }")
 
