@@ -171,7 +171,7 @@ object FrontEnd {
 
     val typeChecker = TypeChecker(th4, ISZ(), TypeChecker.ModeContext.Code)
     val scope = Scope.Local(HashMap.empty, HashMap.empty, None(), None(), Some(Scope.Global(ISZ(), ISZ(), ISZ())))
-    val (newScope, newBody) = typeChecker.checkBody(None(), scope, program.body, reporter)
+    val (newScope, newBody) = typeChecker.checkBody(T, None(), scope, program.body, reporter)
 
     nameMap = typeChecker.nameMap
 
