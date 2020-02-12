@@ -2141,7 +2141,7 @@ object ResolvedInfo {
 
   }
 
-  @datatype class LocalVar(context: ISZ[String], scope: ResolvedInfo.LocalVar.Scope.Type, isVal: B, id: String)
+  @datatype class LocalVar(context: ISZ[String], scope: ResolvedInfo.LocalVar.Scope.Type, isSpec: B, isVal: B, id: String)
     extends ResolvedInfo
 
   @datatype class Fact(name: ISZ[String]) extends ResolvedInfo

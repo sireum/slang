@@ -1808,6 +1808,7 @@ object MsgPack {
       writer.writeZ(Constants._astResolvedInfoLocalVar)
       writer.writeISZ(o.context, writer.writeString _)
       write_astResolvedInfoLocalVarScopeType(o.scope)
+      writer.writeB(o.isSpec)
       writer.writeB(o.isVal)
       writer.writeString(o.id)
     }
@@ -4697,9 +4698,10 @@ object MsgPack {
       }
       val context = reader.readISZ(reader.readString _)
       val scope = read_astResolvedInfoLocalVarScopeType()
+      val isSpec = reader.readB()
       val isVal = reader.readB()
       val id = reader.readString()
-      return org.sireum.lang.ast.ResolvedInfo.LocalVar(context, scope, isVal, id)
+      return org.sireum.lang.ast.ResolvedInfo.LocalVar(context, scope, isSpec, isVal, id)
     }
 
     def read_astResolvedInfoFact(): org.sireum.lang.ast.ResolvedInfo.Fact = {
