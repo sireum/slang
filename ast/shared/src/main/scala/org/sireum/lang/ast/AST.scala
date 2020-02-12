@@ -138,7 +138,7 @@ object Stmt {
 
   }
 
-  @datatype class Var(isVal: B, id: Id, tipeOpt: Option[Type], initOpt: Option[AssignExp], @hidden attr: ResolvedAttr)
+  @datatype class Var(isSpec: B, isVal: B, id: Id, tipeOpt: Option[Type], initOpt: Option[AssignExp], @hidden attr: ResolvedAttr)
     extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
@@ -147,7 +147,7 @@ object Stmt {
 
   }
 
-  @datatype class VarPattern(isVal: B, pattern: Pattern, tipeOpt: Option[Type], init: AssignExp, @hidden attr: Attr)
+  @datatype class VarPattern(isSpec: B, isVal: B, pattern: Pattern, tipeOpt: Option[Type], init: AssignExp, @hidden attr: Attr)
     extends Stmt {
 
     @pure override def posOpt: Option[Position] = {

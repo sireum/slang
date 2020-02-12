@@ -419,7 +419,7 @@ import GlobalDeclarationResolver._
             name,
             F,
             sc,
-            AST.Stmt.Var(p.isVal, p.id, Some(p.tipe), None(),
+            AST.Stmt.Var(F, p.isVal, p.id, Some(p.tipe), None(),
               AST.ResolvedAttr(posOpt = p.id.attr.posOpt, resOpt = paramResInfoOpt, typedOpt = None()))
           )
         }

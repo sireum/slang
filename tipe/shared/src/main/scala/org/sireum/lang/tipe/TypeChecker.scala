@@ -3305,6 +3305,7 @@ import TypeChecker._
   }
 
   def checkPattern(
+    isSpec: B,
     unrefinedIdOpt: Option[AST.Id],
     expected: AST.Typed,
     sc: Scope.Local,
@@ -3348,7 +3349,7 @@ import TypeChecker._
                 F,
                 id,
                 tOpt,
-                Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T, key))
+                Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, isSpec, T, key))
               )
             )
           }
@@ -3738,7 +3739,7 @@ import TypeChecker._
       case _ => None()
     }
     for (c <- stmt.cases) {
-      val (newScopeOpt, newPattern) = checkPattern(unrefinedIdOpt, expType, scope, c.pattern, reporter)
+      val (newScopeOpt, newPattern) = checkPattern(F, unrefinedIdOpt, expType, scope, c.pattern, reporter)
       newScopeOpt match {
         case Some(newScope) =>
           val newCondOpt: Option[AST.Exp] = c.condOpt match {
@@ -3776,7 +3777,8 @@ import TypeChecker._
         case Some(_: Info.LocalVar) =>
           err()
           return (None(), r)
-        case _ => Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, F, varStmt.isVal, key))
+        case _ => Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, varStmt.isSpec,
+          varStmt.isVal, key))
       }
       val expectedOpt: Option[AST.Typed] = varStmt.tipeOpt match {
         case Some(tipe) =>
@@ -3793,8 +3795,12 @@ import TypeChecker._
           }
         case _ => None()
       }
-      val (rhs, tOpt) =
-        checkAssignExp(expectedOpt, scope, varStmt.initOpt.get, reporter)
+      val (rhsOpt, tOpt): (Option[AST.AssignExp], Option[AST.Typed]) = varStmt.initOpt match {
+        case Some(init) =>
+          val (rhs, to) = checkAssignExp(expectedOpt, scope, init, reporter)
+          (Some(rhs), to)
+        case _ => (None(), expectedOpt)
+      }
       tOpt match {
         case Some(_) =>
           val typedOpt: Option[AST.Typed] = expectedOpt match {
@@ -3804,57 +3810,7 @@ import TypeChecker._
           val newScope = scope(
             nameMap = scope.nameMap + key ~> Info.LocalVar(name, varStmt.isVal, r.id, typedOpt, resOpt)
           )
-          val newStmt = r(initOpt = Some(rhs), attr = r.attr(typedOpt = typedOpt, resOpt = resOpt))
-          return (Some(newScope), newStmt)
-        case _ =>
-          return (None(), r)
-      }
-    }
-
-    def checkSpecVar(varStmt: AST.Stmt.SpecVar): (Option[Scope.Local], AST.Stmt) = {
-      val key = varStmt.id.value
-
-      def sverr(): Unit = {
-        reporter.error(
-          varStmt.id.attr.posOpt,
-          typeCheckerKind,
-          s"Cannot declare '$key' because the identifier has already been previously declared."
-        )
-      }
-
-      val name = context :+ varStmt.id.value
-      var r = varStmt
-      val resOpt: Option[AST.ResolvedInfo] = scope.resolveName(typeHierarchy.nameMap, ISZ(key)) match {
-        case Some(info: Info.Var) => info.resOpt
-        case Some(_: Info.LocalVar) =>
-          sverr()
-          return (None(), r)
-        case _ => Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, T, varStmt.isVal, key))
-      }
-      val tipe = varStmt.tipe
-      val expectedOpt: Option[AST.Typed] = tipe.typedOpt match {
-        case tOpt @ Some(_) => tOpt
-        case _ =>
-          val newTipeOpt = typeHierarchy.typed(scope, tipe, reporter)
-          newTipeOpt match {
-            case Some(newTipe) if newTipe.typedOpt.nonEmpty =>
-              r = r(tipe = newTipe)
-              newTipe.typedOpt
-            case _ => return (None(), r)
-          }
-      }
-      val tOpt = expectedOpt // checkAssignExp(expectedOpt, scope, varStmt.initOpt.get, reporter)
-      tOpt match {
-        case Some(_) =>
-          val typedOpt: Option[AST.Typed] = expectedOpt match {
-            case Some(_) => expectedOpt
-            case _ => tOpt
-          }
-          val newScope = scope(
-            nameMap = scope.nameMap + key ~> Info.LocalVar(name, varStmt.isVal, r.id, typedOpt, resOpt)
-          )
-          //val newStmt = r(initOpt = Some(rhs), attr = r.attr(typedOpt = typedOpt, resOpt = resOpt))
-          val newStmt = r(attr = r.attr(typedOpt = typedOpt, resOpt = resOpt))
+          val newStmt = r(initOpt = rhsOpt, attr = r.attr(typedOpt = typedOpt, resOpt = resOpt))
           return (Some(newScope), newStmt)
         case _ =>
           return (None(), r)
@@ -3876,7 +3832,7 @@ import TypeChecker._
       initTypeOpt match {
         case Some(initType) =>
           val expected: AST.Typed = if (expectedOpt.nonEmpty) expectedOpt.get else initType
-          val (scopeOpt, newPattern) = checkPattern(None(), expected, scope, vpStmt.pattern, reporter)
+          val (scopeOpt, newPattern) = checkPattern(vpStmt.isSpec, None(), expected, scope, vpStmt.pattern, reporter)
           return (scopeOpt, vpStmt(pattern = newPattern, tipeOpt = newTipeOpt, init = newInit))
         case _ =>
           if (expectedOpt.isEmpty) {
@@ -4162,7 +4118,7 @@ import TypeChecker._
 
       case stmt: AST.Stmt.SpecMethod => return (Some(scope), stmt)
 
-      case stmt: AST.Stmt.SpecVar => return checkSpecVar(stmt)
+      case stmt: AST.Stmt.SpecVar => return (Some(scope), stmt)
 
       case stmt: AST.Stmt.SubZ => return (Some(scope), stmt)
 
@@ -4302,7 +4258,7 @@ import TypeChecker._
             }
             var newCases = ISZ[AST.Proof.Step.StructInduction.MatchCase]()
             for (cas <- step.cases) {
-              val (scOpt, newPattern) = checkPattern(unrefinedIdOpt, t, scope, cas.pattern, reporter)
+              val (scOpt, newPattern) = checkPattern(T, unrefinedIdOpt, t, scope, cas.pattern, reporter)
               scOpt match {
                 case Some(sc) =>
                   val newHypoOpt: Option[AST.Proof.Step.Assume] = cas.hypoOpt match {

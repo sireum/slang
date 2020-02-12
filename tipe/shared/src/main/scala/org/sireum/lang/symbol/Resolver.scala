@@ -70,7 +70,7 @@ object Resolver {
       AST.Typed.sireumName,
       T,
       scope,
-      AST.Stmt.Var(T, id("T"), Some(tname("B", ISZ())), Some(dollarAssignExp),
+      AST.Stmt.Var(F, T, id("T"), Some(tname("B", ISZ())), Some(dollarAssignExp),
         AST.ResolvedAttr(None[Position](),
           Some[AST.ResolvedInfo](AST.ResolvedInfo.Var(T, F, T, AST.Typed.sireumName, "T")), AST.Typed.bOpt)))
 
@@ -79,7 +79,7 @@ object Resolver {
       AST.Typed.sireumName,
       T,
       scope,
-      AST.Stmt.Var(T, id("F"), Some(tname("B", ISZ())), Some(dollarAssignExp),
+      AST.Stmt.Var(F, T, id("F"), Some(tname("B", ISZ())), Some(dollarAssignExp),
         AST.ResolvedAttr(None[Position](),
           Some[AST.ResolvedInfo](AST.ResolvedInfo.Var(T, F, T, AST.Typed.sireumName, "F")), AST.Typed.bOpt)))
 

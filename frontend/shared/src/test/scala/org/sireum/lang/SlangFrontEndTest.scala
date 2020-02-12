@@ -292,17 +292,13 @@ class SlangFrontEndTest extends TestSuite {
 
         * - failing("@spec val x, y: Z = $", multiple, isWorksheet = true)
 
-        failing("@spec var x, y: Z = $", multiple, isWorksheet = true)
+        * - failing("@spec var x, y: Z = $", multiple, isWorksheet = true)
 
         val specForm = "should have the form: '@spec"
 
-        * - failing("@spec val x = 5", specForm, isWorksheet = true)
+        * - failing("object Foo { @spec val x: Z = 5 }", specForm, isWorksheet = true)
 
-        * - failing("@spec var x = 5", specForm, isWorksheet = true)
-
-        * - failing("@spec val x: Z = 5", specForm, isWorksheet = true)
-
-        * - failing("@spec var x: Z = 5", specForm, isWorksheet = true)
+        * - failing("object Foo { @spec var x: Z = 5 }", specForm, isWorksheet = true)
 
         * - failing("var x: Z = _", "Uninitialized", isWorksheet = true)
 

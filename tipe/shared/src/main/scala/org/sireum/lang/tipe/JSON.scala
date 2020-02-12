@@ -459,6 +459,7 @@ object JSON {
     @pure def print_astStmtVar(o: org.sireum.lang.ast.Stmt.Var): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Stmt.Var""""),
+        ("isSpec", printB(o.isSpec)),
         ("isVal", printB(o.isVal)),
         ("id", print_astId(o.id)),
         ("tipeOpt", printOption(F, o.tipeOpt, print_astType _)),
@@ -470,6 +471,7 @@ object JSON {
     @pure def print_astStmtVarPattern(o: org.sireum.lang.ast.Stmt.VarPattern): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Stmt.VarPattern""""),
+        ("isSpec", printB(o.isSpec)),
         ("isVal", printB(o.isVal)),
         ("pattern", print_astPattern(o.pattern)),
         ("tipeOpt", printOption(F, o.tipeOpt, print_astType _)),
@@ -2877,6 +2879,9 @@ object JSON {
       if (!typeParsed) {
         parser.parseObjectType("org.sireum.lang.ast.Stmt.Var")
       }
+      parser.parseObjectKey("isSpec")
+      val isSpec = parser.parseB()
+      parser.parseObjectNext()
       parser.parseObjectKey("isVal")
       val isVal = parser.parseB()
       parser.parseObjectNext()
@@ -2892,7 +2897,7 @@ object JSON {
       parser.parseObjectKey("attr")
       val attr = parse_astResolvedAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.Var(isVal, id, tipeOpt, initOpt, attr)
+      return org.sireum.lang.ast.Stmt.Var(isSpec, isVal, id, tipeOpt, initOpt, attr)
     }
 
     def parse_astStmtVarPattern(): org.sireum.lang.ast.Stmt.VarPattern = {
@@ -2904,6 +2909,9 @@ object JSON {
       if (!typeParsed) {
         parser.parseObjectType("org.sireum.lang.ast.Stmt.VarPattern")
       }
+      parser.parseObjectKey("isSpec")
+      val isSpec = parser.parseB()
+      parser.parseObjectNext()
       parser.parseObjectKey("isVal")
       val isVal = parser.parseB()
       parser.parseObjectNext()
@@ -2919,7 +2927,7 @@ object JSON {
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.VarPattern(isVal, pattern, tipeOpt, init, attr)
+      return org.sireum.lang.ast.Stmt.VarPattern(isSpec, isVal, pattern, tipeOpt, init, attr)
     }
 
     def parse_astStmtSpecVar(): org.sireum.lang.ast.Stmt.SpecVar = {

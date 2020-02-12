@@ -733,6 +733,7 @@ object MsgPack {
 
     def write_astStmtVar(o: org.sireum.lang.ast.Stmt.Var): Unit = {
       writer.writeZ(Constants._astStmtVar)
+      writer.writeB(o.isSpec)
       writer.writeB(o.isVal)
       write_astId(o.id)
       writer.writeOption(o.tipeOpt, write_astType _)
@@ -742,6 +743,7 @@ object MsgPack {
 
     def write_astStmtVarPattern(o: org.sireum.lang.ast.Stmt.VarPattern): Unit = {
       writer.writeZ(Constants._astStmtVarPattern)
+      writer.writeB(o.isSpec)
       writer.writeB(o.isVal)
       write_astPattern(o.pattern)
       writer.writeOption(o.tipeOpt, write_astType _)
@@ -2552,12 +2554,13 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astStmtVar)
       }
+      val isSpec = reader.readB()
       val isVal = reader.readB()
       val id = read_astId()
       val tipeOpt = reader.readOption(read_astType _)
       val initOpt = reader.readOption(read_astAssignExp _)
       val attr = read_astResolvedAttr()
-      return org.sireum.lang.ast.Stmt.Var(isVal, id, tipeOpt, initOpt, attr)
+      return org.sireum.lang.ast.Stmt.Var(isSpec, isVal, id, tipeOpt, initOpt, attr)
     }
 
     def read_astStmtVarPattern(): org.sireum.lang.ast.Stmt.VarPattern = {
@@ -2569,12 +2572,13 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astStmtVarPattern)
       }
+      val isSpec = reader.readB()
       val isVal = reader.readB()
       val pattern = read_astPattern()
       val tipeOpt = reader.readOption(read_astType _)
       val init = read_astAssignExp()
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.VarPattern(isVal, pattern, tipeOpt, init, attr)
+      return org.sireum.lang.ast.Stmt.VarPattern(isSpec, isVal, pattern, tipeOpt, init, attr)
     }
 
     def read_astStmtSpecVar(): org.sireum.lang.ast.Stmt.SpecVar = {

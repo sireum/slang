@@ -579,6 +579,12 @@ class SlangParser(
     val tpeopt = stat.decltpe
     val expr = stat.rhs
     val isDollarExpr = isDollar(expr)
+    val isLocal: B = enclosing match {
+      case Enclosing.Top => true
+      case Enclosing.Method => true
+      case Enclosing.Block => true
+      case _ => false
+    }
     if (tpeopt.isEmpty && !(enclosing match {
         case Enclosing.Top | Enclosing.Method | Enclosing.Block => true
         case _ => false
@@ -596,18 +602,19 @@ class SlangParser(
     } else if (isDollarExpr && !(hasSpec || enclosing == Enclosing.ExtObject)) {
       hasError = true
       error(stat.pos, "'$' is only allowed in a Slang @ext object or @spec val/var expression.")
-    } else if (hasSpec && (!isDollar(expr) || !patsnel.head.isInstanceOf[Pat.Var] || tpeopt.isEmpty)) {
+    } else if (hasSpec && !isLocal && (!isDollar(expr) || !patsnel.head.isInstanceOf[Pat.Var] || tpeopt.isEmpty)) {
       hasError = true
-      errorInSlang(stat.pos, "@spec val declarations should have the form: '@spec val〈ID〉:〈type〉= $'")
+      errorInSlang(stat.pos, "@spec val field declarations should have the form: '@spec val〈ID〉:〈type〉= $'")
     }
     if (hasError) rStmt
-    else if (hasSpec)
+    else if (hasSpec && !isLocal)
       AST.Stmt.SpecVar(isVal = true, cid(patsnel.head.asInstanceOf[Pat.Var]), translateType(tpeopt.get), resolvedAttr(stat.pos))
     else
       patsnel.head match {
         case x: Pat.Var =>
           checkReservedId(x.name.pos, x.name.value)
           val r = AST.Stmt.Var(
+            isSpec = hasSpec,
             isVal = true,
             cid(x),
             opt(tpeopt.map(translateType)),
@@ -632,7 +639,7 @@ class SlangParser(
             case _ => error(pattern.pos, s"Unallowable val pattern: '${pattern.syntax}'")
           }
           val exp = translateAssignExp(expr)
-          val r = AST.Stmt.VarPattern(isVal = true, pat, opt(tpeopt.map(translateType)), exp, attr(stat.pos))
+          val r = AST.Stmt.VarPattern(isSpec = hasSpec, isVal = true, pat, opt(tpeopt.map(translateType)), exp, attr(stat.pos))
           if (tpeopt.isEmpty) checkTyped(expr.pos, Some(r.init))
           r
       }
@@ -674,6 +681,12 @@ class SlangParser(
     val tpeopt = stat.decltpe
     val expropt = stat.rhs
     val isDollarExpr = expropt.exists(isDollar)
+    val isLocal: B = enclosing match {
+      case Enclosing.Top => true
+      case Enclosing.Method => true
+      case Enclosing.Block => true
+      case _ => false
+    }
     if (tpeopt.isEmpty && !(enclosing match {
         case Enclosing.Top | Enclosing.Method | Enclosing.Block => true
         case _ => false
@@ -691,15 +704,15 @@ class SlangParser(
     } else if (isDollarExpr && !(hasSpec || enclosing == Enclosing.ExtObject)) {
       hasError = true
       error(stat.pos, "'$' is only allowed in a Slang @ext object or @spec val/var expression.")
-    } else if (hasSpec && (!isDollarExpr || !patsnel.head.isInstanceOf[Pat.Var] || tpeopt.isEmpty)) {
+    } else if (hasSpec && !isLocal && (!isDollarExpr || !patsnel.head.isInstanceOf[Pat.Var] || tpeopt.isEmpty)) {
       hasError = true
-      errorInSlang(stat.pos, "@spec val declarations should have the form: '@spec var〈ID〉:〈type〉= $'")
+      errorInSlang(stat.pos, "Non-local @spec val declarations should have the form: '@spec var〈ID〉:〈type〉= $'")
     } else if (expropt.isEmpty) {
       hasError = true
       errorInSlang(stat.pos, "Uninitialized '_' var declarations are disallowed")
     }
     if (hasError) rStmt
-    else if (hasSpec)
+    else if (hasSpec && !isLocal)
       AST.Stmt
         .SpecVar(isVal = false, cid(patsnel.head.asInstanceOf[Pat.Var]), translateType(tpeopt.get), resolvedAttr(stat.pos))
     else
@@ -707,6 +720,7 @@ class SlangParser(
         case x: Pat.Var =>
           checkReservedId(x.name.pos, x.name.value)
           val r = AST.Stmt.Var(
+            isSpec = hasSpec,
             isVal = false,
             cid(x),
             opt(tpeopt.map(translateType)),
@@ -738,7 +752,7 @@ class SlangParser(
             case _ => error(pattern.pos, s"Unallowable var pattern: '${pattern.syntax}'")
           }
           val exp = expropt.map(translateAssignExp).getOrElse(AST.Stmt.Expr(rExp, typedAttr(pattern.pos)))
-          val r = AST.Stmt.VarPattern(isVal = false, pat, opt(tpeopt.map(translateType)), exp, attr(stat.pos))
+          val r = AST.Stmt.VarPattern(isSpec = hasSpec, isVal = false, pat, opt(tpeopt.map(translateType)), exp, attr(stat.pos))
           if (tpeopt.isEmpty) checkTyped(expropt.get.pos, Some(r.init))
           r
       }
