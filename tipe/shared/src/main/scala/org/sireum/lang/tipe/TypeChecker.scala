@@ -3873,6 +3873,9 @@ import TypeChecker._
             return assignStmt(rhs = newRhs)
           }
           def checkVarInfo(info: Info.Var): AST.Stmt = {
+            if (inSpec) {
+              reporter.error(lhs.posOpt, typeCheckerKind, s"Cannot assign to variable '${lhs.id.value}' in spec context.")
+            }
             if (info.ast.isVal) {
               reporter.error(lhs.posOpt, typeCheckerKind, s"Cannot assign to read-only variable '${lhs.id.value}'.")
             }
@@ -3880,6 +3883,9 @@ import TypeChecker._
             return r
           }
           def checkSpecVarInfo(info: Info.SpecVar): AST.Stmt = {
+            if (!inSpec) {
+              reporter.error(lhs.posOpt, typeCheckerKind, s"Cannot assign to variable '${lhs.id.value}' in non-spec context.")
+            }
             if (info.ast.isVal) {
               reporter.error(lhs.posOpt, typeCheckerKind, s"Cannot assign to read-only variable '${lhs.id.value}'.")
             }
@@ -3893,8 +3899,8 @@ import TypeChecker._
               }
               val r = checkAssignH(info.typedOpt, info.resOpt)
               return r
-            case Some(info: Info.Var) if !inSpec => return checkVarInfo(info)
-            case Some(info: Info.SpecVar) if inSpec => return checkSpecVarInfo(info)
+            case Some(info: Info.Var) => return checkVarInfo(info)
+            case Some(info: Info.SpecVar) => return checkSpecVarInfo(info)
             case Some(info) =>
               reporter.error(lhs.posOpt, typeCheckerKind, st"Cannot assign to '${(info.name, ".")}'.".render)
               val (newRhs, _) = checkAssignExp(None(), scope, assignStmt.rhs, reporter)
@@ -3906,6 +3912,10 @@ import TypeChecker._
                     case Some(info: TypeInfo.Adt) =>
                       info.vars.get(lhs.id.value) match {
                         case Some(varInfo) => val r = checkVarInfo(varInfo); return r
+                        case _ =>
+                      }
+                      info.specVars.get(lhs.id.value) match {
+                        case Some(varInfo) => val r = checkSpecVarInfo(varInfo); return r
                         case _ =>
                       }
                     case _ =>
