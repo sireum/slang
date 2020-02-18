@@ -32,6 +32,21 @@ import org.sireum.U64._
 
 object Util {
 
+  @record class TypeSubstitutor(substMap: HashMap[String, Typed]) extends MTransformer {
+    override def preTyped(o: Typed): MTransformer.PreResult[Typed] = {
+      o match {
+        case o: Typed.TypeVar =>
+          substMap.get(o.id) match {
+            case Some(t) => return MTransformer.PreResult(F, MSome(t))
+            case _ =>
+          }
+        case _ =>
+      }
+      val r = super.preTyped(o)
+      return r
+    }
+  }
+  
   @pure def ids2strings(ids: ISZ[Id]): ISZ[String] = {
     val r = MSZ.create[String](ids.size, "")
     for (i <- ids.indices) {
@@ -165,6 +180,30 @@ object Util {
       case Exp.BinaryOp.Gt => return T
       case Exp.BinaryOp.Ge => return T
       case _ => return F
+    }
+  }
+
+  @pure def substAssignExp(ast: AssignExp, substMap: HashMap[String, Typed]): AssignExp = {
+    if (substMap.nonEmpty) {
+      val astOpt = TypeSubstitutor(substMap).transformAssignExp(ast)
+      astOpt match {
+        case MSome(newAst) => return newAst
+        case _ => return ast
+      }
+    } else {
+      return ast
+    }
+  }
+
+  @pure def substExp(ast: Exp, substMap: HashMap[String, Typed]): Exp = {
+    if (substMap.nonEmpty) {
+      val astOpt = TypeSubstitutor(substMap).transformExp(ast)
+      astOpt match {
+        case MSome(newAst) => return newAst
+        case _ => return ast
+      }
+    } else {
+      return ast
     }
   }
 }
