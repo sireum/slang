@@ -495,11 +495,13 @@ object Stmt {
   @pure def nonEmpty: B = {
     return !isEmpty
   }
+  @pure def reads: ISZ[Exp.Ident]
+  @pure def modifies: ISZ[Exp.Ident]
 }
 
 object MethodContract {
 
-  @datatype class Simple(reads: ISZ[Exp.Ident],
+  @datatype class Simple(val reads: ISZ[Exp.Ident],
                          requires: ISZ[Exp],
                          val modifies: ISZ[Exp.Ident],
                          ensures: ISZ[Exp]) extends MethodContract {
@@ -508,7 +510,7 @@ object MethodContract {
     }
   }
 
-  @datatype class Cases(reads: ISZ[Exp.Ident],
+  @datatype class Cases(val reads: ISZ[Exp.Ident],
                         val modifies: ISZ[Exp.Ident],
                         cases: ISZ[Case]) extends MethodContract {
     @pure override def isEmpty: B = {
