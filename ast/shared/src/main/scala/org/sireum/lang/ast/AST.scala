@@ -2065,10 +2065,6 @@ object ResolvedInfo {
       'BinaryCondAnd
       'BinaryCondOr
       'BinaryCondImply
-      'BinaryAppend
-      'BinaryPrepend
-      'BinaryAppendAll
-      'BinaryRemoveAll
       'BinaryMapsTo
       'Cprint
       'Cprintln
