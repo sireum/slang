@@ -46,7 +46,36 @@ object Util {
       return r
     }
   }
-  
+
+  val symbolCharMap: HashMap[C, String] = HashMap ++ ISZ(
+    '+' ~> "__plus",
+    '-' ~> "__minus",
+    '*' ~> "__star",
+    '/' ~> "__slash",
+    '%' ~> "__percent",
+    '>' ~> "__gt",
+    '<' ~> "__lt",
+    '=' ~> "__eq",
+    '!' ~> "__bang",
+    '~' ~> "__tilde",
+    '@' ~> "__at",
+    '#' ~> "__pound",
+    '$' ~> "__dollar",
+    '^' ~> "__hat",
+    '(' ~> "__lparen",
+    ')' ~> "__rparen",
+    '{' ~> "__lbrace",
+    '}' ~> "__rbrace",
+    '[' ~> "__lbracket",
+    ']' ~> "__rbracket",
+    ':' ~> "__colon",
+    ';' ~> "__semi",
+    '.' ~> "__dot",
+    '?' ~> "__q",
+    '\\' ~> "__bslash",
+    ',' ~> "__comma",
+  )
+
   @pure def ids2strings(ids: ISZ[Id]): ISZ[String] = {
     val r = MSZ.create[String](ids.size, "")
     for (i <- ids.indices) {
@@ -204,6 +233,77 @@ object Util {
       }
     } else {
       return ast
+    }
+  }
+
+  @pure def stableTypeSig(t: Typed, width: Z): ST = {
+    val max: Z = if (0 < width && width <= 64) width else 64
+    val bytes = ops.ISZOps(crypto.SHA3.sum512(conversions.String.toU8is(t.string))).take(max)
+    var cs = ISZ[C]()
+    for (b <- bytes) {
+      val c = conversions.U32.toC(conversions.U8.toU32(b))
+      cs = cs :+ ops.COps.hex2c((c >>> '\u0004') & '\u000F')
+      cs = cs :+ ops.COps.hex2c(c & '\u000F')
+    }
+    return st"$cs"
+  }
+
+  @pure def stableTypeId(t: Typed, width: Z): (ST, B) = {
+    t match {
+      case t: Typed.Name => return if (t.args.isEmpty) (mangleName(t.ids), F) else (st"${mangleName(t.ids)}_${stableTypeSig(t, width)}", T)
+      case t: Typed.Tuple => return (st"Tuple${t.args.size}_${stableTypeSig(t, width)}", T)
+      case t: Typed.Fun => return (st"Fun${t.args.size}_${stableTypeSig(t, width)}", T)
+      case _ => halt(s"Infeasible: $t")
+    }
+  }
+
+  @pure def mangleName(ids: ISZ[String]): ST = {
+    val r: ST =
+      ids.size match {
+        case z"0" => st"top"
+        case z"1" => st"top_${ids(0)}"
+        case _ => st"${(Typed.short(ids).map(encodeId _), "_")}"
+      }
+    return r
+  }
+
+  @pure def encodeId(id: String): ST = {
+    id match {
+      case Exp.BinaryOp.Add => return st"_add"
+      case Exp.BinaryOp.Sub => return st"_sub"
+      case Exp.BinaryOp.Mul => return st"_mul"
+      case Exp.BinaryOp.Div => return st"_div"
+      case Exp.BinaryOp.Rem => return st"_rem"
+      case Exp.BinaryOp.Eq => return st"_eq"
+      case Exp.BinaryOp.Ne => return st"_ne"
+      case Exp.BinaryOp.Shl => return st"_lt"
+      case Exp.BinaryOp.Shr => return st"_le"
+      case Exp.BinaryOp.Ushr => return st"_gt"
+      case Exp.BinaryOp.Lt => return st"_ge"
+      case Exp.BinaryOp.Le => return st"_shl"
+      case Exp.BinaryOp.Gt => return st"_shr"
+      case Exp.BinaryOp.Ge => return st"_ushr"
+      case Exp.BinaryOp.And => return st"_and"
+      case Exp.BinaryOp.Or => return st"_or"
+      case Exp.BinaryOp.Xor => return st"_xor"
+      case Exp.BinaryOp.Append => return st"_append"
+      case Exp.BinaryOp.Prepend => return st"_prepend"
+      case Exp.BinaryOp.AppendAll => return st"_appendAll"
+      case Exp.BinaryOp.RemoveAll => return st"_removeAll"
+      case _ =>
+        val cis = conversions.String.toCis(id)
+        if (ops.ISZOps(cis).exists((c: C) => symbolCharMap.contains(c))) {
+          var r = ISZ[String]()
+          for (c <- cis) {
+            symbolCharMap.get(c) match {
+              case Some(s) => r = r :+ s
+              case _ => r = r :+ s"$c"
+            }
+          }
+          return st"$r"
+        } else {
+          return st"$id"
+        }
     }
   }
 }
