@@ -663,18 +663,18 @@ class SlangParser(
     enclosing match {
       case Enclosing.Top | Enclosing.Object | Enclosing.ExtObject | Enclosing.RecordClass | Enclosing.Method |
           Enclosing.Block =>
-      case Enclosing.Sig | Enclosing.MSig | Enclosing.DatatypeTrait | Enclosing.RecordTrait if hasSpec =>
+      case Enclosing.Sig | Enclosing.MSig | Enclosing.DatatypeTrait | Enclosing.RecordTrait | Enclosing.DatatypeClass if hasSpec =>
       case _ =>
         hasError = true
         if (isWorksheet)
           errorInSlang(
             stat.pos,
-            "Val declarations can only appear at the top-level, inside objects, classes, methods, or code blocks"
+            "Var declarations can only appear at the top-level, inside objects, classes, methods, or code blocks"
           )
         else
           errorInSlang(
             stat.pos,
-            "Val declarations can only appear inside objects, @record classes, methods, or code blocks"
+            "Var declarations can only appear inside objects, @record classes, methods, or code blocks"
           )
     }
     val patsnel = stat.pats
