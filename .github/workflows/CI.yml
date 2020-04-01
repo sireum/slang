@@ -11,30 +11,6 @@ jobs:
         uses: actions/checkout@v2-beta
       - name: Set env.workspace
         run: echo "::set-env name=workspace::$GITHUB_WORKSPACE"
-      - name: Cache Java
-        id: cache-java
-        uses: actions/cache@v1
-        with:
-          path: ${{ env.workspace }}/bin/linux/java
-          key: ${{ runner.os }}-java
-      - name: Cache Z3
-        id: cache-z3
-        uses: actions/cache@v1
-        with:
-          path: ${{ env.workspace }}/bin/linux/z3
-          key: ${{ runner.os }}-z3
-      - name: Cache Scala
-        id: cache-scala
-        uses: actions/cache@v1
-        with:
-          path: ${{ env.workspace }}/bin/scala
-          key: ${{ runner.os }}-scala
-      - name: Cache Coursier
-        id: cache-coursier
-        uses: actions/cache@v1
-        with:
-          path: ${{ env.workspace }}/cache/coursier
-          key: ${{ runner.os }}-coursier
       - name: Test
         run: |
           export COURSIER_CACHE=$GITHUB_WORKSPACE/cache/coursier
@@ -49,30 +25,6 @@ jobs:
         uses: actions/checkout@v2-beta
       - name: Set env.workspace
         run: echo "::set-env name=workspace::$GITHUB_WORKSPACE"
-      - name: Cache Java
-        id: cache-java
-        uses: actions/cache@v1
-        with:
-          path: ${{ env.workspace }}/bin/mac/java
-          key: ${{ runner.os }}-java
-      - name: Cache Z3
-        id: cache-z3
-        uses: actions/cache@v1
-        with:
-          path: ${{ env.workspace }}/bin/mac/z3
-          key: ${{ runner.os }}-z3
-      - name: Cache Scala
-        id: cache-scala
-        uses: actions/cache@v1
-        with:
-          path: ${{ env.workspace }}/bin/scala
-          key: ${{ runner.os }}-scala
-      - name: Cache Coursier
-        id: cache-coursier
-        uses: actions/cache@v1
-        with:
-          path: ${{ env.workspace }}/cache/coursier
-          key: ${{ runner.os }}-coursier
       - name: Test
         run: |
           export COURSIER_CACHE=$GITHUB_WORKSPACE/cache/coursier
@@ -87,30 +39,6 @@ jobs:
         uses: actions/checkout@v2-beta
       - name: Set env.workspace
         run: echo "::set-env name=workspace::$($env:GITHUB_WORKSPACE)"
-      - name: Cache Java
-        id: cache-java
-        uses: actions/cache@v1
-        with:
-          path: ${{ env.workspace }}\bin\win\java
-          key: ${{ runner.os }}-java
-      - name: Cache Z3
-        id: cache-z3
-        uses: actions/cache@v1
-        with:
-          path: ${{ env.workspace }}\bin\win\z3
-          key: ${{ runner.os }}-z3
-      - name: Cache Scala
-        id: cache-scala
-        uses: actions/cache@v1
-        with:
-          path: ${{ env.workspace }}\bin\scala
-          key: ${{ runner.os }}-scala
-      - name: Cache Coursier
-        id: cache-coursier
-        uses: actions/cache@v1
-        with:
-          path: ${{ env.workspace }}\cache\coursier
-          key: ${{ runner.os }}-coursier
       - name: Test
         shell: cmd
         run: |
