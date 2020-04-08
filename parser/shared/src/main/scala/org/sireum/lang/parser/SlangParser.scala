@@ -456,7 +456,7 @@ class SlangParser(
       case stat: Term.For => translateFor(enclosing, stat)
       case stat: Term.Return => translateReturn(enclosing, stat)
       case q"Contract(${_: Lit.String})" => translateSpecLabel(enclosing, stat)
-      case q"Contract { ..$_ }" => translateSpecBlock(enclosing, stat)
+      case q"Spec { ..$_ }" => translateSpecBlock(enclosing, stat)
       case q"Deduce(..$_)" => translateDeduce(enclosing, stat)
       case q"Contract(DataRefinement($_)(..$_)(..$_))" => translateDataRefinement(enclosing, stat)
       case q"Contract.Havoc(..$args)" => translateHavoc(enclosing, stat)
@@ -3020,7 +3020,7 @@ class SlangParser(
   }
 
   def translateSpecBlock(enclosing: Enclosing.Type, stat: Stat): AST.Stmt.SpecBlock = {
-    val Term.Apply(Term.Name("Contract"), List(b: Term.Block)) = stat
+    val Term.Apply(Term.Name("Spec"), List(b: Term.Block)) = stat
     AST.Stmt.SpecBlock(translateBlock(enclosing, b, isAssignExp = false))
   }
 
