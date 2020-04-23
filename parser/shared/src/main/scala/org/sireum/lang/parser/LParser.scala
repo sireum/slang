@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2017, Robby, Kansas State University
+ Copyright (c) 2020, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -77,7 +77,7 @@ object LParser {
   )
 
   def apply[T](text: String, reporter: Reporter)(f: (LParser, Reporter) => T): T = {
-    val input = Input.String(text.replaceAllLiterally("\r\n", "\n")) // WORKAROUND: scalameta crlf issues
+    val input = Input.String(text.replace("\r\n", "\n")) // WORKAROUND: scalameta crlf issues
     val dialect = SlangParser.scalaDialect(isWorksheet = false)
     val slangParser = new SlangParser(
       input = input,

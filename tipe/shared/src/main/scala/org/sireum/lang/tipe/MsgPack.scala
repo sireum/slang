@@ -166,27 +166,27 @@ object MsgPack {
 
     val _astSequent: Z = 32
 
-    val _astProof: Z = 33
+    val _astProofAst: Z = 33
 
-    val _astProofStepRegular: Z = 34
+    val _astProofAstStepRegular: Z = 34
 
-    val _astProofStepAssume: Z = 35
+    val _astProofAstStepAssume: Z = 35
 
-    val _astProofStepAssert: Z = 36
+    val _astProofAstStepAssert: Z = 36
 
-    val _astProofStepSubProof: Z = 37
+    val _astProofAstStepSubProof: Z = 37
 
-    val _astProofStepLet: Z = 38
+    val _astProofAstStepLet: Z = 38
 
-    val _astProofStepLetParam: Z = 39
+    val _astProofAstStepLetParam: Z = 39
 
-    val _astProofStepStructInduction: Z = 40
+    val _astProofAstStepStructInduction: Z = 40
 
-    val _astProofStepStructInductionMatchCase: Z = 41
+    val _astProofAstStepStructInductionMatchCase: Z = 41
 
-    val _astProofStepStructInductionMatchDefault: Z = 42
+    val _astProofAstStepStructInductionMatchDefault: Z = 42
 
-    val _astProofStepJustification: Z = 43
+    val _astProofAstStepJustification: Z = 43
 
     val _astCase: Z = 44
 
@@ -963,7 +963,7 @@ object MsgPack {
       writer.writeOption(o.descOpt, write_astExpLitString _)
       write_astExp(o.claim)
       writer.writeB(o.isFun)
-      write_astProof(o.proof)
+      write_astProofAst(o.proof)
       write_astResolvedAttr(o.attr)
     }
 
@@ -994,7 +994,7 @@ object MsgPack {
 
     def write_astStmtDeduceSteps(o: org.sireum.lang.ast.Stmt.DeduceSteps): Unit = {
       writer.writeZ(Constants._astStmtDeduceSteps)
-      writer.writeISZ(o.steps, write_astProofStep _)
+      writer.writeISZ(o.steps, write_astProofAstStep _)
       write_astAttr(o.attr)
     }
 
@@ -1037,90 +1037,90 @@ object MsgPack {
       writer.writeZ(Constants._astSequent)
       writer.writeISZ(o.premises, write_astExp _)
       write_astExp(o.conclusion)
-      writer.writeISZ(o.steps, write_astProofStep _)
+      writer.writeISZ(o.steps, write_astProofAstStep _)
       write_astAttr(o.attr)
     }
 
-    def write_astProof(o: org.sireum.lang.ast.Proof): Unit = {
-      writer.writeZ(Constants._astProof)
-      writer.writeISZ(o.steps, write_astProofStep _)
+    def write_astProofAst(o: org.sireum.lang.ast.ProofAst): Unit = {
+      writer.writeZ(Constants._astProofAst)
+      writer.writeISZ(o.steps, write_astProofAstStep _)
       write_astAttr(o.attr)
     }
 
-    def write_astProofStep(o: org.sireum.lang.ast.Proof.Step): Unit = {
+    def write_astProofAstStep(o: org.sireum.lang.ast.ProofAst.Step): Unit = {
       o match {
-        case o: org.sireum.lang.ast.Proof.Step.Regular => write_astProofStepRegular(o)
-        case o: org.sireum.lang.ast.Proof.Step.Assume => write_astProofStepAssume(o)
-        case o: org.sireum.lang.ast.Proof.Step.Assert => write_astProofStepAssert(o)
-        case o: org.sireum.lang.ast.Proof.Step.SubProof => write_astProofStepSubProof(o)
-        case o: org.sireum.lang.ast.Proof.Step.Let => write_astProofStepLet(o)
-        case o: org.sireum.lang.ast.Proof.Step.StructInduction => write_astProofStepStructInduction(o)
+        case o: org.sireum.lang.ast.ProofAst.Step.Regular => write_astProofAstStepRegular(o)
+        case o: org.sireum.lang.ast.ProofAst.Step.Assume => write_astProofAstStepAssume(o)
+        case o: org.sireum.lang.ast.ProofAst.Step.Assert => write_astProofAstStepAssert(o)
+        case o: org.sireum.lang.ast.ProofAst.Step.SubProof => write_astProofAstStepSubProof(o)
+        case o: org.sireum.lang.ast.ProofAst.Step.Let => write_astProofAstStepLet(o)
+        case o: org.sireum.lang.ast.ProofAst.Step.StructInduction => write_astProofAstStepStructInduction(o)
       }
     }
 
-    def write_astProofStepRegular(o: org.sireum.lang.ast.Proof.Step.Regular): Unit = {
-      writer.writeZ(Constants._astProofStepRegular)
+    def write_astProofAstStepRegular(o: org.sireum.lang.ast.ProofAst.Step.Regular): Unit = {
+      writer.writeZ(Constants._astProofAstStepRegular)
       write_astExpLitZ(o.no)
       write_astExp(o.claim)
-      write_astProofStepJustification(o.just)
+      write_astProofAstStepJustification(o.just)
     }
 
-    def write_astProofStepAssume(o: org.sireum.lang.ast.Proof.Step.Assume): Unit = {
-      writer.writeZ(Constants._astProofStepAssume)
+    def write_astProofAstStepAssume(o: org.sireum.lang.ast.ProofAst.Step.Assume): Unit = {
+      writer.writeZ(Constants._astProofAstStepAssume)
       write_astExpLitZ(o.no)
       write_astExp(o.claim)
     }
 
-    def write_astProofStepAssert(o: org.sireum.lang.ast.Proof.Step.Assert): Unit = {
-      writer.writeZ(Constants._astProofStepAssert)
+    def write_astProofAstStepAssert(o: org.sireum.lang.ast.ProofAst.Step.Assert): Unit = {
+      writer.writeZ(Constants._astProofAstStepAssert)
       write_astExpLitZ(o.no)
       write_astExp(o.claim)
-      writer.writeISZ(o.steps, write_astProofStep _)
+      writer.writeISZ(o.steps, write_astProofAstStep _)
     }
 
-    def write_astProofStepSubProof(o: org.sireum.lang.ast.Proof.Step.SubProof): Unit = {
-      writer.writeZ(Constants._astProofStepSubProof)
+    def write_astProofAstStepSubProof(o: org.sireum.lang.ast.ProofAst.Step.SubProof): Unit = {
+      writer.writeZ(Constants._astProofAstStepSubProof)
       write_astExpLitZ(o.no)
-      writer.writeISZ(o.steps, write_astProofStep _)
+      writer.writeISZ(o.steps, write_astProofAstStep _)
     }
 
-    def write_astProofStepLet(o: org.sireum.lang.ast.Proof.Step.Let): Unit = {
-      writer.writeZ(Constants._astProofStepLet)
+    def write_astProofAstStepLet(o: org.sireum.lang.ast.ProofAst.Step.Let): Unit = {
+      writer.writeZ(Constants._astProofAstStepLet)
       write_astExpLitZ(o.no)
-      writer.writeISZ(o.params, write_astProofStepLetParam _)
-      writer.writeISZ(o.steps, write_astProofStep _)
+      writer.writeISZ(o.params, write_astProofAstStepLetParam _)
+      writer.writeISZ(o.steps, write_astProofAstStep _)
     }
 
-    def write_astProofStepLetParam(o: org.sireum.lang.ast.Proof.Step.Let.Param): Unit = {
-      writer.writeZ(Constants._astProofStepLetParam)
+    def write_astProofAstStepLetParam(o: org.sireum.lang.ast.ProofAst.Step.Let.Param): Unit = {
+      writer.writeZ(Constants._astProofAstStepLetParam)
       write_astId(o.id)
       writer.writeOption(o.tipeOpt, write_astType _)
     }
 
-    def write_astProofStepStructInduction(o: org.sireum.lang.ast.Proof.Step.StructInduction): Unit = {
-      writer.writeZ(Constants._astProofStepStructInduction)
+    def write_astProofAstStepStructInduction(o: org.sireum.lang.ast.ProofAst.Step.StructInduction): Unit = {
+      writer.writeZ(Constants._astProofAstStepStructInduction)
       write_astExpLitZ(o.no)
       write_astExp(o.claim)
       write_astExp(o.exp)
-      writer.writeISZ(o.cases, write_astProofStepStructInductionMatchCase _)
-      writer.writeOption(o.defaultOpt, write_astProofStepStructInductionMatchDefault _)
+      writer.writeISZ(o.cases, write_astProofAstStepStructInductionMatchCase _)
+      writer.writeOption(o.defaultOpt, write_astProofAstStepStructInductionMatchDefault _)
     }
 
-    def write_astProofStepStructInductionMatchCase(o: org.sireum.lang.ast.Proof.Step.StructInduction.MatchCase): Unit = {
-      writer.writeZ(Constants._astProofStepStructInductionMatchCase)
+    def write_astProofAstStepStructInductionMatchCase(o: org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchCase): Unit = {
+      writer.writeZ(Constants._astProofAstStepStructInductionMatchCase)
       write_astPatternStructure(o.pattern)
-      writer.writeOption(o.hypoOpt, write_astProofStepAssume _)
-      writer.writeISZ(o.steps, write_astProofStep _)
+      writer.writeOption(o.hypoOpt, write_astProofAstStepAssume _)
+      writer.writeISZ(o.steps, write_astProofAstStep _)
     }
 
-    def write_astProofStepStructInductionMatchDefault(o: org.sireum.lang.ast.Proof.Step.StructInduction.MatchDefault): Unit = {
-      writer.writeZ(Constants._astProofStepStructInductionMatchDefault)
-      writer.writeOption(o.hypoOpt, write_astProofStepAssume _)
-      writer.writeISZ(o.steps, write_astProofStep _)
+    def write_astProofAstStepStructInductionMatchDefault(o: org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchDefault): Unit = {
+      writer.writeZ(Constants._astProofAstStepStructInductionMatchDefault)
+      writer.writeOption(o.hypoOpt, write_astProofAstStepAssume _)
+      writer.writeISZ(o.steps, write_astProofAstStep _)
     }
 
-    def write_astProofStepJustification(o: org.sireum.lang.ast.Proof.Step.Justification): Unit = {
-      writer.writeZ(Constants._astProofStepJustification)
+    def write_astProofAstStepJustification(o: org.sireum.lang.ast.ProofAst.Step.Justification): Unit = {
+      writer.writeZ(Constants._astProofAstStepJustification)
       write_astId(o.id)
       writer.writeISZ(o.args, write_astExp _)
     }
@@ -2980,7 +2980,7 @@ object MsgPack {
       val descOpt = reader.readOption(read_astExpLitString _)
       val claim = read_astExp()
       val isFun = reader.readB()
-      val proof = read_astProof()
+      val proof = read_astProofAst()
       val attr = read_astResolvedAttr()
       return org.sireum.lang.ast.Stmt.Theorem(isLemma, id, typeParams, descOpt, claim, isFun, proof, attr)
     }
@@ -3051,7 +3051,7 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astStmtDeduceSteps)
       }
-      val steps = reader.readISZ(read_astProofStep _)
+      val steps = reader.readISZ(read_astProofAstStep _)
       val attr = read_astAttr()
       return org.sireum.lang.ast.Stmt.DeduceSteps(steps, attr)
     }
@@ -3140,187 +3140,187 @@ object MsgPack {
       }
       val premises = reader.readISZ(read_astExp _)
       val conclusion = read_astExp()
-      val steps = reader.readISZ(read_astProofStep _)
+      val steps = reader.readISZ(read_astProofAstStep _)
       val attr = read_astAttr()
       return org.sireum.lang.ast.Sequent(premises, conclusion, steps, attr)
     }
 
-    def read_astProof(): org.sireum.lang.ast.Proof = {
-      val r = read_astProofT(F)
+    def read_astProofAst(): org.sireum.lang.ast.ProofAst = {
+      val r = read_astProofAstT(F)
       return r
     }
 
-    def read_astProofT(typeParsed: B): org.sireum.lang.ast.Proof = {
+    def read_astProofAstT(typeParsed: B): org.sireum.lang.ast.ProofAst = {
       if (!typeParsed) {
-        reader.expectZ(Constants._astProof)
+        reader.expectZ(Constants._astProofAst)
       }
-      val steps = reader.readISZ(read_astProofStep _)
+      val steps = reader.readISZ(read_astProofAstStep _)
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Proof(steps, attr)
+      return org.sireum.lang.ast.ProofAst(steps, attr)
     }
 
-    def read_astProofStep(): org.sireum.lang.ast.Proof.Step = {
+    def read_astProofAstStep(): org.sireum.lang.ast.ProofAst.Step = {
       val i = reader.curr
       val t = reader.readZ()
       t match {
-        case Constants._astProofStepRegular => val r = read_astProofStepRegularT(T); return r
-        case Constants._astProofStepAssume => val r = read_astProofStepAssumeT(T); return r
-        case Constants._astProofStepAssert => val r = read_astProofStepAssertT(T); return r
-        case Constants._astProofStepSubProof => val r = read_astProofStepSubProofT(T); return r
-        case Constants._astProofStepLet => val r = read_astProofStepLetT(T); return r
-        case Constants._astProofStepStructInduction => val r = read_astProofStepStructInductionT(T); return r
+        case Constants._astProofAstStepRegular => val r = read_astProofAstStepRegularT(T); return r
+        case Constants._astProofAstStepAssume => val r = read_astProofAstStepAssumeT(T); return r
+        case Constants._astProofAstStepAssert => val r = read_astProofAstStepAssertT(T); return r
+        case Constants._astProofAstStepSubProof => val r = read_astProofAstStepSubProofT(T); return r
+        case Constants._astProofAstStepLet => val r = read_astProofAstStepLetT(T); return r
+        case Constants._astProofAstStepStructInduction => val r = read_astProofAstStepStructInductionT(T); return r
         case _ =>
-          reader.error(i, s"$t is not a valid type of org.sireum.lang.ast.Proof.Step.")
-          val r = read_astProofStepStructInductionT(T)
+          reader.error(i, s"$t is not a valid type of org.sireum.lang.ast.ProofAst.Step.")
+          val r = read_astProofAstStepStructInductionT(T)
           return r
       }
     }
 
-    def read_astProofStepRegular(): org.sireum.lang.ast.Proof.Step.Regular = {
-      val r = read_astProofStepRegularT(F)
+    def read_astProofAstStepRegular(): org.sireum.lang.ast.ProofAst.Step.Regular = {
+      val r = read_astProofAstStepRegularT(F)
       return r
     }
 
-    def read_astProofStepRegularT(typeParsed: B): org.sireum.lang.ast.Proof.Step.Regular = {
+    def read_astProofAstStepRegularT(typeParsed: B): org.sireum.lang.ast.ProofAst.Step.Regular = {
       if (!typeParsed) {
-        reader.expectZ(Constants._astProofStepRegular)
+        reader.expectZ(Constants._astProofAstStepRegular)
       }
       val no = read_astExpLitZ()
       val claim = read_astExp()
-      val just = read_astProofStepJustification()
-      return org.sireum.lang.ast.Proof.Step.Regular(no, claim, just)
+      val just = read_astProofAstStepJustification()
+      return org.sireum.lang.ast.ProofAst.Step.Regular(no, claim, just)
     }
 
-    def read_astProofStepAssume(): org.sireum.lang.ast.Proof.Step.Assume = {
-      val r = read_astProofStepAssumeT(F)
+    def read_astProofAstStepAssume(): org.sireum.lang.ast.ProofAst.Step.Assume = {
+      val r = read_astProofAstStepAssumeT(F)
       return r
     }
 
-    def read_astProofStepAssumeT(typeParsed: B): org.sireum.lang.ast.Proof.Step.Assume = {
+    def read_astProofAstStepAssumeT(typeParsed: B): org.sireum.lang.ast.ProofAst.Step.Assume = {
       if (!typeParsed) {
-        reader.expectZ(Constants._astProofStepAssume)
+        reader.expectZ(Constants._astProofAstStepAssume)
       }
       val no = read_astExpLitZ()
       val claim = read_astExp()
-      return org.sireum.lang.ast.Proof.Step.Assume(no, claim)
+      return org.sireum.lang.ast.ProofAst.Step.Assume(no, claim)
     }
 
-    def read_astProofStepAssert(): org.sireum.lang.ast.Proof.Step.Assert = {
-      val r = read_astProofStepAssertT(F)
+    def read_astProofAstStepAssert(): org.sireum.lang.ast.ProofAst.Step.Assert = {
+      val r = read_astProofAstStepAssertT(F)
       return r
     }
 
-    def read_astProofStepAssertT(typeParsed: B): org.sireum.lang.ast.Proof.Step.Assert = {
+    def read_astProofAstStepAssertT(typeParsed: B): org.sireum.lang.ast.ProofAst.Step.Assert = {
       if (!typeParsed) {
-        reader.expectZ(Constants._astProofStepAssert)
+        reader.expectZ(Constants._astProofAstStepAssert)
       }
       val no = read_astExpLitZ()
       val claim = read_astExp()
-      val steps = reader.readISZ(read_astProofStep _)
-      return org.sireum.lang.ast.Proof.Step.Assert(no, claim, steps)
+      val steps = reader.readISZ(read_astProofAstStep _)
+      return org.sireum.lang.ast.ProofAst.Step.Assert(no, claim, steps)
     }
 
-    def read_astProofStepSubProof(): org.sireum.lang.ast.Proof.Step.SubProof = {
-      val r = read_astProofStepSubProofT(F)
+    def read_astProofAstStepSubProof(): org.sireum.lang.ast.ProofAst.Step.SubProof = {
+      val r = read_astProofAstStepSubProofT(F)
       return r
     }
 
-    def read_astProofStepSubProofT(typeParsed: B): org.sireum.lang.ast.Proof.Step.SubProof = {
+    def read_astProofAstStepSubProofT(typeParsed: B): org.sireum.lang.ast.ProofAst.Step.SubProof = {
       if (!typeParsed) {
-        reader.expectZ(Constants._astProofStepSubProof)
+        reader.expectZ(Constants._astProofAstStepSubProof)
       }
       val no = read_astExpLitZ()
-      val steps = reader.readISZ(read_astProofStep _)
-      return org.sireum.lang.ast.Proof.Step.SubProof(no, steps)
+      val steps = reader.readISZ(read_astProofAstStep _)
+      return org.sireum.lang.ast.ProofAst.Step.SubProof(no, steps)
     }
 
-    def read_astProofStepLet(): org.sireum.lang.ast.Proof.Step.Let = {
-      val r = read_astProofStepLetT(F)
+    def read_astProofAstStepLet(): org.sireum.lang.ast.ProofAst.Step.Let = {
+      val r = read_astProofAstStepLetT(F)
       return r
     }
 
-    def read_astProofStepLetT(typeParsed: B): org.sireum.lang.ast.Proof.Step.Let = {
+    def read_astProofAstStepLetT(typeParsed: B): org.sireum.lang.ast.ProofAst.Step.Let = {
       if (!typeParsed) {
-        reader.expectZ(Constants._astProofStepLet)
+        reader.expectZ(Constants._astProofAstStepLet)
       }
       val no = read_astExpLitZ()
-      val params = reader.readISZ(read_astProofStepLetParam _)
-      val steps = reader.readISZ(read_astProofStep _)
-      return org.sireum.lang.ast.Proof.Step.Let(no, params, steps)
+      val params = reader.readISZ(read_astProofAstStepLetParam _)
+      val steps = reader.readISZ(read_astProofAstStep _)
+      return org.sireum.lang.ast.ProofAst.Step.Let(no, params, steps)
     }
 
-    def read_astProofStepLetParam(): org.sireum.lang.ast.Proof.Step.Let.Param = {
-      val r = read_astProofStepLetParamT(F)
+    def read_astProofAstStepLetParam(): org.sireum.lang.ast.ProofAst.Step.Let.Param = {
+      val r = read_astProofAstStepLetParamT(F)
       return r
     }
 
-    def read_astProofStepLetParamT(typeParsed: B): org.sireum.lang.ast.Proof.Step.Let.Param = {
+    def read_astProofAstStepLetParamT(typeParsed: B): org.sireum.lang.ast.ProofAst.Step.Let.Param = {
       if (!typeParsed) {
-        reader.expectZ(Constants._astProofStepLetParam)
+        reader.expectZ(Constants._astProofAstStepLetParam)
       }
       val id = read_astId()
       val tipeOpt = reader.readOption(read_astType _)
-      return org.sireum.lang.ast.Proof.Step.Let.Param(id, tipeOpt)
+      return org.sireum.lang.ast.ProofAst.Step.Let.Param(id, tipeOpt)
     }
 
-    def read_astProofStepStructInduction(): org.sireum.lang.ast.Proof.Step.StructInduction = {
-      val r = read_astProofStepStructInductionT(F)
+    def read_astProofAstStepStructInduction(): org.sireum.lang.ast.ProofAst.Step.StructInduction = {
+      val r = read_astProofAstStepStructInductionT(F)
       return r
     }
 
-    def read_astProofStepStructInductionT(typeParsed: B): org.sireum.lang.ast.Proof.Step.StructInduction = {
+    def read_astProofAstStepStructInductionT(typeParsed: B): org.sireum.lang.ast.ProofAst.Step.StructInduction = {
       if (!typeParsed) {
-        reader.expectZ(Constants._astProofStepStructInduction)
+        reader.expectZ(Constants._astProofAstStepStructInduction)
       }
       val no = read_astExpLitZ()
       val claim = read_astExp()
       val exp = read_astExp()
-      val cases = reader.readISZ(read_astProofStepStructInductionMatchCase _)
-      val defaultOpt = reader.readOption(read_astProofStepStructInductionMatchDefault _)
-      return org.sireum.lang.ast.Proof.Step.StructInduction(no, claim, exp, cases, defaultOpt)
+      val cases = reader.readISZ(read_astProofAstStepStructInductionMatchCase _)
+      val defaultOpt = reader.readOption(read_astProofAstStepStructInductionMatchDefault _)
+      return org.sireum.lang.ast.ProofAst.Step.StructInduction(no, claim, exp, cases, defaultOpt)
     }
 
-    def read_astProofStepStructInductionMatchCase(): org.sireum.lang.ast.Proof.Step.StructInduction.MatchCase = {
-      val r = read_astProofStepStructInductionMatchCaseT(F)
+    def read_astProofAstStepStructInductionMatchCase(): org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchCase = {
+      val r = read_astProofAstStepStructInductionMatchCaseT(F)
       return r
     }
 
-    def read_astProofStepStructInductionMatchCaseT(typeParsed: B): org.sireum.lang.ast.Proof.Step.StructInduction.MatchCase = {
+    def read_astProofAstStepStructInductionMatchCaseT(typeParsed: B): org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchCase = {
       if (!typeParsed) {
-        reader.expectZ(Constants._astProofStepStructInductionMatchCase)
+        reader.expectZ(Constants._astProofAstStepStructInductionMatchCase)
       }
       val pattern = read_astPatternStructure()
-      val hypoOpt = reader.readOption(read_astProofStepAssume _)
-      val steps = reader.readISZ(read_astProofStep _)
-      return org.sireum.lang.ast.Proof.Step.StructInduction.MatchCase(pattern, hypoOpt, steps)
+      val hypoOpt = reader.readOption(read_astProofAstStepAssume _)
+      val steps = reader.readISZ(read_astProofAstStep _)
+      return org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchCase(pattern, hypoOpt, steps)
     }
 
-    def read_astProofStepStructInductionMatchDefault(): org.sireum.lang.ast.Proof.Step.StructInduction.MatchDefault = {
-      val r = read_astProofStepStructInductionMatchDefaultT(F)
+    def read_astProofAstStepStructInductionMatchDefault(): org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchDefault = {
+      val r = read_astProofAstStepStructInductionMatchDefaultT(F)
       return r
     }
 
-    def read_astProofStepStructInductionMatchDefaultT(typeParsed: B): org.sireum.lang.ast.Proof.Step.StructInduction.MatchDefault = {
+    def read_astProofAstStepStructInductionMatchDefaultT(typeParsed: B): org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchDefault = {
       if (!typeParsed) {
-        reader.expectZ(Constants._astProofStepStructInductionMatchDefault)
+        reader.expectZ(Constants._astProofAstStepStructInductionMatchDefault)
       }
-      val hypoOpt = reader.readOption(read_astProofStepAssume _)
-      val steps = reader.readISZ(read_astProofStep _)
-      return org.sireum.lang.ast.Proof.Step.StructInduction.MatchDefault(hypoOpt, steps)
+      val hypoOpt = reader.readOption(read_astProofAstStepAssume _)
+      val steps = reader.readISZ(read_astProofAstStep _)
+      return org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchDefault(hypoOpt, steps)
     }
 
-    def read_astProofStepJustification(): org.sireum.lang.ast.Proof.Step.Justification = {
-      val r = read_astProofStepJustificationT(F)
+    def read_astProofAstStepJustification(): org.sireum.lang.ast.ProofAst.Step.Justification = {
+      val r = read_astProofAstStepJustificationT(F)
       return r
     }
 
-    def read_astProofStepJustificationT(typeParsed: B): org.sireum.lang.ast.Proof.Step.Justification = {
+    def read_astProofAstStepJustificationT(typeParsed: B): org.sireum.lang.ast.ProofAst.Step.Justification = {
       if (!typeParsed) {
-        reader.expectZ(Constants._astProofStepJustification)
+        reader.expectZ(Constants._astProofAstStepJustification)
       }
       val id = read_astId()
       val args = reader.readISZ(read_astExp _)
-      return org.sireum.lang.ast.Proof.Step.Justification(id, args)
+      return org.sireum.lang.ast.ProofAst.Step.Justification(id, args)
     }
 
     def read_astAssignExp(): org.sireum.lang.ast.AssignExp = {
@@ -5986,183 +5986,183 @@ object MsgPack {
     return r
   }
 
-  def from_astProof(o: org.sireum.lang.ast.Proof, pooling: B): ISZ[U8] = {
+  def from_astProofAst(o: org.sireum.lang.ast.ProofAst, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astProof(o)
+    w.write_astProofAst(o)
     return w.result
   }
 
-  def to_astProof(data: ISZ[U8]): Either[org.sireum.lang.ast.Proof, MessagePack.ErrorMsg] = {
-    def f_astProof(reader: Reader): org.sireum.lang.ast.Proof = {
-      val r = reader.read_astProof()
+  def to_astProofAst(data: ISZ[U8]): Either[org.sireum.lang.ast.ProofAst, MessagePack.ErrorMsg] = {
+    def f_astProofAst(reader: Reader): org.sireum.lang.ast.ProofAst = {
+      val r = reader.read_astProofAst()
       return r
     }
-    val r = to(data, f_astProof _)
+    val r = to(data, f_astProofAst _)
     return r
   }
 
-  def from_astProofStep(o: org.sireum.lang.ast.Proof.Step, pooling: B): ISZ[U8] = {
+  def from_astProofAstStep(o: org.sireum.lang.ast.ProofAst.Step, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astProofStep(o)
+    w.write_astProofAstStep(o)
     return w.result
   }
 
-  def to_astProofStep(data: ISZ[U8]): Either[org.sireum.lang.ast.Proof.Step, MessagePack.ErrorMsg] = {
-    def f_astProofStep(reader: Reader): org.sireum.lang.ast.Proof.Step = {
-      val r = reader.read_astProofStep()
+  def to_astProofAstStep(data: ISZ[U8]): Either[org.sireum.lang.ast.ProofAst.Step, MessagePack.ErrorMsg] = {
+    def f_astProofAstStep(reader: Reader): org.sireum.lang.ast.ProofAst.Step = {
+      val r = reader.read_astProofAstStep()
       return r
     }
-    val r = to(data, f_astProofStep _)
+    val r = to(data, f_astProofAstStep _)
     return r
   }
 
-  def from_astProofStepRegular(o: org.sireum.lang.ast.Proof.Step.Regular, pooling: B): ISZ[U8] = {
+  def from_astProofAstStepRegular(o: org.sireum.lang.ast.ProofAst.Step.Regular, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astProofStepRegular(o)
+    w.write_astProofAstStepRegular(o)
     return w.result
   }
 
-  def to_astProofStepRegular(data: ISZ[U8]): Either[org.sireum.lang.ast.Proof.Step.Regular, MessagePack.ErrorMsg] = {
-    def f_astProofStepRegular(reader: Reader): org.sireum.lang.ast.Proof.Step.Regular = {
-      val r = reader.read_astProofStepRegular()
+  def to_astProofAstStepRegular(data: ISZ[U8]): Either[org.sireum.lang.ast.ProofAst.Step.Regular, MessagePack.ErrorMsg] = {
+    def f_astProofAstStepRegular(reader: Reader): org.sireum.lang.ast.ProofAst.Step.Regular = {
+      val r = reader.read_astProofAstStepRegular()
       return r
     }
-    val r = to(data, f_astProofStepRegular _)
+    val r = to(data, f_astProofAstStepRegular _)
     return r
   }
 
-  def from_astProofStepAssume(o: org.sireum.lang.ast.Proof.Step.Assume, pooling: B): ISZ[U8] = {
+  def from_astProofAstStepAssume(o: org.sireum.lang.ast.ProofAst.Step.Assume, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astProofStepAssume(o)
+    w.write_astProofAstStepAssume(o)
     return w.result
   }
 
-  def to_astProofStepAssume(data: ISZ[U8]): Either[org.sireum.lang.ast.Proof.Step.Assume, MessagePack.ErrorMsg] = {
-    def f_astProofStepAssume(reader: Reader): org.sireum.lang.ast.Proof.Step.Assume = {
-      val r = reader.read_astProofStepAssume()
+  def to_astProofAstStepAssume(data: ISZ[U8]): Either[org.sireum.lang.ast.ProofAst.Step.Assume, MessagePack.ErrorMsg] = {
+    def f_astProofAstStepAssume(reader: Reader): org.sireum.lang.ast.ProofAst.Step.Assume = {
+      val r = reader.read_astProofAstStepAssume()
       return r
     }
-    val r = to(data, f_astProofStepAssume _)
+    val r = to(data, f_astProofAstStepAssume _)
     return r
   }
 
-  def from_astProofStepAssert(o: org.sireum.lang.ast.Proof.Step.Assert, pooling: B): ISZ[U8] = {
+  def from_astProofAstStepAssert(o: org.sireum.lang.ast.ProofAst.Step.Assert, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astProofStepAssert(o)
+    w.write_astProofAstStepAssert(o)
     return w.result
   }
 
-  def to_astProofStepAssert(data: ISZ[U8]): Either[org.sireum.lang.ast.Proof.Step.Assert, MessagePack.ErrorMsg] = {
-    def f_astProofStepAssert(reader: Reader): org.sireum.lang.ast.Proof.Step.Assert = {
-      val r = reader.read_astProofStepAssert()
+  def to_astProofAstStepAssert(data: ISZ[U8]): Either[org.sireum.lang.ast.ProofAst.Step.Assert, MessagePack.ErrorMsg] = {
+    def f_astProofAstStepAssert(reader: Reader): org.sireum.lang.ast.ProofAst.Step.Assert = {
+      val r = reader.read_astProofAstStepAssert()
       return r
     }
-    val r = to(data, f_astProofStepAssert _)
+    val r = to(data, f_astProofAstStepAssert _)
     return r
   }
 
-  def from_astProofStepSubProof(o: org.sireum.lang.ast.Proof.Step.SubProof, pooling: B): ISZ[U8] = {
+  def from_astProofAstStepSubProof(o: org.sireum.lang.ast.ProofAst.Step.SubProof, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astProofStepSubProof(o)
+    w.write_astProofAstStepSubProof(o)
     return w.result
   }
 
-  def to_astProofStepSubProof(data: ISZ[U8]): Either[org.sireum.lang.ast.Proof.Step.SubProof, MessagePack.ErrorMsg] = {
-    def f_astProofStepSubProof(reader: Reader): org.sireum.lang.ast.Proof.Step.SubProof = {
-      val r = reader.read_astProofStepSubProof()
+  def to_astProofAstStepSubProof(data: ISZ[U8]): Either[org.sireum.lang.ast.ProofAst.Step.SubProof, MessagePack.ErrorMsg] = {
+    def f_astProofAstStepSubProof(reader: Reader): org.sireum.lang.ast.ProofAst.Step.SubProof = {
+      val r = reader.read_astProofAstStepSubProof()
       return r
     }
-    val r = to(data, f_astProofStepSubProof _)
+    val r = to(data, f_astProofAstStepSubProof _)
     return r
   }
 
-  def from_astProofStepLet(o: org.sireum.lang.ast.Proof.Step.Let, pooling: B): ISZ[U8] = {
+  def from_astProofAstStepLet(o: org.sireum.lang.ast.ProofAst.Step.Let, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astProofStepLet(o)
+    w.write_astProofAstStepLet(o)
     return w.result
   }
 
-  def to_astProofStepLet(data: ISZ[U8]): Either[org.sireum.lang.ast.Proof.Step.Let, MessagePack.ErrorMsg] = {
-    def f_astProofStepLet(reader: Reader): org.sireum.lang.ast.Proof.Step.Let = {
-      val r = reader.read_astProofStepLet()
+  def to_astProofAstStepLet(data: ISZ[U8]): Either[org.sireum.lang.ast.ProofAst.Step.Let, MessagePack.ErrorMsg] = {
+    def f_astProofAstStepLet(reader: Reader): org.sireum.lang.ast.ProofAst.Step.Let = {
+      val r = reader.read_astProofAstStepLet()
       return r
     }
-    val r = to(data, f_astProofStepLet _)
+    val r = to(data, f_astProofAstStepLet _)
     return r
   }
 
-  def from_astProofStepLetParam(o: org.sireum.lang.ast.Proof.Step.Let.Param, pooling: B): ISZ[U8] = {
+  def from_astProofAstStepLetParam(o: org.sireum.lang.ast.ProofAst.Step.Let.Param, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astProofStepLetParam(o)
+    w.write_astProofAstStepLetParam(o)
     return w.result
   }
 
-  def to_astProofStepLetParam(data: ISZ[U8]): Either[org.sireum.lang.ast.Proof.Step.Let.Param, MessagePack.ErrorMsg] = {
-    def f_astProofStepLetParam(reader: Reader): org.sireum.lang.ast.Proof.Step.Let.Param = {
-      val r = reader.read_astProofStepLetParam()
+  def to_astProofAstStepLetParam(data: ISZ[U8]): Either[org.sireum.lang.ast.ProofAst.Step.Let.Param, MessagePack.ErrorMsg] = {
+    def f_astProofAstStepLetParam(reader: Reader): org.sireum.lang.ast.ProofAst.Step.Let.Param = {
+      val r = reader.read_astProofAstStepLetParam()
       return r
     }
-    val r = to(data, f_astProofStepLetParam _)
+    val r = to(data, f_astProofAstStepLetParam _)
     return r
   }
 
-  def from_astProofStepStructInduction(o: org.sireum.lang.ast.Proof.Step.StructInduction, pooling: B): ISZ[U8] = {
+  def from_astProofAstStepStructInduction(o: org.sireum.lang.ast.ProofAst.Step.StructInduction, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astProofStepStructInduction(o)
+    w.write_astProofAstStepStructInduction(o)
     return w.result
   }
 
-  def to_astProofStepStructInduction(data: ISZ[U8]): Either[org.sireum.lang.ast.Proof.Step.StructInduction, MessagePack.ErrorMsg] = {
-    def f_astProofStepStructInduction(reader: Reader): org.sireum.lang.ast.Proof.Step.StructInduction = {
-      val r = reader.read_astProofStepStructInduction()
+  def to_astProofAstStepStructInduction(data: ISZ[U8]): Either[org.sireum.lang.ast.ProofAst.Step.StructInduction, MessagePack.ErrorMsg] = {
+    def f_astProofAstStepStructInduction(reader: Reader): org.sireum.lang.ast.ProofAst.Step.StructInduction = {
+      val r = reader.read_astProofAstStepStructInduction()
       return r
     }
-    val r = to(data, f_astProofStepStructInduction _)
+    val r = to(data, f_astProofAstStepStructInduction _)
     return r
   }
 
-  def from_astProofStepStructInductionMatchCase(o: org.sireum.lang.ast.Proof.Step.StructInduction.MatchCase, pooling: B): ISZ[U8] = {
+  def from_astProofAstStepStructInductionMatchCase(o: org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchCase, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astProofStepStructInductionMatchCase(o)
+    w.write_astProofAstStepStructInductionMatchCase(o)
     return w.result
   }
 
-  def to_astProofStepStructInductionMatchCase(data: ISZ[U8]): Either[org.sireum.lang.ast.Proof.Step.StructInduction.MatchCase, MessagePack.ErrorMsg] = {
-    def f_astProofStepStructInductionMatchCase(reader: Reader): org.sireum.lang.ast.Proof.Step.StructInduction.MatchCase = {
-      val r = reader.read_astProofStepStructInductionMatchCase()
+  def to_astProofAstStepStructInductionMatchCase(data: ISZ[U8]): Either[org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchCase, MessagePack.ErrorMsg] = {
+    def f_astProofAstStepStructInductionMatchCase(reader: Reader): org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchCase = {
+      val r = reader.read_astProofAstStepStructInductionMatchCase()
       return r
     }
-    val r = to(data, f_astProofStepStructInductionMatchCase _)
+    val r = to(data, f_astProofAstStepStructInductionMatchCase _)
     return r
   }
 
-  def from_astProofStepStructInductionMatchDefault(o: org.sireum.lang.ast.Proof.Step.StructInduction.MatchDefault, pooling: B): ISZ[U8] = {
+  def from_astProofAstStepStructInductionMatchDefault(o: org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchDefault, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astProofStepStructInductionMatchDefault(o)
+    w.write_astProofAstStepStructInductionMatchDefault(o)
     return w.result
   }
 
-  def to_astProofStepStructInductionMatchDefault(data: ISZ[U8]): Either[org.sireum.lang.ast.Proof.Step.StructInduction.MatchDefault, MessagePack.ErrorMsg] = {
-    def f_astProofStepStructInductionMatchDefault(reader: Reader): org.sireum.lang.ast.Proof.Step.StructInduction.MatchDefault = {
-      val r = reader.read_astProofStepStructInductionMatchDefault()
+  def to_astProofAstStepStructInductionMatchDefault(data: ISZ[U8]): Either[org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchDefault, MessagePack.ErrorMsg] = {
+    def f_astProofAstStepStructInductionMatchDefault(reader: Reader): org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchDefault = {
+      val r = reader.read_astProofAstStepStructInductionMatchDefault()
       return r
     }
-    val r = to(data, f_astProofStepStructInductionMatchDefault _)
+    val r = to(data, f_astProofAstStepStructInductionMatchDefault _)
     return r
   }
 
-  def from_astProofStepJustification(o: org.sireum.lang.ast.Proof.Step.Justification, pooling: B): ISZ[U8] = {
+  def from_astProofAstStepJustification(o: org.sireum.lang.ast.ProofAst.Step.Justification, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astProofStepJustification(o)
+    w.write_astProofAstStepJustification(o)
     return w.result
   }
 
-  def to_astProofStepJustification(data: ISZ[U8]): Either[org.sireum.lang.ast.Proof.Step.Justification, MessagePack.ErrorMsg] = {
-    def f_astProofStepJustification(reader: Reader): org.sireum.lang.ast.Proof.Step.Justification = {
-      val r = reader.read_astProofStepJustification()
+  def to_astProofAstStepJustification(data: ISZ[U8]): Either[org.sireum.lang.ast.ProofAst.Step.Justification, MessagePack.ErrorMsg] = {
+    def f_astProofAstStepJustification(reader: Reader): org.sireum.lang.ast.ProofAst.Step.Justification = {
+      val r = reader.read_astProofAstStepJustification()
       return r
     }
-    val r = to(data, f_astProofStepJustification _)
+    val r = to(data, f_astProofAstStepJustification _)
     return r
   }
 

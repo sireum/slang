@@ -442,7 +442,7 @@ object Stmt {
                           descOpt: Option[Exp.LitString],
                           claim: Exp,
                           isFun: B,
-                          proof: Proof,
+                          proof: ProofAst,
                           @hidden attr: ResolvedAttr) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -476,7 +476,7 @@ object Stmt {
     }
   }
 
-  @datatype class DeduceSteps(steps: ISZ[Proof.Step], @hidden attr: Attr) extends Spec {
+  @datatype class DeduceSteps(steps: ISZ[ProofAst.Step], @hidden attr: Attr) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
@@ -526,12 +526,12 @@ object MethodContract {
 
 @datatype class Sequent(premises: ISZ[Exp],
                         conclusion: Exp,
-                        steps: ISZ[Proof.Step],
+                        steps: ISZ[ProofAst.Step],
                         @hidden attr: Attr)
 
-@datatype class Proof(steps: ISZ[Proof.Step], @hidden attr: Attr)
+@datatype class ProofAst(steps: ISZ[ProofAst.Step], @hidden attr: Attr)
 
-object Proof {
+object ProofAst {
 
   @datatype trait Step {
     def no: Exp.LitZ

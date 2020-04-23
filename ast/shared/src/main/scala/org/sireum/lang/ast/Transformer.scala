@@ -403,58 +403,58 @@ object Transformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preProof(ctx: Context, o: Proof): PreResult[Context, Proof] = {
+    @pure def preProofAst(ctx: Context, o: ProofAst): PreResult[Context, ProofAst] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preProofStep(ctx: Context, o: Proof.Step): PreResult[Context, Proof.Step] = {
+    @pure def preProofAstStep(ctx: Context, o: ProofAst.Step): PreResult[Context, ProofAst.Step] = {
       o match {
-        case o: Proof.Step.Regular => return preProofStepRegular(ctx, o)
-        case o: Proof.Step.Assume => return preProofStepAssume(ctx, o)
-        case o: Proof.Step.Assert => return preProofStepAssert(ctx, o)
-        case o: Proof.Step.SubProof => return preProofStepSubProof(ctx, o)
-        case o: Proof.Step.Let => return preProofStepLet(ctx, o)
-        case o: Proof.Step.StructInduction => return preProofStepStructInduction(ctx, o)
+        case o: ProofAst.Step.Regular => return preProofAstStepRegular(ctx, o)
+        case o: ProofAst.Step.Assume => return preProofAstStepAssume(ctx, o)
+        case o: ProofAst.Step.Assert => return preProofAstStepAssert(ctx, o)
+        case o: ProofAst.Step.SubProof => return preProofAstStepSubProof(ctx, o)
+        case o: ProofAst.Step.Let => return preProofAstStepLet(ctx, o)
+        case o: ProofAst.Step.StructInduction => return preProofAstStepStructInduction(ctx, o)
       }
     }
 
-    @pure def preProofStepRegular(ctx: Context, o: Proof.Step.Regular): PreResult[Context, Proof.Step] = {
+    @pure def preProofAstStepRegular(ctx: Context, o: ProofAst.Step.Regular): PreResult[Context, ProofAst.Step] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preProofStepAssume(ctx: Context, o: Proof.Step.Assume): PreResult[Context, Proof.Step] = {
+    @pure def preProofAstStepAssume(ctx: Context, o: ProofAst.Step.Assume): PreResult[Context, ProofAst.Step] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preProofStepAssert(ctx: Context, o: Proof.Step.Assert): PreResult[Context, Proof.Step] = {
+    @pure def preProofAstStepAssert(ctx: Context, o: ProofAst.Step.Assert): PreResult[Context, ProofAst.Step] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preProofStepSubProof(ctx: Context, o: Proof.Step.SubProof): PreResult[Context, Proof.Step] = {
+    @pure def preProofAstStepSubProof(ctx: Context, o: ProofAst.Step.SubProof): PreResult[Context, ProofAst.Step] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preProofStepLet(ctx: Context, o: Proof.Step.Let): PreResult[Context, Proof.Step] = {
+    @pure def preProofAstStepLet(ctx: Context, o: ProofAst.Step.Let): PreResult[Context, ProofAst.Step] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preProofStepLetParam(ctx: Context, o: Proof.Step.Let.Param): PreResult[Context, Proof.Step.Let.Param] = {
+    @pure def preProofAstStepLetParam(ctx: Context, o: ProofAst.Step.Let.Param): PreResult[Context, ProofAst.Step.Let.Param] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preProofStepStructInduction(ctx: Context, o: Proof.Step.StructInduction): PreResult[Context, Proof.Step] = {
+    @pure def preProofAstStepStructInduction(ctx: Context, o: ProofAst.Step.StructInduction): PreResult[Context, ProofAst.Step] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preProofStepStructInductionMatchCase(ctx: Context, o: Proof.Step.StructInduction.MatchCase): PreResult[Context, Proof.Step.StructInduction.MatchCase] = {
+    @pure def preProofAstStepStructInductionMatchCase(ctx: Context, o: ProofAst.Step.StructInduction.MatchCase): PreResult[Context, ProofAst.Step.StructInduction.MatchCase] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preProofStepStructInductionMatchDefault(ctx: Context, o: Proof.Step.StructInduction.MatchDefault): PreResult[Context, Proof.Step.StructInduction.MatchDefault] = {
+    @pure def preProofAstStepStructInductionMatchDefault(ctx: Context, o: ProofAst.Step.StructInduction.MatchDefault): PreResult[Context, ProofAst.Step.StructInduction.MatchDefault] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preProofStepJustification(ctx: Context, o: Proof.Step.Justification): PreResult[Context, Proof.Step.Justification] = {
+    @pure def preProofAstStepJustification(ctx: Context, o: ProofAst.Step.Justification): PreResult[Context, ProofAst.Step.Justification] = {
       return PreResult(ctx, T, None())
     }
 
@@ -1471,58 +1471,58 @@ object Transformer {
       return TPostResult(ctx, None())
     }
 
-    @pure def postProof(ctx: Context, o: Proof): TPostResult[Context, Proof] = {
+    @pure def postProofAst(ctx: Context, o: ProofAst): TPostResult[Context, ProofAst] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postProofStep(ctx: Context, o: Proof.Step): TPostResult[Context, Proof.Step] = {
+    @pure def postProofAstStep(ctx: Context, o: ProofAst.Step): TPostResult[Context, ProofAst.Step] = {
       o match {
-        case o: Proof.Step.Regular => return postProofStepRegular(ctx, o)
-        case o: Proof.Step.Assume => return postProofStepAssume(ctx, o)
-        case o: Proof.Step.Assert => return postProofStepAssert(ctx, o)
-        case o: Proof.Step.SubProof => return postProofStepSubProof(ctx, o)
-        case o: Proof.Step.Let => return postProofStepLet(ctx, o)
-        case o: Proof.Step.StructInduction => return postProofStepStructInduction(ctx, o)
+        case o: ProofAst.Step.Regular => return postProofAstStepRegular(ctx, o)
+        case o: ProofAst.Step.Assume => return postProofAstStepAssume(ctx, o)
+        case o: ProofAst.Step.Assert => return postProofAstStepAssert(ctx, o)
+        case o: ProofAst.Step.SubProof => return postProofAstStepSubProof(ctx, o)
+        case o: ProofAst.Step.Let => return postProofAstStepLet(ctx, o)
+        case o: ProofAst.Step.StructInduction => return postProofAstStepStructInduction(ctx, o)
       }
     }
 
-    @pure def postProofStepRegular(ctx: Context, o: Proof.Step.Regular): TPostResult[Context, Proof.Step] = {
+    @pure def postProofAstStepRegular(ctx: Context, o: ProofAst.Step.Regular): TPostResult[Context, ProofAst.Step] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postProofStepAssume(ctx: Context, o: Proof.Step.Assume): TPostResult[Context, Proof.Step] = {
+    @pure def postProofAstStepAssume(ctx: Context, o: ProofAst.Step.Assume): TPostResult[Context, ProofAst.Step] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postProofStepAssert(ctx: Context, o: Proof.Step.Assert): TPostResult[Context, Proof.Step] = {
+    @pure def postProofAstStepAssert(ctx: Context, o: ProofAst.Step.Assert): TPostResult[Context, ProofAst.Step] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postProofStepSubProof(ctx: Context, o: Proof.Step.SubProof): TPostResult[Context, Proof.Step] = {
+    @pure def postProofAstStepSubProof(ctx: Context, o: ProofAst.Step.SubProof): TPostResult[Context, ProofAst.Step] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postProofStepLet(ctx: Context, o: Proof.Step.Let): TPostResult[Context, Proof.Step] = {
+    @pure def postProofAstStepLet(ctx: Context, o: ProofAst.Step.Let): TPostResult[Context, ProofAst.Step] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postProofStepLetParam(ctx: Context, o: Proof.Step.Let.Param): TPostResult[Context, Proof.Step.Let.Param] = {
+    @pure def postProofAstStepLetParam(ctx: Context, o: ProofAst.Step.Let.Param): TPostResult[Context, ProofAst.Step.Let.Param] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postProofStepStructInduction(ctx: Context, o: Proof.Step.StructInduction): TPostResult[Context, Proof.Step] = {
+    @pure def postProofAstStepStructInduction(ctx: Context, o: ProofAst.Step.StructInduction): TPostResult[Context, ProofAst.Step] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postProofStepStructInductionMatchCase(ctx: Context, o: Proof.Step.StructInduction.MatchCase): TPostResult[Context, Proof.Step.StructInduction.MatchCase] = {
+    @pure def postProofAstStepStructInductionMatchCase(ctx: Context, o: ProofAst.Step.StructInduction.MatchCase): TPostResult[Context, ProofAst.Step.StructInduction.MatchCase] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postProofStepStructInductionMatchDefault(ctx: Context, o: Proof.Step.StructInduction.MatchDefault): TPostResult[Context, Proof.Step.StructInduction.MatchDefault] = {
+    @pure def postProofAstStepStructInductionMatchDefault(ctx: Context, o: ProofAst.Step.StructInduction.MatchDefault): TPostResult[Context, ProofAst.Step.StructInduction.MatchDefault] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postProofStepJustification(ctx: Context, o: Proof.Step.Justification): TPostResult[Context, Proof.Step.Justification] = {
+    @pure def postProofAstStepJustification(ctx: Context, o: ProofAst.Step.Justification): TPostResult[Context, ProofAst.Step.Justification] = {
       return TPostResult(ctx, None())
     }
 
@@ -2479,7 +2479,7 @@ import Transformer._
           val r1: TPostResult[Context, IS[Z, TypeParam]] = transformISZ(r0.ctx, o2.typeParams, transformTypeParam _)
           val r2: TPostResult[Context, Option[Exp.LitString]] = transformOption(r1.ctx, o2.descOpt, transformExpLitString _)
           val r3: TPostResult[Context, Exp] = transformExp(r2.ctx, o2.claim)
-          val r4: TPostResult[Context, Proof] = transformProof(r3.ctx, o2.proof)
+          val r4: TPostResult[Context, ProofAst] = transformProofAst(r3.ctx, o2.proof)
           val r5: TPostResult[Context, ResolvedAttr] = transformResolvedAttr(r4.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty || r5.resultOpt.nonEmpty)
             TPostResult(r5.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), typeParams = r1.resultOpt.getOrElse(o2.typeParams), descOpt = r2.resultOpt.getOrElse(o2.descOpt), claim = r3.resultOpt.getOrElse(o2.claim), proof = r4.resultOpt.getOrElse(o2.proof), attr = r5.resultOpt.getOrElse(o2.attr))))
@@ -2515,7 +2515,7 @@ import Transformer._
           else
             TPostResult(r2.ctx, None())
         case o2: Stmt.DeduceSteps =>
-          val r0: TPostResult[Context, IS[Z, Proof.Step]] = transformISZ(preR.ctx, o2.steps, transformProofStep _)
+          val r0: TPostResult[Context, IS[Z, ProofAst.Step]] = transformISZ(preR.ctx, o2.steps, transformProofAstStep _)
           val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
             TPostResult(r1.ctx, Some(o2(steps = r0.resultOpt.getOrElse(o2.steps), attr = r1.resultOpt.getOrElse(o2.attr))))
@@ -2795,7 +2795,7 @@ import Transformer._
           val r1: TPostResult[Context, IS[Z, TypeParam]] = transformISZ(r0.ctx, o2.typeParams, transformTypeParam _)
           val r2: TPostResult[Context, Option[Exp.LitString]] = transformOption(r1.ctx, o2.descOpt, transformExpLitString _)
           val r3: TPostResult[Context, Exp] = transformExp(r2.ctx, o2.claim)
-          val r4: TPostResult[Context, Proof] = transformProof(r3.ctx, o2.proof)
+          val r4: TPostResult[Context, ProofAst] = transformProofAst(r3.ctx, o2.proof)
           val r5: TPostResult[Context, ResolvedAttr] = transformResolvedAttr(r4.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty || r5.resultOpt.nonEmpty)
             TPostResult(r5.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), typeParams = r1.resultOpt.getOrElse(o2.typeParams), descOpt = r2.resultOpt.getOrElse(o2.descOpt), claim = r3.resultOpt.getOrElse(o2.claim), proof = r4.resultOpt.getOrElse(o2.proof), attr = r5.resultOpt.getOrElse(o2.attr))))
@@ -2831,7 +2831,7 @@ import Transformer._
           else
             TPostResult(r2.ctx, None())
         case o2: Stmt.DeduceSteps =>
-          val r0: TPostResult[Context, IS[Z, Proof.Step]] = transformISZ(preR.ctx, o2.steps, transformProofStep _)
+          val r0: TPostResult[Context, IS[Z, ProofAst.Step]] = transformISZ(preR.ctx, o2.steps, transformProofAstStep _)
           val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
             TPostResult(r1.ctx, Some(o2(steps = r0.resultOpt.getOrElse(o2.steps), attr = r1.resultOpt.getOrElse(o2.attr))))
@@ -2941,7 +2941,7 @@ import Transformer._
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: TPostResult[Context, IS[Z, Exp]] = transformISZ(preR.ctx, o2.premises, transformExp _)
       val r1: TPostResult[Context, Exp] = transformExp(r0.ctx, o2.conclusion)
-      val r2: TPostResult[Context, IS[Z, Proof.Step]] = transformISZ(r1.ctx, o2.steps, transformProofStep _)
+      val r2: TPostResult[Context, IS[Z, ProofAst.Step]] = transformISZ(r1.ctx, o2.steps, transformProofAstStep _)
       val r3: TPostResult[Context, Attr] = transformAttr(r2.ctx, o2.attr)
       if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
         TPostResult(r3.ctx, Some(o2(premises = r0.resultOpt.getOrElse(o2.premises), conclusion = r1.resultOpt.getOrElse(o2.conclusion), steps = r2.resultOpt.getOrElse(o2.steps), attr = r3.resultOpt.getOrElse(o2.attr))))
@@ -2964,12 +2964,12 @@ import Transformer._
     }
   }
 
-  @pure def transformProof(ctx: Context, o: Proof): TPostResult[Context, Proof] = {
-    val preR: PreResult[Context, Proof] = pp.preProof(ctx, o)
-    val r: TPostResult[Context, Proof] = if (preR.continu) {
-      val o2: Proof = preR.resultOpt.getOrElse(o)
+  @pure def transformProofAst(ctx: Context, o: ProofAst): TPostResult[Context, ProofAst] = {
+    val preR: PreResult[Context, ProofAst] = pp.preProofAst(ctx, o)
+    val r: TPostResult[Context, ProofAst] = if (preR.continu) {
+      val o2: ProofAst = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: TPostResult[Context, IS[Z, Proof.Step]] = transformISZ(preR.ctx, o2.steps, transformProofStep _)
+      val r0: TPostResult[Context, IS[Z, ProofAst.Step]] = transformISZ(preR.ctx, o2.steps, transformProofAstStep _)
       val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
       if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
         TPostResult(r1.ctx, Some(o2(steps = r0.resultOpt.getOrElse(o2.steps), attr = r1.resultOpt.getOrElse(o2.attr))))
@@ -2981,8 +2981,8 @@ import Transformer._
       TPostResult(preR.ctx, None())
     }
     val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: Proof = r.resultOpt.getOrElse(o)
-    val postR: TPostResult[Context, Proof] = pp.postProof(r.ctx, o2)
+    val o2: ProofAst = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, ProofAst] = pp.postProofAst(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -2992,56 +2992,56 @@ import Transformer._
     }
   }
 
-  @pure def transformProofStep(ctx: Context, o: Proof.Step): TPostResult[Context, Proof.Step] = {
-    val preR: PreResult[Context, Proof.Step] = pp.preProofStep(ctx, o)
-    val r: TPostResult[Context, Proof.Step] = if (preR.continu) {
-      val o2: Proof.Step = preR.resultOpt.getOrElse(o)
+  @pure def transformProofAstStep(ctx: Context, o: ProofAst.Step): TPostResult[Context, ProofAst.Step] = {
+    val preR: PreResult[Context, ProofAst.Step] = pp.preProofAstStep(ctx, o)
+    val r: TPostResult[Context, ProofAst.Step] = if (preR.continu) {
+      val o2: ProofAst.Step = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
-      val rOpt: TPostResult[Context, Proof.Step] = o2 match {
-        case o2: Proof.Step.Regular =>
+      val rOpt: TPostResult[Context, ProofAst.Step] = o2 match {
+        case o2: ProofAst.Step.Regular =>
           val r0: TPostResult[Context, Exp.LitZ] = transformExpLitZ(preR.ctx, o2.no)
           val r1: TPostResult[Context, Exp] = transformExp(r0.ctx, o2.claim)
-          val r2: TPostResult[Context, Proof.Step.Justification] = transformProofStepJustification(r1.ctx, o2.just)
+          val r2: TPostResult[Context, ProofAst.Step.Justification] = transformProofAstStepJustification(r1.ctx, o2.just)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
             TPostResult(r2.ctx, Some(o2(no = r0.resultOpt.getOrElse(o2.no), claim = r1.resultOpt.getOrElse(o2.claim), just = r2.resultOpt.getOrElse(o2.just))))
           else
             TPostResult(r2.ctx, None())
-        case o2: Proof.Step.Assume =>
+        case o2: ProofAst.Step.Assume =>
           val r0: TPostResult[Context, Exp.LitZ] = transformExpLitZ(preR.ctx, o2.no)
           val r1: TPostResult[Context, Exp] = transformExp(r0.ctx, o2.claim)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
             TPostResult(r1.ctx, Some(o2(no = r0.resultOpt.getOrElse(o2.no), claim = r1.resultOpt.getOrElse(o2.claim))))
           else
             TPostResult(r1.ctx, None())
-        case o2: Proof.Step.Assert =>
+        case o2: ProofAst.Step.Assert =>
           val r0: TPostResult[Context, Exp.LitZ] = transformExpLitZ(preR.ctx, o2.no)
           val r1: TPostResult[Context, Exp] = transformExp(r0.ctx, o2.claim)
-          val r2: TPostResult[Context, IS[Z, Proof.Step]] = transformISZ(r1.ctx, o2.steps, transformProofStep _)
+          val r2: TPostResult[Context, IS[Z, ProofAst.Step]] = transformISZ(r1.ctx, o2.steps, transformProofAstStep _)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
             TPostResult(r2.ctx, Some(o2(no = r0.resultOpt.getOrElse(o2.no), claim = r1.resultOpt.getOrElse(o2.claim), steps = r2.resultOpt.getOrElse(o2.steps))))
           else
             TPostResult(r2.ctx, None())
-        case o2: Proof.Step.SubProof =>
+        case o2: ProofAst.Step.SubProof =>
           val r0: TPostResult[Context, Exp.LitZ] = transformExpLitZ(preR.ctx, o2.no)
-          val r1: TPostResult[Context, IS[Z, Proof.Step]] = transformISZ(r0.ctx, o2.steps, transformProofStep _)
+          val r1: TPostResult[Context, IS[Z, ProofAst.Step]] = transformISZ(r0.ctx, o2.steps, transformProofAstStep _)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
             TPostResult(r1.ctx, Some(o2(no = r0.resultOpt.getOrElse(o2.no), steps = r1.resultOpt.getOrElse(o2.steps))))
           else
             TPostResult(r1.ctx, None())
-        case o2: Proof.Step.Let =>
+        case o2: ProofAst.Step.Let =>
           val r0: TPostResult[Context, Exp.LitZ] = transformExpLitZ(preR.ctx, o2.no)
-          val r1: TPostResult[Context, IS[Z, Proof.Step.Let.Param]] = transformISZ(r0.ctx, o2.params, transformProofStepLetParam _)
-          val r2: TPostResult[Context, IS[Z, Proof.Step]] = transformISZ(r1.ctx, o2.steps, transformProofStep _)
+          val r1: TPostResult[Context, IS[Z, ProofAst.Step.Let.Param]] = transformISZ(r0.ctx, o2.params, transformProofAstStepLetParam _)
+          val r2: TPostResult[Context, IS[Z, ProofAst.Step]] = transformISZ(r1.ctx, o2.steps, transformProofAstStep _)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
             TPostResult(r2.ctx, Some(o2(no = r0.resultOpt.getOrElse(o2.no), params = r1.resultOpt.getOrElse(o2.params), steps = r2.resultOpt.getOrElse(o2.steps))))
           else
             TPostResult(r2.ctx, None())
-        case o2: Proof.Step.StructInduction =>
+        case o2: ProofAst.Step.StructInduction =>
           val r0: TPostResult[Context, Exp.LitZ] = transformExpLitZ(preR.ctx, o2.no)
           val r1: TPostResult[Context, Exp] = transformExp(r0.ctx, o2.claim)
           val r2: TPostResult[Context, Exp] = transformExp(r1.ctx, o2.exp)
-          val r3: TPostResult[Context, IS[Z, Proof.Step.StructInduction.MatchCase]] = transformISZ(r2.ctx, o2.cases, transformProofStepStructInductionMatchCase _)
-          val r4: TPostResult[Context, Option[Proof.Step.StructInduction.MatchDefault]] = transformOption(r3.ctx, o2.defaultOpt, transformProofStepStructInductionMatchDefault _)
+          val r3: TPostResult[Context, IS[Z, ProofAst.Step.StructInduction.MatchCase]] = transformISZ(r2.ctx, o2.cases, transformProofAstStepStructInductionMatchCase _)
+          val r4: TPostResult[Context, Option[ProofAst.Step.StructInduction.MatchDefault]] = transformOption(r3.ctx, o2.defaultOpt, transformProofAstStepStructInductionMatchDefault _)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty)
             TPostResult(r4.ctx, Some(o2(no = r0.resultOpt.getOrElse(o2.no), claim = r1.resultOpt.getOrElse(o2.claim), exp = r2.resultOpt.getOrElse(o2.exp), cases = r3.resultOpt.getOrElse(o2.cases), defaultOpt = r4.resultOpt.getOrElse(o2.defaultOpt))))
           else
@@ -3054,8 +3054,8 @@ import Transformer._
       TPostResult(preR.ctx, None())
     }
     val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: Proof.Step = r.resultOpt.getOrElse(o)
-    val postR: TPostResult[Context, Proof.Step] = pp.postProofStep(r.ctx, o2)
+    val o2: ProofAst.Step = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, ProofAst.Step] = pp.postProofAstStep(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -3065,10 +3065,10 @@ import Transformer._
     }
   }
 
-  @pure def transformProofStepLetParam(ctx: Context, o: Proof.Step.Let.Param): TPostResult[Context, Proof.Step.Let.Param] = {
-    val preR: PreResult[Context, Proof.Step.Let.Param] = pp.preProofStepLetParam(ctx, o)
-    val r: TPostResult[Context, Proof.Step.Let.Param] = if (preR.continu) {
-      val o2: Proof.Step.Let.Param = preR.resultOpt.getOrElse(o)
+  @pure def transformProofAstStepLetParam(ctx: Context, o: ProofAst.Step.Let.Param): TPostResult[Context, ProofAst.Step.Let.Param] = {
+    val preR: PreResult[Context, ProofAst.Step.Let.Param] = pp.preProofAstStepLetParam(ctx, o)
+    val r: TPostResult[Context, ProofAst.Step.Let.Param] = if (preR.continu) {
+      val o2: ProofAst.Step.Let.Param = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: TPostResult[Context, Id] = transformId(preR.ctx, o2.id)
       val r1: TPostResult[Context, Option[Type]] = transformOption(r0.ctx, o2.tipeOpt, transformType _)
@@ -3082,8 +3082,8 @@ import Transformer._
       TPostResult(preR.ctx, None())
     }
     val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: Proof.Step.Let.Param = r.resultOpt.getOrElse(o)
-    val postR: TPostResult[Context, Proof.Step.Let.Param] = pp.postProofStepLetParam(r.ctx, o2)
+    val o2: ProofAst.Step.Let.Param = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, ProofAst.Step.Let.Param] = pp.postProofAstStepLetParam(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -3093,14 +3093,14 @@ import Transformer._
     }
   }
 
-  @pure def transformProofStepStructInductionMatchCase(ctx: Context, o: Proof.Step.StructInduction.MatchCase): TPostResult[Context, Proof.Step.StructInduction.MatchCase] = {
-    val preR: PreResult[Context, Proof.Step.StructInduction.MatchCase] = pp.preProofStepStructInductionMatchCase(ctx, o)
-    val r: TPostResult[Context, Proof.Step.StructInduction.MatchCase] = if (preR.continu) {
-      val o2: Proof.Step.StructInduction.MatchCase = preR.resultOpt.getOrElse(o)
+  @pure def transformProofAstStepStructInductionMatchCase(ctx: Context, o: ProofAst.Step.StructInduction.MatchCase): TPostResult[Context, ProofAst.Step.StructInduction.MatchCase] = {
+    val preR: PreResult[Context, ProofAst.Step.StructInduction.MatchCase] = pp.preProofAstStepStructInductionMatchCase(ctx, o)
+    val r: TPostResult[Context, ProofAst.Step.StructInduction.MatchCase] = if (preR.continu) {
+      val o2: ProofAst.Step.StructInduction.MatchCase = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: TPostResult[Context, Pattern.Structure] = transformPatternStructure(preR.ctx, o2.pattern)
-      val r1: TPostResult[Context, Option[Proof.Step.Assume]] = transformOption(r0.ctx, o2.hypoOpt, transformProofStepAssume _)
-      val r2: TPostResult[Context, IS[Z, Proof.Step]] = transformISZ(r1.ctx, o2.steps, transformProofStep _)
+      val r1: TPostResult[Context, Option[ProofAst.Step.Assume]] = transformOption(r0.ctx, o2.hypoOpt, transformProofAstStepAssume _)
+      val r2: TPostResult[Context, IS[Z, ProofAst.Step]] = transformISZ(r1.ctx, o2.steps, transformProofAstStep _)
       if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
         TPostResult(r2.ctx, Some(o2(pattern = r0.resultOpt.getOrElse(o2.pattern), hypoOpt = r1.resultOpt.getOrElse(o2.hypoOpt), steps = r2.resultOpt.getOrElse(o2.steps))))
       else
@@ -3111,8 +3111,8 @@ import Transformer._
       TPostResult(preR.ctx, None())
     }
     val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: Proof.Step.StructInduction.MatchCase = r.resultOpt.getOrElse(o)
-    val postR: TPostResult[Context, Proof.Step.StructInduction.MatchCase] = pp.postProofStepStructInductionMatchCase(r.ctx, o2)
+    val o2: ProofAst.Step.StructInduction.MatchCase = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, ProofAst.Step.StructInduction.MatchCase] = pp.postProofAstStepStructInductionMatchCase(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -3122,13 +3122,13 @@ import Transformer._
     }
   }
 
-  @pure def transformProofStepStructInductionMatchDefault(ctx: Context, o: Proof.Step.StructInduction.MatchDefault): TPostResult[Context, Proof.Step.StructInduction.MatchDefault] = {
-    val preR: PreResult[Context, Proof.Step.StructInduction.MatchDefault] = pp.preProofStepStructInductionMatchDefault(ctx, o)
-    val r: TPostResult[Context, Proof.Step.StructInduction.MatchDefault] = if (preR.continu) {
-      val o2: Proof.Step.StructInduction.MatchDefault = preR.resultOpt.getOrElse(o)
+  @pure def transformProofAstStepStructInductionMatchDefault(ctx: Context, o: ProofAst.Step.StructInduction.MatchDefault): TPostResult[Context, ProofAst.Step.StructInduction.MatchDefault] = {
+    val preR: PreResult[Context, ProofAst.Step.StructInduction.MatchDefault] = pp.preProofAstStepStructInductionMatchDefault(ctx, o)
+    val r: TPostResult[Context, ProofAst.Step.StructInduction.MatchDefault] = if (preR.continu) {
+      val o2: ProofAst.Step.StructInduction.MatchDefault = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: TPostResult[Context, Option[Proof.Step.Assume]] = transformOption(preR.ctx, o2.hypoOpt, transformProofStepAssume _)
-      val r1: TPostResult[Context, IS[Z, Proof.Step]] = transformISZ(r0.ctx, o2.steps, transformProofStep _)
+      val r0: TPostResult[Context, Option[ProofAst.Step.Assume]] = transformOption(preR.ctx, o2.hypoOpt, transformProofAstStepAssume _)
+      val r1: TPostResult[Context, IS[Z, ProofAst.Step]] = transformISZ(r0.ctx, o2.steps, transformProofAstStep _)
       if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
         TPostResult(r1.ctx, Some(o2(hypoOpt = r0.resultOpt.getOrElse(o2.hypoOpt), steps = r1.resultOpt.getOrElse(o2.steps))))
       else
@@ -3139,8 +3139,8 @@ import Transformer._
       TPostResult(preR.ctx, None())
     }
     val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: Proof.Step.StructInduction.MatchDefault = r.resultOpt.getOrElse(o)
-    val postR: TPostResult[Context, Proof.Step.StructInduction.MatchDefault] = pp.postProofStepStructInductionMatchDefault(r.ctx, o2)
+    val o2: ProofAst.Step.StructInduction.MatchDefault = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, ProofAst.Step.StructInduction.MatchDefault] = pp.postProofAstStepStructInductionMatchDefault(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -3150,10 +3150,10 @@ import Transformer._
     }
   }
 
-  @pure def transformProofStepJustification(ctx: Context, o: Proof.Step.Justification): TPostResult[Context, Proof.Step.Justification] = {
-    val preR: PreResult[Context, Proof.Step.Justification] = pp.preProofStepJustification(ctx, o)
-    val r: TPostResult[Context, Proof.Step.Justification] = if (preR.continu) {
-      val o2: Proof.Step.Justification = preR.resultOpt.getOrElse(o)
+  @pure def transformProofAstStepJustification(ctx: Context, o: ProofAst.Step.Justification): TPostResult[Context, ProofAst.Step.Justification] = {
+    val preR: PreResult[Context, ProofAst.Step.Justification] = pp.preProofAstStepJustification(ctx, o)
+    val r: TPostResult[Context, ProofAst.Step.Justification] = if (preR.continu) {
+      val o2: ProofAst.Step.Justification = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: TPostResult[Context, Id] = transformId(preR.ctx, o2.id)
       val r1: TPostResult[Context, IS[Z, Exp]] = transformISZ(r0.ctx, o2.args, transformExp _)
@@ -3167,8 +3167,8 @@ import Transformer._
       TPostResult(preR.ctx, None())
     }
     val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: Proof.Step.Justification = r.resultOpt.getOrElse(o)
-    val postR: TPostResult[Context, Proof.Step.Justification] = pp.postProofStepJustification(r.ctx, o2)
+    val o2: ProofAst.Step.Justification = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, ProofAst.Step.Justification] = pp.postProofAstStepJustification(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -4814,14 +4814,14 @@ import Transformer._
     }
   }
 
-  @pure def transformProofStepAssume(ctx: Context, o: Proof.Step.Assume): TPostResult[Context, Proof.Step.Assume] = {
-    val preR: PreResult[Context, Proof.Step.Assume] = pp.preProofStepAssume(ctx, o) match {
-     case PreResult(preCtx, continu, Some(r: Proof.Step.Assume)) => PreResult(preCtx, continu, Some[Proof.Step.Assume](r))
-     case PreResult(_, _, Some(_)) => halt("Can only produce object of type Proof.Step.Assume")
-     case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Proof.Step.Assume]())
+  @pure def transformProofAstStepAssume(ctx: Context, o: ProofAst.Step.Assume): TPostResult[Context, ProofAst.Step.Assume] = {
+    val preR: PreResult[Context, ProofAst.Step.Assume] = pp.preProofAstStepAssume(ctx, o) match {
+     case PreResult(preCtx, continu, Some(r: ProofAst.Step.Assume)) => PreResult(preCtx, continu, Some[ProofAst.Step.Assume](r))
+     case PreResult(_, _, Some(_)) => halt("Can only produce object of type ProofAst.Step.Assume")
+     case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[ProofAst.Step.Assume]())
     }
-    val r: TPostResult[Context, Proof.Step.Assume] = if (preR.continu) {
-      val o2: Proof.Step.Assume = preR.resultOpt.getOrElse(o)
+    val r: TPostResult[Context, ProofAst.Step.Assume] = if (preR.continu) {
+      val o2: ProofAst.Step.Assume = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: TPostResult[Context, Exp.LitZ] = transformExpLitZ(preR.ctx, o2.no)
       val r1: TPostResult[Context, Exp] = transformExp(r0.ctx, o2.claim)
@@ -4835,11 +4835,11 @@ import Transformer._
       TPostResult(preR.ctx, None())
     }
     val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: Proof.Step.Assume = r.resultOpt.getOrElse(o)
-    val postR: TPostResult[Context, Proof.Step.Assume] = pp.postProofStepAssume(r.ctx, o2) match {
-     case TPostResult(postCtx, Some(result: Proof.Step.Assume)) => TPostResult(postCtx, Some[Proof.Step.Assume](result))
-     case TPostResult(_, Some(_)) => halt("Can only produce object of type Proof.Step.Assume")
-     case TPostResult(postCtx, _) => TPostResult(postCtx, None[Proof.Step.Assume]())
+    val o2: ProofAst.Step.Assume = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, ProofAst.Step.Assume] = pp.postProofAstStepAssume(r.ctx, o2) match {
+     case TPostResult(postCtx, Some(result: ProofAst.Step.Assume)) => TPostResult(postCtx, Some[ProofAst.Step.Assume](result))
+     case TPostResult(_, Some(_)) => halt("Can only produce object of type ProofAst.Step.Assume")
+     case TPostResult(postCtx, _) => TPostResult(postCtx, None[ProofAst.Step.Assume]())
     }
     if (postR.resultOpt.nonEmpty) {
       return postR

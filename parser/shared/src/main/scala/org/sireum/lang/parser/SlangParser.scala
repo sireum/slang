@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2019, Robby, Kansas State University
+ Copyright (c) 2020, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -134,7 +134,7 @@ object SlangParser {
     txt: Predef.String,
     reporter: Reporter
   ): Result = {
-    var text = txt.replaceAllLiterally("\r\n", "\n") // WORKAROUND: scalameta crlf issues
+    var text = txt.replace("\r\n", "\n") // WORKAROUND: scalameta crlf issues
     def compactLine(k: Int): Predef.String = {
       val sb = new _root_.java.lang.StringBuilder
       var i = k
@@ -194,7 +194,7 @@ object SlangParser {
   private[SlangParser] lazy val rExp = AST.Exp.Ident(rDollarId, emptyResolvedAttr)
   private[SlangParser] lazy val rStmt = AST.Stmt.Expr(rExp, emptyTypedAttr)
   private[SlangParser] lazy val emptyContract = AST.MethodContract.Simple(ISZ(), ISZ(), ISZ(), ISZ())
-  private[SlangParser] lazy val emptyProofStep = AST.Proof.Step.SubProof(AST.Exp.LitZ(0, emptyAttr), ISZ())
+  private[SlangParser] lazy val emptyProofStep = AST.ProofAst.Step.SubProof(AST.Exp.LitZ(0, emptyAttr), ISZ())
 
 }
 
@@ -3024,11 +3024,11 @@ class SlangParser(
     AST.Stmt.SpecBlock(translateBlock(enclosing, b, isAssignExp = false))
   }
 
-  def translateStructuralInduction(n: AST.Exp.LitZ, claim: AST.Exp, m: Term): AST.Proof.Step.StructInduction = {
-    def hypoSteps(steps: Seq[Term]): (Option[AST.Proof.Step.Assume], ISZ[AST.Proof.Step]) = {
+  def translateStructuralInduction(n: AST.Exp.LitZ, claim: AST.Exp, m: Term): AST.ProofAst.Step.StructInduction = {
+    def hypoSteps(steps: Seq[Term]): (Option[AST.ProofAst.Step.Assume], ISZ[AST.ProofAst.Step]) = {
       steps.headOption match {
         case scala.Some(q"${no: Lit.Int} #> Assume($claim)") =>
-          (Some(AST.Proof.Step.Assume(toLitZ(no), translateExp(claim))),
+          (Some(AST.ProofAst.Step.Assume(toLitZ(no), translateExp(claim))),
             ISZ(steps.tail.map(translateProofStep): _*))
         case _ =>
           (None(), ISZ(steps.map(translateProofStep): _*))
@@ -3036,12 +3036,12 @@ class SlangParser(
     }
     m match {
       case q"$e match { ..case $cs }" =>
-        var cases = ISZ[AST.Proof.Step.StructInduction.MatchCase]()
-        val (defaultOpt, rest): (Option[AST.Proof.Step.StructInduction.MatchDefault], Seq[Case]) =
+        var cases = ISZ[AST.ProofAst.Step.StructInduction.MatchCase]()
+        val (defaultOpt, rest): (Option[AST.ProofAst.Step.StructInduction.MatchDefault], Seq[Case]) =
           cs.lastOption match {
             case scala.Some(p"case _ => SubProof(..$pexprs)") =>
               val (hypoOpt, proofSteps) = hypoSteps(pexprs)
-              (Some(AST.Proof.Step.StructInduction.MatchDefault(hypoOpt, proofSteps)), cs.dropRight(1))
+              (Some(AST.ProofAst.Step.StructInduction.MatchDefault(hypoOpt, proofSteps)), cs.dropRight(1))
             case _ => (None(), cs)
           }
         for (c <- rest) {
@@ -3055,24 +3055,24 @@ class SlangParser(
                 }
               }
               val (hypoOpt, proofSteps) = hypoSteps(steps)
-              cases = cases :+ AST.Proof.Step.StructInduction.MatchCase(
+              cases = cases :+ AST.ProofAst.Step.StructInduction.MatchCase(
                 AST.Pattern.Structure(None(), Some(AST.Name(ref2IS(ref), attr(ref.pos))),
                   patterns, resolvedAttr(c.pat.pos)), hypoOpt, proofSteps
               )
             case _ => error(c.pos, "Expecting 'case ...(...) => SubProof(...)'.")
           }
         }
-        AST.Proof.Step.StructInduction(n, claim, translateExp(e), cases, defaultOpt)
+        AST.ProofAst.Step.StructInduction(n, claim, translateExp(e), cases, defaultOpt)
       case _ =>
         error(m.pos, "Expecting '... match { case ...(...) => SubProof(...) ... }'.")
-        AST.Proof.Step.StructInduction(n, claim, AST.Exp.LitB(false, emptyAttr), ISZ(), None())
+        AST.ProofAst.Step.StructInduction(n, claim, AST.Exp.LitB(false, emptyAttr), ISZ(), None())
     }
   }
 
   def toLitZ(n: Lit.Int): AST.Exp.LitZ = AST.Exp.LitZ(n.value, attr(n.pos))
 
-  def translateProofStep(proofStep: Term): AST.Proof.Step = {
-    def translateLetParam(param: Term.Param): AST.Proof.Step.Let.Param = {
+  def translateProofStep(proofStep: Term): AST.ProofAst.Step = {
+    def translateLetParam(param: Term.Param): AST.ProofAst.Step.Let.Param = {
       if (param.mods.nonEmpty) {
         for (mod <- param.mods) {
           error(mod.pos, "Cannot have Let parameter modifier.")
@@ -3081,29 +3081,29 @@ class SlangParser(
       if (param.default.nonEmpty) {
         error(param.default.get.pos, "Cannot have Let parameter default value.")
       }
-      AST.Proof.Step.Let.Param(cid(param.name), opt(param.decltpe.map(translateType)))
+      AST.ProofAst.Step.Let.Param(cid(param.name), opt(param.decltpe.map(translateType)))
     }
     proofStep match {
       case q"${no: Lit.Int} #> $claim by ${jid: Lit.String}(..${jargs: Seq[Term]})" =>
-        AST.Proof.Step.Regular(toLitZ(no), translateExp(claim),
-          AST.Proof.Step.Justification(cid(jid.value, jid.pos),
+        AST.ProofAst.Step.Regular(toLitZ(no), translateExp(claim),
+          AST.ProofAst.Step.Justification(cid(jid.value, jid.pos),
             ISZ(jargs.map(translateExp): _*)))
       case q"${no: Lit.Int} #> $claim by ${jid: Lit.String}" =>
-        AST.Proof.Step.Regular(toLitZ(no), translateExp(claim),
-          AST.Proof.Step.Justification(cid(jid.value, jid.pos), ISZ()))
+        AST.ProofAst.Step.Regular(toLitZ(no), translateExp(claim),
+          AST.ProofAst.Step.Justification(cid(jid.value, jid.pos), ISZ()))
       case q"${no: Lit.Int} #> $claim by StructuralInduction($m)" =>
         translateStructuralInduction(toLitZ(no), translateExp(claim), m)
       case q"${no: Lit.Int} #> Assume($claim)" =>
-        AST.Proof.Step.Assume(toLitZ(no), translateExp(claim))
+        AST.ProofAst.Step.Assume(toLitZ(no), translateExp(claim))
       case q"${no: Lit.Int} #> Assert($claim, SubProof(..${claims: Seq[Term]}))" =>
-        AST.Proof.Step.Assert(toLitZ(no), translateExp(claim), ISZ(claims.map(translateProofStep): _*))
+        AST.ProofAst.Step.Assert(toLitZ(no), translateExp(claim), ISZ(claims.map(translateProofStep): _*))
       case q"${no: Lit.Int} #> SubProof(..${claims: Seq[Term]})" =>
-        AST.Proof.Step.SubProof(toLitZ(no), ISZ(claims.map(translateProofStep): _*))
+        AST.ProofAst.Step.SubProof(toLitZ(no), ISZ(claims.map(translateProofStep): _*))
       case q"${no: Lit.Int} #> Let ((..$params) => SubProof(..${claims: Seq[Term]}))" =>
-        AST.Proof.Step.Let(toLitZ(no), ISZ(params.map(translateLetParam): _*),
+        AST.ProofAst.Step.Let(toLitZ(no), ISZ(params.map(translateLetParam): _*),
           ISZ(claims.map(translateProofStep): _*))
       case q"${no: Lit.Int} #> Let {(..$params) => SubProof(..${claims: Seq[Term]})}" =>
-        AST.Proof.Step.Let(toLitZ(no), ISZ(params.map(translateLetParam): _*),
+        AST.ProofAst.Step.Let(toLitZ(no), ISZ(params.map(translateLetParam): _*),
           ISZ(claims.map(translateProofStep): _*))
       case _ =>
         error(proofStep.pos, s"Invalid proof step form: '$proofStep'.")
@@ -3111,13 +3111,13 @@ class SlangParser(
     }
   }
 
-  def translateProof(proof: Term): AST.Proof = {
+  def translateProof(proof: Term): AST.ProofAst = {
     proof match {
       case q"Proof(..${pexprs: Seq[Term]})" =>
-        AST.Proof(ISZ(pexprs.map(translateProofStep): _*), attr(proof.pos))
+        AST.ProofAst(ISZ(pexprs.map(translateProofStep): _*), attr(proof.pos))
       case _ =>
         error(proof.pos, s"Expecting 'Proof(...)' but found '$proof'.")
-        return AST.Proof(ISZ(), attr(proof.pos))
+        return AST.ProofAst(ISZ(), attr(proof.pos))
     }
   }
 

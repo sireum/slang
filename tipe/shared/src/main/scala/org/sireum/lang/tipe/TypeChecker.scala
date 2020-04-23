@@ -1,6 +1,6 @@
 // #Sireum
 /*
- Copyright (c) 2019, Robby, Kansas State University
+ Copyright (c) 2020, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -4207,18 +4207,18 @@ import TypeChecker._
     )
   }
 
-  def checkStep(scope: Scope.Local, step: AST.Proof.Step, reporter: Reporter): AST.Proof.Step = {
-    def checkJustification(just: AST.Proof.Step.Justification): AST.Proof.Step.Justification = {
+  def checkStep(scope: Scope.Local, step: AST.ProofAst.Step, reporter: Reporter): AST.ProofAst.Step = {
+    def checkJustification(just: AST.ProofAst.Step.Justification): AST.ProofAst.Step.Justification = {
       return just(args = for (arg <- just.args) yield checkExp(None(), scope, arg, reporter)._1)
     }
     val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
     step match {
-      case step: AST.Proof.Step.Regular =>
+      case step: AST.ProofAst.Step.Regular =>
         return step(claim = checkExp(bExpectedOpt, scope, step.claim, reporter)._1,
           just = checkJustification(step.just))
-      case step: AST.Proof.Step.SubProof =>
+      case step: AST.ProofAst.Step.SubProof =>
         return step(steps = for (s <- step.steps) yield checkStep(scope, s, reporter))
-      case step: AST.Proof.Step.Let =>
+      case step: AST.ProofAst.Step.Let =>
         var ok = T
         var sc = createNewScope(scope)
         def declId(id: AST.Id, tOpt: Option[AST.Typed]): Unit = {
@@ -4242,7 +4242,7 @@ import TypeChecker._
             )
           }
         }
-        var newParams = ISZ[AST.Proof.Step.Let.Param]()
+        var newParams = ISZ[AST.ProofAst.Step.Let.Param]()
         for (p <- step.params) {
           val typedOpt: Option[AST.Typed] = p.tipeOpt match {
             case Some(tipe) =>
@@ -4256,12 +4256,12 @@ import TypeChecker._
           declId(p.id, typedOpt)
         }
         return step(params = newParams, steps = for (s <- step.steps) yield checkStep(sc, s, reporter))
-      case step: AST.Proof.Step.Assume =>
+      case step: AST.ProofAst.Step.Assume =>
         return step(claim = checkExp(bExpectedOpt, scope, step.claim, reporter)._1)
-      case step: AST.Proof.Step.Assert =>
+      case step: AST.ProofAst.Step.Assert =>
         return step(claim = checkExp(bExpectedOpt, scope, step.claim, reporter)._1,
           steps = for (s <- step.steps) yield checkStep(scope, s, reporter))
-      case step: AST.Proof.Step.StructInduction =>
+      case step: AST.ProofAst.Step.StructInduction =>
         val newClaim = checkExp(bExpectedOpt, scope, step.claim, reporter)._1
         val (newExp, tOpt) = checkExp(None(), scope, step.exp, reporter)
         tOpt match {
@@ -4270,13 +4270,13 @@ import TypeChecker._
               case newExp: AST.Exp.Ident => Some(newExp.id)
               case _ => None()
             }
-            var newCases = ISZ[AST.Proof.Step.StructInduction.MatchCase]()
+            var newCases = ISZ[AST.ProofAst.Step.StructInduction.MatchCase]()
             for (cas <- step.cases) {
               val (scOpt, newPattern) = checkPattern(T, unrefinedIdOpt, t, scope, cas.pattern, reporter)
               scOpt match {
                 case Some(sc) =>
-                  val newHypoOpt: Option[AST.Proof.Step.Assume] = cas.hypoOpt match {
-                    case Some(hypo) => Some(checkStep(sc, hypo, reporter).asInstanceOf[AST.Proof.Step.Assume])
+                  val newHypoOpt: Option[AST.ProofAst.Step.Assume] = cas.hypoOpt match {
+                    case Some(hypo) => Some(checkStep(sc, hypo, reporter).asInstanceOf[AST.ProofAst.Step.Assume])
                     case _ => None()
                   }
                   newCases = newCases :+ cas(
@@ -4290,10 +4290,10 @@ import TypeChecker._
                   )
               }
             }
-            val newDefaultOpt: Option[AST.Proof.Step.StructInduction.MatchDefault] = step.defaultOpt match {
+            val newDefaultOpt: Option[AST.ProofAst.Step.StructInduction.MatchDefault] = step.defaultOpt match {
               case Some(default) =>
-                val newHypoOpt: Option[AST.Proof.Step.Assume] = default.hypoOpt match {
-                  case Some(hypo) => Some(checkStep(scope, hypo, reporter).asInstanceOf[AST.Proof.Step.Assume])
+                val newHypoOpt: Option[AST.ProofAst.Step.Assume] = default.hypoOpt match {
+                  case Some(hypo) => Some(checkStep(scope, hypo, reporter).asInstanceOf[AST.ProofAst.Step.Assume])
                   case _ => None()
                 }
                 Some(default(hypoOpt = newHypoOpt, steps = for (s <- default.steps) yield checkStep(scope, s, reporter)))
