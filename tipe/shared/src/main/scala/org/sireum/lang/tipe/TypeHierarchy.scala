@@ -538,7 +538,7 @@ object TypeHierarchy {
   ): Option[AST.Typed] = {
     val tipeOpt: Option[AST.Type] = if (!ti.outlined) {
       val tm = typeParamMap(ti.ast.typeParams, reporter)
-      val scope = localTypeScope(tm.map, ti.scope)
+      val scope = Scope.Local.create(tm.map, ti.scope)
       this.typed(scope, ti.ast.tipe, reporter)
     } else {
       Some(ti.ast.tipe)

@@ -346,7 +346,7 @@ object TypeOutliner {
     var r = ISZ[(QName, TypeInfo)]()
     for (info <- infos) {
       val tm = typeParamMap(info.ast.typeParams, reporter)
-      val scope = localTypeScope(tm.map, info.scope)
+      val scope = Scope.Local.create(tm.map, info.scope)
       val newTipeOpt = typeHierarchy.typed(scope, info.ast.tipe, reporter)
       val newInfo: TypeInfo.TypeAlias = newTipeOpt match {
         case Some(newTipe) => info(ast = info.ast(tipe = newTipe))
@@ -360,7 +360,7 @@ object TypeOutliner {
   @pure def outlineSig(info: TypeInfo.Sig): TypeHierarchy => (TypeHierarchy, Reporter) @pure = {
     val reporter = Reporter.create
     val tm = typeParamMap(info.ast.typeParams, reporter)
-    val scope = localTypeScope(tm.map, info.scope)
+    val scope = Scope.Local.create(tm.map, info.scope)
     val members = outlineMembers(
       T,
       info.name,
@@ -397,7 +397,7 @@ object TypeOutliner {
   @pure def outlineAdt(info: TypeInfo.Adt): TypeHierarchy => (TypeHierarchy, Reporter) @pure = {
     val reporter = Reporter.create
     val tm = typeParamMap(info.ast.typeParams, reporter)
-    val scope = localTypeScope(tm.map, info.scope)
+    val scope = Scope.Local.create(tm.map, info.scope)
     val members = outlineMembers(
       info.ast.isRoot,
       info.name,
@@ -496,7 +496,7 @@ object TypeOutliner {
       }
     }
     val tm = typeParamMap(typeParams, reporter)
-    val mScope = localTypeScope(tm.map, scope)
+    val mScope = Scope.Local.create(tm.map, scope)
     var params = ISZ[AST.Param]()
     for (p <- sig.params) {
       val tipeOpt = typeHierarchy.typed(mScope, p.tipe, reporter)

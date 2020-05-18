@@ -445,6 +445,10 @@ object MTransformer {
 
   val PostResultExpAtLoc: MOption[Exp.Spec] = MNone()
 
+  val PreResultExpLoopIndex: PreResult[Exp.Spec] = PreResult(T, MNone())
+
+  val PostResultExpLoopIndex: MOption[Exp.Spec] = MNone()
+
   val PreResultExpStateSeq: PreResult[Exp.Spec] = PreResult(T, MNone())
 
   val PostResultExpStateSeq: MOption[Exp.Spec] = MNone()
@@ -1234,6 +1238,13 @@ import MTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
         }
         return r
+      case o: Exp.LoopIndex =>
+        val r: PreResult[Exp] = preExpLoopIndex(o) match {
+         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
+        }
+        return r
       case o: Exp.StateSeq =>
         val r: PreResult[Exp] = preExpStateSeq(o) match {
          case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
@@ -1438,6 +1449,7 @@ import MTransformer._
       case o: Exp.Input => return preExpInput(o)
       case o: Exp.OldVal => return preExpOldVal(o)
       case o: Exp.AtLoc => return preExpAtLoc(o)
+      case o: Exp.LoopIndex => return preExpLoopIndex(o)
       case o: Exp.StateSeq => return preExpStateSeq(o)
       case o: Exp.Result => return preExpResult(o)
     }
@@ -1473,6 +1485,10 @@ import MTransformer._
 
   def preExpAtLoc(o: Exp.AtLoc): PreResult[Exp.Spec] = {
     return PreResultExpAtLoc
+  }
+
+  def preExpLoopIndex(o: Exp.LoopIndex): PreResult[Exp.Spec] = {
+    return PreResultExpLoopIndex
   }
 
   def preExpStateSeq(o: Exp.StateSeq): PreResult[Exp.Spec] = {
@@ -2302,6 +2318,13 @@ import MTransformer._
          case _ => MNone[Exp]()
         }
         return r
+      case o: Exp.LoopIndex =>
+        val r: MOption[Exp] = postExpLoopIndex(o) match {
+         case MSome(result: Exp) => MSome[Exp](result)
+         case MSome(_) => halt("Can only produce object of type Exp")
+         case _ => MNone[Exp]()
+        }
+        return r
       case o: Exp.StateSeq =>
         val r: MOption[Exp] = postExpStateSeq(o) match {
          case MSome(result: Exp) => MSome[Exp](result)
@@ -2506,6 +2529,7 @@ import MTransformer._
       case o: Exp.Input => return postExpInput(o)
       case o: Exp.OldVal => return postExpOldVal(o)
       case o: Exp.AtLoc => return postExpAtLoc(o)
+      case o: Exp.LoopIndex => return postExpLoopIndex(o)
       case o: Exp.StateSeq => return postExpStateSeq(o)
       case o: Exp.Result => return postExpResult(o)
     }
@@ -2541,6 +2565,10 @@ import MTransformer._
 
   def postExpAtLoc(o: Exp.AtLoc): MOption[Exp.Spec] = {
     return PostResultExpAtLoc
+  }
+
+  def postExpLoopIndex(o: Exp.LoopIndex): MOption[Exp.Spec] = {
+    return PostResultExpLoopIndex
   }
 
   def postExpStateSeq(o: Exp.StateSeq): MOption[Exp.Spec] = {
@@ -4217,6 +4245,14 @@ import MTransformer._
             MSome(o2(idOpt = r0.getOrElse(o2.idOpt), exp = r1.getOrElse(o2.exp), attr = r2.getOrElse(o2.attr)))
           else
             MNone()
+        case o2: Exp.LoopIndex =>
+          val r0: MOption[Option[Type]] = transformOption(o2.tipeOpt, transformType _)
+          val r1: MOption[Exp.Ident] = transformExpIdent(o2.exp)
+          val r2: MOption[TypedAttr] = transformTypedAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(tipeOpt = r0.getOrElse(o2.tipeOpt), exp = r1.getOrElse(o2.exp), attr = r2.getOrElse(o2.attr)))
+          else
+            MNone()
         case o2: Exp.StateSeq =>
           val r0: MOption[Id] = transformId(o2.id)
           val r1: MOption[IS[Z, Exp.StateSeq.Fragment]] = transformISZ(o2.fragments, transformExpStateSeqFragment _)
@@ -4438,6 +4474,14 @@ import MTransformer._
           val r2: MOption[Attr] = transformAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
             MSome(o2(idOpt = r0.getOrElse(o2.idOpt), exp = r1.getOrElse(o2.exp), attr = r2.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Exp.LoopIndex =>
+          val r0: MOption[Option[Type]] = transformOption(o2.tipeOpt, transformType _)
+          val r1: MOption[Exp.Ident] = transformExpIdent(o2.exp)
+          val r2: MOption[TypedAttr] = transformTypedAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(tipeOpt = r0.getOrElse(o2.tipeOpt), exp = r1.getOrElse(o2.exp), attr = r2.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Exp.StateSeq =>

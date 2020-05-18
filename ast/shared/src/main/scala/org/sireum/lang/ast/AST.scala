@@ -1194,6 +1194,20 @@ object Exp {
     }
   }
 
+  @datatype class LoopIndex(tipeOpt: Option[Type], exp: Exp.Ident, @hidden attr: TypedAttr) extends Spec {
+
+    @pure override def posOpt: Option[Position] = {
+      return attr.posOpt
+    }
+
+    @pure override def typedOpt: Option[Typed] = {
+      tipeOpt match {
+        case Some(tipe) => return tipe.typedOpt
+        case _ => return attr.typedOpt
+      }
+    }
+  }
+
   @datatype class StateSeq(id: Id, fragments: ISZ[StateSeq.Fragment], @hidden attr: Attr) extends Spec {
 
     @pure override def posOpt: Option[Position] = {

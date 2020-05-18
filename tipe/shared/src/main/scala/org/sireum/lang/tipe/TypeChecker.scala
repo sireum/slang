@@ -834,10 +834,20 @@ import TypeChecker._
               expType.ids match {
                 case AST.Typed.isName =>
                   ok = checkIS(range.attr.posOpt, T)
-                  indexTypeOpt = Some(expType.args(0))
+                  val indexType = expType.args(0)
+                  indexTypeOpt = Some(indexType)
+                  enumGen.idOpt match {
+                    case Some(id) => scope = scope(indexMap = scope.indexMap + id.value ~> indexType)
+                    case _ =>
+                  }
                 case AST.Typed.msName =>
                   ok = checkIS(range.attr.posOpt, F)
-                  indexTypeOpt = Some(expType.args(0))
+                  val indexType = expType.args(0)
+                  indexTypeOpt = Some(indexType)
+                  enumGen.idOpt match {
+                    case Some(id) => scope = scope(indexMap = scope.indexMap + id.value ~> indexType)
+                    case _ =>
+                  }
                 case AST.Typed.jenName =>
                   ok = checkIS(range.attr.posOpt, T)
                   indexTypeOpt = None()
@@ -2871,6 +2881,37 @@ import TypeChecker._
       return (res, None())
     }
 
+    def checkLoopIndex(idx: AST.Exp.LoopIndex): (AST.Exp, Option[AST.Typed]) = {
+      if (inSpec) {
+        val id = idx.exp.id.value
+        scope.resolveIndex(id) match {
+          case Some(indexType) =>
+            val newExp = checkExp(None(), scope, idx.exp, reporter)._1.asInstanceOf[AST.Exp.Ident]
+            idx.tipeOpt match {
+              case Some(tipe) =>
+                val nto = typeHierarchy.typed(scope, tipe, reporter)
+                nto match {
+                  case Some(newTipe) =>
+                    if (newTipe.typedOpt.nonEmpty && indexType == newTipe.typedOpt.get) {
+                      val tOpt = newTipe.typedOpt
+                      return (idx(tipeOpt = nto, exp = newExp, attr = idx.attr(typedOpt = tOpt)), tOpt)
+                    } else {
+                      reporter.error(tipe.posOpt, typeCheckerKind, s"Expecting type '$indexType', but '${newTipe.typedOpt.get}' found.")
+                    }
+                  case _ =>
+                }
+                return (idx(exp = newExp), None())
+              case _ => return (idx(exp = newExp), idx.typedOpt)
+            }
+          case _ =>
+            reporter.error(idx.posOpt, typeCheckerKind, s"Could not resolve 'Idx($id)'.")
+        }
+      } else {
+        reporter.error(idx.posOpt, typeCheckerKind, "Idx can only be used inside specification context.")
+      }
+      return (idx, None())
+    }
+
     def checkExpH(): (AST.Exp, Option[AST.Typed]) = {
       exp match {
 
@@ -2974,20 +3015,37 @@ import TypeChecker._
         case exp: AST.Exp.Quant => return checkQuant(exp)
 
         case exp: AST.Exp.Input =>
-          val (e, tOpt) = checkExp(expectedOpt, scope, exp.exp, reporter)
-          return (exp(exp = e), tOpt)
+          if (inSpec) {
+            val (e, tOpt) = checkExp(expectedOpt, scope, exp.exp, reporter)
+            return (exp(exp = e), tOpt)
+          } else {
+            reporter.error(exp.posOpt, typeCheckerKind, "Input can only be used inside specification context.")
+            return (exp, None())
+          }
 
         case exp: AST.Exp.AtLoc =>
-          val (e, tOpt) = checkExp(expectedOpt, scope, exp.exp, reporter)
-          return (exp(exp = e), tOpt)
+          if (inSpec) {
+            val (e, tOpt) = checkExp(expectedOpt, scope, exp.exp, reporter)
+            return (exp(exp = e), tOpt)
+          } else {
+            reporter.error(exp.posOpt, typeCheckerKind, "At can only be used inside specification context.")
+            return (exp, None())
+          }
 
         case exp: AST.Exp.OldVal =>
-          val (e, tOpt) = checkExp(expectedOpt, scope, exp.exp, reporter)
-          return (exp(exp = e), tOpt)
+          if (inSpec) {
+            val (e, tOpt) = checkExp(expectedOpt, scope, exp.exp, reporter)
+            return (exp(exp = e), tOpt)
+          } else {
+            reporter.error(exp.posOpt, typeCheckerKind, "Old can only be used inside specification context.")
+            return (exp, None())
+          }
 
         case _: AST.Exp.StateSeq => halt("Unimplemented") // TODO
 
         case exp: AST.Exp.Result => return checkResult(exp)
+
+        case exp: AST.Exp.LoopIndex => return checkLoopIndex(exp)
       }
     }
 
@@ -3297,7 +3355,7 @@ import TypeChecker._
   }
 
   @pure def createNewScope(scope: Scope): Scope.Local = {
-    return Scope.Local(HashMap.empty, HashMap.empty, None(), None(), Some(scope))
+    return Scope.Local.create(HashMap.empty, scope)
   }
 
   def checkPattern(
@@ -4166,14 +4224,14 @@ import TypeChecker._
         val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
         val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
         val typeParams = typeParamMap(stmt.typeParams, reporter)
-        val sc = localTypeScope(typeParams.map, scope)
+        val sc = Scope.Local.create(typeParams.map, scope)
         return (Some(scope), stmt(claims = for (claim <- stmt.claims) yield tc.checkExp(bExpectedOpt, sc, claim, reporter)._1))
 
       case stmt: AST.Stmt.Theorem =>
         val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
         val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
         val typeParams = typeParamMap(stmt.typeParams, reporter)
-        val sc = localTypeScope(typeParams.map, scope)
+        val sc = Scope.Local.create(typeParams.map, scope)
         if (stmt.isFun) {
           val qclaim = stmt.claim.asInstanceOf[AST.Exp.QuantType]
           val (newFun, tOpt, proofScope) = tc.checkFun(None(), sc, qclaim.fun, reporter)
@@ -4396,7 +4454,7 @@ import TypeChecker._
 
   def methodScope(sc: Scope, sig: AST.MethodSig, reporter: Reporter): (B, Scope.Local) = {
     val typeParams = typeParamMap(sig.typeParams, reporter)
-    var scope = localTypeScope(typeParams.map, sc)
+    var scope = Scope.Local.create(typeParams.map, sc)
     sig.returnType.typedOpt match {
       case tOpt @ Some(_) => scope = scope(methodReturnOpt = tOpt)
       case _ => halt("Unexpected situation when type checking method.")
@@ -4458,7 +4516,7 @@ import TypeChecker._
     assert(info.outlined, st"${(info.name, ".")} is not outlined".render)
     val reporter = Reporter.create
     val typeParams = typeParamMap(info.ast.typeParams, reporter)
-    var scope = localTypeScope(typeParams.map, info.scope)
+    var scope = Scope.Local.create(typeParams.map, info.scope)
     scope = scope(localThisOpt = Some(info.tpe))
     var stmts = ISZ[AST.Stmt]()
     var dataRefinements = ISZ[AST.Stmt.DataRefinement]()
@@ -4544,7 +4602,7 @@ import TypeChecker._
     assert(info.outlined, st"${(info.name, ".")} is not outlined".render)
     val reporter = Reporter.create
     val typeParams = typeParamMap(info.ast.typeParams, reporter)
-    var scope = localTypeScope(typeParams.map, info.scope)
+    var scope = Scope.Local.create(typeParams.map, info.scope)
     scope = scope(localThisOpt = Some(info.tpe))
     var stmts = ISZ[AST.Stmt]()
     for (stmt <- info.ast.stmts) {

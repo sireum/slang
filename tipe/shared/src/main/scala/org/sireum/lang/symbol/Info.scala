@@ -38,6 +38,8 @@ import org.sireum.lang.{ast => AST}
 
   @pure def resolveType(globalTypeMap: HashMap[ISZ[String], TypeInfo], name: ISZ[String]): Option[TypeInfo]
 
+  @pure def resolveIndex(id: String): Option[AST.Typed]
+
   @pure def returnOpt: Option[AST.Typed]
 
   @pure def thisOpt: Option[AST.Typed]
@@ -45,10 +47,17 @@ import org.sireum.lang.{ast => AST}
 
 object Scope {
 
+  object Local {
+    @pure def create(typeMap: HashMap[String, TypeInfo], outer: Scope): Local = {
+      return Local(HashMap.empty, typeMap, None(), None(), HashMap.empty, Some(outer))
+    }
+  }
+
   @datatype class Local(nameMap: HashMap[String, Info],
                         typeMap: HashMap[String, TypeInfo],
                         localThisOpt: Option[AST.Typed],
                         methodReturnOpt: Option[AST.Typed],
+                        indexMap: HashMap[String, AST.Typed],
                         val outerOpt: Option[Scope]) extends Scope {
 
     @pure override def thisOpt: Option[AST.Typed] = {
@@ -98,6 +107,17 @@ object Scope {
       }
       outerOpt match {
         case Some(scope) => return scope.resolveType(globalTypeMap, name)
+        case _ => return None()
+      }
+    }
+
+    @pure override def resolveIndex(id: String): Option[AST.Typed] = {
+      val rOpt = indexMap.get(id)
+      if (rOpt.nonEmpty) {
+        return rOpt
+      }
+      outerOpt match {
+        case Some(scope) => return scope.resolveIndex(id)
         case _ => return None()
       }
     }
@@ -285,6 +305,11 @@ object Scope {
 
       return globalTypeMap.get(packageName ++ name)
     }
+
+    @pure override def resolveIndex(id: String): Option[AST.Typed] = {
+      return None()
+    }
+
   }
 
 }

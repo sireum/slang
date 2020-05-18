@@ -56,6 +56,7 @@ object SlangParser {
     "Old",
     "In",
     "At",
+    "Idx",
     "Res",
     "All",
     "Exists",
@@ -81,6 +82,7 @@ object SlangParser {
     "In",
     "Old",
     "At",
+    "Idx",
     "Res",
     "All",
     "Exists",
@@ -2273,6 +2275,14 @@ class SlangParser(
         AST.Exp.Eta(ref, typedAttr(exp.pos))
       case exp: Term.Tuple => AST.Exp.Tuple(ISZ(exp.args.map(translateExp): _*), typedAttr(exp.pos))
       case q"Res[$t]" => AST.Exp.Result(Some(translateType(t)), typedAttr(exp.pos))
+      case q"Idx[$t]($arg)" =>
+        translateIdent("Idx", arg) match {
+          case Some(idx) => AST.Exp.LoopIndex(Some(translateType(t)), idx, typedAttr(exp.pos))
+          case _ => rExp
+        }
+      case q"Idx($arg)" =>
+        error(exp.pos, s"Idx requires an explicit type parameter of the sequence index type.")
+        rExp
       case Term.Apply(Term.Apply(Term.Name(qid), List(d)), List(f: Term.Function)) if quantSymbols.contains(qid) => quant(qid, d, f)
       case Term.Apply(Term.Apply(Term.Name(qid), List(d)), List(Term.Block(List(f: Term.Function)))) if quantSymbols.contains(qid) => quant(qid, d, f)
       case Term.Apply(Term.Name(qid), List(Term.Block(List(f: Term.Function)))) if quantSymbols.contains(qid) => quantType(qid, f)
@@ -2305,8 +2315,10 @@ class SlangParser(
           Position.Range(expr.pos.input, name.pos.start, exp.pos.end)
         )
       case q"${name: Term.Name}[..$tpes](...${aexprssnel: List[List[Term]]})" if aexprssnel.nonEmpty =>
-        if (name.value == "Res") translateInvoke(scala.Some(name), AST.Id("apply", attr(name.pos)), name.pos, tpes, aexprssnel, exp.pos)
-        else translateInvoke(scala.None, cid(name), name.pos, tpes, aexprssnel, exp.pos)
+        name.value match {
+          case "Res" => translateInvoke(scala.Some(name), AST.Id("apply", attr(name.pos)), name.pos, tpes, aexprssnel, exp.pos)
+          case _ => translateInvoke(scala.None, cid(name), name.pos, tpes, aexprssnel, exp.pos)
+        }
       case q"${name: Term.Name}(...${aexprssnel: List[List[Term]]})" if aexprssnel.nonEmpty =>
         name.value match {
           case "Res" => translateInvoke(scala.Some(name), AST.Id("apply", attr(name.pos)), name.pos, List(), aexprssnel, exp.pos)

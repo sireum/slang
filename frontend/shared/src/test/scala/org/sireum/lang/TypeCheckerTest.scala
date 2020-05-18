@@ -44,6 +44,14 @@ class TypeCheckerTest extends TestSuite {
       "Worksheet" - {
 
         * - passingWorksheet("""import org.sireum._
+                               |val a = ISZ(1, 2, 3)
+                               |for (e <- a) {
+                               |  Invariant(
+                               |    (Idx[Z](e) != a.size - 1) imply_: (e < a(Idx[Z](e) + 1))
+                               |  )
+                               |}""".stripMargin)
+
+        * - passingWorksheet("""import org.sireum._
                                |@spec def bar(x: Z): Z = $
                                |@spec def barAx1 = Fact(
                                |  ∀{x: Z => (x >= 0) imply_: (bar(x) >= 0)}
@@ -492,7 +500,7 @@ class TypeCheckerTest extends TestSuite {
 
   def testStmt(input: Predef.String, isPassing: Boolean, msg: Predef.String = ""): Boolean = {
     val stmt = Parser(input).parseStmt[Stmt]
-    val scope = Scope.Local(HashMap.empty, HashMap.empty, None(), None(), Some(Scope.Global(ISZ(), ISZ(), ISZ())))
+    val scope = Scope.Local.create(HashMap.empty, Scope.Global(ISZ(), ISZ(), ISZ()))
     val reporter = Reporter.create
     typeChecker.checkStmt(scope, stmt, reporter) match {
       case (Some(_), checkedStmt) if isPassing =>

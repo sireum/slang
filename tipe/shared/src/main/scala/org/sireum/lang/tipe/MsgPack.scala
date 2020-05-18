@@ -272,95 +272,97 @@ object MsgPack {
 
     val _astExpAtLoc: Z = 85
 
-    val _astExpStateSeq: Z = 86
+    val _astExpLoopIndex: Z = 86
 
-    val _astExpStateSeqFragment: Z = 87
+    val _astExpStateSeq: Z = 87
 
-    val _astExpResult: Z = 88
+    val _astExpStateSeqFragment: Z = 88
 
-    val _astNamedArg: Z = 89
+    val _astExpResult: Z = 89
 
-    val _astId: Z = 90
+    val _astNamedArg: Z = 90
 
-    val _astName: Z = 91
+    val _astId: Z = 91
 
-    val _astBody: Z = 92
+    val _astName: Z = 92
 
-    val _astAdtParam: Z = 93
+    val _astBody: Z = 93
 
-    val _astMethodSig: Z = 94
+    val _astAdtParam: Z = 94
 
-    val _astParam: Z = 95
+    val _astMethodSig: Z = 95
 
-    val _astTypeParam: Z = 96
+    val _astParam: Z = 96
 
-    val _astTypedName: Z = 97
+    val _astTypeParam: Z = 97
 
-    val _astTypedTuple: Z = 98
+    val _astTypedName: Z = 98
 
-    val _astTypedFun: Z = 99
+    val _astTypedTuple: Z = 99
 
-    val _astTypedTypeVar: Z = 100
+    val _astTypedFun: Z = 100
 
-    val _astTypedPackage: Z = 101
+    val _astTypedTypeVar: Z = 101
 
-    val _astTypedObject: Z = 102
+    val _astTypedPackage: Z = 102
 
-    val _astTypedEnum: Z = 103
+    val _astTypedObject: Z = 103
 
-    val _astTypedMethod: Z = 104
+    val _astTypedEnum: Z = 104
 
-    val _astTypedMethods: Z = 105
+    val _astTypedMethod: Z = 105
 
-    val _astTypedFact: Z = 106
+    val _astTypedMethods: Z = 106
 
-    val _astTypedTheorem: Z = 107
+    val _astTypedFact: Z = 107
 
-    val _astTypedInv: Z = 108
+    val _astTypedTheorem: Z = 108
 
-    val _astAttr: Z = 109
+    val _astTypedInv: Z = 109
 
-    val _astTypedAttr: Z = 110
+    val _astAttr: Z = 110
 
-    val _astResolvedAttr: Z = 111
+    val _astTypedAttr: Z = 111
 
-    val _astResolvedInfoBuiltIn: Z = 112
+    val _astResolvedAttr: Z = 112
 
-    val _astResolvedInfoPackage: Z = 113
+    val _astResolvedInfoBuiltIn: Z = 113
 
-    val _astResolvedInfoEnum: Z = 114
+    val _astResolvedInfoPackage: Z = 114
 
-    val _astResolvedInfoEnumElement: Z = 115
+    val _astResolvedInfoEnum: Z = 115
 
-    val _astResolvedInfoObject: Z = 116
+    val _astResolvedInfoEnumElement: Z = 116
 
-    val _astResolvedInfoVar: Z = 117
+    val _astResolvedInfoObject: Z = 117
 
-    val _astResolvedInfoMethod: Z = 118
+    val _astResolvedInfoVar: Z = 118
 
-    val _astResolvedInfoMethods: Z = 119
+    val _astResolvedInfoMethod: Z = 119
 
-    val _astResolvedInfoTuple: Z = 120
+    val _astResolvedInfoMethods: Z = 120
 
-    val _astResolvedInfoLocalVar: Z = 121
+    val _astResolvedInfoTuple: Z = 121
 
-    val _astResolvedInfoFact: Z = 122
+    val _astResolvedInfoLocalVar: Z = 122
 
-    val _astResolvedInfoTheorem: Z = 123
+    val _astResolvedInfoFact: Z = 123
 
-    val _astResolvedInfoInv: Z = 124
+    val _astResolvedInfoTheorem: Z = 124
 
-    val _astTruthTableRow: Z = 125
+    val _astResolvedInfoInv: Z = 125
 
-    val _astTruthTableAssignment: Z = 126
+    val _astTruthTableRow: Z = 126
 
-    val _astTruthTableConclusionValidity: Z = 127
+    val _astTruthTableAssignment: Z = 127
 
-    val _astTruthTableConclusionTautology: Z = 128
+    val _astTruthTableConclusionValidity: Z = 128
 
-    val _astTruthTableConclusionContradictory: Z = 129
+    val _astTruthTableConclusionTautology: Z = 129
 
-    val _astTruthTableConclusionContingent: Z = 130
+    val _astTruthTableConclusionContradictory: Z = 130
+
+    val _astTruthTableConclusionContingent: Z = 131
 
   }
 
@@ -387,6 +389,7 @@ object MsgPack {
       writer.writeHashMap(o.typeMap, writer.writeString _, write_symbolTypeInfo _)
       writer.writeOption(o.localThisOpt, write_astTyped _)
       writer.writeOption(o.methodReturnOpt, write_astTyped _)
+      writer.writeHashMap(o.indexMap, writer.writeString _, write_astTyped _)
       writer.writeOption(o.outerOpt, write_symbolScope _)
     }
 
@@ -1290,6 +1293,7 @@ object MsgPack {
         case o: org.sireum.lang.ast.Exp.Input => write_astExpInput(o)
         case o: org.sireum.lang.ast.Exp.OldVal => write_astExpOldVal(o)
         case o: org.sireum.lang.ast.Exp.AtLoc => write_astExpAtLoc(o)
+        case o: org.sireum.lang.ast.Exp.LoopIndex => write_astExpLoopIndex(o)
         case o: org.sireum.lang.ast.Exp.StateSeq => write_astExpStateSeq(o)
         case o: org.sireum.lang.ast.Exp.Result => write_astExpResult(o)
       }
@@ -1476,6 +1480,7 @@ object MsgPack {
         case o: org.sireum.lang.ast.Exp.Input => write_astExpInput(o)
         case o: org.sireum.lang.ast.Exp.OldVal => write_astExpOldVal(o)
         case o: org.sireum.lang.ast.Exp.AtLoc => write_astExpAtLoc(o)
+        case o: org.sireum.lang.ast.Exp.LoopIndex => write_astExpLoopIndex(o)
         case o: org.sireum.lang.ast.Exp.StateSeq => write_astExpStateSeq(o)
         case o: org.sireum.lang.ast.Exp.Result => write_astExpResult(o)
       }
@@ -1532,6 +1537,13 @@ object MsgPack {
       writer.writeOption(o.idOpt, write_astId _)
       write_astExp(o.exp)
       write_astAttr(o.attr)
+    }
+
+    def write_astExpLoopIndex(o: org.sireum.lang.ast.Exp.LoopIndex): Unit = {
+      writer.writeZ(Constants._astExpLoopIndex)
+      writer.writeOption(o.tipeOpt, write_astType _)
+      write_astExpIdent(o.exp)
+      write_astTypedAttr(o.attr)
     }
 
     def write_astExpStateSeq(o: org.sireum.lang.ast.Exp.StateSeq): Unit = {
@@ -1924,8 +1936,9 @@ object MsgPack {
       val typeMap = reader.readHashMap(reader.readString _, read_symbolTypeInfo _)
       val localThisOpt = reader.readOption(read_astTyped _)
       val methodReturnOpt = reader.readOption(read_astTyped _)
+      val indexMap = reader.readHashMap(reader.readString _, read_astTyped _)
       val outerOpt = reader.readOption(read_symbolScope _)
-      return org.sireum.lang.symbol.Scope.Local(nameMap, typeMap, localThisOpt, methodReturnOpt, outerOpt)
+      return org.sireum.lang.symbol.Scope.Local(nameMap, typeMap, localThisOpt, methodReturnOpt, indexMap, outerOpt)
     }
 
     def read_symbolScopeGlobal(): org.sireum.lang.symbol.Scope.Global = {
@@ -3627,6 +3640,7 @@ object MsgPack {
         case Constants._astExpInput => val r = read_astExpInputT(T); return r
         case Constants._astExpOldVal => val r = read_astExpOldValT(T); return r
         case Constants._astExpAtLoc => val r = read_astExpAtLocT(T); return r
+        case Constants._astExpLoopIndex => val r = read_astExpLoopIndexT(T); return r
         case Constants._astExpStateSeq => val r = read_astExpStateSeqT(T); return r
         case Constants._astExpResult => val r = read_astExpResultT(T); return r
         case _ =>
@@ -4008,6 +4022,7 @@ object MsgPack {
         case Constants._astExpInput => val r = read_astExpInputT(T); return r
         case Constants._astExpOldVal => val r = read_astExpOldValT(T); return r
         case Constants._astExpAtLoc => val r = read_astExpAtLocT(T); return r
+        case Constants._astExpLoopIndex => val r = read_astExpLoopIndexT(T); return r
         case Constants._astExpStateSeq => val r = read_astExpStateSeqT(T); return r
         case Constants._astExpResult => val r = read_astExpResultT(T); return r
         case _ =>
@@ -4122,6 +4137,21 @@ object MsgPack {
       val exp = read_astExp()
       val attr = read_astAttr()
       return org.sireum.lang.ast.Exp.AtLoc(line, idOpt, exp, attr)
+    }
+
+    def read_astExpLoopIndex(): org.sireum.lang.ast.Exp.LoopIndex = {
+      val r = read_astExpLoopIndexT(F)
+      return r
+    }
+
+    def read_astExpLoopIndexT(typeParsed: B): org.sireum.lang.ast.Exp.LoopIndex = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astExpLoopIndex)
+      }
+      val tipeOpt = reader.readOption(read_astType _)
+      val exp = read_astExpIdent()
+      val attr = read_astTypedAttr()
+      return org.sireum.lang.ast.Exp.LoopIndex(tipeOpt, exp, attr)
     }
 
     def read_astExpStateSeq(): org.sireum.lang.ast.Exp.StateSeq = {
@@ -6928,6 +6958,21 @@ object MsgPack {
       return r
     }
     val r = to(data, f_astExpAtLoc _)
+    return r
+  }
+
+  def from_astExpLoopIndex(o: org.sireum.lang.ast.Exp.LoopIndex, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astExpLoopIndex(o)
+    return w.result
+  }
+
+  def to_astExpLoopIndex(data: ISZ[U8]): Either[org.sireum.lang.ast.Exp.LoopIndex, MessagePack.ErrorMsg] = {
+    def f_astExpLoopIndex(reader: Reader): org.sireum.lang.ast.Exp.LoopIndex = {
+      val r = reader.read_astExpLoopIndex()
+      return r
+    }
+    val r = to(data, f_astExpLoopIndex _)
     return r
   }
 

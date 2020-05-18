@@ -291,7 +291,7 @@ object Resolver {
         typeMap = typeMap + id ~> TypeInfo.TypeVar(id, tp)
       }
     }
-    return Scope.Local(HashMap.empty, typeMap, None(), None(), Some(scope))
+    return Scope.Local.create(typeMap, scope)
   }
 
   @pure def typeNameString(name: QName, ids: QName): ST = {
@@ -379,10 +379,6 @@ object Resolver {
       r = r + id ~> TypeInfo.TypeVar(id, tp)
     }
     return r
-  }
-
-  @pure def localTypeScope(typeMap: HashMap[String, TypeInfo], outer: Scope): Scope.Local = {
-    return Scope.Local(HashMap.empty[String, Info], typeMap, None(), None(), Some(outer))
   }
 
 }
