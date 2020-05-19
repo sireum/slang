@@ -4210,7 +4210,7 @@ import MTransformer._
           val r0: MOption[Exp] = transformExp(o2.lo)
           val r1: MOption[Exp] = transformExp(o2.hi)
           val r2: MOption[Exp.Fun] = transformExpFun(o2.fun)
-          val r3: MOption[Attr] = transformAttr(o2.attr)
+          val r3: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
             MSome(o2(lo = r0.getOrElse(o2.lo), hi = r1.getOrElse(o2.hi), fun = r2.getOrElse(o2.fun), attr = r3.getOrElse(o2.attr)))
           else
@@ -4218,7 +4218,7 @@ import MTransformer._
         case o2: Exp.QuantEach =>
           val r0: MOption[Exp] = transformExp(o2.seq)
           val r1: MOption[Exp.Fun] = transformExpFun(o2.fun)
-          val r2: MOption[Attr] = transformAttr(o2.attr)
+          val r2: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
             MSome(o2(seq = r0.getOrElse(o2.seq), fun = r1.getOrElse(o2.fun), attr = r2.getOrElse(o2.attr)))
           else
@@ -4441,7 +4441,7 @@ import MTransformer._
           val r0: MOption[Exp] = transformExp(o2.lo)
           val r1: MOption[Exp] = transformExp(o2.hi)
           val r2: MOption[Exp.Fun] = transformExpFun(o2.fun)
-          val r3: MOption[Attr] = transformAttr(o2.attr)
+          val r3: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
             MSome(o2(lo = r0.getOrElse(o2.lo), hi = r1.getOrElse(o2.hi), fun = r2.getOrElse(o2.fun), attr = r3.getOrElse(o2.attr)))
           else
@@ -4449,7 +4449,7 @@ import MTransformer._
         case o2: Exp.QuantEach =>
           val r0: MOption[Exp] = transformExp(o2.seq)
           val r1: MOption[Exp.Fun] = transformExpFun(o2.fun)
-          val r2: MOption[Attr] = transformAttr(o2.attr)
+          val r2: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
             MSome(o2(seq = r0.getOrElse(o2.seq), fun = r1.getOrElse(o2.fun), attr = r2.getOrElse(o2.attr)))
           else
@@ -4535,7 +4535,7 @@ import MTransformer._
           val r0: MOption[Exp] = transformExp(o2.lo)
           val r1: MOption[Exp] = transformExp(o2.hi)
           val r2: MOption[Exp.Fun] = transformExpFun(o2.fun)
-          val r3: MOption[Attr] = transformAttr(o2.attr)
+          val r3: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
             MSome(o2(lo = r0.getOrElse(o2.lo), hi = r1.getOrElse(o2.hi), fun = r2.getOrElse(o2.fun), attr = r3.getOrElse(o2.attr)))
           else
@@ -4543,7 +4543,7 @@ import MTransformer._
         case o2: Exp.QuantEach =>
           val r0: MOption[Exp] = transformExp(o2.seq)
           val r1: MOption[Exp.Fun] = transformExpFun(o2.fun)
-          val r2: MOption[Attr] = transformAttr(o2.attr)
+          val r2: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
             MSome(o2(seq = r0.getOrElse(o2.seq), fun = r1.getOrElse(o2.fun), attr = r2.getOrElse(o2.attr)))
           else

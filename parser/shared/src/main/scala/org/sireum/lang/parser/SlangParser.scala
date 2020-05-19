@@ -2241,10 +2241,17 @@ class SlangParser(
       if (fExp.params.size != 1) {
         error(exp.pos, s"Expecting a single parameter, but ${fExp.params.size} found.")
       }
+      fExp.exp match {
+        case _: AST.Stmt.Expr =>
+        case _: AST.Stmt.Block => error(exp.pos, "Expecting an expression, but a block found.")
+        case _: AST.Stmt.If => error(exp.pos, "Expecting an expression, but a conditional found.")
+        case _: AST.Stmt.Match => error(exp.pos, "Expecting an expression, but a match found.")
+        case _: AST.Stmt.Return => error(exp.pos, "Expecting an expression, but a return found.")
+      }
       d match {
-        case q"$lo until $hi" => AST.Exp.QuantRange(isForall, translateExp(lo), translateExp(hi), false, fExp, attr(exp.pos))
-        case q"$lo to $hi" => AST.Exp.QuantRange(isForall, translateExp(lo), translateExp(hi), true, fExp, attr(exp.pos))
-        case _ => AST.Exp.QuantEach(isForall, translateExp(d), fExp, attr(exp.pos))
+        case q"$lo until $hi" => AST.Exp.QuantRange(isForall, translateExp(lo), translateExp(hi), false, fExp, resolvedAttr(exp.pos))
+        case q"$lo to $hi" => AST.Exp.QuantRange(isForall, translateExp(lo), translateExp(hi), true, fExp, resolvedAttr(exp.pos))
+        case _ => AST.Exp.QuantEach(isForall, translateExp(d), fExp, resolvedAttr(exp.pos))
       }
     }
 

@@ -1138,7 +1138,7 @@ object Exp {
 
   }
 
-  @datatype class QuantRange(val isForall: B, lo: Exp, hi: Exp, hiExact: B, val fun: Exp.Fun, @hidden attr: Attr) extends Quant {
+  @datatype class QuantRange(val isForall: B, lo: Exp, hi: Exp, hiExact: B, val fun: Exp.Fun, @hidden attr: ResolvedAttr) extends Quant {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1150,7 +1150,7 @@ object Exp {
 
   }
 
-  @datatype class QuantEach(val isForall: B, seq: Exp, val fun: Exp.Fun, @hidden attr: Attr) extends Quant {
+  @datatype class QuantEach(val isForall: B, seq: Exp, val fun: Exp.Fun, @hidden attr: ResolvedAttr) extends Quant {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt

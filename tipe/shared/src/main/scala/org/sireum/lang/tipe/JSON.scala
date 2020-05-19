@@ -1414,7 +1414,7 @@ object JSON {
         ("hi", print_astExp(o.hi)),
         ("hiExact", printB(o.hiExact)),
         ("fun", print_astExpFun(o.fun)),
-        ("attr", print_astAttr(o.attr))
+        ("attr", print_astResolvedAttr(o.attr))
       ))
     }
 
@@ -1424,7 +1424,7 @@ object JSON {
         ("isForall", printB(o.isForall)),
         ("seq", print_astExp(o.seq)),
         ("fun", print_astExpFun(o.fun)),
-        ("attr", print_astAttr(o.attr))
+        ("attr", print_astResolvedAttr(o.attr))
       ))
     }
 
@@ -4945,7 +4945,7 @@ object JSON {
       val fun = parse_astExpFun()
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
+      val attr = parse_astResolvedAttr()
       parser.parseObjectNext()
       return org.sireum.lang.ast.Exp.QuantRange(isForall, lo, hi, hiExact, fun, attr)
     }
@@ -4969,7 +4969,7 @@ object JSON {
       val fun = parse_astExpFun()
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
+      val attr = parse_astResolvedAttr()
       parser.parseObjectNext()
       return org.sireum.lang.ast.Exp.QuantEach(isForall, seq, fun, attr)
     }

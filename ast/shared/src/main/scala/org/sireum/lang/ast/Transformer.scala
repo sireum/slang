@@ -3656,7 +3656,7 @@ import Transformer._
           val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.lo)
           val r1: TPostResult[Context, Exp] = transformExp(r0.ctx, o2.hi)
           val r2: TPostResult[Context, Exp.Fun] = transformExpFun(r1.ctx, o2.fun)
-          val r3: TPostResult[Context, Attr] = transformAttr(r2.ctx, o2.attr)
+          val r3: TPostResult[Context, ResolvedAttr] = transformResolvedAttr(r2.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
             TPostResult(r3.ctx, Some(o2(lo = r0.resultOpt.getOrElse(o2.lo), hi = r1.resultOpt.getOrElse(o2.hi), fun = r2.resultOpt.getOrElse(o2.fun), attr = r3.resultOpt.getOrElse(o2.attr))))
           else
@@ -3664,7 +3664,7 @@ import Transformer._
         case o2: Exp.QuantEach =>
           val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.seq)
           val r1: TPostResult[Context, Exp.Fun] = transformExpFun(r0.ctx, o2.fun)
-          val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
+          val r2: TPostResult[Context, ResolvedAttr] = transformResolvedAttr(r1.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
             TPostResult(r2.ctx, Some(o2(seq = r0.resultOpt.getOrElse(o2.seq), fun = r1.resultOpt.getOrElse(o2.fun), attr = r2.resultOpt.getOrElse(o2.attr))))
           else
@@ -3887,7 +3887,7 @@ import Transformer._
           val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.lo)
           val r1: TPostResult[Context, Exp] = transformExp(r0.ctx, o2.hi)
           val r2: TPostResult[Context, Exp.Fun] = transformExpFun(r1.ctx, o2.fun)
-          val r3: TPostResult[Context, Attr] = transformAttr(r2.ctx, o2.attr)
+          val r3: TPostResult[Context, ResolvedAttr] = transformResolvedAttr(r2.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
             TPostResult(r3.ctx, Some(o2(lo = r0.resultOpt.getOrElse(o2.lo), hi = r1.resultOpt.getOrElse(o2.hi), fun = r2.resultOpt.getOrElse(o2.fun), attr = r3.resultOpt.getOrElse(o2.attr))))
           else
@@ -3895,7 +3895,7 @@ import Transformer._
         case o2: Exp.QuantEach =>
           val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.seq)
           val r1: TPostResult[Context, Exp.Fun] = transformExpFun(r0.ctx, o2.fun)
-          val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
+          val r2: TPostResult[Context, ResolvedAttr] = transformResolvedAttr(r1.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
             TPostResult(r2.ctx, Some(o2(seq = r0.resultOpt.getOrElse(o2.seq), fun = r1.resultOpt.getOrElse(o2.fun), attr = r2.resultOpt.getOrElse(o2.attr))))
           else
@@ -3981,7 +3981,7 @@ import Transformer._
           val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.lo)
           val r1: TPostResult[Context, Exp] = transformExp(r0.ctx, o2.hi)
           val r2: TPostResult[Context, Exp.Fun] = transformExpFun(r1.ctx, o2.fun)
-          val r3: TPostResult[Context, Attr] = transformAttr(r2.ctx, o2.attr)
+          val r3: TPostResult[Context, ResolvedAttr] = transformResolvedAttr(r2.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
             TPostResult(r3.ctx, Some(o2(lo = r0.resultOpt.getOrElse(o2.lo), hi = r1.resultOpt.getOrElse(o2.hi), fun = r2.resultOpt.getOrElse(o2.fun), attr = r3.resultOpt.getOrElse(o2.attr))))
           else
@@ -3989,7 +3989,7 @@ import Transformer._
         case o2: Exp.QuantEach =>
           val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.seq)
           val r1: TPostResult[Context, Exp.Fun] = transformExpFun(r0.ctx, o2.fun)
-          val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
+          val r2: TPostResult[Context, ResolvedAttr] = transformResolvedAttr(r1.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
             TPostResult(r2.ctx, Some(o2(seq = r0.resultOpt.getOrElse(o2.seq), fun = r1.resultOpt.getOrElse(o2.fun), attr = r2.resultOpt.getOrElse(o2.attr))))
           else

@@ -1508,7 +1508,7 @@ object MsgPack {
       write_astExp(o.hi)
       writer.writeB(o.hiExact)
       write_astExpFun(o.fun)
-      write_astAttr(o.attr)
+      write_astResolvedAttr(o.attr)
     }
 
     def write_astExpQuantEach(o: org.sireum.lang.ast.Exp.QuantEach): Unit = {
@@ -1516,7 +1516,7 @@ object MsgPack {
       writer.writeB(o.isForall)
       write_astExp(o.seq)
       write_astExpFun(o.fun)
-      write_astAttr(o.attr)
+      write_astResolvedAttr(o.attr)
     }
 
     def write_astExpInput(o: org.sireum.lang.ast.Exp.Input): Unit = {
@@ -4075,7 +4075,7 @@ object MsgPack {
       val hi = read_astExp()
       val hiExact = reader.readB()
       val fun = read_astExpFun()
-      val attr = read_astAttr()
+      val attr = read_astResolvedAttr()
       return org.sireum.lang.ast.Exp.QuantRange(isForall, lo, hi, hiExact, fun, attr)
     }
 
@@ -4091,7 +4091,7 @@ object MsgPack {
       val isForall = reader.readB()
       val seq = read_astExp()
       val fun = read_astExpFun()
-      val attr = read_astAttr()
+      val attr = read_astResolvedAttr()
       return org.sireum.lang.ast.Exp.QuantEach(isForall, seq, fun, attr)
     }
 
