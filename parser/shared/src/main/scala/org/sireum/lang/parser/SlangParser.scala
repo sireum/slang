@@ -113,30 +113,30 @@ object SlangParser {
     "Exists"
   )
 
-  def scalaDialect(isWorksheet: Boolean): Dialect =
-    if (isWorksheet) scala.meta.dialects.Scala212.copy(allowToplevelTerms = true)
+  def scalaDialect(isWorksheet: B): Dialect =
+    if (isWorksheet) scala.meta.dialects.Scala212.withAllowToplevelTerms(true)
     else scala.meta.dialects.Scala212
 
   case class Result(text: Predef.String, hashSireum: Boolean, unitOpt: Option[AST.TopUnit])
 
   def apply(
-    isWorksheet: Boolean,
-    isDiet: Boolean,
+    isWorksheet: B,
+    isDiet: B,
     fileUriOpt: Option[String],
-    text: Predef.String,
+    text: String,
     reporter: Reporter
   ): Result =
     apply(allowSireumPackage = false, isWorksheet, isDiet, fileUriOpt, text, reporter)
 
   def apply(
-    allowSireumPackage: Boolean,
-    isWorksheet: Boolean,
-    isDiet: Boolean,
+    allowSireumPackage: B,
+    isWorksheet: B,
+    isDiet: B,
     fileUriOpt: Option[String],
-    txt: Predef.String,
+    txt: String,
     reporter: Reporter
   ): Result = {
-    var text = txt.replace("\r\n", "\n") // WORKAROUND: scalameta crlf issues
+    var text = txt.value.replace("\r\n", "\n") // WORKAROUND: scalameta crlf issues
     def compactLine(k: Int): Predef.String = {
       val sb = new _root_.java.lang.StringBuilder
       var i = k
