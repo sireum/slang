@@ -4003,11 +4003,12 @@ import TypeChecker._
                 st"Cannot assign to val '${lhs.id.value}' of '${(varInfo.owner, ".")}'.".render
               )
             }
-            val (newRhs, _) = checkAssignExp(Some(varInfo.typedOpt.get.subst(substMap)), scope, assignStmt.rhs, reporter)
+            val expected = varInfo.typedOpt.get.subst(substMap)
+            val (newRhs, _) = checkAssignExp(Some(expected), scope, assignStmt.rhs, reporter)
             return assignStmt(
               lhs = lhs(
                 receiverOpt = Some(newReceiver),
-                attr = lhs.attr(resOpt = varInfo.resOpt, typedOpt = varInfo.typedOpt)
+                attr = lhs.attr(resOpt = varInfo.resOpt, typedOpt = Some(expected))
               ),
               rhs = newRhs
             )
