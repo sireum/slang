@@ -28,6 +28,8 @@
 
 // This file is auto-generated from AST.scala
 
+// This file is auto-generated from Typed.scala
+
 package org.sireum.lang.ast
 
 import org.sireum._
@@ -943,71 +945,6 @@ object Transformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preTyped(ctx: Context, o: Typed): PreResult[Context, Typed] = {
-      o match {
-        case o: Typed.Name => return preTypedName(ctx, o)
-        case o: Typed.Tuple => return preTypedTuple(ctx, o)
-        case o: Typed.Fun => return preTypedFun(ctx, o)
-        case o: Typed.TypeVar => return preTypedTypeVar(ctx, o)
-        case o: Typed.Package => return preTypedPackage(ctx, o)
-        case o: Typed.Object => return preTypedObject(ctx, o)
-        case o: Typed.Enum => return preTypedEnum(ctx, o)
-        case o: Typed.Method => return preTypedMethod(ctx, o)
-        case o: Typed.Methods => return preTypedMethods(ctx, o)
-        case o: Typed.Fact => return preTypedFact(ctx, o)
-        case o: Typed.Theorem => return preTypedTheorem(ctx, o)
-        case o: Typed.Inv => return preTypedInv(ctx, o)
-      }
-    }
-
-    @pure def preTypedName(ctx: Context, o: Typed.Name): PreResult[Context, Typed] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preTypedTuple(ctx: Context, o: Typed.Tuple): PreResult[Context, Typed] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preTypedFun(ctx: Context, o: Typed.Fun): PreResult[Context, Typed] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preTypedTypeVar(ctx: Context, o: Typed.TypeVar): PreResult[Context, Typed] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preTypedPackage(ctx: Context, o: Typed.Package): PreResult[Context, Typed] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preTypedObject(ctx: Context, o: Typed.Object): PreResult[Context, Typed] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preTypedEnum(ctx: Context, o: Typed.Enum): PreResult[Context, Typed] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preTypedMethod(ctx: Context, o: Typed.Method): PreResult[Context, Typed] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preTypedMethods(ctx: Context, o: Typed.Methods): PreResult[Context, Typed] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preTypedFact(ctx: Context, o: Typed.Fact): PreResult[Context, Typed] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preTypedTheorem(ctx: Context, o: Typed.Theorem): PreResult[Context, Typed] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preTypedInv(ctx: Context, o: Typed.Inv): PreResult[Context, Typed] = {
-      return PreResult(ctx, T, None())
-    }
-
     @pure def preAttr(ctx: Context, o: Attr): PreResult[Context, Attr] = {
       return PreResult(ctx, T, None())
     }
@@ -1120,6 +1057,71 @@ object Transformer {
     }
 
     @pure def preTruthTableConclusionContingent(ctx: Context, o: TruthTable.Conclusion.Contingent): PreResult[Context, TruthTable.Conclusion] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preTyped(ctx: Context, o: Typed): PreResult[Context, Typed] = {
+      o match {
+        case o: Typed.Name => return preTypedName(ctx, o)
+        case o: Typed.Tuple => return preTypedTuple(ctx, o)
+        case o: Typed.Fun => return preTypedFun(ctx, o)
+        case o: Typed.TypeVar => return preTypedTypeVar(ctx, o)
+        case o: Typed.Package => return preTypedPackage(ctx, o)
+        case o: Typed.Object => return preTypedObject(ctx, o)
+        case o: Typed.Enum => return preTypedEnum(ctx, o)
+        case o: Typed.Method => return preTypedMethod(ctx, o)
+        case o: Typed.Methods => return preTypedMethods(ctx, o)
+        case o: Typed.Fact => return preTypedFact(ctx, o)
+        case o: Typed.Theorem => return preTypedTheorem(ctx, o)
+        case o: Typed.Inv => return preTypedInv(ctx, o)
+      }
+    }
+
+    @pure def preTypedName(ctx: Context, o: Typed.Name): PreResult[Context, Typed] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preTypedTuple(ctx: Context, o: Typed.Tuple): PreResult[Context, Typed] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preTypedFun(ctx: Context, o: Typed.Fun): PreResult[Context, Typed] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preTypedTypeVar(ctx: Context, o: Typed.TypeVar): PreResult[Context, Typed] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preTypedPackage(ctx: Context, o: Typed.Package): PreResult[Context, Typed] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preTypedObject(ctx: Context, o: Typed.Object): PreResult[Context, Typed] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preTypedEnum(ctx: Context, o: Typed.Enum): PreResult[Context, Typed] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preTypedMethod(ctx: Context, o: Typed.Method): PreResult[Context, Typed] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preTypedMethods(ctx: Context, o: Typed.Methods): PreResult[Context, Typed] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preTypedFact(ctx: Context, o: Typed.Fact): PreResult[Context, Typed] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preTypedTheorem(ctx: Context, o: Typed.Theorem): PreResult[Context, Typed] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preTypedInv(ctx: Context, o: Typed.Inv): PreResult[Context, Typed] = {
       return PreResult(ctx, T, None())
     }
 
@@ -2023,71 +2025,6 @@ object Transformer {
       return TPostResult(ctx, None())
     }
 
-    @pure def postTyped(ctx: Context, o: Typed): TPostResult[Context, Typed] = {
-      o match {
-        case o: Typed.Name => return postTypedName(ctx, o)
-        case o: Typed.Tuple => return postTypedTuple(ctx, o)
-        case o: Typed.Fun => return postTypedFun(ctx, o)
-        case o: Typed.TypeVar => return postTypedTypeVar(ctx, o)
-        case o: Typed.Package => return postTypedPackage(ctx, o)
-        case o: Typed.Object => return postTypedObject(ctx, o)
-        case o: Typed.Enum => return postTypedEnum(ctx, o)
-        case o: Typed.Method => return postTypedMethod(ctx, o)
-        case o: Typed.Methods => return postTypedMethods(ctx, o)
-        case o: Typed.Fact => return postTypedFact(ctx, o)
-        case o: Typed.Theorem => return postTypedTheorem(ctx, o)
-        case o: Typed.Inv => return postTypedInv(ctx, o)
-      }
-    }
-
-    @pure def postTypedName(ctx: Context, o: Typed.Name): TPostResult[Context, Typed] = {
-      return TPostResult(ctx, None())
-    }
-
-    @pure def postTypedTuple(ctx: Context, o: Typed.Tuple): TPostResult[Context, Typed] = {
-      return TPostResult(ctx, None())
-    }
-
-    @pure def postTypedFun(ctx: Context, o: Typed.Fun): TPostResult[Context, Typed] = {
-      return TPostResult(ctx, None())
-    }
-
-    @pure def postTypedTypeVar(ctx: Context, o: Typed.TypeVar): TPostResult[Context, Typed] = {
-      return TPostResult(ctx, None())
-    }
-
-    @pure def postTypedPackage(ctx: Context, o: Typed.Package): TPostResult[Context, Typed] = {
-      return TPostResult(ctx, None())
-    }
-
-    @pure def postTypedObject(ctx: Context, o: Typed.Object): TPostResult[Context, Typed] = {
-      return TPostResult(ctx, None())
-    }
-
-    @pure def postTypedEnum(ctx: Context, o: Typed.Enum): TPostResult[Context, Typed] = {
-      return TPostResult(ctx, None())
-    }
-
-    @pure def postTypedMethod(ctx: Context, o: Typed.Method): TPostResult[Context, Typed] = {
-      return TPostResult(ctx, None())
-    }
-
-    @pure def postTypedMethods(ctx: Context, o: Typed.Methods): TPostResult[Context, Typed] = {
-      return TPostResult(ctx, None())
-    }
-
-    @pure def postTypedFact(ctx: Context, o: Typed.Fact): TPostResult[Context, Typed] = {
-      return TPostResult(ctx, None())
-    }
-
-    @pure def postTypedTheorem(ctx: Context, o: Typed.Theorem): TPostResult[Context, Typed] = {
-      return TPostResult(ctx, None())
-    }
-
-    @pure def postTypedInv(ctx: Context, o: Typed.Inv): TPostResult[Context, Typed] = {
-      return TPostResult(ctx, None())
-    }
-
     @pure def postAttr(ctx: Context, o: Attr): TPostResult[Context, Attr] = {
       return TPostResult(ctx, None())
     }
@@ -2200,6 +2137,71 @@ object Transformer {
     }
 
     @pure def postTruthTableConclusionContingent(ctx: Context, o: TruthTable.Conclusion.Contingent): TPostResult[Context, TruthTable.Conclusion] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postTyped(ctx: Context, o: Typed): TPostResult[Context, Typed] = {
+      o match {
+        case o: Typed.Name => return postTypedName(ctx, o)
+        case o: Typed.Tuple => return postTypedTuple(ctx, o)
+        case o: Typed.Fun => return postTypedFun(ctx, o)
+        case o: Typed.TypeVar => return postTypedTypeVar(ctx, o)
+        case o: Typed.Package => return postTypedPackage(ctx, o)
+        case o: Typed.Object => return postTypedObject(ctx, o)
+        case o: Typed.Enum => return postTypedEnum(ctx, o)
+        case o: Typed.Method => return postTypedMethod(ctx, o)
+        case o: Typed.Methods => return postTypedMethods(ctx, o)
+        case o: Typed.Fact => return postTypedFact(ctx, o)
+        case o: Typed.Theorem => return postTypedTheorem(ctx, o)
+        case o: Typed.Inv => return postTypedInv(ctx, o)
+      }
+    }
+
+    @pure def postTypedName(ctx: Context, o: Typed.Name): TPostResult[Context, Typed] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postTypedTuple(ctx: Context, o: Typed.Tuple): TPostResult[Context, Typed] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postTypedFun(ctx: Context, o: Typed.Fun): TPostResult[Context, Typed] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postTypedTypeVar(ctx: Context, o: Typed.TypeVar): TPostResult[Context, Typed] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postTypedPackage(ctx: Context, o: Typed.Package): TPostResult[Context, Typed] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postTypedObject(ctx: Context, o: Typed.Object): TPostResult[Context, Typed] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postTypedEnum(ctx: Context, o: Typed.Enum): TPostResult[Context, Typed] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postTypedMethod(ctx: Context, o: Typed.Method): TPostResult[Context, Typed] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postTypedMethods(ctx: Context, o: Typed.Methods): TPostResult[Context, Typed] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postTypedFact(ctx: Context, o: Typed.Fact): TPostResult[Context, Typed] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postTypedTheorem(ctx: Context, o: Typed.Theorem): TPostResult[Context, Typed] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postTypedInv(ctx: Context, o: Typed.Inv): TPostResult[Context, Typed] = {
       return TPostResult(ctx, None())
     }
 
@@ -4265,97 +4267,6 @@ import Transformer._
     }
   }
 
-  @pure def transformTyped(ctx: Context, o: Typed): TPostResult[Context, Typed] = {
-    val preR: PreResult[Context, Typed] = pp.preTyped(ctx, o)
-    val r: TPostResult[Context, Typed] = if (preR.continu) {
-      val o2: Typed = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val rOpt: TPostResult[Context, Typed] = o2 match {
-        case o2: Typed.Name =>
-          val r0: TPostResult[Context, IS[Z, Typed]] = transformISZ(preR.ctx, o2.args, transformTyped _)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args))))
-          else
-            TPostResult(r0.ctx, None())
-        case o2: Typed.Tuple =>
-          val r0: TPostResult[Context, IS[Z, Typed]] = transformISZ(preR.ctx, o2.args, transformTyped _)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args))))
-          else
-            TPostResult(r0.ctx, None())
-        case o2: Typed.Fun =>
-          val r0: TPostResult[Context, IS[Z, Typed]] = transformISZ(preR.ctx, o2.args, transformTyped _)
-          val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.ret)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args), ret = r1.resultOpt.getOrElse(o2.ret))))
-          else
-            TPostResult(r1.ctx, None())
-        case o2: Typed.TypeVar =>
-          if (hasChanged)
-            TPostResult(preR.ctx, Some(o2))
-          else
-            TPostResult(preR.ctx, None())
-        case o2: Typed.Package =>
-          if (hasChanged)
-            TPostResult(preR.ctx, Some(o2))
-          else
-            TPostResult(preR.ctx, None())
-        case o2: Typed.Object =>
-          if (hasChanged)
-            TPostResult(preR.ctx, Some(o2))
-          else
-            TPostResult(preR.ctx, None())
-        case o2: Typed.Enum =>
-          if (hasChanged)
-            TPostResult(preR.ctx, Some(o2))
-          else
-            TPostResult(preR.ctx, None())
-        case o2: Typed.Method =>
-          val r0: TPostResult[Context, Typed.Fun] = transformTypedFun(preR.ctx, o2.tpe)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(tpe = r0.resultOpt.getOrElse(o2.tpe))))
-          else
-            TPostResult(r0.ctx, None())
-        case o2: Typed.Methods =>
-          val r0: TPostResult[Context, IS[Z, Typed.Method]] = transformISZ(preR.ctx, o2.methods, transformTypedMethod _)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(methods = r0.resultOpt.getOrElse(o2.methods))))
-          else
-            TPostResult(r0.ctx, None())
-        case o2: Typed.Fact =>
-          if (hasChanged)
-            TPostResult(preR.ctx, Some(o2))
-          else
-            TPostResult(preR.ctx, None())
-        case o2: Typed.Theorem =>
-          if (hasChanged)
-            TPostResult(preR.ctx, Some(o2))
-          else
-            TPostResult(preR.ctx, None())
-        case o2: Typed.Inv =>
-          if (hasChanged)
-            TPostResult(preR.ctx, Some(o2))
-          else
-            TPostResult(preR.ctx, None())
-      }
-      rOpt
-    } else if (preR.resultOpt.nonEmpty) {
-      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
-    } else {
-      TPostResult(preR.ctx, None())
-    }
-    val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: Typed = r.resultOpt.getOrElse(o)
-    val postR: TPostResult[Context, Typed] = pp.postTyped(r.ctx, o2)
-    if (postR.resultOpt.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return TPostResult(postR.ctx, Some(o2))
-    } else {
-      return TPostResult(postR.ctx, None())
-    }
-  }
-
   @pure def transformAttr(ctx: Context, o: Attr): TPostResult[Context, Attr] = {
     val preR: PreResult[Context, Attr] = pp.preAttr(ctx, o)
     val r: TPostResult[Context, Attr] = if (preR.continu) {
@@ -4628,6 +4539,97 @@ import Transformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: TruthTable.Conclusion = r.resultOpt.getOrElse(o)
     val postR: TPostResult[Context, TruthTable.Conclusion] = pp.postTruthTableConclusion(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformTyped(ctx: Context, o: Typed): TPostResult[Context, Typed] = {
+    val preR: PreResult[Context, Typed] = pp.preTyped(ctx, o)
+    val r: TPostResult[Context, Typed] = if (preR.continu) {
+      val o2: Typed = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: TPostResult[Context, Typed] = o2 match {
+        case o2: Typed.Name =>
+          val r0: TPostResult[Context, IS[Z, Typed]] = transformISZ(preR.ctx, o2.args, transformTyped _)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args))))
+          else
+            TPostResult(r0.ctx, None())
+        case o2: Typed.Tuple =>
+          val r0: TPostResult[Context, IS[Z, Typed]] = transformISZ(preR.ctx, o2.args, transformTyped _)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args))))
+          else
+            TPostResult(r0.ctx, None())
+        case o2: Typed.Fun =>
+          val r0: TPostResult[Context, IS[Z, Typed]] = transformISZ(preR.ctx, o2.args, transformTyped _)
+          val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.ret)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args), ret = r1.resultOpt.getOrElse(o2.ret))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: Typed.TypeVar =>
+          if (hasChanged)
+            TPostResult(preR.ctx, Some(o2))
+          else
+            TPostResult(preR.ctx, None())
+        case o2: Typed.Package =>
+          if (hasChanged)
+            TPostResult(preR.ctx, Some(o2))
+          else
+            TPostResult(preR.ctx, None())
+        case o2: Typed.Object =>
+          if (hasChanged)
+            TPostResult(preR.ctx, Some(o2))
+          else
+            TPostResult(preR.ctx, None())
+        case o2: Typed.Enum =>
+          if (hasChanged)
+            TPostResult(preR.ctx, Some(o2))
+          else
+            TPostResult(preR.ctx, None())
+        case o2: Typed.Method =>
+          val r0: TPostResult[Context, Typed.Fun] = transformTypedFun(preR.ctx, o2.tpe)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(tpe = r0.resultOpt.getOrElse(o2.tpe))))
+          else
+            TPostResult(r0.ctx, None())
+        case o2: Typed.Methods =>
+          val r0: TPostResult[Context, IS[Z, Typed.Method]] = transformISZ(preR.ctx, o2.methods, transformTypedMethod _)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(methods = r0.resultOpt.getOrElse(o2.methods))))
+          else
+            TPostResult(r0.ctx, None())
+        case o2: Typed.Fact =>
+          if (hasChanged)
+            TPostResult(preR.ctx, Some(o2))
+          else
+            TPostResult(preR.ctx, None())
+        case o2: Typed.Theorem =>
+          if (hasChanged)
+            TPostResult(preR.ctx, Some(o2))
+          else
+            TPostResult(preR.ctx, None())
+        case o2: Typed.Inv =>
+          if (hasChanged)
+            TPostResult(preR.ctx, Some(o2))
+          else
+            TPostResult(preR.ctx, None())
+      }
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: Typed = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, Typed] = pp.postTyped(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -4997,41 +4999,6 @@ import Transformer._
     }
   }
 
-  @pure def transformTypedMethod(ctx: Context, o: Typed.Method): TPostResult[Context, Typed.Method] = {
-    val preR: PreResult[Context, Typed.Method] = pp.preTypedMethod(ctx, o) match {
-     case PreResult(preCtx, continu, Some(r: Typed.Method)) => PreResult(preCtx, continu, Some[Typed.Method](r))
-     case PreResult(_, _, Some(_)) => halt("Can only produce object of type Typed.Method")
-     case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Typed.Method]())
-    }
-    val r: TPostResult[Context, Typed.Method] = if (preR.continu) {
-      val o2: Typed.Method = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: TPostResult[Context, Typed.Fun] = transformTypedFun(preR.ctx, o2.tpe)
-      if (hasChanged || r0.resultOpt.nonEmpty)
-        TPostResult(r0.ctx, Some(o2(tpe = r0.resultOpt.getOrElse(o2.tpe))))
-      else
-        TPostResult(r0.ctx, None())
-    } else if (preR.resultOpt.nonEmpty) {
-      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
-    } else {
-      TPostResult(preR.ctx, None())
-    }
-    val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: Typed.Method = r.resultOpt.getOrElse(o)
-    val postR: TPostResult[Context, Typed.Method] = pp.postTypedMethod(r.ctx, o2) match {
-     case TPostResult(postCtx, Some(result: Typed.Method)) => TPostResult(postCtx, Some[Typed.Method](result))
-     case TPostResult(_, Some(_)) => halt("Can only produce object of type Typed.Method")
-     case TPostResult(postCtx, _) => TPostResult(postCtx, None[Typed.Method]())
-    }
-    if (postR.resultOpt.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return TPostResult(postR.ctx, Some(o2))
-    } else {
-      return TPostResult(postR.ctx, None())
-    }
-  }
-
   @pure def transformResolvedInfoMethod(ctx: Context, o: ResolvedInfo.Method): TPostResult[Context, ResolvedInfo.Method] = {
     val preR: PreResult[Context, ResolvedInfo.Method] = pp.preResolvedInfoMethod(ctx, o) match {
      case PreResult(preCtx, continu, Some(r: ResolvedInfo.Method)) => PreResult(preCtx, continu, Some[ResolvedInfo.Method](r))
@@ -5092,6 +5059,41 @@ import Transformer._
      case TPostResult(postCtx, Some(result: Exp.LitB)) => TPostResult(postCtx, Some[Exp.LitB](result))
      case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp.LitB")
      case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp.LitB]())
+    }
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformTypedMethod(ctx: Context, o: Typed.Method): TPostResult[Context, Typed.Method] = {
+    val preR: PreResult[Context, Typed.Method] = pp.preTypedMethod(ctx, o) match {
+     case PreResult(preCtx, continu, Some(r: Typed.Method)) => PreResult(preCtx, continu, Some[Typed.Method](r))
+     case PreResult(_, _, Some(_)) => halt("Can only produce object of type Typed.Method")
+     case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Typed.Method]())
+    }
+    val r: TPostResult[Context, Typed.Method] = if (preR.continu) {
+      val o2: Typed.Method = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: TPostResult[Context, Typed.Fun] = transformTypedFun(preR.ctx, o2.tpe)
+      if (hasChanged || r0.resultOpt.nonEmpty)
+        TPostResult(r0.ctx, Some(o2(tpe = r0.resultOpt.getOrElse(o2.tpe))))
+      else
+        TPostResult(r0.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: Typed.Method = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, Typed.Method] = pp.postTypedMethod(r.ctx, o2) match {
+     case TPostResult(postCtx, Some(result: Typed.Method)) => TPostResult(postCtx, Some[Typed.Method](result))
+     case TPostResult(_, Some(_)) => halt("Can only produce object of type Typed.Method")
+     case TPostResult(postCtx, _) => TPostResult(postCtx, None[Typed.Method]())
     }
     if (postR.resultOpt.nonEmpty) {
       return postR

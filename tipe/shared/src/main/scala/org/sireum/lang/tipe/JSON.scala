@@ -26,7 +26,7 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// This file is auto-generated from Info.scala, AST.scala
+// This file is auto-generated from Info.scala, AST.scala, Typed.scala
 
 package org.sireum.lang.tipe
 
@@ -1559,140 +1559,6 @@ object JSON {
       ))
     }
 
-    @pure def print_astTyped(o: org.sireum.lang.ast.Typed): ST = {
-      o match {
-        case o: org.sireum.lang.ast.Typed.Name => return print_astTypedName(o)
-        case o: org.sireum.lang.ast.Typed.Tuple => return print_astTypedTuple(o)
-        case o: org.sireum.lang.ast.Typed.Fun => return print_astTypedFun(o)
-        case o: org.sireum.lang.ast.Typed.TypeVar => return print_astTypedTypeVar(o)
-        case o: org.sireum.lang.ast.Typed.Package => return print_astTypedPackage(o)
-        case o: org.sireum.lang.ast.Typed.Object => return print_astTypedObject(o)
-        case o: org.sireum.lang.ast.Typed.Enum => return print_astTypedEnum(o)
-        case o: org.sireum.lang.ast.Typed.Method => return print_astTypedMethod(o)
-        case o: org.sireum.lang.ast.Typed.Methods => return print_astTypedMethods(o)
-        case o: org.sireum.lang.ast.Typed.Fact => return print_astTypedFact(o)
-        case o: org.sireum.lang.ast.Typed.Theorem => return print_astTypedTheorem(o)
-        case o: org.sireum.lang.ast.Typed.Inv => return print_astTypedInv(o)
-      }
-    }
-
-    @pure def print_astMethodModeType(o: org.sireum.lang.ast.MethodMode.Type): ST = {
-      val value: String = o match {
-        case org.sireum.lang.ast.MethodMode.Method => "Method"
-        case org.sireum.lang.ast.MethodMode.Spec => "Spec"
-        case org.sireum.lang.ast.MethodMode.Ext => "Ext"
-        case org.sireum.lang.ast.MethodMode.Constructor => "Constructor"
-        case org.sireum.lang.ast.MethodMode.Copy => "Copy"
-        case org.sireum.lang.ast.MethodMode.Extractor => "Extractor"
-        case org.sireum.lang.ast.MethodMode.ObjectConstructor => "ObjectConstructor"
-        case org.sireum.lang.ast.MethodMode.Select => "Select"
-        case org.sireum.lang.ast.MethodMode.Store => "Store"
-      }
-      return printObject(ISZ(
-        ("type", printString("org.sireum.lang.ast.MethodMode")),
-        ("value", printString(value))
-      ))
-    }
-
-    @pure def print_astTypedName(o: org.sireum.lang.ast.Typed.Name): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Typed.Name""""),
-        ("ids", printISZ(T, o.ids, printString _)),
-        ("args", printISZ(F, o.args, print_astTyped _))
-      ))
-    }
-
-    @pure def print_astTypedTuple(o: org.sireum.lang.ast.Typed.Tuple): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Typed.Tuple""""),
-        ("args", printISZ(F, o.args, print_astTyped _))
-      ))
-    }
-
-    @pure def print_astTypedFun(o: org.sireum.lang.ast.Typed.Fun): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Typed.Fun""""),
-        ("isPure", printB(o.isPure)),
-        ("isByName", printB(o.isByName)),
-        ("args", printISZ(F, o.args, print_astTyped _)),
-        ("ret", print_astTyped(o.ret))
-      ))
-    }
-
-    @pure def print_astTypedTypeVar(o: org.sireum.lang.ast.Typed.TypeVar): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Typed.TypeVar""""),
-        ("id", printString(o.id))
-      ))
-    }
-
-    @pure def print_astTypedPackage(o: org.sireum.lang.ast.Typed.Package): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Typed.Package""""),
-        ("name", printISZ(T, o.name, printString _))
-      ))
-    }
-
-    @pure def print_astTypedObject(o: org.sireum.lang.ast.Typed.Object): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Typed.Object""""),
-        ("owner", printISZ(T, o.owner, printString _)),
-        ("id", printString(o.id))
-      ))
-    }
-
-    @pure def print_astTypedEnum(o: org.sireum.lang.ast.Typed.Enum): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Typed.Enum""""),
-        ("name", printISZ(T, o.name, printString _))
-      ))
-    }
-
-    @pure def print_astTypedMethod(o: org.sireum.lang.ast.Typed.Method): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Typed.Method""""),
-        ("isInObject", printB(o.isInObject)),
-        ("mode", print_astMethodModeType(o.mode)),
-        ("typeParams", printISZ(T, o.typeParams, printString _)),
-        ("owner", printISZ(T, o.owner, printString _)),
-        ("name", printString(o.name)),
-        ("paramNames", printISZ(T, o.paramNames, printString _)),
-        ("tpe", print_astTypedFun(o.tpe))
-      ))
-    }
-
-    @pure def print_astTypedMethods(o: org.sireum.lang.ast.Typed.Methods): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Typed.Methods""""),
-        ("methods", printISZ(F, o.methods, print_astTypedMethod _))
-      ))
-    }
-
-    @pure def print_astTypedFact(o: org.sireum.lang.ast.Typed.Fact): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Typed.Fact""""),
-        ("owner", printISZ(T, o.owner, printString _)),
-        ("id", printString(o.id))
-      ))
-    }
-
-    @pure def print_astTypedTheorem(o: org.sireum.lang.ast.Typed.Theorem): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Typed.Theorem""""),
-        ("owner", printISZ(T, o.owner, printString _)),
-        ("id", printString(o.id))
-      ))
-    }
-
-    @pure def print_astTypedInv(o: org.sireum.lang.ast.Typed.Inv): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Typed.Inv""""),
-        ("isInObject", printB(o.isInObject)),
-        ("owner", printISZ(T, o.owner, printString _)),
-        ("id", printString(o.id))
-      ))
-    }
-
     @pure def print_astAttr(o: org.sireum.lang.ast.Attr): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Attr""""),
@@ -1975,6 +1841,140 @@ object JSON {
         ("trueAssignments", printISZ(F, o.trueAssignments, print_astTruthTableAssignment _)),
         ("falseAssignments", printISZ(F, o.falseAssignments, print_astTruthTableAssignment _)),
         ("attr", print_astAttr(o.attr))
+      ))
+    }
+
+    @pure def print_astMethodModeType(o: org.sireum.lang.ast.MethodMode.Type): ST = {
+      val value: String = o match {
+        case org.sireum.lang.ast.MethodMode.Method => "Method"
+        case org.sireum.lang.ast.MethodMode.Spec => "Spec"
+        case org.sireum.lang.ast.MethodMode.Ext => "Ext"
+        case org.sireum.lang.ast.MethodMode.Constructor => "Constructor"
+        case org.sireum.lang.ast.MethodMode.Copy => "Copy"
+        case org.sireum.lang.ast.MethodMode.Extractor => "Extractor"
+        case org.sireum.lang.ast.MethodMode.ObjectConstructor => "ObjectConstructor"
+        case org.sireum.lang.ast.MethodMode.Select => "Select"
+        case org.sireum.lang.ast.MethodMode.Store => "Store"
+      }
+      return printObject(ISZ(
+        ("type", printString("org.sireum.lang.ast.MethodMode")),
+        ("value", printString(value))
+      ))
+    }
+
+    @pure def print_astTyped(o: org.sireum.lang.ast.Typed): ST = {
+      o match {
+        case o: org.sireum.lang.ast.Typed.Name => return print_astTypedName(o)
+        case o: org.sireum.lang.ast.Typed.Tuple => return print_astTypedTuple(o)
+        case o: org.sireum.lang.ast.Typed.Fun => return print_astTypedFun(o)
+        case o: org.sireum.lang.ast.Typed.TypeVar => return print_astTypedTypeVar(o)
+        case o: org.sireum.lang.ast.Typed.Package => return print_astTypedPackage(o)
+        case o: org.sireum.lang.ast.Typed.Object => return print_astTypedObject(o)
+        case o: org.sireum.lang.ast.Typed.Enum => return print_astTypedEnum(o)
+        case o: org.sireum.lang.ast.Typed.Method => return print_astTypedMethod(o)
+        case o: org.sireum.lang.ast.Typed.Methods => return print_astTypedMethods(o)
+        case o: org.sireum.lang.ast.Typed.Fact => return print_astTypedFact(o)
+        case o: org.sireum.lang.ast.Typed.Theorem => return print_astTypedTheorem(o)
+        case o: org.sireum.lang.ast.Typed.Inv => return print_astTypedInv(o)
+      }
+    }
+
+    @pure def print_astTypedName(o: org.sireum.lang.ast.Typed.Name): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.Typed.Name""""),
+        ("ids", printISZ(T, o.ids, printString _)),
+        ("args", printISZ(F, o.args, print_astTyped _))
+      ))
+    }
+
+    @pure def print_astTypedTuple(o: org.sireum.lang.ast.Typed.Tuple): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.Typed.Tuple""""),
+        ("args", printISZ(F, o.args, print_astTyped _))
+      ))
+    }
+
+    @pure def print_astTypedFun(o: org.sireum.lang.ast.Typed.Fun): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.Typed.Fun""""),
+        ("isPure", printB(o.isPure)),
+        ("isByName", printB(o.isByName)),
+        ("args", printISZ(F, o.args, print_astTyped _)),
+        ("ret", print_astTyped(o.ret))
+      ))
+    }
+
+    @pure def print_astTypedTypeVar(o: org.sireum.lang.ast.Typed.TypeVar): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.Typed.TypeVar""""),
+        ("id", printString(o.id))
+      ))
+    }
+
+    @pure def print_astTypedPackage(o: org.sireum.lang.ast.Typed.Package): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.Typed.Package""""),
+        ("name", printISZ(T, o.name, printString _))
+      ))
+    }
+
+    @pure def print_astTypedObject(o: org.sireum.lang.ast.Typed.Object): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.Typed.Object""""),
+        ("owner", printISZ(T, o.owner, printString _)),
+        ("id", printString(o.id))
+      ))
+    }
+
+    @pure def print_astTypedEnum(o: org.sireum.lang.ast.Typed.Enum): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.Typed.Enum""""),
+        ("name", printISZ(T, o.name, printString _))
+      ))
+    }
+
+    @pure def print_astTypedMethod(o: org.sireum.lang.ast.Typed.Method): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.Typed.Method""""),
+        ("isInObject", printB(o.isInObject)),
+        ("mode", print_astMethodModeType(o.mode)),
+        ("typeParams", printISZ(T, o.typeParams, printString _)),
+        ("owner", printISZ(T, o.owner, printString _)),
+        ("name", printString(o.name)),
+        ("paramNames", printISZ(T, o.paramNames, printString _)),
+        ("tpe", print_astTypedFun(o.tpe))
+      ))
+    }
+
+    @pure def print_astTypedMethods(o: org.sireum.lang.ast.Typed.Methods): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.Typed.Methods""""),
+        ("methods", printISZ(F, o.methods, print_astTypedMethod _))
+      ))
+    }
+
+    @pure def print_astTypedFact(o: org.sireum.lang.ast.Typed.Fact): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.Typed.Fact""""),
+        ("owner", printISZ(T, o.owner, printString _)),
+        ("id", printString(o.id))
+      ))
+    }
+
+    @pure def print_astTypedTheorem(o: org.sireum.lang.ast.Typed.Theorem): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.Typed.Theorem""""),
+        ("owner", printISZ(T, o.owner, printString _)),
+        ("id", printString(o.id))
+      ))
+    }
+
+    @pure def print_astTypedInv(o: org.sireum.lang.ast.Typed.Inv): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.Typed.Inv""""),
+        ("isInObject", printB(o.isInObject)),
+        ("owner", printISZ(T, o.owner, printString _)),
+        ("id", printString(o.id))
       ))
     }
 
@@ -5277,271 +5277,6 @@ object JSON {
       return org.sireum.lang.ast.TypeParam(id)
     }
 
-    def parse_astTyped(): org.sireum.lang.ast.Typed = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Typed.Name", "org.sireum.lang.ast.Typed.Tuple", "org.sireum.lang.ast.Typed.Fun", "org.sireum.lang.ast.Typed.TypeVar", "org.sireum.lang.ast.Typed.Package", "org.sireum.lang.ast.Typed.Object", "org.sireum.lang.ast.Typed.Enum", "org.sireum.lang.ast.Typed.Method", "org.sireum.lang.ast.Typed.Methods", "org.sireum.lang.ast.Typed.Fact", "org.sireum.lang.ast.Typed.Theorem", "org.sireum.lang.ast.Typed.Inv"))
-      t.native match {
-        case "org.sireum.lang.ast.Typed.Name" => val r = parse_astTypedNameT(T); return r
-        case "org.sireum.lang.ast.Typed.Tuple" => val r = parse_astTypedTupleT(T); return r
-        case "org.sireum.lang.ast.Typed.Fun" => val r = parse_astTypedFunT(T); return r
-        case "org.sireum.lang.ast.Typed.TypeVar" => val r = parse_astTypedTypeVarT(T); return r
-        case "org.sireum.lang.ast.Typed.Package" => val r = parse_astTypedPackageT(T); return r
-        case "org.sireum.lang.ast.Typed.Object" => val r = parse_astTypedObjectT(T); return r
-        case "org.sireum.lang.ast.Typed.Enum" => val r = parse_astTypedEnumT(T); return r
-        case "org.sireum.lang.ast.Typed.Method" => val r = parse_astTypedMethodT(T); return r
-        case "org.sireum.lang.ast.Typed.Methods" => val r = parse_astTypedMethodsT(T); return r
-        case "org.sireum.lang.ast.Typed.Fact" => val r = parse_astTypedFactT(T); return r
-        case "org.sireum.lang.ast.Typed.Theorem" => val r = parse_astTypedTheoremT(T); return r
-        case "org.sireum.lang.ast.Typed.Inv" => val r = parse_astTypedInvT(T); return r
-        case _ => val r = parse_astTypedInvT(T); return r
-      }
-    }
-
-    def parse_astMethodModeType(): org.sireum.lang.ast.MethodMode.Type = {
-      val r = parse_astMethodModeT(F)
-      return r
-    }
-
-    def parse_astMethodModeT(typeParsed: B): org.sireum.lang.ast.MethodMode.Type = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.MethodMode")
-      }
-      parser.parseObjectKey("value")
-      var i = parser.offset
-      val s = parser.parseString()
-      parser.parseObjectNext()
-      org.sireum.lang.ast.MethodMode.byName(s) match {
-        case Some(r) => return r
-        case _ =>
-          parser.parseException(i, s"Invalid element name '$s' for org.sireum.lang.ast.MethodMode.")
-          return org.sireum.lang.ast.MethodMode.byOrdinal(0).get
-      }
-    }
-
-    def parse_astTypedName(): org.sireum.lang.ast.Typed.Name = {
-      val r = parse_astTypedNameT(F)
-      return r
-    }
-
-    def parse_astTypedNameT(typeParsed: B): org.sireum.lang.ast.Typed.Name = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Typed.Name")
-      }
-      parser.parseObjectKey("ids")
-      val ids = parser.parseISZ(parser.parseString _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("args")
-      val args = parser.parseISZ(parse_astTyped _)
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Typed.Name(ids, args)
-    }
-
-    def parse_astTypedTuple(): org.sireum.lang.ast.Typed.Tuple = {
-      val r = parse_astTypedTupleT(F)
-      return r
-    }
-
-    def parse_astTypedTupleT(typeParsed: B): org.sireum.lang.ast.Typed.Tuple = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Typed.Tuple")
-      }
-      parser.parseObjectKey("args")
-      val args = parser.parseISZ(parse_astTyped _)
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Typed.Tuple(args)
-    }
-
-    def parse_astTypedFun(): org.sireum.lang.ast.Typed.Fun = {
-      val r = parse_astTypedFunT(F)
-      return r
-    }
-
-    def parse_astTypedFunT(typeParsed: B): org.sireum.lang.ast.Typed.Fun = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Typed.Fun")
-      }
-      parser.parseObjectKey("isPure")
-      val isPure = parser.parseB()
-      parser.parseObjectNext()
-      parser.parseObjectKey("isByName")
-      val isByName = parser.parseB()
-      parser.parseObjectNext()
-      parser.parseObjectKey("args")
-      val args = parser.parseISZ(parse_astTyped _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("ret")
-      val ret = parse_astTyped()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Typed.Fun(isPure, isByName, args, ret)
-    }
-
-    def parse_astTypedTypeVar(): org.sireum.lang.ast.Typed.TypeVar = {
-      val r = parse_astTypedTypeVarT(F)
-      return r
-    }
-
-    def parse_astTypedTypeVarT(typeParsed: B): org.sireum.lang.ast.Typed.TypeVar = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Typed.TypeVar")
-      }
-      parser.parseObjectKey("id")
-      val id = parser.parseString()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Typed.TypeVar(id)
-    }
-
-    def parse_astTypedPackage(): org.sireum.lang.ast.Typed.Package = {
-      val r = parse_astTypedPackageT(F)
-      return r
-    }
-
-    def parse_astTypedPackageT(typeParsed: B): org.sireum.lang.ast.Typed.Package = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Typed.Package")
-      }
-      parser.parseObjectKey("name")
-      val name = parser.parseISZ(parser.parseString _)
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Typed.Package(name)
-    }
-
-    def parse_astTypedObject(): org.sireum.lang.ast.Typed.Object = {
-      val r = parse_astTypedObjectT(F)
-      return r
-    }
-
-    def parse_astTypedObjectT(typeParsed: B): org.sireum.lang.ast.Typed.Object = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Typed.Object")
-      }
-      parser.parseObjectKey("owner")
-      val owner = parser.parseISZ(parser.parseString _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("id")
-      val id = parser.parseString()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Typed.Object(owner, id)
-    }
-
-    def parse_astTypedEnum(): org.sireum.lang.ast.Typed.Enum = {
-      val r = parse_astTypedEnumT(F)
-      return r
-    }
-
-    def parse_astTypedEnumT(typeParsed: B): org.sireum.lang.ast.Typed.Enum = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Typed.Enum")
-      }
-      parser.parseObjectKey("name")
-      val name = parser.parseISZ(parser.parseString _)
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Typed.Enum(name)
-    }
-
-    def parse_astTypedMethod(): org.sireum.lang.ast.Typed.Method = {
-      val r = parse_astTypedMethodT(F)
-      return r
-    }
-
-    def parse_astTypedMethodT(typeParsed: B): org.sireum.lang.ast.Typed.Method = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Typed.Method")
-      }
-      parser.parseObjectKey("isInObject")
-      val isInObject = parser.parseB()
-      parser.parseObjectNext()
-      parser.parseObjectKey("mode")
-      val mode = parse_astMethodModeType()
-      parser.parseObjectNext()
-      parser.parseObjectKey("typeParams")
-      val typeParams = parser.parseISZ(parser.parseString _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("owner")
-      val owner = parser.parseISZ(parser.parseString _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("name")
-      val name = parser.parseString()
-      parser.parseObjectNext()
-      parser.parseObjectKey("paramNames")
-      val paramNames = parser.parseISZ(parser.parseString _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("tpe")
-      val tpe = parse_astTypedFun()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Typed.Method(isInObject, mode, typeParams, owner, name, paramNames, tpe)
-    }
-
-    def parse_astTypedMethods(): org.sireum.lang.ast.Typed.Methods = {
-      val r = parse_astTypedMethodsT(F)
-      return r
-    }
-
-    def parse_astTypedMethodsT(typeParsed: B): org.sireum.lang.ast.Typed.Methods = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Typed.Methods")
-      }
-      parser.parseObjectKey("methods")
-      val methods = parser.parseISZ(parse_astTypedMethod _)
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Typed.Methods(methods)
-    }
-
-    def parse_astTypedFact(): org.sireum.lang.ast.Typed.Fact = {
-      val r = parse_astTypedFactT(F)
-      return r
-    }
-
-    def parse_astTypedFactT(typeParsed: B): org.sireum.lang.ast.Typed.Fact = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Typed.Fact")
-      }
-      parser.parseObjectKey("owner")
-      val owner = parser.parseISZ(parser.parseString _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("id")
-      val id = parser.parseString()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Typed.Fact(owner, id)
-    }
-
-    def parse_astTypedTheorem(): org.sireum.lang.ast.Typed.Theorem = {
-      val r = parse_astTypedTheoremT(F)
-      return r
-    }
-
-    def parse_astTypedTheoremT(typeParsed: B): org.sireum.lang.ast.Typed.Theorem = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Typed.Theorem")
-      }
-      parser.parseObjectKey("owner")
-      val owner = parser.parseISZ(parser.parseString _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("id")
-      val id = parser.parseString()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Typed.Theorem(owner, id)
-    }
-
-    def parse_astTypedInv(): org.sireum.lang.ast.Typed.Inv = {
-      val r = parse_astTypedInvT(F)
-      return r
-    }
-
-    def parse_astTypedInvT(typeParsed: B): org.sireum.lang.ast.Typed.Inv = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Typed.Inv")
-      }
-      parser.parseObjectKey("isInObject")
-      val isInObject = parser.parseB()
-      parser.parseObjectNext()
-      parser.parseObjectKey("owner")
-      val owner = parser.parseISZ(parser.parseString _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("id")
-      val id = parser.parseString()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Typed.Inv(isInObject, owner, id)
-    }
-
     def parse_astAttr(): org.sireum.lang.ast.Attr = {
       val r = parse_astAttrT(F)
       return r
@@ -6030,6 +5765,271 @@ object JSON {
       val attr = parse_astAttr()
       parser.parseObjectNext()
       return org.sireum.lang.ast.TruthTable.Conclusion.Contingent(trueAssignments, falseAssignments, attr)
+    }
+
+    def parse_astMethodModeType(): org.sireum.lang.ast.MethodMode.Type = {
+      val r = parse_astMethodModeT(F)
+      return r
+    }
+
+    def parse_astMethodModeT(typeParsed: B): org.sireum.lang.ast.MethodMode.Type = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.MethodMode")
+      }
+      parser.parseObjectKey("value")
+      var i = parser.offset
+      val s = parser.parseString()
+      parser.parseObjectNext()
+      org.sireum.lang.ast.MethodMode.byName(s) match {
+        case Some(r) => return r
+        case _ =>
+          parser.parseException(i, s"Invalid element name '$s' for org.sireum.lang.ast.MethodMode.")
+          return org.sireum.lang.ast.MethodMode.byOrdinal(0).get
+      }
+    }
+
+    def parse_astTyped(): org.sireum.lang.ast.Typed = {
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Typed.Name", "org.sireum.lang.ast.Typed.Tuple", "org.sireum.lang.ast.Typed.Fun", "org.sireum.lang.ast.Typed.TypeVar", "org.sireum.lang.ast.Typed.Package", "org.sireum.lang.ast.Typed.Object", "org.sireum.lang.ast.Typed.Enum", "org.sireum.lang.ast.Typed.Method", "org.sireum.lang.ast.Typed.Methods", "org.sireum.lang.ast.Typed.Fact", "org.sireum.lang.ast.Typed.Theorem", "org.sireum.lang.ast.Typed.Inv"))
+      t.native match {
+        case "org.sireum.lang.ast.Typed.Name" => val r = parse_astTypedNameT(T); return r
+        case "org.sireum.lang.ast.Typed.Tuple" => val r = parse_astTypedTupleT(T); return r
+        case "org.sireum.lang.ast.Typed.Fun" => val r = parse_astTypedFunT(T); return r
+        case "org.sireum.lang.ast.Typed.TypeVar" => val r = parse_astTypedTypeVarT(T); return r
+        case "org.sireum.lang.ast.Typed.Package" => val r = parse_astTypedPackageT(T); return r
+        case "org.sireum.lang.ast.Typed.Object" => val r = parse_astTypedObjectT(T); return r
+        case "org.sireum.lang.ast.Typed.Enum" => val r = parse_astTypedEnumT(T); return r
+        case "org.sireum.lang.ast.Typed.Method" => val r = parse_astTypedMethodT(T); return r
+        case "org.sireum.lang.ast.Typed.Methods" => val r = parse_astTypedMethodsT(T); return r
+        case "org.sireum.lang.ast.Typed.Fact" => val r = parse_astTypedFactT(T); return r
+        case "org.sireum.lang.ast.Typed.Theorem" => val r = parse_astTypedTheoremT(T); return r
+        case "org.sireum.lang.ast.Typed.Inv" => val r = parse_astTypedInvT(T); return r
+        case _ => val r = parse_astTypedInvT(T); return r
+      }
+    }
+
+    def parse_astTypedName(): org.sireum.lang.ast.Typed.Name = {
+      val r = parse_astTypedNameT(F)
+      return r
+    }
+
+    def parse_astTypedNameT(typeParsed: B): org.sireum.lang.ast.Typed.Name = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Typed.Name")
+      }
+      parser.parseObjectKey("ids")
+      val ids = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("args")
+      val args = parser.parseISZ(parse_astTyped _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Typed.Name(ids, args)
+    }
+
+    def parse_astTypedTuple(): org.sireum.lang.ast.Typed.Tuple = {
+      val r = parse_astTypedTupleT(F)
+      return r
+    }
+
+    def parse_astTypedTupleT(typeParsed: B): org.sireum.lang.ast.Typed.Tuple = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Typed.Tuple")
+      }
+      parser.parseObjectKey("args")
+      val args = parser.parseISZ(parse_astTyped _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Typed.Tuple(args)
+    }
+
+    def parse_astTypedFun(): org.sireum.lang.ast.Typed.Fun = {
+      val r = parse_astTypedFunT(F)
+      return r
+    }
+
+    def parse_astTypedFunT(typeParsed: B): org.sireum.lang.ast.Typed.Fun = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Typed.Fun")
+      }
+      parser.parseObjectKey("isPure")
+      val isPure = parser.parseB()
+      parser.parseObjectNext()
+      parser.parseObjectKey("isByName")
+      val isByName = parser.parseB()
+      parser.parseObjectNext()
+      parser.parseObjectKey("args")
+      val args = parser.parseISZ(parse_astTyped _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("ret")
+      val ret = parse_astTyped()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Typed.Fun(isPure, isByName, args, ret)
+    }
+
+    def parse_astTypedTypeVar(): org.sireum.lang.ast.Typed.TypeVar = {
+      val r = parse_astTypedTypeVarT(F)
+      return r
+    }
+
+    def parse_astTypedTypeVarT(typeParsed: B): org.sireum.lang.ast.Typed.TypeVar = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Typed.TypeVar")
+      }
+      parser.parseObjectKey("id")
+      val id = parser.parseString()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Typed.TypeVar(id)
+    }
+
+    def parse_astTypedPackage(): org.sireum.lang.ast.Typed.Package = {
+      val r = parse_astTypedPackageT(F)
+      return r
+    }
+
+    def parse_astTypedPackageT(typeParsed: B): org.sireum.lang.ast.Typed.Package = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Typed.Package")
+      }
+      parser.parseObjectKey("name")
+      val name = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Typed.Package(name)
+    }
+
+    def parse_astTypedObject(): org.sireum.lang.ast.Typed.Object = {
+      val r = parse_astTypedObjectT(F)
+      return r
+    }
+
+    def parse_astTypedObjectT(typeParsed: B): org.sireum.lang.ast.Typed.Object = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Typed.Object")
+      }
+      parser.parseObjectKey("owner")
+      val owner = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("id")
+      val id = parser.parseString()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Typed.Object(owner, id)
+    }
+
+    def parse_astTypedEnum(): org.sireum.lang.ast.Typed.Enum = {
+      val r = parse_astTypedEnumT(F)
+      return r
+    }
+
+    def parse_astTypedEnumT(typeParsed: B): org.sireum.lang.ast.Typed.Enum = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Typed.Enum")
+      }
+      parser.parseObjectKey("name")
+      val name = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Typed.Enum(name)
+    }
+
+    def parse_astTypedMethod(): org.sireum.lang.ast.Typed.Method = {
+      val r = parse_astTypedMethodT(F)
+      return r
+    }
+
+    def parse_astTypedMethodT(typeParsed: B): org.sireum.lang.ast.Typed.Method = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Typed.Method")
+      }
+      parser.parseObjectKey("isInObject")
+      val isInObject = parser.parseB()
+      parser.parseObjectNext()
+      parser.parseObjectKey("mode")
+      val mode = parse_astMethodModeType()
+      parser.parseObjectNext()
+      parser.parseObjectKey("typeParams")
+      val typeParams = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("owner")
+      val owner = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("name")
+      val name = parser.parseString()
+      parser.parseObjectNext()
+      parser.parseObjectKey("paramNames")
+      val paramNames = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("tpe")
+      val tpe = parse_astTypedFun()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Typed.Method(isInObject, mode, typeParams, owner, name, paramNames, tpe)
+    }
+
+    def parse_astTypedMethods(): org.sireum.lang.ast.Typed.Methods = {
+      val r = parse_astTypedMethodsT(F)
+      return r
+    }
+
+    def parse_astTypedMethodsT(typeParsed: B): org.sireum.lang.ast.Typed.Methods = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Typed.Methods")
+      }
+      parser.parseObjectKey("methods")
+      val methods = parser.parseISZ(parse_astTypedMethod _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Typed.Methods(methods)
+    }
+
+    def parse_astTypedFact(): org.sireum.lang.ast.Typed.Fact = {
+      val r = parse_astTypedFactT(F)
+      return r
+    }
+
+    def parse_astTypedFactT(typeParsed: B): org.sireum.lang.ast.Typed.Fact = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Typed.Fact")
+      }
+      parser.parseObjectKey("owner")
+      val owner = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("id")
+      val id = parser.parseString()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Typed.Fact(owner, id)
+    }
+
+    def parse_astTypedTheorem(): org.sireum.lang.ast.Typed.Theorem = {
+      val r = parse_astTypedTheoremT(F)
+      return r
+    }
+
+    def parse_astTypedTheoremT(typeParsed: B): org.sireum.lang.ast.Typed.Theorem = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Typed.Theorem")
+      }
+      parser.parseObjectKey("owner")
+      val owner = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("id")
+      val id = parser.parseString()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Typed.Theorem(owner, id)
+    }
+
+    def parse_astTypedInv(): org.sireum.lang.ast.Typed.Inv = {
+      val r = parse_astTypedInvT(F)
+      return r
+    }
+
+    def parse_astTypedInvT(typeParsed: B): org.sireum.lang.ast.Typed.Inv = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Typed.Inv")
+      }
+      parser.parseObjectKey("isInObject")
+      val isInObject = parser.parseB()
+      parser.parseObjectNext()
+      parser.parseObjectKey("owner")
+      val owner = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("id")
+      val id = parser.parseString()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Typed.Inv(isInObject, owner, id)
     }
 
     def eof(): B = {
@@ -8749,240 +8749,6 @@ object JSON {
     return r
   }
 
-  def from_astTyped(o: org.sireum.lang.ast.Typed, isCompact: B): String = {
-    val st = Printer.print_astTyped(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astTyped(s: String): Either[org.sireum.lang.ast.Typed, Json.ErrorMsg] = {
-    def f_astTyped(parser: Parser): org.sireum.lang.ast.Typed = {
-      val r = parser.parse_astTyped()
-      return r
-    }
-    val r = to(s, f_astTyped _)
-    return r
-  }
-
-  def from_astTypedName(o: org.sireum.lang.ast.Typed.Name, isCompact: B): String = {
-    val st = Printer.print_astTypedName(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astTypedName(s: String): Either[org.sireum.lang.ast.Typed.Name, Json.ErrorMsg] = {
-    def f_astTypedName(parser: Parser): org.sireum.lang.ast.Typed.Name = {
-      val r = parser.parse_astTypedName()
-      return r
-    }
-    val r = to(s, f_astTypedName _)
-    return r
-  }
-
-  def from_astTypedTuple(o: org.sireum.lang.ast.Typed.Tuple, isCompact: B): String = {
-    val st = Printer.print_astTypedTuple(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astTypedTuple(s: String): Either[org.sireum.lang.ast.Typed.Tuple, Json.ErrorMsg] = {
-    def f_astTypedTuple(parser: Parser): org.sireum.lang.ast.Typed.Tuple = {
-      val r = parser.parse_astTypedTuple()
-      return r
-    }
-    val r = to(s, f_astTypedTuple _)
-    return r
-  }
-
-  def from_astTypedFun(o: org.sireum.lang.ast.Typed.Fun, isCompact: B): String = {
-    val st = Printer.print_astTypedFun(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astTypedFun(s: String): Either[org.sireum.lang.ast.Typed.Fun, Json.ErrorMsg] = {
-    def f_astTypedFun(parser: Parser): org.sireum.lang.ast.Typed.Fun = {
-      val r = parser.parse_astTypedFun()
-      return r
-    }
-    val r = to(s, f_astTypedFun _)
-    return r
-  }
-
-  def from_astTypedTypeVar(o: org.sireum.lang.ast.Typed.TypeVar, isCompact: B): String = {
-    val st = Printer.print_astTypedTypeVar(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astTypedTypeVar(s: String): Either[org.sireum.lang.ast.Typed.TypeVar, Json.ErrorMsg] = {
-    def f_astTypedTypeVar(parser: Parser): org.sireum.lang.ast.Typed.TypeVar = {
-      val r = parser.parse_astTypedTypeVar()
-      return r
-    }
-    val r = to(s, f_astTypedTypeVar _)
-    return r
-  }
-
-  def from_astTypedPackage(o: org.sireum.lang.ast.Typed.Package, isCompact: B): String = {
-    val st = Printer.print_astTypedPackage(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astTypedPackage(s: String): Either[org.sireum.lang.ast.Typed.Package, Json.ErrorMsg] = {
-    def f_astTypedPackage(parser: Parser): org.sireum.lang.ast.Typed.Package = {
-      val r = parser.parse_astTypedPackage()
-      return r
-    }
-    val r = to(s, f_astTypedPackage _)
-    return r
-  }
-
-  def from_astTypedObject(o: org.sireum.lang.ast.Typed.Object, isCompact: B): String = {
-    val st = Printer.print_astTypedObject(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astTypedObject(s: String): Either[org.sireum.lang.ast.Typed.Object, Json.ErrorMsg] = {
-    def f_astTypedObject(parser: Parser): org.sireum.lang.ast.Typed.Object = {
-      val r = parser.parse_astTypedObject()
-      return r
-    }
-    val r = to(s, f_astTypedObject _)
-    return r
-  }
-
-  def from_astTypedEnum(o: org.sireum.lang.ast.Typed.Enum, isCompact: B): String = {
-    val st = Printer.print_astTypedEnum(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astTypedEnum(s: String): Either[org.sireum.lang.ast.Typed.Enum, Json.ErrorMsg] = {
-    def f_astTypedEnum(parser: Parser): org.sireum.lang.ast.Typed.Enum = {
-      val r = parser.parse_astTypedEnum()
-      return r
-    }
-    val r = to(s, f_astTypedEnum _)
-    return r
-  }
-
-  def from_astTypedMethod(o: org.sireum.lang.ast.Typed.Method, isCompact: B): String = {
-    val st = Printer.print_astTypedMethod(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astTypedMethod(s: String): Either[org.sireum.lang.ast.Typed.Method, Json.ErrorMsg] = {
-    def f_astTypedMethod(parser: Parser): org.sireum.lang.ast.Typed.Method = {
-      val r = parser.parse_astTypedMethod()
-      return r
-    }
-    val r = to(s, f_astTypedMethod _)
-    return r
-  }
-
-  def from_astTypedMethods(o: org.sireum.lang.ast.Typed.Methods, isCompact: B): String = {
-    val st = Printer.print_astTypedMethods(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astTypedMethods(s: String): Either[org.sireum.lang.ast.Typed.Methods, Json.ErrorMsg] = {
-    def f_astTypedMethods(parser: Parser): org.sireum.lang.ast.Typed.Methods = {
-      val r = parser.parse_astTypedMethods()
-      return r
-    }
-    val r = to(s, f_astTypedMethods _)
-    return r
-  }
-
-  def from_astTypedFact(o: org.sireum.lang.ast.Typed.Fact, isCompact: B): String = {
-    val st = Printer.print_astTypedFact(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astTypedFact(s: String): Either[org.sireum.lang.ast.Typed.Fact, Json.ErrorMsg] = {
-    def f_astTypedFact(parser: Parser): org.sireum.lang.ast.Typed.Fact = {
-      val r = parser.parse_astTypedFact()
-      return r
-    }
-    val r = to(s, f_astTypedFact _)
-    return r
-  }
-
-  def from_astTypedTheorem(o: org.sireum.lang.ast.Typed.Theorem, isCompact: B): String = {
-    val st = Printer.print_astTypedTheorem(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astTypedTheorem(s: String): Either[org.sireum.lang.ast.Typed.Theorem, Json.ErrorMsg] = {
-    def f_astTypedTheorem(parser: Parser): org.sireum.lang.ast.Typed.Theorem = {
-      val r = parser.parse_astTypedTheorem()
-      return r
-    }
-    val r = to(s, f_astTypedTheorem _)
-    return r
-  }
-
-  def from_astTypedInv(o: org.sireum.lang.ast.Typed.Inv, isCompact: B): String = {
-    val st = Printer.print_astTypedInv(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astTypedInv(s: String): Either[org.sireum.lang.ast.Typed.Inv, Json.ErrorMsg] = {
-    def f_astTypedInv(parser: Parser): org.sireum.lang.ast.Typed.Inv = {
-      val r = parser.parse_astTypedInv()
-      return r
-    }
-    val r = to(s, f_astTypedInv _)
-    return r
-  }
-
   def from_astAttr(o: org.sireum.lang.ast.Attr, isCompact: B): String = {
     val st = Printer.print_astAttr(o)
     if (isCompact) {
@@ -9412,6 +9178,240 @@ object JSON {
       return r
     }
     val r = to(s, f_astTruthTableConclusionContingent _)
+    return r
+  }
+
+  def from_astTyped(o: org.sireum.lang.ast.Typed, isCompact: B): String = {
+    val st = Printer.print_astTyped(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astTyped(s: String): Either[org.sireum.lang.ast.Typed, Json.ErrorMsg] = {
+    def f_astTyped(parser: Parser): org.sireum.lang.ast.Typed = {
+      val r = parser.parse_astTyped()
+      return r
+    }
+    val r = to(s, f_astTyped _)
+    return r
+  }
+
+  def from_astTypedName(o: org.sireum.lang.ast.Typed.Name, isCompact: B): String = {
+    val st = Printer.print_astTypedName(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astTypedName(s: String): Either[org.sireum.lang.ast.Typed.Name, Json.ErrorMsg] = {
+    def f_astTypedName(parser: Parser): org.sireum.lang.ast.Typed.Name = {
+      val r = parser.parse_astTypedName()
+      return r
+    }
+    val r = to(s, f_astTypedName _)
+    return r
+  }
+
+  def from_astTypedTuple(o: org.sireum.lang.ast.Typed.Tuple, isCompact: B): String = {
+    val st = Printer.print_astTypedTuple(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astTypedTuple(s: String): Either[org.sireum.lang.ast.Typed.Tuple, Json.ErrorMsg] = {
+    def f_astTypedTuple(parser: Parser): org.sireum.lang.ast.Typed.Tuple = {
+      val r = parser.parse_astTypedTuple()
+      return r
+    }
+    val r = to(s, f_astTypedTuple _)
+    return r
+  }
+
+  def from_astTypedFun(o: org.sireum.lang.ast.Typed.Fun, isCompact: B): String = {
+    val st = Printer.print_astTypedFun(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astTypedFun(s: String): Either[org.sireum.lang.ast.Typed.Fun, Json.ErrorMsg] = {
+    def f_astTypedFun(parser: Parser): org.sireum.lang.ast.Typed.Fun = {
+      val r = parser.parse_astTypedFun()
+      return r
+    }
+    val r = to(s, f_astTypedFun _)
+    return r
+  }
+
+  def from_astTypedTypeVar(o: org.sireum.lang.ast.Typed.TypeVar, isCompact: B): String = {
+    val st = Printer.print_astTypedTypeVar(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astTypedTypeVar(s: String): Either[org.sireum.lang.ast.Typed.TypeVar, Json.ErrorMsg] = {
+    def f_astTypedTypeVar(parser: Parser): org.sireum.lang.ast.Typed.TypeVar = {
+      val r = parser.parse_astTypedTypeVar()
+      return r
+    }
+    val r = to(s, f_astTypedTypeVar _)
+    return r
+  }
+
+  def from_astTypedPackage(o: org.sireum.lang.ast.Typed.Package, isCompact: B): String = {
+    val st = Printer.print_astTypedPackage(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astTypedPackage(s: String): Either[org.sireum.lang.ast.Typed.Package, Json.ErrorMsg] = {
+    def f_astTypedPackage(parser: Parser): org.sireum.lang.ast.Typed.Package = {
+      val r = parser.parse_astTypedPackage()
+      return r
+    }
+    val r = to(s, f_astTypedPackage _)
+    return r
+  }
+
+  def from_astTypedObject(o: org.sireum.lang.ast.Typed.Object, isCompact: B): String = {
+    val st = Printer.print_astTypedObject(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astTypedObject(s: String): Either[org.sireum.lang.ast.Typed.Object, Json.ErrorMsg] = {
+    def f_astTypedObject(parser: Parser): org.sireum.lang.ast.Typed.Object = {
+      val r = parser.parse_astTypedObject()
+      return r
+    }
+    val r = to(s, f_astTypedObject _)
+    return r
+  }
+
+  def from_astTypedEnum(o: org.sireum.lang.ast.Typed.Enum, isCompact: B): String = {
+    val st = Printer.print_astTypedEnum(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astTypedEnum(s: String): Either[org.sireum.lang.ast.Typed.Enum, Json.ErrorMsg] = {
+    def f_astTypedEnum(parser: Parser): org.sireum.lang.ast.Typed.Enum = {
+      val r = parser.parse_astTypedEnum()
+      return r
+    }
+    val r = to(s, f_astTypedEnum _)
+    return r
+  }
+
+  def from_astTypedMethod(o: org.sireum.lang.ast.Typed.Method, isCompact: B): String = {
+    val st = Printer.print_astTypedMethod(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astTypedMethod(s: String): Either[org.sireum.lang.ast.Typed.Method, Json.ErrorMsg] = {
+    def f_astTypedMethod(parser: Parser): org.sireum.lang.ast.Typed.Method = {
+      val r = parser.parse_astTypedMethod()
+      return r
+    }
+    val r = to(s, f_astTypedMethod _)
+    return r
+  }
+
+  def from_astTypedMethods(o: org.sireum.lang.ast.Typed.Methods, isCompact: B): String = {
+    val st = Printer.print_astTypedMethods(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astTypedMethods(s: String): Either[org.sireum.lang.ast.Typed.Methods, Json.ErrorMsg] = {
+    def f_astTypedMethods(parser: Parser): org.sireum.lang.ast.Typed.Methods = {
+      val r = parser.parse_astTypedMethods()
+      return r
+    }
+    val r = to(s, f_astTypedMethods _)
+    return r
+  }
+
+  def from_astTypedFact(o: org.sireum.lang.ast.Typed.Fact, isCompact: B): String = {
+    val st = Printer.print_astTypedFact(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astTypedFact(s: String): Either[org.sireum.lang.ast.Typed.Fact, Json.ErrorMsg] = {
+    def f_astTypedFact(parser: Parser): org.sireum.lang.ast.Typed.Fact = {
+      val r = parser.parse_astTypedFact()
+      return r
+    }
+    val r = to(s, f_astTypedFact _)
+    return r
+  }
+
+  def from_astTypedTheorem(o: org.sireum.lang.ast.Typed.Theorem, isCompact: B): String = {
+    val st = Printer.print_astTypedTheorem(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astTypedTheorem(s: String): Either[org.sireum.lang.ast.Typed.Theorem, Json.ErrorMsg] = {
+    def f_astTypedTheorem(parser: Parser): org.sireum.lang.ast.Typed.Theorem = {
+      val r = parser.parse_astTypedTheorem()
+      return r
+    }
+    val r = to(s, f_astTypedTheorem _)
+    return r
+  }
+
+  def from_astTypedInv(o: org.sireum.lang.ast.Typed.Inv, isCompact: B): String = {
+    val st = Printer.print_astTypedInv(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astTypedInv(s: String): Either[org.sireum.lang.ast.Typed.Inv, Json.ErrorMsg] = {
+    def f_astTypedInv(parser: Parser): org.sireum.lang.ast.Typed.Inv = {
+      val r = parser.parse_astTypedInv()
+      return r
+    }
+    val r = to(s, f_astTypedInv _)
     return r
   }
 

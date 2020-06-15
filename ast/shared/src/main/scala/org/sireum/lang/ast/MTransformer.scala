@@ -26,7 +26,7 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// This file is auto-generated from AST.scala
+// This file is auto-generated from AST.scala, Typed.scala
 
 package org.sireum.lang.ast
 
@@ -493,54 +493,6 @@ object MTransformer {
 
   val PostResultTypeParam: MOption[TypeParam] = MNone()
 
-  val PreResultTypedName: PreResult[Typed] = PreResult(T, MNone())
-
-  val PostResultTypedName: MOption[Typed] = MNone()
-
-  val PreResultTypedTuple: PreResult[Typed] = PreResult(T, MNone())
-
-  val PostResultTypedTuple: MOption[Typed] = MNone()
-
-  val PreResultTypedFun: PreResult[Typed] = PreResult(T, MNone())
-
-  val PostResultTypedFun: MOption[Typed] = MNone()
-
-  val PreResultTypedTypeVar: PreResult[Typed] = PreResult(T, MNone())
-
-  val PostResultTypedTypeVar: MOption[Typed] = MNone()
-
-  val PreResultTypedPackage: PreResult[Typed] = PreResult(T, MNone())
-
-  val PostResultTypedPackage: MOption[Typed] = MNone()
-
-  val PreResultTypedObject: PreResult[Typed] = PreResult(T, MNone())
-
-  val PostResultTypedObject: MOption[Typed] = MNone()
-
-  val PreResultTypedEnum: PreResult[Typed] = PreResult(T, MNone())
-
-  val PostResultTypedEnum: MOption[Typed] = MNone()
-
-  val PreResultTypedMethod: PreResult[Typed] = PreResult(T, MNone())
-
-  val PostResultTypedMethod: MOption[Typed] = MNone()
-
-  val PreResultTypedMethods: PreResult[Typed] = PreResult(T, MNone())
-
-  val PostResultTypedMethods: MOption[Typed] = MNone()
-
-  val PreResultTypedFact: PreResult[Typed] = PreResult(T, MNone())
-
-  val PostResultTypedFact: MOption[Typed] = MNone()
-
-  val PreResultTypedTheorem: PreResult[Typed] = PreResult(T, MNone())
-
-  val PostResultTypedTheorem: MOption[Typed] = MNone()
-
-  val PreResultTypedInv: PreResult[Typed] = PreResult(T, MNone())
-
-  val PostResultTypedInv: MOption[Typed] = MNone()
-
   val PreResultAttr: PreResult[Attr] = PreResult(T, MNone())
 
   val PostResultAttr: MOption[Attr] = MNone()
@@ -628,6 +580,54 @@ object MTransformer {
   val PreResultTruthTableConclusionContingent: PreResult[TruthTable.Conclusion] = PreResult(T, MNone())
 
   val PostResultTruthTableConclusionContingent: MOption[TruthTable.Conclusion] = MNone()
+
+  val PreResultTypedName: PreResult[Typed] = PreResult(T, MNone())
+
+  val PostResultTypedName: MOption[Typed] = MNone()
+
+  val PreResultTypedTuple: PreResult[Typed] = PreResult(T, MNone())
+
+  val PostResultTypedTuple: MOption[Typed] = MNone()
+
+  val PreResultTypedFun: PreResult[Typed] = PreResult(T, MNone())
+
+  val PostResultTypedFun: MOption[Typed] = MNone()
+
+  val PreResultTypedTypeVar: PreResult[Typed] = PreResult(T, MNone())
+
+  val PostResultTypedTypeVar: MOption[Typed] = MNone()
+
+  val PreResultTypedPackage: PreResult[Typed] = PreResult(T, MNone())
+
+  val PostResultTypedPackage: MOption[Typed] = MNone()
+
+  val PreResultTypedObject: PreResult[Typed] = PreResult(T, MNone())
+
+  val PostResultTypedObject: MOption[Typed] = MNone()
+
+  val PreResultTypedEnum: PreResult[Typed] = PreResult(T, MNone())
+
+  val PostResultTypedEnum: MOption[Typed] = MNone()
+
+  val PreResultTypedMethod: PreResult[Typed] = PreResult(T, MNone())
+
+  val PostResultTypedMethod: MOption[Typed] = MNone()
+
+  val PreResultTypedMethods: PreResult[Typed] = PreResult(T, MNone())
+
+  val PostResultTypedMethods: MOption[Typed] = MNone()
+
+  val PreResultTypedFact: PreResult[Typed] = PreResult(T, MNone())
+
+  val PostResultTypedFact: MOption[Typed] = MNone()
+
+  val PreResultTypedTheorem: PreResult[Typed] = PreResult(T, MNone())
+
+  val PostResultTypedTheorem: MOption[Typed] = MNone()
+
+  val PreResultTypedInv: PreResult[Typed] = PreResult(T, MNone())
+
+  val PostResultTypedInv: MOption[Typed] = MNone()
 
 }
 
@@ -1535,71 +1535,6 @@ import MTransformer._
     return PreResultTypeParam
   }
 
-  def preTyped(o: Typed): PreResult[Typed] = {
-    o match {
-      case o: Typed.Name => return preTypedName(o)
-      case o: Typed.Tuple => return preTypedTuple(o)
-      case o: Typed.Fun => return preTypedFun(o)
-      case o: Typed.TypeVar => return preTypedTypeVar(o)
-      case o: Typed.Package => return preTypedPackage(o)
-      case o: Typed.Object => return preTypedObject(o)
-      case o: Typed.Enum => return preTypedEnum(o)
-      case o: Typed.Method => return preTypedMethod(o)
-      case o: Typed.Methods => return preTypedMethods(o)
-      case o: Typed.Fact => return preTypedFact(o)
-      case o: Typed.Theorem => return preTypedTheorem(o)
-      case o: Typed.Inv => return preTypedInv(o)
-    }
-  }
-
-  def preTypedName(o: Typed.Name): PreResult[Typed] = {
-    return PreResultTypedName
-  }
-
-  def preTypedTuple(o: Typed.Tuple): PreResult[Typed] = {
-    return PreResultTypedTuple
-  }
-
-  def preTypedFun(o: Typed.Fun): PreResult[Typed] = {
-    return PreResultTypedFun
-  }
-
-  def preTypedTypeVar(o: Typed.TypeVar): PreResult[Typed] = {
-    return PreResultTypedTypeVar
-  }
-
-  def preTypedPackage(o: Typed.Package): PreResult[Typed] = {
-    return PreResultTypedPackage
-  }
-
-  def preTypedObject(o: Typed.Object): PreResult[Typed] = {
-    return PreResultTypedObject
-  }
-
-  def preTypedEnum(o: Typed.Enum): PreResult[Typed] = {
-    return PreResultTypedEnum
-  }
-
-  def preTypedMethod(o: Typed.Method): PreResult[Typed] = {
-    return PreResultTypedMethod
-  }
-
-  def preTypedMethods(o: Typed.Methods): PreResult[Typed] = {
-    return PreResultTypedMethods
-  }
-
-  def preTypedFact(o: Typed.Fact): PreResult[Typed] = {
-    return PreResultTypedFact
-  }
-
-  def preTypedTheorem(o: Typed.Theorem): PreResult[Typed] = {
-    return PreResultTypedTheorem
-  }
-
-  def preTypedInv(o: Typed.Inv): PreResult[Typed] = {
-    return PreResultTypedInv
-  }
-
   def preAttr(o: Attr): PreResult[Attr] = {
     return PreResultAttr
   }
@@ -1713,6 +1648,71 @@ import MTransformer._
 
   def preTruthTableConclusionContingent(o: TruthTable.Conclusion.Contingent): PreResult[TruthTable.Conclusion] = {
     return PreResultTruthTableConclusionContingent
+  }
+
+  def preTyped(o: Typed): PreResult[Typed] = {
+    o match {
+      case o: Typed.Name => return preTypedName(o)
+      case o: Typed.Tuple => return preTypedTuple(o)
+      case o: Typed.Fun => return preTypedFun(o)
+      case o: Typed.TypeVar => return preTypedTypeVar(o)
+      case o: Typed.Package => return preTypedPackage(o)
+      case o: Typed.Object => return preTypedObject(o)
+      case o: Typed.Enum => return preTypedEnum(o)
+      case o: Typed.Method => return preTypedMethod(o)
+      case o: Typed.Methods => return preTypedMethods(o)
+      case o: Typed.Fact => return preTypedFact(o)
+      case o: Typed.Theorem => return preTypedTheorem(o)
+      case o: Typed.Inv => return preTypedInv(o)
+    }
+  }
+
+  def preTypedName(o: Typed.Name): PreResult[Typed] = {
+    return PreResultTypedName
+  }
+
+  def preTypedTuple(o: Typed.Tuple): PreResult[Typed] = {
+    return PreResultTypedTuple
+  }
+
+  def preTypedFun(o: Typed.Fun): PreResult[Typed] = {
+    return PreResultTypedFun
+  }
+
+  def preTypedTypeVar(o: Typed.TypeVar): PreResult[Typed] = {
+    return PreResultTypedTypeVar
+  }
+
+  def preTypedPackage(o: Typed.Package): PreResult[Typed] = {
+    return PreResultTypedPackage
+  }
+
+  def preTypedObject(o: Typed.Object): PreResult[Typed] = {
+    return PreResultTypedObject
+  }
+
+  def preTypedEnum(o: Typed.Enum): PreResult[Typed] = {
+    return PreResultTypedEnum
+  }
+
+  def preTypedMethod(o: Typed.Method): PreResult[Typed] = {
+    return PreResultTypedMethod
+  }
+
+  def preTypedMethods(o: Typed.Methods): PreResult[Typed] = {
+    return PreResultTypedMethods
+  }
+
+  def preTypedFact(o: Typed.Fact): PreResult[Typed] = {
+    return PreResultTypedFact
+  }
+
+  def preTypedTheorem(o: Typed.Theorem): PreResult[Typed] = {
+    return PreResultTypedTheorem
+  }
+
+  def preTypedInv(o: Typed.Inv): PreResult[Typed] = {
+    return PreResultTypedInv
   }
 
   def postTopUnit(o: TopUnit): MOption[TopUnit] = {
@@ -2615,71 +2615,6 @@ import MTransformer._
     return PostResultTypeParam
   }
 
-  def postTyped(o: Typed): MOption[Typed] = {
-    o match {
-      case o: Typed.Name => return postTypedName(o)
-      case o: Typed.Tuple => return postTypedTuple(o)
-      case o: Typed.Fun => return postTypedFun(o)
-      case o: Typed.TypeVar => return postTypedTypeVar(o)
-      case o: Typed.Package => return postTypedPackage(o)
-      case o: Typed.Object => return postTypedObject(o)
-      case o: Typed.Enum => return postTypedEnum(o)
-      case o: Typed.Method => return postTypedMethod(o)
-      case o: Typed.Methods => return postTypedMethods(o)
-      case o: Typed.Fact => return postTypedFact(o)
-      case o: Typed.Theorem => return postTypedTheorem(o)
-      case o: Typed.Inv => return postTypedInv(o)
-    }
-  }
-
-  def postTypedName(o: Typed.Name): MOption[Typed] = {
-    return PostResultTypedName
-  }
-
-  def postTypedTuple(o: Typed.Tuple): MOption[Typed] = {
-    return PostResultTypedTuple
-  }
-
-  def postTypedFun(o: Typed.Fun): MOption[Typed] = {
-    return PostResultTypedFun
-  }
-
-  def postTypedTypeVar(o: Typed.TypeVar): MOption[Typed] = {
-    return PostResultTypedTypeVar
-  }
-
-  def postTypedPackage(o: Typed.Package): MOption[Typed] = {
-    return PostResultTypedPackage
-  }
-
-  def postTypedObject(o: Typed.Object): MOption[Typed] = {
-    return PostResultTypedObject
-  }
-
-  def postTypedEnum(o: Typed.Enum): MOption[Typed] = {
-    return PostResultTypedEnum
-  }
-
-  def postTypedMethod(o: Typed.Method): MOption[Typed] = {
-    return PostResultTypedMethod
-  }
-
-  def postTypedMethods(o: Typed.Methods): MOption[Typed] = {
-    return PostResultTypedMethods
-  }
-
-  def postTypedFact(o: Typed.Fact): MOption[Typed] = {
-    return PostResultTypedFact
-  }
-
-  def postTypedTheorem(o: Typed.Theorem): MOption[Typed] = {
-    return PostResultTypedTheorem
-  }
-
-  def postTypedInv(o: Typed.Inv): MOption[Typed] = {
-    return PostResultTypedInv
-  }
-
   def postAttr(o: Attr): MOption[Attr] = {
     return PostResultAttr
   }
@@ -2793,6 +2728,71 @@ import MTransformer._
 
   def postTruthTableConclusionContingent(o: TruthTable.Conclusion.Contingent): MOption[TruthTable.Conclusion] = {
     return PostResultTruthTableConclusionContingent
+  }
+
+  def postTyped(o: Typed): MOption[Typed] = {
+    o match {
+      case o: Typed.Name => return postTypedName(o)
+      case o: Typed.Tuple => return postTypedTuple(o)
+      case o: Typed.Fun => return postTypedFun(o)
+      case o: Typed.TypeVar => return postTypedTypeVar(o)
+      case o: Typed.Package => return postTypedPackage(o)
+      case o: Typed.Object => return postTypedObject(o)
+      case o: Typed.Enum => return postTypedEnum(o)
+      case o: Typed.Method => return postTypedMethod(o)
+      case o: Typed.Methods => return postTypedMethods(o)
+      case o: Typed.Fact => return postTypedFact(o)
+      case o: Typed.Theorem => return postTypedTheorem(o)
+      case o: Typed.Inv => return postTypedInv(o)
+    }
+  }
+
+  def postTypedName(o: Typed.Name): MOption[Typed] = {
+    return PostResultTypedName
+  }
+
+  def postTypedTuple(o: Typed.Tuple): MOption[Typed] = {
+    return PostResultTypedTuple
+  }
+
+  def postTypedFun(o: Typed.Fun): MOption[Typed] = {
+    return PostResultTypedFun
+  }
+
+  def postTypedTypeVar(o: Typed.TypeVar): MOption[Typed] = {
+    return PostResultTypedTypeVar
+  }
+
+  def postTypedPackage(o: Typed.Package): MOption[Typed] = {
+    return PostResultTypedPackage
+  }
+
+  def postTypedObject(o: Typed.Object): MOption[Typed] = {
+    return PostResultTypedObject
+  }
+
+  def postTypedEnum(o: Typed.Enum): MOption[Typed] = {
+    return PostResultTypedEnum
+  }
+
+  def postTypedMethod(o: Typed.Method): MOption[Typed] = {
+    return PostResultTypedMethod
+  }
+
+  def postTypedMethods(o: Typed.Methods): MOption[Typed] = {
+    return PostResultTypedMethods
+  }
+
+  def postTypedFact(o: Typed.Fact): MOption[Typed] = {
+    return PostResultTypedFact
+  }
+
+  def postTypedTheorem(o: Typed.Theorem): MOption[Typed] = {
+    return PostResultTypedTheorem
+  }
+
+  def postTypedInv(o: Typed.Inv): MOption[Typed] = {
+    return PostResultTypedInv
   }
 
   def transformTopUnit(o: TopUnit): MOption[TopUnit] = {
@@ -4819,97 +4819,6 @@ import MTransformer._
     }
   }
 
-  def transformTyped(o: Typed): MOption[Typed] = {
-    val preR: PreResult[Typed] = preTyped(o)
-    val r: MOption[Typed] = if (preR.continu) {
-      val o2: Typed = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val rOpt: MOption[Typed] = o2 match {
-        case o2: Typed.Name =>
-          val r0: MOption[IS[Z, Typed]] = transformISZ(o2.args, transformTyped _)
-          if (hasChanged || r0.nonEmpty)
-            MSome(o2(args = r0.getOrElse(o2.args)))
-          else
-            MNone()
-        case o2: Typed.Tuple =>
-          val r0: MOption[IS[Z, Typed]] = transformISZ(o2.args, transformTyped _)
-          if (hasChanged || r0.nonEmpty)
-            MSome(o2(args = r0.getOrElse(o2.args)))
-          else
-            MNone()
-        case o2: Typed.Fun =>
-          val r0: MOption[IS[Z, Typed]] = transformISZ(o2.args, transformTyped _)
-          val r1: MOption[Typed] = transformTyped(o2.ret)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(args = r0.getOrElse(o2.args), ret = r1.getOrElse(o2.ret)))
-          else
-            MNone()
-        case o2: Typed.TypeVar =>
-          if (hasChanged)
-            MSome(o2)
-          else
-            MNone()
-        case o2: Typed.Package =>
-          if (hasChanged)
-            MSome(o2)
-          else
-            MNone()
-        case o2: Typed.Object =>
-          if (hasChanged)
-            MSome(o2)
-          else
-            MNone()
-        case o2: Typed.Enum =>
-          if (hasChanged)
-            MSome(o2)
-          else
-            MNone()
-        case o2: Typed.Method =>
-          val r0: MOption[Typed.Fun] = transformTypedFun(o2.tpe)
-          if (hasChanged || r0.nonEmpty)
-            MSome(o2(tpe = r0.getOrElse(o2.tpe)))
-          else
-            MNone()
-        case o2: Typed.Methods =>
-          val r0: MOption[IS[Z, Typed.Method]] = transformISZ(o2.methods, transformTypedMethod _)
-          if (hasChanged || r0.nonEmpty)
-            MSome(o2(methods = r0.getOrElse(o2.methods)))
-          else
-            MNone()
-        case o2: Typed.Fact =>
-          if (hasChanged)
-            MSome(o2)
-          else
-            MNone()
-        case o2: Typed.Theorem =>
-          if (hasChanged)
-            MSome(o2)
-          else
-            MNone()
-        case o2: Typed.Inv =>
-          if (hasChanged)
-            MSome(o2)
-          else
-            MNone()
-      }
-      rOpt
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: Typed = r.getOrElse(o)
-    val postR: MOption[Typed] = postTyped(o2)
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
   def transformAttr(o: Attr): MOption[Attr] = {
     val preR: PreResult[Attr] = preAttr(o)
     val r: MOption[Attr] = if (preR.continu) {
@@ -5182,6 +5091,97 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: TruthTable.Conclusion = r.getOrElse(o)
     val postR: MOption[TruthTable.Conclusion] = postTruthTableConclusion(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformTyped(o: Typed): MOption[Typed] = {
+    val preR: PreResult[Typed] = preTyped(o)
+    val r: MOption[Typed] = if (preR.continu) {
+      val o2: Typed = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: MOption[Typed] = o2 match {
+        case o2: Typed.Name =>
+          val r0: MOption[IS[Z, Typed]] = transformISZ(o2.args, transformTyped _)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(args = r0.getOrElse(o2.args)))
+          else
+            MNone()
+        case o2: Typed.Tuple =>
+          val r0: MOption[IS[Z, Typed]] = transformISZ(o2.args, transformTyped _)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(args = r0.getOrElse(o2.args)))
+          else
+            MNone()
+        case o2: Typed.Fun =>
+          val r0: MOption[IS[Z, Typed]] = transformISZ(o2.args, transformTyped _)
+          val r1: MOption[Typed] = transformTyped(o2.ret)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(args = r0.getOrElse(o2.args), ret = r1.getOrElse(o2.ret)))
+          else
+            MNone()
+        case o2: Typed.TypeVar =>
+          if (hasChanged)
+            MSome(o2)
+          else
+            MNone()
+        case o2: Typed.Package =>
+          if (hasChanged)
+            MSome(o2)
+          else
+            MNone()
+        case o2: Typed.Object =>
+          if (hasChanged)
+            MSome(o2)
+          else
+            MNone()
+        case o2: Typed.Enum =>
+          if (hasChanged)
+            MSome(o2)
+          else
+            MNone()
+        case o2: Typed.Method =>
+          val r0: MOption[Typed.Fun] = transformTypedFun(o2.tpe)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(tpe = r0.getOrElse(o2.tpe)))
+          else
+            MNone()
+        case o2: Typed.Methods =>
+          val r0: MOption[IS[Z, Typed.Method]] = transformISZ(o2.methods, transformTypedMethod _)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(methods = r0.getOrElse(o2.methods)))
+          else
+            MNone()
+        case o2: Typed.Fact =>
+          if (hasChanged)
+            MSome(o2)
+          else
+            MNone()
+        case o2: Typed.Theorem =>
+          if (hasChanged)
+            MSome(o2)
+          else
+            MNone()
+        case o2: Typed.Inv =>
+          if (hasChanged)
+            MSome(o2)
+          else
+            MNone()
+      }
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Typed = r.getOrElse(o)
+    val postR: MOption[Typed] = postTyped(o2)
     if (postR.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -5551,41 +5551,6 @@ import MTransformer._
     }
   }
 
-  def transformTypedMethod(o: Typed.Method): MOption[Typed.Method] = {
-    val preR: PreResult[Typed.Method] = preTypedMethod(o) match {
-     case PreResult(continu, MSome(r: Typed.Method)) => PreResult(continu, MSome[Typed.Method](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Typed.Method")
-     case PreResult(continu, _) => PreResult(continu, MNone[Typed.Method]())
-    }
-    val r: MOption[Typed.Method] = if (preR.continu) {
-      val o2: Typed.Method = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[Typed.Fun] = transformTypedFun(o2.tpe)
-      if (hasChanged || r0.nonEmpty)
-        MSome(o2(tpe = r0.getOrElse(o2.tpe)))
-      else
-        MNone()
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: Typed.Method = r.getOrElse(o)
-    val postR: MOption[Typed.Method] = postTypedMethod(o2) match {
-     case MSome(result: Typed.Method) => MSome[Typed.Method](result)
-     case MSome(_) => halt("Can only produce object of type Typed.Method")
-     case _ => MNone[Typed.Method]()
-    }
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
   def transformResolvedInfoMethod(o: ResolvedInfo.Method): MOption[ResolvedInfo.Method] = {
     val preR: PreResult[ResolvedInfo.Method] = preResolvedInfoMethod(o) match {
      case PreResult(continu, MSome(r: ResolvedInfo.Method)) => PreResult(continu, MSome[ResolvedInfo.Method](r))
@@ -5646,6 +5611,41 @@ import MTransformer._
      case MSome(result: Exp.LitB) => MSome[Exp.LitB](result)
      case MSome(_) => halt("Can only produce object of type Exp.LitB")
      case _ => MNone[Exp.LitB]()
+    }
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformTypedMethod(o: Typed.Method): MOption[Typed.Method] = {
+    val preR: PreResult[Typed.Method] = preTypedMethod(o) match {
+     case PreResult(continu, MSome(r: Typed.Method)) => PreResult(continu, MSome[Typed.Method](r))
+     case PreResult(_, MSome(_)) => halt("Can only produce object of type Typed.Method")
+     case PreResult(continu, _) => PreResult(continu, MNone[Typed.Method]())
+    }
+    val r: MOption[Typed.Method] = if (preR.continu) {
+      val o2: Typed.Method = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[Typed.Fun] = transformTypedFun(o2.tpe)
+      if (hasChanged || r0.nonEmpty)
+        MSome(o2(tpe = r0.getOrElse(o2.tpe)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Typed.Method = r.getOrElse(o)
+    val postR: MOption[Typed.Method] = postTypedMethod(o2) match {
+     case MSome(result: Typed.Method) => MSome[Typed.Method](result)
+     case MSome(_) => halt("Can only produce object of type Typed.Method")
+     case _ => MNone[Typed.Method]()
     }
     if (postR.nonEmpty) {
       return postR

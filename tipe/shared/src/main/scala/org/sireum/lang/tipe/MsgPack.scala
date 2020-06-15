@@ -26,7 +26,7 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// This file is auto-generated from Info.scala, AST.scala
+// This file is auto-generated from Info.scala, AST.scala, Typed.scala
 
 package org.sireum.lang.tipe
 
@@ -296,73 +296,73 @@ object MsgPack {
 
     val _astTypeParam: Z = 97
 
-    val _astTypedName: Z = 98
+    val _astAttr: Z = 98
 
-    val _astTypedTuple: Z = 99
+    val _astTypedAttr: Z = 99
 
-    val _astTypedFun: Z = 100
+    val _astResolvedAttr: Z = 100
 
-    val _astTypedTypeVar: Z = 101
+    val _astResolvedInfoBuiltIn: Z = 101
 
-    val _astTypedPackage: Z = 102
+    val _astResolvedInfoPackage: Z = 102
 
-    val _astTypedObject: Z = 103
+    val _astResolvedInfoEnum: Z = 103
 
-    val _astTypedEnum: Z = 104
+    val _astResolvedInfoEnumElement: Z = 104
 
-    val _astTypedMethod: Z = 105
+    val _astResolvedInfoObject: Z = 105
 
-    val _astTypedMethods: Z = 106
+    val _astResolvedInfoVar: Z = 106
 
-    val _astTypedFact: Z = 107
+    val _astResolvedInfoMethod: Z = 107
 
-    val _astTypedTheorem: Z = 108
+    val _astResolvedInfoMethods: Z = 108
 
-    val _astTypedInv: Z = 109
+    val _astResolvedInfoTuple: Z = 109
 
-    val _astAttr: Z = 110
+    val _astResolvedInfoLocalVar: Z = 110
 
-    val _astTypedAttr: Z = 111
+    val _astResolvedInfoFact: Z = 111
 
-    val _astResolvedAttr: Z = 112
+    val _astResolvedInfoTheorem: Z = 112
 
-    val _astResolvedInfoBuiltIn: Z = 113
+    val _astResolvedInfoInv: Z = 113
 
-    val _astResolvedInfoPackage: Z = 114
+    val _astTruthTableRow: Z = 114
 
-    val _astResolvedInfoEnum: Z = 115
+    val _astTruthTableAssignment: Z = 115
 
-    val _astResolvedInfoEnumElement: Z = 116
+    val _astTruthTableConclusionValidity: Z = 116
 
-    val _astResolvedInfoObject: Z = 117
+    val _astTruthTableConclusionTautology: Z = 117
 
-    val _astResolvedInfoVar: Z = 118
+    val _astTruthTableConclusionContradictory: Z = 118
 
-    val _astResolvedInfoMethod: Z = 119
+    val _astTruthTableConclusionContingent: Z = 119
 
-    val _astResolvedInfoMethods: Z = 120
+    val _astTypedName: Z = 120
 
-    val _astResolvedInfoTuple: Z = 121
+    val _astTypedTuple: Z = 121
 
-    val _astResolvedInfoLocalVar: Z = 122
+    val _astTypedFun: Z = 122
 
-    val _astResolvedInfoFact: Z = 123
+    val _astTypedTypeVar: Z = 123
 
-    val _astResolvedInfoTheorem: Z = 124
+    val _astTypedPackage: Z = 124
 
-    val _astResolvedInfoInv: Z = 125
+    val _astTypedObject: Z = 125
 
-    val _astTruthTableRow: Z = 126
+    val _astTypedEnum: Z = 126
 
-    val _astTruthTableAssignment: Z = 127
+    val _astTypedMethod: Z = 127
 
-    val _astTruthTableConclusionValidity: Z = 128
+    val _astTypedMethods: Z = 128
 
-    val _astTruthTableConclusionTautology: Z = 129
+    val _astTypedFact: Z = 129
 
-    val _astTruthTableConclusionContradictory: Z = 130
+    val _astTypedTheorem: Z = 130
 
-    val _astTruthTableConclusionContingent: Z = 131
+    val _astTypedInv: Z = 131
 
   }
 
@@ -1620,102 +1620,6 @@ object MsgPack {
       write_astId(o.id)
     }
 
-    def write_astTyped(o: org.sireum.lang.ast.Typed): Unit = {
-      o match {
-        case o: org.sireum.lang.ast.Typed.Name => write_astTypedName(o)
-        case o: org.sireum.lang.ast.Typed.Tuple => write_astTypedTuple(o)
-        case o: org.sireum.lang.ast.Typed.Fun => write_astTypedFun(o)
-        case o: org.sireum.lang.ast.Typed.TypeVar => write_astTypedTypeVar(o)
-        case o: org.sireum.lang.ast.Typed.Package => write_astTypedPackage(o)
-        case o: org.sireum.lang.ast.Typed.Object => write_astTypedObject(o)
-        case o: org.sireum.lang.ast.Typed.Enum => write_astTypedEnum(o)
-        case o: org.sireum.lang.ast.Typed.Method => write_astTypedMethod(o)
-        case o: org.sireum.lang.ast.Typed.Methods => write_astTypedMethods(o)
-        case o: org.sireum.lang.ast.Typed.Fact => write_astTypedFact(o)
-        case o: org.sireum.lang.ast.Typed.Theorem => write_astTypedTheorem(o)
-        case o: org.sireum.lang.ast.Typed.Inv => write_astTypedInv(o)
-      }
-    }
-
-    def write_astMethodModeType(o: org.sireum.lang.ast.MethodMode.Type): Unit = {
-      writer.writeZ(o.ordinal)
-    }
-
-    def write_astTypedName(o: org.sireum.lang.ast.Typed.Name): Unit = {
-      writer.writeZ(Constants._astTypedName)
-      writer.writeISZ(o.ids, writer.writeString _)
-      writer.writeISZ(o.args, write_astTyped _)
-    }
-
-    def write_astTypedTuple(o: org.sireum.lang.ast.Typed.Tuple): Unit = {
-      writer.writeZ(Constants._astTypedTuple)
-      writer.writeISZ(o.args, write_astTyped _)
-    }
-
-    def write_astTypedFun(o: org.sireum.lang.ast.Typed.Fun): Unit = {
-      writer.writeZ(Constants._astTypedFun)
-      writer.writeB(o.isPure)
-      writer.writeB(o.isByName)
-      writer.writeISZ(o.args, write_astTyped _)
-      write_astTyped(o.ret)
-    }
-
-    def write_astTypedTypeVar(o: org.sireum.lang.ast.Typed.TypeVar): Unit = {
-      writer.writeZ(Constants._astTypedTypeVar)
-      writer.writeString(o.id)
-    }
-
-    def write_astTypedPackage(o: org.sireum.lang.ast.Typed.Package): Unit = {
-      writer.writeZ(Constants._astTypedPackage)
-      writer.writeISZ(o.name, writer.writeString _)
-    }
-
-    def write_astTypedObject(o: org.sireum.lang.ast.Typed.Object): Unit = {
-      writer.writeZ(Constants._astTypedObject)
-      writer.writeISZ(o.owner, writer.writeString _)
-      writer.writeString(o.id)
-    }
-
-    def write_astTypedEnum(o: org.sireum.lang.ast.Typed.Enum): Unit = {
-      writer.writeZ(Constants._astTypedEnum)
-      writer.writeISZ(o.name, writer.writeString _)
-    }
-
-    def write_astTypedMethod(o: org.sireum.lang.ast.Typed.Method): Unit = {
-      writer.writeZ(Constants._astTypedMethod)
-      writer.writeB(o.isInObject)
-      write_astMethodModeType(o.mode)
-      writer.writeISZ(o.typeParams, writer.writeString _)
-      writer.writeISZ(o.owner, writer.writeString _)
-      writer.writeString(o.name)
-      writer.writeISZ(o.paramNames, writer.writeString _)
-      write_astTypedFun(o.tpe)
-    }
-
-    def write_astTypedMethods(o: org.sireum.lang.ast.Typed.Methods): Unit = {
-      writer.writeZ(Constants._astTypedMethods)
-      writer.writeISZ(o.methods, write_astTypedMethod _)
-    }
-
-    def write_astTypedFact(o: org.sireum.lang.ast.Typed.Fact): Unit = {
-      writer.writeZ(Constants._astTypedFact)
-      writer.writeISZ(o.owner, writer.writeString _)
-      writer.writeString(o.id)
-    }
-
-    def write_astTypedTheorem(o: org.sireum.lang.ast.Typed.Theorem): Unit = {
-      writer.writeZ(Constants._astTypedTheorem)
-      writer.writeISZ(o.owner, writer.writeString _)
-      writer.writeString(o.id)
-    }
-
-    def write_astTypedInv(o: org.sireum.lang.ast.Typed.Inv): Unit = {
-      writer.writeZ(Constants._astTypedInv)
-      writer.writeB(o.isInObject)
-      writer.writeISZ(o.owner, writer.writeString _)
-      writer.writeString(o.id)
-    }
-
     def write_astAttr(o: org.sireum.lang.ast.Attr): Unit = {
       writer.writeZ(Constants._astAttr)
       writer.writeOption(o.posOpt, writer.writePosition _)
@@ -1888,6 +1792,102 @@ object MsgPack {
       writer.writeISZ(o.trueAssignments, write_astTruthTableAssignment _)
       writer.writeISZ(o.falseAssignments, write_astTruthTableAssignment _)
       write_astAttr(o.attr)
+    }
+
+    def write_astMethodModeType(o: org.sireum.lang.ast.MethodMode.Type): Unit = {
+      writer.writeZ(o.ordinal)
+    }
+
+    def write_astTyped(o: org.sireum.lang.ast.Typed): Unit = {
+      o match {
+        case o: org.sireum.lang.ast.Typed.Name => write_astTypedName(o)
+        case o: org.sireum.lang.ast.Typed.Tuple => write_astTypedTuple(o)
+        case o: org.sireum.lang.ast.Typed.Fun => write_astTypedFun(o)
+        case o: org.sireum.lang.ast.Typed.TypeVar => write_astTypedTypeVar(o)
+        case o: org.sireum.lang.ast.Typed.Package => write_astTypedPackage(o)
+        case o: org.sireum.lang.ast.Typed.Object => write_astTypedObject(o)
+        case o: org.sireum.lang.ast.Typed.Enum => write_astTypedEnum(o)
+        case o: org.sireum.lang.ast.Typed.Method => write_astTypedMethod(o)
+        case o: org.sireum.lang.ast.Typed.Methods => write_astTypedMethods(o)
+        case o: org.sireum.lang.ast.Typed.Fact => write_astTypedFact(o)
+        case o: org.sireum.lang.ast.Typed.Theorem => write_astTypedTheorem(o)
+        case o: org.sireum.lang.ast.Typed.Inv => write_astTypedInv(o)
+      }
+    }
+
+    def write_astTypedName(o: org.sireum.lang.ast.Typed.Name): Unit = {
+      writer.writeZ(Constants._astTypedName)
+      writer.writeISZ(o.ids, writer.writeString _)
+      writer.writeISZ(o.args, write_astTyped _)
+    }
+
+    def write_astTypedTuple(o: org.sireum.lang.ast.Typed.Tuple): Unit = {
+      writer.writeZ(Constants._astTypedTuple)
+      writer.writeISZ(o.args, write_astTyped _)
+    }
+
+    def write_astTypedFun(o: org.sireum.lang.ast.Typed.Fun): Unit = {
+      writer.writeZ(Constants._astTypedFun)
+      writer.writeB(o.isPure)
+      writer.writeB(o.isByName)
+      writer.writeISZ(o.args, write_astTyped _)
+      write_astTyped(o.ret)
+    }
+
+    def write_astTypedTypeVar(o: org.sireum.lang.ast.Typed.TypeVar): Unit = {
+      writer.writeZ(Constants._astTypedTypeVar)
+      writer.writeString(o.id)
+    }
+
+    def write_astTypedPackage(o: org.sireum.lang.ast.Typed.Package): Unit = {
+      writer.writeZ(Constants._astTypedPackage)
+      writer.writeISZ(o.name, writer.writeString _)
+    }
+
+    def write_astTypedObject(o: org.sireum.lang.ast.Typed.Object): Unit = {
+      writer.writeZ(Constants._astTypedObject)
+      writer.writeISZ(o.owner, writer.writeString _)
+      writer.writeString(o.id)
+    }
+
+    def write_astTypedEnum(o: org.sireum.lang.ast.Typed.Enum): Unit = {
+      writer.writeZ(Constants._astTypedEnum)
+      writer.writeISZ(o.name, writer.writeString _)
+    }
+
+    def write_astTypedMethod(o: org.sireum.lang.ast.Typed.Method): Unit = {
+      writer.writeZ(Constants._astTypedMethod)
+      writer.writeB(o.isInObject)
+      write_astMethodModeType(o.mode)
+      writer.writeISZ(o.typeParams, writer.writeString _)
+      writer.writeISZ(o.owner, writer.writeString _)
+      writer.writeString(o.name)
+      writer.writeISZ(o.paramNames, writer.writeString _)
+      write_astTypedFun(o.tpe)
+    }
+
+    def write_astTypedMethods(o: org.sireum.lang.ast.Typed.Methods): Unit = {
+      writer.writeZ(Constants._astTypedMethods)
+      writer.writeISZ(o.methods, write_astTypedMethod _)
+    }
+
+    def write_astTypedFact(o: org.sireum.lang.ast.Typed.Fact): Unit = {
+      writer.writeZ(Constants._astTypedFact)
+      writer.writeISZ(o.owner, writer.writeString _)
+      writer.writeString(o.id)
+    }
+
+    def write_astTypedTheorem(o: org.sireum.lang.ast.Typed.Theorem): Unit = {
+      writer.writeZ(Constants._astTypedTheorem)
+      writer.writeISZ(o.owner, writer.writeString _)
+      writer.writeString(o.id)
+    }
+
+    def write_astTypedInv(o: org.sireum.lang.ast.Typed.Inv): Unit = {
+      writer.writeZ(Constants._astTypedInv)
+      writer.writeB(o.isInObject)
+      writer.writeISZ(o.owner, writer.writeString _)
+      writer.writeString(o.id)
     }
 
     def result: ISZ[U8] = {
@@ -4316,205 +4316,6 @@ object MsgPack {
       return org.sireum.lang.ast.TypeParam(id)
     }
 
-    def read_astTyped(): org.sireum.lang.ast.Typed = {
-      val i = reader.curr
-      val t = reader.readZ()
-      t match {
-        case Constants._astTypedName => val r = read_astTypedNameT(T); return r
-        case Constants._astTypedTuple => val r = read_astTypedTupleT(T); return r
-        case Constants._astTypedFun => val r = read_astTypedFunT(T); return r
-        case Constants._astTypedTypeVar => val r = read_astTypedTypeVarT(T); return r
-        case Constants._astTypedPackage => val r = read_astTypedPackageT(T); return r
-        case Constants._astTypedObject => val r = read_astTypedObjectT(T); return r
-        case Constants._astTypedEnum => val r = read_astTypedEnumT(T); return r
-        case Constants._astTypedMethod => val r = read_astTypedMethodT(T); return r
-        case Constants._astTypedMethods => val r = read_astTypedMethodsT(T); return r
-        case Constants._astTypedFact => val r = read_astTypedFactT(T); return r
-        case Constants._astTypedTheorem => val r = read_astTypedTheoremT(T); return r
-        case Constants._astTypedInv => val r = read_astTypedInvT(T); return r
-        case _ =>
-          reader.error(i, s"$t is not a valid type of org.sireum.lang.ast.Typed.")
-          val r = read_astTypedInvT(T)
-          return r
-      }
-    }
-
-    def read_astMethodModeType(): org.sireum.lang.ast.MethodMode.Type = {
-      val r = reader.readZ()
-      return org.sireum.lang.ast.MethodMode.byOrdinal(r).get
-    }
-
-    def read_astTypedName(): org.sireum.lang.ast.Typed.Name = {
-      val r = read_astTypedNameT(F)
-      return r
-    }
-
-    def read_astTypedNameT(typeParsed: B): org.sireum.lang.ast.Typed.Name = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astTypedName)
-      }
-      val ids = reader.readISZ(reader.readString _)
-      val args = reader.readISZ(read_astTyped _)
-      return org.sireum.lang.ast.Typed.Name(ids, args)
-    }
-
-    def read_astTypedTuple(): org.sireum.lang.ast.Typed.Tuple = {
-      val r = read_astTypedTupleT(F)
-      return r
-    }
-
-    def read_astTypedTupleT(typeParsed: B): org.sireum.lang.ast.Typed.Tuple = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astTypedTuple)
-      }
-      val args = reader.readISZ(read_astTyped _)
-      return org.sireum.lang.ast.Typed.Tuple(args)
-    }
-
-    def read_astTypedFun(): org.sireum.lang.ast.Typed.Fun = {
-      val r = read_astTypedFunT(F)
-      return r
-    }
-
-    def read_astTypedFunT(typeParsed: B): org.sireum.lang.ast.Typed.Fun = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astTypedFun)
-      }
-      val isPure = reader.readB()
-      val isByName = reader.readB()
-      val args = reader.readISZ(read_astTyped _)
-      val ret = read_astTyped()
-      return org.sireum.lang.ast.Typed.Fun(isPure, isByName, args, ret)
-    }
-
-    def read_astTypedTypeVar(): org.sireum.lang.ast.Typed.TypeVar = {
-      val r = read_astTypedTypeVarT(F)
-      return r
-    }
-
-    def read_astTypedTypeVarT(typeParsed: B): org.sireum.lang.ast.Typed.TypeVar = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astTypedTypeVar)
-      }
-      val id = reader.readString()
-      return org.sireum.lang.ast.Typed.TypeVar(id)
-    }
-
-    def read_astTypedPackage(): org.sireum.lang.ast.Typed.Package = {
-      val r = read_astTypedPackageT(F)
-      return r
-    }
-
-    def read_astTypedPackageT(typeParsed: B): org.sireum.lang.ast.Typed.Package = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astTypedPackage)
-      }
-      val name = reader.readISZ(reader.readString _)
-      return org.sireum.lang.ast.Typed.Package(name)
-    }
-
-    def read_astTypedObject(): org.sireum.lang.ast.Typed.Object = {
-      val r = read_astTypedObjectT(F)
-      return r
-    }
-
-    def read_astTypedObjectT(typeParsed: B): org.sireum.lang.ast.Typed.Object = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astTypedObject)
-      }
-      val owner = reader.readISZ(reader.readString _)
-      val id = reader.readString()
-      return org.sireum.lang.ast.Typed.Object(owner, id)
-    }
-
-    def read_astTypedEnum(): org.sireum.lang.ast.Typed.Enum = {
-      val r = read_astTypedEnumT(F)
-      return r
-    }
-
-    def read_astTypedEnumT(typeParsed: B): org.sireum.lang.ast.Typed.Enum = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astTypedEnum)
-      }
-      val name = reader.readISZ(reader.readString _)
-      return org.sireum.lang.ast.Typed.Enum(name)
-    }
-
-    def read_astTypedMethod(): org.sireum.lang.ast.Typed.Method = {
-      val r = read_astTypedMethodT(F)
-      return r
-    }
-
-    def read_astTypedMethodT(typeParsed: B): org.sireum.lang.ast.Typed.Method = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astTypedMethod)
-      }
-      val isInObject = reader.readB()
-      val mode = read_astMethodModeType()
-      val typeParams = reader.readISZ(reader.readString _)
-      val owner = reader.readISZ(reader.readString _)
-      val name = reader.readString()
-      val paramNames = reader.readISZ(reader.readString _)
-      val tpe = read_astTypedFun()
-      return org.sireum.lang.ast.Typed.Method(isInObject, mode, typeParams, owner, name, paramNames, tpe)
-    }
-
-    def read_astTypedMethods(): org.sireum.lang.ast.Typed.Methods = {
-      val r = read_astTypedMethodsT(F)
-      return r
-    }
-
-    def read_astTypedMethodsT(typeParsed: B): org.sireum.lang.ast.Typed.Methods = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astTypedMethods)
-      }
-      val methods = reader.readISZ(read_astTypedMethod _)
-      return org.sireum.lang.ast.Typed.Methods(methods)
-    }
-
-    def read_astTypedFact(): org.sireum.lang.ast.Typed.Fact = {
-      val r = read_astTypedFactT(F)
-      return r
-    }
-
-    def read_astTypedFactT(typeParsed: B): org.sireum.lang.ast.Typed.Fact = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astTypedFact)
-      }
-      val owner = reader.readISZ(reader.readString _)
-      val id = reader.readString()
-      return org.sireum.lang.ast.Typed.Fact(owner, id)
-    }
-
-    def read_astTypedTheorem(): org.sireum.lang.ast.Typed.Theorem = {
-      val r = read_astTypedTheoremT(F)
-      return r
-    }
-
-    def read_astTypedTheoremT(typeParsed: B): org.sireum.lang.ast.Typed.Theorem = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astTypedTheorem)
-      }
-      val owner = reader.readISZ(reader.readString _)
-      val id = reader.readString()
-      return org.sireum.lang.ast.Typed.Theorem(owner, id)
-    }
-
-    def read_astTypedInv(): org.sireum.lang.ast.Typed.Inv = {
-      val r = read_astTypedInvT(F)
-      return r
-    }
-
-    def read_astTypedInvT(typeParsed: B): org.sireum.lang.ast.Typed.Inv = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astTypedInv)
-      }
-      val isInObject = reader.readB()
-      val owner = reader.readISZ(reader.readString _)
-      val id = reader.readString()
-      return org.sireum.lang.ast.Typed.Inv(isInObject, owner, id)
-    }
-
     def read_astAttr(): org.sireum.lang.ast.Attr = {
       val r = read_astAttrT(F)
       return r
@@ -4877,6 +4678,205 @@ object MsgPack {
       val falseAssignments = reader.readISZ(read_astTruthTableAssignment _)
       val attr = read_astAttr()
       return org.sireum.lang.ast.TruthTable.Conclusion.Contingent(trueAssignments, falseAssignments, attr)
+    }
+
+    def read_astMethodModeType(): org.sireum.lang.ast.MethodMode.Type = {
+      val r = reader.readZ()
+      return org.sireum.lang.ast.MethodMode.byOrdinal(r).get
+    }
+
+    def read_astTyped(): org.sireum.lang.ast.Typed = {
+      val i = reader.curr
+      val t = reader.readZ()
+      t match {
+        case Constants._astTypedName => val r = read_astTypedNameT(T); return r
+        case Constants._astTypedTuple => val r = read_astTypedTupleT(T); return r
+        case Constants._astTypedFun => val r = read_astTypedFunT(T); return r
+        case Constants._astTypedTypeVar => val r = read_astTypedTypeVarT(T); return r
+        case Constants._astTypedPackage => val r = read_astTypedPackageT(T); return r
+        case Constants._astTypedObject => val r = read_astTypedObjectT(T); return r
+        case Constants._astTypedEnum => val r = read_astTypedEnumT(T); return r
+        case Constants._astTypedMethod => val r = read_astTypedMethodT(T); return r
+        case Constants._astTypedMethods => val r = read_astTypedMethodsT(T); return r
+        case Constants._astTypedFact => val r = read_astTypedFactT(T); return r
+        case Constants._astTypedTheorem => val r = read_astTypedTheoremT(T); return r
+        case Constants._astTypedInv => val r = read_astTypedInvT(T); return r
+        case _ =>
+          reader.error(i, s"$t is not a valid type of org.sireum.lang.ast.Typed.")
+          val r = read_astTypedInvT(T)
+          return r
+      }
+    }
+
+    def read_astTypedName(): org.sireum.lang.ast.Typed.Name = {
+      val r = read_astTypedNameT(F)
+      return r
+    }
+
+    def read_astTypedNameT(typeParsed: B): org.sireum.lang.ast.Typed.Name = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astTypedName)
+      }
+      val ids = reader.readISZ(reader.readString _)
+      val args = reader.readISZ(read_astTyped _)
+      return org.sireum.lang.ast.Typed.Name(ids, args)
+    }
+
+    def read_astTypedTuple(): org.sireum.lang.ast.Typed.Tuple = {
+      val r = read_astTypedTupleT(F)
+      return r
+    }
+
+    def read_astTypedTupleT(typeParsed: B): org.sireum.lang.ast.Typed.Tuple = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astTypedTuple)
+      }
+      val args = reader.readISZ(read_astTyped _)
+      return org.sireum.lang.ast.Typed.Tuple(args)
+    }
+
+    def read_astTypedFun(): org.sireum.lang.ast.Typed.Fun = {
+      val r = read_astTypedFunT(F)
+      return r
+    }
+
+    def read_astTypedFunT(typeParsed: B): org.sireum.lang.ast.Typed.Fun = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astTypedFun)
+      }
+      val isPure = reader.readB()
+      val isByName = reader.readB()
+      val args = reader.readISZ(read_astTyped _)
+      val ret = read_astTyped()
+      return org.sireum.lang.ast.Typed.Fun(isPure, isByName, args, ret)
+    }
+
+    def read_astTypedTypeVar(): org.sireum.lang.ast.Typed.TypeVar = {
+      val r = read_astTypedTypeVarT(F)
+      return r
+    }
+
+    def read_astTypedTypeVarT(typeParsed: B): org.sireum.lang.ast.Typed.TypeVar = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astTypedTypeVar)
+      }
+      val id = reader.readString()
+      return org.sireum.lang.ast.Typed.TypeVar(id)
+    }
+
+    def read_astTypedPackage(): org.sireum.lang.ast.Typed.Package = {
+      val r = read_astTypedPackageT(F)
+      return r
+    }
+
+    def read_astTypedPackageT(typeParsed: B): org.sireum.lang.ast.Typed.Package = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astTypedPackage)
+      }
+      val name = reader.readISZ(reader.readString _)
+      return org.sireum.lang.ast.Typed.Package(name)
+    }
+
+    def read_astTypedObject(): org.sireum.lang.ast.Typed.Object = {
+      val r = read_astTypedObjectT(F)
+      return r
+    }
+
+    def read_astTypedObjectT(typeParsed: B): org.sireum.lang.ast.Typed.Object = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astTypedObject)
+      }
+      val owner = reader.readISZ(reader.readString _)
+      val id = reader.readString()
+      return org.sireum.lang.ast.Typed.Object(owner, id)
+    }
+
+    def read_astTypedEnum(): org.sireum.lang.ast.Typed.Enum = {
+      val r = read_astTypedEnumT(F)
+      return r
+    }
+
+    def read_astTypedEnumT(typeParsed: B): org.sireum.lang.ast.Typed.Enum = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astTypedEnum)
+      }
+      val name = reader.readISZ(reader.readString _)
+      return org.sireum.lang.ast.Typed.Enum(name)
+    }
+
+    def read_astTypedMethod(): org.sireum.lang.ast.Typed.Method = {
+      val r = read_astTypedMethodT(F)
+      return r
+    }
+
+    def read_astTypedMethodT(typeParsed: B): org.sireum.lang.ast.Typed.Method = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astTypedMethod)
+      }
+      val isInObject = reader.readB()
+      val mode = read_astMethodModeType()
+      val typeParams = reader.readISZ(reader.readString _)
+      val owner = reader.readISZ(reader.readString _)
+      val name = reader.readString()
+      val paramNames = reader.readISZ(reader.readString _)
+      val tpe = read_astTypedFun()
+      return org.sireum.lang.ast.Typed.Method(isInObject, mode, typeParams, owner, name, paramNames, tpe)
+    }
+
+    def read_astTypedMethods(): org.sireum.lang.ast.Typed.Methods = {
+      val r = read_astTypedMethodsT(F)
+      return r
+    }
+
+    def read_astTypedMethodsT(typeParsed: B): org.sireum.lang.ast.Typed.Methods = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astTypedMethods)
+      }
+      val methods = reader.readISZ(read_astTypedMethod _)
+      return org.sireum.lang.ast.Typed.Methods(methods)
+    }
+
+    def read_astTypedFact(): org.sireum.lang.ast.Typed.Fact = {
+      val r = read_astTypedFactT(F)
+      return r
+    }
+
+    def read_astTypedFactT(typeParsed: B): org.sireum.lang.ast.Typed.Fact = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astTypedFact)
+      }
+      val owner = reader.readISZ(reader.readString _)
+      val id = reader.readString()
+      return org.sireum.lang.ast.Typed.Fact(owner, id)
+    }
+
+    def read_astTypedTheorem(): org.sireum.lang.ast.Typed.Theorem = {
+      val r = read_astTypedTheoremT(F)
+      return r
+    }
+
+    def read_astTypedTheoremT(typeParsed: B): org.sireum.lang.ast.Typed.Theorem = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astTypedTheorem)
+      }
+      val owner = reader.readISZ(reader.readString _)
+      val id = reader.readString()
+      return org.sireum.lang.ast.Typed.Theorem(owner, id)
+    }
+
+    def read_astTypedInv(): org.sireum.lang.ast.Typed.Inv = {
+      val r = read_astTypedInvT(F)
+      return r
+    }
+
+    def read_astTypedInvT(typeParsed: B): org.sireum.lang.ast.Typed.Inv = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astTypedInv)
+      }
+      val isInObject = reader.readB()
+      val owner = reader.readISZ(reader.readString _)
+      val id = reader.readString()
+      return org.sireum.lang.ast.Typed.Inv(isInObject, owner, id)
     }
 
   }
@@ -7141,201 +7141,6 @@ object MsgPack {
     return r
   }
 
-  def from_astTyped(o: org.sireum.lang.ast.Typed, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astTyped(o)
-    return w.result
-  }
-
-  def to_astTyped(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed, MessagePack.ErrorMsg] = {
-    def f_astTyped(reader: Reader): org.sireum.lang.ast.Typed = {
-      val r = reader.read_astTyped()
-      return r
-    }
-    val r = to(data, f_astTyped _)
-    return r
-  }
-
-  def from_astTypedName(o: org.sireum.lang.ast.Typed.Name, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astTypedName(o)
-    return w.result
-  }
-
-  def to_astTypedName(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Name, MessagePack.ErrorMsg] = {
-    def f_astTypedName(reader: Reader): org.sireum.lang.ast.Typed.Name = {
-      val r = reader.read_astTypedName()
-      return r
-    }
-    val r = to(data, f_astTypedName _)
-    return r
-  }
-
-  def from_astTypedTuple(o: org.sireum.lang.ast.Typed.Tuple, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astTypedTuple(o)
-    return w.result
-  }
-
-  def to_astTypedTuple(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Tuple, MessagePack.ErrorMsg] = {
-    def f_astTypedTuple(reader: Reader): org.sireum.lang.ast.Typed.Tuple = {
-      val r = reader.read_astTypedTuple()
-      return r
-    }
-    val r = to(data, f_astTypedTuple _)
-    return r
-  }
-
-  def from_astTypedFun(o: org.sireum.lang.ast.Typed.Fun, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astTypedFun(o)
-    return w.result
-  }
-
-  def to_astTypedFun(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Fun, MessagePack.ErrorMsg] = {
-    def f_astTypedFun(reader: Reader): org.sireum.lang.ast.Typed.Fun = {
-      val r = reader.read_astTypedFun()
-      return r
-    }
-    val r = to(data, f_astTypedFun _)
-    return r
-  }
-
-  def from_astTypedTypeVar(o: org.sireum.lang.ast.Typed.TypeVar, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astTypedTypeVar(o)
-    return w.result
-  }
-
-  def to_astTypedTypeVar(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.TypeVar, MessagePack.ErrorMsg] = {
-    def f_astTypedTypeVar(reader: Reader): org.sireum.lang.ast.Typed.TypeVar = {
-      val r = reader.read_astTypedTypeVar()
-      return r
-    }
-    val r = to(data, f_astTypedTypeVar _)
-    return r
-  }
-
-  def from_astTypedPackage(o: org.sireum.lang.ast.Typed.Package, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astTypedPackage(o)
-    return w.result
-  }
-
-  def to_astTypedPackage(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Package, MessagePack.ErrorMsg] = {
-    def f_astTypedPackage(reader: Reader): org.sireum.lang.ast.Typed.Package = {
-      val r = reader.read_astTypedPackage()
-      return r
-    }
-    val r = to(data, f_astTypedPackage _)
-    return r
-  }
-
-  def from_astTypedObject(o: org.sireum.lang.ast.Typed.Object, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astTypedObject(o)
-    return w.result
-  }
-
-  def to_astTypedObject(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Object, MessagePack.ErrorMsg] = {
-    def f_astTypedObject(reader: Reader): org.sireum.lang.ast.Typed.Object = {
-      val r = reader.read_astTypedObject()
-      return r
-    }
-    val r = to(data, f_astTypedObject _)
-    return r
-  }
-
-  def from_astTypedEnum(o: org.sireum.lang.ast.Typed.Enum, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astTypedEnum(o)
-    return w.result
-  }
-
-  def to_astTypedEnum(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Enum, MessagePack.ErrorMsg] = {
-    def f_astTypedEnum(reader: Reader): org.sireum.lang.ast.Typed.Enum = {
-      val r = reader.read_astTypedEnum()
-      return r
-    }
-    val r = to(data, f_astTypedEnum _)
-    return r
-  }
-
-  def from_astTypedMethod(o: org.sireum.lang.ast.Typed.Method, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astTypedMethod(o)
-    return w.result
-  }
-
-  def to_astTypedMethod(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Method, MessagePack.ErrorMsg] = {
-    def f_astTypedMethod(reader: Reader): org.sireum.lang.ast.Typed.Method = {
-      val r = reader.read_astTypedMethod()
-      return r
-    }
-    val r = to(data, f_astTypedMethod _)
-    return r
-  }
-
-  def from_astTypedMethods(o: org.sireum.lang.ast.Typed.Methods, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astTypedMethods(o)
-    return w.result
-  }
-
-  def to_astTypedMethods(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Methods, MessagePack.ErrorMsg] = {
-    def f_astTypedMethods(reader: Reader): org.sireum.lang.ast.Typed.Methods = {
-      val r = reader.read_astTypedMethods()
-      return r
-    }
-    val r = to(data, f_astTypedMethods _)
-    return r
-  }
-
-  def from_astTypedFact(o: org.sireum.lang.ast.Typed.Fact, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astTypedFact(o)
-    return w.result
-  }
-
-  def to_astTypedFact(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Fact, MessagePack.ErrorMsg] = {
-    def f_astTypedFact(reader: Reader): org.sireum.lang.ast.Typed.Fact = {
-      val r = reader.read_astTypedFact()
-      return r
-    }
-    val r = to(data, f_astTypedFact _)
-    return r
-  }
-
-  def from_astTypedTheorem(o: org.sireum.lang.ast.Typed.Theorem, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astTypedTheorem(o)
-    return w.result
-  }
-
-  def to_astTypedTheorem(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Theorem, MessagePack.ErrorMsg] = {
-    def f_astTypedTheorem(reader: Reader): org.sireum.lang.ast.Typed.Theorem = {
-      val r = reader.read_astTypedTheorem()
-      return r
-    }
-    val r = to(data, f_astTypedTheorem _)
-    return r
-  }
-
-  def from_astTypedInv(o: org.sireum.lang.ast.Typed.Inv, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astTypedInv(o)
-    return w.result
-  }
-
-  def to_astTypedInv(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Inv, MessagePack.ErrorMsg] = {
-    def f_astTypedInv(reader: Reader): org.sireum.lang.ast.Typed.Inv = {
-      val r = reader.read_astTypedInv()
-      return r
-    }
-    val r = to(data, f_astTypedInv _)
-    return r
-  }
-
   def from_astAttr(o: org.sireum.lang.ast.Attr, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
     w.write_astAttr(o)
@@ -7693,6 +7498,201 @@ object MsgPack {
       return r
     }
     val r = to(data, f_astTruthTableConclusionContingent _)
+    return r
+  }
+
+  def from_astTyped(o: org.sireum.lang.ast.Typed, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astTyped(o)
+    return w.result
+  }
+
+  def to_astTyped(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed, MessagePack.ErrorMsg] = {
+    def f_astTyped(reader: Reader): org.sireum.lang.ast.Typed = {
+      val r = reader.read_astTyped()
+      return r
+    }
+    val r = to(data, f_astTyped _)
+    return r
+  }
+
+  def from_astTypedName(o: org.sireum.lang.ast.Typed.Name, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astTypedName(o)
+    return w.result
+  }
+
+  def to_astTypedName(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Name, MessagePack.ErrorMsg] = {
+    def f_astTypedName(reader: Reader): org.sireum.lang.ast.Typed.Name = {
+      val r = reader.read_astTypedName()
+      return r
+    }
+    val r = to(data, f_astTypedName _)
+    return r
+  }
+
+  def from_astTypedTuple(o: org.sireum.lang.ast.Typed.Tuple, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astTypedTuple(o)
+    return w.result
+  }
+
+  def to_astTypedTuple(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Tuple, MessagePack.ErrorMsg] = {
+    def f_astTypedTuple(reader: Reader): org.sireum.lang.ast.Typed.Tuple = {
+      val r = reader.read_astTypedTuple()
+      return r
+    }
+    val r = to(data, f_astTypedTuple _)
+    return r
+  }
+
+  def from_astTypedFun(o: org.sireum.lang.ast.Typed.Fun, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astTypedFun(o)
+    return w.result
+  }
+
+  def to_astTypedFun(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Fun, MessagePack.ErrorMsg] = {
+    def f_astTypedFun(reader: Reader): org.sireum.lang.ast.Typed.Fun = {
+      val r = reader.read_astTypedFun()
+      return r
+    }
+    val r = to(data, f_astTypedFun _)
+    return r
+  }
+
+  def from_astTypedTypeVar(o: org.sireum.lang.ast.Typed.TypeVar, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astTypedTypeVar(o)
+    return w.result
+  }
+
+  def to_astTypedTypeVar(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.TypeVar, MessagePack.ErrorMsg] = {
+    def f_astTypedTypeVar(reader: Reader): org.sireum.lang.ast.Typed.TypeVar = {
+      val r = reader.read_astTypedTypeVar()
+      return r
+    }
+    val r = to(data, f_astTypedTypeVar _)
+    return r
+  }
+
+  def from_astTypedPackage(o: org.sireum.lang.ast.Typed.Package, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astTypedPackage(o)
+    return w.result
+  }
+
+  def to_astTypedPackage(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Package, MessagePack.ErrorMsg] = {
+    def f_astTypedPackage(reader: Reader): org.sireum.lang.ast.Typed.Package = {
+      val r = reader.read_astTypedPackage()
+      return r
+    }
+    val r = to(data, f_astTypedPackage _)
+    return r
+  }
+
+  def from_astTypedObject(o: org.sireum.lang.ast.Typed.Object, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astTypedObject(o)
+    return w.result
+  }
+
+  def to_astTypedObject(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Object, MessagePack.ErrorMsg] = {
+    def f_astTypedObject(reader: Reader): org.sireum.lang.ast.Typed.Object = {
+      val r = reader.read_astTypedObject()
+      return r
+    }
+    val r = to(data, f_astTypedObject _)
+    return r
+  }
+
+  def from_astTypedEnum(o: org.sireum.lang.ast.Typed.Enum, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astTypedEnum(o)
+    return w.result
+  }
+
+  def to_astTypedEnum(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Enum, MessagePack.ErrorMsg] = {
+    def f_astTypedEnum(reader: Reader): org.sireum.lang.ast.Typed.Enum = {
+      val r = reader.read_astTypedEnum()
+      return r
+    }
+    val r = to(data, f_astTypedEnum _)
+    return r
+  }
+
+  def from_astTypedMethod(o: org.sireum.lang.ast.Typed.Method, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astTypedMethod(o)
+    return w.result
+  }
+
+  def to_astTypedMethod(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Method, MessagePack.ErrorMsg] = {
+    def f_astTypedMethod(reader: Reader): org.sireum.lang.ast.Typed.Method = {
+      val r = reader.read_astTypedMethod()
+      return r
+    }
+    val r = to(data, f_astTypedMethod _)
+    return r
+  }
+
+  def from_astTypedMethods(o: org.sireum.lang.ast.Typed.Methods, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astTypedMethods(o)
+    return w.result
+  }
+
+  def to_astTypedMethods(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Methods, MessagePack.ErrorMsg] = {
+    def f_astTypedMethods(reader: Reader): org.sireum.lang.ast.Typed.Methods = {
+      val r = reader.read_astTypedMethods()
+      return r
+    }
+    val r = to(data, f_astTypedMethods _)
+    return r
+  }
+
+  def from_astTypedFact(o: org.sireum.lang.ast.Typed.Fact, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astTypedFact(o)
+    return w.result
+  }
+
+  def to_astTypedFact(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Fact, MessagePack.ErrorMsg] = {
+    def f_astTypedFact(reader: Reader): org.sireum.lang.ast.Typed.Fact = {
+      val r = reader.read_astTypedFact()
+      return r
+    }
+    val r = to(data, f_astTypedFact _)
+    return r
+  }
+
+  def from_astTypedTheorem(o: org.sireum.lang.ast.Typed.Theorem, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astTypedTheorem(o)
+    return w.result
+  }
+
+  def to_astTypedTheorem(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Theorem, MessagePack.ErrorMsg] = {
+    def f_astTypedTheorem(reader: Reader): org.sireum.lang.ast.Typed.Theorem = {
+      val r = reader.read_astTypedTheorem()
+      return r
+    }
+    val r = to(data, f_astTypedTheorem _)
+    return r
+  }
+
+  def from_astTypedInv(o: org.sireum.lang.ast.Typed.Inv, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astTypedInv(o)
+    return w.result
+  }
+
+  def to_astTypedInv(data: ISZ[U8]): Either[org.sireum.lang.ast.Typed.Inv, MessagePack.ErrorMsg] = {
+    def f_astTypedInv(reader: Reader): org.sireum.lang.ast.Typed.Inv = {
+      val r = reader.read_astTypedInv()
+      return r
+    }
+    val r = to(data, f_astTypedInv _)
     return r
   }
 
