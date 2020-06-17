@@ -1252,7 +1252,7 @@ import TypeChecker._
         scope.thisOpt match {
           case Some(t) =>
             val rep = Reporter.create
-            rep.ignore = T
+            rep.setIgnore(T)
             val r = checkSelectH(t, id, ISZ(), rep)
             if (r._1.nonEmpty) {
               return (r._1, r._2)
