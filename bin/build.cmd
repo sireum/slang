@@ -8,16 +8,20 @@ fi                                                                              
 if [ -n "$COMSPEC" -a -x "$COMSPEC" ]; then                                                                 #
   export SIREUM_HOME=$(cygpath -C OEM -w -a ${SIREUM_HOME})                                                 #
   if [ -z ${SIREUM_PROVIDED_JAVA++} ]; then                                                                 #
-    export PATH="${SIREUM_HOME}/bin/win/java":"${SIREUM_HOME}/bin/win/z3":$PATH                             #
-    export PATH="$(cygpath -C OEM -w -a ${JAVA_HOME}/bin)":"$(cygpath -C OEM -w -a ${Z3_HOME}/bin)":$PATH   #
+    export PATH="${SIREUM_HOME}/bin/win/java":"${SIREUM_HOME}/bin/win/z3":"$PATH"                           #
+    export PATH="$(cygpath -C OEM -w -a ${JAVA_HOME}/bin)":"$(cygpath -C OEM -w -a ${Z3_HOME}/bin)":"$PATH" #
   fi                                                                                                        #
 elif [ "$(uname)" = "Darwin" ]; then                                                                        #
   if [ -z ${SIREUM_PROVIDED_JAVA++} ]; then                                                                 #
-    export PATH="${SIREUM_HOME}/bin/mac/java/bin":"${SIREUM_HOME}/bin/mac/z3/bin":$PATH                     #
+    export PATH="${SIREUM_HOME}/bin/mac/java/bin":"${SIREUM_HOME}/bin/mac/z3/bin":"$PATH"                   #
   fi                                                                                                        #
 elif [ "$(expr substr $(uname -s) 1 5)" = "Linux" ]; then                                                   #
   if [ -z ${SIREUM_PROVIDED_JAVA++} ]; then                                                                 #
-    export PATH="${SIREUM_HOME}/bin/linux/java/bin":"${SIREUM_HOME}/bin/linux/z3/bin":$PATH                 #
+    if [ "$(uname -m)" = "aarch64" ]; then                                                                  #
+      export PATH="${SIREUM_HOME}/bin/linux/arm/java/bin":"$PATH"                                           #
+    else                                                                                                    #
+      export PATH="${SIREUM_HOME}/bin/linux/java/bin":"${SIREUM_HOME}/bin/linux/z3/bin":"$PATH"             #
+    fi                                                                                                      #
   fi                                                                                                        #
 fi                                                                                                          #
 if [ -f "$0.com" ] && [ "$0.com" -nt "$0" ]; then                                                           #
@@ -28,13 +32,14 @@ else                                                                            
 fi                                                                                                          #
 :BOF
 setlocal
+set SIREUM_HOME=%~dp0../
 call "%~dp0init.bat"
+if defined SIREUM_PROVIDED_SCALA set SIREUM_PROVIDED_JAVA=true
+if not defined SIREUM_PROVIDED_JAVA set PATH=%~dp0win\java\bin;%~dp0win\z3\bin;%PATH%
 set NEWER=False
 if exist %~dpnx0.com for /f %%i in ('powershell -noprofile -executionpolicy bypass -command "(Get-Item %~dpnx0.com).LastWriteTime -gt (Get-Item %~dpnx0).LastWriteTime"') do @set NEWER=%%i
 if "%NEWER%" == "True" goto native
 del "%~dpnx0.com" > nul 2>&1
-if defined SIREUM_PROVIDED_SCALA set SIREUM_PROVIDED_JAVA=true
-if not defined SIREUM_PROVIDED_JAVA set PATH=%~dp0win\java\bin;%~dp0win\z3\bin;%PATH%
 "%~dp0sireum.bat" slang run -s -n "%0" %*
 exit /B %errorlevel%
 :native
