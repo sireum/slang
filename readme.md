@@ -1,6 +1,8 @@
 # The Sireum Programming Language (Slang)
 
-[![Actions Status](https://github.com/sireum/slang/workflows/CI/badge.svg)](https://github.com/sireum/slang/actions)
+| [![Actions Status](https://github.com/sireum/slang/workflows/CI/badge.svg)](https://github.com/sireum/slang/actions) | [![](https://jitpack.io/v/org.sireum/kekinian.svg)](https://jitpack.io/#org.sireum.kekinian/slang-frontend) |
+| :---: | :---: | 
+| <sub><sup>amd64: mac, linux, windows</sup></sub> | <sub><sup>maven package repository</sup></sub> |
 
 This repository holds the [Slang](https://github.com/sireum/kekinian) 
 front-end components (i.e., parser, symbol resolver, and type checker).
