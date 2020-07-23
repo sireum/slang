@@ -58,6 +58,27 @@ object FrontEnd {
         case _ => return (reporter, AST.TopUnit.Program.empty, nameMap, typeMap)
       }
     }
+    def checkImport(packageName: QName, stmt: AST.Stmt.Import, nameMap: NameMap, typeMap: TypeMap,
+                    reporter: Reporter): Unit = {
+      def resolve(posOpt: Option[Position], ids: ISZ[String]): Unit = {
+        if (typeMap.get(ids).isEmpty && typeMap.get(packageName ++ ids).isEmpty && nameMap.get(ids).isEmpty &&
+          nameMap.get(packageName ++ ids).isEmpty) {
+          reporter.error(posOpt, resolverKind, st"Could not resolve '${(ids, ".")}'.".render)
+        }
+      }
+      for (importer <- stmt.importers) {
+        val name = AST.Util.ids2strings(importer.name.ids)
+        importer.selectorOpt match {
+          case Some(selector: AST.Stmt.Import.MultiSelector) =>
+            for (ns <- selector.selectors) {
+              resolve(ns.from.attr.posOpt, name :+ ns.from.value)
+            }
+          case Some(_: AST.Stmt.Import.WildcardSelector) =>
+          case _ =>
+            resolve(importer.name.attr.posOpt, name)
+        }
+      }
+    }
 
     val t = ops
       .ISZOps(sources)
@@ -66,7 +87,19 @@ object FrontEnd {
         (Reporter, ISZ[AST.TopUnit.Program], NameMap, TypeMap)
       ](parseGloballyResolve _, combine _, (Reporter.create, ISZ(), globalNameMap, globalTypeMap))
     val p = addBuiltIns(t._3, t._4)
-    return (t._1, t._2, p._1, p._2)
+    val reporter = t._1
+    val nameMap = p._1
+    val typeMap = p._2
+    for (program <- t._2) {
+      for (stmt <- program.body.stmts) {
+        stmt match {
+          case stmt: AST.Stmt.Import =>
+            // checkImport(AST.Util.ids2strings(program.packageName.ids), stmt, nameMap, typeMap, reporter)
+          case _ =>
+        }
+      }
+    }
+    return (reporter, t._2, nameMap, typeMap)
   }
 
   def libraryReporter: (TypeChecker, Reporter) = {

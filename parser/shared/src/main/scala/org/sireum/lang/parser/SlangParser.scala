@@ -347,48 +347,39 @@ class SlangParser(
       case List(pkg: Pkg) =>
         val ref = pkg.ref
         val stats = pkg.stats
-        if (hashSireum || fileUriOpt.isEmpty || fileUriOpt.get.value.endsWith(".slang")) {
-          val name = AST.Name(ref2IS(ref), attr(ref.pos))
-          val refSyntax = ref.syntax
-          if (refSyntax == "org.sireum" || refSyntax.startsWith("org.sireum.")) {
-            if (allowSireumPackage)
-              Result(
-                text,
-                hashSireum,
-                Some(
-                  AST.TopUnit.Program(
-                    fileUriOpt,
-                    name,
-                    bodyCheck(checkMemberStmts(ISZ(stats.map(translateStat(Enclosing.Package)): _*)), ISZ())
-                  )
+        val name = AST.Name(ref2IS(ref), attr(ref.pos))
+        def process(): Result = {
+          def packageF(rest: List[Stat]) =
+            Result(
+              text,
+              hashSireum,
+              Some(
+                AST.TopUnit.Program(
+                  fileUriOpt,
+                  name,
+                  bodyCheck(checkMemberStmts(ISZ(rest.map(translateStat(Enclosing.Package)): _*)), ISZ())
                 )
               )
+            )
+
+          stats match {
+            case q"import org.sireum._" :: _ => packageF(stats)
+            case q"import org.sireum.logika._" :: _ => packageF(stats)
+            case _ if ref.syntax == "org.sireum" => packageF(stats)
+            case _ =>
+              errorInSlang(ref.pos, "The first member of packages should be 'import org.sireum._'")
+              Result(text, hashSireum, None())
+          }
+        }
+        if (hashSireum || fileUriOpt.isEmpty || fileUriOpt.get.value.endsWith(".slang")) {
+          val refSyntax = ref.syntax
+          if (refSyntax == "org.sireum" || refSyntax.startsWith("org.sireum.")) {
+            if (allowSireumPackage) process()
             else {
               errorInSlang(ref.pos, s"Cannot define members of the $refSyntax package")
               Result(text, hashSireum, None())
             }
-          } else {
-            def packageF(rest: List[Stat]) =
-              Result(
-                text,
-                hashSireum,
-                Some(
-                  AST.TopUnit.Program(
-                    fileUriOpt,
-                    name,
-                    bodyCheck(checkMemberStmts(ISZ(rest.map(translateStat(Enclosing.Package)): _*)), ISZ())
-                  )
-                )
-              )
-
-            stats match {
-              case q"import org.sireum._" :: _ => packageF(stats)
-              case q"import org.sireum.logika._" :: _ => packageF(stats)
-              case _ =>
-                errorInSlang(ref.pos, "The first member of packages should be 'import org.sireum._'")
-                Result(text, hashSireum, None())
-            }
-          }
+          } else process()
         } else Result(text, hashSireum, None())
       case q"import org.sireum._" :: _ => topF(source.stats)
       case q"import org.sireum.logika._" :: _ => topF(source.stats)
@@ -520,8 +511,8 @@ class SlangParser(
     enclosing match {
       case Enclosing.Top | Enclosing.Package | Enclosing.Method =>
       case _ =>
-        if (isWorksheet) errorInSlang(stat.pos, "Imports can only appear at the top-level or inside packages.")
-        else errorInSlang(stat.pos, "Imports can only appear inside packages.")
+        if (isWorksheet) errorInSlang(stat.pos, "Imports can only appear at the top-level or inside packages or methods")
+        else errorInSlang(stat.pos, "Imports can only appear inside packages or methods")
     }
     stat.importers match {
       case Seq(Importer(ref: Term.Ref, Seq(Importee.Wildcard()))) =>

@@ -3180,8 +3180,6 @@ import TypeChecker._
   }
 
   def checkImport(scope: Scope.Local, stmt: AST.Stmt.Import, reporter: Reporter): (Option[Scope.Local], AST.Stmt) = {
-    // TODO: resolve import
-
     @pure def addImport(s: Scope.Local): Scope.Local = {
       s.outerOpt match {
         case Some(outer: Scope.Local) => s(outerOpt = Some(addImport(outer)))
