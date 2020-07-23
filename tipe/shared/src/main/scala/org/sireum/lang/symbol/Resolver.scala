@@ -257,6 +257,28 @@ object Resolver {
     return r
   }
 
+  def checkImport(packageName: QName, stmt: AST.Stmt.Import, nameMap: NameMap, typeMap: TypeMap,
+                  reporter: Reporter): Unit = {
+    def resolve(posOpt: Option[Position], ids: ISZ[String]): Unit = {
+      if (typeMap.get(ids).isEmpty && typeMap.get(packageName ++ ids).isEmpty && nameMap.get(ids).isEmpty &&
+        nameMap.get(packageName ++ ids).isEmpty) {
+        reporter.error(posOpt, resolverKind, st"Could not resolve '${(ids, ".")}'.".render)
+      }
+    }
+    for (importer <- stmt.importers) {
+      val name = AST.Util.ids2strings(importer.name.ids)
+      importer.selectorOpt match {
+        case Some(selector: AST.Stmt.Import.MultiSelector) =>
+          for (ns <- selector.selectors) {
+            resolve(ns.from.attr.posOpt, name :+ ns.from.value)
+          }
+        case Some(_: AST.Stmt.Import.WildcardSelector) =>
+        case _ =>
+          resolve(importer.name.attr.posOpt, name)
+      }
+    }
+  }
+
   @pure def relQName(name: QName, ids: QName, shorten: B): QName = {
     val sz = name.size
     if (ids.size <= sz) {

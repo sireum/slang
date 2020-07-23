@@ -32,6 +32,8 @@ import org.sireum.lang.{ast => AST}
 
 @datatype trait Scope {
 
+  @pure def packageName: ISZ[String]
+
   @pure def outerOpt: Option[Scope]
 
   @pure def resolveName(globalNameMap: HashMap[ISZ[String], Info], name: ISZ[String]): Option[Info]
@@ -59,6 +61,13 @@ object Scope {
                         methodReturnOpt: Option[AST.Typed],
                         indexMap: HashMap[String, AST.Typed],
                         val outerOpt: Option[Scope]) extends Scope {
+
+    @pure override def packageName: ISZ[String] = {
+      outerOpt match {
+        case Some(outer) => return outer.packageName
+        case _ => return ISZ()
+      }
+    }
 
     @pure override def thisOpt: Option[AST.Typed] = {
       localThisOpt match {
@@ -123,7 +132,7 @@ object Scope {
     }
   }
 
-  @datatype class Global(packageName: ISZ[String], imports: ISZ[AST.Stmt.Import], enclosingName: ISZ[String])
+  @datatype class Global(val packageName: ISZ[String], imports: ISZ[AST.Stmt.Import], enclosingName: ISZ[String])
     extends Scope {
 
     @pure override def outerOpt: Option[Scope] = {

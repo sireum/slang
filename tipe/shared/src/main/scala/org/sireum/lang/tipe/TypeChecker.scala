@@ -3189,6 +3189,8 @@ import TypeChecker._
       }
     }
 
+    Resolver.checkImport(scope.packageName, stmt, typeHierarchy.nameMap, typeHierarchy.typeMap, reporter)
+
     return (Some(addImport(scope)), stmt)
   }
 
