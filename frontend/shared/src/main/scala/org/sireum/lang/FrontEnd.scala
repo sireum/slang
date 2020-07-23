@@ -73,7 +73,7 @@ object FrontEnd {
       for (stmt <- program.body.stmts) {
         stmt match {
           case stmt: AST.Stmt.Import =>
-            //Resolver.checkImport(AST.Util.ids2strings(program.packageName.ids), stmt, nameMap, typeMap, reporter)
+            Resolver.checkImport(AST.Util.ids2strings(program.packageName.ids), stmt, nameMap, typeMap, reporter)
           case _ =>
         }
       }
