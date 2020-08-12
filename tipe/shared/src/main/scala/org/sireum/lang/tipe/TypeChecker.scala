@@ -812,9 +812,11 @@ import TypeChecker._
                   Some(newCondExp)
                 case _ => None()
               }
+              val (newInvs, _) = this(mode = ModeContext.Spec).checkLoopInv(scope, enumGen.invariants, ISZ(), reporter)
               return enumGen(
                 range = range(start = newStartExp, end = newEndExp, byOpt = newByOpt),
-                condOpt = newCondOpt
+                condOpt = newCondOpt,
+                invariants = newInvs
               )
             case _ =>
               ok = F
@@ -870,7 +872,8 @@ import TypeChecker._
               } else {
                 None()
               }
-              return enumGen(range = range(exp = newExp), condOpt = newCondOpt)
+              val (newInvs, _) = this(mode = ModeContext.Spec).checkLoopInv(scope, enumGen.invariants, ISZ(), reporter)
+              return enumGen(range = range(exp = newExp), condOpt = newCondOpt, invariants = newInvs)
             case Some(expType) =>
               errType(st"$expType")
               ok = F
@@ -4088,10 +4091,9 @@ import TypeChecker._
       val (newScopeOpt, newEnumGens, _, _) = checkEnumGens(F, scope, forStmt.enumGens, reporter)
       newScopeOpt match {
         case Some(newScope) =>
-          val (newInvs, newMods) = this(mode = ModeContext.Spec).
-            checkLoopInv(newScope, forStmt.invariants, forStmt.modifies, reporter)
+          val (_, newMods) = this(mode = ModeContext.Spec).checkLoopInv(newScope, ISZ(), forStmt.modifies, reporter)
           val (_, newBody) = checkBody(F, None(), newScope, forStmt.body, reporter)
-          return forStmt(context = context, enumGens = newEnumGens, invariants = newInvs, modifies = newMods, body = newBody)
+          return forStmt(context = context, enumGens = newEnumGens, modifies = newMods, body = newBody)
         case _ => return forStmt(context = context, enumGens = newEnumGens)
       }
     }

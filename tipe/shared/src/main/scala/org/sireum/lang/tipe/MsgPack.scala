@@ -910,7 +910,6 @@ object MsgPack {
       writer.writeZ(Constants._astStmtFor)
       writer.writeISZ(o.context, writer.writeString _)
       writer.writeISZ(o.enumGens, write_astEnumGenFor _)
-      writer.writeISZ(o.invariants, write_astExp _)
       writer.writeISZ(o.modifies, write_astExpIdent _)
       write_astBody(o.body)
       write_astAttr(o.attr)
@@ -1176,6 +1175,7 @@ object MsgPack {
       writer.writeOption(o.idOpt, write_astId _)
       write_astEnumGenRange(o.range)
       writer.writeOption(o.condOpt, write_astExp _)
+      writer.writeISZ(o.invariants, write_astExp _)
     }
 
     def write_astType(o: org.sireum.lang.ast.Type): Unit = {
@@ -2891,11 +2891,10 @@ object MsgPack {
       }
       val context = reader.readISZ(reader.readString _)
       val enumGens = reader.readISZ(read_astEnumGenFor _)
-      val invariants = reader.readISZ(read_astExp _)
       val modifies = reader.readISZ(read_astExpIdent _)
       val body = read_astBody()
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.For(context, enumGens, invariants, modifies, body, attr)
+      return org.sireum.lang.ast.Stmt.For(context, enumGens, modifies, body, attr)
     }
 
     def read_astStmtReturn(): org.sireum.lang.ast.Stmt.Return = {
@@ -3428,7 +3427,8 @@ object MsgPack {
       val idOpt = reader.readOption(read_astId _)
       val range = read_astEnumGenRange()
       val condOpt = reader.readOption(read_astExp _)
-      return org.sireum.lang.ast.EnumGen.For(idOpt, range, condOpt)
+      val invariants = reader.readISZ(read_astExp _)
+      return org.sireum.lang.ast.EnumGen.For(idOpt, range, condOpt, invariants)
     }
 
     def read_astType(): org.sireum.lang.ast.Type = {

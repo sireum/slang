@@ -369,7 +369,6 @@ object Stmt {
 
   @datatype class For(val context: ISZ[String],
                       enumGens: ISZ[EnumGen.For],
-                      val invariants: ISZ[Exp],
                       val modifies: ISZ[Exp.Ident],
                       body: Body,
                       @hidden attr: Attr) extends Stmt with Loop {
@@ -377,6 +376,9 @@ object Stmt {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
+
+    @strictpure override def invariants: ISZ[Exp] =
+      for (enumGen <- enumGens; inv <- enumGen.invariants) yield inv
 
   }
 
@@ -619,7 +621,7 @@ object EnumGen {
 
   }
 
-  @datatype class For(idOpt: Option[Id], range: Range, condOpt: Option[Exp])
+  @datatype class For(idOpt: Option[Id], range: Range, condOpt: Option[Exp], invariants: ISZ[Exp])
 
 }
 

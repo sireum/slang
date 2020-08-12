@@ -3012,12 +3012,11 @@ import MTransformer._
             MNone()
         case o2: Stmt.For =>
           val r0: MOption[IS[Z, EnumGen.For]] = transformISZ(o2.enumGens, transformEnumGenFor _)
-          val r1: MOption[IS[Z, Exp]] = transformISZ(o2.invariants, transformExp _)
-          val r2: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.modifies, transformExpIdent _)
-          val r3: MOption[Body] = transformBody(o2.body)
-          val r4: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
-            MSome(o2(enumGens = r0.getOrElse(o2.enumGens), invariants = r1.getOrElse(o2.invariants), modifies = r2.getOrElse(o2.modifies), body = r3.getOrElse(o2.body), attr = r4.getOrElse(o2.attr)))
+          val r1: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.modifies, transformExpIdent _)
+          val r2: MOption[Body] = transformBody(o2.body)
+          val r3: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+            MSome(o2(enumGens = r0.getOrElse(o2.enumGens), modifies = r1.getOrElse(o2.modifies), body = r2.getOrElse(o2.body), attr = r3.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.Return =>
@@ -3153,12 +3152,11 @@ import MTransformer._
             MNone()
         case o2: Stmt.For =>
           val r0: MOption[IS[Z, EnumGen.For]] = transformISZ(o2.enumGens, transformEnumGenFor _)
-          val r1: MOption[IS[Z, Exp]] = transformISZ(o2.invariants, transformExp _)
-          val r2: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.modifies, transformExpIdent _)
-          val r3: MOption[Body] = transformBody(o2.body)
-          val r4: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
-            MSome(o2(enumGens = r0.getOrElse(o2.enumGens), invariants = r1.getOrElse(o2.invariants), modifies = r2.getOrElse(o2.modifies), body = r3.getOrElse(o2.body), attr = r4.getOrElse(o2.attr)))
+          val r1: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.modifies, transformExpIdent _)
+          val r2: MOption[Body] = transformBody(o2.body)
+          val r3: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+            MSome(o2(enumGens = r0.getOrElse(o2.enumGens), modifies = r1.getOrElse(o2.modifies), body = r2.getOrElse(o2.body), attr = r3.getOrElse(o2.attr)))
           else
             MNone()
         case o2: MethodContract.Simple =>
@@ -3317,12 +3315,11 @@ import MTransformer._
             MNone()
         case o2: Stmt.For =>
           val r0: MOption[IS[Z, EnumGen.For]] = transformISZ(o2.enumGens, transformEnumGenFor _)
-          val r1: MOption[IS[Z, Exp]] = transformISZ(o2.invariants, transformExp _)
-          val r2: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.modifies, transformExpIdent _)
-          val r3: MOption[Body] = transformBody(o2.body)
-          val r4: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
-            MSome(o2(enumGens = r0.getOrElse(o2.enumGens), invariants = r1.getOrElse(o2.invariants), modifies = r2.getOrElse(o2.modifies), body = r3.getOrElse(o2.body), attr = r4.getOrElse(o2.attr)))
+          val r1: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.modifies, transformExpIdent _)
+          val r2: MOption[Body] = transformBody(o2.body)
+          val r3: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+            MSome(o2(enumGens = r0.getOrElse(o2.enumGens), modifies = r1.getOrElse(o2.modifies), body = r2.getOrElse(o2.body), attr = r3.getOrElse(o2.attr)))
           else
             MNone()
       }
@@ -3897,8 +3894,9 @@ import MTransformer._
       val r0: MOption[Option[Id]] = transformOption(o2.idOpt, transformId _)
       val r1: MOption[EnumGen.Range] = transformEnumGenRange(o2.range)
       val r2: MOption[Option[Exp]] = transformOption(o2.condOpt, transformExp _)
-      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-        MSome(o2(idOpt = r0.getOrElse(o2.idOpt), range = r1.getOrElse(o2.range), condOpt = r2.getOrElse(o2.condOpt)))
+      val r3: MOption[IS[Z, Exp]] = transformISZ(o2.invariants, transformExp _)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+        MSome(o2(idOpt = r0.getOrElse(o2.idOpt), range = r1.getOrElse(o2.range), condOpt = r2.getOrElse(o2.condOpt), invariants = r3.getOrElse(o2.invariants)))
       else
         MNone()
     } else if (preR.resultOpt.nonEmpty) {

@@ -670,7 +670,6 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.Stmt.For""""),
         ("context", printISZ(T, o.context, printString _)),
         ("enumGens", printISZ(F, o.enumGens, print_astEnumGenFor _)),
-        ("invariants", printISZ(F, o.invariants, print_astExp _)),
         ("modifies", printISZ(F, o.modifies, print_astExpIdent _)),
         ("body", print_astBody(o.body)),
         ("attr", print_astAttr(o.attr))
@@ -1004,7 +1003,8 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.EnumGen.For""""),
         ("idOpt", printOption(F, o.idOpt, print_astId _)),
         ("range", print_astEnumGenRange(o.range)),
-        ("condOpt", printOption(F, o.condOpt, print_astExp _))
+        ("condOpt", printOption(F, o.condOpt, print_astExp _)),
+        ("invariants", printISZ(F, o.invariants, print_astExp _))
       ))
     }
 
@@ -3398,9 +3398,6 @@ object JSON {
       parser.parseObjectKey("enumGens")
       val enumGens = parser.parseISZ(parse_astEnumGenFor _)
       parser.parseObjectNext()
-      parser.parseObjectKey("invariants")
-      val invariants = parser.parseISZ(parse_astExp _)
-      parser.parseObjectNext()
       parser.parseObjectKey("modifies")
       val modifies = parser.parseISZ(parse_astExpIdent _)
       parser.parseObjectNext()
@@ -3410,7 +3407,7 @@ object JSON {
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.For(context, enumGens, invariants, modifies, body, attr)
+      return org.sireum.lang.ast.Stmt.For(context, enumGens, modifies, body, attr)
     }
 
     def parse_astStmtReturn(): org.sireum.lang.ast.Stmt.Return = {
@@ -4117,7 +4114,10 @@ object JSON {
       parser.parseObjectKey("condOpt")
       val condOpt = parser.parseOption(parse_astExp _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.EnumGen.For(idOpt, range, condOpt)
+      parser.parseObjectKey("invariants")
+      val invariants = parser.parseISZ(parse_astExp _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.EnumGen.For(idOpt, range, condOpt, invariants)
     }
 
     def parse_astType(): org.sireum.lang.ast.Type = {

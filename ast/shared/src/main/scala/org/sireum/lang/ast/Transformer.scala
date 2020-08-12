@@ -2460,14 +2460,13 @@ import Transformer._
             TPostResult(r4.ctx, None())
         case o2: Stmt.For =>
           val r0: TPostResult[Context, IS[Z, EnumGen.For]] = transformISZ(preR.ctx, o2.enumGens, transformEnumGenFor _)
-          val r1: TPostResult[Context, IS[Z, Exp]] = transformISZ(r0.ctx, o2.invariants, transformExp _)
-          val r2: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(r1.ctx, o2.modifies, transformExpIdent _)
-          val r3: TPostResult[Context, Body] = transformBody(r2.ctx, o2.body)
-          val r4: TPostResult[Context, Attr] = transformAttr(r3.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty)
-            TPostResult(r4.ctx, Some(o2(enumGens = r0.resultOpt.getOrElse(o2.enumGens), invariants = r1.resultOpt.getOrElse(o2.invariants), modifies = r2.resultOpt.getOrElse(o2.modifies), body = r3.resultOpt.getOrElse(o2.body), attr = r4.resultOpt.getOrElse(o2.attr))))
+          val r1: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(r0.ctx, o2.modifies, transformExpIdent _)
+          val r2: TPostResult[Context, Body] = transformBody(r1.ctx, o2.body)
+          val r3: TPostResult[Context, Attr] = transformAttr(r2.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+            TPostResult(r3.ctx, Some(o2(enumGens = r0.resultOpt.getOrElse(o2.enumGens), modifies = r1.resultOpt.getOrElse(o2.modifies), body = r2.resultOpt.getOrElse(o2.body), attr = r3.resultOpt.getOrElse(o2.attr))))
           else
-            TPostResult(r4.ctx, None())
+            TPostResult(r3.ctx, None())
         case o2: Stmt.Return =>
           val r0: TPostResult[Context, Option[Exp]] = transformOption(preR.ctx, o2.expOpt, transformExp _)
           val r1: TPostResult[Context, TypedAttr] = transformTypedAttr(r0.ctx, o2.attr)
@@ -2601,14 +2600,13 @@ import Transformer._
             TPostResult(r4.ctx, None())
         case o2: Stmt.For =>
           val r0: TPostResult[Context, IS[Z, EnumGen.For]] = transformISZ(preR.ctx, o2.enumGens, transformEnumGenFor _)
-          val r1: TPostResult[Context, IS[Z, Exp]] = transformISZ(r0.ctx, o2.invariants, transformExp _)
-          val r2: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(r1.ctx, o2.modifies, transformExpIdent _)
-          val r3: TPostResult[Context, Body] = transformBody(r2.ctx, o2.body)
-          val r4: TPostResult[Context, Attr] = transformAttr(r3.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty)
-            TPostResult(r4.ctx, Some(o2(enumGens = r0.resultOpt.getOrElse(o2.enumGens), invariants = r1.resultOpt.getOrElse(o2.invariants), modifies = r2.resultOpt.getOrElse(o2.modifies), body = r3.resultOpt.getOrElse(o2.body), attr = r4.resultOpt.getOrElse(o2.attr))))
+          val r1: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(r0.ctx, o2.modifies, transformExpIdent _)
+          val r2: TPostResult[Context, Body] = transformBody(r1.ctx, o2.body)
+          val r3: TPostResult[Context, Attr] = transformAttr(r2.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+            TPostResult(r3.ctx, Some(o2(enumGens = r0.resultOpt.getOrElse(o2.enumGens), modifies = r1.resultOpt.getOrElse(o2.modifies), body = r2.resultOpt.getOrElse(o2.body), attr = r3.resultOpt.getOrElse(o2.attr))))
           else
-            TPostResult(r4.ctx, None())
+            TPostResult(r3.ctx, None())
         case o2: MethodContract.Simple =>
           val r0: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(preR.ctx, o2.reads, transformExpIdent _)
           val r1: TPostResult[Context, IS[Z, Exp]] = transformISZ(r0.ctx, o2.requires, transformExp _)
@@ -2765,14 +2763,13 @@ import Transformer._
             TPostResult(r4.ctx, None())
         case o2: Stmt.For =>
           val r0: TPostResult[Context, IS[Z, EnumGen.For]] = transformISZ(preR.ctx, o2.enumGens, transformEnumGenFor _)
-          val r1: TPostResult[Context, IS[Z, Exp]] = transformISZ(r0.ctx, o2.invariants, transformExp _)
-          val r2: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(r1.ctx, o2.modifies, transformExpIdent _)
-          val r3: TPostResult[Context, Body] = transformBody(r2.ctx, o2.body)
-          val r4: TPostResult[Context, Attr] = transformAttr(r3.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty)
-            TPostResult(r4.ctx, Some(o2(enumGens = r0.resultOpt.getOrElse(o2.enumGens), invariants = r1.resultOpt.getOrElse(o2.invariants), modifies = r2.resultOpt.getOrElse(o2.modifies), body = r3.resultOpt.getOrElse(o2.body), attr = r4.resultOpt.getOrElse(o2.attr))))
+          val r1: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(r0.ctx, o2.modifies, transformExpIdent _)
+          val r2: TPostResult[Context, Body] = transformBody(r1.ctx, o2.body)
+          val r3: TPostResult[Context, Attr] = transformAttr(r2.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+            TPostResult(r3.ctx, Some(o2(enumGens = r0.resultOpt.getOrElse(o2.enumGens), modifies = r1.resultOpt.getOrElse(o2.modifies), body = r2.resultOpt.getOrElse(o2.body), attr = r3.resultOpt.getOrElse(o2.attr))))
           else
-            TPostResult(r4.ctx, None())
+            TPostResult(r3.ctx, None())
       }
       rOpt
     } else if (preR.resultOpt.nonEmpty) {
@@ -3345,10 +3342,11 @@ import Transformer._
       val r0: TPostResult[Context, Option[Id]] = transformOption(preR.ctx, o2.idOpt, transformId _)
       val r1: TPostResult[Context, EnumGen.Range] = transformEnumGenRange(r0.ctx, o2.range)
       val r2: TPostResult[Context, Option[Exp]] = transformOption(r1.ctx, o2.condOpt, transformExp _)
-      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-        TPostResult(r2.ctx, Some(o2(idOpt = r0.resultOpt.getOrElse(o2.idOpt), range = r1.resultOpt.getOrElse(o2.range), condOpt = r2.resultOpt.getOrElse(o2.condOpt))))
+      val r3: TPostResult[Context, IS[Z, Exp]] = transformISZ(r2.ctx, o2.invariants, transformExp _)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+        TPostResult(r3.ctx, Some(o2(idOpt = r0.resultOpt.getOrElse(o2.idOpt), range = r1.resultOpt.getOrElse(o2.range), condOpt = r2.resultOpt.getOrElse(o2.condOpt), invariants = r3.resultOpt.getOrElse(o2.invariants))))
       else
-        TPostResult(r2.ctx, None())
+        TPostResult(r3.ctx, None())
     } else if (preR.resultOpt.nonEmpty) {
       TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
     } else {
