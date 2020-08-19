@@ -2150,9 +2150,10 @@ class SlangParser(
     stat.body match {
       case body: Term.Block =>
         var i = 0
+        var stop = false
         while (i < body.stats.size) {
           body.stats(i) match {
-            case q"Invariant(..${exprs: Seq[Term]})" =>
+            case q"Invariant(..${exprs: Seq[Term]})" if !stop =>
               val (is, ms) = translateLoopInvariant(exprs, body.stats.head.pos)
               modifies = ms
               invariants = invariants :+ is
@@ -2161,11 +2162,10 @@ class SlangParser(
                 hasError = true
               }
             case _ =>
+              stop = true
+              stats = stats :+ body.stats(i)
           }
           i = i + 1
-        }
-        for (j <- i until body.stats.size) {
-          stats = stats :+ body.stats(j)
         }
       case _ =>
         hasError = true
