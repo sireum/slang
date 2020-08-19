@@ -2151,7 +2151,7 @@ class SlangParser(
       case body: Term.Block =>
         var i = 0
         var stop = false
-        while (i < body.stats.size) {
+        while (i < body.stats.size && !stop) {
           body.stats(i) match {
             case q"Invariant(..${exprs: Seq[Term]})" if !stop =>
               val (is, ms) = translateLoopInvariant(exprs, body.stats.head.pos)
@@ -2161,11 +2161,12 @@ class SlangParser(
                 error(body.stats(i).pos, "Modifies clause has to appear in the first invariant specification")
                 hasError = true
               }
-            case _ =>
-              stop = true
-              stats = stats :+ body.stats(i)
+              i = i + 1
+            case _ => stop = true
           }
-          i = i + 1
+        }
+        for (j <- i until body.stats.size) {
+          stats = stats :+ body.stats(j)
         }
       case _ =>
         hasError = true
