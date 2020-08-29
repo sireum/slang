@@ -38,7 +38,7 @@ object Parser_Ext {
     val reporter = Reporter.create
     val (dialect, input) = SlangParser.scalaDialect(isWorksheet = false)(text.value)
     val metap = new ModifiedScalametaParser(input, dialect)
-    val stat = Try(metap.parseStat) match {
+    val stat = Try(metap.parseStat()) match {
       case Success(s) => s
       case Failure(e) => err(e.getMessage)
     }
@@ -62,7 +62,7 @@ object Parser_Ext {
     val reporter = Reporter.create
     val (dialect, input) = SlangParser.scalaDialect(isWorksheet = false)(text.value)
     val metap = new ModifiedScalametaParser(input, dialect)
-    val term = Try(metap.parseTerm) match {
+    val term = Try(metap.parseTerm()) match {
       case Success(t) => t
       case Failure(e) => err(e.getMessage)
     }
