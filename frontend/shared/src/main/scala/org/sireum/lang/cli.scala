@@ -43,8 +43,6 @@ object cli {
         description = "Input file for stdin (default: <slang-file>.txt, if any)"),
       Opt(name = "output", longKey = "output", shortKey = Some('o'),
         tpe = Type.Path(multiple = F, default = None()), description = "Output file for stdin & stderr"),
-      Opt(name = "server", longKey = "no-server", shortKey = Some('s'),
-        tpe = Type.Flag(F), description = "Disable Scala compile server"),
       Opt(name = "transformed", longKey = "transformed", shortKey = Some('t'),
         tpe = Type.Flag(F), description = "Show Scala transformed tree"),
       Opt(name = "nativ", longKey = "native", shortKey = Some('n'),
