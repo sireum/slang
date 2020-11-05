@@ -2491,7 +2491,7 @@ class SlangParser(
 
   def translateStringInterpolate(s: Term.Interpolate): AST.Exp.StringInterpolate = {
     s.prefix.value match {
-      case "s" | "st" =>
+      case "s" | "st" | "proc" =>
       case _ =>
         if (s.args.nonEmpty || s.parts.size != 1) {
           errorInSlang(s.pos, s"Literal pattern interpolation cannot have arguments.")

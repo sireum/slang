@@ -1624,6 +1624,7 @@ import TypeChecker._
         case "s" =>
           return (siExp(args = args, attr = siExp.attr(typedOpt = AST.Typed.stringOpt)), Some(AST.Typed.string))
         case "st" => return (siExp(args = args, attr = siExp.attr(typedOpt = AST.Typed.stOpt)), Some(AST.Typed.st))
+        case "proc" => return (siExp(args = args, attr = siExp.attr(typedOpt = AST.Typed.procOpt)), Some(AST.Typed.proc))
         case _ =>
           val tOpt = checkStringInterpolator(siExp.posOpt, scope, siExp.prefix, siExp.lits(0).value, reporter)
           tOpt match {
