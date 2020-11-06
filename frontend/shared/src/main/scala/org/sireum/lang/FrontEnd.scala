@@ -228,6 +228,7 @@ object FrontEnd {
             case Some(info: Info.Inv) =>
               val newStmt = stmt(attr = stmt.attr(resOpt = info.ast.attr.resOpt))
               nameMap = nameMap + ISZ(id) ~> info(ast = newStmt)
+              newStmts = newStmts :+ newStmt
             case _ =>
               newStmts = newStmts :+ stmt
           }

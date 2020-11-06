@@ -4263,7 +4263,8 @@ import TypeChecker._
       case stmt: AST.Stmt.Inv =>
         val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
         val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
-        return (Some(scope), stmt(claims = for (claim <- stmt.claims) yield tc.checkExp(bExpectedOpt, scope, claim, reporter)._1))
+        return (Some(scope), stmt(claims = for (claim <- stmt.claims) yield tc.checkExp(bExpectedOpt, scope, claim, reporter)._1,
+          attr = stmt.attr(typedOpt = AST.Typed.unitOpt)))
 
       case stmt: AST.Stmt.DataRefinement => return (Some(scope), stmt)
     }

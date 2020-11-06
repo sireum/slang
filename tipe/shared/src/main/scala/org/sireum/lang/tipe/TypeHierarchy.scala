@@ -320,6 +320,17 @@ object TypeHierarchy {
     }
   }
 
+  @memoize def worksheetInvs: ISZ[Info.Inv] = {
+    var r = ISZ[Info.Inv]()
+    for (info <- nameMap.values) {
+      info match {
+        case info: Info.Inv if info.owner.isEmpty => r = r :+ info
+        case _ =>
+      }
+    }
+    return r
+  }
+
   def dealiasInit(posOpt: Option[Position], t: AST.Typed.Name, reporter: Reporter): Option[AST.Typed.Name] = {
     aliases.get(t.ids) match {
       case Some(t2: AST.Typed.Name) =>
