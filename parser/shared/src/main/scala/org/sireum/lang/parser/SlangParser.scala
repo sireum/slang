@@ -114,8 +114,8 @@ object SlangParser {
   )
 
   def scalaDialect(isWorksheet: B): Dialect =
-    if (isWorksheet) scala.meta.dialects.Scala212.withAllowToplevelTerms(true)
-    else scala.meta.dialects.Scala212
+    if (isWorksheet) scala.meta.dialects.Scala213.withAllowToplevelTerms(true)
+    else scala.meta.dialects.Scala213
 
   case class Result(text: Predef.String, hashSireum: Boolean, unitOpt: Option[AST.TopUnit])
 
