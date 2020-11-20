@@ -9,35 +9,33 @@ jobs:
     if: "!contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip action]')"
     steps:
       - name: Checkout
-        uses: actions/checkout@v2-beta
-      - name: Set env.workspace
-        run: echo "::set-env name=workspace::$GITHUB_WORKSPACE"
+        uses: actions/checkout@v2
       - name: Retrieve versions.properties
         run: |
           wget -q https://raw.githubusercontent.com/sireum/kekinian/master/versions.properties
       - name: Cache Java
         id: cache-java
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
-          path: ${{ env.workspace }}/bin/linux/java
+          path: bin/linux/java
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-java
       - name: Cache Z3
         id: cache-z3
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
-          path: ${{ env.workspace }}/bin/linux/z3
+          path: bin/linux/z3
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-z3
       - name: Cache Scala
         id: cache-scala
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
-          path: ${{ env.workspace }}/bin/scala
+          path: bin/scala
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-scala
       - name: Cache Coursier
         id: cache-coursier
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
-          path: ${{ env.workspace }}/cache/coursier
+          path: cache/coursier
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-coursier
       - name: Test
         run: |
@@ -51,35 +49,33 @@ jobs:
     if: "!contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip action]')"
     steps:
       - name: Checkout
-        uses: actions/checkout@v2-beta
-      - name: Set env.workspace
-        run: echo "::set-env name=workspace::$GITHUB_WORKSPACE"
+        uses: actions/checkout@v2
       - name: Retrieve versions.properties
         run: |
           curl -JLOs https://raw.githubusercontent.com/sireum/kekinian/master/versions.properties
       - name: Cache Java
         id: cache-java
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
-          path: ${{ env.workspace }}/bin/mac/java
+          path: bin/mac/java
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-java
       - name: Cache Z3
         id: cache-z3
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
-          path: ${{ env.workspace }}/bin/mac/z3
+          path: bin/mac/z3
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-z3
       - name: Cache Scala
         id: cache-scala
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
-          path: ${{ env.workspace }}/bin/scala
+          path: bin/scala
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-scala
       - name: Cache Coursier
         id: cache-coursier
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
-          path: ${{ env.workspace }}/cache/coursier
+          path: cache/coursier
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-coursier
       - name: Test
         run: |
@@ -93,35 +89,33 @@ jobs:
     if: "!contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip action]')"
     steps:
       - name: Checkout
-        uses: actions/checkout@v2-beta
-      - name: Set env.workspace
-        run: echo "::set-env name=workspace::$($env:GITHUB_WORKSPACE)"
+        uses: actions/checkout@v2
       - name: Retrieve versions.properties
         run: |
           Invoke-WebRequest -Uri "https://raw.githubusercontent.com/sireum/kekinian/master/versions.properties" -OutFile "versions.properties"
       - name: Cache Java
         id: cache-java
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
-          path: ${{ env.workspace }}\bin\win\java
+          path: bin\win\java
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-java
       - name: Cache Z3
         id: cache-z3
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
-          path: ${{ env.workspace }}\bin\win\z3
+          path: bin\win\z3
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-z3
       - name: Cache Scala
         id: cache-scala
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
-          path: ${{ env.workspace }}\bin\scala
+          path: bin\scala
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-scala
       - name: Cache Coursier
         id: cache-coursier
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
-          path: ${{ env.workspace }}\cache\coursier
+          path: cache\coursier
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-coursier
       - name: Test
         shell: cmd
