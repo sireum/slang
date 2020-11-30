@@ -159,34 +159,37 @@ object Scope {
           val importer = importers(j)
           val contextName = AST.Util.ids2strings(importer.name.ids)
           importer.selectorOpt match {
-            case Some(selector: AST.Stmt.Import.MultiSelector) =>
-              val nss = selector.selectors
-              val name0 = name(0)
-              for (k <- nss.size - 1 to 0 by -1) {
-                val ns = nss(k)
-                if (name0 == ns.to.value) {
-                  val n = (contextName :+ ns.from.value) ++ ops.ISZOps(name).drop(1)
-                  val rOpt = globalNameMap.get(packageName ++ n)
+            case Some(selector) =>
+              selector match {
+                case selector: AST.Stmt.Import.MultiSelector =>
+                  val nss = selector.selectors
+                  val name0 = name(0)
+                  for (k <- nss.size - 1 to 0 by -1) {
+                    val ns = nss(k)
+                    if (name0 == ns.to.value) {
+                      val n = (contextName :+ ns.from.value) ++ ops.ISZOps(name).drop(1)
+                      val rOpt = globalNameMap.get(packageName ++ n)
+                      if (rOpt.nonEmpty) {
+                        return rOpt
+                      }
+                      val rGlobalOpt = globalNameMap.get(n)
+                      if (rGlobalOpt.nonEmpty) {
+                        return rGlobalOpt
+                      }
+                    }
+                  }
+                case _: AST.Stmt.Import.WildcardSelector =>
+                  val n = contextName ++ name
+                  val rOpt = globalNameMap.get(n)
                   if (rOpt.nonEmpty) {
                     return rOpt
                   }
-                  val rGlobalOpt = globalNameMap.get(n)
+                  val rGlobalOpt = globalNameMap.get(packageName ++ n)
                   if (rGlobalOpt.nonEmpty) {
                     return rGlobalOpt
                   }
-                }
               }
-            case Some(_: AST.Stmt.Import.WildcardSelector) =>
-              val n = contextName ++ name
-              val rOpt = globalNameMap.get(n)
-              if (rOpt.nonEmpty) {
-                return rOpt
-              }
-              val rGlobalOpt = globalNameMap.get(packageName ++ n)
-              if (rGlobalOpt.nonEmpty) {
-                return rGlobalOpt
-              }
-            case None() =>
+            case _ =>
               val name0 = name(0)
               val contextLast = contextName(contextName.size - 1)
               if (contextLast == name0) {
@@ -220,13 +223,27 @@ object Scope {
           val importer = importers(j)
           val contextName = AST.Util.ids2strings(importer.name.ids)
           importer.selectorOpt match {
-            case Some(selector: AST.Stmt.Import.MultiSelector) =>
-              val nss = selector.selectors
-              val name0 = name(0)
-              for (k <- nss.size - 1 to 0 by -1) {
-                val ns = nss(k)
-                if (name0 == ns.to.value) {
-                  val n = (contextName :+ ns.from.value) ++ ops.ISZOps(name).drop(1)
+            case Some(selector) =>
+              selector match {
+                case selector: AST.Stmt.Import.MultiSelector =>
+                  val nss = selector.selectors
+                  val name0 = name(0)
+                  for (k <- nss.size - 1 to 0 by -1) {
+                    val ns = nss(k)
+                    if (name0 == ns.to.value) {
+                      val n = (contextName :+ ns.from.value) ++ ops.ISZOps(name).drop(1)
+                      val rOpt = globalTypeMap.get(packageName ++ n)
+                      if (rOpt.nonEmpty) {
+                        return rOpt
+                      }
+                      val rGlobalOpt = globalTypeMap.get(n)
+                      if (rGlobalOpt.nonEmpty) {
+                        return rGlobalOpt
+                      }
+                    }
+                  }
+                case _: AST.Stmt.Import.WildcardSelector =>
+                  val n = contextName ++ name
                   val rOpt = globalTypeMap.get(packageName ++ n)
                   if (rOpt.nonEmpty) {
                     return rOpt
@@ -235,19 +252,8 @@ object Scope {
                   if (rGlobalOpt.nonEmpty) {
                     return rGlobalOpt
                   }
-                }
               }
-            case Some(_: AST.Stmt.Import.WildcardSelector) =>
-              val n = contextName ++ name
-              val rOpt = globalTypeMap.get(packageName ++ n)
-              if (rOpt.nonEmpty) {
-                return rOpt
-              }
-              val rGlobalOpt = globalTypeMap.get(n)
-              if (rGlobalOpt.nonEmpty) {
-                return rGlobalOpt
-              }
-            case None() =>
+            case _ =>
               val name0 = name(0)
               val contextLast = contextName(contextName.size - 1)
               if (contextLast == name0) {
