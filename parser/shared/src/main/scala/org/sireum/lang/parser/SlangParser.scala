@@ -232,11 +232,11 @@ class SlangParser(
       val fileUri = fileUriOpt.getOrElse("").value
       if (fileUri.endsWith(".scala") || fileUri.endsWith(".sc") || fileUri.endsWith(".slang") || fileUri.endsWith(".cmd")) {
         if (hashSireum || fileUri.endsWith(".slang")) {
-          val parser = new ScalametaParser(input, dialect)
+          val parser = new ScalametaParser(input)(dialect)
           translateSource(parser.parseSource())
         } else Result(text, hashSireum, None())
       } else if (fileUriOpt.isEmpty || fileUri.endsWith(".logika")) {
-        val parser = new ScalametaParser(input, dialect)
+        val parser = new ScalametaParser(input)(dialect)
         val oldIn = parser.in
         parser.in = oldIn.fork
         parser.next()

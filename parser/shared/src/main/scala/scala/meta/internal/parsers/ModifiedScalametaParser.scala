@@ -38,7 +38,7 @@ import scala.meta.tokens.Token.{Ident, LeftBrace, LeftBracket, LeftParen, Unquot
 import scala.meta.{Dialect, Term}
 
 class ModifiedScalametaParser(input: Input, dialect: Dialect)
-  extends ScalametaParser(input: Input, dialect: Dialect) {
+  extends ScalametaParser(input)(dialect) {
 
   def isInfixOp: Boolean = token.is[Ident]
 
