@@ -232,6 +232,15 @@ object FrontEnd {
             case _ =>
               newStmts = newStmts :+ stmt
           }
+        case stmt: AST.Stmt.TypeAlias =>
+          val id = stmt.id.value
+          th4.typeMap.get(ISZ(id)) match {
+            case Some(info: TypeInfo.TypeAlias) =>
+              val newStmt = info.ast
+              newStmts = newStmts :+ newStmt
+            case _ =>
+              newStmts = newStmts :+ stmt
+          }
         case _ => newStmts = newStmts :+ stmt
       }
     }
