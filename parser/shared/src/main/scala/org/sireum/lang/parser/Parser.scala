@@ -36,7 +36,6 @@ import org.sireum.message._
   @pure def parseExp[T](text: String): T = $
 
   def parseTopUnit[T](text: String,
-                      allowSireum: B,
                       isWorksheet: B,
                       isDiet: B,
                       fileUriOpt: Option[String],
@@ -53,12 +52,11 @@ import org.sireum.message._
     return Parser.parseExp[T](text)
   }
 
-  def parseTopUnit[T](allowSireum: B,
-                      isWorksheet: B,
+  def parseTopUnit[T](isWorksheet: B,
                       isDiet: B,
                       fileUriOpt: Option[String],
                       reporter: Reporter): Option[T] = {
-    val r = Parser.parseTopUnit[T](text, allowSireum, isWorksheet, isDiet, fileUriOpt, reporter)
+    val r = Parser.parseTopUnit[T](text, isWorksheet, isDiet, fileUriOpt, reporter)
     return r
   }
 }

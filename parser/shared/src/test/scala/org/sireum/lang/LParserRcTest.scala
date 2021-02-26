@@ -46,7 +46,7 @@ class LParserRcTest extends SireumRcSpec {
 
   def parse(input: String): Boolean = {
     val reporter = Reporter.create
-    val rOpt = parser.Parser.parseTopUnit[TopUnit.SequentUnit](input, false, true, false, SNone(), reporter)
+    val rOpt = parser.Parser.parseTopUnit[TopUnit.SequentUnit](input, true, false, SNone(), reporter)
     TestUtil.check(reporter) && rOpt.exists(_.isInstanceOf[TopUnit.SequentUnit])
   }
 

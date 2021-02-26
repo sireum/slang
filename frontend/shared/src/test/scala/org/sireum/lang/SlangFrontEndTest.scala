@@ -36,7 +36,7 @@ import org.sireum.lang.tipe._
 object SlangFrontEndTest {
 
   def parse(text: String, isWorksheet: Boolean, isPrelude: Boolean, reporter: Reporter): SlangParser.Result =
-    SlangParser(isPrelude, isWorksheet, isDiet = false, SNone(), text, reporter)
+    SlangParser(isWorksheet, isDiet = false, SNone(), text, reporter)
 
   def passingCheck(
     text: String,

@@ -46,7 +46,6 @@ object Parser_Ext {
       text.value,
       input,
       dialect,
-      allowSireumPackage = false,
       hashSireum = true,
       isWorksheet = false,
       isDiet = false,
@@ -70,7 +69,6 @@ object Parser_Ext {
       text.value,
       input,
       dialect,
-      allowSireumPackage = false,
       hashSireum = true,
       isWorksheet = false,
       isDiet = false,
@@ -84,13 +82,12 @@ object Parser_Ext {
 
   def parseTopUnit[T](
     text: String,
-    allowSireum: B,
     isWorksheet: B,
     isDiet: B,
     fileUriOpt: Option[String],
     reporter: Reporter
   ): Option[T] =
-    SlangParser(allowSireum, isWorksheet, isDiet, fileUriOpt, text.value, reporter).unitOpt.map(_.asInstanceOf[T])
+    SlangParser(isWorksheet, isDiet, fileUriOpt, text.value, reporter).unitOpt.map(_.asInstanceOf[T])
 
   def err(s: Predef.String = "Can only be used for non-erroneous Slang statement."): Nothing = halt(s)
 }

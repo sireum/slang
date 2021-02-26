@@ -29,7 +29,6 @@ import org.sireum.{B, F, ISZ, T, Z, None => SNone, Option => SOption, Some => SS
 import org.sireum.message
 import org.sireum.message.Reporter
 
-import scala.collection.immutable.ListSet
 import scala.meta._
 import scala.meta.inputs.Input
 import scala.meta.internal.parsers.{InfixMode, ModifiedScalametaParser}
@@ -82,7 +81,6 @@ object LParser {
     val slangParser = new SlangParser(
       input = input,
       dialect = dialect,
-      allowSireumPackage = false,
       hashSireum = false,
       isDiet = false,
       fileUriOpt = org.sireum.None(),

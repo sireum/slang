@@ -166,22 +166,12 @@ object SlangParser {
     isWorksheet: B,
     isDiet: B,
     fileUriOpt: Option[String],
-    text: String,
-    reporter: Reporter
-  ): Result =
-    apply(allowSireumPackage = false, isWorksheet, isDiet, fileUriOpt, text, reporter)
-
-  def apply(
-    allowSireumPackage: B,
-    isWorksheet: B,
-    isDiet: B,
-    fileUriOpt: Option[String],
     txt: String,
     reporter: Reporter
   ): Result = {
     val (hashSireum, compactFirstLine, text) = detectSlang(fileUriOpt, txt)
     val (dialect, input) = scalaDialect(isWorksheet)(text)
-    val r = new SlangParser(text, input, dialect, allowSireumPackage, hashSireum, isWorksheet, isDiet, fileUriOpt, reporter)
+    val r = new SlangParser(text, input, dialect, hashSireum, isWorksheet, isDiet, fileUriOpt, reporter)
       .parseTopUnit()
     r
   }
@@ -212,7 +202,6 @@ class SlangParser(
   text: Predef.String,
   input: Input,
   dialect: Dialect,
-  allowSireumPackage: Boolean,
   hashSireum: Boolean,
   isWorksheet: Boolean,
   isDiet: Boolean,
@@ -378,14 +367,7 @@ class SlangParser(
           }
         }
         if (hashSireum || fileUriOpt.isEmpty || fileUriOpt.get.value.endsWith(".slang")) {
-          val refSyntax = ref.syntax
-          if (refSyntax == "org.sireum" || refSyntax.startsWith("org.sireum.")) {
-            if (allowSireumPackage) process()
-            else {
-              errorInSlang(ref.pos, s"Cannot define members of the $refSyntax package")
-              Result(text, hashSireum, None())
-            }
-          } else process()
+          process()
         } else Result(text, hashSireum, None())
       case q"import org.sireum._" :: _ => topF(source.stats)
       case q"import org.sireum.logika._" :: _ => topF(source.stats)
