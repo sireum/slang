@@ -120,7 +120,7 @@ object SlangParser {
   case class Result(text: Predef.String, hashSireum: Boolean, unitOpt: Option[AST.TopUnit])
 
   def detectSlang(fileUriOpt: Option[String], txt: String): (Boolean, Predef.String, Predef.String) = {
-    var text = txt.value.replace("\r\n", "\n") // WORKAROUND: scalameta crlf issues
+    var text = txt.value.replace("\r\n", " \n") // WORKAROUND: scalameta crlf issues
     def compactLine(k: Int): Predef.String = {
       val sb = new _root_.java.lang.StringBuilder
       var i = k
