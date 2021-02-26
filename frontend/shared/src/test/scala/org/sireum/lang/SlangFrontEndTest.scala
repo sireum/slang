@@ -35,7 +35,7 @@ import org.sireum.lang.tipe._
 
 object SlangFrontEndTest {
 
-  def parse(text: String, isWorksheet: Boolean, isPrelude: Boolean, reporter: Reporter): SlangParser.Result =
+  def parse(text: String, isWorksheet: Boolean, reporter: Reporter): SlangParser.Result =
     SlangParser(isWorksheet, isDiet = false, SNone(), text, reporter)
 
   def passingCheck(
@@ -50,7 +50,6 @@ object SlangFrontEndTest {
     val r = parse(
       s"${if (isPrelude) "" else "// #Sireum\n"}${if (addImport) "import org.sireum._; " else ""}$text",
       isWorksheet,
-      isPrelude,
       reporter
     )
     var b = r.unitOpt.nonEmpty && !reporter.hasIssue
@@ -111,7 +110,6 @@ object SlangFrontEndTest {
       val r = parse(
         s"${if (isPrelude) "" else "// #Sireum\n"}${if (addImport) "import org.sireum._; " else ""}$text",
         isWorksheet,
-        isPrelude,
         reporter
       )
       val b = reporter.issues.elements.exists(_.text.value.contains(msg))
@@ -132,7 +130,6 @@ object SlangFrontEndTest {
       val r = parse(
         s"${if (isPrelude) "" else "// #Sireum\n"}${if (addImport) "import org.sireum._; " else ""}$text",
         isWorksheet,
-        isPrelude,
         reporter
       )
       val b = reporter.issues.elements.exists(
@@ -253,8 +250,6 @@ class SlangFrontEndTest extends TestSuite {
     }
 
     "Failing" - {
-
-      * - failing("package org.sireum.logika", "org.sireum.logika", addImport = false)
 
       val packageFirstMember = "first member of packages"
 
