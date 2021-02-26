@@ -119,6 +119,49 @@ object SlangParser {
 
   case class Result(text: Predef.String, hashSireum: Boolean, unitOpt: Option[AST.TopUnit])
 
+  def detectSlang(fileUriOpt: Option[String], txt: String): (Boolean, Predef.String, Predef.String) = {
+    var text = txt.value.replace("\r\n", "\n") // WORKAROUND: scalameta crlf issues
+    def compactLine(k: Int): Predef.String = {
+      val sb = new _root_.java.lang.StringBuilder
+      var i = k
+      while (i < text.length && text(i).isWhitespace) i += 1
+      var found = false
+      while (i < text.length && !found) {
+        text(i) match {
+          case '\n' => found = true
+          case c => if (!c.isWhitespace) sb.append(c)
+        }
+        i += 1
+      }
+      sb.toString
+    }
+    var firstLine = compactLine(0)
+    var hashSireum = firstLine.contains("#Sireum")
+    if (fileUriOpt.nonEmpty && fileUriOpt.get.value.endsWith(".cmd")) {
+      if (firstLine.startsWith("::#!")) {
+        var found = false
+        var i = 4
+        while (i + 4 < text.length && !found) {
+          if (text(i) == ':' && text(i + 1) == ':' && text(i + 2) == '!' && text(i + 3) == '#') {
+            found = true
+            i = i + 4
+            while (i < text.length && text(i).isWhitespace) i += 1
+            firstLine = compactLine(i)
+            if (firstLine.contains("#Sireum")) {
+              hashSireum = true
+              val cs = text.toCharArray
+              for (j <- 0 until i if cs(j) != '\n') cs(j) = ' '
+              text = new Predef.String(cs)
+            }
+          } else {
+            i = i + 1
+          }
+        }
+      }
+    }
+    (hashSireum, firstLine, text)
+  }
+
   def apply(
     isWorksheet: B,
     isDiet: B,
@@ -136,44 +179,7 @@ object SlangParser {
     txt: String,
     reporter: Reporter
   ): Result = {
-    var text = txt.value.replace("\r\n", "\n") // WORKAROUND: scalameta crlf issues
-    def compactLine(k: Int): Predef.String = {
-      val sb = new _root_.java.lang.StringBuilder
-      var i = k
-      while (i < text.length && text(i).isWhitespace) i += 1
-      var found = false
-      while (i < text.length && !found) {
-        text(i) match {
-          case '\n' => found = true
-          case c => if (!c.isWhitespace) sb.append(c)
-        }
-        i += 1
-      }
-      sb.toString
-    }
-    val firstLine = compactLine(0)
-    var hashSireum = firstLine.contains("#Sireum")
-    if (fileUriOpt.nonEmpty && fileUriOpt.get.value.endsWith(".cmd")) {
-      if (firstLine.startsWith("::#!")) {
-        var found = false
-        var i = 4
-        while (i + 4 < text.length && !found) {
-          if (text(i) == ':' && text(i + 1) == ':' && text(i + 2) == '!' && text(i + 3) == '#') {
-            found = true
-            i = i + 4
-            while (i < text.length && text(i).isWhitespace) i += 1
-            if (compactLine(i).contains("#Sireum")) {
-              hashSireum = true
-              val cs = text.toCharArray
-              for (j <- 0 until i if cs(j) != '\n') cs(j) = ' '
-              text = new Predef.String(cs)
-            }
-          } else {
-            i = i + 1
-          }
-        }
-      }
-    }
+    val (hashSireum, compactFirstLine, text) = detectSlang(fileUriOpt, txt)
     val (dialect, input) = scalaDialect(isWorksheet)(text)
     val r = new SlangParser(text, input, dialect, allowSireumPackage, hashSireum, isWorksheet, isDiet, fileUriOpt, reporter)
       .parseTopUnit()
