@@ -83,6 +83,21 @@ object Resolver {
         AST.ResolvedAttr(None[Position](),
           Some[AST.ResolvedInfo](AST.ResolvedInfo.Var(T, F, T, AST.Typed.sireumName, "F")), AST.Typed.bOpt)))
 
+    val randomIntId = "randomInt"
+    val randomIntTyped = AST.Typed.Fun(F, F, ISZ(), AST.Typed.z)
+    val randomIntName = AST.Typed.sireumName :+ randomIntId
+    nm = nm + randomIntName ~> Info.ExtMethod(
+      AST.Typed.sireumName,
+      scope,
+      AST.Stmt.ExtMethod(F,
+        AST.MethodSig(F, AST.Id(randomIntId, emptyAttr), ISZ(), F, ISZ(),
+          AST.Type.Named(AST.Name(for (id <- AST.Typed.zName) yield AST.Id(id, emptyAttr), emptyAttr), ISZ(),
+          AST.TypedAttr(None(), Some(randomIntTyped)))),
+        AST.MethodContract.Simple(ISZ(), ISZ(), ISZ(), ISZ()),
+        AST.ResolvedAttr(None[Position](), Some[AST.ResolvedInfo](AST.ResolvedInfo.Method(
+          T, AST.MethodMode.Ext, ISZ(), AST.Typed.sireumName, randomIntId, ISZ(), Some(randomIntTyped))), Some(
+          AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), AST.Typed.sireumName, randomIntId, ISZ(), randomIntTyped)))))
+
     var tm = typeMap + AST.Typed.iszName ~>
       TypeInfo.TypeAlias(
         AST.Typed.iszName,
