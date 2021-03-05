@@ -2839,9 +2839,11 @@ import TypeChecker._
             case Some(tLo) =>
               val (newFun, _) = checkExp(Some(AST.Typed.Fun(F, F, ISZ(tLo), AST.Typed.b)), scope, quant.fun, reporter)
               checkIndexType(quant.lo.posOpt, tLo, reporter)
-              val res = AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T, quant.fun.params(0).idOpt.get.value)
+              val newFunExp = newFun.asInstanceOf[AST.Exp.Fun]
+              val res = AST.ResolvedInfo.LocalVar(newFunExp.context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T,
+                quant.fun.params(0).idOpt.get.value)
               return (
-                quant(lo = newLo, hi = newHi, fun = newFun.asInstanceOf[AST.Exp.Fun], attr = quant.attr(typedOpt = Some(tLo), resOpt = Some(res))),
+                quant(lo = newLo, hi = newHi, fun = newFunExp, attr = quant.attr(typedOpt = Some(tLo), resOpt = Some(res))),
                 Some(AST.Typed.b)
               )
             case _ => return (quant(lo = newLo, hi = newHi), Some(AST.Typed.b))
