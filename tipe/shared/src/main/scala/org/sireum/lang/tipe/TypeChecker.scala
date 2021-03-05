@@ -2855,9 +2855,11 @@ import TypeChecker._
                 case st: AST.Typed.Name if st.ids == AST.Typed.isName || st.ids == AST.Typed.msName =>
                   val eType = st.args(1)
                   val (newFun, _) = checkExp(Some(AST.Typed.Fun(F, F, ISZ(eType), AST.Typed.b)), scope, quant.fun, reporter)
-                  val res = AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T, quant.fun.params(0).idOpt.get.value)
+                  val newFunExp = newFun.asInstanceOf[AST.Exp.Fun]
+                  val res = AST.ResolvedInfo.LocalVar(newFunExp.context,
+                    AST.ResolvedInfo.LocalVar.Scope.Current, F, T, quant.fun.params(0).idOpt.get.value)
                   return (
-                    quant(seq = newSeq, fun = newFun.asInstanceOf[AST.Exp.Fun], attr = quant.attr(typedOpt = Some(eType), resOpt = Some(res))),
+                    quant(seq = newSeq, fun = newFunExp, attr = quant.attr(typedOpt = Some(eType), resOpt = Some(res))),
                     Some(AST.Typed.b)
                   )
                 case st =>
