@@ -4482,7 +4482,7 @@ import TypeChecker._
       val id = p.id.value
       scope.resolveName(typeHierarchy.nameMap, ISZ(id)) match {
         case Some(_: Info.LocalVar) =>
-          reporter.warn(
+          reporter.error(
             p.id.attr.posOpt,
             typeCheckerKind,
             s"Identifier '$id' shadows a declaration in the enclosing context."
