@@ -57,7 +57,7 @@ object TypeOutliner {
     }
   }
 
-  def checkOutline(typeHierarchy: TypeHierarchy, reporter: Reporter): TypeHierarchy = {
+  def checkOutline(par: B, typeHierarchy: TypeHierarchy, reporter: Reporter): TypeHierarchy = {
     def parentsOutlined(name: QName, typeMap: TypeMap): B = {
       def isOutlined(ids: QName): B = {
         typeMap.get(ids).get match {
@@ -131,11 +131,12 @@ object TypeOutliner {
           }
         }
       }
-      val r = ISZOps(jobs).parMapFoldLeft(
-        (f: () => TypeHierarchy => (TypeHierarchy, Reporter)) => f(),
-        TypeHierarchy.combine _,
-        (th, Reporter.create)
-      )
+      val init = (th, Reporter.create)
+      val r: (TypeHierarchy, Reporter) =
+        if (par) ISZOps(jobs).parMapFoldLeft((f: () => TypeHierarchy => (TypeHierarchy, Reporter)) => f(),
+          TypeHierarchy.combine _, init)
+        else ISZOps(ISZOps(jobs).map((f: () => TypeHierarchy => (TypeHierarchy, Reporter)) => f())).foldLeft(
+          TypeHierarchy.combine _, init)
       reporter.reports(r._2.messages)
       th = r._1
       workList = l
@@ -150,11 +151,12 @@ object TypeOutliner {
           case _ =>
         }
       }
-      val r = ISZOps(jobs).parMapFoldLeft(
-        (f: () => TypeHierarchy => (TypeHierarchy, Reporter)) => f(),
-        TypeHierarchy.combine _,
-        (th, Reporter.create)
-      )
+      val init = (th, Reporter.create)
+      val r: (TypeHierarchy, Reporter) =
+        if (par) ISZOps(jobs).parMapFoldLeft((f: () => TypeHierarchy => (TypeHierarchy, Reporter)) => f(),
+          TypeHierarchy.combine _, init)
+        else ops.ISZOps(ISZOps(jobs).map((f: () => TypeHierarchy => (TypeHierarchy, Reporter)) => f())).foldLeft(
+          TypeHierarchy.combine _, init)
       reporter.reports(r._2.messages)
       th = r._1
       var gnm = th.nameMap

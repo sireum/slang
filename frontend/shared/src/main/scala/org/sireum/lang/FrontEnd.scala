@@ -37,6 +37,7 @@ import org.sireum.lang.tipe._
 object FrontEnd {
 
   @pure def parseProgramAndGloballyResolve(
+    par: B,
     sources: ISZ[(Option[String], String)],
     globalNameMap: NameMap,
     globalTypeMap: TypeMap
@@ -59,12 +60,11 @@ object FrontEnd {
       }
     }
 
-    val t = ops
-      .ISZOps(sources)
-      .parMapFoldLeft[
-        (Reporter, AST.TopUnit.Program, NameMap, TypeMap),
-        (Reporter, ISZ[AST.TopUnit.Program], NameMap, TypeMap)
-      ](parseGloballyResolve _, combine _, (Reporter.create, ISZ(), globalNameMap, globalTypeMap))
+    val init = (Reporter.create, ISZ[AST.TopUnit.Program](), globalNameMap, globalTypeMap)
+    val t: (Reporter, ISZ[AST.TopUnit.Program], NameMap, TypeMap) =
+      if (par) ops.ISZOps(sources).parMapFoldLeft[(Reporter, AST.TopUnit.Program, NameMap, TypeMap),
+        (Reporter, ISZ[AST.TopUnit.Program], NameMap, TypeMap)](parseGloballyResolve _, combine _, init)
+      else ops.ISZOps(ops.ISZOps(sources).map(parseGloballyResolve _)).foldLeft(combine _, init)
     val p = addBuiltIns(t._3, t._4)
     val reporter = t._1
     val nameMap = p._1
@@ -85,10 +85,10 @@ object FrontEnd {
     val (initNameMap, initTypeMap) =
       Resolver.addBuiltIns(HashMap.empty, HashMap.empty)
     val (reporter, _, nameMap, typeMap) =
-      parseProgramAndGloballyResolve(Library.files, initNameMap, initTypeMap)
+      parseProgramAndGloballyResolve(T, Library.files, initNameMap, initTypeMap)
     val th =
       TypeHierarchy.build(TypeHierarchy(nameMap, typeMap, Poset.empty, HashMap.empty), reporter)
-    val thOutlined = TypeOutliner.checkOutline(th, reporter)
+    val thOutlined = TypeOutliner.checkOutline(T, th, reporter)
     val tc = TypeChecker(thOutlined, ISZ(), TypeChecker.ModeContext.Code)
     val r = (tc, reporter)
     return r
@@ -97,11 +97,12 @@ object FrontEnd {
   @memoize def checkedLibraryReporter: (TypeChecker, Reporter) = {
     val (tc, reporter) = libraryReporter
     val th = tc.typeHierarchy
-    val th2 = TypeChecker.checkComponents(th, th.nameMap, th.typeMap, reporter)
+    val th2 = TypeChecker.checkComponents(T, th, th.nameMap, th.typeMap, reporter)
     return (TypeChecker(th2, ISZ(), TypeChecker.ModeContext.Code), reporter)
   }
 
   def checkWorksheet(
+    par: B,
     thOpt: Option[TypeHierarchy],
     program: AST.TopUnit.Program,
     reporter: Reporter
@@ -160,7 +161,7 @@ object FrontEnd {
       return (th2, program)
     }
 
-    val th3 = TypeOutliner.checkOutline(th2, reporter)
+    val th3 = TypeOutliner.checkOutline(par, th2, reporter)
     if (reporter.hasError) {
       return (th3, program)
     }
@@ -176,7 +177,7 @@ object FrontEnd {
       typeMap = typeMap + name ~> th3.typeMap.get(name).get
     }
 
-    val th4 = TypeChecker.checkComponents(th3, nameMap, typeMap, reporter)
+    val th4 = TypeChecker.checkComponents(par, th3, nameMap, typeMap, reporter)
     if (reporter.hasError) {
       return (th4, program)
     }

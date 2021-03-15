@@ -58,7 +58,7 @@ class LibraryTypeCheckingTest extends TestSuite {
       val name = ""
       val nameMap: Resolver.NameMap = if (all) tc.typeHierarchy.nameMap else nameInfo(tc.typeHierarchy, name)
       val typeMap: Resolver.TypeMap = if (all) tc.typeHierarchy.typeMap else typeInfo(tc.typeHierarchy, name)
-      val th = TypeChecker.checkComponents(tc.typeHierarchy, nameMap, typeMap, reporter)
+      val th = TypeChecker.checkComponents(T, tc.typeHierarchy, nameMap, typeMap, reporter)
       if (!reporter.hasError) {
         if (all) {
           PostTipeAttrChecker.checkNameTypeMaps(th.nameMap, th.typeMap, reporter)

@@ -212,7 +212,7 @@ object TypeChecker {
     return Some(substMap)
   }
 
-  def checkComponents(th: TypeHierarchy, nameMap: NameMap, typeMap: TypeMap, reporter: Reporter): TypeHierarchy = {
+  def checkComponents(par: B, th: TypeHierarchy, nameMap: NameMap, typeMap: TypeMap, reporter: Reporter): TypeHierarchy = {
     var jobs = ISZ[() => (TypeHierarchy => (TypeHierarchy, Reporter) @pure) @pure]()
     for (info <- typeMap.values) {
       info match {
@@ -230,13 +230,12 @@ object TypeChecker {
         case _ =>
       }
     }
-    val p = ops
-      .ISZOps(jobs)
-      .parMapFoldLeft(
-        (f: () => TypeHierarchy => (TypeHierarchy, Reporter)) => f(),
-        TypeHierarchy.combine _,
-        (th, Reporter.create)
-      )
+    val init = (th, Reporter.create)
+    val p: (TypeHierarchy, Reporter) =
+      if (par) ops.ISZOps(jobs).parMapFoldLeft(
+        (f: () => TypeHierarchy => (TypeHierarchy, Reporter)) => f(), TypeHierarchy.combine _, init)
+      else ops.ISZOps(ops.ISZOps(jobs).map((f: () => TypeHierarchy => (TypeHierarchy, Reporter)) => f())).foldLeft(
+        TypeHierarchy.combine _, init)
     var r = p._1
     def reconstructObject(info: Info): Unit = {
       info match {
