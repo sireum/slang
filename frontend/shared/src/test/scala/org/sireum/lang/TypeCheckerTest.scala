@@ -47,14 +47,14 @@ class TypeCheckerTest extends TestSuite {
                                |val a = ISZ(1, 2, 3)
                                |for (e <- a) {
                                |  Invariant(
-                               |    (Idx[Z](e) != a.size - 1) imply_: (e < a(Idx[Z](e) + 1))
+                               |    (Idx[Z](e) != a.size - 1) ->: (e < a(Idx[Z](e) + 1))
                                |  )
                                |}""".stripMargin)
 
         * - passingWorksheet("""import org.sireum._
                                |@spec def bar(x: Z): Z = $
                                |@spec def barAx1 = Fact(
-                               |  ∀{x: Z => (x >= 0) imply_: (bar(x) >= 0)}
+                               |  ∀{x: Z => (x >= 0) ->: (bar(x) >= 0)}
                                |)""".stripMargin)
 
         * - passingWorksheet("""import org.sireum._

@@ -101,9 +101,9 @@ object SlangParser {
 
   val topLevelMethodsIds: Seq[String] = Seq("assert", "assume", "print", "println", "eprint", "eprintln", "halt")
 
-  val infixSymbols: Set[String] = Set(
-    LParser.simpInternalSym,
-    LParser.impInternalSym
+  val infixSymbols: Map[Predef.String, Predef.String] = Map(
+    LParser.simpInternalSym -> AST.Exp.BinaryOp.CondImply.value,
+    LParser.impInternalSym -> AST.Exp.BinaryOp.Imply.value
   )
 
   val quantSymbols: Set[String] = Set(
@@ -2534,7 +2534,7 @@ class SlangParser(
         if (t.targs.nonEmpty)
           errorInSlang(t.targs.head.pos, "Binary operations cannot have type arguments")
 
-        val id = t.op.value
+        val id = infixSymbols.getOrElse(t.op.value, t.op.value)
         if (!checkSymbol(id) && !infixSymbols.contains(id)) {
           error(
             t.op.pos,

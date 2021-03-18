@@ -1,17 +1,17 @@
-(p imply_: r,  q imply_: r) |- ((p | q) imply_: r) Proof(
-  1 #> (p imply_: r)         by "premise",
-  2 #> (q imply_: r)         by "premise",
+(p ->: r,  q ->: r) |- ((p | q) ->: r) Proof(
+  1 #> (p ->: r)             by "premise",
+  2 #> (q ->: r)             by "premise",
   3 #> SubProof(
      4 #> Assume(p ∨ q),
      5 #> SubProof(
         6 #> Assume(p),
-        7 #> (r)             by "imply_:e"(1, 6),
+        7 #> (r)             by "->:e"(1, 6),
      ),
      8 #> SubProof(
         9 #> Assume(q),
-       10 #> (r)             by "imply_:e"(2, 9),
+       10 #> (r)             by "->:e"(2, 9),
      ),
     11 #> (r)                by "|e"(4, 5, 8),
   ),
- 12 #> ((p | q) imply_: r)   by "imply_:i"(3),
+ 12 #> ((p | q) ->: r)       by "->:i"(3),
 )

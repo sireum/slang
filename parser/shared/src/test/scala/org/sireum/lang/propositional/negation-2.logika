@@ -1,9 +1,9 @@
-(!p) |- (p imply_: q) Proof(
+(!p) |- (p ->: q) Proof(
   1 #> (!p)            by "premise",
   2 #> SubProof(
     3 #> Assume(p),
     4 #> (F)           by "!e"(3, 1),
     5 #> (q)           by "Fe"(4),
   ),
-  6 #> (p imply_: q)   by "imply_:i"(2),
+  6 #> (p ->: q)       by "->:i"(2),
 )

@@ -1,6 +1,6 @@
-(∀{x => human(x) imply_: mortal(x)}, human(Socrates))  |- (mortal(Socrates)) Proof(
-  1 #> (∀{x => human(x) imply_: mortal(x)})         by "premise",
+(∀{x => human(x) ->: mortal(x)}, human(Socrates))  |- (mortal(Socrates)) Proof(
+  1 #> (∀{x => human(x) ->: mortal(x)})             by "premise",
   2 #> (human(Socrates))                            by "premise",
-  3 #> (human(Socrates) imply_: mortal(Socrates))   by "∀e"(1, Socrates),
-  4 #> (mortal(Socrates))                           by "imply_:e"(3, 2),
+  3 #> (human(Socrates) ->: mortal(Socrates))       by "∀e"(1, Socrates),
+  4 #> (mortal(Socrates))                           by "->:e"(3, 2),
 )

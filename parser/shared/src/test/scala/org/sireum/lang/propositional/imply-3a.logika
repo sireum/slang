@@ -1,8 +1,8 @@
-(q) |- (p imply_: q) Proof(
+(q) |- (p ->: q) Proof(
   1 #> (q)             by "premise",
   2 #> SubProof(
     3 #> Assume(p),
     4 #> (q)           by "premise",
   ),
-  5 #> (p imply_: q)   by "imply_:i"(2),
+  5 #> (p ->: q)       by "->:i"(2),
 )

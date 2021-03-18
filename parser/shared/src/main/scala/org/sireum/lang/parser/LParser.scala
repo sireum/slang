@@ -57,9 +57,9 @@ object LParser {
 
   val internalOpMap = Map(
     "→" -> impInternalSym,
-    "->" -> impInternalSym,
-    "==>" -> simpInternalSym,
-    "⟹" -> simpInternalSym,
+    "->:" -> impInternalSym,
+    "-->:" -> simpInternalSym,
+    "⟶" -> simpInternalSym,
     "∧" -> "&",
     "^" -> "&",
     "∨" -> "|",

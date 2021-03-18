@@ -1,11 +1,11 @@
-(∃{s => covered(s) & ∃{c => vowel(c) & holds(s, c)}}, (∃{x => covered(x)}) imply_: !gameOver) |- (!gameOver) Proof(
+(∃{s => covered(s) & ∃{c => vowel(c) & holds(s, c)}}, (∃{x => covered(x)}) ->: !gameOver) |- (!gameOver) Proof(
   1 #> (∃{s => covered(s) & (∃{c => vowel(c) & holds(s, c)})})    by "premise",
-  2 #> ((∃{x => covered(x)}) imply_: !gameOver)                   by "premise",
+  2 #> ((∃{x => covered(x)}) ->: !gameOver)                       by "premise",
   3 #> Let { a => SubProof(
     4 #> Assume(covered(a) & (∃{c => vowel(c) & holds(a, c)})),
     5 #> (covered(a))                                             by "&e1"(4),
     6 #> (∃{x => covered(x)})                                     by "∃i"(5, a),
   )},
   7 #> (∃{x => covered(x)})                                       by "∃e"(1, 3),
-  8 #> (!gameOver)                                                by "imply_:e"(2, 7),
+  8 #> (!gameOver)                                                by "->:e"(2, 7),
 )

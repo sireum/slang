@@ -1,10 +1,10 @@
-(p imply_: !q) |- (!(p & q)) Proof(
-  1 #> (p imply_: !q)     by "premise",
+(p ->: !q) |- (!(p & q)) Proof(
+  1 #> (p ->: !q)         by "premise",
   2 #> SubProof(
     3 #> Assume(p ∧ q),
     4 #> (p)              by "&e1"(3),
     5 #> (q)              by "&e2"(3),
-    6 #> (!q)             by "imply_:e"(1, 4),
+    6 #> (!q)             by "->:e"(1, 4),
     7 #> (F)              by "!e"(5, 6),
   ),
   8 #> (!(p & q))         by "!i"(2),
