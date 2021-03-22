@@ -400,6 +400,16 @@ class TypeCheckerTest extends TestSuite {
       "Worksheet" - {
 
         * - failingWorksheet("""import org.sireum._
+                               |
+                               |@datatype trait Foo {
+                               |  def id: String
+                               |}
+                               |
+                               |def bar(foo: Foo): Unit = {
+                               |  Contract(Requires(foo.id != ""))
+                               |}""".stripMargin, "non-pure")
+
+        * - failingWorksheet("""import org.sireum._
                                |@record class Foo
                                |val a: Option[Foo] = Some(Foo())""".stripMargin, "mutable")
 
