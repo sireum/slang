@@ -773,16 +773,20 @@ object TypeInfo {
       return ast.attr.posOpt
     }
 
-    @pure def typeRes(id: String, inSpec: B): (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
+    @pure def typeRes(id: String, inSpec: B): (B, Option[AST.Typed], Option[AST.ResolvedInfo]) = {
 
-      @pure def noResult: (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
-        return (None(), None())
+      @pure def noResult: (B, Option[AST.Typed], Option[AST.ResolvedInfo]) = {
+        return (T, None(), None())
+      }
+
+      @pure def errResult: (B, Option[AST.Typed], Option[AST.ResolvedInfo]) = {
+        return (F, None(), None())
       }
 
       methods.get(id) match {
         case Some(m) =>
-          return if (inSpec && m.ast.purity == AST.Purity.Impure) noResult
-          else (m.typedOpt, m.resOpt)
+          return if (inSpec && m.ast.purity == AST.Purity.Impure) errResult
+          else (T, m.typedOpt, m.resOpt)
         case _ =>
       }
 
@@ -791,12 +795,12 @@ object TypeInfo {
       }
 
       specMethods.get(id) match {
-        case Some(sm) => return (sm.typedOpt, sm.resOpt)
+        case Some(sm) => return (T, sm.typedOpt, sm.resOpt)
         case _ =>
       }
 
       specVars.get(id) match {
-        case Some(sv) => return (sv.typedOpt, sv.resOpt)
+        case Some(sv) => return (T, sv.typedOpt, sv.resOpt)
         case _ =>
       }
 
@@ -848,21 +852,25 @@ object TypeInfo {
       return ast.attr.posOpt
     }
 
-    @pure def typeRes(id: String, inSpec: B): (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
+    @pure def typeRes(id: String, inSpec: B): (B, Option[AST.Typed], Option[AST.ResolvedInfo]) = {
 
-      @pure def noResult: (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
-        return (None(), None())
+      @pure def noResult: (B, Option[AST.Typed], Option[AST.ResolvedInfo]) = {
+        return (T, None(), None())
+      }
+
+      @pure def errResult: (B, Option[AST.Typed], Option[AST.ResolvedInfo]) = {
+        return (F, None(), None())
       }
 
       vars.get(id) match {
-        case Some(v) => return (v.typedOpt, v.resOpt)
+        case Some(v) => return (T, v.typedOpt, v.resOpt)
         case _ =>
       }
 
       methods.get(id) match {
         case Some(m) =>
-          return if (inSpec && m.ast.purity == AST.Purity.Impure) noResult
-          else (m.typedOpt, m.resOpt)
+          return if (inSpec && m.ast.purity == AST.Purity.Impure) errResult
+          else (T, m.typedOpt, m.resOpt)
         case _ =>
       }
 
@@ -871,17 +879,17 @@ object TypeInfo {
       }
 
       specMethods.get(id) match {
-        case Some(sm) => return (sm.typedOpt, sm.resOpt)
+        case Some(sm) => return (T, sm.typedOpt, sm.resOpt)
         case _ =>
       }
 
       specVars.get(id) match {
-        case Some(sv) => return (sv.typedOpt, sv.resOpt)
+        case Some(sv) => return (T, sv.typedOpt, sv.resOpt)
         case _ =>
       }
 
       invariants.get(id) match {
-        case Some(inv) => return (inv.typedOpt, inv.resOpt)
+        case Some(inv) => return (T, inv.typedOpt, inv.resOpt)
         case _ =>
       }
 

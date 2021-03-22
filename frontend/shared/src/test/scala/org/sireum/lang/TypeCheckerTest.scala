@@ -44,6 +44,16 @@ class TypeCheckerTest extends TestSuite {
       "Worksheet" - {
 
         * - passingWorksheet("""import org.sireum._
+                               |
+                               |@datatype trait Foo {
+                               |  @pure def id: String
+                               |}
+                               |
+                               |def bar(foo: Foo): Unit = {
+                               |  Contract(Requires(foo.id != ""))
+                               |}""".stripMargin)
+
+        * - passingWorksheet("""import org.sireum._
                                |val a = ISZ(1, 2, 3)
                                |for (e <- a) {
                                |  Invariant(
@@ -461,6 +471,7 @@ class TypeCheckerTest extends TestSuite {
       }
 
     }
+
   }
 
   def passingStmt(input: Predef.String): Unit =

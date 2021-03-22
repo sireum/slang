@@ -1109,32 +1109,42 @@ import TypeChecker._
       reporter.error(ident.attr.posOpt, typeCheckerKind, s"Member '$id' of type '$t' does not accept type arguments.")
     }
 
+    def errSpecImpureAccess(t: AST.Typed): Unit = {
+      reporter.error(ident.attr.posOpt, typeCheckerKind, s"Cannot access non-pure member '$id' of type '$t' in contract specifications.")
+    }
+
     receiverType match {
       case receiverType: AST.Typed.Name =>
         typeHierarchy.typeMap.get(receiverType.ids).get match {
           case info: TypeInfo.Sig =>
             val r = info.typeRes(id, inSpec)
-            r._1 match {
-              case Some(rt) =>
+            r match {
+              case (T, Some(rt), _) =>
                 val smOpt =
                   buildTypeSubstMap(info.name, ident.attr.posOpt, info.ast.typeParams, receiverType.args, reporter)
                 smOpt match {
-                  case Some(sm) => return (Some(rt.subst(sm)), AST.ResolvedInfo.substOpt(r._2, sm), typeArgs)
+                  case Some(sm) => return (Some(rt.subst(sm)), AST.ResolvedInfo.substOpt(r._3, sm), typeArgs)
                   case _ => return noResult
                 }
-              case _ => val res = checkAccess(receiverType); return res
+              case (T, _, _) => val res = checkAccess(receiverType); return res
+              case (_, _, _) =>
+                errSpecImpureAccess(receiverType)
+                return noResult
             }
           case info: TypeInfo.Adt =>
             val r = info.typeRes(id, inSpec)
-            r._1 match {
-              case Some(rt) =>
+            r match {
+              case (T, Some(rt), _) =>
                 val smOpt =
                   buildTypeSubstMap(info.name, ident.attr.posOpt, info.ast.typeParams, receiverType.args, reporter)
                 smOpt match {
-                  case Some(sm) => return (Some(rt.subst(sm)), AST.ResolvedInfo.substOpt(r._2, sm), typeArgs)
+                  case Some(sm) => return (Some(rt.subst(sm)), AST.ResolvedInfo.substOpt(r._3, sm), typeArgs)
                   case _ => return noResult
                 }
-              case _ => val res = checkAccess(receiverType); return res
+              case (T, _, _) => val res = checkAccess(receiverType); return res
+              case (_, _, _) =>
+                errSpecImpureAccess(receiverType)
+                return noResult
             }
           case _ => val res = checkAccess(receiverType); return res
         }
