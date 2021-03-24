@@ -354,6 +354,19 @@ object Resolver {
     return st"${relQName(name, ids, T)}"
   }
 
+  @pure def isPosUriSuffixEq(posOpt1: Option[Position], posOpt2: Option[Position]): B = {
+    (posOpt1, posOpt2) match {
+      case (Some(pos1), Some(pos2)) =>
+        if (pos1.uriOpt.nonEmpty && pos2.uriOpt.nonEmpty) {
+          val uri1 = pos1.uriOpt.get
+          val uri2 = pos2.uriOpt.get
+          return ops.StringOps(uri2).endsWith(uri1)
+        }
+      case (_, _) =>
+    }
+    return F
+  }
+
   @pure def combine(
     r: (Reporter, ISZ[AST.TopUnit.Program], NameMap, TypeMap),
     u: (Reporter, AST.TopUnit.Program, NameMap, TypeMap)
@@ -367,7 +380,7 @@ object Resolver {
       val name = p._1
       val uInfo = p._2
       rNameMap.get(name) match {
-        case Some(rInfo) =>
+        case Some(rInfo) if !isPosUriSuffixEq(rInfo.posOpt, uInfo.posOpt) =>
           (rInfo, uInfo) match {
             case (_: Info.Package, _: Info.Package) =>
             case _ =>
@@ -392,7 +405,7 @@ object Resolver {
       val name = p._1
       val uInfo = p._2
       rTypeMap.get(name) match {
-        case Some(rInfo) =>
+        case Some(rInfo) if !isPosUriSuffixEq(rInfo.posOpt, uInfo.posOpt) =>
           rInfo.posOpt match {
             case Some(pos) =>
               val file: String = pos.uriOpt match {
