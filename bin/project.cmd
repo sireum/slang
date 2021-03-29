@@ -72,4 +72,4 @@ val frontendShared = moduleShared(
 
 val project = Project.empty + astShared + parserShared + tipeShared + frontendShared
 
-println(JSON.fromProject(project, T))
+projectCli(Os.cliArgs, project)
