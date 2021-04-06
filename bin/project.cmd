@@ -30,32 +30,56 @@ val frontend = "frontend"
 
 val homeDir = Os.slashDir.up.canon
 
-val astShared = moduleShared(
+val astShared = moduleSharedPub(
   id = s"$slang-$ast",
   baseDir = homeDir / ast,
   sharedDeps = sharedId(library),
-  sharedIvyDeps = ISZ()
+  sharedIvyDeps = ISZ(),
+  pubOpt = pub(
+    desc = "Slang Abstract Syntax Trees (AST)",
+    url = "github.com/sireum/slang",
+    licenses = org.sireum.project.ProjectUtil.bsd2,
+    devs = ISZ(robby)
+  )
 )
 
-val parserShared = moduleShared(
+val parserShared = moduleSharedPub(
   id = s"$slang-$parser",
   baseDir = homeDir / parser,
   sharedDeps = ISZ(astShared.id),
-  sharedIvyDeps = ISZ("org.scalameta::scalameta::")
+  sharedIvyDeps = ISZ("org.scalameta::scalameta::"),
+  pubOpt = pub(
+    desc = "Slang Parser",
+    url = "github.com/sireum/slang",
+    licenses = org.sireum.project.ProjectUtil.bsd2,
+    devs = ISZ(robby)
+  )
 )
 
-val tipeShared = moduleShared(
+val tipeShared = moduleSharedPub(
   id = s"$slang-$tipe",
   baseDir = homeDir / tipe,
   sharedDeps = ISZ(astShared.id),
-  sharedIvyDeps = ISZ()
+  sharedIvyDeps = ISZ(),
+  pubOpt = pub(
+    desc = "Slang Parser",
+    url = "github.com/sireum/slang",
+    licenses = org.sireum.project.ProjectUtil.bsd2,
+    devs = ISZ(robby)
+  )
 )
 
-val frontendShared = moduleShared(
+val frontendShared = moduleSharedPub(
   id = s"$slang-$frontend",
   baseDir = homeDir / frontend,
   sharedDeps = ISZ(parserShared.id, tipeShared.id),
-  sharedIvyDeps = ISZ()
+  sharedIvyDeps = ISZ(),
+  pubOpt = pub(
+    desc = "Slang Frontend",
+    url = "github.com/sireum/slang",
+    licenses = org.sireum.project.ProjectUtil.bsd2,
+    devs = ISZ(robby)
+  )
 )
 
 val project = Project.empty + astShared + parserShared + tipeShared + frontendShared
