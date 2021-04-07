@@ -38,7 +38,7 @@ val astShared = moduleSharedPub(
   pubOpt = pub(
     desc = "Slang Abstract Syntax Trees (AST)",
     url = "github.com/sireum/slang",
-    licenses = org.sireum.project.ProjectUtil.bsd2,
+    licenses = bsd2,
     devs = ISZ(robby)
   )
 )
@@ -51,7 +51,7 @@ val parserShared = moduleSharedPub(
   pubOpt = pub(
     desc = "Slang Parser",
     url = "github.com/sireum/slang",
-    licenses = org.sireum.project.ProjectUtil.bsd2,
+    licenses = bsd2,
     devs = ISZ(robby)
   )
 )
@@ -64,7 +64,7 @@ val tipeShared = moduleSharedPub(
   pubOpt = pub(
     desc = "Slang Parser",
     url = "github.com/sireum/slang",
-    licenses = org.sireum.project.ProjectUtil.bsd2,
+    licenses = bsd2,
     devs = ISZ(robby)
   )
 )
@@ -77,7 +77,7 @@ val frontendShared = moduleSharedPub(
   pubOpt = pub(
     desc = "Slang Frontend",
     url = "github.com/sireum/slang",
-    licenses = org.sireum.project.ProjectUtil.bsd2,
+    licenses = bsd2,
     devs = ISZ(robby)
   )
 )
