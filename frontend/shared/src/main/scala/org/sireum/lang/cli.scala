@@ -37,6 +37,7 @@ object cli {
     description = "Script runner",
     header = "Slang Script Runner",
     usage = "<option>* <slang-file> <arg>*",
+    usageDescOpt = None(),
     opts = ISZ(
       Opt(name = "input", longKey = "input", shortKey = Some('i'),
         tpe = Type.Path(multiple = F, default = None()),
@@ -57,6 +58,7 @@ object cli {
     description = "Type checker",
     header = "Slang Type Checker",
     usage = "<option>* [<slang-file>]",
+    usageDescOpt = None(),
     opts = ISZ(
       Opt(name = "sourcepath", longKey = "sourcepath", shortKey = Some('s'),
         tpe = Type.Path(T, None()),
