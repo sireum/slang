@@ -29,7 +29,7 @@ import org.sireum._
 import org.sireum.message._
 
 import scala.meta._
-import scala.meta.internal.parsers.ModifiedScalametaParser
+import scala.meta.internal.parsers.ScalametaParser
 import scala.util._
 
 object Parser_Ext {
@@ -37,7 +37,7 @@ object Parser_Ext {
   def parseStmt[T](text: String): T = {
     val reporter = Reporter.create
     val (dialect, input) = SlangParser.scalaDialect(isWorksheet = false)(text.value)
-    val metap = new ModifiedScalametaParser(input, dialect)
+    val metap = new ScalametaParser(input)(dialect)
     val stat = Try(metap.parseStat()) match {
       case Success(s) => s
       case Failure(e) => err(e.getMessage)
@@ -60,7 +60,7 @@ object Parser_Ext {
   def parseExp[T](text: String): T = {
     val reporter = Reporter.create
     val (dialect, input) = SlangParser.scalaDialect(isWorksheet = false)(text.value)
-    val metap = new ModifiedScalametaParser(input, dialect)
+    val metap = new ScalametaParser(input)(dialect)
     val term = Try(metap.parseTerm()) match {
       case Success(t) => t
       case Failure(e) => err(e.getMessage)

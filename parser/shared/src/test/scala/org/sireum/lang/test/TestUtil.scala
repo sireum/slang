@@ -25,29 +25,9 @@
 
 package org.sireum.lang.test
 
-import org.sireum.lang.parser.LParser
 import org.sireum.message.Reporter
 
-import scala.meta.{ParseException, TokenizeException}
-
 object TestUtil {
-
-  def lparser[T](input: String)(f: (LParser, Reporter) => Boolean): Boolean = {
-    val r: Boolean = try {
-      LParser[Boolean](input, Reporter.create)(f)
-      //println(fparser(parser)
-    } catch {
-      case e: TokenizeException =>
-        Console.err.println(s"[${e.pos.startLine}, ${e.pos.endLine}] ${e.getMessage}")
-        e.printStackTrace()
-        false
-      case e: ParseException =>
-        Console.err.println(s"[${e.pos.startLine}, ${e.pos.endLine}] ${e.getMessage}")
-        e.printStackTrace()
-        false
-    }
-    r
-  }
 
   def check(r: Reporter): Boolean = {
     if (r.hasIssue) r.printMessages()

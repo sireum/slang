@@ -22,17 +22,30 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package scala.meta.tokens
 
-object TokensHelper {
-  def extractArray(ts: Tokens): Array[Token] = ts.tokens
+package org.sireum.lang
 
-  def isNl(t: Token): Boolean = t.is[Token.LF] || t.is[Token.LFLF]
+import org.sireum.$internal.RC
+import org.sireum.lang.ast.TopUnit
+import org.sireum.{None => SNone}
+import org.sireum.test.SireumRcSpec
+import org.sireum.lang.test.TestUtil
+import org.sireum.message.Reporter
 
-  def name(t: Token): String = {
-    val name = t.name
-    if (name.startsWith("\\") || t.text == "") s"$name"
-    else if (t.is[Token.Ident]) s"${t.text}"
-    else s"${t.name} '${t.text}'"
+class SequentParserRcTest extends SireumRcSpec {
+  lazy val textResources: scala.collection.Map[Vector[Predef.String], Predef.String] =
+    RC.text(Vector())((p, _) => p.last.endsWith(".logika"))
+
+  def check(path: scala.Vector[Predef.String], content: Predef.String): Boolean = {
+    path.head match {
+      case "propositional" => parse(content)
+      case "predicate" => parse(content)
+    }
+  }
+
+  def parse(input: String): Boolean = {
+    val reporter = Reporter.create
+    val rOpt = parser.Parser.parseTopUnit[TopUnit.SequentUnit](input, true, false, SNone(), reporter)
+    TestUtil.check(reporter) && rOpt.exists(_.isInstanceOf[TopUnit.SequentUnit])
   }
 }

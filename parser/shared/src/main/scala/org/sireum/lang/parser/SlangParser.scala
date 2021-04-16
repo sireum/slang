@@ -95,6 +95,10 @@ object SlangParser {
     "^",
   )
 
+  val impInternalSym: Predef.String = "imply_:"
+
+  val simpInternalSym: Predef.String = "simply_:"
+
   val disallowedMethodIdEndings: Seq[String] = Seq()
 
   val unaryMethods: Seq[String] = Seq("unary_!", "unary_+", "unary_-", "unary_~")
@@ -102,8 +106,8 @@ object SlangParser {
   val topLevelMethodsIds: Seq[String] = Seq("assert", "assume", "print", "println", "eprint", "eprintln", "halt")
 
   val infixSymbols: Map[Predef.String, Predef.String] = Map(
-    LParser.simpInternalSym -> AST.Exp.BinaryOp.CondImply.value,
-    LParser.impInternalSym -> AST.Exp.BinaryOp.Imply.value
+    simpInternalSym -> AST.Exp.BinaryOp.CondImply.value,
+    impInternalSym -> AST.Exp.BinaryOp.Imply.value
   )
 
   val quantSymbols: Set[String] = Set(
@@ -236,17 +240,13 @@ class SlangParser(
         parser.in = oldIn.fork
         parser.next()
         parser.newLinesOpt()
-        if (parser.isIdentOf("*")) {
-          new LParser(input, dialect, this).truthTable(fileUriOpt)
-        } else {
-          parser.in = oldIn
-          val source = parser.parseSource()
-          if (source.stats.size == 1 && input.text.contains("|-") && (source.stats.head match {
-            case q"Deduce(..$_)" => false
-            case _ => true
-          })) sequentSource(source)
-          else translateSource(source)
-        }
+        parser.in = oldIn
+        val source = parser.parseSource()
+        if (source.stats.size == 1 && input.text.contains("|-") && (source.stats.head match {
+          case q"Deduce(..$_)" => false
+          case _ => true
+        })) sequentSource(source)
+        else translateSource(source)
       } else Result(text, hashSireum, None())
     } catch {
       case e: ParseException =>
@@ -2702,23 +2702,6 @@ class SlangParser(
         AST.Exp
           .Invoke(Some(fun), AST.Exp.Ident(cidNoCheck("apply", pos), resolvedAttr(pos)), ISZ(), args, resolvedAttr(pos))
     }
-  }
-
-  def lParser[T](exp: Term.Interpolate)(f: LParser => T): T = {
-    val pos = exp.pos
-    val startOffset = pos.start + 4
-    val endOffset = pos.end - 3
-    lPointOpt = scala.Some(startOffset)
-    try f(new LParser(Input.String(input.text.substring(startOffset, endOffset)), dialect, this))
-    catch {
-      case e: ParseException =>
-        throw ParseException(Position.Range(input, startOffset + e.pos.start, startOffset + e.pos.end), e.shortMessage)
-      case e: TokenizeException =>
-        throw TokenizeException(
-          Position.Range(input, startOffset + e.pos.start, startOffset + e.pos.end),
-          e.shortMessage
-        )
-    } finally lPointOpt = scala.None
   }
 
   def translateIdent(construct: String, expr: Term): Option[AST.Exp.Ident] = {
