@@ -25,6 +25,7 @@
 
 package org.sireum.lang.parser
 
+import org.sireum.$internal.MutableMarker
 import org.sireum.message
 import org.sireum.message.Reporter
 import org.sireum.lang.{ast => AST}
@@ -36,6 +37,32 @@ import scala.meta.internal.parsers.ScalametaParser
 import scala.util.{Success, Try}
 
 object SlangParser {
+
+  final class ProofStepUniquenessChecker(var map: org.sireum.HashMap[Z, org.sireum.message.Position],
+                                         val reporter: Reporter) extends AST.MTransformer {
+    var _owned: Boolean = false
+
+    override def string: String = toString
+
+    override def $owned: Boolean = _owned
+
+    override def $owned_=(b: Boolean): MutableMarker = {
+      _owned = b
+      this
+    }
+
+    override def $clone: MutableMarker = new ProofStepUniquenessChecker(map, reporter)
+
+    override def preProofAstStep(o: AST.ProofAst.Step): AST.MTransformer.PreResult[AST.ProofAst.Step] = {
+      val no = o.no.value
+      map.get(no) match {
+        case Some(otherPos) => reporter.error(o.no.posOpt, messageKind,
+          s"Proof step #$no has been declared at [${otherPos.beginLine}, ${otherPos.beginColumn}]")
+        case _ => map = map + no ~> o.no.posOpt.get
+      }
+      return super.preProofAstStep(o)
+    }
+  }
 
   val messageKind = "Slang Parser"
 
@@ -2923,7 +2950,7 @@ class SlangParser(
       case _ => false
     }
     if (isProofStep) {
-      AST.Stmt.DeduceSteps(ISZ(dexprs.map(translateProofStep): _*), attr(stat.pos))
+      AST.Stmt.DeduceSteps(translateAndCheckProofSteps(dexprs), attr(stat.pos))
     } else {
       val (justOpt, args): (Option[AST.Exp.LitString], Seq[Term]) = dexprs.headOption match {
         case scala.Some(s: Lit.String) => (Some(translateLit(s).asInstanceOf[AST.Exp.LitString]), dexprs.tail)
@@ -2967,22 +2994,22 @@ class SlangParser(
     sequent match {
       case q"|- $conclusion Proof(..$pexprs)" =>
         AST.Sequent(ISZ(), translateExp(conclusion),
-          ISZ(pexprs.map(translateProofStep): _*), attr(sequent.pos))
+          translateAndCheckProofSteps(pexprs), attr(sequent.pos))
       case q"|- $conclusion" =>
         AST.Sequent(ISZ(), translateExp(conclusion),
           ISZ(), attr(sequent.pos))
       case q"|- ($conclusion) Proof(..$pexprs)" =>
         AST.Sequent(ISZ(), translateExp(conclusion),
-          ISZ(pexprs.map(translateProofStep): _*), attr(sequent.pos))
+          translateAndCheckProofSteps(pexprs), attr(sequent.pos))
       case q"|- ($conclusion)" =>
         AST.Sequent(ISZ(), translateExp(conclusion),
           ISZ(), attr(sequent.pos))
       case q"(..$premises) |- $conclusion Proof(..$pexprs)" =>
         AST.Sequent(ISZ(premises.map(translateExp): _*), translateExp(conclusion),
-          ISZ(pexprs.map(translateProofStep): _*), attr(sequent.pos))
+          translateAndCheckProofSteps(pexprs), attr(sequent.pos))
       case q"$premise |- $conclusion Proof(..$pexprs)" =>
         AST.Sequent(ISZ(translateExp(premise)), translateExp(conclusion),
-          ISZ(pexprs.map(translateProofStep): _*), attr(sequent.pos))
+          translateAndCheckProofSteps(pexprs), attr(sequent.pos))
       case q"(..$premises) |- $conclusion" =>
         AST.Sequent(ISZ(premises.map(translateExp): _*), translateExp(conclusion),
           ISZ(), attr(sequent.pos))
@@ -2991,10 +3018,10 @@ class SlangParser(
           ISZ(), attr(sequent.pos))
       case q"(..$premises) |- ($conclusion) Proof(..$pexprs)" =>
         AST.Sequent(ISZ(premises.map(translateExp): _*), translateExp(conclusion),
-          ISZ(pexprs.map(translateProofStep): _*), attr(sequent.pos))
+          translateAndCheckProofSteps(pexprs), attr(sequent.pos))
       case q"$premise |- ($conclusion) Proof(..$pexprs)" =>
         AST.Sequent(ISZ(translateExp(premise)), translateExp(conclusion),
-          ISZ(pexprs.map(translateProofStep): _*), attr(sequent.pos))
+          translateAndCheckProofSteps(pexprs), attr(sequent.pos))
       case q"(..$premises) |- ($conclusion)" =>
         AST.Sequent(ISZ(premises.map(translateExp): _*), translateExp(conclusion),
           ISZ(), attr(sequent.pos))
@@ -3115,11 +3142,21 @@ class SlangParser(
   def translateProof(proof: Term): AST.ProofAst = {
     proof match {
       case q"Proof(..${pexprs: Seq[Term]})" =>
-        AST.ProofAst(ISZ(pexprs.map(translateProofStep): _*), attr(proof.pos))
+        AST.ProofAst(translateAndCheckProofSteps(pexprs), attr(proof.pos))
       case _ =>
         error(proof.pos, s"Expecting 'Proof(...)' but found '$proof'.")
         return AST.ProofAst(ISZ(), attr(proof.pos))
     }
+  }
+
+  def translateAndCheckProofSteps(steps: Seq[Term]): ISZ[AST.ProofAst.Step] = {
+    val r = ISZ(steps.map(translateProofStep): _*)
+    val checker = new ProofStepUniquenessChecker(org.sireum.HashMap.empty, Reporter.create)
+    for (step <- r) {
+      checker.transformProofAstStep(step)
+    }
+    reporter.reports(checker.reporter.messages)
+    return r
   }
 
   def translateTheoremLemma(isLemma: B, enclosing: Enclosing.Type, stat: Defn.Def): AST.Stmt.Theorem = {
