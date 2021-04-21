@@ -573,7 +573,33 @@ object ProofAst {
                                    steps: ISZ[Step])
     }
 
-    @datatype class Justification(id: Id, args: ISZ[Exp])
+    @datatype trait Justification {
+      @pure def posOpt: Option[Position]
+    }
+
+    @datatype trait Inception extends Justification {
+      def witnesses: ISZ[Exp.LitZ]
+    }
+
+    object Justification {
+
+      @datatype class Apply(val id: Id, val args: ISZ[Exp]) extends Justification {
+        @strictpure override def posOpt: Option[Position] = id.attr.posOpt
+      }
+
+      @datatype class Incept(val invoke: Exp.Invoke, val witnesses: ISZ[Exp.LitZ]) extends Inception {
+        @strictpure override def posOpt: Option[Position] = invoke.ident.posOpt
+      }
+
+      @datatype class InceptNamed(val invoke: Exp.InvokeNamed, val witnesses: ISZ[Exp.LitZ]) extends Inception {
+        @strictpure override def posOpt: Option[Position] = invoke.ident.posOpt
+      }
+
+      @datatype class InceptEta(val eta: Exp.Eta, val witnesses: ISZ[Exp.LitZ]) extends Inception {
+        @strictpure override def posOpt: Option[Position] = eta.posOpt
+      }
+
+    }
 
   }
 
