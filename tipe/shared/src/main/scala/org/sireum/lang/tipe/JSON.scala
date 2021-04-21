@@ -937,7 +937,6 @@ object JSON {
         case o: org.sireum.lang.ast.ProofAst.Step.Justification.Apply => return print_astProofAstStepJustificationApply(o)
         case o: org.sireum.lang.ast.ProofAst.Step.Justification.Incept => return print_astProofAstStepJustificationIncept(o)
         case o: org.sireum.lang.ast.ProofAst.Step.Justification.InceptNamed => return print_astProofAstStepJustificationInceptNamed(o)
-        case o: org.sireum.lang.ast.ProofAst.Step.Justification.InceptEta => return print_astProofAstStepJustificationInceptEta(o)
       }
     }
 
@@ -945,7 +944,6 @@ object JSON {
       o match {
         case o: org.sireum.lang.ast.ProofAst.Step.Justification.Incept => return print_astProofAstStepJustificationIncept(o)
         case o: org.sireum.lang.ast.ProofAst.Step.Justification.InceptNamed => return print_astProofAstStepJustificationInceptNamed(o)
-        case o: org.sireum.lang.ast.ProofAst.Step.Justification.InceptEta => return print_astProofAstStepJustificationInceptEta(o)
       }
     }
 
@@ -969,14 +967,6 @@ object JSON {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.ProofAst.Step.Justification.InceptNamed""""),
         ("invoke", print_astExpInvokeNamed(o.invoke)),
-        ("witnesses", printISZ(F, o.witnesses, print_astExpLitZ _))
-      ))
-    }
-
-    @pure def print_astProofAstStepJustificationInceptEta(o: org.sireum.lang.ast.ProofAst.Step.Justification.InceptEta): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.ProofAst.Step.Justification.InceptEta""""),
-        ("eta", print_astExpEta(o.eta)),
         ("witnesses", printISZ(F, o.witnesses, print_astExpLitZ _))
       ))
     }
@@ -4012,23 +4002,21 @@ object JSON {
     }
 
     def parse_astProofAstStepJustification(): org.sireum.lang.ast.ProofAst.Step.Justification = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.ProofAst.Step.Justification.Apply", "org.sireum.lang.ast.ProofAst.Step.Justification.Incept", "org.sireum.lang.ast.ProofAst.Step.Justification.InceptNamed", "org.sireum.lang.ast.ProofAst.Step.Justification.InceptEta"))
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.ProofAst.Step.Justification.Apply", "org.sireum.lang.ast.ProofAst.Step.Justification.Incept", "org.sireum.lang.ast.ProofAst.Step.Justification.InceptNamed"))
       t.native match {
         case "org.sireum.lang.ast.ProofAst.Step.Justification.Apply" => val r = parse_astProofAstStepJustificationApplyT(T); return r
         case "org.sireum.lang.ast.ProofAst.Step.Justification.Incept" => val r = parse_astProofAstStepJustificationInceptT(T); return r
         case "org.sireum.lang.ast.ProofAst.Step.Justification.InceptNamed" => val r = parse_astProofAstStepJustificationInceptNamedT(T); return r
-        case "org.sireum.lang.ast.ProofAst.Step.Justification.InceptEta" => val r = parse_astProofAstStepJustificationInceptEtaT(T); return r
-        case _ => val r = parse_astProofAstStepJustificationInceptEtaT(T); return r
+        case _ => val r = parse_astProofAstStepJustificationInceptNamedT(T); return r
       }
     }
 
     def parse_astProofAstStepInception(): org.sireum.lang.ast.ProofAst.Step.Inception = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.ProofAst.Step.Justification.Incept", "org.sireum.lang.ast.ProofAst.Step.Justification.InceptNamed", "org.sireum.lang.ast.ProofAst.Step.Justification.InceptEta"))
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.ProofAst.Step.Justification.Incept", "org.sireum.lang.ast.ProofAst.Step.Justification.InceptNamed"))
       t.native match {
         case "org.sireum.lang.ast.ProofAst.Step.Justification.Incept" => val r = parse_astProofAstStepJustificationInceptT(T); return r
         case "org.sireum.lang.ast.ProofAst.Step.Justification.InceptNamed" => val r = parse_astProofAstStepJustificationInceptNamedT(T); return r
-        case "org.sireum.lang.ast.ProofAst.Step.Justification.InceptEta" => val r = parse_astProofAstStepJustificationInceptEtaT(T); return r
-        case _ => val r = parse_astProofAstStepJustificationInceptEtaT(T); return r
+        case _ => val r = parse_astProofAstStepJustificationInceptNamedT(T); return r
       }
     }
 
@@ -4084,24 +4072,6 @@ object JSON {
       val witnesses = parser.parseISZ(parse_astExpLitZ _)
       parser.parseObjectNext()
       return org.sireum.lang.ast.ProofAst.Step.Justification.InceptNamed(invoke, witnesses)
-    }
-
-    def parse_astProofAstStepJustificationInceptEta(): org.sireum.lang.ast.ProofAst.Step.Justification.InceptEta = {
-      val r = parse_astProofAstStepJustificationInceptEtaT(F)
-      return r
-    }
-
-    def parse_astProofAstStepJustificationInceptEtaT(typeParsed: B): org.sireum.lang.ast.ProofAst.Step.Justification.InceptEta = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.ProofAst.Step.Justification.InceptEta")
-      }
-      parser.parseObjectKey("eta")
-      val eta = parse_astExpEta()
-      parser.parseObjectNext()
-      parser.parseObjectKey("witnesses")
-      val witnesses = parser.parseISZ(parse_astExpLitZ _)
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.ProofAst.Step.Justification.InceptEta(eta, witnesses)
     }
 
     def parse_astAssignExp(): org.sireum.lang.ast.AssignExp = {
@@ -7800,24 +7770,6 @@ object JSON {
       return r
     }
     val r = to(s, f_astProofAstStepJustificationInceptNamed _)
-    return r
-  }
-
-  def from_astProofAstStepJustificationInceptEta(o: org.sireum.lang.ast.ProofAst.Step.Justification.InceptEta, isCompact: B): String = {
-    val st = Printer.print_astProofAstStepJustificationInceptEta(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astProofAstStepJustificationInceptEta(s: String): Either[org.sireum.lang.ast.ProofAst.Step.Justification.InceptEta, Json.ErrorMsg] = {
-    def f_astProofAstStepJustificationInceptEta(parser: Parser): org.sireum.lang.ast.ProofAst.Step.Justification.InceptEta = {
-      val r = parser.parse_astProofAstStepJustificationInceptEta()
-      return r
-    }
-    val r = to(s, f_astProofAstStepJustificationInceptEta _)
     return r
   }
 

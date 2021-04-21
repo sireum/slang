@@ -4330,15 +4330,6 @@ import TypeChecker._
               reporter.error(newExp.posOpt, typeCheckerKind, errMessage)
           }
           return just(invoke = newInvoke)
-        case just: AST.ProofAst.Step.Justification.InceptEta =>
-          val (newExp, _) = checkExp(None(), scope, just.eta, reporter)
-          val newEta = newExp.asInstanceOf[AST.Exp.Eta]
-          newEta.ref.asExp.typedOpt match {
-            case Some(t: AST.Typed.Method) if t.isInObject && t.tpe.isPure =>
-            case Some(_) => reporter.error(newExp.posOpt, typeCheckerKind, errMessage)
-            case _ =>
-          }
-          return just(eta = newEta)
       }
     }
     val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)

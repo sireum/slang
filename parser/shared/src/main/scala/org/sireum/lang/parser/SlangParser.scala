@@ -3127,10 +3127,6 @@ class SlangParser(
       case q"${no: Lit.Int} #> $claim by ${jid: Lit.String}" =>
         AST.ProofAst.Step.Regular(toLitZ(no), translateExp(claim),
           AST.ProofAst.Step.Justification.Apply(cid(jid.value, jid.pos), ISZ()))
-      case q"${no: Lit.Int} #> $claim by ${eta: Term.Eta} and (..${jargs: Seq[Term]})" =>
-        AST.ProofAst.Step.Regular(toLitZ(no), translateExp(claim),
-          AST.ProofAst.Step.Justification.InceptEta(translateExp(eta).asInstanceOf[AST.Exp.Eta],
-            translateWitnesses(jargs)))
       case q"${no: Lit.Int} #> $claim by ${t: Term.Apply} and (..${jargs: Seq[Term]})" =>
         val stepNo = toLitZ(no)
         val stepClaim = translateExp(claim)

@@ -285,10 +285,6 @@ object MTransformer {
 
   val PostResultProofAstStepJustificationInceptNamed: MOption[ProofAst.Step.Inception] = MNone()
 
-  val PreResultProofAstStepJustificationInceptEta: PreResult[ProofAst.Step.Inception] = PreResult(T, MNone())
-
-  val PostResultProofAstStepJustificationInceptEta: MOption[ProofAst.Step.Inception] = MNone()
-
   val PreResultCase: PreResult[Case] = PreResult(T, MNone())
 
   val PostResultCase: MOption[Case] = MNone()
@@ -1075,13 +1071,6 @@ import MTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[ProofAst.Step.Justification]())
         }
         return r
-      case o: ProofAst.Step.Justification.InceptEta =>
-        val r: PreResult[ProofAst.Step.Justification] = preProofAstStepJustificationInceptEta(o) match {
-         case PreResult(continu, MSome(r: ProofAst.Step.Justification)) => PreResult(continu, MSome[ProofAst.Step.Justification](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type ProofAst.Step.Justification")
-         case PreResult(continu, _) => PreResult(continu, MNone[ProofAst.Step.Justification]())
-        }
-        return r
     }
   }
 
@@ -1089,7 +1078,6 @@ import MTransformer._
     o match {
       case o: ProofAst.Step.Justification.Incept => return preProofAstStepJustificationIncept(o)
       case o: ProofAst.Step.Justification.InceptNamed => return preProofAstStepJustificationInceptNamed(o)
-      case o: ProofAst.Step.Justification.InceptEta => return preProofAstStepJustificationInceptEta(o)
     }
   }
 
@@ -1103,10 +1091,6 @@ import MTransformer._
 
   def preProofAstStepJustificationInceptNamed(o: ProofAst.Step.Justification.InceptNamed): PreResult[ProofAst.Step.Inception] = {
     return PreResultProofAstStepJustificationInceptNamed
-  }
-
-  def preProofAstStepJustificationInceptEta(o: ProofAst.Step.Justification.InceptEta): PreResult[ProofAst.Step.Inception] = {
-    return PreResultProofAstStepJustificationInceptEta
   }
 
   def preAssignExp(o: AssignExp): PreResult[AssignExp] = {
@@ -2202,13 +2186,6 @@ import MTransformer._
          case _ => MNone[ProofAst.Step.Justification]()
         }
         return r
-      case o: ProofAst.Step.Justification.InceptEta =>
-        val r: MOption[ProofAst.Step.Justification] = postProofAstStepJustificationInceptEta(o) match {
-         case MSome(result: ProofAst.Step.Justification) => MSome[ProofAst.Step.Justification](result)
-         case MSome(_) => halt("Can only produce object of type ProofAst.Step.Justification")
-         case _ => MNone[ProofAst.Step.Justification]()
-        }
-        return r
     }
   }
 
@@ -2216,7 +2193,6 @@ import MTransformer._
     o match {
       case o: ProofAst.Step.Justification.Incept => return postProofAstStepJustificationIncept(o)
       case o: ProofAst.Step.Justification.InceptNamed => return postProofAstStepJustificationInceptNamed(o)
-      case o: ProofAst.Step.Justification.InceptEta => return postProofAstStepJustificationInceptEta(o)
     }
   }
 
@@ -2230,10 +2206,6 @@ import MTransformer._
 
   def postProofAstStepJustificationInceptNamed(o: ProofAst.Step.Justification.InceptNamed): MOption[ProofAst.Step.Inception] = {
     return PostResultProofAstStepJustificationInceptNamed
-  }
-
-  def postProofAstStepJustificationInceptEta(o: ProofAst.Step.Justification.InceptEta): MOption[ProofAst.Step.Inception] = {
-    return PostResultProofAstStepJustificationInceptEta
   }
 
   def postAssignExp(o: AssignExp): MOption[AssignExp] = {
@@ -3858,13 +3830,6 @@ import MTransformer._
             MSome(o2(invoke = r0.getOrElse(o2.invoke), witnesses = r1.getOrElse(o2.witnesses)))
           else
             MNone()
-        case o2: ProofAst.Step.Justification.InceptEta =>
-          val r0: MOption[Exp.Eta] = transformExpEta(o2.eta)
-          val r1: MOption[IS[Z, Exp.LitZ]] = transformISZ(o2.witnesses, transformExpLitZ _)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(eta = r0.getOrElse(o2.eta), witnesses = r1.getOrElse(o2.witnesses)))
-          else
-            MNone()
       }
       rOpt
     } else if (preR.resultOpt.nonEmpty) {
@@ -3902,13 +3867,6 @@ import MTransformer._
           val r1: MOption[IS[Z, Exp.LitZ]] = transformISZ(o2.witnesses, transformExpLitZ _)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
             MSome(o2(invoke = r0.getOrElse(o2.invoke), witnesses = r1.getOrElse(o2.witnesses)))
-          else
-            MNone()
-        case o2: ProofAst.Step.Justification.InceptEta =>
-          val r0: MOption[Exp.Eta] = transformExpEta(o2.eta)
-          val r1: MOption[IS[Z, Exp.LitZ]] = transformISZ(o2.witnesses, transformExpLitZ _)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(eta = r0.getOrElse(o2.eta), witnesses = r1.getOrElse(o2.witnesses)))
           else
             MNone()
       }
@@ -5687,42 +5645,6 @@ import MTransformer._
      case MSome(result: Exp.InvokeNamed) => MSome[Exp.InvokeNamed](result)
      case MSome(_) => halt("Can only produce object of type Exp.InvokeNamed")
      case _ => MNone[Exp.InvokeNamed]()
-    }
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
-  def transformExpEta(o: Exp.Eta): MOption[Exp.Eta] = {
-    val preR: PreResult[Exp.Eta] = preExpEta(o) match {
-     case PreResult(continu, MSome(r: Exp.Eta)) => PreResult(continu, MSome[Exp.Eta](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp.Eta")
-     case PreResult(continu, _) => PreResult(continu, MNone[Exp.Eta]())
-    }
-    val r: MOption[Exp.Eta] = if (preR.continu) {
-      val o2: Exp.Eta = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[Exp.Ref] = transformExpRef(o2.ref)
-      val r1: MOption[TypedAttr] = transformTypedAttr(o2.attr)
-      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-        MSome(o2(ref = r0.getOrElse(o2.ref), attr = r1.getOrElse(o2.attr)))
-      else
-        MNone()
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: Exp.Eta = r.getOrElse(o)
-    val postR: MOption[Exp.Eta] = postExpEta(o2) match {
-     case MSome(result: Exp.Eta) => MSome[Exp.Eta](result)
-     case MSome(_) => halt("Can only produce object of type Exp.Eta")
-     case _ => MNone[Exp.Eta]()
     }
     if (postR.nonEmpty) {
       return postR

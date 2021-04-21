@@ -595,10 +595,6 @@ object ProofAst {
         @strictpure override def posOpt: Option[Position] = invoke.ident.posOpt
       }
 
-      @datatype class InceptEta(val eta: Exp.Eta, val witnesses: ISZ[Exp.LitZ]) extends Inception {
-        @strictpure override def posOpt: Option[Position] = eta.posOpt
-      }
-
     }
 
   }
