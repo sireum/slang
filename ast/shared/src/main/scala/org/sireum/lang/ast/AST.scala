@@ -578,7 +578,9 @@ object ProofAst {
     }
 
     @datatype trait Inception extends Justification {
-      def witnesses: ISZ[Exp.LitZ]
+      @pure def invokeIdent: Exp.Ident
+      @pure def args: ISZ[Exp]
+      @pure def witnesses: ISZ[Exp.LitZ]
     }
 
     object Justification {
@@ -588,10 +590,20 @@ object ProofAst {
       }
 
       @datatype class Incept(val invoke: Exp.Invoke, val witnesses: ISZ[Exp.LitZ]) extends Inception {
+        @strictpure override def invokeIdent: Exp.Ident = invoke.ident
+        @strictpure override def args: ISZ[Exp] = invoke.args
         @strictpure override def posOpt: Option[Position] = invoke.ident.posOpt
       }
 
       @datatype class InceptNamed(val invoke: Exp.InvokeNamed, val witnesses: ISZ[Exp.LitZ]) extends Inception {
+        @strictpure override def invokeIdent: Exp.Ident = invoke.ident
+        @pure override def args: ISZ[Exp] = {
+          var r = MSZ.create[Option[Exp]](invoke.args.size, None())
+          for (e <- invoke.args) {
+            r(e.index) = Some(e.arg)
+          }
+          return for (arg <- r.toIS) yield arg.get
+        }
         @strictpure override def posOpt: Option[Position] = invoke.ident.posOpt
       }
 
