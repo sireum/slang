@@ -4246,7 +4246,7 @@ import TypeChecker._
 
       case stmt: AST.Stmt.Havoc =>
         val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
-        return (Some(scope), stmt(args = tc.checkModifies("havoc", scope, stmt.args, reporter)))
+        return (Some(scope), stmt(args = tc.checkModifiesH("havoc", scope, stmt.args, reporter)))
 
       case stmt: AST.Stmt.Fact =>
         val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
@@ -4429,28 +4429,29 @@ import TypeChecker._
 
   def checkMethodContract(scope: Scope, contract: AST.MethodContract, reporter: Reporter): AST.MethodContract = {
     assert(inSpec)
-    def checkReads(reads: ISZ[AST.Exp.Ident]): ISZ[AST.Exp.Ident] = {
-      return for (read <- reads) yield checkExp(None(), scope, read, reporter)._1.asInstanceOf[AST.Exp.Ident]
+    def checkReads(reads: AST.MethodContract.Accesses): AST.MethodContract.Accesses = {
+      return reads(idents = for (read <- reads.idents) yield checkExp(None(), scope, read, reporter)._1.asInstanceOf[AST.Exp.Ident])
     }
-    def checkRequires(requires: ISZ[AST.Exp]): ISZ[AST.Exp] = {
-      return for (require <- requires) yield checkExp(Some(AST.Typed.b), scope, require, reporter)._1
+    def checkRequires(requires: AST.MethodContract.Claims): AST.MethodContract.Claims = {
+      return requires(claims = for (require <- requires.claims) yield checkExp(Some(AST.Typed.b), scope, require, reporter)._1)
     }
-    def checkEnsures(ensures: ISZ[AST.Exp]): ISZ[AST.Exp] = {
+    def checkEnsures(ensures: AST.MethodContract.Claims): AST.MethodContract.Claims = {
       val tc = TypeChecker(typeHierarchy, context, ModeContext.SpecPost)
-      return for (ensure <- ensures) yield tc.checkExp(Some(AST.Typed.b), scope, ensure, reporter)._1
+      return ensures(claims = for (ensure <- ensures.claims) yield tc.checkExp(Some(AST.Typed.b), scope, ensure, reporter)._1)
     }
     def checkCase(cas: AST.MethodContract.Case): AST.MethodContract.Case = {
-      return AST.MethodContract.Case(cas.label, checkRequires(cas.requires), checkEnsures(cas.ensures))
+      return AST.MethodContract.Case(cas.label, checkRequires(cas.requiresClause), checkEnsures(cas.ensuresClause))
     }
     contract match {
       case contract: AST.MethodContract.Simple =>
         return AST.MethodContract.Simple(
-          checkReads(contract.reads), checkRequires(contract.requires),
-          checkModifies("modify", scope, contract.modifies, reporter), checkEnsures(contract.ensures)
+          checkReads(contract.readsClause), checkRequires(contract.requiresClause),
+          checkModifies("modify", scope, contract.modifiesClause, reporter), checkEnsures(contract.ensuresClause),
+          contract.attr
         )
       case contract: AST.MethodContract.Cases =>
-        val newReads = checkReads(contract.reads)
-        val newModifies = checkModifies("modify", scope, contract.modifies, reporter)
+        val newReads = checkReads(contract.readsClause)
+        val newModifies = checkModifies("modify", scope, contract.modifiesClause, reporter)
         var newCases = ISZ[AST.MethodContract.Case]()
         var labelMap = HashMap.empty[String, Option[Position]]
         for (cas <- contract.cases) {
@@ -4469,17 +4470,21 @@ import TypeChecker._
             }
           }
         }
-        return AST.MethodContract.Cases(newReads, newModifies, newCases)
+        return AST.MethodContract.Cases(newReads, newModifies, newCases, contract.attr)
     }
   }
 
   def checkLoopInv(scope: Scope, invs: ISZ[AST.Exp], modifies: ISZ[AST.Exp.Ident],
                    reporter: Reporter): (ISZ[AST.Exp], ISZ[AST.Exp.Ident]) = {
     val newInvs: ISZ[AST.Exp] = for (inv <- invs) yield checkExp(AST.Typed.bOpt, scope, inv, reporter)._1
-    return (newInvs, checkModifies("modify", scope, modifies, reporter))
+    return (newInvs, checkModifiesH("modify", scope, modifies, reporter))
   }
 
-  def checkModifies(title: String, scope: Scope, modifies: ISZ[AST.Exp.Ident], reporter: Reporter): ISZ[AST.Exp.Ident] = {
+  def checkModifies(title: String, scope: Scope, modifies: AST.MethodContract.Accesses, reporter: Reporter): AST.MethodContract.Accesses = {
+    return modifies(idents = checkModifiesH(title, scope, modifies.idents, reporter))
+  }
+
+  def checkModifiesH(title: String, scope: Scope, modifies: ISZ[AST.Exp.Ident], reporter: Reporter): ISZ[AST.Exp.Ident] = {
     return for (modify <- modifies) yield checkModifyExp(title, scope, modify, reporter)
   }
 
@@ -4565,7 +4570,7 @@ import TypeChecker._
 
   def checkDataRefinement(scope: Scope, stmt: AST.Stmt.DataRefinement, reporter: Reporter): AST.Stmt.DataRefinement = {
     val rep = checkModifyExp("represent data using", scope, stmt.rep, reporter)
-    val refs = checkModifies("refine data using", scope, stmt.refs, reporter)
+    val refs = checkModifiesH("refine data using", scope, stmt.refs, reporter)
     var claims = ISZ[AST.Exp]()
     val expectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
     for (claim <- stmt.claims) {

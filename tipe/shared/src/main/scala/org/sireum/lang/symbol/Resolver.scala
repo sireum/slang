@@ -90,7 +90,7 @@ object Resolver {
       AST.TypedAttr(None(), Some(AST.Typed.z)))
     nm = nm + randomIntName ~> Info.ExtMethod(AST.Typed.sireumName, scope,
       AST.Stmt.ExtMethod(F, AST.MethodSig(F, AST.Id(randomIntId, emptyAttr), ISZ(), F, ISZ(), zType),
-        AST.MethodContract.Simple(ISZ(), ISZ(), ISZ(), ISZ()),
+        AST.MethodContract.Simple.empty,
         AST.ResolvedAttr(None[Position](), Some[AST.ResolvedInfo](AST.ResolvedInfo.Method(
           T, AST.MethodMode.Ext, ISZ(), AST.Typed.sireumName, randomIntId, ISZ(), Some(randomIntTyped))), Some(
           AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), AST.Typed.sireumName, randomIntId, ISZ(), randomIntTyped)))))

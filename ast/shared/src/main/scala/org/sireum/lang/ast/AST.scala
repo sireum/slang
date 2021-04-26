@@ -503,27 +503,54 @@ object Stmt {
 
 object MethodContract {
 
-  @datatype class Simple(val reads: ISZ[Exp.Ident],
-                         requires: ISZ[Exp],
-                         val modifies: ISZ[Exp.Ident],
-                         ensures: ISZ[Exp]) extends MethodContract {
+  object Accesses {
+    @strictpure def empty: Accesses = Accesses(ISZ(), Attr(None()))
+  }
+
+  @datatype class Accesses(val idents: ISZ[Exp.Ident], val attr: Attr)
+
+  object Claims {
+    @strictpure def empty: Claims = Claims(ISZ(), Attr(None()))
+  }
+
+  @datatype class Claims(val claims: ISZ[Exp], val attr: Attr)
+
+  object Simple {
+    @strictpure def empty: Simple = Simple(Accesses.empty, Claims.empty, Accesses.empty, Claims.empty, Attr(None()))
+  }
+  @datatype class Simple(val readsClause: Accesses,
+                         val requiresClause: Claims,
+                         val modifiesClause: Accesses,
+                         val ensuresClause: Claims,
+                         val attr: Attr) extends MethodContract {
+    @strictpure override def reads: ISZ[Exp.Ident] = readsClause.idents
+    @strictpure def requires: ISZ[Exp] = requiresClause.claims
+    @strictpure override def modifies: ISZ[Exp.Ident] = modifiesClause.idents
+    @strictpure def ensures: ISZ[Exp] = ensuresClause.claims
+
     @pure override def isEmpty: B = {
       return reads.isEmpty && requires.isEmpty && modifies.isEmpty && ensures.isEmpty
     }
   }
 
-  @datatype class Cases(val reads: ISZ[Exp.Ident],
-                        val modifies: ISZ[Exp.Ident],
-                        cases: ISZ[Case]) extends MethodContract {
+  @datatype class Cases(val readsClause: Accesses,
+                        val modifiesClause: Accesses,
+                        val cases: ISZ[Case],
+                        val attr: Attr) extends MethodContract {
+    @strictpure override def reads: ISZ[Exp.Ident] = readsClause.idents
+    @strictpure override def modifies: ISZ[Exp.Ident] = modifiesClause.idents
+
     @pure override def isEmpty: B = {
       return reads.isEmpty && modifies.isEmpty && cases.isEmpty
     }
   }
 
-  @datatype class Case(label: Exp.LitString,
-                       requires: ISZ[Exp],
-                       ensures: ISZ[Exp])
-
+  @datatype class Case(val label: Exp.LitString,
+                       val requiresClause: Claims,
+                       val ensuresClause: Claims) {
+    @strictpure def requires: ISZ[Exp] = requiresClause.claims
+    @strictpure def ensures: ISZ[Exp] = ensuresClause.claims
+  }
 }
 
 @datatype class Sequent(premises: ISZ[Exp],

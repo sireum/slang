@@ -222,7 +222,7 @@ object SlangParser {
   private[SlangParser] lazy val rDollarId = AST.Id("$", emptyAttr)
   private[SlangParser] lazy val rExp = AST.Exp.Ident(rDollarId, emptyResolvedAttr)
   private[SlangParser] lazy val rStmt = AST.Stmt.Expr(rExp, emptyTypedAttr)
-  private[SlangParser] lazy val emptyContract = AST.MethodContract.Simple(ISZ(), ISZ(), ISZ(), ISZ())
+  private[SlangParser] lazy val emptyContract = AST.MethodContract.Simple.empty
   private[SlangParser] lazy val emptyProofStep = AST.ProofAst.Step.SubProof(AST.Exp.LitZ(0, emptyAttr), ISZ())
 
 }
@@ -1019,9 +1019,9 @@ class SlangParser(
       exp match {
         case exp: Term.Block if !isStrictPure =>
           val (mc, bodyOpt) = exp.stats.headOption match {
-            case scala.Some(q"Contract(..${exprs: Seq[Term]})") =>
+            case scala.Some(c@q"Contract(..${exprs: Seq[Term]})") =>
               (
-                translateMethodContract(exprs),
+                translateMethodContract(exprs, attr(c.pos)),
                 if (isDiet) None[AST.Body]()
                 else Some(bodyCheck(ISZ(exp.stats.tail.map(translateStat(Enclosing.Method)): _*), ISZ()))
               )
@@ -1042,7 +1042,7 @@ class SlangParser(
                   "@memoize can only be used for @datatype/@record classes."
                 )
               }
-              AST.Stmt.Method(purity, hasOverride, isHelper, sig, translateMethodContract(exprs), None(), resolvedAttr(tree.pos))
+              AST.Stmt.Method(purity, hasOverride, isHelper, sig, translateMethodContract(exprs, attr(exp.pos)), None(), resolvedAttr(tree.pos))
             case _ => err()
           }
         case _ =>
@@ -1088,7 +1088,7 @@ class SlangParser(
         case exp: Term.Name if exp.value == "$" =>
           AST.Stmt.ExtMethod(isPure, sig, emptyContract, resolvedAttr(tree.pos))
         case q"Contract.Only(..${exprs: Seq[Term]})" =>
-          AST.Stmt.ExtMethod(isPure, sig, translateMethodContract(exprs), resolvedAttr(tree.pos))
+          AST.Stmt.ExtMethod(isPure, sig, translateMethodContract(exprs, attr(exp.pos)), resolvedAttr(tree.pos))
         case _ =>
           hasError = true
           error(exp.pos, "Only '$' or 'Contract.Only(...)' are allowed as Slang extension method expression.")
@@ -2766,20 +2766,20 @@ class SlangParser(
         case _ =>
       }
     }
-    var requires = ISZ[AST.Exp]()
+    var requires = AST.MethodContract.Claims.empty
     if (i < length) {
       exprs(i) match {
         case q"Requires(..${rexprs: Seq[Term]})" =>
-          requires = translateExps(rexprs)
+          requires = AST.MethodContract.Claims(translateExps(rexprs), attr(exprs(i).pos))
           i += 1
         case _ =>
       }
     }
-    var ensures = ISZ[AST.Exp]()
+    var ensures = AST.MethodContract.Claims.empty
     if (i < length) {
       exprs(i) match {
         case q"Ensures(..${eexprs: Seq[Term]})" =>
-          ensures = translateExps(eexprs)
+          ensures = AST.MethodContract.Claims(translateExps(eexprs), attr(exprs(i).pos))
           i += 1
         case _ =>
       }
@@ -2791,21 +2791,21 @@ class SlangParser(
     AST.MethodContract.Case(label, requires, ensures)
   }
 
-  def translateContractCases(exprs: Seq[Term]): AST.MethodContract.Cases = {
+  def translateContractCases(exprs: Seq[Term], ccAttr: AST.Attr): AST.MethodContract.Cases = {
     val length = exprs.length
     var i = 0
-    var reads = ISZ[AST.Exp.Ident]()
+    var reads = AST.MethodContract.Accesses.empty
     exprs(i) match {
       case q"Reads(..${rexprs: Seq[Term]})" =>
-        reads = translateIdents("Reads", rexprs)
+        reads = AST.MethodContract.Accesses(translateIdents("Reads", rexprs), attr(exprs(i).pos))
         i += 1
       case _ =>
     }
-    var modifies = ISZ[AST.Exp.Ident]()
+    var modifies = AST.MethodContract.Accesses.empty
     if (i < length) {
       exprs(i) match {
         case q"Modifies(..${rexprs: Seq[Term]})" =>
-          modifies = translateIdents("Modifies", rexprs)
+          modifies = AST.MethodContract.Accesses(translateIdents("Modifies", rexprs), attr(exprs(i).pos))
           i += 1
         case _ =>
       }
@@ -2818,44 +2818,44 @@ class SlangParser(
       }
       i += 1
     }
-    AST.MethodContract.Cases(reads, modifies, cases)
+    AST.MethodContract.Cases(reads, modifies, cases, ccAttr)
   }
 
-  def translateContractSimple(exprs: Seq[Term]): AST.MethodContract.Simple = {
+  def translateContractSimple(exprs: Seq[Term], csAttr: AST.Attr): AST.MethodContract.Simple = {
     val length = exprs.length
     var i = 0
-    var reads = ISZ[AST.Exp.Ident]()
+    var reads = AST.MethodContract.Accesses.empty
     if (i < length) {
       exprs(i) match {
         case q"Reads(..${rexprs: Seq[Term]})" =>
-          reads = translateIdents("Reads", rexprs)
+          reads = AST.MethodContract.Accesses(translateIdents("Reads", rexprs), attr(exprs(i).pos))
           i += 1
         case _ =>
       }
     }
-    var requires = ISZ[AST.Exp]()
+    var requires = AST.MethodContract.Claims.empty
     if (i < length) {
       exprs(i) match {
         case q"Requires(..${rexprs: Seq[Term]})" =>
-          requires = translateExps(rexprs)
+          requires = AST.MethodContract.Claims(translateExps(rexprs), attr(exprs(i).pos))
           i += 1
         case _ =>
       }
     }
-    var modifies = ISZ[AST.Exp.Ident]()
+    var modifies = AST.MethodContract.Accesses.empty
     if (i < length) {
       exprs(i) match {
         case q"Modifies(..${mexprs: Seq[Term]})" =>
-          modifies = translateIdents("Modifies", mexprs)
+          modifies = AST.MethodContract.Accesses(translateIdents("Modifies", mexprs), attr(exprs(i).pos))
           i += 1
         case _ =>
       }
     }
-    var ensures = ISZ[AST.Exp]()
+    var ensures = AST.MethodContract.Claims.empty
     if (i < length) {
       exprs(i) match {
         case q"Ensures(..${rexprs: Seq[Term]})" =>
-          ensures = translateExps(rexprs)
+          ensures = AST.MethodContract.Claims(translateExps(rexprs), attr(exprs(i).pos))
           i += 1
         case _ =>
       }
@@ -2864,14 +2864,14 @@ class SlangParser(
       val expr = exprs(j)
       error(expr.pos, "Unrecognized Contract argument.")
     }
-    AST.MethodContract.Simple(reads, requires, modifies, ensures)
+    AST.MethodContract.Simple(reads, requires, modifies, ensures, csAttr)
   }
 
-  def translateMethodContract(exprs: Seq[Term]): AST.MethodContract =
+  def translateMethodContract(exprs: Seq[Term], mcAttr: AST.Attr): AST.MethodContract =
     if (exprs.exists({
       case q"Case(..$_)" => true
       case _ => false
-    })) translateContractCases(exprs) else translateContractSimple(exprs)
+    })) translateContractCases(exprs, mcAttr) else translateContractSimple(exprs, mcAttr)
 
   def translateInvariant(enclosing: Enclosing.Type, stat: Defn.Def): AST.Stmt.Inv = {
     def isInvariantContext: Boolean = enclosing match {

@@ -47,7 +47,7 @@ object CustomMessagePack {
   val TypedPoolExtType: S8 = MessagePack.LastExtType + s8"1"
   val ResolvedInfoPoolExtType: S8 = TypedPoolExtType + s8"1"
   val ScopeGlobalPoolExtType: S8 = ResolvedInfoPoolExtType + s8"1"
-  val emptyContract: AST.MethodContract = AST.MethodContract.Simple(ISZ(), ISZ(), ISZ(), ISZ())
+  val emptyContract: AST.MethodContract = AST.MethodContract.Simple.empty
   val emptyAttr: AST.Attr = AST.Attr(None())
 
   @record class Reader(val reader: MessagePack.Reader.Impl) extends MsgPack.Reader {

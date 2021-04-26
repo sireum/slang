@@ -217,6 +217,14 @@ object MTransformer {
 
   val PostResultStmtHavoc: MOption[Stmt.Spec] = MNone()
 
+  val PreResultMethodContractAccesses: PreResult[MethodContract.Accesses] = PreResult(T, MNone())
+
+  val PostResultMethodContractAccesses: MOption[MethodContract.Accesses] = MNone()
+
+  val PreResultMethodContractClaims: PreResult[MethodContract.Claims] = PreResult(T, MNone())
+
+  val PostResultMethodContractClaims: MOption[MethodContract.Claims] = MNone()
+
   val PreResultMethodContractSimple: PreResult[MethodContract] = PreResult(T, MNone())
 
   val PostResultMethodContractSimple: MOption[MethodContract] = MNone()
@@ -985,6 +993,14 @@ import MTransformer._
       case o: MethodContract.Simple => return preMethodContractSimple(o)
       case o: MethodContract.Cases => return preMethodContractCases(o)
     }
+  }
+
+  def preMethodContractAccesses(o: MethodContract.Accesses): PreResult[MethodContract.Accesses] = {
+    return PreResultMethodContractAccesses
+  }
+
+  def preMethodContractClaims(o: MethodContract.Claims): PreResult[MethodContract.Claims] = {
+    return PreResultMethodContractClaims
   }
 
   def preMethodContractSimple(o: MethodContract.Simple): PreResult[MethodContract] = {
@@ -2100,6 +2116,14 @@ import MTransformer._
       case o: MethodContract.Simple => return postMethodContractSimple(o)
       case o: MethodContract.Cases => return postMethodContractCases(o)
     }
+  }
+
+  def postMethodContractAccesses(o: MethodContract.Accesses): MOption[MethodContract.Accesses] = {
+    return PostResultMethodContractAccesses
+  }
+
+  def postMethodContractClaims(o: MethodContract.Claims): MOption[MethodContract.Claims] = {
+    return PostResultMethodContractClaims
   }
 
   def postMethodContractSimple(o: MethodContract.Simple): MOption[MethodContract] = {
@@ -3238,20 +3262,22 @@ import MTransformer._
           else
             MNone()
         case o2: MethodContract.Simple =>
-          val r0: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.reads, transformExpIdent _)
-          val r1: MOption[IS[Z, Exp]] = transformISZ(o2.requires, transformExp _)
-          val r2: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.modifies, transformExpIdent _)
-          val r3: MOption[IS[Z, Exp]] = transformISZ(o2.ensures, transformExp _)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-            MSome(o2(reads = r0.getOrElse(o2.reads), requires = r1.getOrElse(o2.requires), modifies = r2.getOrElse(o2.modifies), ensures = r3.getOrElse(o2.ensures)))
+          val r0: MOption[MethodContract.Accesses] = transformMethodContractAccesses(o2.readsClause)
+          val r1: MOption[MethodContract.Claims] = transformMethodContractClaims(o2.requiresClause)
+          val r2: MOption[MethodContract.Accesses] = transformMethodContractAccesses(o2.modifiesClause)
+          val r3: MOption[MethodContract.Claims] = transformMethodContractClaims(o2.ensuresClause)
+          val r4: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
+            MSome(o2(readsClause = r0.getOrElse(o2.readsClause), requiresClause = r1.getOrElse(o2.requiresClause), modifiesClause = r2.getOrElse(o2.modifiesClause), ensuresClause = r3.getOrElse(o2.ensuresClause), attr = r4.getOrElse(o2.attr)))
           else
             MNone()
         case o2: MethodContract.Cases =>
-          val r0: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.reads, transformExpIdent _)
-          val r1: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.modifies, transformExpIdent _)
+          val r0: MOption[MethodContract.Accesses] = transformMethodContractAccesses(o2.readsClause)
+          val r1: MOption[MethodContract.Accesses] = transformMethodContractAccesses(o2.modifiesClause)
           val r2: MOption[IS[Z, MethodContract.Case]] = transformISZ(o2.cases, transformMethodContractCase _)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(reads = r0.getOrElse(o2.reads), modifies = r1.getOrElse(o2.modifies), cases = r2.getOrElse(o2.cases)))
+          val r3: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+            MSome(o2(readsClause = r0.getOrElse(o2.readsClause), modifiesClause = r1.getOrElse(o2.modifiesClause), cases = r2.getOrElse(o2.cases), attr = r3.getOrElse(o2.attr)))
           else
             MNone()
       }
@@ -3523,20 +3549,22 @@ import MTransformer._
       val hasChanged: B = preR.resultOpt.nonEmpty
       val rOpt: MOption[MethodContract] = o2 match {
         case o2: MethodContract.Simple =>
-          val r0: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.reads, transformExpIdent _)
-          val r1: MOption[IS[Z, Exp]] = transformISZ(o2.requires, transformExp _)
-          val r2: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.modifies, transformExpIdent _)
-          val r3: MOption[IS[Z, Exp]] = transformISZ(o2.ensures, transformExp _)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-            MSome(o2(reads = r0.getOrElse(o2.reads), requires = r1.getOrElse(o2.requires), modifies = r2.getOrElse(o2.modifies), ensures = r3.getOrElse(o2.ensures)))
+          val r0: MOption[MethodContract.Accesses] = transformMethodContractAccesses(o2.readsClause)
+          val r1: MOption[MethodContract.Claims] = transformMethodContractClaims(o2.requiresClause)
+          val r2: MOption[MethodContract.Accesses] = transformMethodContractAccesses(o2.modifiesClause)
+          val r3: MOption[MethodContract.Claims] = transformMethodContractClaims(o2.ensuresClause)
+          val r4: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
+            MSome(o2(readsClause = r0.getOrElse(o2.readsClause), requiresClause = r1.getOrElse(o2.requiresClause), modifiesClause = r2.getOrElse(o2.modifiesClause), ensuresClause = r3.getOrElse(o2.ensuresClause), attr = r4.getOrElse(o2.attr)))
           else
             MNone()
         case o2: MethodContract.Cases =>
-          val r0: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.reads, transformExpIdent _)
-          val r1: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.modifies, transformExpIdent _)
+          val r0: MOption[MethodContract.Accesses] = transformMethodContractAccesses(o2.readsClause)
+          val r1: MOption[MethodContract.Accesses] = transformMethodContractAccesses(o2.modifiesClause)
           val r2: MOption[IS[Z, MethodContract.Case]] = transformISZ(o2.cases, transformMethodContractCase _)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(reads = r0.getOrElse(o2.reads), modifies = r1.getOrElse(o2.modifies), cases = r2.getOrElse(o2.cases)))
+          val r3: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+            MSome(o2(readsClause = r0.getOrElse(o2.readsClause), modifiesClause = r1.getOrElse(o2.modifiesClause), cases = r2.getOrElse(o2.cases), attr = r3.getOrElse(o2.attr)))
           else
             MNone()
       }
@@ -3558,16 +3586,72 @@ import MTransformer._
     }
   }
 
+  def transformMethodContractAccesses(o: MethodContract.Accesses): MOption[MethodContract.Accesses] = {
+    val preR: PreResult[MethodContract.Accesses] = preMethodContractAccesses(o)
+    val r: MOption[MethodContract.Accesses] = if (preR.continu) {
+      val o2: MethodContract.Accesses = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.idents, transformExpIdent _)
+      val r1: MOption[Attr] = transformAttr(o2.attr)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+        MSome(o2(idents = r0.getOrElse(o2.idents), attr = r1.getOrElse(o2.attr)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: MethodContract.Accesses = r.getOrElse(o)
+    val postR: MOption[MethodContract.Accesses] = postMethodContractAccesses(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformMethodContractClaims(o: MethodContract.Claims): MOption[MethodContract.Claims] = {
+    val preR: PreResult[MethodContract.Claims] = preMethodContractClaims(o)
+    val r: MOption[MethodContract.Claims] = if (preR.continu) {
+      val o2: MethodContract.Claims = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[IS[Z, Exp]] = transformISZ(o2.claims, transformExp _)
+      val r1: MOption[Attr] = transformAttr(o2.attr)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+        MSome(o2(claims = r0.getOrElse(o2.claims), attr = r1.getOrElse(o2.attr)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: MethodContract.Claims = r.getOrElse(o)
+    val postR: MOption[MethodContract.Claims] = postMethodContractClaims(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
   def transformMethodContractCase(o: MethodContract.Case): MOption[MethodContract.Case] = {
     val preR: PreResult[MethodContract.Case] = preMethodContractCase(o)
     val r: MOption[MethodContract.Case] = if (preR.continu) {
       val o2: MethodContract.Case = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: MOption[Exp.LitString] = transformExpLitString(o2.label)
-      val r1: MOption[IS[Z, Exp]] = transformISZ(o2.requires, transformExp _)
-      val r2: MOption[IS[Z, Exp]] = transformISZ(o2.ensures, transformExp _)
+      val r1: MOption[MethodContract.Claims] = transformMethodContractClaims(o2.requiresClause)
+      val r2: MOption[MethodContract.Claims] = transformMethodContractClaims(o2.ensuresClause)
       if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-        MSome(o2(label = r0.getOrElse(o2.label), requires = r1.getOrElse(o2.requires), ensures = r2.getOrElse(o2.ensures)))
+        MSome(o2(label = r0.getOrElse(o2.label), requiresClause = r1.getOrElse(o2.requiresClause), ensuresClause = r2.getOrElse(o2.ensuresClause)))
       else
         MNone()
     } else if (preR.resultOpt.nonEmpty) {
