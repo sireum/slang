@@ -2338,6 +2338,41 @@ import TypeChecker._
       }
     }
 
+    def checkInvokeArg(arg: AST.Exp): Unit = {
+      def checkExpRoot(e: AST.Exp): Unit = {
+        def isObjectVar(resOpt: Option[AST.ResolvedInfo]): B = {
+          resOpt match {
+            case Some(res: AST.ResolvedInfo.Var) if res.isInObject => return T
+            case _ => return F
+          }
+        }
+        def err(posOpt: Option[Position]): Unit = {
+          reporter.error(posOpt, typeCheckerKind,
+            "Cannot pass a mutable object rooted in an object variable")
+        }
+        e match {
+          case exp: AST.Exp.Ident if isObjectVar(exp.attr.resOpt) => err(exp.posOpt)
+          case exp: AST.Exp.Select =>
+            if (isObjectVar(exp.attr.resOpt)) {
+              err(exp.posOpt)
+            } else {
+              exp.receiverOpt match {
+                case Some(receiver) => checkExpRoot(receiver)
+                case _ =>
+              }
+            }
+          case _ =>
+        }
+      }
+      val argType: AST.Typed = arg.typedOpt match {
+        case Some(t) => t
+        case _ => return
+      }
+      if (typeHierarchy.isMutable(argType, T)) {
+        checkExpRoot(arg)
+      }
+    }
+
     def checkInvoke(invokeExp: AST.Exp.Invoke): (AST.Exp, Option[AST.Typed]) = {
 
       def checkInvokeH(
@@ -2384,6 +2419,9 @@ import TypeChecker._
           @pure def make(eArgs: ISZ[AST.Exp], tpeOpt: Option[AST.Typed], funType: AST.Typed.Fun): AST.Exp = {
             val ro: Option[AST.ResolvedInfo] = mResOpt.get match {
               case r: AST.ResolvedInfo.Method =>
+                for (eArg <- eArgs) {
+                  checkInvokeArg(eArg)
+                }
                 if (funType == r.tpeOpt.get) Some(r) else Some(r(tpeOpt = Some(funType)))
               case _: AST.ResolvedInfo.BuiltIn => mResOpt
               case _ => halt(s"Unexpected symbol info: ${resOpt.get}")
@@ -2618,6 +2656,9 @@ import TypeChecker._
                 }
               val ro: Option[AST.ResolvedInfo] = resOpt.get match {
                 case r: AST.ResolvedInfo.Method =>
+                  for (arg <- args) {
+                    checkInvokeArg(arg.arg)
+                  }
                   if (r.tpeOpt.get == funType) Some(r) else Some(r(tpeOpt = Some(funType)))
                 case _: AST.ResolvedInfo.BuiltIn => resOpt
                 case _ => halt(s"Unexpected symbol info: ${resOpt.get}")
