@@ -77,7 +77,7 @@ class SlangCodebaseTest extends TestSuite {
       val name = ""
       val nameMap: Resolver.NameMap = if (all) th.nameMap else nameInfo(th, name)
       val typeMap: Resolver.TypeMap = if (all) th.typeMap else typeInfo(th, name)
-      th = TypeChecker.checkComponents(T, th, nameMap, typeMap, reporter)
+      th = TypeChecker.checkComponents(T, T, th, nameMap, typeMap, reporter)
       if (!reporter.hasError) {
         if (all) {
           PostTipeAttrChecker.checkNameTypeMaps(th.nameMap, th.typeMap, reporter)

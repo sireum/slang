@@ -214,21 +214,21 @@ object TypeChecker {
     return Some(substMap)
   }
 
-  def checkComponents(par: B, th: TypeHierarchy, nameMap: NameMap, typeMap: TypeMap, reporter: Reporter): TypeHierarchy = {
+  def checkComponents(par: B, strictAliasing: B, th: TypeHierarchy, nameMap: NameMap, typeMap: TypeMap, reporter: Reporter): TypeHierarchy = {
     var jobs = ISZ[() => (TypeHierarchy => (TypeHierarchy, Reporter) @pure) @pure]()
     for (info <- typeMap.values) {
       info match {
         case info: TypeInfo.Sig if !info.typeChecked =>
-          jobs = jobs :+ (() => TypeChecker(th, info.name, TypeChecker.ModeContext.Code).checkSig(info))
+          jobs = jobs :+ (() => TypeChecker(th, info.name, TypeChecker.ModeContext.Code, strictAliasing).checkSig(info))
         case info: TypeInfo.Adt if !info.typeChecked =>
-          jobs = jobs :+ (() => TypeChecker(th, info.name, TypeChecker.ModeContext.Code).checkAdt(info))
+          jobs = jobs :+ (() => TypeChecker(th, info.name, TypeChecker.ModeContext.Code, strictAliasing).checkAdt(info))
         case _ =>
       }
     }
     for (info <- nameMap.values) {
       info match {
         case info: Info.Object =>
-          jobs = jobs :+ (() => TypeChecker(th, info.name, TypeChecker.ModeContext.Code).checkObject(info))
+          jobs = jobs :+ (() => TypeChecker(th, info.name, TypeChecker.ModeContext.Code, strictAliasing).checkObject(info))
         case _ =>
       }
     }
@@ -523,7 +523,7 @@ object TypeChecker {
 
 import TypeChecker._
 
-@datatype class TypeChecker(typeHierarchy: TypeHierarchy, context: QName, mode: ModeContext.Type) {
+@datatype class TypeChecker(typeHierarchy: TypeHierarchy, context: QName, mode: ModeContext.Type, strictAliasing: B) {
 
   @pure def inSpec: B = {
     mode match {
@@ -2419,7 +2419,7 @@ import TypeChecker._
           @pure def make(eArgs: ISZ[AST.Exp], tpeOpt: Option[AST.Typed], funType: AST.Typed.Fun): AST.Exp = {
             val ro: Option[AST.ResolvedInfo] = mResOpt.get match {
               case r: AST.ResolvedInfo.Method =>
-                if (r.mode == AST.MethodMode.Method || r.mode == AST.MethodMode.Ext) {
+                if (strictAliasing && (r.mode == AST.MethodMode.Method || r.mode == AST.MethodMode.Ext)) {
                   for (eArg <- eArgs) {
                     checkInvokeArg(eArg)
                   }
@@ -2658,7 +2658,7 @@ import TypeChecker._
                 }
               val ro: Option[AST.ResolvedInfo] = resOpt.get match {
                 case r: AST.ResolvedInfo.Method =>
-                  if (r.mode == AST.MethodMode.Method || r.mode == AST.MethodMode.Ext) {
+                  if (strictAliasing && (r.mode == AST.MethodMode.Method || r.mode == AST.MethodMode.Ext)) {
                     for (arg <- args) {
                       checkInvokeArg(arg.arg)
                     }
@@ -4226,7 +4226,7 @@ import TypeChecker._
       case stmt: AST.Stmt.Expr => return (Some(scope), checkExpr(None(), scope, stmt, reporter))
 
       case stmt: AST.Stmt.ExtMethod =>
-        val tc = TypeChecker(typeHierarchy, context :+ stmt.sig.id.value, mode)
+        val tc = TypeChecker(typeHierarchy, context :+ stmt.sig.id.value, mode, strictAliasing)
         val (ok, sc) = tc.methodScope(scope, stmt.sig, reporter)
         if (ok) {
           return (Some(scope), stmt(contract = tc(mode = ModeContext.Spec).checkMethodContract(sc, stmt.contract, reporter)))
@@ -4243,7 +4243,7 @@ import TypeChecker._
       case stmt: AST.Stmt.Match => return (Some(scope), checkMatch(None(), scope, stmt, reporter))
 
       case stmt: AST.Stmt.Method =>
-        val tc = TypeChecker(typeHierarchy, context :+ stmt.sig.id.value, mode)
+        val tc = TypeChecker(typeHierarchy, context :+ stmt.sig.id.value, mode, strictAliasing)
         val r = tc.checkMethod(scope, stmt, reporter)
         return (Some(scope), r)
 
@@ -4278,30 +4278,30 @@ import TypeChecker._
       case stmt: AST.Stmt.SpecLabel => return (Some(scope), stmt)
 
       case stmt: AST.Stmt.SpecBlock =>
-        val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
+        val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec, strictAliasing)
         return tc.checkStmt(scope, stmt.block, reporter)
 
       case stmt: AST.Stmt.DeduceSequent =>
-        val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
+        val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec, strictAliasing)
         return (Some(scope), stmt(sequents = for (sequent <- stmt.sequents) yield tc.checkSequent(scope, sequent, reporter)))
 
       case stmt: AST.Stmt.DeduceSteps =>
-        val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
+        val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec, strictAliasing)
         return (Some(scope), stmt(steps = for (step <- stmt.steps) yield tc.checkStep(scope, step, reporter)))
 
       case stmt: AST.Stmt.Havoc =>
-        val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
+        val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec, strictAliasing)
         return (Some(scope), stmt(args = tc.checkModifiesH("havoc", scope, stmt.args, reporter)))
 
       case stmt: AST.Stmt.Fact =>
-        val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
+        val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec, strictAliasing)
         val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
         val typeParams = typeParamMap(stmt.typeParams, reporter)
         val sc = Scope.Local.create(typeParams.map, scope)
         return (Some(scope), stmt(claims = for (claim <- stmt.claims) yield tc.checkExp(bExpectedOpt, sc, claim, reporter)._1))
 
       case stmt: AST.Stmt.Theorem =>
-        val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
+        val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec, strictAliasing)
         val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
         val typeParams = typeParamMap(stmt.typeParams, reporter)
         val sc = Scope.Local.create(typeParams.map, scope)
@@ -4321,7 +4321,7 @@ import TypeChecker._
         }
 
       case stmt: AST.Stmt.Inv =>
-        val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
+        val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec, strictAliasing)
         val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
         return (Some(scope), stmt(claims = for (claim <- stmt.claims) yield tc.checkExp(bExpectedOpt, scope, claim, reporter)._1,
           attr = stmt.attr(typedOpt = AST.Typed.unitOpt)))
@@ -4481,7 +4481,7 @@ import TypeChecker._
       return requires(claims = for (require <- requires.claims) yield checkExp(Some(AST.Typed.b), scope, require, reporter)._1)
     }
     def checkEnsures(ensures: AST.MethodContract.Claims): AST.MethodContract.Claims = {
-      val tc = TypeChecker(typeHierarchy, context, ModeContext.SpecPost)
+      val tc = TypeChecker(typeHierarchy, context, ModeContext.SpecPost, strictAliasing)
       return ensures(claims = for (ensure <- ensures.claims) yield tc.checkExp(Some(AST.Typed.b), scope, ensure, reporter)._1)
     }
     def checkCase(cas: AST.MethodContract.Case): AST.MethodContract.Case = {
@@ -4601,7 +4601,7 @@ import TypeChecker._
   def checkMethod(sc: Scope, stmt: AST.Stmt.Method, reporter: Reporter): AST.Stmt = {
     val (ok, scope) = methodScope(sc, stmt.sig, reporter)
     if (ok) {
-      val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
+      val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec, strictAliasing)
       val newContract = tc.checkMethodContract(scope, stmt.contract, reporter)
       if (stmt.bodyOpt.isEmpty) {
         return stmt(contract = newContract)
@@ -4633,7 +4633,7 @@ import TypeChecker._
     scope = scope(localThisOpt = Some(info.tpe))
     var stmts = ISZ[AST.Stmt]()
     var dataRefinements = ISZ[AST.Stmt.DataRefinement]()
-    val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec)
+    val tc = TypeChecker(typeHierarchy, context, ModeContext.Spec, strictAliasing)
     for (stmt <- info.ast.stmts) {
       stmt match {
         case stmt: AST.Stmt.Var => stmts = stmts :+ info.vars.get(stmt.id.value).get.ast
