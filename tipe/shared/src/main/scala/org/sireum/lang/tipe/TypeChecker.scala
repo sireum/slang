@@ -2419,8 +2419,10 @@ import TypeChecker._
           @pure def make(eArgs: ISZ[AST.Exp], tpeOpt: Option[AST.Typed], funType: AST.Typed.Fun): AST.Exp = {
             val ro: Option[AST.ResolvedInfo] = mResOpt.get match {
               case r: AST.ResolvedInfo.Method =>
-                for (eArg <- eArgs) {
-                  checkInvokeArg(eArg)
+                if (r.mode == AST.MethodMode.Method || r.mode == AST.MethodMode.Ext) {
+                  for (eArg <- eArgs) {
+                    checkInvokeArg(eArg)
+                  }
                 }
                 if (funType == r.tpeOpt.get) Some(r) else Some(r(tpeOpt = Some(funType)))
               case _: AST.ResolvedInfo.BuiltIn => mResOpt
@@ -2656,8 +2658,10 @@ import TypeChecker._
                 }
               val ro: Option[AST.ResolvedInfo] = resOpt.get match {
                 case r: AST.ResolvedInfo.Method =>
-                  for (arg <- args) {
-                    checkInvokeArg(arg.arg)
+                  if (r.mode == AST.MethodMode.Method || r.mode == AST.MethodMode.Ext) {
+                    for (arg <- args) {
+                      checkInvokeArg(arg.arg)
+                    }
                   }
                   if (r.tpeOpt.get == funType) Some(r) else Some(r(tpeOpt = Some(funType)))
                 case _: AST.ResolvedInfo.BuiltIn => resOpt
