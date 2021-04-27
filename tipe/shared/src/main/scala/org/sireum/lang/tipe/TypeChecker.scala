@@ -3009,7 +3009,7 @@ import TypeChecker._
               )
               return (exp, None())
           }
-          val (newExp, expTypedOpt, _) = this(typeHierarchy, context :+ s"$$${pos.beginLine}_${pos.beginColumn}", mode)
+          val (newExp, expTypedOpt, _) = TypeChecker(typeHierarchy, context :+ s"$$${pos.beginLine}_${pos.beginColumn}", mode, strictAliasing)
             .checkFun(expectedOpt, scope, exp, reporter)
           return (newExp, expTypedOpt)
 
