@@ -2340,39 +2340,43 @@ import TypeChecker._
 
     def checkInvokeArgs(args: ISZ[AST.Exp]): Unit = {
       def expPath(e: AST.Exp, acc: ISZ[String]): Option[ISZ[String]] = {
-        def isObjectVar(resOpt: Option[AST.ResolvedInfo]): Option[ISZ[String]] = {
+        def varAccess(isId: B, resOpt: Option[AST.ResolvedInfo]): Option[ISZ[String]] = {
           resOpt match {
-            case Some(res: AST.ResolvedInfo.Var) if res.isInObject => return Some(res.owner :+ res.id)
+            case Some(res: AST.ResolvedInfo.Var) =>
+              return if (res.isInObject) Some(res.owner :+ res.id) else if (isId) Some(ISZ("this", res.id)) else None()
+            case Some(res: AST.ResolvedInfo.LocalVar) =>
+              return if (res.scope == AST.ResolvedInfo.LocalVar.Scope.Closure) Some(res.context :+ res.id) else Some(ISZ(res.id))
             case _ => return None()
           }
         }
         e match {
-          case exp: AST.Exp.Ident =>
-            isObjectVar(exp.attr.resOpt) match {
+          case e: AST.Exp.Ident =>
+            varAccess(T, e.attr.resOpt) match {
               case Some(name) => return Some(name ++ acc)
               case _ => return None()
             }
-          case exp: AST.Exp.Select =>
-            isObjectVar(exp.attr.resOpt) match {
-              case Some(name) => return Some((name :+ exp.id.value) ++ acc)
+          case e: AST.Exp.Select =>
+            varAccess(F, e.attr.resOpt) match {
+              case Some(name) => return Some(name ++ acc)
               case _ =>
-                exp.receiverOpt match {
-                  case Some(receiver) => return expPath(receiver, exp.id.value +: acc)
-                  case _ => halt(s"Infeasible: $exp")
+                e.receiverOpt match {
+                  case Some(receiver) => return expPath(receiver, e.id.value +: acc)
+                  case _ => halt(s"Infeasible: $e")
                 }
             }
-          case exp: AST.Exp.Invoke =>
-            exp.attr.resOpt.get match {
+          case e: AST.Exp.Invoke =>
+            e.attr.resOpt.get match {
               case res: AST.ResolvedInfo.Method if res.mode == AST.MethodMode.Select =>
-                exp.receiverOpt match {
-                  case Some(receiver) => return expPath(receiver, "@" +: acc)
-                  case _ => exp.ident.attr.resOpt.get match {
-                    case idRes: AST.ResolvedInfo.LocalVar => return Some(ISZ(idRes.id) ++ acc)
-                    case idRes: AST.ResolvedInfo.Var =>
-                      return if (idRes.isInObject) Some((idRes.owner :+ idRes.id) ++ acc)
-                      else Some("this" +: idRes.id +: acc)
-                    case _ => halt(s"Infeasible: $exp")
-                  }
+                varAccess(e.receiverOpt.isEmpty, e.ident.attr.resOpt) match {
+                  case Some(name) => return Some((name :+ "@") ++ acc)
+                  case _ =>
+                    e.receiverOpt match {
+                      case Some(receiver) =>
+                        return if (e.ident.id.value == "apply") expPath(receiver, "@" +: acc)
+                        else expPath(receiver, e.ident.id.value +: "@" +: acc)
+                      case _ =>
+                        halt(s"Infeasible: $e")
+                    }
                 }
               case _ => return None()
             }
@@ -2394,7 +2398,7 @@ import TypeChecker._
               if (ops.ISZOps(path1).slice(0, size) == ops.ISZOps(path2).slice(0, size)) {
                 val pos = args(i).posOpt.get
                 reporter.error(args(j).posOpt, typeCheckerKind,
-                  s"Cannot pass a mutable object rooted in an object var as an argument with a similar access path with the expression at [${pos.beginLine}, ${pos.beginColumn}]")
+                  s"Cannot pass a mutable object as an argument with a similar access path with the expression at [${pos.beginLine}, ${pos.beginColumn}]")
               }
             case (_, _) =>
           }
@@ -2449,7 +2453,10 @@ import TypeChecker._
             val ro: Option[AST.ResolvedInfo] = mResOpt.get match {
               case r: AST.ResolvedInfo.Method =>
                 if (strictAliasing && (r.mode == AST.MethodMode.Method || r.mode == AST.MethodMode.Ext)) {
-                  checkInvokeArgs(receiverOpt.map((rcv: AST.Exp) => ISZ(rcv)).getOrElseEager(ISZ()) ++ eArgs)
+                  checkInvokeArgs(
+                    receiverOpt.map((rcv: AST.Exp) => ISZ(rcv)).getOrElseEager(ISZ()) ++
+                      eArgs
+                  )
                 }
                 if (funType == r.tpeOpt.get) Some(r) else Some(r(tpeOpt = Some(funType)))
               case _: AST.ResolvedInfo.BuiltIn => mResOpt
