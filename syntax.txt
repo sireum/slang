@@ -44,6 +44,7 @@
                      |  @spec def <ID> <type-params>? = Theorem(...)
                      |  @spec def <ID> <type-params>? = Lemma(...)
                      |  @spec def <ID> <type-params>? = Fact(...)
+                     |  @just ⸨ ( ⸨ name = ⸩?  ) <STRING> ⸩? def <ID> <params>? : Unit = $
 
 <val-decl>         ::=  val <pattern> ⸨ : <type> ⸩? = <assign-exp>
                      |  @spec val <ID> : <type> = $
@@ -72,7 +73,7 @@
 <enum-decl>        ::=  @enum object <ID> { ⸨ <SYMBOL> | <STRING> ⸩* }
 
 <object-decl>      ::=  object <ID> { <stmt>* }
-                     |  @ext object <ID> { <stmt>* }
+                     |  @ext ⸨ ( ⸨ name = ⸩?  ) <STRING> ⸩? object <ID> { <stmt>* }
 
 <sig-decl>         ::=  @sig ⸨ sealed ⸩? trait <ID> <type-params>? <extends>? { <stmt>* }
                      |  @msig ⸨ sealed ⸩? trait <ID> <type-params>? <extends>? { <stmt>* }
