@@ -186,6 +186,14 @@ object Stmt {
 
   }
 
+  @datatype class JustMethod(etaOpt: Option[Exp.LitString], sig: MethodSig, @hidden attr: ResolvedAttr) extends Stmt {
+
+    @pure override def posOpt: Option[Position] = {
+      return attr.posOpt
+    }
+
+  }
+
   @datatype class SpecMethod(sig: MethodSig, @hidden attr: ResolvedAttr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
@@ -339,13 +347,16 @@ object Stmt {
     @pure def context: ISZ[String]
 
     @pure def invariants: ISZ[Exp]
+
+    @pure def maxItOpt: Option[Exp.LitZ]
   }
 
   @datatype class While(val context: ISZ[String],
-                        cond: Exp,
+                        val cond: Exp,
                         val invariants: ISZ[Exp],
                         val modifies: ISZ[Exp.Ident],
-                        body: Body,
+                        val maxItOpt: Option[Exp.LitZ],
+                        val body: Body,
                         @hidden attr: Attr) extends Stmt with Loop {
 
     @pure override def posOpt: Option[Position] = {
@@ -355,10 +366,11 @@ object Stmt {
   }
 
   @datatype class DoWhile(val context: ISZ[String],
-                          cond: Exp,
+                          val cond: Exp,
                           val invariants: ISZ[Exp],
                           val modifies: ISZ[Exp.Ident],
-                          body: Body,
+                          val maxItOpt: Option[Exp.LitZ],
+                          val body: Body,
                           @hidden attr: Attr) extends Stmt with Loop {
 
     @pure override def posOpt: Option[Position] = {
@@ -368,9 +380,9 @@ object Stmt {
   }
 
   @datatype class For(val context: ISZ[String],
-                      enumGens: ISZ[EnumGen.For],
+                      val enumGens: ISZ[EnumGen.For],
                       val modifies: ISZ[Exp.Ident],
-                      body: Body,
+                      val body: Body,
                       @hidden attr: Attr) extends Stmt with Loop {
 
     @pure override def posOpt: Option[Position] = {
@@ -380,6 +392,7 @@ object Stmt {
     @strictpure override def invariants: ISZ[Exp] =
       for (enumGen <- enumGens; inv <- enumGen.invariants) yield inv
 
+    @strictpure override def maxItOpt: Option[Exp.LitZ] = None()
   }
 
   @datatype class Return(expOpt: Option[Exp], @hidden attr: TypedAttr) extends Stmt with AssignExp {
@@ -605,8 +618,6 @@ object ProofAst {
     }
 
     @datatype trait Inception extends Justification {
-      @pure def invokeIdent: Exp.Ident
-      @pure def args: ISZ[Exp]
       @pure def witnesses: ISZ[Exp.LitZ]
     }
 
@@ -617,14 +628,14 @@ object ProofAst {
       }
 
       @datatype class Incept(val invoke: Exp.Invoke, val witnesses: ISZ[Exp.LitZ]) extends Inception {
-        @strictpure override def invokeIdent: Exp.Ident = invoke.ident
-        @strictpure override def args: ISZ[Exp] = invoke.args
+        @strictpure def invokeIdent: Exp.Ident = invoke.ident
+        @strictpure def args: ISZ[Exp] = invoke.args
         @strictpure override def posOpt: Option[Position] = invoke.ident.posOpt
       }
 
       @datatype class InceptNamed(val invoke: Exp.InvokeNamed, val witnesses: ISZ[Exp.LitZ]) extends Inception {
-        @strictpure override def invokeIdent: Exp.Ident = invoke.ident
-        @pure override def args: ISZ[Exp] = {
+        @strictpure def invokeIdent: Exp.Ident = invoke.ident
+        @pure def args: ISZ[Exp] = {
           var r = MSZ.create[Option[Exp]](invoke.args.size, None())
           for (e <- invoke.args) {
             r(e.index) = Some(e.arg)
@@ -632,6 +643,10 @@ object ProofAst {
           return for (arg <- r.toIS) yield arg.get
         }
         @strictpure override def posOpt: Option[Position] = invoke.ident.posOpt
+      }
+
+      @datatype class InceptEta(val eta: Exp.Eta, val witnesses: ISZ[Exp.LitZ]) extends Inception {
+        @strictpure override def posOpt: Option[Position] = eta.posOpt
       }
 
     }
@@ -682,7 +697,11 @@ object EnumGen {
 
   }
 
-  @datatype class For(idOpt: Option[Id], range: Range, condOpt: Option[Exp], invariants: ISZ[Exp])
+  @datatype class For(idOpt: Option[Id],
+                      range: Range,
+                      condOpt: Option[Exp],
+                      invariants: ISZ[Exp],
+                      maxItOpt: Option[Exp.LitZ])
 
 }
 

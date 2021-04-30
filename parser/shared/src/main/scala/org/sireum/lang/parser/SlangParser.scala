@@ -893,6 +893,8 @@ class SlangParser(
     var hasOverride = false
     var isMemoize = false
     var isHelper = false
+    var isJust = false
+    var etaOpt: Option[AST.Exp.LitString] = None()
     for (mod <- mods) mod match {
       case mod"@pure" =>
         if (isPure) {
@@ -930,12 +932,53 @@ class SlangParser(
           error(mod.pos, "Redundant override.")
         }
         hasOverride = true
+      case mod"@just(name = ${term: Term})" =>
+        if (isJust) {
+          hasError = true
+          error(mod.pos, "Redundant @just.")
+        }
+        term match {
+          case term: Lit.String => etaOpt = Some(translateLit(term).asInstanceOf[AST.Exp.LitString])
+          case _ => errorInSlang(term.pos, s"Only string literal is allowed as @just argument")
+        }
+        isJust = true
+      case mod"@just(..${terms: Seq[Term]})" =>
+        if (isJust) {
+          hasError = true
+          error(mod.pos, "Redundant @just.")
+        }
+        if (terms.size > 1) {
+          hasError = true
+          error(mod.pos, "@just only accepts a single string literal argument")
+        } else if (terms.size == 1) {
+          val term = terms.head
+          term match {
+            case q"name = ${lit: Lit.String}" => etaOpt = Some(translateLit(lit).asInstanceOf[AST.Exp.LitString])
+            case term: Lit.String => etaOpt = Some(translateLit(term).asInstanceOf[AST.Exp.LitString])
+            case _ => errorInSlang(term.pos, s"Only string literal is allowed as @just argument")
+          }
+        }
+        isJust = true
+      case mod"@just" =>
+        if (isJust) {
+          hasError = true
+          error(mod.pos, "Redundant @just.")
+        }
+        etaOpt = None()
+        isJust = true
       case _ =>
         hasError = true
         errorInSlang(
           mod.pos,
-          s"Only either method modifier @pure, @strictpure, @memoize, @helper, @spec, and/or override is allowed for method definitions"
+          s"Only either method modifier @pure, @strictpure, @memoize, @helper, @spec, @just, and/or override is allowed for method definitions"
         )
+    }
+    if (isJust && enclosing != Enclosing.Object) {
+      hasError = true
+      errorInSlang(
+        mods.head.pos,
+        s"Methods annotated with @just can only appear inside an object"
+      )
     }
     if (isPure && isMemoize) {
       hasError = true
@@ -1062,7 +1105,21 @@ class SlangParser(
       }
     }
 
-    if (isSpec) {
+    if (isJust) {
+      if (checkSymbol(sig.id.value.value)) {
+        error(name.pos, s"@just methods cannot be named with an identifier starting with a symbol")
+      }
+      if (isPure || isSpec || isStrictPure || hasOverride || isMemoize || isHelper) {
+        error(name.pos, s"@just methods cannot have other annotations")
+      }
+      exp match {
+        case exp: Term.Name if exp.value == "$" =>
+        case _ =>
+          hasError = true
+          error(exp.pos, "Only '$' is allowed as Slang @just method expression.")
+      }
+      AST.Stmt.JustMethod(etaOpt, sig, resolvedAttr(tree.pos))
+    } else if (isSpec) {
       if (checkSymbol(sig.id.value.value)) {
         error(name.pos, s"@spec methods cannot be named with an identifier starting with a symbol")
       }
@@ -2096,16 +2153,18 @@ class SlangParser(
   def translateWhile(enclosing: Enclosing.Type, stat: Term.While): AST.Stmt = {
     var hasError = stmtCheck(enclosing, stat, "While-statements")
     var invariants: ISZ[AST.Exp] = ISZ()
+    var maxItOpt: Option[AST.Exp.LitZ] = None()
     var mods: ISZ[AST.Exp.Ident] = ISZ()
     var stats: Seq[Stat] = Seq()
     stat.body match {
       case body: Term.Block =>
         body.stats match {
           case q"Invariant(..${exprs: Seq[Term]})" :: rest =>
-            val (is, ms) = translateLoopInvariant(exprs, body.stats.head.pos)
+            val (is, ms, mio) = translateLoopInvariant(exprs, body.stats.head.pos)
             invariants = is
             mods = ms
             stats = rest
+            maxItOpt = mio
           case _ =>
             stats = body.stats
         }
@@ -2120,6 +2179,7 @@ class SlangParser(
         translateExp(stat.expr),
         invariants,
         mods,
+        maxItOpt,
         bodyCheck(ISZ(stats.map(translateStat(Enclosing.Block)): _*), ISZ()),
         attr(stat.pos)
       )
@@ -2129,14 +2189,16 @@ class SlangParser(
     var hasError = stmtCheck(enclosing, stat, "Do-while-statements")
     var modifies: ISZ[AST.Exp.Ident] = ISZ()
     var invariants: ISZ[AST.Exp] = ISZ()
+    var maxItOpt: Option[AST.Exp.LitZ] = None()
     var stats: Seq[Stat] = Seq()
     stat.body match {
       case body: Term.Block =>
         body.stats match {
           case q"Invariant(..${exprs: Seq[Term]})" :: rest =>
-            val (is, ms) = translateLoopInvariant(exprs, body.stats.head.pos)
+            val (is, ms, mio) = translateLoopInvariant(exprs, body.stats.head.pos)
             modifies = ms
             invariants = is
+            maxItOpt = mio
             stats = rest
           case _ =>
             stats = body.stats
@@ -2152,6 +2214,7 @@ class SlangParser(
         translateExp(stat.expr),
         invariants,
         modifies,
+        maxItOpt,
         bodyCheck(ISZ(stats.map(translateStat(Enclosing.Block)): _*), ISZ()),
         attr(stat.pos)
       )
@@ -2160,7 +2223,7 @@ class SlangParser(
   def translateFor(enclosing: Enclosing.Type, stat: Term.For): AST.Stmt = {
     var hasError = stmtCheck(enclosing, stat, "For-statements")
     var modifies: ISZ[AST.Exp.Ident] = ISZ()
-    var invariants = ISZ[ISZ[AST.Exp]]()
+    var invariants = ISZ[(ISZ[AST.Exp], Option[AST.Exp.LitZ])]()
     var stats: Seq[Stat] = Seq()
     stat.body match {
       case body: Term.Block =>
@@ -2169,9 +2232,9 @@ class SlangParser(
         while (i < body.stats.size && !stop) {
           body.stats(i) match {
             case q"Invariant(..${exprs: Seq[Term]})" if !stop =>
-              val (is, ms) = translateLoopInvariant(exprs, body.stats.head.pos)
+              val (is, ms, mio) = translateLoopInvariant(exprs, body.stats.head.pos)
               modifies = ms
-              invariants = invariants :+ is
+              invariants = invariants :+ ((is, mio))
               if (ms.nonEmpty && i > 1) {
                 error(body.stats(i).pos, "Modifies clause has to appear in the first invariant specification")
                 hasError = true
@@ -2194,7 +2257,7 @@ class SlangParser(
       AST.Stmt.For(
         ISZ(),
         for (i <- Z(0) until enumGens.size) yield
-          if (i < invariants.size) enumGens(i)(invariants = invariants(i)) else enumGens(i),
+          if (i < invariants.size) enumGens(i)(invariants = invariants(i)._1, maxItOpt = invariants(i)._2) else enumGens(i),
         modifies,
         bodyCheck(ISZ(stats.map(translateStat(Enclosing.Block)): _*), ISZ()),
         attr(stat.pos)
@@ -2222,19 +2285,19 @@ class SlangParser(
     case head :: enumerator"if $cond" :: rest =>
       head match {
         case enumerator"${_: Pat.Wildcard} <- $expr" =>
-          AST.EnumGen.For(None(), translateRange(expr), Some(translateExp(cond)), ISZ()) +: translateEnumGens(rest)
+          AST.EnumGen.For(None(), translateRange(expr), Some(translateExp(cond)), ISZ(), None()) +: translateEnumGens(rest)
         case enumerator"${id: Pat.Var} <- $expr" =>
           checkReservedId(id.name.pos, id.name.value)
-          AST.EnumGen.For(Some(cid(id)), translateRange(expr), Some(translateExp(cond)), ISZ()) +: translateEnumGens(rest)
+          AST.EnumGen.For(Some(cid(id)), translateRange(expr), Some(translateExp(cond)), ISZ(), None()) +: translateEnumGens(rest)
         case _ =>
           errorNotSlang(head.pos, s"For-loop enumerator: '${syntax(head)}'")
           ISZ()
       }
     case enumerator"${_: Pat.Wildcard} <- $expr" :: rest =>
-      AST.EnumGen.For(None(), translateRange(expr), None(), ISZ()) +: translateEnumGens(rest)
+      AST.EnumGen.For(None(), translateRange(expr), None(), ISZ(), None()) +: translateEnumGens(rest)
     case enumerator"${id: Pat.Var} <- $expr" :: rest =>
       checkReservedId(id.name.pos, id.name.value)
-      AST.EnumGen.For(Some(cid(id)), translateRange(expr), None(), ISZ()) +: translateEnumGens(rest)
+      AST.EnumGen.For(Some(cid(id)), translateRange(expr), None(), ISZ(), None()) +: translateEnumGens(rest)
     case Nil => ISZ()
     case _ =>
       errorNotSlang(enums.head.pos, s"For-loop enumerator: '${syntax(enums.head)}'")
@@ -3127,6 +3190,12 @@ class SlangParser(
       case q"${no: Lit.Int} #> $claim by ${jid: Lit.String}" =>
         AST.ProofAst.Step.Regular(toLitZ(no), translateExp(claim),
           AST.ProofAst.Step.Justification.Apply(cid(jid.value, jid.pos), ISZ()))
+      case q"${no: Lit.Int} #> $claim by ${t: Term.Eta} and (..${jargs: Seq[Term]})" =>
+        val stepNo = toLitZ(no)
+        val stepClaim = translateExp(claim)
+        val tExp = translateExp(t).asInstanceOf[AST.Exp.Eta]
+        AST.ProofAst.Step.Regular(stepNo, stepClaim,
+          AST.ProofAst.Step.Justification.InceptEta(tExp, translateWitnesses(jargs)))
       case q"${no: Lit.Int} #> $claim by ${t: Term.Apply} and (..${jargs: Seq[Term]})" =>
         val stepNo = toLitZ(no)
         val stepClaim = translateExp(claim)
@@ -3231,10 +3300,26 @@ class SlangParser(
     AST.Stmt.Theorem(isLemma, cid(stat.name), typeArgs, descOpt, body, isFun, proof, resolvedAttr(stat.pos))
   }
 
-  def translateLoopInvariant(exprs: Seq[Term], loopPos: Position): (ISZ[AST.Exp], ISZ[AST.Exp.Ident]) = {
+  def translateLoopInvariant(exprs: Seq[Term], loopPos: Position): (ISZ[AST.Exp], ISZ[AST.Exp.Ident], Option[AST.Exp.LitZ]) = {
     var mods = ISZ[AST.Exp.Ident]()
     var invs = ISZ[AST.Exp]()
-    val rest = exprs match {
+    var maxItOpt: Option[AST.Exp.LitZ] = None()
+    var rest = exprs
+    rest = rest match {
+      case (expr@q"MaxIt(..${mexprs: Seq[Term]})") :: tail =>
+        if (mexprs.size != 1) {
+          error(expr.pos, "MaxIt expects a single positive integer literal argument.")
+        } else {
+          translateExp(mexprs.head) match {
+            case exp: AST.Exp.LitZ if exp.value > 0 => maxItOpt = Some(exp)
+            case _ =>
+              error(mexprs.head.pos, "MaxIt expects a single positive integer literal argument.")
+          }
+        }
+        tail
+      case _ => rest
+    }
+    rest = rest match {
       case q"Modifies(..${mexprs: Seq[Term]})" :: tail =>
         for (mexpr <- mexprs) {
           mexpr match {
@@ -3243,12 +3328,12 @@ class SlangParser(
           }
         }
         tail
-      case _ => exprs
+      case _ => rest
     }
     for (exp <- rest) {
       invs = invs :+ translateExp(exp)
     }
-    return (invs, mods)
+    return (invs, mods, maxItOpt)
   }
 
   def checkMemberStmts(stmts: ISZ[AST.Stmt]): ISZ[AST.Stmt] = {

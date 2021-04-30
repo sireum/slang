@@ -230,6 +230,34 @@ import GlobalDeclarationResolver._
           ),
           stmt.attr.posOpt
         )
+      case stmt: AST.Stmt.JustMethod =>
+        val id = stmt.sig.id.value
+        val name = currentName :+ stmt.sig.id.value
+        val params = checkParams(stmt.sig.params)
+        declareName(
+          "@just method",
+          name,
+          Info.JustMethod(
+            currentName,
+            scope(packageName, currentImports, name),
+            stmt(
+              attr = stmt.attr(
+                resOpt = Some(
+                  AST.ResolvedInfo.Method(
+                    T,
+                    AST.MethodMode.Just,
+                    stmt.sig.typeParams.map(tp => tp.id.value),
+                    currentName,
+                    id,
+                    params,
+                    None()
+                  )
+                )
+              )
+            )
+          ),
+          stmt.attr.posOpt
+        )
       case stmt: AST.Stmt.SpecMethod =>
         val id = stmt.sig.id.value
         val name = currentName :+ id

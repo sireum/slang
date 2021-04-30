@@ -610,6 +610,13 @@ import TypeChecker._
         } else {
           return (info.typedOpt, info.resOpt)
         }
+      case info: Info.JustMethod =>
+        if (!inSpec) {
+          reporter.error(posOpt, typeCheckerKind, "Cannot access @just method in non-spec context.")
+          return (None(), None())
+        } else {
+          return (info.typedOpt, info.resOpt)
+        }
       case info: Info.Var => return (info.typedOpt, info.resOpt)
       case info: Info.SpecMethod =>
         if (!inSpec) {
@@ -4267,6 +4274,35 @@ import TypeChecker._
           return (Some(scope), stmt)
         }
 
+      case stmt: AST.Stmt.JustMethod =>
+        stmt.etaOpt match {
+          case Some(eta) =>
+            val res = stmt.attr.resOpt.get.asInstanceOf[AST.ResolvedInfo.Method]
+            val name = res.owner :+ eta.value
+            typeHierarchy.nameMap.get(name) match {
+              case Some(info: Info.Method) =>
+                val ast = info.ast
+                if (ast.purity != AST.Purity.Pure) {
+                  reporter.error(eta.posOpt, typeCheckerKind, st"Object method ${(name, ".")} has to be @pure".render)
+                }
+                if (stmt.sig.typeParams != ast.sig.typeParams) {
+                  reporter.error(eta.posOpt, typeCheckerKind, st"Object method ${(name, ".")}'s type parameters are not equivalent with ${(res.owner :+ res.id, ".")}'s".render)
+                }
+                if (info.methodType.tpe.ret != AST.Typed.unit) {
+                  reporter.error(eta.posOpt, typeCheckerKind, st"Object method ${(name, ".")}'s return type should be Unit".render)
+                }
+                ast.contract match {
+                  case contract: AST.MethodContract.Simple if stmt.sig.params.size != contract.requires.size =>
+                    reporter.error(eta.posOpt, typeCheckerKind, st"Mismatch number of object method ${(name, ".")}'s preconditions with ${(res.owner :+ res.id, ".")}'s number of parameters'".render)
+                  case _ =>
+                }
+              case _ =>
+                reporter.error(eta.posOpt, typeCheckerKind, st"Could not find object method ${(name, ".")}".render)
+            }
+          case _ =>
+        }
+        return (Some(scope), stmt)
+
       case stmt: AST.Stmt.For => return (Some(scope), checkFor(stmt))
 
       case stmt: AST.Stmt.If => return (Some(scope), checkIf(None(), scope, stmt, reporter))
@@ -4379,35 +4415,29 @@ import TypeChecker._
         case just: AST.ProofAst.Step.Justification.Apply =>
           return just(args = for (arg <- just.args) yield checkExp(None(), scope, arg, reporter)._1)
         case just: AST.ProofAst.Step.Justification.Incept =>
-          val (newExp, invokeTypedOpt) = checkExp(None(), scope, just.invoke, reporter)
-          val newInvoke = newExp.asInstanceOf[AST.Exp.Invoke]
-          if (invokeTypedOpt != AST.Typed.unitOpt) {
-            if (invokeTypedOpt.nonEmpty) {
-              reporter.error(newExp.posOpt, typeCheckerKind, errMessage)
-            }
-            return just(invoke = newInvoke)
-          }
-          newInvoke.ident.typedOpt.get match {
-            case t: AST.Typed.Method if t.isInObject && t.tpe.isPure =>
+          val newInvoke = checkExp(None(), scope, just.invoke, reporter)._1.asInstanceOf[AST.Exp.Invoke]
+          newInvoke.ident.typedOpt match {
+            case Some(t: AST.Typed.Method) if t.isInObject && t.tpe.isPure && t.tpe.ret == AST.Typed.unit =>
+            case Some(_) => reporter.error(newInvoke.posOpt, typeCheckerKind, errMessage)
             case _ =>
-              reporter.error(newExp.posOpt, typeCheckerKind, errMessage)
           }
           return just(invoke = newInvoke)
         case just: AST.ProofAst.Step.Justification.InceptNamed =>
-          val (newExp, invokeTypedOpt) = checkExp(None(), scope, just.invoke, reporter)
-          val newInvoke = newExp.asInstanceOf[AST.Exp.InvokeNamed]
-          if (invokeTypedOpt != AST.Typed.unitOpt) {
-            if (invokeTypedOpt.nonEmpty) {
-              reporter.error(newExp.posOpt, typeCheckerKind, errMessage)
-            }
-            return just(invoke = newInvoke)
-          }
-          newInvoke.ident.typedOpt.get match {
-            case t: AST.Typed.Method if t.isInObject && t.tpe.isPure =>
+          val newInvoke = checkExp(None(), scope, just.invoke, reporter)._1.asInstanceOf[AST.Exp.InvokeNamed]
+          newInvoke.ident.typedOpt match {
+            case Some(t: AST.Typed.Method) if t.isInObject && t.tpe.isPure && t.tpe.ret == AST.Typed.unit =>
+            case Some(_) => reporter.error(newInvoke.posOpt, typeCheckerKind, errMessage)
             case _ =>
-              reporter.error(newExp.posOpt, typeCheckerKind, errMessage)
           }
           return just(invoke = newInvoke)
+        case just: AST.ProofAst.Step.Justification.InceptEta =>
+          val newEta = checkExp(None(), scope, just.eta, reporter)._1.asInstanceOf[AST.Exp.Eta]
+          newEta.ref.asExp.typedOpt match {
+            case Some(t: AST.Typed.Method) if t.isInObject && t.tpe.isPure && t.tpe.ret == AST.Typed.unit =>
+            case Some(_) => reporter.error(newEta.posOpt, typeCheckerKind, errMessage)
+            case _ =>
+          }
+          return just(eta = newEta)
       }
     }
     val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
@@ -4819,6 +4849,7 @@ import TypeChecker._
         case sinfo: Info.SpecMethod => return Some(sinfo.ast)
         case sinfo: Info.Method => return Some(sinfo.ast)
         case sinfo: Info.ExtMethod => return Some(sinfo.ast)
+        case sinfo: Info.JustMethod => return Some(sinfo.ast)
         case sinfo: Info.Fact => return Some(sinfo.ast)
         case sinfo: Info.Theorem => return Some(sinfo.ast)
         case sinfo: Info.Inv => return Some(sinfo.ast)
@@ -4836,6 +4867,7 @@ import TypeChecker._
         case stmt: AST.Stmt.Method => stmtOpts = stmtOpts :+ getStmt(stmt.sig.id.value)
         case stmt: AST.Stmt.SpecMethod => stmtOpts = stmtOpts :+ getStmt(stmt.sig.id.value)
         case stmt: AST.Stmt.ExtMethod => stmtOpts = stmtOpts :+ getStmt(stmt.sig.id.value)
+        case stmt: AST.Stmt.JustMethod => stmtOpts = stmtOpts :+ getStmt(stmt.sig.id.value)
         case stmt: AST.Stmt.Fact =>  stmtOpts = stmtOpts :+ getStmt(stmt.id.value)
         case stmt: AST.Stmt.Theorem =>  stmtOpts = stmtOpts :+ getStmt(stmt.id.value)
         case stmt: AST.Stmt.Inv =>  stmtOpts = stmtOpts :+ getStmt(stmt.id.value)
@@ -4867,6 +4899,9 @@ import TypeChecker._
               nameEntries = nameEntries :+ (sm.name ~> sm(ast = stmt))
             case stmt: AST.Stmt.ExtMethod =>
               val em = getInfo(stmt.sig.id.value).asInstanceOf[Info.ExtMethod]
+              nameEntries = nameEntries :+ (em.name ~> em(ast = stmt))
+            case stmt: AST.Stmt.JustMethod =>
+              val em = getInfo(stmt.sig.id.value).asInstanceOf[Info.JustMethod]
               nameEntries = nameEntries :+ (em.name ~> em(ast = stmt))
             case stmt: AST.Stmt.Fact =>
               val em = getInfo(stmt.id.value).asInstanceOf[Info.Fact]

@@ -32,6 +32,7 @@ import org.sireum._
   'Method
   'Spec
   'Ext
+  'Just
   'Constructor
   'Copy
   'Extractor
@@ -435,6 +436,7 @@ object Typed {
       mode match {
         case MethodMode.Extractor => return st"extractor of $mST".render
         case MethodMode.Ext => return st"@ext object method $mST".render
+        case MethodMode.Just => return st"@just method $mST".render
         case MethodMode.Copy => return st"copy of $mST".render
         case MethodMode.Constructor => return st"constructor of $mST".render
         case MethodMode.Method => return st"method $mST".render

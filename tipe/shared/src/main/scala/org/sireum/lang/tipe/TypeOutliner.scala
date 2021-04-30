@@ -276,6 +276,44 @@ object TypeOutliner {
     }
   }
 
+  def outlineJustMethod(info: Info.JustMethod, reporter: Reporter): Option[Info] = {
+    val m = info.ast
+    val sigOpt = outlineMethodSig(info.scope, m.sig, reporter)
+    sigOpt match {
+      case Some((sig, tVars)) =>
+        if (sig.funType.ret != AST.Typed.unit) {
+          reporter.error(m.sig.returnType.posOpt, TypeChecker.typeCheckerKind,
+            "Expecting Unit return type for a @just plugin method")
+        }
+        if (m.etaOpt.nonEmpty) {
+          for (p <- sig.params) {
+            p.tipe.typedOpt match {
+              case Some(t) if t != AST.Typed.z =>
+                reporter.error(m.sig.returnType.posOpt, TypeChecker.typeCheckerKind,
+                  "Expecting parameter type Z for a @just forwarding method")
+              case _ =>
+            }
+          }
+        }
+        val res = info.methodRes
+        val tOpt: Option[AST.Typed] = Some(
+          AST.Typed.Method(
+            T,
+            AST.MethodMode.Just,
+            tVars,
+            info.owner,
+            sig.id.value,
+            sig.params.map(p => p.id.value),
+            sig.funType
+          )
+        )
+        return Some(
+          info(ast = m(sig = sig, attr = m.attr(typedOpt = tOpt, resOpt = Some(res(tpeOpt = Some(sig.funType))))))
+        )
+      case _ => return None()
+    }
+  }
+
   @pure def outlineObject(info: Info.Object): TypeHierarchy => (TypeHierarchy, Reporter) @pure = {
     val reporter = Reporter.create
 
@@ -288,6 +326,7 @@ object TypeOutliner {
         case stmt: AST.Stmt.SpecMethod => Some(stmt.sig.id.value)
         case stmt: AST.Stmt.Method => Some(stmt.sig.id.value)
         case stmt: AST.Stmt.ExtMethod => Some(stmt.sig.id.value)
+        case stmt: AST.Stmt.JustMethod => Some(stmt.sig.id.value)
         case _ => None()
       }
       idOpt match {
@@ -329,6 +368,14 @@ object TypeOutliner {
               val rOpt = outlineExtMethod(inf, reporter)
               rOpt match {
                 case Some(r: Info.ExtMethod) =>
+                  infos = infos :+ ((r.name, r))
+                  newStmts = newStmts :+ r.ast
+                case _ => newStmts = newStmts :+ stmt
+              }
+            case inf: Info.JustMethod =>
+              val rOpt = outlineJustMethod(inf, reporter)
+              rOpt match {
+                case Some(r: Info.JustMethod) =>
                   infos = infos :+ ((r.name, r))
                   newStmts = newStmts :+ r.ast
                 case _ => newStmts = newStmts :+ stmt

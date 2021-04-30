@@ -512,6 +512,33 @@ object Info {
     }
   }
 
+  @datatype class JustMethod(owner: ISZ[String], scope: Scope.Global, ast: AST.Stmt.JustMethod) extends Info {
+
+    @pure override def posOpt: Option[Position] = {
+      return ast.attr.posOpt
+    }
+
+    @pure override def name: ISZ[String] = {
+      return owner :+ ast.sig.id.value
+    }
+
+    @pure def outlined: B = {
+      return ast.sig.returnType.typedOpt.nonEmpty
+    }
+
+    @pure def typedOpt: Option[AST.Typed] = {
+      return ast.attr.typedOpt
+    }
+
+    @pure def resOpt: Option[AST.ResolvedInfo] = {
+      return ast.attr.resOpt
+    }
+
+    @pure def methodRes: AST.ResolvedInfo.Method = {
+      return resOpt.get.asInstanceOf[AST.ResolvedInfo.Method]
+    }
+  }
+
   object Enum {
 
     val elementTypeSuffix: String = "Type"
