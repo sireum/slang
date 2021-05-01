@@ -3185,11 +3185,11 @@ class SlangParser(
     proofStep match {
       case q"${no: Lit.Int} #> $claim by ${jid: Lit.String}(..${jargs: Seq[Term]})" =>
         AST.ProofAst.Step.Regular(toLitZ(no), translateExp(claim),
-          AST.ProofAst.Step.Justification.Apply(cid(jid.value, jid.pos),
+          AST.ProofAst.Step.Justification.Apply(translateExp(jid),
             ISZ(jargs.map(translateExp): _*)))
       case q"${no: Lit.Int} #> $claim by ${jid: Lit.String}" =>
         AST.ProofAst.Step.Regular(toLitZ(no), translateExp(claim),
-          AST.ProofAst.Step.Justification.Apply(cid(jid.value, jid.pos), ISZ()))
+          AST.ProofAst.Step.Justification.Apply(translateLit(jid), ISZ()))
       case q"${no: Lit.Int} #> $claim by ${t: Term.Eta} and (..${jargs: Seq[Term]})" =>
         val stepNo = toLitZ(no)
         val stepClaim = translateExp(claim)
@@ -3210,7 +3210,7 @@ class SlangParser(
           case _ =>
             reporter.error(tExp.posOpt, messageKind, s"Expecting a method invocation but found '${t.syntax}'")
             AST.ProofAst.Step.Regular(stepNo, stepClaim,
-              AST.ProofAst.Step.Justification.Apply(AST.Id("?", emptyAttr), translateWitnesses(jargs).asInstanceOf[ISZ[AST.Exp]]))
+              AST.ProofAst.Step.Justification.Apply(AST.Exp.LitString("?", emptyAttr), translateWitnesses(jargs).asInstanceOf[ISZ[AST.Exp]]))
         }
       case q"${no: Lit.Int} #> $claim by ${t: Term.Apply}" =>
         val stepNo = toLitZ(no)
@@ -3226,8 +3226,11 @@ class SlangParser(
           case _ =>
             reporter.error(tExp.posOpt, messageKind, s"Expecting a method invocation but found '${t.syntax}'")
             AST.ProofAst.Step.Regular(stepNo, stepClaim,
-              AST.ProofAst.Step.Justification.Apply(AST.Id("?", emptyAttr), ISZ()))
+              AST.ProofAst.Step.Justification.Apply(AST.Exp.LitString("?", emptyAttr), ISZ()))
         }
+      case q"${no: Lit.Int} #> $claim by ${term: Term.Ref}" =>
+        AST.ProofAst.Step.Regular(toLitZ(no), translateExp(claim),
+          AST.ProofAst.Step.Justification.Apply(translateExp(term), ISZ()))
       case q"${no: Lit.Int} #> $claim by StructuralInduction($m)" =>
         translateStructuralInduction(toLitZ(no), translateExp(claim), m)
       case q"${no: Lit.Int} #> Assume($claim)" =>

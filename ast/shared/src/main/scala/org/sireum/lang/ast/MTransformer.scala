@@ -3950,7 +3950,7 @@ import MTransformer._
       val hasChanged: B = preR.resultOpt.nonEmpty
       val rOpt: MOption[ProofAst.Step.Justification] = o2 match {
         case o2: ProofAst.Step.Justification.Apply =>
-          val r0: MOption[Id] = transformId(o2.id)
+          val r0: MOption[Exp] = transformExp(o2.id)
           val r1: MOption[IS[Z, Exp]] = transformISZ(o2.args, transformExp _)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
             MSome(o2(id = r0.getOrElse(o2.id), args = r1.getOrElse(o2.args)))

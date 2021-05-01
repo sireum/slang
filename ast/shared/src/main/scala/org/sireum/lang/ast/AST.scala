@@ -623,8 +623,32 @@ object ProofAst {
 
     object Justification {
 
-      @datatype class Apply(val id: Id, val args: ISZ[Exp]) extends Justification {
-        @strictpure override def posOpt: Option[Position] = id.attr.posOpt
+      @datatype class Apply(val id: Exp, val args: ISZ[Exp]) extends Justification {
+        @strictpure override def posOpt: Option[Position] = id.posOpt
+        @pure def idString: String = {
+          id match {
+            case id: Exp.LitString => return id.value
+            case id: Exp.Ident => return id.id.value
+            case id: Exp.Select => return id.id.value
+            case _ => halt("Infeasible")
+          }
+        }
+        @pure def isOwnedBy(name: ISZ[String]): B = {
+          id match {
+            case id: Exp.Ident => return id.attr.resOpt.get.asInstanceOf[ResolvedInfo.Method].owner == name
+            case id: Exp.Select => return id.attr.resOpt.get.asInstanceOf[ResolvedInfo.Method].owner == name
+            case _: Exp.LitString => return T
+            case _ => halt("Infeasible")
+          }
+        }
+        @pure def resOpt: Option[ResolvedInfo] = {
+          id match {
+            case id: Exp.Ident => return id.attr.resOpt
+            case id: Exp.Select => return id.attr.resOpt
+            case _: Exp.LitString => return None()
+            case _ => halt("Infeasible")
+          }
+        }
       }
 
       @datatype class Incept(val invoke: Exp.Invoke, val witnesses: ISZ[Exp.LitZ]) extends Inception {

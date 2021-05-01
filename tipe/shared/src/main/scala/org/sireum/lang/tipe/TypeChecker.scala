@@ -4410,14 +4410,21 @@ import TypeChecker._
 
   def checkStep(scope: Scope.Local, step: AST.ProofAst.Step, reporter: Reporter): AST.ProofAst.Step = {
     def checkJustification(just: AST.ProofAst.Step.Justification): AST.ProofAst.Step.Justification = {
-      val errMessage = "Expecting an object @pure method with Unit return type"
+      val errMessage = "Expecting an object @just/@pure method with Unit return type"
       just match {
         case just: AST.ProofAst.Step.Justification.Apply =>
-          return just(args = for (arg <- just.args) yield checkExp(None(), scope, arg, reporter)._1)
+          val (newId, _) = checkExp(None(), scope, just.id, reporter)
+          val newJust = just(id = newId, args = for (arg <- just.args) yield checkExp(None(), scope, arg, reporter)._1)
+          newJust.resOpt match {
+            case Some(res: AST.ResolvedInfo.Method) if res.mode == AST.MethodMode.Just =>
+            case Some(_) => reporter.error(newId.posOpt, typeCheckerKind, "Expecting an object @just method")
+            case _ =>
+          }
+          return newJust
         case just: AST.ProofAst.Step.Justification.Incept =>
           val newInvoke = checkExp(None(), scope, just.invoke, reporter)._1.asInstanceOf[AST.Exp.Invoke]
           newInvoke.ident.typedOpt match {
-            case Some(t: AST.Typed.Method) if t.isInObject && t.tpe.isPure && t.tpe.ret == AST.Typed.unit =>
+            case Some(t: AST.Typed.Method) if t.isInObject && (t.tpe.isPure || t.mode == AST.MethodMode.Just) && t.tpe.ret == AST.Typed.unit =>
             case Some(_) => reporter.error(newInvoke.posOpt, typeCheckerKind, errMessage)
             case _ =>
           }
@@ -4425,7 +4432,7 @@ import TypeChecker._
         case just: AST.ProofAst.Step.Justification.InceptNamed =>
           val newInvoke = checkExp(None(), scope, just.invoke, reporter)._1.asInstanceOf[AST.Exp.InvokeNamed]
           newInvoke.ident.typedOpt match {
-            case Some(t: AST.Typed.Method) if t.isInObject && t.tpe.isPure && t.tpe.ret == AST.Typed.unit =>
+            case Some(t: AST.Typed.Method) if t.isInObject && (t.tpe.isPure || t.mode == AST.MethodMode.Just) && t.tpe.ret == AST.Typed.unit =>
             case Some(_) => reporter.error(newInvoke.posOpt, typeCheckerKind, errMessage)
             case _ =>
           }
@@ -4433,7 +4440,7 @@ import TypeChecker._
         case just: AST.ProofAst.Step.Justification.InceptEta =>
           val newEta = checkExp(None(), scope, just.eta, reporter)._1.asInstanceOf[AST.Exp.Eta]
           newEta.ref.asExp.typedOpt match {
-            case Some(t: AST.Typed.Method) if t.isInObject && t.tpe.isPure && t.tpe.ret == AST.Typed.unit =>
+            case Some(t: AST.Typed.Method) if t.isInObject && (t.tpe.isPure || t.mode == AST.MethodMode.Just) && t.tpe.ret == AST.Typed.unit =>
             case Some(_) => reporter.error(newEta.posOpt, typeCheckerKind, errMessage)
             case _ =>
           }

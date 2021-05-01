@@ -3374,7 +3374,7 @@ import Transformer._
       val hasChanged: B = preR.resultOpt.nonEmpty
       val rOpt: TPostResult[Context, ProofAst.Step.Justification] = o2 match {
         case o2: ProofAst.Step.Justification.Apply =>
-          val r0: TPostResult[Context, Id] = transformId(preR.ctx, o2.id)
+          val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.id)
           val r1: TPostResult[Context, IS[Z, Exp]] = transformISZ(r0.ctx, o2.args, transformExp _)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
             TPostResult(r1.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), args = r1.resultOpt.getOrElse(o2.args))))

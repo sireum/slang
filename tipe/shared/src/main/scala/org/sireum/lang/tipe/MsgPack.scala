@@ -1186,7 +1186,7 @@ object MsgPack {
 
     def write_astProofAstStepJustificationApply(o: org.sireum.lang.ast.ProofAst.Step.Justification.Apply): Unit = {
       writer.writeZ(Constants._astProofAstStepJustificationApply)
-      write_astId(o.id)
+      write_astExp(o.id)
       writer.writeISZ(o.args, write_astExp _)
     }
 
@@ -3505,7 +3505,7 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astProofAstStepJustificationApply)
       }
-      val id = read_astId()
+      val id = read_astExp()
       val args = reader.readISZ(read_astExp _)
       return org.sireum.lang.ast.ProofAst.Step.Justification.Apply(id, args)
     }

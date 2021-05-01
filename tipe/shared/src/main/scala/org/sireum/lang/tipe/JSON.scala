@@ -992,7 +992,7 @@ object JSON {
     @pure def print_astProofAstStepJustificationApply(o: org.sireum.lang.ast.ProofAst.Step.Justification.Apply): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.ProofAst.Step.Justification.Apply""""),
-        ("id", print_astId(o.id)),
+        ("id", print_astExp(o.id)),
         ("args", printISZ(F, o.args, print_astExp _))
       ))
     }
@@ -4176,7 +4176,7 @@ object JSON {
         parser.parseObjectType("org.sireum.lang.ast.ProofAst.Step.Justification.Apply")
       }
       parser.parseObjectKey("id")
-      val id = parse_astId()
+      val id = parse_astExp()
       parser.parseObjectNext()
       parser.parseObjectKey("args")
       val args = parser.parseISZ(parse_astExp _)
