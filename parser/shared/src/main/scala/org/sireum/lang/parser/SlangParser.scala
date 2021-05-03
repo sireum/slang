@@ -3238,7 +3238,12 @@ class SlangParser(
       case q"${no: Lit.Int} #> Assert($claim, SubProof(..${claims: Seq[Term]}))" =>
         AST.ProofAst.Step.Assert(toLitZ(no), translateExp(claim), ISZ(claims.map(translateProofStep): _*))
       case q"${no: Lit.Int} #> SubProof(..${claims: Seq[Term]})" =>
-        AST.ProofAst.Step.SubProof(toLitZ(no), ISZ(claims.map(translateProofStep): _*))
+        val stepNo = toLitZ(no)
+        val subClaims = ISZ(claims.map(translateProofStep): _*)
+        if (subClaims.nonEmpty && !subClaims(0).isInstanceOf[AST.ProofAst.Step.Assume]) {
+          reporter.error(subClaims(0).no.posOpt, messageKind, "Expecting an Assume(...) claim")
+        }
+        AST.ProofAst.Step.SubProof(stepNo, subClaims)
       case q"${no: Lit.Int} #> Let ((..$params) => SubProof(..${claims: Seq[Term]}))" =>
         AST.ProofAst.Step.Let(toLitZ(no), ISZ(params.map(translateLetParam): _*),
           ISZ(claims.map(translateProofStep): _*))
