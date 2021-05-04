@@ -4486,6 +4486,7 @@ import TypeChecker._
               newParams = newParams :+ p(tipeOpt = ntOpt)
               if (ntOpt.isEmpty) None() else ntOpt.get.typedOpt
             case _ =>
+              reporter.error(p.id.attr.posOpt, typeCheckerKind, s"${p.id.value} has to be explicitly typed")
               newParams = newParams :+ p
               None()
           }

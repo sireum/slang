@@ -170,7 +170,9 @@ object SlangParser {
     var hashSireum = false
     fileUriOpt match {
       case Some(fileUri) =>
-        if (fileUri.value.endsWith(".slang") || (fileUri.value.endsWith(".scala") || fileUri.value.endsWith(".sc")) && firstLine.contains("#Sireum")) {
+        if ((fileUri.value.endsWith(".scala") || fileUri.value.endsWith(".sc")) && firstLine.contains("#Sireum")) {
+          hashSireum = true
+        } else if (fileUri.value.endsWith(".slang") || fileUri.value.endsWith(".logika")) {
           hashSireum = true
         } else if (fileUri.value.endsWith(".cmd") && firstLine.startsWith("::#!")) {
           var found = false
@@ -3119,9 +3121,9 @@ class SlangParser(
       steps.headOption match {
         case scala.Some(q"${no: Lit.Int} #> Assume($claim)") =>
           (Some(AST.ProofAst.Step.Assume(toLitZ(no), translateExp(claim))),
-            ISZ(steps.tail.map(translateProofStep): _*))
+            ISZ(steps.tail.map(translateProofStep(false)): _*))
         case _ =>
-          (None(), ISZ(steps.map(translateProofStep): _*))
+          (None(), ISZ(steps.map(translateProofStep(false)): _*))
       }
     }
     m match {
@@ -3161,7 +3163,13 @@ class SlangParser(
 
   def toLitZ(n: Lit.Int): AST.Exp.LitZ = AST.Exp.LitZ(n.value, attr(n.pos))
 
-  def translateProofStep(proofStep: Term): AST.ProofAst.Step = {
+  def translateAssumeSubClaims(claims: Seq[Term]): ISZ[AST.ProofAst.Step] =
+    if (claims.nonEmpty)
+      translateProofStep(true)(claims.head) +:
+        ISZ((for (i <- 1 until claims.length) yield translateProofStep(false)(claims(i))): _*)
+    else ISZ()
+
+  def translateProofStep(allowAssume: B)(proofStep: Term): AST.ProofAst.Step = {
     def translateLetParam(param: Term.Param): AST.ProofAst.Step.Let.Param = {
       if (param.mods.nonEmpty) {
         for (mod <- param.mods) {
@@ -3186,7 +3194,7 @@ class SlangParser(
       }
       witnesses
     }
-    proofStep match {
+    val r: AST.ProofAst.Step = proofStep match {
       case q"${no: Lit.Int} #> $claim by ${jid: Lit.String}(..${jargs: Seq[Term]})" =>
         AST.ProofAst.Step.Regular(toLitZ(no), translateExp(claim),
           AST.ProofAst.Step.Justification.Apply(translateExp(jid),
@@ -3238,26 +3246,29 @@ class SlangParser(
       case q"${no: Lit.Int} #> $claim by StructuralInduction($m)" =>
         translateStructuralInduction(toLitZ(no), translateExp(claim), m)
       case q"${no: Lit.Int} #> Assume($claim)" =>
-        AST.ProofAst.Step.Assume(toLitZ(no), translateExp(claim))
+        val stepNo = toLitZ(no)
+        if (!allowAssume) {
+          reporter.error(stepNo.posOpt, messageKind, "Assume justification cannot be used at this location")
+        }
+        AST.ProofAst.Step.Assume(stepNo, translateExp(claim))
       case q"${no: Lit.Int} #> Assert($claim, SubProof(..${claims: Seq[Term]}))" =>
-        AST.ProofAst.Step.Assert(toLitZ(no), translateExp(claim), ISZ(claims.map(translateProofStep): _*))
+        AST.ProofAst.Step.Assert(toLitZ(no), translateExp(claim), ISZ(claims.map(translateProofStep(false)): _*))
       case q"${no: Lit.Int} #> SubProof(..${claims: Seq[Term]})" =>
         val stepNo = toLitZ(no)
-        val subClaims = ISZ(claims.map(translateProofStep): _*)
+        val subClaims = translateAssumeSubClaims(claims)
         if (subClaims.nonEmpty && !subClaims(0).isInstanceOf[AST.ProofAst.Step.Assume]) {
           reporter.error(subClaims(0).no.posOpt, messageKind, "Expecting an Assume(...) claim")
         }
         AST.ProofAst.Step.SubProof(stepNo, subClaims)
       case q"${no: Lit.Int} #> Let ((..$params) => SubProof(..${claims: Seq[Term]}))" =>
-        AST.ProofAst.Step.Let(toLitZ(no), ISZ(params.map(translateLetParam): _*),
-          ISZ(claims.map(translateProofStep): _*))
+        AST.ProofAst.Step.Let(toLitZ(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims))
       case q"${no: Lit.Int} #> Let {(..$params) => SubProof(..${claims: Seq[Term]})}" =>
-        AST.ProofAst.Step.Let(toLitZ(no), ISZ(params.map(translateLetParam): _*),
-          ISZ(claims.map(translateProofStep): _*))
+        AST.ProofAst.Step.Let(toLitZ(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims))
       case _ =>
         error(proofStep.pos, s"Invalid proof step form: '$proofStep'.")
         emptyProofStep
     }
+    r
   }
 
   def translateProof(proof: Term): AST.ProofAst = {
@@ -3271,7 +3282,7 @@ class SlangParser(
   }
 
   def translateAndCheckProofSteps(steps: Seq[Term]): ISZ[AST.ProofAst.Step] = {
-    val r = ISZ(steps.map(translateProofStep): _*)
+    val r = ISZ(steps.map(translateProofStep(false)): _*)
     val checker = new ProofStepUniquenessChecker(org.sireum.HashMap.empty, Reporter.create)
     for (step <- r) {
       checker.transformProofAstStep(step)
