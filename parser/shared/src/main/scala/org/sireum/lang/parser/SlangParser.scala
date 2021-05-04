@@ -167,28 +167,32 @@ object SlangParser {
       sb.toString
     }
     var firstLine = compactLine(0)
-    var hashSireum = firstLine.contains("#Sireum")
-    if (fileUriOpt.nonEmpty && fileUriOpt.get.value.endsWith(".cmd")) {
-      if (firstLine.startsWith("::#!")) {
-        var found = false
-        var i = 4
-        while (i + 4 < text.length && !found) {
-          if (text(i) == ':' && text(i + 1) == ':' && text(i + 2) == '!' && text(i + 3) == '#') {
-            found = true
-            i = i + 4
-            while (i < text.length && text(i).isWhitespace) i += 1
-            firstLine = compactLine(i)
-            if (firstLine.contains("#Sireum")) {
-              hashSireum = true
-              val cs = text.toCharArray
-              for (j <- 0 until i if cs(j) != '\n') cs(j) = ' '
-              text = new Predef.String(cs)
+    var hashSireum = false
+    fileUriOpt match {
+      case Some(fileUri) =>
+        if (fileUri.value.endsWith(".slang") || (fileUri.value.endsWith(".scala") || fileUri.value.endsWith(".sc")) && firstLine.contains("#Sireum")) {
+          hashSireum = true
+        } else if (fileUri.value.endsWith(".cmd") && firstLine.startsWith("::#!")) {
+          var found = false
+          var i = 4
+          while (i + 4 < text.length && !found) {
+            if (text(i) == ':' && text(i + 1) == ':' && text(i + 2) == '!' && text(i + 3) == '#') {
+              found = true
+              i = i + 4
+              while (i < text.length && text(i).isWhitespace) i += 1
+              firstLine = compactLine(i)
+              if (firstLine.contains("#Sireum")) {
+                hashSireum = true
+                val cs = text.toCharArray
+                for (j <- 0 until i if cs(j) != '\n') cs(j) = ' '
+                text = new Predef.String(cs)
+              }
+            } else {
+              i = i + 1
             }
-          } else {
-            i = i + 1
           }
         }
-      }
+      case _ =>
     }
     (hashSireum, firstLine, text)
   }
