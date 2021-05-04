@@ -192,7 +192,7 @@ object SlangParser {
             }
           }
         }
-      case _ =>
+      case _ => hashSireum = true
     }
     (hashSireum, firstLine, text)
   }
