@@ -47,8 +47,10 @@ object SlangFrontEndTest {
     checkMsgPack: Boolean = true
   ): Boolean = {
     val reporter = Reporter.create
+    val prelude = if (isPrelude) "" else "// #Sireum\n"
+    val impor = if (addImport) "import org.sireum._; " else ""
     val r = parse(
-      s"${if (isPrelude) "" else "// #Sireum\n"}${if (addImport) "import org.sireum._; " else ""}$text",
+      s"$prelude$impor$text",
       isWorksheet,
       reporter
     )
@@ -107,8 +109,10 @@ object SlangFrontEndTest {
   ): Unit =
     assert({
       val reporter = Reporter.create
+      val prelude = if (isPrelude) "" else "// #Sireum\n"
+      val impor = if (addImport) "import org.sireum._; " else ""
       val r = parse(
-        s"${if (isPrelude) "" else "// #Sireum\n"}${if (addImport) "import org.sireum._; " else ""}$text",
+        s"$prelude$impor$text",
         isWorksheet,
         reporter
       )
@@ -127,8 +131,10 @@ object SlangFrontEndTest {
   ): Unit =
     assert({
       val reporter = Reporter.create
+      val prelude = if (isPrelude) "" else "// #Sireum\n"
+      val impor = if (addImport) "import org.sireum._; " else ""
       val r = parse(
-        s"${if (isPrelude) "" else "// #Sireum\n"}${if (addImport) "import org.sireum._; " else ""}$text",
+        s"$prelude$impor$text",
         isWorksheet,
         reporter
       )
