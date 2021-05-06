@@ -3010,7 +3010,7 @@ class SlangParser(
     }
     val q"Deduce(..${dexprs: Seq[Term]})" = stat
     val isProofStep = dexprs.headOption match {
-      case scala.Some(head: Term) => head.pos.text.contains("#>")
+      case scala.Some(head: Term) => !head.pos.text.contains("|-")
       case _ => false
     }
     if (isProofStep) {
@@ -3267,6 +3267,12 @@ class SlangParser(
       case _ =>
         error(proofStep.pos, s"Invalid proof step form: '$proofStep'.")
         emptyProofStep
+    }
+    if (r.no.posOpt.isEmpty) {
+      println("Here")
+    }
+    if (r.no.value < 0) {
+      reporter.error(r.no.posOpt, messageKind, "Proof step # has to be non-negative")
     }
     r
   }
