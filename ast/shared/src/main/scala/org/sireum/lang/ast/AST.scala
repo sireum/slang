@@ -792,6 +792,7 @@ object Type {
 
 @datatype trait Pattern {
   @pure def posOpt: Option[Position]
+  @pure def typedOpt: Option[Typed]
 }
 
 object Pattern {
@@ -802,6 +803,8 @@ object Pattern {
       return lit.posOpt
     }
 
+    @strictpure override def typedOpt: Option[Typed] = lit.typedOpt
+
   }
 
   @datatype class LitInterpolate(prefix: String, value: String, @hidden attr: TypedAttr) extends Pattern {
@@ -809,6 +812,8 @@ object Pattern {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
+
+    @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
 
   }
 
@@ -818,6 +823,8 @@ object Pattern {
       return attr.posOpt
     }
 
+    @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
+
   }
 
   @datatype class VarBinding(id: Id, tipeOpt: Option[Type], @hidden attr: TypedAttr) extends Pattern {
@@ -826,6 +833,7 @@ object Pattern {
       return attr.posOpt
     }
 
+    @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
   }
 
   @datatype class Wildcard(typeOpt: Option[Type], @hidden attr: TypedAttr) extends Pattern {
@@ -834,6 +842,7 @@ object Pattern {
       return attr.posOpt
     }
 
+    @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
   }
 
   @datatype class SeqWildcard(@hidden attr: TypedAttr) extends Pattern {
@@ -842,18 +851,19 @@ object Pattern {
       return attr.posOpt
     }
 
+    @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
   }
 
-  @datatype class Structure(
-                             idOpt: Option[Id],
-                             nameOpt: Option[Name],
-                             patterns: ISZ[Pattern],
-                             @hidden attr: ResolvedAttr
-                           ) extends Pattern {
+  @datatype class Structure(idOpt: Option[Id],
+                            nameOpt: Option[Name],
+                            patterns: ISZ[Pattern],
+                            @hidden attr: ResolvedAttr) extends Pattern {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
+
+    @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
 
   }
 
