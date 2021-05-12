@@ -763,14 +763,10 @@ object Type {
     }
 
     @pure def isEqual(other: Named): B = {
-      val r: B = (typedOpt, other.typedOpt) match {
-        case (Some(t1), Some(t2)) => t1 == t2
-        case _ => name == other.name && typeArgs == other.typeArgs
+      (typedOpt, other.typedOpt) match {
+        case (Some(t1), Some(t2)) => return t1 == t2
+        case _ => return name == other.name && typeArgs == other.typeArgs
       }
-      if (!r) {
-        println("here")
-      }
-      return r
     }
 
     @pure override def hash: Z = {
