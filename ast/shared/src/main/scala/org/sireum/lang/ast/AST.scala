@@ -763,16 +763,20 @@ object Type {
     }
 
     @pure def isEqual(other: Named): B = {
-      (typedOpt, other.typedOpt) match {
-        case (Some(t1), Some(t2)) => return t1 == t2
-        case _ => return name == other.name && typeArgs == other.typeArgs
+      val r: B = (typedOpt, other.typedOpt) match {
+        case (Some(t1), Some(t2)) => t1 == t2
+        case _ => name == other.name && typeArgs == other.typeArgs
       }
+      if (!r) {
+        println("here")
+      }
+      return r
     }
 
     @pure override def hash: Z = {
       typedOpt match {
         case Some(t) => return t.hash
-        case _ => return super.hash
+        case _ => return (name, typeArgs).hash
       }
     }
 
@@ -802,7 +806,7 @@ object Type {
     @pure override def hash: Z = {
       typedOpt match {
         case Some(t) => return (isPure, isByName, t).hash
-        case _ => return super.hash
+        case _ => return (isPure, isByName, args, ret).hash
       }
     }
 
@@ -832,7 +836,7 @@ object Type {
     @pure override def hash: Z = {
       typedOpt match {
         case Some(t) => return t.hash
-        case _ => return super.hash
+        case _ => return args.hash
       }
     }
 
