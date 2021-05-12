@@ -762,6 +762,20 @@ object Type {
       return this (name, typeArgs, attr(typedOpt = Some(t)))
     }
 
+    @pure def isEqual(other: Named): B = {
+      (typedOpt, other.typedOpt) match {
+        case (Some(t1), Some(t2)) => return t1 == t2
+        case _ => return name == other.name && typeArgs == other.typeArgs
+      }
+    }
+
+    @pure override def hash: Z = {
+      typedOpt match {
+        case Some(t) => return t.hash
+        case _ => return super.hash
+      }
+    }
+
   }
 
   @datatype class Fun(isPure: B, isByName: B, args: ISZ[Type], ret: Type, @hidden attr: TypedAttr) extends Type {
@@ -778,6 +792,20 @@ object Type {
       return this (isPure, isByName, args, ret, attr(typedOpt = Some(t)))
     }
 
+    @pure def isEqual(other: Fun): B = {
+      (typedOpt, other.typedOpt) match {
+        case (Some(t1), Some(t2)) => return isPure == other.isPure && isByName == other.isByName && t1 == t2
+        case _ => return isPure == other.isPure && isByName == other.isByName && args == other.args && ret == other.ret
+      }
+    }
+
+    @pure override def hash: Z = {
+      typedOpt match {
+        case Some(t) => return (isPure, isByName, t).hash
+        case _ => return super.hash
+      }
+    }
+
   }
 
   @datatype class Tuple(args: ISZ[Type], @hidden attr: TypedAttr) extends Type {
@@ -792,6 +820,20 @@ object Type {
 
     @pure override def typed(t: Typed): Tuple = {
       return this (args, attr(typedOpt = Some(t)))
+    }
+
+    @pure def isEqual(other: Tuple): B = {
+      (typedOpt, other.typedOpt) match {
+        case (Some(t1), Some(t2)) => return t1 == t2
+        case _ => return args == other.args
+      }
+    }
+
+    @pure override def hash: Z = {
+      typedOpt match {
+        case Some(t) => return t.hash
+        case _ => return super.hash
+      }
     }
 
   }
