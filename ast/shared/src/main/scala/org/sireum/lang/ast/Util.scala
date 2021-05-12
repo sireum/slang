@@ -96,7 +96,7 @@ object Util {
         p.idOpt match {
           case Some(id) =>
             val newId = id(value = s"$newContextId.$i")
-            newParams = newParams :+ p(idOpt = Some(newId), tipeOpt = None())
+            newParams = newParams :+ p(idOpt = Some(newId))
             m = m + id.value ~> newId.value
           case _ => newParams = newParams :+ p
         }
