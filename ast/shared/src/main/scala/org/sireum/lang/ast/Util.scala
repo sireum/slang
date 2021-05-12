@@ -32,18 +32,81 @@ import org.sireum.U64._
 
 object Util {
 
-  @record class TypeSubstitutor(substMap: HashMap[String, Typed]) extends MTransformer {
-    override def preTyped(o: Typed): MTransformer.PreResult[Typed] = {
-      o match {
-        case o: Typed.TypeVar =>
-          substMap.get(o.id) match {
-            case Some(t) => return MTransformer.PreResult(F, MSome(t))
-            case _ =>
-          }
+  @datatype class TypePrePostSubstitutor(substMap: HashMap[String, Typed]) extends Transformer.PrePost[B] {
+    @pure override def preTypedTypeVar(ctx: B, o: Typed.TypeVar): Transformer.PreResult[B, Typed] = {
+      substMap.get(o.id) match {
+        case Some(t) => return Transformer.PreResult(ctx, T, Some(t))
         case _ =>
       }
-      val r = super.preTyped(o)
-      return r
+      return Transformer.PreResult(ctx, T, None())
+    }
+  }
+
+  @datatype class LocalVarContextPrePostSubstitutor(oldContext: ISZ[String], newContext: ISZ[String]) extends Transformer.PrePost[B] {
+    @pure override def postResolvedInfoLocalVar(ctx: B, o: ResolvedInfo.LocalVar): Transformer.TPostResult[B, ResolvedInfo] = {
+      if (o.context == oldContext) {
+        return Transformer.TPostResult(ctx, Some(o(context = newContext)))
+      }
+      return Transformer.TPostResult(ctx, None())
+    }
+  }
+
+  @datatype class QuantTypePrePostNormalizer extends Transformer.PrePost[B] {
+    override def postExpQuantType(ctx: B, o: Exp.QuantType): Transformer.TPostResult[B, Exp.Quant] = {
+      o.fun.exp match {
+        case Stmt.Expr(body: Exp.QuantType) if o.isForall == body.isForall =>
+          val params = o.fun.params ++ body.fun.params
+          val exp = Transformer(LocalVarContextPrePostSubstitutor(body.fun.context, o.fun.context)).
+            transformAssignExp(F, body.fun.exp).resultOpt.getOrElse(body.fun.exp)
+          val funType = o.fun.typedOpt.get.asInstanceOf[Typed.Fun]
+          val typedOpt: Option[Typed] = Some(funType(args = funType.args ++ body.fun.typedOpt.get.asInstanceOf[Typed.Fun].args))
+          val newO = o(fun = o.fun(params = params, exp = exp, attr = o.fun.attr(typedOpt = typedOpt)))
+          return Transformer.TPostResult(ctx, Some(newO))
+        case _ =>
+          return Transformer.TPostResult(ctx, None())
+      }
+    }
+  }
+
+  object FunDebruijner {
+    @strictpure def create: Transformer[Z] = Transformer(FunPrePostDebruijner())
+
+    @datatype class PrePostSubstitutor(oldContext: ISZ[String], newContext: ISZ[String], m: HashMap[String, String]) extends Transformer.PrePost[B] {
+      override def postExpIdent(ctx: B, o: Exp.Ident): Transformer.TPostResult[B, Exp] = {
+        o.attr.resOpt.get match {
+          case res: ResolvedInfo.LocalVar if res.context == oldContext =>
+            val newId = m.get(res.id).get
+            val newO = o(id = o.id(value = newId), attr = o.attr(resOpt = Some(res(context = newContext, id = newId))))
+            return Transformer.TPostResult(ctx, Some(newO))
+          case _ =>
+        }
+        return Transformer.TPostResult(ctx, None())
+      }
+    }
+  }
+
+  @datatype class FunPrePostDebruijner extends Transformer.PrePost[Z] {
+    override def preExpFun(ctx: Z, o: Exp.Fun): Transformer.PreResult[Z, Exp] = {
+      val num = ctx
+      val newContextId: String = s".$num"
+      var m = HashMap.empty[String, String]
+      var i: Z = 1
+      var newParams = ISZ[Exp.Fun.Param]()
+      for (p <- o.params) {
+        p.idOpt match {
+          case Some(id) =>
+            val newId = id(value = s"$newContextId.$i")
+            newParams = newParams :+ p(idOpt = Some(newId), tipeOpt = None())
+            m = m + id.value ~> newId.value
+          case _ => newParams = newParams :+ p
+        }
+        i = i + 1
+      }
+      val newContext = ISZ(newContextId)
+      val newExp = Transformer(FunDebruijner.PrePostSubstitutor(o.context, newContext, m)).transformAssignExp(F, o.exp).
+        resultOpt.getOrElse(o.exp)
+      val newO = o(context = newContext, params = newParams, exp = newExp)
+      return Transformer.PreResult(ctx + 1, T, Some(newO))
     }
   }
 
@@ -214,11 +277,7 @@ object Util {
 
   @pure def substAssignExp(ast: AssignExp, substMap: HashMap[String, Typed]): AssignExp = {
     if (substMap.nonEmpty) {
-      val astOpt = TypeSubstitutor(substMap).transformAssignExp(ast)
-      astOpt match {
-        case MSome(newAst) => return newAst
-        case _ => return ast
-      }
+      return Transformer(TypePrePostSubstitutor(substMap)).transformAssignExp(F, ast).resultOpt.getOrElse(ast)
     } else {
       return ast
     }
@@ -226,11 +285,7 @@ object Util {
 
   @pure def substExp(ast: Exp, substMap: HashMap[String, Typed]): Exp = {
     if (substMap.nonEmpty) {
-      val astOpt = TypeSubstitutor(substMap).transformExp(ast)
-      astOpt match {
-        case MSome(newAst) => return newAst
-        case _ => return ast
-      }
+      return Transformer(TypePrePostSubstitutor(substMap)).transformExp(F, ast).resultOpt.getOrElse(ast)
     } else {
       return ast
     }
@@ -306,4 +361,17 @@ object Util {
         }
     }
   }
+
+  @pure def normalizeQuantType(exp: Exp): Exp = {
+    return Transformer(QuantTypePrePostNormalizer()).transformExp(F, exp).resultOpt.getOrElseEager(exp)
+  }
+
+  @pure def deBruijn(exp: Exp): Exp = {
+    val exp2 = FunDebruijner.create.transformExp(1, exp).resultOpt.getOrElseEager(exp)
+    Transformer(QuantTypePrePostNormalizer()).transformExp(F, exp2).resultOpt match {
+      case Some(exp3) => FunDebruijner.create.transformExp(1, exp3).resultOpt.getOrElseEager(exp3)
+      case _ => return exp2
+    }
+  }
+
 }

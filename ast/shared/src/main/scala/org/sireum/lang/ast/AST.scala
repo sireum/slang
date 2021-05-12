@@ -581,15 +581,21 @@ object ProofAst {
 
   object Step {
 
-    @datatype class Regular(val no: Exp.LitZ, claim: Exp, just: Justification) extends Step
+    @datatype class Regular(val no: Exp.LitZ, val claim: Exp, val just: Justification) extends Step {
+      @strictpure def claimDeBruijn: Exp = Util.deBruijn(claim)
+    }
 
-    @datatype class Assume(val no: Exp.LitZ, claim: Exp) extends Step
+    @datatype class Assume(val no: Exp.LitZ, val claim: Exp) extends Step {
+      @strictpure def claimDeBruijn: Exp = Util.deBruijn(claim)
+    }
 
-    @datatype class Assert(val no: Exp.LitZ, claim: Exp, steps: ISZ[Step]) extends Step
+    @datatype class Assert(val no: Exp.LitZ, val claim: Exp, val steps: ISZ[Step]) extends Step {
+      @strictpure def claimDeBruijn: Exp = Util.deBruijn(claim)
+    }
 
-    @datatype class SubProof(val no: Exp.LitZ, steps: ISZ[Step]) extends Step
+    @datatype class SubProof(val no: Exp.LitZ, val steps: ISZ[Step]) extends Step
 
-    @datatype class Let(val no: Exp.LitZ, params: ISZ[Let.Param], steps: ISZ[Step]) extends Step
+    @datatype class Let(val no: Exp.LitZ, val params: ISZ[Let.Param], val steps: ISZ[Step]) extends Step
 
     object Let {
 
@@ -598,10 +604,12 @@ object ProofAst {
     }
 
     @datatype class StructInduction(val no: Exp.LitZ,
-                                    claim: Exp,
-                                    exp: Exp,
-                                    cases: ISZ[StructInduction.MatchCase],
-                                    defaultOpt: Option[StructInduction.MatchDefault]) extends Step
+                                    val claim: Exp,
+                                    val exp: Exp,
+                                    val cases: ISZ[StructInduction.MatchCase],
+                                    val defaultOpt: Option[StructInduction.MatchDefault]) extends Step {
+      @strictpure def claimDeBruijn: Exp = Util.deBruijn(claim)
+    }
 
     object StructInduction {
 
@@ -740,7 +748,7 @@ object EnumGen {
 
 object Type {
 
-  @datatype class Named(name: Name, typeArgs: ISZ[Type], attr: TypedAttr) extends Type {
+  @datatype class Named(name: Name, typeArgs: ISZ[Type], @hidden attr: TypedAttr) extends Type {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -756,7 +764,7 @@ object Type {
 
   }
 
-  @datatype class Fun(isPure: B, isByName: B, args: ISZ[Type], ret: Type, attr: TypedAttr) extends Type {
+  @datatype class Fun(isPure: B, isByName: B, args: ISZ[Type], ret: Type, @hidden attr: TypedAttr) extends Type {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -772,7 +780,7 @@ object Type {
 
   }
 
-  @datatype class Tuple(args: ISZ[Type], attr: TypedAttr) extends Type {
+  @datatype class Tuple(args: ISZ[Type], @hidden attr: TypedAttr) extends Type {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1517,7 +1525,10 @@ object ResolvedInfo {
   }
 
   @datatype class LocalVar(context: ISZ[String], scope: ResolvedInfo.LocalVar.Scope.Type, isSpec: B, isVal: B, id: String)
-    extends ResolvedInfo
+    extends ResolvedInfo {
+    @strictpure def isEqual(other: LocalVar): B = id == other.id && context == other.context
+    @strictpure override def hash: Z = (context :+ id).hash
+  }
 
   @datatype class Fact(name: ISZ[String]) extends ResolvedInfo
 
