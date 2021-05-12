@@ -703,9 +703,9 @@ object Info {
 
   @pure def substMethod(m: Method, substMap: HashMap[String, AST.Typed]): Method = {
     if (substMap.nonEmpty) {
-      val astOpt = AST.Util.TypeSubstitutor(substMap).transformStmt(m.ast)
+      val astOpt = AST.Transformer(AST.Util.TypePrePostSubstitutor(substMap)).transformStmt(F, m.ast).resultOpt
       astOpt match {
-        case MSome(newAst: AST.Stmt.Method) => return m(ast = newAst)
+        case Some(newAst: AST.Stmt.Method) => return m(ast = newAst)
         case _ => return m
       }
     } else {
