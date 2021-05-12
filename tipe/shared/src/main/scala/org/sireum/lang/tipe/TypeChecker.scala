@@ -127,6 +127,10 @@ object TypeChecker {
     AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Max)
   )
 
+  val randomResOpt: Option[AST.ResolvedInfo] = Some(
+    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Random)
+  )
+
   val indicesResOpt: Option[AST.ResolvedInfo] = Some(
     AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Indices)
   )
@@ -1193,8 +1197,9 @@ import TypeChecker._
         typeHierarchy.typeMap.get(receiverType.name) match {
           case Some(info: TypeInfo.SubZ) =>
             id.native match {
-              case "Max" if info.ast.hasMax => return (info.typedOpt, minResOpt, typeArgs)
-              case "Min" if info.ast.hasMin => return (info.typedOpt, maxResOpt, typeArgs)
+              case "Max" if info.ast.hasMax && typeArgs.isEmpty => return (info.typedOpt, minResOpt, typeArgs)
+              case "Min" if info.ast.hasMin && typeArgs.isEmpty => return (info.typedOpt, maxResOpt, typeArgs)
+              case "random" if typeArgs.isEmpty => return (info.typedOpt, randomResOpt, typeArgs)
               case _ =>
             }
           case _ =>

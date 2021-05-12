@@ -1729,6 +1729,7 @@ object JSON {
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.Indices => "Indices"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.Min => "Min"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.Max => "Max"
+        case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.Random => "Random"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.Native => "Native"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.Print => "Print"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.Println => "Println"

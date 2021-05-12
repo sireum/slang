@@ -1509,6 +1509,7 @@ object ResolvedInfo {
       'Indices
       'Min
       'Max
+      'Random
       'Native
       'Print
       'Println
