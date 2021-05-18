@@ -424,6 +424,10 @@ class TypeCheckerTest extends TestSuite {
             |assert(3 > 0)
             |""".stripMargin)
 
+        * - passingWorksheet(
+          """import org.sireum._
+            |def foo: Unit = { ISZ(1).map((x: Z) => { x + 1 }) }""".stripMargin)
+
       }
 
       "Stmt" - {

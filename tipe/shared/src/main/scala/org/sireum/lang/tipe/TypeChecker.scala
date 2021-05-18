@@ -3206,7 +3206,14 @@ import TypeChecker._
       case aexp: AST.Stmt.Return => checkStmt(scope, aexp, reporter)._2
     }
 
-    return (newStmt.asAssignExp, expectedOpt)
+    val newAssignExp = newStmt.asAssignExp
+    if (expectedOpt.isEmpty) {
+      val exprs = newAssignExp.exprs
+      if (exprs.size === 1) {
+        return (newAssignExp, exprs(0).exp.typedOpt)
+      }
+    }
+    return (newAssignExp, expectedOpt)
   }
 
   def checkStmts(
