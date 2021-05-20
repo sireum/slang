@@ -71,23 +71,23 @@ object TypeChecker {
     }
   }
   @record class StrictPureChecker(typeVarMutable: B, th: TypeHierarchy, reporter: Reporter) extends AST.MTransformer {
+    def errVars(posOpt: Option[Position]): Unit = {
+      reporter.error(posOpt, TypeChecker.typeCheckerKind, "@strictpure methods cannot refer to vars")
+    }
+    def checkType(t: AST.Typed, posOpt: Option[Position]): Unit = {
+      if (th.isMutable(t, typeVarMutable)) {
+        reporter.error(posOpt, TypeChecker.typeCheckerKind, "@strictpure methods cannot refer to outer vals of mutable type")
+      }
+    }
     override def postResolvedAttr(o: AST.ResolvedAttr): MOption[AST.ResolvedAttr] = {
-      def errVars(): Unit = {
-        reporter.error(o.posOpt, TypeChecker.typeCheckerKind, "@strictpure methods cannot refer to vars")
-      }
-      def checkType(t: AST.Typed): Unit = {
-        if (th.isMutable(t, typeVarMutable)) {
-          reporter.error(o.posOpt, TypeChecker.typeCheckerKind, "@strictpure methods cannot refer to outer vals of mutable type")
-        }
-      }
       o.resOpt match {
         case Some(res) =>
           res match {
             case res: AST.ResolvedInfo.Var if res.isInObject =>
               if (!res.isVal) {
-                errVars()
+                errVars(o.posOpt)
               } else {
-                checkType(o.typedOpt.get)
+                checkType(o.typedOpt.get, o.posOpt)
               }
             case res: AST.ResolvedInfo.LocalVar if res.scope == AST.ResolvedInfo.LocalVar.Scope.Closure && res.context.isEmpty =>
               reporter.error(o.posOpt, TypeChecker.typeCheckerKind, "Worksheet @strictpure methods cannot refer to top-level vars/vals")
@@ -96,6 +96,31 @@ object TypeChecker {
         case _ =>
       }
       return super.postResolvedAttr(o)
+    }
+
+    def checkResOpt(attr: AST.ResolvedAttr): Unit = {
+      attr.resOpt.get match {
+        case res: AST.ResolvedInfo.Var if !res.isInObject =>
+          if (!res.isVal) {
+            errVars(attr.posOpt)
+          } else {
+            checkType(attr.typedOpt.get, attr.posOpt)
+          }
+        case _ =>
+      }
+    }
+
+    override def postExpSelect(o: AST.Exp.Select): MOption[AST.Exp] = {
+      o.receiverOpt match {
+        case Some(_: AST.Exp.This) => checkResOpt(o.attr)
+        case _ =>
+      }
+      return super.postExpSelect(o)
+    }
+
+    override def postExpIdent(o: AST.Exp.Ident): MOption[AST.Exp] = {
+      checkResOpt(o.attr)
+      return super.postExpIdent(o)
     }
   }
 
