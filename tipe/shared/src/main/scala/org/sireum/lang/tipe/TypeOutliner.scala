@@ -934,18 +934,19 @@ object TypeOutliner {
           if (name != otherInfo.owner) {
             val (isEqual, t1, t2) = checkMethodEquality(otherInfo, mInfo, substMap, posOpt)
             if (isEqual) {
-              if (otherInfo.ast.bodyOpt.nonEmpty && mInfo.ast.bodyOpt.nonEmpty) {
+              if ((otherInfo.ast.bodyOpt.nonEmpty || otherInfo.ast.contract.nonEmpty) &&
+                (mInfo.ast.bodyOpt.nonEmpty || mInfo.ast.contract.nonEmpty)) {
                 if (otherInfo.owner != mInfo.owner) {
                   reporter.error(
                     posOpt,
                     TypeChecker.typeCheckerKind,
-                    st"Explicit declaration of $id in ${(name, ".")} is required because it is inherited from ${(otherInfo.owner, ".")} and ${(mInfo.owner, ".")}.".render
+                    st"Explicit declaration of $id in ${(name, ".")} (or its contract) is required because it is inherited from ${(otherInfo.owner, ".")} and ${(mInfo.owner, ".")}.".render
                   )
                 } else if (mInfo.methodType.collectTypeVars.nonEmpty) {
                   reporter.error(
                     posOpt,
                     TypeChecker.typeCheckerKind,
-                    st"Explicit declaration of $id in ${(name, ".")} is required because it is polymorphic and it is inherited from ${(otherInfo.owner, ".")} more than once.".render
+                    st"Explicit declaration of $id in ${(name, ".")} (or its contract) is required because it is polymorphic and it is inherited from ${(otherInfo.owner, ".")} more than once.".render
                   )
                 }
               } else {
