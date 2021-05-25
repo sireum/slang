@@ -241,6 +241,9 @@ object TypeOutliner {
             sig.funType
           )
         )
+        if (sig.funType.ret == AST.Typed.unit) {
+          reporter.error(sm.sig.returnType.posOpt, TypeChecker.typeCheckerKind, "@spec methods cannot have Unit as their return type")
+        }
         return Some(
           info(ast = sm(sig = sig, attr = sm.attr(typedOpt = tOpt, resOpt = Some(res(tpeOpt = Some(sig.funType))))))
         )
@@ -265,6 +268,9 @@ object TypeOutliner {
             sig.funType
           )
         )
+        if (info.ast.purity == AST.Purity.StrictPure && sig.funType.ret == AST.Typed.unit) {
+          reporter.error(m.sig.returnType.posOpt, TypeChecker.typeCheckerKind, "@strictpure methods cannot have Unit as their return type")
+        }
         return Some(
           info(ast = m(sig = sig, attr = m.attr(typedOpt = tOpt, resOpt = Some(res(tpeOpt = Some(sig.funType))))))
         )
