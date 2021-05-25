@@ -1966,7 +1966,9 @@ import TypeChecker._
                         AST.Typed.sireumName,
                         "IS",
                         ISZ(),
-                        Some(constructorType)
+                        Some(constructorType),
+                        ISZ(),
+                        ISZ()
                       )
                     ),
                     newTypeArgs
@@ -1998,7 +2000,9 @@ import TypeChecker._
                         AST.Typed.sireumName,
                         "MS",
                         ISZ(),
-                        Some(constructorType)
+                        Some(constructorType),
+                        ISZ(),
+                        ISZ()
                       )
                     ),
                     newTypeArgs
@@ -2030,7 +2034,9 @@ import TypeChecker._
                         AST.Typed.sireumName,
                         "IS",
                         ISZ(),
-                        Some(constructorType)
+                        Some(constructorType),
+                        ISZ(),
+                        ISZ()
                       )
                     ),
                     newTypeArgs
@@ -2062,7 +2068,9 @@ import TypeChecker._
                         AST.Typed.sireumName,
                         "MS",
                         ISZ(),
-                        Some(constructorType)
+                        Some(constructorType),
+                        ISZ(),
+                        ISZ()
                       )
                     ),
                     newTypeArgs
@@ -2092,7 +2100,9 @@ import TypeChecker._
                         AST.Typed.sireumName,
                         "IS",
                         ISZ(),
-                        Some(constructorType)
+                        Some(constructorType),
+                        ISZ(),
+                        ISZ()
                       )
                     ),
                     newTypeArgs
@@ -2125,7 +2135,9 @@ import TypeChecker._
                                 info.owner,
                                 info.ast.id.value,
                                 ISZ(),
-                                Some(constructorType)
+                                Some(constructorType),
+                                ISZ(),
+                                ISZ()
                               )
                             ),
                             newTypeArgs
@@ -2172,9 +2184,9 @@ import TypeChecker._
                     AST.ResolvedInfo.Methods(
                       ISZ(
                         AST.ResolvedInfo
-                          .Method(F, AST.MethodMode.Select, ISZ(), AST.Typed.sireumName, "IS", ISZ(), Some(selectType)),
+                          .Method(F, AST.MethodMode.Select, ISZ(), AST.Typed.sireumName, "IS", ISZ(), Some(selectType), ISZ(), ISZ()),
                         AST.ResolvedInfo
-                          .Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "IS", ISZ(), Some(storeType))
+                          .Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "IS", ISZ(), Some(storeType), ISZ(), ISZ())
                       )
                     )
                   ),
@@ -2191,7 +2203,7 @@ import TypeChecker._
                   Some(AST.Typed.Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "IS", ISZ(), storeType)),
                   Some(
                     AST.ResolvedInfo
-                      .Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "IS", ISZ(), Some(storeType))
+                      .Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "IS", ISZ(), Some(storeType), ISZ(), ISZ())
                   ),
                   newTypeArgs
                 )
@@ -2217,9 +2229,9 @@ import TypeChecker._
                     AST.ResolvedInfo.Methods(
                       ISZ(
                         AST.ResolvedInfo
-                          .Method(F, AST.MethodMode.Select, ISZ(), AST.Typed.sireumName, "MS", ISZ(), Some(selectType)),
+                          .Method(F, AST.MethodMode.Select, ISZ(), AST.Typed.sireumName, "MS", ISZ(), Some(selectType), ISZ(), ISZ()),
                         AST.ResolvedInfo
-                          .Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "MS", ISZ(), Some(storeType))
+                          .Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "MS", ISZ(), Some(storeType), ISZ(), ISZ())
                       )
                     )
                   ),
@@ -2236,7 +2248,7 @@ import TypeChecker._
                   Some(AST.Typed.Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "MS", ISZ(), storeType)),
                   Some(
                     AST.ResolvedInfo
-                      .Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "MS", ISZ(), Some(storeType))
+                      .Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "MS", ISZ(), Some(storeType), ISZ(), ISZ())
                   ),
                   newTypeArgs
                 )
@@ -2275,7 +2287,7 @@ import TypeChecker._
                         Some(AST.Typed.Method(F, AST.MethodMode.Copy, ISZ(), info.owner, id, paramNames, copyType)),
                         Some(
                           AST.ResolvedInfo
-                            .Method(F, AST.MethodMode.Copy, ISZ(), info.owner, id, paramNames, Some(copyType))
+                            .Method(F, AST.MethodMode.Copy, ISZ(), info.owner, id, paramNames, Some(copyType), ISZ(), ISZ())
                         ),
                         newTypeArgs
                       )
@@ -2403,17 +2415,26 @@ import TypeChecker._
       }
     }
 
-    def checkInvokeArgs(args: ISZ[AST.Exp]): Unit = {
-      def expPath(e: AST.Exp, acc: ISZ[String]): Option[ISZ[String]] = {
-        def varAccess(isId: B, resOpt: Option[AST.ResolvedInfo]): Option[ISZ[String]] = {
-          resOpt match {
-            case Some(res: AST.ResolvedInfo.Var) =>
-              return if (res.isInObject) Some(res.owner :+ res.id) else if (isId) Some(ISZ("this", res.id)) else None()
-            case Some(res: AST.ResolvedInfo.LocalVar) =>
-              return if (res.scope == AST.ResolvedInfo.LocalVar.Scope.Closure) Some(res.context :+ res.id) else Some(ISZ(res.id))
-            case _ => return None()
-          }
+    def checkInvokeArgs(args: ISZ[AST.Exp], accesses: ISZ[AST.ResolvedInfo]): Unit = {
+      def varAccess(isId: B, resOpt: Option[AST.ResolvedInfo]): Option[ISZ[String]] = {
+        resOpt match {
+          case Some(res: AST.ResolvedInfo.Var) =>
+            return if (res.isInObject) Some(res.owner :+ res.id) else if (isId) Some(ISZ("this", res.id)) else None()
+          case Some(res: AST.ResolvedInfo.LocalVar) =>
+            return if (res.scope == AST.ResolvedInfo.LocalVar.Scope.Closure) Some(res.context :+ res.id) else Some(ISZ(res.id))
+          case _ => return None()
         }
+      }
+      def mVarAccess(thisAccessOpt: Option[ISZ[String]], resOpt: Option[AST.ResolvedInfo]): Option[ISZ[String]] = {
+        resOpt match {
+          case Some(res: AST.ResolvedInfo.Var) =>
+            return if (res.isInObject) Some(res.owner :+ res.id) else Some(thisAccessOpt.get :+ res.id)
+          case Some(res: AST.ResolvedInfo.LocalVar) =>
+            return if (res.scope == AST.ResolvedInfo.LocalVar.Scope.Closure) Some(res.context :+ res.id) else Some(ISZ(res.id))
+          case _ => return None()
+        }
+      }
+      def expPath(e: AST.Exp, acc: ISZ[String]): Option[ISZ[String]] = {
         e match {
           case e: AST.Exp.Ident =>
             varAccess(T, e.attr.resOpt) match {
@@ -2455,15 +2476,23 @@ import TypeChecker._
           case _ => argPaths = argPaths :+ None()
         }
       }
+      for (access <- accesses) {
+        argPaths = argPaths :+ mVarAccess(if (argPaths.nonEmpty) argPaths(0) else None(), Some(access))
+      }
       for (i <- 0 until args.size) {
         for (j <- i + 1 until args.size) {
           (argPaths(i), argPaths(j)) match {
             case (Some(path1), Some(path2)) =>
               val size: Z = if (path1.size > path2.size) path2.size else path1.size
               if (ops.ISZOps(path1).slice(0, size) == ops.ISZOps(path2).slice(0, size)) {
-                val pos = args(i).posOpt.get
-                reporter.error(args(j).posOpt, typeCheckerKind,
-                  s"Cannot pass a mutable object as an argument with a similar access path with the expression at [${pos.beginLine}, ${pos.beginColumn}]")
+                if (i < args.size) {
+                  val pos = args(i).posOpt.get
+                  reporter.error(args(j).posOpt, typeCheckerKind,
+                    s"Cannot pass a mutable object as an argument with a similar access path with the expression at [${pos.beginLine}, ${pos.beginColumn}]")
+                } else {
+                  reporter.error(args(j).posOpt, typeCheckerKind,
+                    s"Cannot pass a mutable object as an argument with a similar access path to the method reads/modifies variables of mutable type")
+                }
               }
             case (_, _) =>
           }
@@ -2519,8 +2548,8 @@ import TypeChecker._
               case r: AST.ResolvedInfo.Method =>
                 if (strictAliasing && (r.mode == AST.MethodMode.Method || r.mode == AST.MethodMode.Ext)) {
                   checkInvokeArgs(
-                    receiverOpt.map((rcv: AST.Exp) => ISZ(rcv)).getOrElseEager(ISZ()) ++
-                      eArgs
+                    receiverOpt.map((rcv: AST.Exp) => ISZ(rcv)).getOrElseEager(ISZ()) ++ eArgs,
+                    (HashSSet ++ r.reads ++ r.writes).elements
                   )
                 }
                 if (funType == r.tpeOpt.get) Some(r) else Some(r(tpeOpt = Some(funType)))
@@ -2759,7 +2788,7 @@ import TypeChecker._
                 case r: AST.ResolvedInfo.Method =>
                   if (strictAliasing && (r.mode == AST.MethodMode.Method || r.mode == AST.MethodMode.Ext)) {
                     checkInvokeArgs(receiverOpt.map((rcv: AST.Exp) => ISZ(rcv)).getOrElseEager(ISZ()) ++
-                      (for (arg <- args) yield arg.arg))
+                      (for (arg <- args) yield arg.arg), (HashSSet ++ r.reads ++ r.writes).elements)
                   }
                   if (r.tpeOpt.get == funType) Some(r) else Some(r(tpeOpt = Some(funType)))
                 case _: AST.ResolvedInfo.BuiltIn => resOpt
@@ -3429,7 +3458,9 @@ import TypeChecker._
                       context,
                       id,
                       stmt.sig.params.map(p => p.id.value),
-                      None()
+                      None(),
+                      ISZ(),
+                      ISZ()
                     )
                   )
                 )
@@ -3493,7 +3524,9 @@ import TypeChecker._
                       context,
                       id,
                       stmt.sig.params.map(p => p.id.value),
-                      None()
+                      None(),
+                      ISZ(),
+                      ISZ()
                     )
                   )
                 )

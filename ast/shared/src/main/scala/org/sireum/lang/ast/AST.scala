@@ -1542,11 +1542,14 @@ object ResolvedInfo {
                          owner: ISZ[String],
                          id: String,
                          paramNames: ISZ[String],
-                         tpeOpt: Option[Typed.Fun]) extends ResolvedInfo {
+                         tpeOpt: Option[Typed.Fun],
+                         reads: ISZ[ResolvedInfo],
+                         writes: ISZ[ResolvedInfo]) extends ResolvedInfo {
 
     @pure override def subst(substMap: HashMap[String, Typed]): ResolvedInfo = {
       tpeOpt match {
-        case Some(tpe) => return Method(isInObject, mode, typeParams, owner, id, paramNames, Some(tpe.subst(substMap)))
+        case Some(tpe) => return Method(isInObject, mode, typeParams, owner, id, paramNames, Some(tpe.subst(substMap)),
+          for (r <- reads) yield r.subst(substMap), for (w <- writes) yield w.subst(substMap))
         case _ => return this
       }
     }

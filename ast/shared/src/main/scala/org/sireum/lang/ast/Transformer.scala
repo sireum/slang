@@ -4650,10 +4650,12 @@ import Transformer._
             TPostResult(preR.ctx, None())
         case o2: ResolvedInfo.Method =>
           val r0: TPostResult[Context, Option[Typed.Fun]] = transformOption(preR.ctx, o2.tpeOpt, transformTypedFun _)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(tpeOpt = r0.resultOpt.getOrElse(o2.tpeOpt))))
+          val r1: TPostResult[Context, IS[Z, ResolvedInfo]] = transformISZ(r0.ctx, o2.reads, transformResolvedInfo _)
+          val r2: TPostResult[Context, IS[Z, ResolvedInfo]] = transformISZ(r1.ctx, o2.writes, transformResolvedInfo _)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(tpeOpt = r0.resultOpt.getOrElse(o2.tpeOpt), reads = r1.resultOpt.getOrElse(o2.reads), writes = r2.resultOpt.getOrElse(o2.writes))))
           else
-            TPostResult(r0.ctx, None())
+            TPostResult(r2.ctx, None())
         case o2: ResolvedInfo.Methods =>
           val r0: TPostResult[Context, IS[Z, ResolvedInfo.Method]] = transformISZ(preR.ctx, o2.methods, transformResolvedInfoMethod _)
           if (hasChanged || r0.resultOpt.nonEmpty)
@@ -5387,10 +5389,12 @@ import Transformer._
       val o2: ResolvedInfo.Method = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: TPostResult[Context, Option[Typed.Fun]] = transformOption(preR.ctx, o2.tpeOpt, transformTypedFun _)
-      if (hasChanged || r0.resultOpt.nonEmpty)
-        TPostResult(r0.ctx, Some(o2(tpeOpt = r0.resultOpt.getOrElse(o2.tpeOpt))))
+      val r1: TPostResult[Context, IS[Z, ResolvedInfo]] = transformISZ(r0.ctx, o2.reads, transformResolvedInfo _)
+      val r2: TPostResult[Context, IS[Z, ResolvedInfo]] = transformISZ(r1.ctx, o2.writes, transformResolvedInfo _)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+        TPostResult(r2.ctx, Some(o2(tpeOpt = r0.resultOpt.getOrElse(o2.tpeOpt), reads = r1.resultOpt.getOrElse(o2.reads), writes = r2.resultOpt.getOrElse(o2.writes))))
       else
-        TPostResult(r0.ctx, None())
+        TPostResult(r2.ctx, None())
     } else if (preR.resultOpt.nonEmpty) {
       TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
     } else {

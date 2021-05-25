@@ -5226,8 +5226,10 @@ import MTransformer._
             MNone()
         case o2: ResolvedInfo.Method =>
           val r0: MOption[Option[Typed.Fun]] = transformOption(o2.tpeOpt, transformTypedFun _)
-          if (hasChanged || r0.nonEmpty)
-            MSome(o2(tpeOpt = r0.getOrElse(o2.tpeOpt)))
+          val r1: MOption[IS[Z, ResolvedInfo]] = transformISZ(o2.reads, transformResolvedInfo _)
+          val r2: MOption[IS[Z, ResolvedInfo]] = transformISZ(o2.writes, transformResolvedInfo _)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(tpeOpt = r0.getOrElse(o2.tpeOpt), reads = r1.getOrElse(o2.reads), writes = r2.getOrElse(o2.writes)))
           else
             MNone()
         case o2: ResolvedInfo.Methods =>
@@ -5963,8 +5965,10 @@ import MTransformer._
       val o2: ResolvedInfo.Method = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: MOption[Option[Typed.Fun]] = transformOption(o2.tpeOpt, transformTypedFun _)
-      if (hasChanged || r0.nonEmpty)
-        MSome(o2(tpeOpt = r0.getOrElse(o2.tpeOpt)))
+      val r1: MOption[IS[Z, ResolvedInfo]] = transformISZ(o2.reads, transformResolvedInfo _)
+      val r2: MOption[IS[Z, ResolvedInfo]] = transformISZ(o2.writes, transformResolvedInfo _)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+        MSome(o2(tpeOpt = r0.getOrElse(o2.tpeOpt), reads = r1.getOrElse(o2.reads), writes = r2.getOrElse(o2.writes)))
       else
         MNone()
     } else if (preR.resultOpt.nonEmpty) {

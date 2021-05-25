@@ -1787,6 +1787,8 @@ object MsgPack {
       writer.writeString(o.id)
       writer.writeISZ(o.paramNames, writer.writeString _)
       writer.writeOption(o.tpeOpt, write_astTypedFun _)
+      writer.writeISZ(o.reads, write_astResolvedInfo _)
+      writer.writeISZ(o.writes, write_astResolvedInfo _)
     }
 
     def write_astResolvedInfoMethods(o: org.sireum.lang.ast.ResolvedInfo.Methods): Unit = {
@@ -4705,7 +4707,9 @@ object MsgPack {
       val id = reader.readString()
       val paramNames = reader.readISZ(reader.readString _)
       val tpeOpt = reader.readOption(read_astTypedFun _)
-      return org.sireum.lang.ast.ResolvedInfo.Method(isInObject, mode, typeParams, owner, id, paramNames, tpeOpt)
+      val reads = reader.readISZ(read_astResolvedInfo _)
+      val writes = reader.readISZ(read_astResolvedInfo _)
+      return org.sireum.lang.ast.ResolvedInfo.Method(isInObject, mode, typeParams, owner, id, paramNames, tpeOpt, reads, writes)
     }
 
     def read_astResolvedInfoMethods(): org.sireum.lang.ast.ResolvedInfo.Methods = {

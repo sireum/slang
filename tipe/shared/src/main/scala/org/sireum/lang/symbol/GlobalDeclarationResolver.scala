@@ -119,7 +119,7 @@ import GlobalDeclarationResolver._
               AST.Stmt.Object(F, None(), AST.Id(id, attr), ISZ(), attr),
               Some(AST.Typed.Object(owner, id)),
               Some(AST.ResolvedInfo.Object(name)),
-              AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), owner, id, ISZ(), None()),
+              AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), owner, id, ISZ(), None(), ISZ(), ISZ()),
             )
           }
       }
@@ -194,7 +194,9 @@ import GlobalDeclarationResolver._
                     currentName,
                     id,
                     params,
-                    None()
+                    None(),
+                    ISZ(),
+                    ISZ()
                   )
                 )
               )
@@ -222,7 +224,9 @@ import GlobalDeclarationResolver._
                     currentName,
                     id,
                     params,
-                    None()
+                    None(),
+                    ISZ(),
+                    ISZ()
                   )
                 )
               )
@@ -250,7 +254,9 @@ import GlobalDeclarationResolver._
                     currentName,
                     id,
                     params,
-                    None()
+                    None(),
+                    ISZ(),
+                    ISZ()
                   )
                 )
               )
@@ -279,7 +285,9 @@ import GlobalDeclarationResolver._
                     currentName,
                     id,
                     params,
-                    None()
+                    None(),
+                    ISZ(),
+                    ISZ()
                   )
                 )
               )
@@ -307,7 +315,7 @@ import GlobalDeclarationResolver._
             AST.Stmt.Object(F, None(), AST.Id(stringInterpolator, stmt.id.attr), ISZ(), stmt.attr),
             Some(AST.Typed.Object(name, stringInterpolator)),
             Some(AST.ResolvedInfo.Object(stringInterpolatorName)),
-            AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), currentName, id, ISZ(), None())
+            AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), currentName, id, ISZ(), None(), ISZ(), ISZ())
           ),
           stmt.attr.posOpt
         )
@@ -387,7 +395,7 @@ import GlobalDeclarationResolver._
             stmt,
             Some(AST.Typed.Object(currentName, stmt.id.value)),
             Some(AST.ResolvedInfo.Object(name)),
-            AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), currentName, id, ISZ(), None())
+            AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), currentName, id, ISZ(), None(), ISZ(), ISZ())
           ),
           stmt.attr.posOpt
         )
@@ -456,11 +464,11 @@ import GlobalDeclarationResolver._
         val tpe = AST.Typed.Name(name, for (tVar <- typeVars) yield AST.Typed.TypeVar(tVar))
         val constructorResOpt: Option[AST.ResolvedInfo] = Some(
           AST.ResolvedInfo
-            .Method(F, AST.MethodMode.Constructor, typeVars, currentName, stmt.id.value, constructorParamVars, None())
+            .Method(F, AST.MethodMode.Constructor, typeVars, currentName, stmt.id.value, constructorParamVars, None(), ISZ(), ISZ())
         )
         val extractorResOpt: Option[AST.ResolvedInfo] = Some(
           AST.ResolvedInfo
-            .Method(F, AST.MethodMode.Extractor, typeVars, currentName, stmt.id.value, extractorParamVars, None())
+            .Method(F, AST.MethodMode.Extractor, typeVars, currentName, stmt.id.value, extractorParamVars, None(), ISZ(), ISZ())
         )
         declareType(
           if (stmt.isDatatype) "datatype" else "record",
@@ -598,7 +606,9 @@ import GlobalDeclarationResolver._
                     owner,
                     id,
                     params,
-                    None()
+                    None(),
+                    ISZ(),
+                    ISZ()
                   )
                 )
               )
@@ -623,7 +633,9 @@ import GlobalDeclarationResolver._
                     owner,
                     id,
                     params,
-                    None()
+                    None(),
+                    ISZ(),
+                    ISZ()
                   )
                 )
               )

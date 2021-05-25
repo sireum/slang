@@ -92,8 +92,8 @@ object Resolver {
       AST.Stmt.ExtMethod(F, AST.MethodSig(F, AST.Id(randomIntId, emptyAttr), ISZ(), F, ISZ(), zType),
         AST.MethodContract.Simple.empty,
         AST.ResolvedAttr(None[Position](), Some[AST.ResolvedInfo](AST.ResolvedInfo.Method(
-          T, AST.MethodMode.Ext, ISZ(), AST.Typed.sireumName, randomIntId, ISZ(), Some(randomIntTyped))), Some(
-          AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), AST.Typed.sireumName, randomIntId, ISZ(), randomIntTyped)))))
+          T, AST.MethodMode.Ext, ISZ(), AST.Typed.sireumName, randomIntId, ISZ(), Some(randomIntTyped), ISZ(), ISZ())),
+          Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), AST.Typed.sireumName, randomIntId, ISZ(), randomIntTyped)))))
 
     val seqIndexValidSizeId = "seqIndexValidSize"
     val seqIndexValidSizeTyped = AST.Typed.Fun(T, F, ISZ(AST.Typed.z), AST.Typed.b)
@@ -109,7 +109,7 @@ object Resolver {
           AST.Param(F, AST.Id(seqIndexValidSizeParamId, emptyAttr), zType)), bType),
         AST.ResolvedAttr(None[Position](), Some[AST.ResolvedInfo](AST.ResolvedInfo.Method(T, AST.MethodMode.Spec,
           ISZ(seqIndexValidSizeTypeParamId), AST.Typed.sireumName, seqIndexValidSizeId, ISZ(seqIndexValidSizeParamId),
-          Some(seqIndexValidSizeTyped))), Some(AST.Typed.Method(T, AST.MethodMode.Spec,
+          Some(seqIndexValidSizeTyped), ISZ(), ISZ())), Some(AST.Typed.Method(T, AST.MethodMode.Spec,
           ISZ(seqIndexValidSizeTypeParamId), AST.Typed.sireumName, seqIndexValidSizeId, ISZ(seqIndexValidSizeParamId),
             seqIndexValidSizeTyped)))))
 
