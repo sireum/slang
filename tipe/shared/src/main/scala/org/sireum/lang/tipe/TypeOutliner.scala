@@ -80,24 +80,25 @@ object TypeOutliner {
       return r
     }
 
-    var workList = typeHierarchy.rootTypeNames()
-
-    var typeAliases: ISZ[TypeInfo.TypeAlias] = ISZ()
-    for (typeInfo <- typeHierarchy.typeMap.values) {
-      typeInfo match {
-        case typeInfo: TypeInfo.TypeAlias => typeAliases = typeAliases :+ typeInfo
-        case _ =>
-      }
-    }
-
     var th = typeHierarchy
-    var jobs =
-      ISZ[() => (TypeHierarchy => (TypeHierarchy, Reporter) @pure) @pure](
-        () => TypeOutliner(th).outlineTypeAliases(typeAliases)
-      )
-    while (workList.nonEmpty && !reporter.hasError) {
-      var l = ISZ[QName]()
-      for (name <- workList) {
+
+    def outlineNonObject(): Unit = {
+      var workList = typeHierarchy.rootTypeNames()
+      var jobs = ISZ[() => (TypeHierarchy => (TypeHierarchy, Reporter) @pure) @pure]()
+
+      def addTypeAliases(): Unit = {
+        var typeAliases: ISZ[TypeInfo.TypeAlias] = ISZ()
+        for (typeInfo <- typeHierarchy.typeMap.values) {
+          typeInfo match {
+            case typeInfo: TypeInfo.TypeAlias => typeAliases = typeAliases :+ typeInfo
+            case _ =>
+          }
+        }
+        jobs = jobs :+ (() => TypeOutliner(th).outlineTypeAliases(typeAliases))
+      }
+
+      def addJob(name: QName, acc: ISZ[QName]): ISZ[QName] = {
+        var r = acc
         val ti = th.typeMap.get(name).get
         var ok: B = F
         val to = TypeOutliner(th)
@@ -127,23 +128,34 @@ object TypeOutliner {
         if (ok) {
           val children = typeHierarchy.poset.childrenOf(name).elements
           for (n <- children) {
-            l = l :+ n
+            r = r :+ n
           }
         }
+        return r
       }
-      val init = (th, Reporter.create)
-      val r: (TypeHierarchy, Reporter) =
-        if (par) ISZOps(jobs).parMapFoldLeft((f: () => TypeHierarchy => (TypeHierarchy, Reporter)) => f(),
-          TypeHierarchy.combine _, init)
-        else ISZOps(ISZOps(jobs).map((f: () => TypeHierarchy => (TypeHierarchy, Reporter)) => f())).foldLeft(
-          TypeHierarchy.combine _, init)
-      reporter.reports(r._2.messages)
-      th = r._1
-      workList = l
-      jobs = ISZ()
+
+      addTypeAliases()
+
+      while (workList.nonEmpty && !reporter.hasError) {
+        var l = ISZ[QName]()
+        for (name <- workList) {
+          l = addJob(name, l)
+        }
+        val init = (th, Reporter.create)
+        val r: (TypeHierarchy, Reporter) =
+          if (par) ISZOps(jobs).parMapFoldLeft((f: () => TypeHierarchy => (TypeHierarchy, Reporter)) => f(),
+            TypeHierarchy.combine _, init)
+          else ISZOps(ISZOps(jobs).map((f: () => TypeHierarchy => (TypeHierarchy, Reporter)) => f())).foldLeft(
+            TypeHierarchy.combine _, init)
+        reporter.reports(r._2.messages)
+        th = r._1
+        workList = l
+        jobs = ISZ()
+      }
     }
-    if (!reporter.hasError) {
-      jobs = ISZ[() => (TypeHierarchy => (TypeHierarchy, Reporter) @pure) @pure]()
+
+    def outlineObject(): Unit = {
+      var jobs = ISZ[() => (TypeHierarchy => (TypeHierarchy, Reporter)@pure)@pure]()
       val to = TypeOutliner(th)
       for (info <- th.nameMap.values) {
         info match {
@@ -174,10 +186,18 @@ object TypeOutliner {
           case _ =>
         }
       }
-      return th(nameMap = gnm)
-    } else {
+      th = th(nameMap = gnm)
+    }
+
+    outlineNonObject()
+
+    if (reporter.hasError) {
       return th
     }
+
+    outlineObject()
+
+    return th
   }
 }
 
@@ -411,8 +431,6 @@ object TypeOutliner {
     val tm = typeParamMap(info.ast.typeParams, reporter)
     val scope = Scope.Local.create(tm.map, info.scope)
     val members = outlineMembers(
-      T,
-      info.name,
       TypeInfo.Members(
         info.specVars,
         HashSMap.empty,
@@ -448,8 +466,6 @@ object TypeOutliner {
     val tm = typeParamMap(info.ast.typeParams, reporter)
     val scope = Scope.Local.create(tm.map, info.scope)
     val members = outlineMembers(
-      info.ast.isRoot,
-      info.name,
       TypeInfo.Members(
         info.specVars,
         info.vars,
@@ -563,8 +579,6 @@ object TypeOutliner {
   }
 
   def outlineMembers(
-    isAbstract: B,
-    name: QName,
     info: TypeInfo.Members,
     scope: Scope,
     reporter: Reporter
@@ -858,8 +872,7 @@ object TypeOutliner {
     def checkMethodEquality(
       m1: Info.Method,
       m2: Info.Method,
-      substMap: HashMap[String, AST.Typed],
-      posOpt: Option[Position]
+      substMap: HashMap[String, AST.Typed]
     ): (B, AST.Typed, AST.Typed) = {
       val t1 = m1.typedOpt.get.asInstanceOf[AST.Typed.Method].tpe.deBruijn
       val t2 = m2.typedOpt.get.asInstanceOf[AST.Typed.Method].tpe.subst(substMap).deBruijn
@@ -869,8 +882,7 @@ object TypeOutliner {
     def checkMethodRefinement(
       m: Info.Method,
       supM: Info.Method,
-      substMap: HashMap[String, AST.Typed],
-      posOpt: Option[Position]
+      substMap: HashMap[String, AST.Typed]
     ): (B, AST.Typed, AST.Typed) = {
       val t1 = m.typedOpt.get.deBruijn
       val t2 = supM.typedOpt.get.subst(substMap).deBruijn
@@ -932,7 +944,7 @@ object TypeOutliner {
       methods.get(id) match {
         case Some(otherInfo) =>
           if (name != otherInfo.owner) {
-            val (isEqual, t1, t2) = checkMethodEquality(otherInfo, mInfo, substMap, posOpt)
+            val (isEqual, t1, t2) = checkMethodEquality(otherInfo, mInfo, substMap)
             if (isEqual) {
               if ((otherInfo.ast.bodyOpt.nonEmpty || otherInfo.ast.contract.nonEmpty) &&
                 (mInfo.ast.bodyOpt.nonEmpty || mInfo.ast.contract.nonEmpty)) {
@@ -963,7 +975,7 @@ object TypeOutliner {
             }
             return
           } else {
-            val (refined, t1, t2) = checkMethodRefinement(otherInfo, mInfo, substMap, posOpt)
+            val (refined, t1, t2) = checkMethodRefinement(otherInfo, mInfo, substMap)
             ok = refined
             if (ok) {
               refinements = refinements + id ~> TypeInfo.Name(mInfo.owner)
