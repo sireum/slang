@@ -262,7 +262,7 @@ class SlangParser(
   def parseTopUnit(): Result = {
     try {
       val fileUri = fileUriOpt.getOrElse("").value
-      if (fileUri.endsWith(".scala") || fileUri.endsWith(".sc") || fileUri.endsWith(".slang") || fileUri.endsWith(".cmd")) {
+      if (fileUri.endsWith(".scala") || fileUri.endsWith(".sc") || fileUri.endsWith(".slang") || fileUri.endsWith(".cmd") || (fileUri == "" && hashSireum)) {
         if (hashSireum || fileUri.endsWith(".slang")) {
           val parser = new ScalametaParser(input)(dialect)
           translateSource(parser.parseSource())
