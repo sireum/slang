@@ -4389,10 +4389,20 @@ import TypeChecker._
                 if (info.methodType.tpe.ret != AST.Typed.unit) {
                   reporter.error(eta.posOpt, typeCheckerKind, st"Object method ${(name, ".")}'s return type should be Unit".render)
                 }
-                ast.contract match {
-                  case contract: AST.MethodContract.Simple if stmt.sig.params.size != contract.requires.size =>
-                    reporter.error(eta.posOpt, typeCheckerKind, st"Mismatch number of object method ${(name, ".")}'s preconditions with ${(res.owner :+ res.id, ".")}'s number of parameters'".render)
-                  case _ =>
+                if (ast.contract.isEmpty) {
+                  ast.bodyOpt match {
+                    case Some(AST.Body(ISZ(AST.Stmt.DeduceSequent(_, ISZ(sequent)), _*))) if stmt.sig.params.size != sequent.premises.size =>
+                      reporter.error(eta.posOpt, typeCheckerKind, st"Mismatch number of object method ${(name, ".")}'s sequent premises with ${(res.owner :+ res.id, ".")}'s number of parameters'".render)
+                    case Some(_) =>
+                    case _ =>
+                      reporter.error(eta.posOpt, typeCheckerKind, st"Expecting a simple contract or a single sequent for object method ${(name, ".")}".render)
+                  }
+                } else {
+                  ast.contract match {
+                    case contract: AST.MethodContract.Simple if stmt.sig.params.size != contract.requires.size =>
+                      reporter.error(eta.posOpt, typeCheckerKind, st"Mismatch number of object method ${(name, ".")}'s preconditions with ${(res.owner :+ res.id, ".")}'s number of parameters'".render)
+                    case _ =>
+                  }
                 }
               case _ =>
                 reporter.error(eta.posOpt, typeCheckerKind, st"Could not find object method ${(name, ".")}".render)
@@ -4783,7 +4793,7 @@ import TypeChecker._
       }
     }
     val r = checkMethodH()
-    if (r.purity == AST.Purity.StrictPure) {
+    if (!reporter.hasError && r.purity == AST.Purity.StrictPure) {
       val spc = TypeChecker.StrictPureChecker(isInMutableContext, typeHierarchy, Reporter.create)
       spc.transformStmt(r)
       reporter.reports(spc.reporter.messages)
