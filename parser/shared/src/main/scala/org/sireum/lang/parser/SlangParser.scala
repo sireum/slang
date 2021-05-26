@@ -173,7 +173,7 @@ object SlangParser {
         if ((fileUri.value.endsWith(".scala") || fileUri.value.endsWith(".sc")) && firstLine.contains("#Sireum")) {
           hashSireum = true
         } else if (fileUri.value.endsWith(".slang") || fileUri.value.endsWith(".logika")) {
-          hashSireum = true
+          hashSireum = false
         } else if (fileUri.value.endsWith(".cmd") && firstLine.startsWith("::#!")) {
           var found = false
           var i = 4
@@ -194,7 +194,7 @@ object SlangParser {
             }
           }
         }
-      case _ => hashSireum = true
+      case _ => hashSireum = firstLine.contains("#Sireum")
     }
     (hashSireum, firstLine, text)
   }
@@ -206,7 +206,7 @@ object SlangParser {
     txt: String,
     reporter: Reporter
   ): Result = {
-    val (hashSireum, compactFirstLine, text) = detectSlang(fileUriOpt, txt)
+    val (hashSireum, _, text) = detectSlang(fileUriOpt, txt)
     val (dialect, input) = scalaDialect(isWorksheet)(text)
     val r = new SlangParser(text, input, dialect, hashSireum, isWorksheet, isDiet, fileUriOpt, reporter)
       .parseTopUnit()
