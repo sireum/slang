@@ -3027,11 +3027,11 @@ import MTransformer._
             MNone()
         case o2: Stmt.Method =>
           val r0: MOption[MethodSig] = transformMethodSig(o2.sig)
-          val r1: MOption[MethodContract] = transformMethodContract(o2.contract)
+          val r1: MOption[MethodContract] = transformMethodContract(o2.mcontract)
           val r2: MOption[Option[Body]] = transformOption(o2.bodyOpt, transformBody _)
           val r3: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-            MSome(o2(sig = r0.getOrElse(o2.sig), contract = r1.getOrElse(o2.contract), bodyOpt = r2.getOrElse(o2.bodyOpt), attr = r3.getOrElse(o2.attr)))
+            MSome(o2(sig = r0.getOrElse(o2.sig), mcontract = r1.getOrElse(o2.mcontract), bodyOpt = r2.getOrElse(o2.bodyOpt), attr = r3.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.ExtMethod =>

@@ -2451,11 +2451,11 @@ import Transformer._
             TPostResult(r2.ctx, None())
         case o2: Stmt.Method =>
           val r0: TPostResult[Context, MethodSig] = transformMethodSig(preR.ctx, o2.sig)
-          val r1: TPostResult[Context, MethodContract] = transformMethodContract(r0.ctx, o2.contract)
+          val r1: TPostResult[Context, MethodContract] = transformMethodContract(r0.ctx, o2.mcontract)
           val r2: TPostResult[Context, Option[Body]] = transformOption(r1.ctx, o2.bodyOpt, transformBody _)
           val r3: TPostResult[Context, ResolvedAttr] = transformResolvedAttr(r2.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
-            TPostResult(r3.ctx, Some(o2(sig = r0.resultOpt.getOrElse(o2.sig), contract = r1.resultOpt.getOrElse(o2.contract), bodyOpt = r2.resultOpt.getOrElse(o2.bodyOpt), attr = r3.resultOpt.getOrElse(o2.attr))))
+            TPostResult(r3.ctx, Some(o2(sig = r0.resultOpt.getOrElse(o2.sig), mcontract = r1.resultOpt.getOrElse(o2.mcontract), bodyOpt = r2.resultOpt.getOrElse(o2.bodyOpt), attr = r3.resultOpt.getOrElse(o2.attr))))
           else
             TPostResult(r3.ctx, None())
         case o2: Stmt.ExtMethod =>

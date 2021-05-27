@@ -168,7 +168,7 @@ object Stmt {
                          hasOverride: B,
                          isHelper: B,
                          sig: MethodSig,
-                         contract: MethodContract,
+                         mcontract: MethodContract,
                          bodyOpt: Option[Body],
                          @hidden attr: ResolvedAttr) extends Stmt {
 
@@ -177,16 +177,36 @@ object Stmt {
     }
 
     @pure def hasContract: B = {
-      if (contract.nonEmpty) {
+      if (mcontract.nonEmpty) {
         return T
       }
-
       bodyOpt match {
         case Some(Body(ISZ(Stmt.DeduceSequent(_, ISZ(_)), _*))) => return T
         case _ =>
       }
-
       return F
+    }
+
+    @pure def contract: MethodContract = {
+      if (mcontract.isEmpty) {
+        bodyOpt match {
+          case Some(Body(ISZ(Stmt.DeduceSequent(_, ISZ(sequent)), _*))) =>
+            val reqAttr: Attr = if (sequent.premises.isEmpty) {
+              Attr(None())
+            } else {
+              val pos1 = sequent.premises(0).posOpt.get
+              val pos2 = sequent.premises(sequent.premises.size - 1).posOpt.get
+              Attr(Some(pos1.to(pos2)))
+            }
+            return MethodContract.Simple(MethodContract.Accesses.empty,
+              MethodContract.Claims(sequent.premises, reqAttr),
+              MethodContract.Accesses.empty,
+              MethodContract.Claims(ISZ(sequent.conclusion), Attr(sequent.conclusion.posOpt)),
+                Attr(sequent.attr.posOpt))
+          case _ =>
+        }
+      }
+      return mcontract
     }
   }
 

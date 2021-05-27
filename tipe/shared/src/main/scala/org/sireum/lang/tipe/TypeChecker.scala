@@ -618,7 +618,7 @@ object TypeChecker {
     val (ok, sc) = TypeChecker.methodScope(th, context, scope, stmt.sig, reporter)
     if (ok) {
       val tc = TypeChecker(th, context, isMutableContext, TypeChecker.ModeContext.Spec, strictAliasing)
-      val newStmt: AST.Stmt.Method = if (stmt.contract.isEmpty) {
+      val newStmt: AST.Stmt.Method = if (stmt.mcontract.isEmpty) {
         val bstmts = stmt.bodyOpt.get.stmts
         val ds = bstmts(0).asInstanceOf[AST.Stmt.DeduceSequent]
         val sequent = ds.sequents(0)
@@ -628,7 +628,7 @@ object TypeChecker {
           conclusion = tc.checkExp(Some(AST.Typed.b), sc, sequent.conclusion, reporter)._1)
         stmt(bodyOpt = Some(stmt.bodyOpt.get(stmts = ds(sequents = ISZ(newSequent)) +: ops.ISZOps(bstmts).drop(1))))
       } else {
-        stmt(contract = tc.checkMethodContract(sc, stmt.contract, reporter))
+        stmt(mcontract = tc.checkMethodContract(sc, stmt.contract, reporter))
       }
       if (reporter.hasError) {
         return newStmt

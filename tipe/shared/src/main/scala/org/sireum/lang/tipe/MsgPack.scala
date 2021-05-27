@@ -794,7 +794,7 @@ object MsgPack {
       writer.writeB(o.hasOverride)
       writer.writeB(o.isHelper)
       write_astMethodSig(o.sig)
-      write_astMethodContract(o.contract)
+      write_astMethodContract(o.mcontract)
       writer.writeOption(o.bodyOpt, write_astBody _)
       write_astResolvedAttr(o.attr)
     }
@@ -2730,10 +2730,10 @@ object MsgPack {
       val hasOverride = reader.readB()
       val isHelper = reader.readB()
       val sig = read_astMethodSig()
-      val contract = read_astMethodContract()
+      val mcontract = read_astMethodContract()
       val bodyOpt = reader.readOption(read_astBody _)
       val attr = read_astResolvedAttr()
-      return org.sireum.lang.ast.Stmt.Method(purity, hasOverride, isHelper, sig, contract, bodyOpt, attr)
+      return org.sireum.lang.ast.Stmt.Method(purity, hasOverride, isHelper, sig, mcontract, bodyOpt, attr)
     }
 
     def read_astStmtExtMethod(): org.sireum.lang.ast.Stmt.ExtMethod = {

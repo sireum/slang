@@ -512,7 +512,7 @@ object JSON {
         ("hasOverride", printB(o.hasOverride)),
         ("isHelper", printB(o.isHelper)),
         ("sig", print_astMethodSig(o.sig)),
-        ("contract", print_astMethodContract(o.contract)),
+        ("mcontract", print_astMethodContract(o.mcontract)),
         ("bodyOpt", printOption(F, o.bodyOpt, print_astBody _)),
         ("attr", print_astResolvedAttr(o.attr))
       ))
@@ -3107,8 +3107,8 @@ object JSON {
       parser.parseObjectKey("sig")
       val sig = parse_astMethodSig()
       parser.parseObjectNext()
-      parser.parseObjectKey("contract")
-      val contract = parse_astMethodContract()
+      parser.parseObjectKey("mcontract")
+      val mcontract = parse_astMethodContract()
       parser.parseObjectNext()
       parser.parseObjectKey("bodyOpt")
       val bodyOpt = parser.parseOption(parse_astBody _)
@@ -3116,7 +3116,7 @@ object JSON {
       parser.parseObjectKey("attr")
       val attr = parse_astResolvedAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.Method(purity, hasOverride, isHelper, sig, contract, bodyOpt, attr)
+      return org.sireum.lang.ast.Stmt.Method(purity, hasOverride, isHelper, sig, mcontract, bodyOpt, attr)
     }
 
     def parse_astStmtExtMethod(): org.sireum.lang.ast.Stmt.ExtMethod = {
