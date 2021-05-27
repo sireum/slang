@@ -176,6 +176,18 @@ object Stmt {
       return attr.posOpt
     }
 
+    @pure def hasContract: B = {
+      if (contract.nonEmpty) {
+        return T
+      }
+
+      bodyOpt match {
+        case Some(Body(ISZ(Stmt.DeduceSequent(_, ISZ(_)), _*))) => return T
+        case _ =>
+      }
+
+      return F
+    }
   }
 
   @datatype class ExtMethod(isPure: B, sig: MethodSig, contract: MethodContract, @hidden attr: ResolvedAttr) extends Stmt {

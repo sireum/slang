@@ -88,7 +88,7 @@ object FrontEnd {
       parseProgramAndGloballyResolve(T, Library.files, initNameMap, initTypeMap)
     val th =
       TypeHierarchy.build(TypeHierarchy(nameMap, typeMap, Poset.empty, HashMap.empty), reporter)
-    val thOutlined = TypeOutliner.checkOutline(T, th, reporter)
+    val thOutlined = TypeOutliner.checkOutline(T, T, th, reporter)
     val tc = TypeChecker(thOutlined, ISZ(), F, TypeChecker.ModeContext.Code, T)
     val r = (tc, reporter)
     return r
@@ -161,7 +161,7 @@ object FrontEnd {
       return (th2, program)
     }
 
-    val th3 = TypeOutliner.checkOutline(par, th2, reporter)
+    val th3 = TypeOutliner.checkOutline(par, T, th2, reporter)
     if (reporter.hasError) {
       return (th3, program)
     }

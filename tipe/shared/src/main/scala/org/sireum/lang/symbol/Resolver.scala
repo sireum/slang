@@ -148,6 +148,7 @@ object Resolver {
       AST.Typed.sireumName,
       T,
       T,
+      T,
       AST.Typed.unit,
       None(),
       None(),
@@ -167,6 +168,7 @@ object Resolver {
 
     tm = tm + AST.Typed.nothing.ids ~> TypeInfo.Adt(
       AST.Typed.sireumName,
+      T,
       T,
       T,
       AST.Typed.nothing,

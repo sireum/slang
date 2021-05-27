@@ -683,7 +683,7 @@ class TypeCheckerTest extends TestSuite {
     val scope = Scope.Local.create(HashMap.empty, Scope.Global(ISZ(), ISZ(), ISZ()))
     val reporter = Reporter.create
     typeChecker.checkStmt(scope, stmt, reporter) match {
-      case (Some(_), checkedStmt) if isPassing =>
+      case checkedStmt if isPassing =>
         if (reporter.hasIssue) {
           reporter.printMessages()
           return false

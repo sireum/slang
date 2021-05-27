@@ -28,7 +28,6 @@ package org.sireum.lang.tipe
 
 import org.sireum._
 import org.sireum.message._
-import org.sireum.ops._
 import org.sireum.lang.{ast => AST}
 import org.sireum.lang.symbol._
 import org.sireum.lang.symbol.Resolver._
@@ -57,7 +56,16 @@ object TypeOutliner {
     }
   }
 
-  def checkOutline(par: B, typeHierarchy: TypeHierarchy, reporter: Reporter): TypeHierarchy = {
+
+  @record class TypeMembers(var specVars: HashSMap[String, Info.SpecVar],
+                            var vars: HashSMap[String, Info.Var],
+                            var specMethods: HashMap[String, Info.SpecMethod],
+                            var methods: HashMap[String, Info.Method],
+                            var invariants: HashMap[String, Info.Inv],
+                            var drs: ISZ[AST.Stmt.DataRefinement],
+                            var stmts: ISZ[AST.Stmt])
+
+  def checkOutline(par: B, strictAliasing: B, typeHierarchy: TypeHierarchy, reporter: Reporter): TypeHierarchy = {
     def parentsOutlined(name: QName, typeMap: TypeMap): B = {
       def isOutlined(ids: QName): B = {
         typeMap.get(ids).get match {
@@ -84,7 +92,7 @@ object TypeOutliner {
 
     def outlineNonObject(): Unit = {
       var workList = typeHierarchy.rootTypeNames()
-      var jobs = ISZ[() => (TypeHierarchy => (TypeHierarchy, Reporter) @pure) @pure]()
+      var jobs = ISZ[() => (TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure)@pure]()
 
       def addTypeAliases(): Unit = {
         var typeAliases: ISZ[TypeInfo.TypeAlias] = ISZ()
@@ -141,13 +149,13 @@ object TypeOutliner {
         for (name <- workList) {
           l = addJob(name, l)
         }
-        val init = (th, Reporter.create)
-        val r: (TypeHierarchy, Reporter) =
-          if (par) ISZOps(jobs).parMapFoldLeft((f: () => TypeHierarchy => (TypeHierarchy, Reporter)) => f(),
-            TypeHierarchy.combine _, init)
-          else ISZOps(ISZOps(jobs).map((f: () => TypeHierarchy => (TypeHierarchy, Reporter)) => f())).foldLeft(
-            TypeHierarchy.combine _, init)
-        reporter.reports(r._2.messages)
+        val init = (th, ISZ[Message]())
+        val r: (TypeHierarchy, ISZ[Message]) =
+          if (par) ops.ISZOps(ops.ISZOps(jobs).parMap((f: () => (TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure)@pure) => f())).
+            foldLeft(TypeHierarchy.combine _, init)
+          else ops.ISZOps(ops.ISZOps(jobs).map((f: () => (TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure)@pure) => f())).
+            foldLeft(TypeHierarchy.combine _, init)
+        reporter.reports(r._2)
         th = r._1
         workList = l
         jobs = ISZ()
@@ -155,7 +163,7 @@ object TypeOutliner {
     }
 
     def outlineObject(): Unit = {
-      var jobs = ISZ[() => (TypeHierarchy => (TypeHierarchy, Reporter)@pure)@pure]()
+      var jobs = ISZ[() => (TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure)@pure]()
       val to = TypeOutliner(th)
       for (info <- th.nameMap.values) {
         info match {
@@ -163,13 +171,13 @@ object TypeOutliner {
           case _ =>
         }
       }
-      val init = (th, Reporter.create)
-      val r: (TypeHierarchy, Reporter) =
-        if (par) ISZOps(jobs).parMapFoldLeft((f: () => TypeHierarchy => (TypeHierarchy, Reporter)) => f(),
-          TypeHierarchy.combine _, init)
-        else ops.ISZOps(ISZOps(jobs).map((f: () => TypeHierarchy => (TypeHierarchy, Reporter)) => f())).foldLeft(
-          TypeHierarchy.combine _, init)
-      reporter.reports(r._2.messages)
+      val init = (th, ISZ[Message]())
+      val r: (TypeHierarchy, ISZ[Message]) =
+        if (par) ops.ISZOps(ops.ISZOps(jobs).parMap((f: () => (TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure)@pure) => f())).
+          foldLeft(TypeHierarchy.combine _, init)
+        else ops.ISZOps(ops.ISZOps(jobs).map((f: () => (TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure)@pure) => f())).
+          foldLeft(TypeHierarchy.combine _, init)
+      reporter.reports(r._2)
       th = r._1
       var gnm = th.nameMap
       val to2 = TypeOutliner(th)
@@ -189,6 +197,36 @@ object TypeOutliner {
       th = th(nameMap = gnm)
     }
 
+    def checkContract(): Unit = {
+      var jobs = ISZ[() => (TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure)@pure]()
+      val to3 = TypeOutliner(th)
+      for (info <- th.nameMap.values) {
+        info match {
+          case info: Info.Object if !info.contractOutlined =>
+            jobs = jobs :+ (() => to3.checkObjectContract(strictAliasing, info))
+          case _ =>
+        }
+      }
+      for (info <- th.typeMap.values) {
+        info match {
+          case info: TypeInfo.Adt if !info.contractOutlined =>
+            jobs = jobs :+ (() => to3.checkAdtContract(strictAliasing, info))
+          case info: TypeInfo.Sig if !info.contractOutlined =>
+            jobs = jobs :+ (() => to3.checkSigContract(strictAliasing, info))
+          case _ =>
+        }
+      }
+
+      val init = (th, ISZ[Message]())
+      val r: (TypeHierarchy, ISZ[Message]) =
+        if (par) ops.ISZOps(ops.ISZOps(jobs).parMap((f: () => (TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure)@pure) => f())).
+          foldLeft(TypeHierarchy.combine _, init)
+        else ops.ISZOps(ops.ISZOps(jobs).map((f: () => (TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure)@pure) => f())).
+          foldLeft(TypeHierarchy.combine _, init)
+      reporter.reports(r._2)
+      th = r._1
+    }
+
     outlineNonObject()
 
     if (reporter.hasError) {
@@ -197,8 +235,15 @@ object TypeOutliner {
 
     outlineObject()
 
+    if (reporter.hasError) {
+      return th
+    }
+
+    checkContract()
+
     return th
   }
+
 }
 
 @datatype class TypeOutliner(typeHierarchy: TypeHierarchy) {
@@ -340,7 +385,7 @@ object TypeOutliner {
     }
   }
 
-  @pure def outlineObject(info: Info.Object): TypeHierarchy => (TypeHierarchy, Reporter) @pure = {
+  @pure def outlineObject(info: Info.Object): TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure = {
     val reporter = Reporter.create
 
     var infos = ISZ[(QName, Info)]()
@@ -412,11 +457,13 @@ object TypeOutliner {
       }
     }
 
-    return (th: TypeHierarchy) =>
-      (th(nameMap = th.nameMap ++ infos + info.name ~> info(outlined = T, ast = info.ast(stmts = newStmts))), reporter)
+    val messages = reporter.messages
+    val newAst = info.ast(stmts = newStmts)
+    val newInfos = infos
+    return (th: TypeHierarchy) => (th(nameMap = th.nameMap ++ newInfos + info.name ~> info(outlined = T, ast = newAst)), messages)
   }
 
-  @pure def outlineTypeAliases(infos: ISZ[TypeInfo.TypeAlias]): TypeHierarchy => (TypeHierarchy, Reporter) @pure = {
+  @pure def outlineTypeAliases(infos: ISZ[TypeInfo.TypeAlias]): TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure = {
     val reporter = Reporter.create
     var r = ISZ[(QName, TypeInfo)]()
     for (info <- infos) {
@@ -429,10 +476,11 @@ object TypeOutliner {
       }
       r = r :+ ((info.name, newInfo))
     }
-    return (th: TypeHierarchy) => (th(typeMap = th.typeMap ++ r), reporter)
+    val messages = reporter.messages
+    return (th: TypeHierarchy) => (th(typeMap = th.typeMap ++ r), messages)
   }
 
-  @pure def outlineSig(info: TypeInfo.Sig): TypeHierarchy => (TypeHierarchy, Reporter) @pure = {
+  @pure def outlineSig(info: TypeInfo.Sig): TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure = {
     val reporter = Reporter.create
     val tm = typeParamMap(info.ast.typeParams, reporter)
     val scope = Scope.Local.create(tm.map, info.scope)
@@ -452,7 +500,7 @@ object TypeOutliner {
       TypeInfo.Members(specVars, _, specMethods, methods, refinements, invariants),
       ancestors,
       newParents
-    ) =
+      ) =
       outlineInheritedMembers(info.owner, info.ast.id.value, info.name, info.ast.parents, scope, members, reporter)
     val newInfo = info(
       outlined = T,
@@ -464,10 +512,11 @@ object TypeOutliner {
       refinements = refinements,
       invariants = invariants
     )
-    return (th: TypeHierarchy) => (th(typeMap = th.typeMap + info.name ~> newInfo), reporter)
+    val messages = reporter.messages
+    return (th: TypeHierarchy) => (th(typeMap = th.typeMap + info.name ~> newInfo), messages)
   }
 
-  @pure def outlineAdt(info: TypeInfo.Adt): TypeHierarchy => (TypeHierarchy, Reporter) @pure = {
+  @pure def outlineAdt(info: TypeInfo.Adt): TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure = {
     val reporter = Reporter.create
     val tm = typeParamMap(info.ast.typeParams, reporter)
     val scope = Scope.Local.create(tm.map, info.scope)
@@ -487,7 +536,7 @@ object TypeOutliner {
       TypeInfo.Members(specVars, vars, specMethods, methods, refinements, invariants),
       ancestors,
       newParents
-    ) =
+      ) =
       outlineInheritedMembers(info.owner, info.ast.id.value, info.name, info.ast.parents, scope, members, reporter)
     var newParams = ISZ[AST.AdtParam]()
     var paramTypes = ISZ[AST.Typed]()
@@ -552,7 +601,8 @@ object TypeOutliner {
           ast = info.ast(params = newParams, parents = newParents)
         )
       }
-    return (th: TypeHierarchy) => (th(typeMap = th.typeMap + info.name ~> newInfo), reporter)
+    val messages = reporter.messages
+    return (th: TypeHierarchy) => (th(typeMap = th.typeMap + info.name ~> newInfo), messages)
   }
 
   def outlineMethodSig(scope: Scope, sig: AST.MethodSig, reporter: Reporter): Option[(AST.MethodSig, ISZ[String])] = {
@@ -585,10 +635,10 @@ object TypeOutliner {
   }
 
   def outlineMembers(
-    info: TypeInfo.Members,
-    scope: Scope,
-    reporter: Reporter
-  ): TypeInfo.Members = {
+                      info: TypeInfo.Members,
+                      scope: Scope,
+                      reporter: Reporter
+                    ): TypeInfo.Members = {
     var specVars = HashSMap.empty[String, Info.SpecVar]
     var vars = HashSMap.empty[String, Info.Var]
     var specMethods = HashMap.empty[String, Info.SpecMethod]
@@ -709,14 +759,14 @@ object TypeOutliner {
   }
 
   def outlineInheritedMembers(
-    nameOwner: QName,
-    nameId: String,
-    name: QName,
-    parents: ISZ[AST.Type.Named],
-    scope: Scope,
-    info: TypeInfo.Members,
-    reporter: Reporter
-  ): (TypeInfo.Members, ISZ[AST.Typed.Name], ISZ[AST.Type.Named]) = {
+                               nameOwner: QName,
+                               nameId: String,
+                               name: QName,
+                               parents: ISZ[AST.Type.Named],
+                               scope: Scope,
+                               info: TypeInfo.Members,
+                               reporter: Reporter
+                             ): (TypeInfo.Members, ISZ[AST.Typed.Name], ISZ[AST.Type.Named]) = {
     val vars = info.vars
     var specVars = info.specVars
     var specMethods = info.specMethods
@@ -824,10 +874,10 @@ object TypeOutliner {
     }
 
     def inheritSpecMethod(
-      smInfo: Info.SpecMethod,
-      posOpt: Option[Position],
-      substMap: HashMap[String, AST.Typed]
-    ): Unit = {
+                           smInfo: Info.SpecMethod,
+                           posOpt: Option[Position],
+                           substMap: HashMap[String, AST.Typed]
+                         ): Unit = {
       val owner = smInfo.owner
       var sm = smInfo.ast
       val id = sm.sig.id.value
@@ -853,12 +903,14 @@ object TypeOutliner {
 
     def inheritInv(invInfo: Info.Inv, posOpt: Option[Position], substMap: HashMap[String, AST.Typed]): Unit = {
       val transformer = AST.Transformer[B](ExpTypedSubst(substMap))
+
       @pure def transform(exp: AST.Exp): AST.Exp = {
         transformer.transformExp(T, exp).resultOpt match {
           case Some(result) => return result
           case _ => return exp
         }
       }
+
       val owner = invInfo.owner
       val inv = invInfo.ast
       val id = inv.id.value
@@ -876,20 +928,20 @@ object TypeOutliner {
     }
 
     def checkMethodEquality(
-      m1: Info.Method,
-      m2: Info.Method,
-      substMap: HashMap[String, AST.Typed]
-    ): (B, AST.Typed, AST.Typed) = {
+                             m1: Info.Method,
+                             m2: Info.Method,
+                             substMap: HashMap[String, AST.Typed]
+                           ): (B, AST.Typed, AST.Typed) = {
       val t1 = m1.typedOpt.get.asInstanceOf[AST.Typed.Method].tpe.deBruijn
       val t2 = m2.typedOpt.get.asInstanceOf[AST.Typed.Method].tpe.subst(substMap).deBruijn
       return (t1 == t2, t1, t2)
     }
 
     def checkMethodRefinement(
-      m: Info.Method,
-      supM: Info.Method,
-      substMap: HashMap[String, AST.Typed]
-    ): (B, AST.Typed, AST.Typed) = {
+                               m: Info.Method,
+                               supM: Info.Method,
+                               substMap: HashMap[String, AST.Typed]
+                             ): (B, AST.Typed, AST.Typed) = {
       val t1 = m.typedOpt.get.deBruijn
       val t2 = supM.typedOpt.get.subst(substMap).deBruijn
       return (typeHierarchy.isRefinement(t1, t2), t1, t2)
@@ -914,9 +966,9 @@ object TypeOutliner {
             )
             return
           } else if (!(!mInfo.ast.sig.hasParams && typeHierarchy.isSubType(
-              otherInfo.typedOpt.get,
-              mInfo.ast.sig.returnType.typedOpt.get
-            ))) {
+            otherInfo.typedOpt.get,
+            mInfo.ast.sig.returnType.typedOpt.get
+          ))) {
             reporter.error(
               posOpt,
               TypeChecker.typeCheckerKind,
@@ -927,6 +979,7 @@ object TypeOutliner {
           return
         case _ =>
       }
+
       def inherit(): Unit = {
         if (substMap.isEmpty) {
           methods = methods + id ~>
@@ -947,6 +1000,7 @@ object TypeOutliner {
           methods = methods + id ~> mInfo(ast = m(attr = m.attr(typedOpt = Some(mInfo.typedOpt.get.subst(substMap)))))
         }
       }
+
       methods.get(id) match {
         case Some(otherInfo) =>
           if (name != otherInfo.owner) {
@@ -1080,6 +1134,169 @@ object TypeOutliner {
       ancestors.elements,
       newParents,
     )
+  }
+
+  @pure def checkObjectContract(strictAliasing: B, info: Info.Object): TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure = {
+    val reporter = Reporter.create
+    var newStmts = ISZ[AST.Stmt]()
+    var nameEntries = ISZ[(QName, Info)]()
+    var scope = TypeChecker.createNewScope(info.scope(enclosingName = info.name))
+    scope = scope(localThisOpt = Some(AST.Typed.Object(info.owner, info.ast.id.value)))
+    for (stmt <- info.ast.stmts) {
+      stmt match {
+        case stmt: AST.Stmt.Var =>
+          val id = stmt.id.value
+          val sInfo = typeHierarchy.nameMap.get(info.name :+ id).get.asInstanceOf[Info.Var]
+          newStmts = newStmts :+ sInfo.ast
+        case stmt: AST.Stmt.SpecVar =>
+          val id = stmt.id.value
+          val sInfo = typeHierarchy.nameMap.get(info.name :+ id).get.asInstanceOf[Info.SpecVar]
+          newStmts = newStmts :+ sInfo.ast
+        case stmt: AST.Stmt.SpecMethod =>
+          val id = stmt.sig.id.value
+          val sInfo = typeHierarchy.nameMap.get(info.name :+ id).get.asInstanceOf[Info.SpecMethod]
+          newStmts = newStmts :+ sInfo.ast
+        case stmt: AST.Stmt.JustMethod =>
+          val id = stmt.sig.id.value
+          val sInfo = typeHierarchy.nameMap.get(info.name :+ id).get.asInstanceOf[Info.JustMethod]
+          newStmts = newStmts :+ sInfo.ast
+        case stmt: AST.Stmt.Method if stmt.hasContract =>
+          val id = stmt.sig.id.value
+          val context = info.name :+ id
+          val newStmt = TypeChecker.checkMethodContractSequent(strictAliasing, typeHierarchy, context, scope, F, stmt, reporter)
+          newStmts = newStmts :+ newStmt
+          val mInfo = typeHierarchy.nameMap.get(info.name :+ id).get.asInstanceOf[Info.Method]
+          nameEntries = nameEntries :+ ((mInfo.name, mInfo(ast = newStmt)))
+        case stmt: AST.Stmt.Fact =>
+          val id = stmt.id.value
+          val context = info.name :+ id
+          val newStmt = TypeChecker.checkFactStmt(strictAliasing, typeHierarchy, context, scope, stmt, reporter)
+          newStmts = newStmts :+ newStmt
+          val fInfo = typeHierarchy.nameMap.get(info.name :+ id).get.asInstanceOf[Info.Fact]
+          nameEntries = nameEntries :+ ((fInfo.name, fInfo(ast = newStmt)))
+        case stmt: AST.Stmt.Theorem =>
+          val id = stmt.id.value
+          val context = info.name :+ id
+          val newStmt = TypeChecker.checkTheoremStmt(strictAliasing, typeHierarchy, context, scope, stmt, reporter)
+          newStmts = newStmts :+ newStmt
+          val tInfo = typeHierarchy.nameMap.get(info.name :+ id).get.asInstanceOf[Info.Theorem]
+          nameEntries = nameEntries :+ ((tInfo.name, tInfo(ast = newStmt)))
+        case stmt: AST.Stmt.Inv =>
+          val id = stmt.id.value
+          val context = info.name :+ id
+          val newStmt = TypeChecker.checkInvStmt(strictAliasing, typeHierarchy, context, scope, stmt, reporter)
+          newStmts = newStmts :+ newStmt
+          val iInfo = typeHierarchy.nameMap.get(info.name :+ id).get.asInstanceOf[Info.Inv]
+          nameEntries = nameEntries :+ ((iInfo.name, iInfo(ast = newStmt)))
+        case stmt: AST.Stmt.ExtMethod if stmt.contract.nonEmpty =>
+          val id = stmt.sig.id.value
+          val mInfo = typeHierarchy.nameMap.get(info.name :+ id).get.asInstanceOf[Info.ExtMethod]
+          val context = info.name :+ id
+          val (ok, sc) = TypeChecker.methodScope(typeHierarchy, context, info.scope, stmt.sig, reporter)
+          if (ok) {
+            val tc = TypeChecker(typeHierarchy, context, F, TypeChecker.ModeContext.Spec, strictAliasing)
+            var newStmt = stmt(contract = tc.checkMethodContract(sc, stmt.contract, reporter))
+            val reads: ISZ[AST.ResolvedInfo] = for (r <- newStmt.contract.reads) yield r.attr.resOpt.get
+            val writes: ISZ[AST.ResolvedInfo] = for (w <- newStmt.contract.modifies) yield w.attr.resOpt.get
+            newStmt = newStmt(attr = newStmt.attr(resOpt = Some(mInfo.methodRes(reads = reads, writes = writes))))
+            newStmts = newStmts :+ newStmt
+            nameEntries = nameEntries :+ ((mInfo.name, mInfo(ast = newStmt)))
+          } else {
+            newStmts = newStmts :+ stmt
+          }
+        case _ => newStmts = newStmts :+ stmt
+      }
+    }
+    val newInfo = info(contractOutlined = T, ast = info.ast(stmts = newStmts))
+    val messages = reporter.messages
+    val entries = nameEntries
+    return (th: TypeHierarchy) => (th(nameMap = th.nameMap ++ entries + info.name ~> newInfo), messages)
+  }
+
+  def checkContract(strictAliasing: B, isMutableContext: B, name: QName, scope: Scope, members: TypeOutliner.TypeMembers,
+                    reporter: Reporter): Unit = {
+    var newStmts = ISZ[AST.Stmt]()
+    for (astmt <- members.stmts) {
+      astmt match {
+        case astmt: AST.Stmt.SpecVar =>
+          val id = astmt.id.value
+          newStmts = newStmts :+ members.specVars.get(id).get.ast
+        case astmt: AST.Stmt.Var =>
+          val id = astmt.id.value
+          newStmts = newStmts :+ members.vars.get(id).get.ast
+        case astmt: AST.Stmt.SpecMethod =>
+          val id = astmt.sig.id.value
+          newStmts = newStmts :+ members.specMethods.get(id).get.ast
+        case astmt: AST.Stmt.Method =>
+          val id = astmt.sig.id.value
+          val mInfo = members.methods.get(id).get
+          if (astmt.hasContract) {
+            val stmt = mInfo.ast
+            val context = name :+ stmt.sig.id.value
+            val newStmt = TypeChecker.checkMethodContractSequent(strictAliasing, typeHierarchy, context, scope,
+              isMutableContext, stmt, reporter)
+            newStmts = newStmts :+ newStmt
+            members.methods = members.methods + id ~> mInfo(ast = newStmt)
+          } else {
+            newStmts = newStmts :+ mInfo.ast
+          }
+        case astmt: AST.Stmt.Inv =>
+          val id = astmt.id.value
+          val iInfo = members.invariants.get(id).get
+          val stmt = iInfo.ast
+          val context = name :+ id
+          val newStmt = TypeChecker.checkInvStmt(strictAliasing, typeHierarchy, context, scope, stmt, reporter)
+          newStmts = newStmts :+ newStmt
+          members.invariants = members.invariants + id ~> iInfo(ast = newStmt)
+        case astmt: AST.Stmt.DataRefinement =>
+          val dr = TypeChecker.checkDataRefinement(strictAliasing, typeHierarchy, name, scope, astmt, reporter)
+          members.drs = members.drs :+ dr
+          newStmts = newStmts :+ dr
+        case _ => newStmts = newStmts :+ astmt
+      }
+    }
+    members.stmts = newStmts
+  }
+
+  @pure def checkAdtContract(strictAliasing: B, info: TypeInfo.Adt): TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure = {
+    val reporter = Reporter.create
+    val typeParams = typeParamMap(info.ast.typeParams, reporter)
+    var scope = Scope.Local.create(typeParams.map, info.scope)
+    scope = scope(localThisOpt = Some(info.tpe))
+    val members = TypeOutliner.TypeMembers(info.specVars, info.vars, info.specMethods, info.methods, info.invariants,
+      info.dataRefinements, info.ast.stmts)
+    checkContract(strictAliasing, !info.ast.isDatatype, info.name, scope, members, reporter)
+    val newInfo = info(
+        contractOutlined = T,
+        specVars = members.specVars,
+        vars = members.vars,
+        specMethods = members.specMethods,
+        methods = members.methods,
+        invariants = members.invariants,
+        dataRefinements = members.drs,
+        ast = info.ast(stmts = members.stmts))
+    val messages = reporter.messages
+    return (th: TypeHierarchy) => (th(typeMap = th.typeMap + info.name ~> newInfo), messages)
+  }
+
+  @pure def checkSigContract(strictAliasing: B, info: TypeInfo.Sig): TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure = {
+    val reporter = Reporter.create
+    val typeParams = typeParamMap(info.ast.typeParams, reporter)
+    var scope = Scope.Local.create(typeParams.map, info.scope)
+    scope = scope(localThisOpt = Some(info.tpe))
+    val members = TypeOutliner.TypeMembers(info.specVars, HashSMap.empty, info.specMethods, info.methods, info.invariants,
+      info.dataRefinements, info.ast.stmts)
+    checkContract(strictAliasing, !info.ast.isImmutable, info.name, scope, members, reporter)
+    val newInfo = info(
+      contractOutlined = T,
+      specVars = members.specVars,
+      specMethods = members.specMethods,
+      methods = members.methods,
+      invariants = members.invariants,
+      dataRefinements = members.drs,
+      ast = info.ast(stmts = members.stmts))
+    val messages = reporter.messages
+    return (th: TypeHierarchy) => (th(typeMap = th.typeMap + info.name ~> newInfo), messages)
   }
 
 }

@@ -272,7 +272,7 @@ object TypeChecker {
   }
 
   def checkComponents(par: B, strictAliasing: B, th: TypeHierarchy, nameMap: NameMap, typeMap: TypeMap, reporter: Reporter): TypeHierarchy = {
-    var jobs = ISZ[() => (TypeHierarchy => (TypeHierarchy, Reporter) @pure) @pure]()
+    var jobs = ISZ[() => (TypeHierarchy => (TypeHierarchy, ISZ[Message]) @pure) @pure]()
     for (info <- typeMap.values) {
       info match {
         case info: TypeInfo.Sig if !info.typeChecked =>
@@ -289,12 +289,12 @@ object TypeChecker {
         case _ =>
       }
     }
-    val init = (th, Reporter.create)
-    val p: (TypeHierarchy, Reporter) =
-      if (par) ops.ISZOps(jobs).parMapFoldLeft(
-        (f: () => TypeHierarchy => (TypeHierarchy, Reporter)) => f(), TypeHierarchy.combine _, init)
-      else ops.ISZOps(ops.ISZOps(jobs).map((f: () => TypeHierarchy => (TypeHierarchy, Reporter)) => f())).foldLeft(
-        TypeHierarchy.combine _, init)
+    val init = (th, ISZ[Message]())
+    val p: (TypeHierarchy, ISZ[Message]) =
+      if (par) ops.ISZOps(ops.ISZOps(jobs).parMap((f: () => (TypeHierarchy => (TypeHierarchy, ISZ[Message]) @pure)@pure) => f())).
+        foldLeft(TypeHierarchy.combine _, init)
+      else ops.ISZOps(ops.ISZOps(jobs).map((f: () => (TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure)@pure) => f())).
+        foldLeft(TypeHierarchy.combine _, init)
     var r = p._1
     def reconstructObject(info: Info): Unit = {
       info match {
@@ -332,7 +332,7 @@ object TypeChecker {
         case _ =>
       }
     }
-    reporter.reports(p._2.messages)
+    reporter.reports(p._2)
     return r
   }
 
@@ -575,6 +575,112 @@ object TypeChecker {
       case _: AST.Typed.Theorem => err()
       case _: AST.Typed.Inv => err()
     }
+  }
+
+  def methodScope(typeHierarchy: TypeHierarchy, context: QName, sc: Scope, sig: AST.MethodSig, reporter: Reporter): (B, Scope.Local) = {
+    val typeParams = typeParamMap(sig.typeParams, reporter)
+    var scope = Scope.Local.create(typeParams.map, sc)
+    sig.returnType.typedOpt match {
+      case tOpt @ Some(_) => scope = scope(methodReturnOpt = tOpt)
+      case _ => halt("Unexpected situation when type checking method.")
+    }
+    var ok = T
+    for (p <- sig.params) {
+      val id = p.id.value
+      scope.resolveName(typeHierarchy.nameMap, ISZ(id)) match {
+        case Some(_: Info.LocalVar) =>
+          reporter.error(
+            p.id.attr.posOpt,
+            TypeChecker.typeCheckerKind,
+            s"Identifier '$id' shadows a declaration in the enclosing context."
+          )
+          ok = F
+        case _ =>
+          scope = scope(
+            nameMap = scope.nameMap + id ~> Info.LocalVar(
+              context :+ id,
+              T,
+              p.id,
+              p.tipe.typedOpt,
+              Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T, id))
+            )
+          )
+      }
+    }
+    return (ok, scope)
+  }
+
+  @pure def createNewScope(scope: Scope): Scope.Local = {
+    return Scope.Local.create(HashMap.empty, scope)
+  }
+
+  def checkMethodContractSequent(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope, isMutableContext: B, stmt: AST.Stmt.Method, reporter: Reporter): AST.Stmt.Method = {
+    val (ok, sc) = TypeChecker.methodScope(th, context, scope, stmt.sig, reporter)
+    if (ok) {
+      val tc = TypeChecker(th, context, isMutableContext, TypeChecker.ModeContext.Spec, strictAliasing)
+      val newStmt: AST.Stmt.Method = if (stmt.contract.isEmpty) {
+        val bstmts = stmt.bodyOpt.get.stmts
+        val ds = bstmts(0).asInstanceOf[AST.Stmt.DeduceSequent]
+        val sequent = ds.sequents(0)
+        val newPremises: ISZ[AST.Exp] = for (premise <- sequent.premises) yield
+          tc.checkExp(Some(AST.Typed.b), sc, premise, reporter)._1
+        val newSequent = sequent(premises = newPremises,
+          conclusion = tc.checkExp(Some(AST.Typed.b), sc, sequent.conclusion, reporter)._1)
+        stmt(bodyOpt = Some(stmt.bodyOpt.get(stmts = ds(sequents = ISZ(newSequent)) +: ops.ISZOps(bstmts).drop(1))))
+      } else {
+        stmt(contract = tc.checkMethodContract(sc, stmt.contract, reporter))
+      }
+      if (reporter.hasError) {
+        return newStmt
+      }
+      val reads: ISZ[AST.ResolvedInfo] = for (r <- newStmt.contract.reads) yield r.attr.resOpt.get
+      val writes: ISZ[AST.ResolvedInfo] = for (w <- newStmt.contract.modifies) yield w.attr.resOpt.get
+      val methodRes = stmt.attr.resOpt.get.asInstanceOf[AST.ResolvedInfo.Method]
+      return newStmt(attr = newStmt.attr(resOpt = Some(methodRes(reads = reads, writes = writes))))
+    } else {
+      return stmt
+    }
+  }
+
+  def checkFactStmt(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope, stmt: AST.Stmt.Fact, reporter: Reporter): AST.Stmt.Fact = {
+    val tc = TypeChecker(th, context, F, ModeContext.Spec, strictAliasing)
+    val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
+    val typeParams = typeParamMap(stmt.typeParams, reporter)
+    val sc = Scope.Local.create(typeParams.map, scope)
+    return stmt(claims = for (claim <- stmt.claims) yield tc.checkExp(bExpectedOpt, sc, claim, reporter)._1)
+  }
+
+  def checkTheoremStmt(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope, stmt: AST.Stmt.Theorem, reporter: Reporter): AST.Stmt.Theorem = {
+    val tc = TypeChecker(th, context, F, ModeContext.Spec, strictAliasing)
+    val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
+    val typeParams = typeParamMap(stmt.typeParams, reporter)
+    val sc = Scope.Local.create(typeParams.map, scope)
+    if (stmt.isFun) {
+      val qclaim = stmt.claim.asInstanceOf[AST.Exp.QuantType]
+      val (newFun, tOpt, proofScope) = tc.checkFun(None(), sc, qclaim.fun, reporter)
+      tOpt match {
+        case Some(t: AST.Typed.Fun) if t.ret != AST.Typed.b =>
+          reporter.error(qclaim.fun.posOpt, TypeChecker.typeCheckerKind, s"Expecting type 'B', but '${t.ret}' found.")
+        case _ =>
+      }
+      return stmt(claim = qclaim(fun = newFun.asInstanceOf[AST.Exp.Fun]),
+        proof = stmt.proof(steps = for (step <- stmt.proof.steps) yield tc.checkStep(proofScope, step, reporter)))
+    } else {
+      return stmt(claim = tc.checkExp(bExpectedOpt, sc, stmt.claim, reporter)._1,
+        proof = stmt.proof(steps = for (step <- stmt.proof.steps) yield tc.checkStep(sc, step, reporter)))
+    }
+  }
+
+  def checkInvStmt(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope, stmt: AST.Stmt.Inv, reporter: Reporter): AST.Stmt.Inv = {
+    val tc = TypeChecker(th, context, F, ModeContext.Spec, strictAliasing)
+    val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
+    return stmt(claims = for (claim <- stmt.claims) yield tc.checkExp(bExpectedOpt, scope, claim, reporter)._1,
+      attr = stmt.attr(typedOpt = AST.Typed.unitOpt))
+  }
+
+  def checkDataRefinement(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope, stmt: AST.Stmt.DataRefinement, reporter: Reporter): AST.Stmt.DataRefinement = {
+    val tc = TypeChecker(th, context, F, ModeContext.Spec, strictAliasing)
+    tc.checkDataRefinement(scope, stmt, reporter)
   }
 }
 
@@ -888,7 +994,7 @@ import TypeChecker._
               return enumGen(range = range(start = newStartExp, end = newEndExp, byOpt = newByOpt))
           }
         case range: AST.EnumGen.Range.Expr =>
-          def errType(t: ST): Unit = {
+          def reportErrType(t: ST): Unit = {
             reporter.error(
               range.exp.posOpt,
               typeCheckerKind,
@@ -922,7 +1028,7 @@ import TypeChecker._
                   ok = checkIS(range.attr.posOpt, F)
                   indexTypeOpt = None()
                 case ids =>
-                  errType(st"${(ids, ".")}")
+                  reportErrType(st"${(ids, ".")}")
                   ok = F
               }
               val newCondOpt: Option[AST.Exp] = if (ok) {
@@ -940,7 +1046,7 @@ import TypeChecker._
               val (newInvs, _) = this(mode = ModeContext.Spec).checkLoopInv(scope, enumGen.invariants, ISZ(), reporter)
               return enumGen(range = range(exp = newExp), condOpt = newCondOpt, invariants = newInvs)
             case Some(expType) =>
-              errType(st"$expType")
+              reportErrType(st"$expType")
               ok = F
               return enumGen(range = range(exp = newExp))
             case _ =>
@@ -2477,7 +2583,7 @@ import TypeChecker._
         }
       }
       for (access <- accesses) {
-        argPaths = argPaths :+ mVarAccess(if (argPaths.nonEmpty) argPaths(0) else None(), Some(access))
+        argPaths = argPaths :+ mVarAccess(if (argPaths.nonEmpty) argPaths(0) else Some(ISZ("this")), Some(access))
       }
       for (i <- 0 until args.size) {
         for (j <- i + 1 until args.size) {
@@ -3285,7 +3391,7 @@ import TypeChecker._
       case aexp: AST.Stmt.If => checkIf(expectedOpt, scope, aexp, reporter)
       case aexp: AST.Stmt.Block => checkBlock(expectedOpt, scope, aexp, reporter)
       case aexp: AST.Stmt.Match => checkMatch(expectedOpt, scope, aexp, reporter)
-      case aexp: AST.Stmt.Return => checkStmt(scope, aexp, reporter)._2
+      case aexp: AST.Stmt.Return => checkStmt(scope, aexp, reporter)
     }
 
     val newAssignExp = newStmt.asAssignExp
@@ -3299,55 +3405,42 @@ import TypeChecker._
   }
 
   def checkStmts(
-    useLocalScope: B,
+    scopes: ISZ[Scope.Local],
     expectedOpt: Option[AST.Typed],
-    scope: Scope.Local,
     stmts: ISZ[AST.Stmt],
     reporter: Reporter
-  ): (Option[Scope.Local], ISZ[AST.Stmt]) = {
-    var newScope = scope
+  ): ISZ[AST.Stmt] = {
     var newStmts = ISZ[AST.Stmt]()
     val size = stmts.size - 1
-    for (i <- z"0" until size) {
-      val (newScope2Opt, newStmt) = checkStmt(newScope, stmts(i), reporter)
-      newScope2Opt match {
-        case Some(newScope2) =>
-          if (useLocalScope) {
-            newScope = newScope2
-          }
-          newStmts = newStmts :+ newStmt
-        case _ =>
-          for (j <- i until stmts.size) {
-            newStmts = newStmts :+ stmts(j)
-          }
-          return (None(), newStmts)
-      }
+    for (i <- z"0" until size if !reporter.hasError) {
+      val newStmt = checkStmt(if (scopes.size === 1) scopes(0) else scopes(i), stmts(i), reporter)
+      newStmts = newStmts :+ newStmt
+    }
+
+    if (reporter.hasError) {
+      return newStmts ++ ops.ISZOps(stmts).slice(newStmts.size, stmts.size)
     }
 
     if (size < 0) {
-      return (Some(newScope), newStmts)
+      return newStmts
     }
 
     val stmt = stmts(size)
+    val newScope: Scope.Local = if (scopes.size === 1) scopes(0) else scopes(size)
 
     expectedOpt match {
       case Some(_) =>
-        val (r, _) =
-          checkAssignExp(expectedOpt, newScope, stmt.asAssignExp, reporter)
-        return (Some(newScope), newStmts :+ r.asStmt)
+        val (r, _) = checkAssignExp(expectedOpt, newScope, stmt.asAssignExp, reporter)
+        return newStmts :+ r.asStmt
       case _ =>
-        val (newScope2Opt, newStmt) = checkStmt(newScope, stmt, reporter)
-        newScope2Opt match {
-          case Some(newScope2) => return (Some(newScope2), newStmts :+ newStmt)
-          case _ => return (None(), newStmts :+ stmt)
-        }
+        val newStmt = checkStmt(newScope, stmt, reporter)
+        return newStmts :+ newStmt
     }
 
-    return (Some(newScope), newStmts)
+    return newStmts
   }
 
   def checkStmtOpts(
-    useLocalScope: B,
     scope: Scope.Local,
     stmtOpts: ISZ[Option[AST.Stmt]],
     reporter: Reporter
@@ -3357,19 +3450,8 @@ import TypeChecker._
     for (i <- z"0" until stmtOpts.size) {
       stmtOpts(i) match {
         case Some(stmt) =>
-          val (newScope2Opt, newStmt) = checkStmt(newScope, stmt, reporter)
-          newScope2Opt match {
-            case Some(newScope2) =>
-              if (useLocalScope) {
-                newScope = newScope2
-              }
-              newStmtOpts = newStmtOpts :+ Some(newStmt)
-            case _ =>
-              for (j <- i until stmtOpts.size) {
-                newStmtOpts = newStmtOpts :+ stmtOpts(j)
-              }
-              return newStmtOpts
-          }
+          val newStmt = checkStmt(newScope, stmt, reporter)
+          newStmtOpts = newStmtOpts :+ Some(newStmt)
         case _ => newStmtOpts = newStmtOpts :+ None()
       }
     }
@@ -3397,6 +3479,41 @@ import TypeChecker._
     val to = TypeOutliner(typeHierarchy)
     var ok = T
     var scope = sc
+    def checkLocalId(id: String, posOpt: Option[Position]): Unit = {
+      scope.nameMap.get(id) match {
+        case Some(_) =>
+          reporter.error(posOpt, typeCheckerKind, s"Cannot redeclare '$id'.")
+          ok = F
+        case _ =>
+      }
+      scope.resolveName(typeHierarchy.nameMap, ISZ(id)) match {
+        case Some(_) =>
+          reporter.error(
+            posOpt,
+            typeCheckerKind,
+            s"Cannot declare method '$id' as it has been previously declared in the enclosing context."
+          )
+          ok = F
+        case _ =>
+      }
+      scope.thisOpt match {
+        case Some(thisType: AST.Typed.Name) =>
+          val hasMethod: B = typeHierarchy.typeMap.get(thisType.ids) match {
+            case Some(info: TypeInfo.Sig) => info.hasId(id)
+            case Some(info: TypeInfo.Adt) => info.hasId(id)
+            case _ => F
+          }
+          if (hasMethod) {
+            reporter.error(
+              posOpt,
+              typeCheckerKind,
+              s"Cannot declare method '$id' as it has been previously declared in the enclosing context."
+            )
+            ok = F
+          }
+        case _ =>
+      }
+    }
     var stmts = ISZ[AST.Stmt]()
     for (stmt <- body.stmts) {
       stmt match {
@@ -3409,39 +3526,7 @@ import TypeChecker._
           stmts = stmts :+ newStmt
         case stmt: AST.Stmt.Method =>
           val id = stmt.sig.id.value
-          scope.nameMap.get(id) match {
-            case Some(info) if info.isInstanceOf[Info.Method] || info.isInstanceOf[Info.SpecMethod] =>
-              reporter.error(stmt.posOpt, typeCheckerKind, s"Cannot redeclare '$id'.")
-              ok = F
-            case _ =>
-          }
-          scope.resolveName(typeHierarchy.nameMap, ISZ(id)) match {
-            case Some(info) if info.isInstanceOf[Info.Method] || info.isInstanceOf[Info.SpecMethod] =>
-              reporter.error(
-                stmt.posOpt,
-                typeCheckerKind,
-                s"Cannot declare method '$id' as it has been previously declared in the enclosing context."
-              )
-              ok = F
-            case _ =>
-          }
-          scope.thisOpt match {
-            case Some(thisType: AST.Typed.Name) =>
-              val hasMethod: B = typeHierarchy.typeMap.get(thisType.ids) match {
-                case Some(info: TypeInfo.Sig) => info.methods.contains(id) || info.specMethods.contains(id)
-                case Some(info: TypeInfo.Adt) => info.methods.contains(id) || info.specMethods.contains(id)
-                case _ => F
-              }
-              if (hasMethod) {
-                reporter.error(
-                  stmt.posOpt,
-                  typeCheckerKind,
-                  s"Cannot declare method '$id' as it has been previously declared in the enclosing context."
-                )
-                ok = F
-              }
-            case _ =>
-          }
+          checkLocalId(id, stmt.posOpt)
           val infoOpt = to.outlineMethod(
             Info.Method(
               context,
@@ -3476,39 +3561,7 @@ import TypeChecker._
           }
         case stmt: AST.Stmt.SpecMethod =>
           val id = stmt.sig.id.value
-          scope.nameMap.get(id) match {
-            case Some(info) if info.isInstanceOf[Info.Method] || info.isInstanceOf[Info.SpecMethod] =>
-              reporter.error(stmt.posOpt, typeCheckerKind, s"Cannot redeclare '$id'.")
-              ok = F
-            case _ =>
-          }
-          scope.resolveName(typeHierarchy.nameMap, ISZ(id)) match {
-            case Some(info) if info.isInstanceOf[Info.Method] || info.isInstanceOf[Info.SpecMethod] =>
-              reporter.error(
-                stmt.posOpt,
-                typeCheckerKind,
-                s"Cannot declare method '$id' as it has been previously declared in the enclosing context."
-              )
-              ok = F
-            case _ =>
-          }
-          scope.thisOpt match {
-            case Some(thisType: AST.Typed.Name) =>
-              val hasMethod: B = typeHierarchy.typeMap.get(thisType.ids) match {
-                case Some(info: TypeInfo.Sig) => info.methods.contains(id) || info.specMethods.contains(id)
-                case Some(info: TypeInfo.Adt) => info.methods.contains(id) || info.specMethods.contains(id)
-                case _ => F
-              }
-              if (hasMethod) {
-                reporter.error(
-                  stmt.posOpt,
-                  typeCheckerKind,
-                  s"Cannot declare method '$id' as it has been previously declared in the enclosing context."
-                )
-                ok = F
-              }
-            case _ =>
-          }
+          checkLocalId(id, stmt.posOpt)
           val infoOpt = to.outlineSpecMethod(
             Info.SpecMethod(
               context,
@@ -3547,26 +3600,79 @@ import TypeChecker._
       return (scope, body)
     }
     scope = sc(nameMap = scope.nameMap)
-    val (newScopeOpt, newStmts) = checkStmts(T, expectedOpt, scope, stmts, reporter)
-    val undecls: ISZ[AST.ResolvedInfo.LocalVar] = newScopeOpt match {
-      case Some(newScope) =>
-        var r = ISZ[AST.ResolvedInfo.LocalVar]()
-        for (e <- newScope.nameMap.entries) {
-          e._2 match {
-            case _: Info.Method =>
-            case _: Info.SpecMethod =>
-            case Info.LocalVar(_, _, _, _, Some(res: AST.ResolvedInfo.LocalVar)) => r = r :+ res
-            case _ => halt("Infeasible")
+    var nameMap = scope.nameMap
+    var stmts2 = ISZ[AST.Stmt]()
+    val mscopes = MSZ.create(stmts.size, scope)
+    for (i <- z"0" until stmts.size) {
+      mscopes(i) = scope
+      val stmt = stmts(i)
+      stmt match {
+        case stmt: AST.Stmt.Import =>
+          val (newScopeOpt, newStmt) = checkImport(scope, stmt, reporter)
+          scope = newScopeOpt.get
+          stmts2 = stmts2 :+ newStmt
+        case stmt: AST.Stmt.Method if stmt.hasContract =>
+          val id = stmt.sig.id.value
+          val newStmt = TypeChecker.checkMethodContractSequent(strictAliasing, typeHierarchy, context :+ id, scope,
+            isInMutableContext, stmt, reporter)
+          stmts2 = stmts2 :+ newStmt
+          val info = nameMap.get(id).get.asInstanceOf[Info.Method]
+          nameMap = nameMap + id ~> info(ast = newStmt)
+        case stmt: AST.Stmt.Fact =>
+          val id = stmt.id.value
+          val name = context :+ id
+          val newStmt = TypeChecker.checkFactStmt(strictAliasing, typeHierarchy, name, scope, stmt, reporter)
+          stmts2 = stmts2 :+ newStmt
+          val info = typeHierarchy.nameMap.get(name).get.asInstanceOf[Info.Fact]
+          nameMap = nameMap + id ~> info(ast = newStmt)
+        case stmt: AST.Stmt.Theorem =>
+          val id = stmt.id.value
+          val name = context :+ id
+          val newStmt = TypeChecker.checkTheoremStmt(strictAliasing, typeHierarchy, name, scope, stmt, reporter)
+          stmts2 = stmts2 :+ newStmt
+          val info = typeHierarchy.nameMap.get(name).get.asInstanceOf[Info.Theorem]
+          nameMap = nameMap + id ~> info(ast = newStmt)
+        case stmt: AST.Stmt.Inv =>
+          val id = stmt.id.value
+          val name = context :+ id
+          val newStmt = TypeChecker.checkInvStmt(strictAliasing, typeHierarchy, name, scope, stmt, reporter)
+          stmts2 = stmts2 :+ newStmt
+          val info = typeHierarchy.nameMap.get(name).get.asInstanceOf[Info.Inv]
+          nameMap = nameMap + id ~> info(ast = newStmt)
+        case stmt: AST.Stmt.Var =>
+          val (newScopeOpt, newStmt) = checkVarStmt(scope, stmt, reporter)
+          newScopeOpt match {
+            case Some(newScope) => scope = newScope
+            case _ => return (sc, body)
           }
+          stmts2 = stmts2 :+ newStmt
+        case stmt: AST.Stmt.VarPattern =>
+          val (newScopeOpt, newStmt) = checkVarPatternStmt(scope, stmt, reporter)
+          newScopeOpt match {
+            case Some(newScope) => scope = newScope
+            case _ => return (sc, body)
+          }
+          stmts2 = stmts2 :+ newStmt
+        case _ =>
+          stmts2 = stmts2 :+ stmt
+      }
+    }
+    val scopes = mscopes.toIS
+    val newStmts = checkStmts(scopes, expectedOpt, stmts2, reporter)
+    val newScope: Scope.Local = if (scopes.isEmpty) scope else scopes(scopes.size - 1)
+    val undecls: ISZ[AST.ResolvedInfo.LocalVar] = {
+      var r = ISZ[AST.ResolvedInfo.LocalVar]()
+      for (e <- newScope.nameMap.entries) {
+        e._2 match {
+          case _: Info.Method =>
+          case _: Info.SpecMethod =>
+          case Info.LocalVar(_, _, _, _, Some(res: AST.ResolvedInfo.LocalVar)) => r = r :+ res
+          case _ => halt("Infeasible")
         }
-        r
-      case _ => body.undecls
+      }
+      r
     }
     return (scope, body(stmts = newStmts, undecls = undecls))
-  }
-
-  @pure def createNewScope(scope: Scope): Scope.Local = {
-    return Scope.Local.create(HashMap.empty, scope)
   }
 
   def checkPattern(
@@ -4022,103 +4128,107 @@ import TypeChecker._
     return stmt(exp = newExp, cases = newCases)
   }
 
-  def checkStmt(scope: Scope.Local, stmt: AST.Stmt, reporter: Reporter): (Option[Scope.Local], AST.Stmt) = {
+  def checkVarStmt(scope: Scope.Local, stmt: AST.Stmt.Var, reporter: Reporter): (Option[Scope.Local], AST.Stmt) = {
+    stmt.attr.resOpt match {
+      case Some(_: AST.ResolvedInfo.LocalVar) => return (None(), stmt)
+      case _ =>
+    }
+    val key = stmt.id.value
+    val name = context :+ stmt.id.value
 
-    def checkVar(varStmt: AST.Stmt.Var): (Option[Scope.Local], AST.Stmt) = {
-      val key = varStmt.id.value
+    def err(): Unit = {
+      reporter.error(
+        stmt.id.attr.posOpt,
+        typeCheckerKind,
+        s"Cannot declare '$key' because the identifier has already been previously declared."
+      )
+    }
 
-      def err(): Unit = {
-        reporter.error(
-          varStmt.id.attr.posOpt,
-          typeCheckerKind,
-          s"Cannot declare '$key' because the identifier has already been previously declared."
+    var r = stmt
+    val resOpt: Option[AST.ResolvedInfo] = scope.resolveName(typeHierarchy.nameMap, ISZ(key)) match {
+      case Some(info: Info.Var) => info.resOpt
+      case Some(_: Info.LocalVar) =>
+        err()
+        return (None(), r)
+      case _ => Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, stmt.isSpec,
+        stmt.isVal, key))
+    }
+    val expectedOpt: Option[AST.Typed] = stmt.tipeOpt match {
+      case Some(tipe) =>
+        tipe.typedOpt match {
+          case tOpt @ Some(_) => tOpt
+          case _ =>
+            val newTipeOpt = typeHierarchy.typed(scope, tipe, reporter)
+            newTipeOpt match {
+              case Some(newTipe) if newTipe.typedOpt.nonEmpty =>
+                r = r(tipeOpt = newTipeOpt)
+                newTipe.typedOpt
+              case _ => return (None(), r)
+            }
+        }
+      case _ => None()
+    }
+    val (rhsOpt, tOpt): (Option[AST.AssignExp], Option[AST.Typed]) = stmt.initOpt match {
+      case Some(init) =>
+        var tc = this
+        if (stmt.isSpec) {
+          tc = tc(mode = ModeContext.Spec)
+        }
+        val (rhs, to) = tc.checkAssignExp(expectedOpt, scope, init, reporter)
+        (Some(rhs), to)
+      case _ => (None(), expectedOpt)
+    }
+    tOpt match {
+      case Some(_) =>
+        val typedOpt: Option[AST.Typed] = expectedOpt match {
+          case Some(_) => expectedOpt
+          case _ => tOpt
+        }
+        val newScope = scope(
+          nameMap = scope.nameMap + key ~> Info.LocalVar(name, stmt.isVal, r.id, typedOpt, resOpt)
         )
-      }
+        val newStmt = r(initOpt = rhsOpt, attr = r.attr(typedOpt = typedOpt, resOpt = resOpt))
+        return (Some(newScope), newStmt)
+      case _ =>
+        return (None(), r)
+    }
+  }
 
-      val name = context :+ varStmt.id.value
-      var r = varStmt
-      val resOpt: Option[AST.ResolvedInfo] = scope.resolveName(typeHierarchy.nameMap, ISZ(key)) match {
-        case Some(info: Info.Var) => info.resOpt
-        case Some(_: Info.LocalVar) =>
-          err()
-          return (None(), r)
-        case _ => Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, varStmt.isSpec,
-          varStmt.isVal, key))
-      }
-      val expectedOpt: Option[AST.Typed] = varStmt.tipeOpt match {
-        case Some(tipe) =>
-          tipe.typedOpt match {
-            case tOpt @ Some(_) => tOpt
-            case _ =>
-              val newTipeOpt = typeHierarchy.typed(scope, tipe, reporter)
-              newTipeOpt match {
-                case Some(newTipe) if newTipe.typedOpt.nonEmpty =>
-                  r = r(tipeOpt = newTipeOpt)
-                  newTipe.typedOpt
-                case _ => return (None(), r)
-              }
-          }
-        case _ => None()
-      }
-      val (rhsOpt, tOpt): (Option[AST.AssignExp], Option[AST.Typed]) = varStmt.initOpt match {
-        case Some(init) =>
-          var tc = this
-          if (varStmt.isSpec) {
-            tc = tc(mode = ModeContext.Spec)
-          }
-          val (rhs, to) = tc.checkAssignExp(expectedOpt, scope, init, reporter)
-          (Some(rhs), to)
-        case _ => (None(), expectedOpt)
-      }
-      tOpt match {
-        case Some(_) =>
-          val typedOpt: Option[AST.Typed] = expectedOpt match {
-            case Some(_) => expectedOpt
-            case _ => tOpt
-          }
-          val newScope = scope(
-            nameMap = scope.nameMap + key ~> Info.LocalVar(name, varStmt.isVal, r.id, typedOpt, resOpt)
+  def checkVarPatternStmt(scope: Scope.Local, stmt: AST.Stmt.VarPattern, reporter: Reporter): (Option[Scope.Local], AST.Stmt) = {
+    var newTipeOpt = stmt.tipeOpt
+    val expectedOpt: Option[AST.Typed] = newTipeOpt match {
+      case Some(tipe) =>
+        newTipeOpt = typeHierarchy.typed(scope, tipe, reporter)
+        newTipeOpt match {
+          case Some(newTipe) if newTipe.typedOpt.nonEmpty => newTipe.typedOpt
+          case _ => return (None(), stmt(tipeOpt = newTipeOpt))
+        }
+      case _ => None()
+    }
+    var tc = this
+    if (stmt.isSpec) {
+      tc = tc(mode = ModeContext.Spec)
+    }
+    val (newInit, initTypeOpt) = tc.checkAssignExp(expectedOpt, scope, stmt.init, reporter)
+    initTypeOpt match {
+      case Some(initType) =>
+        val expected: AST.Typed = if (expectedOpt.nonEmpty) expectedOpt.get else initType
+        val (scopeOpt, newPattern) = checkPattern(stmt.isSpec, None(), expected, scope, stmt.pattern, reporter)
+        return (scopeOpt, stmt(pattern = newPattern, tipeOpt = newTipeOpt, init = newInit))
+      case _ =>
+        if (expectedOpt.isEmpty) {
+          val varText: String = if (stmt.isVal) "val" else "var"
+          reporter.error(
+            stmt.pattern.posOpt,
+            typeCheckerKind,
+            s"Could not infer the expected type for $varText pattern to match to."
           )
-          val newStmt = r(initOpt = rhsOpt, attr = r.attr(typedOpt = typedOpt, resOpt = resOpt))
-          return (Some(newScope), newStmt)
-        case _ =>
-          return (None(), r)
-      }
+        }
+        return (None(), stmt(tipeOpt = newTipeOpt, init = newInit))
     }
+  }
 
-    def checkVarPattern(vpStmt: AST.Stmt.VarPattern): (Option[Scope.Local], AST.Stmt) = {
-      var newTipeOpt = vpStmt.tipeOpt
-      val expectedOpt: Option[AST.Typed] = newTipeOpt match {
-        case Some(tipe) =>
-          newTipeOpt = typeHierarchy.typed(scope, tipe, reporter)
-          newTipeOpt match {
-            case Some(newTipe) if newTipe.typedOpt.nonEmpty => newTipe.typedOpt
-            case _ => return (None(), vpStmt(tipeOpt = newTipeOpt))
-          }
-        case _ => None()
-      }
-      var tc = this
-      if (vpStmt.isSpec) {
-        tc = tc(mode = ModeContext.Spec)
-      }
-      val (newInit, initTypeOpt) = tc.checkAssignExp(expectedOpt, scope, vpStmt.init, reporter)
-      initTypeOpt match {
-        case Some(initType) =>
-          val expected: AST.Typed = if (expectedOpt.nonEmpty) expectedOpt.get else initType
-          val (scopeOpt, newPattern) = checkPattern(vpStmt.isSpec, None(), expected, scope, vpStmt.pattern, reporter)
-          return (scopeOpt, vpStmt(pattern = newPattern, tipeOpt = newTipeOpt, init = newInit))
-        case _ =>
-          if (expectedOpt.isEmpty) {
-            val varText: String = if (vpStmt.isVal) "val" else "var"
-            reporter.error(
-              vpStmt.pattern.posOpt,
-              typeCheckerKind,
-              s"Could not infer the expected type for $varText pattern to match to."
-            )
-          }
-          return (None(), vpStmt(tipeOpt = newTipeOpt, init = newInit))
-      }
-    }
+  def checkStmt(scope: Scope.Local, stmt: AST.Stmt, reporter: Reporter): AST.Stmt = {
 
     def checkAssign(assignStmt: AST.Stmt.Assign): AST.Stmt = {
       assignStmt.lhs match {
@@ -4313,7 +4423,7 @@ import TypeChecker._
       return whileStmt(context = context, cond = newCond, invariants = newInvs, modifies = newMods, body = newBody)
     }
 
-    def checkReturn(returnStmt: AST.Stmt.Return): (Option[Scope.Local], AST.Stmt) = {
+    def checkReturn(returnStmt: AST.Stmt.Return): AST.Stmt = {
       (scope.returnOpt, returnStmt.expOpt) match {
         case (tOpt @ Some(_), Some(exp)) =>
           val (newExp, expTypeCond) = checkExp(tOpt, scope, exp, reporter)
@@ -4326,22 +4436,22 @@ import TypeChecker._
                   s"Expecting type '${tOpt.get}', but incompatible type '$t' found."
                 )
               }
-              return (Some(scope), returnStmt(expOpt = Some(newExp), attr = returnStmt.attr(typedOpt = tOpt)))
-            case _ => return (None(), returnStmt(expOpt = Some(newExp)))
+              return returnStmt(expOpt = Some(newExp), attr = returnStmt.attr(typedOpt = tOpt))
+            case _ => return returnStmt(expOpt = Some(newExp))
           }
         case (Some(t), _) =>
           if (t != AST.Typed.unit) {
             reporter.error(returnStmt.posOpt, typeCheckerKind, s"Expecting type '$t', but none found.")
-            return (None(), returnStmt)
+            return returnStmt
           } else {
-            return (Some(scope), returnStmt(attr = returnStmt.attr(typedOpt = AST.Typed.unitOpt)))
+            return returnStmt(attr = returnStmt.attr(typedOpt = AST.Typed.unitOpt))
           }
         case (_, Some(exp)) =>
           val (newExp, _) = checkExp(None(), scope, exp, reporter)
           reporter.error(exp.posOpt, typeCheckerKind, s"Unexpected return expression.")
-          return (None(), returnStmt(expOpt = Some(newExp)))
+          return returnStmt(expOpt = Some(newExp))
         case _ =>
-          return (Some(scope), returnStmt)
+          return returnStmt
       }
     }
 
@@ -4349,28 +4459,21 @@ import TypeChecker._
 
       case stmt: AST.Stmt.Adt =>
         typeHierarchy.typeMap.get(context :+ stmt.id.value) match {
-          case Some(info: TypeInfo.Adt) => return (Some(scope), info.ast)
+          case Some(info: TypeInfo.Adt) => return info.ast
           case _ => halt("Unexpected situation when type checking statement.")
         }
 
-      case stmt: AST.Stmt.Assign => return (Some(scope), checkAssign(stmt))
+      case stmt: AST.Stmt.Assign => return checkAssign(stmt)
 
-      case stmt: AST.Stmt.Block => return (Some(scope), checkBlock(None(), scope, stmt, reporter))
+      case stmt: AST.Stmt.Block => return checkBlock(None(), scope, stmt, reporter)
 
-      case stmt: AST.Stmt.DoWhile => return (Some(scope), checkDoWhile(stmt))
+      case stmt: AST.Stmt.DoWhile => return checkDoWhile(stmt)
 
-      case stmt: AST.Stmt.Enum => return (Some(scope), stmt)
+      case stmt: AST.Stmt.Enum => return stmt
 
-      case stmt: AST.Stmt.Expr => return (Some(scope), checkExpr(None(), scope, stmt, reporter))
+      case stmt: AST.Stmt.Expr => return checkExpr(None(), scope, stmt, reporter)
 
-      case stmt: AST.Stmt.ExtMethod =>
-        val tc = TypeChecker(typeHierarchy, context :+ stmt.sig.id.value, F, mode, strictAliasing)
-        val (ok, sc) = tc.methodScope(scope, stmt.sig, reporter)
-        if (ok) {
-          return (Some(scope), stmt(contract = tc(mode = ModeContext.Spec).checkMethodContract(sc, stmt.contract, reporter)))
-        } else {
-          return (Some(scope), stmt)
-        }
+      case stmt: AST.Stmt.ExtMethod => return stmt
 
       case stmt: AST.Stmt.JustMethod =>
         stmt.etaOpt match {
@@ -4409,24 +4512,24 @@ import TypeChecker._
             }
           case _ =>
         }
-        return (Some(scope), stmt)
+        return stmt
 
-      case stmt: AST.Stmt.For => return (Some(scope), checkFor(stmt))
+      case stmt: AST.Stmt.For => return checkFor(stmt)
 
-      case stmt: AST.Stmt.If => return (Some(scope), checkIf(None(), scope, stmt, reporter))
+      case stmt: AST.Stmt.If => return checkIf(None(), scope, stmt, reporter)
 
-      case stmt: AST.Stmt.Import => return checkImport(scope, stmt, reporter)
+      case stmt: AST.Stmt.Import => return checkImport(scope, stmt, reporter)._2
 
-      case stmt: AST.Stmt.Match => return (Some(scope), checkMatch(None(), scope, stmt, reporter))
+      case stmt: AST.Stmt.Match => return checkMatch(None(), scope, stmt, reporter)
 
       case stmt: AST.Stmt.Method =>
         val tc = TypeChecker(typeHierarchy, context :+ stmt.sig.id.value, isInMutableContext, mode, strictAliasing)
         val r = tc.checkMethod(scope, stmt, reporter)
-        return (Some(scope), r)
+        return r
 
       case stmt: AST.Stmt.Object =>
         typeHierarchy.nameMap.get(context :+ stmt.id.value) match {
-          case Some(info: Info.Object) => return (Some(scope), info.ast)
+          case Some(info: Info.Object) => return info.ast
           case _ => halt("Unexpected situation when type checking statement.")
         }
 
@@ -4434,25 +4537,25 @@ import TypeChecker._
 
       case stmt: AST.Stmt.Sig =>
         typeHierarchy.typeMap.get(context :+ stmt.id.value) match {
-          case Some(info: TypeInfo.Sig) => return (Some(scope), info.ast)
+          case Some(info: TypeInfo.Sig) => return info.ast
           case _ => halt("Unexpected situation when type checking statement.")
         }
 
-      case stmt: AST.Stmt.SpecMethod => return (Some(scope), stmt)
+      case stmt: AST.Stmt.SpecMethod => return stmt
 
-      case stmt: AST.Stmt.SpecVar => return (Some(scope), stmt)
+      case stmt: AST.Stmt.SpecVar => return stmt
 
-      case stmt: AST.Stmt.SubZ => return (Some(scope), stmt)
+      case stmt: AST.Stmt.SubZ => return stmt
 
-      case stmt: AST.Stmt.TypeAlias => return (Some(scope), stmt)
+      case stmt: AST.Stmt.TypeAlias => return stmt
 
-      case stmt: AST.Stmt.Var => return checkVar(stmt)
+      case stmt: AST.Stmt.Var => return checkVarStmt(scope, stmt, reporter)._2
 
-      case stmt: AST.Stmt.VarPattern => return checkVarPattern(stmt)
+      case stmt: AST.Stmt.VarPattern => return stmt
 
-      case stmt: AST.Stmt.While => return (Some(scope), checkWhile(stmt))
+      case stmt: AST.Stmt.While => return checkWhile(stmt)
 
-      case stmt: AST.Stmt.SpecLabel => return (Some(scope), stmt)
+      case stmt: AST.Stmt.SpecLabel => return stmt
 
       case stmt: AST.Stmt.SpecBlock =>
         val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.Spec, strictAliasing)
@@ -4460,50 +4563,23 @@ import TypeChecker._
 
       case stmt: AST.Stmt.DeduceSequent =>
         val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.Spec, strictAliasing)
-        return (Some(scope), stmt(sequents = for (sequent <- stmt.sequents) yield tc.checkSequent(scope, sequent, reporter)))
+        return stmt(sequents = for (sequent <- stmt.sequents) yield tc.checkSequent(scope, sequent, reporter))
 
       case stmt: AST.Stmt.DeduceSteps =>
         val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.Spec, strictAliasing)
-        return (Some(scope), stmt(steps = for (step <- stmt.steps) yield tc.checkStep(scope, step, reporter)))
+        return stmt(steps = for (step <- stmt.steps) yield tc.checkStep(scope, step, reporter))
 
       case stmt: AST.Stmt.Havoc =>
         val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.Spec, strictAliasing)
-        return (Some(scope), stmt(args = tc.checkModifiesH("havoc", scope, stmt.args, reporter)))
+        return stmt(args = tc.checkModifiesH("havoc", scope, stmt.args, reporter))
 
-      case stmt: AST.Stmt.Fact =>
-        val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.Spec, strictAliasing)
-        val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
-        val typeParams = typeParamMap(stmt.typeParams, reporter)
-        val sc = Scope.Local.create(typeParams.map, scope)
-        return (Some(scope), stmt(claims = for (claim <- stmt.claims) yield tc.checkExp(bExpectedOpt, sc, claim, reporter)._1))
+      case stmt: AST.Stmt.Fact => return stmt
 
-      case stmt: AST.Stmt.Theorem =>
-        val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.Spec, strictAliasing)
-        val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
-        val typeParams = typeParamMap(stmt.typeParams, reporter)
-        val sc = Scope.Local.create(typeParams.map, scope)
-        if (stmt.isFun) {
-          val qclaim = stmt.claim.asInstanceOf[AST.Exp.QuantType]
-          val (newFun, tOpt, proofScope) = tc.checkFun(None(), sc, qclaim.fun, reporter)
-          tOpt match {
-            case Some(t: AST.Typed.Fun) if t.ret != AST.Typed.b =>
-              reporter.error(qclaim.fun.posOpt, typeCheckerKind, s"Expecting type 'B', but '${t.ret}' found.")
-            case _ =>
-          }
-          return (Some(scope), stmt(claim = qclaim(fun = newFun.asInstanceOf[AST.Exp.Fun]),
-            proof = stmt.proof(steps = for (step <- stmt.proof.steps) yield tc.checkStep(proofScope, step, reporter))))
-        } else {
-          return (Some(scope), stmt(claim = tc.checkExp(bExpectedOpt, sc, stmt.claim, reporter)._1,
-            proof = stmt.proof(steps = for (step <- stmt.proof.steps) yield tc.checkStep(sc, step, reporter))))
-        }
+      case stmt: AST.Stmt.Theorem => return stmt
 
-      case stmt: AST.Stmt.Inv =>
-        val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.Spec, strictAliasing)
-        val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
-        return (Some(scope), stmt(claims = for (claim <- stmt.claims) yield tc.checkExp(bExpectedOpt, scope, claim, reporter)._1,
-          attr = stmt.attr(typedOpt = AST.Typed.unitOpt)))
+      case stmt: AST.Stmt.Inv => return stmt
 
-      case stmt: AST.Stmt.DataRefinement => return (Some(scope), stmt)
+      case stmt: AST.Stmt.DataRefinement => return stmt
     }
   }
 
@@ -4744,50 +4820,15 @@ import TypeChecker._
     return exp
   }
 
-  def methodScope(sc: Scope, sig: AST.MethodSig, reporter: Reporter): (B, Scope.Local) = {
-    val typeParams = typeParamMap(sig.typeParams, reporter)
-    var scope = Scope.Local.create(typeParams.map, sc)
-    sig.returnType.typedOpt match {
-      case tOpt @ Some(_) => scope = scope(methodReturnOpt = tOpt)
-      case _ => halt("Unexpected situation when type checking method.")
-    }
-    var ok = T
-    for (p <- sig.params) {
-      val id = p.id.value
-      scope.resolveName(typeHierarchy.nameMap, ISZ(id)) match {
-        case Some(_: Info.LocalVar) =>
-          reporter.error(
-            p.id.attr.posOpt,
-            typeCheckerKind,
-            s"Identifier '$id' shadows a declaration in the enclosing context."
-          )
-          ok = F
-        case _ =>
-          scope = scope(
-            nameMap = scope.nameMap + id ~> Info.LocalVar(
-              context :+ id,
-              T,
-              p.id,
-              p.tipe.typedOpt,
-              Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T, id))
-            )
-          )
-      }
-    }
-    return (ok, scope)
-  }
-
   def checkMethod(sc: Scope, stmt: AST.Stmt.Method, reporter: Reporter): AST.Stmt = {
     def checkMethodH(): AST.Stmt.Method = {
-      val (ok, scope) = methodScope(sc, stmt.sig, reporter)
+      if (stmt.bodyOpt.isEmpty) {
+        return stmt
+      }
+      val (ok, scope) = methodScope(typeHierarchy, context, sc, stmt.sig, reporter)
       if (ok) {
-        val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.Spec, strictAliasing)
-        val newContract = tc.checkMethodContract(scope, stmt.contract, reporter)
-        if (stmt.bodyOpt.isEmpty) {
-          return stmt(contract = newContract)
-        }
         val (_, newBody) = checkBody(F, None(), scope, stmt.bodyOpt.get, reporter)
-        return stmt(contract = newContract, bodyOpt = Some(newBody))
+        return stmt(bodyOpt = Some(newBody))
       } else {
         return stmt
       }
@@ -4813,35 +4854,17 @@ import TypeChecker._
     return stmt(rep = rep, refs = refs, claims = claims)
   }
 
-  def checkAdt(info: TypeInfo.Adt): TypeHierarchy => (TypeHierarchy, Reporter) @pure = {
+  def checkAdt(info: TypeInfo.Adt): TypeHierarchy => (TypeHierarchy, ISZ[Message]) @pure = {
     assert(info.outlined, st"${(info.name, ".")} is not outlined".render)
     val reporter = Reporter.create
     val typeParams = typeParamMap(info.ast.typeParams, reporter)
     var scope = Scope.Local.create(typeParams.map, info.scope)
     scope = scope(localThisOpt = Some(info.tpe))
-    var stmts = ISZ[AST.Stmt]()
-    var dataRefinements = ISZ[AST.Stmt.DataRefinement]()
-    val tc = TypeChecker(typeHierarchy, context, !info.ast.isDatatype, ModeContext.Spec, strictAliasing)
-    for (stmt <- info.ast.stmts) {
-      stmt match {
-        case stmt: AST.Stmt.Var => stmts = stmts :+ info.vars.get(stmt.id.value).get.ast
-        case stmt: AST.Stmt.SpecVar => stmts = stmts :+ info.specVars.get(stmt.id.value).get.ast
-        case stmt: AST.Stmt.Method => stmts = stmts :+ info.methods.get(stmt.sig.id.value).get.ast
-        case stmt: AST.Stmt.SpecMethod => stmts = stmts :+ info.specMethods.get(stmt.sig.id.value).get.ast
-        case stmt: AST.Stmt.Inv => stmts = stmts :+ info.invariants.get(stmt.id.value).get.ast
-        case stmt: AST.Stmt.DataRefinement =>
-          val newStmt = tc.checkDataRefinement(scope, stmt, reporter)
-          dataRefinements = dataRefinements :+ newStmt
-          stmts = stmts :+ newStmt
-        case _ => stmts = stmts :+ stmt
-      }
-    }
-    val (_, newStmts) = checkStmts(F, None(), scope, stmts, reporter)
+    val newStmts = checkStmts(ISZ(scope), None(), info.ast.stmts, reporter)
     var specVars: HashSMap[String, Info.SpecVar] = info.specVars
     var vars: HashSMap[String, Info.Var] = info.vars
     var specMethods: HashMap[String, Info.SpecMethod] = info.specMethods
     var methods: HashMap[String, Info.Method] = info.methods
-    var invariants: HashMap[String, Info.Inv] = info.invariants
     for (stmt <- newStmts) {
       stmt match {
         case stmt: AST.Stmt.Var =>
@@ -4860,10 +4883,6 @@ import TypeChecker._
           val id = stmt.sig.id.value
           val smInfo = info.specMethods.get(id).get
           specMethods = specMethods + id ~> smInfo(ast = stmt)
-        case stmt: AST.Stmt.Inv =>
-          val id = stmt.id.value
-          val invInfo = info.invariants.get(id).get
-          invariants = invariants + id ~> invInfo(ast = stmt)
         case _ =>
       }
     }
@@ -4881,46 +4900,28 @@ import TypeChecker._
         }
       }
     }
-    return (th: TypeHierarchy) =>
-      (
-        th(
-          typeMap = th.typeMap + info.name ~> info(
-            typeChecked = T,
-            ast = info.ast(stmts = newStmts),
-            vars = vars,
-            specVars = specVars,
-            methods = methods,
-            specMethods = specMethods,
-            invariants = invariants,
-            dataRefinements = dataRefinements
-          )
-        ),
-        reporter
+    val messages = reporter.messages
+    val newInfo = info(
+      typeChecked = T,
+      ast = info.ast(stmts = newStmts),
+      vars = vars,
+      specVars = specVars,
+      methods = methods,
+      specMethods = specMethods
     )
+    return (th: TypeHierarchy) => (th(typeMap = th.typeMap + info.name ~> newInfo), messages)
   }
 
-  def checkSig(info: TypeInfo.Sig): TypeHierarchy => (TypeHierarchy, Reporter) @pure = {
+  def checkSig(info: TypeInfo.Sig): TypeHierarchy => (TypeHierarchy, ISZ[Message]) @pure = {
     assert(info.outlined, st"${(info.name, ".")} is not outlined".render)
     val reporter = Reporter.create
     val typeParams = typeParamMap(info.ast.typeParams, reporter)
     var scope = Scope.Local.create(typeParams.map, info.scope)
     scope = scope(localThisOpt = Some(info.tpe))
-    var stmts = ISZ[AST.Stmt]()
-    for (stmt <- info.ast.stmts) {
-      stmt match {
-        case stmt: AST.Stmt.SpecVar => stmts = stmts :+ info.specVars.get(stmt.id.value).get.ast
-        case stmt: AST.Stmt.Method => stmts = stmts :+ info.methods.get(stmt.sig.id.value).get.ast
-        case stmt: AST.Stmt.SpecMethod => stmts = stmts :+ info.specMethods.get(stmt.sig.id.value).get.ast
-        case stmt: AST.Stmt.Inv => stmts = stmts :+ info.invariants.get(stmt.id.value).get.ast
-        case _ => stmts = stmts :+ stmt
-      }
-    }
-    val (_, newStmts) = checkStmts(F, None(), scope, stmts, reporter)
+    val newStmts = checkStmts(ISZ(scope), None(), info.ast.stmts, reporter)
     var specVars: HashSMap[String, Info.SpecVar] = info.specVars
     var specMethods: HashMap[String, Info.SpecMethod] = info.specMethods
     var methods: HashMap[String, Info.Method] = info.methods
-    var invariants: HashMap[String, Info.Inv] = info.invariants
-    var dataRefinements = ISZ[AST.Stmt.DataRefinement]()
     for (stmt <- newStmts) {
       stmt match {
         case stmt: AST.Stmt.SpecVar =>
@@ -4935,51 +4936,25 @@ import TypeChecker._
           val id = stmt.sig.id.value
           val smInfo = info.specMethods.get(id).get
           specMethods = specMethods + id ~> smInfo(ast = stmt)
-        case stmt: AST.Stmt.Inv =>
-          val id = stmt.id.value
-          val invInfo = info.invariants.get(id).get
-          invariants = invariants + id ~> invInfo(ast = stmt)
-        case stmt: AST.Stmt.DataRefinement =>
-          dataRefinements = dataRefinements :+ checkDataRefinement(scope, stmt, reporter)
         case _ =>
       }
     }
-    return (th: TypeHierarchy) =>
-      (
-        th(
-          typeMap = th.typeMap + info.name ~> info(
-            typeChecked = T,
-            ast = info.ast(stmts = newStmts),
-            specVars = specVars,
-            methods = methods,
-            specMethods = specMethods,
-            invariants = invariants,
-            dataRefinements = dataRefinements
-          )
-        ),
-        reporter
+    val messages = reporter.messages
+    val newInfo = info(
+      typeChecked = T,
+      ast = info.ast(stmts = newStmts),
+      specVars = specVars,
+      methods = methods,
+      specMethods = specMethods
     )
+    return (th: TypeHierarchy) => (th(typeMap = th.typeMap + info.name ~> newInfo), messages)
   }
 
-  def checkObject(info: Info.Object): TypeHierarchy => (TypeHierarchy, Reporter) @pure = {
+  def checkObject(info: Info.Object): TypeHierarchy => (TypeHierarchy, ISZ[Message]) @pure = {
     assert(info.outlined, st"${(info.name, ".")} is not outlined".render)
     val name = info.name
     @pure def getInfo(id: String): Info = {
       return typeHierarchy.nameMap.get(name :+ id).get
-    }
-    @pure def getStmt(id: String): Option[AST.Stmt] = {
-      getInfo(id) match {
-        case sinfo: Info.Var => return if (info.ast.extNameOpt.nonEmpty) None() else Some(sinfo.ast)
-        case sinfo: Info.SpecVar => return Some(sinfo.ast)
-        case sinfo: Info.SpecMethod => return Some(sinfo.ast)
-        case sinfo: Info.Method => return Some(sinfo.ast)
-        case sinfo: Info.ExtMethod => return Some(sinfo.ast)
-        case sinfo: Info.JustMethod => return Some(sinfo.ast)
-        case sinfo: Info.Fact => return Some(sinfo.ast)
-        case sinfo: Info.Theorem => return Some(sinfo.ast)
-        case sinfo: Info.Inv => return Some(sinfo.ast)
-        case _ => halt("Unexpected situation when type checking object.")
-      }
     }
     val reporter = Reporter.create
     var scope = createNewScope(info.scope(enclosingName = name))
@@ -4987,22 +4962,22 @@ import TypeChecker._
     var stmtOpts = ISZ[Option[AST.Stmt]]()
     for (stmt <- info.ast.stmts) {
       stmt match {
-        case stmt: AST.Stmt.Var => stmtOpts = stmtOpts :+ getStmt(stmt.id.value)
-        case stmt: AST.Stmt.SpecVar => stmtOpts = stmtOpts :+ getStmt(stmt.id.value)
-        case stmt: AST.Stmt.Method => stmtOpts = stmtOpts :+ getStmt(stmt.sig.id.value)
-        case stmt: AST.Stmt.SpecMethod => stmtOpts = stmtOpts :+ getStmt(stmt.sig.id.value)
-        case stmt: AST.Stmt.ExtMethod => stmtOpts = stmtOpts :+ getStmt(stmt.sig.id.value)
-        case stmt: AST.Stmt.JustMethod => stmtOpts = stmtOpts :+ getStmt(stmt.sig.id.value)
-        case stmt: AST.Stmt.Fact =>  stmtOpts = stmtOpts :+ getStmt(stmt.id.value)
-        case stmt: AST.Stmt.Theorem =>  stmtOpts = stmtOpts :+ getStmt(stmt.id.value)
-        case stmt: AST.Stmt.Inv =>  stmtOpts = stmtOpts :+ getStmt(stmt.id.value)
+        case stmt: AST.Stmt.Var => stmtOpts = stmtOpts :+ (if (info.ast.extNameOpt.nonEmpty) None() else Some(stmt))
+        case stmt: AST.Stmt.SpecVar => stmtOpts = stmtOpts :+ Some(stmt)
+        case stmt: AST.Stmt.Method => stmtOpts = stmtOpts :+ Some(stmt)
+        case stmt: AST.Stmt.SpecMethod => stmtOpts = stmtOpts :+ Some(stmt)
+        case stmt: AST.Stmt.ExtMethod => stmtOpts = stmtOpts :+ Some(stmt)
+        case stmt: AST.Stmt.JustMethod => stmtOpts = stmtOpts :+ Some(stmt)
+        case _: AST.Stmt.Fact =>  stmtOpts = stmtOpts :+ None()
+        case _: AST.Stmt.Theorem =>  stmtOpts = stmtOpts :+ None()
+        case _: AST.Stmt.Inv =>  stmtOpts = stmtOpts :+ None()
         case _: AST.Stmt.Sig => stmtOpts = stmtOpts :+ None()
         case _: AST.Stmt.Adt => stmtOpts = stmtOpts :+ None()
         case _: AST.Stmt.Object => stmtOpts = stmtOpts :+ None()
         case _ => stmtOpts = stmtOpts :+ Some(stmt)
       }
     }
-    val newStmtOpts = checkStmtOpts(F, scope, stmtOpts, reporter)
+    val newStmtOpts = checkStmtOpts(scope, stmtOpts, reporter)
     var i = 0
     var newStmts = ISZ[AST.Stmt]()
     var nameEntries = ISZ[(QName, Info)]()
@@ -5028,15 +5003,6 @@ import TypeChecker._
             case stmt: AST.Stmt.JustMethod =>
               val em = getInfo(stmt.sig.id.value).asInstanceOf[Info.JustMethod]
               nameEntries = nameEntries :+ (em.name ~> em(ast = stmt))
-            case stmt: AST.Stmt.Fact =>
-              val em = getInfo(stmt.id.value).asInstanceOf[Info.Fact]
-              nameEntries = nameEntries :+ (em.name ~> em(ast = stmt))
-            case stmt: AST.Stmt.Theorem =>
-              val em = getInfo(stmt.id.value).asInstanceOf[Info.Theorem]
-              nameEntries = nameEntries :+ (em.name ~> em(ast = stmt))
-            case stmt: AST.Stmt.Inv =>
-              val em = getInfo(stmt.id.value).asInstanceOf[Info.Inv]
-              nameEntries = nameEntries :+ (em.name ~> em(ast = stmt))
             case _ =>
           }
           newStmts = newStmts :+ stmt
@@ -5045,6 +5011,8 @@ import TypeChecker._
       i = i + 1
     }
     nameEntries = nameEntries :+ (info.name ~> info(ast = info.ast(stmts = newStmts)))
-    return (th: TypeHierarchy) => (th(nameMap = th.nameMap ++ nameEntries), reporter)
+    val messages = reporter.messages
+    val newInfos = nameEntries
+    return (th: TypeHierarchy) => (th(nameMap = th.nameMap ++ newInfos), messages)
   }
 }

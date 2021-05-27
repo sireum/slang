@@ -141,6 +141,7 @@ object JSON {
         ("isSynthetic", printB(o.isSynthetic)),
         ("scope", print_symbolScopeGlobal(o.scope)),
         ("outlined", printB(o.outlined)),
+        ("contractOutlined", printB(o.contractOutlined)),
         ("typeChecked", printB(o.typeChecked)),
         ("ast", print_astStmtObject(o.ast)),
         ("typedOpt", printOption(F, o.typedOpt, print_astTyped _)),
@@ -264,6 +265,7 @@ object JSON {
         ("type", st""""org.sireum.lang.symbol.TypeInfo.Sig""""),
         ("owner", printISZ(T, o.owner, printString _)),
         ("outlined", printB(o.outlined)),
+        ("contractOutlined", printB(o.contractOutlined)),
         ("typeChecked", printB(o.typeChecked)),
         ("tpe", print_astTypedName(o.tpe)),
         ("ancestors", printISZ(F, o.ancestors, print_astTypedName _)),
@@ -290,6 +292,7 @@ object JSON {
         ("type", st""""org.sireum.lang.symbol.TypeInfo.Adt""""),
         ("owner", printISZ(T, o.owner, printString _)),
         ("outlined", printB(o.outlined)),
+        ("contractOutlined", printB(o.contractOutlined)),
         ("typeChecked", printB(o.typeChecked)),
         ("tpe", print_astTypedName(o.tpe)),
         ("constructorTypeOpt", printOption(F, o.constructorTypeOpt, print_astTyped _)),
@@ -2295,6 +2298,9 @@ object JSON {
       parser.parseObjectKey("outlined")
       val outlined = parser.parseB()
       parser.parseObjectNext()
+      parser.parseObjectKey("contractOutlined")
+      val contractOutlined = parser.parseB()
+      parser.parseObjectNext()
       parser.parseObjectKey("typeChecked")
       val typeChecked = parser.parseB()
       parser.parseObjectNext()
@@ -2310,7 +2316,7 @@ object JSON {
       parser.parseObjectKey("constructorRes")
       val constructorRes = parse_astResolvedInfoMethod()
       parser.parseObjectNext()
-      return org.sireum.lang.symbol.Info.Object(owner, isSynthetic, scope, outlined, typeChecked, ast, typedOpt, resOpt, constructorRes)
+      return org.sireum.lang.symbol.Info.Object(owner, isSynthetic, scope, outlined, contractOutlined, typeChecked, ast, typedOpt, resOpt, constructorRes)
     }
 
     def parse_symbolInfoExtMethod(): org.sireum.lang.symbol.Info.ExtMethod = {
@@ -2578,6 +2584,9 @@ object JSON {
       parser.parseObjectKey("outlined")
       val outlined = parser.parseB()
       parser.parseObjectNext()
+      parser.parseObjectKey("contractOutlined")
+      val contractOutlined = parser.parseB()
+      parser.parseObjectNext()
       parser.parseObjectKey("typeChecked")
       val typeChecked = parser.parseB()
       parser.parseObjectNext()
@@ -2611,7 +2620,7 @@ object JSON {
       parser.parseObjectKey("ast")
       val ast = parse_astStmtSig()
       parser.parseObjectNext()
-      return org.sireum.lang.symbol.TypeInfo.Sig(owner, outlined, typeChecked, tpe, ancestors, specVars, specMethods, methods, refinements, invariants, dataRefinements, scope, ast)
+      return org.sireum.lang.symbol.TypeInfo.Sig(owner, outlined, contractOutlined, typeChecked, tpe, ancestors, specVars, specMethods, methods, refinements, invariants, dataRefinements, scope, ast)
     }
 
     def parse_symbolTypeInfoName(): org.sireum.lang.symbol.TypeInfo.Name = {
@@ -2643,6 +2652,9 @@ object JSON {
       parser.parseObjectNext()
       parser.parseObjectKey("outlined")
       val outlined = parser.parseB()
+      parser.parseObjectNext()
+      parser.parseObjectKey("contractOutlined")
+      val contractOutlined = parser.parseB()
       parser.parseObjectNext()
       parser.parseObjectKey("typeChecked")
       val typeChecked = parser.parseB()
@@ -2692,7 +2704,7 @@ object JSON {
       parser.parseObjectKey("ast")
       val ast = parse_astStmtAdt()
       parser.parseObjectNext()
-      return org.sireum.lang.symbol.TypeInfo.Adt(owner, outlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, ancestors, specVars, vars, specMethods, methods, refinements, invariants, dataRefinements, scope, ast)
+      return org.sireum.lang.symbol.TypeInfo.Adt(owner, outlined, contractOutlined, typeChecked, tpe, constructorTypeOpt, constructorResOpt, extractorTypeMap, extractorResOpt, ancestors, specVars, vars, specMethods, methods, refinements, invariants, dataRefinements, scope, ast)
     }
 
     def parse_symbolTypeInfoTypeAlias(): org.sireum.lang.symbol.TypeInfo.TypeAlias = {

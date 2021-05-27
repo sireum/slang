@@ -189,11 +189,11 @@ object TypeHierarchy {
   }
 
   @pure def combine(
-    r: (TypeHierarchy, Reporter),
-    f: TypeHierarchy => (TypeHierarchy, Reporter)
-  ): (TypeHierarchy, Reporter) = {
+    r: (TypeHierarchy, ISZ[Message]),
+    f: TypeHierarchy => (TypeHierarchy, ISZ[Message]) @pure
+  ): (TypeHierarchy, ISZ[Message]) = {
     val p = f(r._1)
-    return (p._1, Reporter.combine(r._2, p._2))
+    return (p._1, r._2 ++ p._2)
   }
 
 }

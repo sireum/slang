@@ -469,6 +469,7 @@ object Info {
                          isSynthetic: B,
                          scope: Scope.Global,
                          outlined: B,
+                         contractOutlined: B,
                          typeChecked: B,
                          ast: AST.Stmt.Object,
                          typedOpt: Option[AST.Typed],
@@ -686,7 +687,9 @@ object Info {
                       scope: Scope,
                       ast: AST.Stmt.Inv) extends Info {
 
-    val typedOpt: Option[AST.Typed] = Some(AST.Typed.Inv(ast.attr.resOpt.get.asInstanceOf[AST.ResolvedInfo.Inv].isInObject, owner, id))
+    @memoize def typedOpt: Option[AST.Typed] = {
+      return Some(AST.Typed.Inv(ast.attr.resOpt.get.asInstanceOf[AST.ResolvedInfo.Inv].isInObject, owner, id))
+    }
 
     @pure def resOpt: Option[AST.ResolvedInfo] = {
       return ast.attr.resOpt
@@ -776,6 +779,7 @@ object TypeInfo {
 
   @datatype class Sig(owner: ISZ[String],
                       outlined: B,
+                      contractOutlined: B,
                       typeChecked: B,
                       tpe: AST.Typed.Name,
                       ancestors: ISZ[AST.Typed.Name],
@@ -799,6 +803,9 @@ object TypeInfo {
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
     }
+
+    @strictpure def hasId(id: String): B = specVars.contains(id) || specMethods.contains(id) || methods.contains(id) ||
+      invariants.contains(id)
 
     @pure def typeRes(id: String, inSpec: B): (B, Option[AST.Typed], Option[AST.ResolvedInfo]) = {
 
@@ -850,6 +857,7 @@ object TypeInfo {
 
   @datatype class Adt(owner: ISZ[String],
                       outlined: B,
+                      contractOutlined: B,
                       typeChecked: B,
                       tpe: AST.Typed.Name,
                       constructorTypeOpt: Option[AST.Typed],
@@ -878,6 +886,9 @@ object TypeInfo {
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
     }
+
+    @strictpure def hasId(id: String): B = specVars.contains(id) || specMethods.contains(id) || methods.contains(id) ||
+      invariants.contains(id)
 
     @pure def typeRes(id: String, inSpec: B): (B, Option[AST.Typed], Option[AST.ResolvedInfo]) = {
 

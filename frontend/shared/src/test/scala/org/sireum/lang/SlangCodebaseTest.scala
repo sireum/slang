@@ -57,7 +57,7 @@ class SlangCodebaseTest extends TestSuite {
       report()
       var th = TypeHierarchy.build(TypeHierarchy(globalNameMap, globalTypeMap, Poset.empty, HashMap.empty), reporter)
       report()
-      th = TypeOutliner.checkOutline(T, th, reporter)
+      th = TypeOutliner.checkOutline(T, T, th, reporter)
       report()
 
       def nameInfo(th: TypeHierarchy, name: Predef.String): Resolver.NameMap = {
