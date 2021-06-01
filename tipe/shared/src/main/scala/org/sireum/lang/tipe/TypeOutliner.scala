@@ -1163,46 +1163,47 @@ object TypeOutliner {
         case stmt: AST.Stmt.Method if stmt.hasContract =>
           val id = stmt.sig.id.value
           val context = info.name :+ id
-          val newStmt = TypeChecker.checkMethodContractSequent(strictAliasing, typeHierarchy, context, scope, F, stmt, reporter)
-          newStmts = newStmts :+ newStmt
           val mInfo = typeHierarchy.nameMap.get(info.name :+ id).get.asInstanceOf[Info.Method]
+          val newStmt = TypeChecker.checkMethodContractSequent(strictAliasing, typeHierarchy, context, scope, F, mInfo.ast, reporter)
+          newStmts = newStmts :+ newStmt
           nameEntries = nameEntries :+ ((mInfo.name, mInfo(ast = newStmt)))
         case stmt: AST.Stmt.Fact =>
           val id = stmt.id.value
           val context = info.name :+ id
-          val newStmt = TypeChecker.checkFactStmt(strictAliasing, typeHierarchy, context, scope, stmt, reporter)
-          newStmts = newStmts :+ newStmt
           val fInfo = typeHierarchy.nameMap.get(info.name :+ id).get.asInstanceOf[Info.Fact]
+          val newStmt = TypeChecker.checkFactStmt(strictAliasing, typeHierarchy, context, scope, fInfo.ast, reporter)
+          newStmts = newStmts :+ newStmt
           nameEntries = nameEntries :+ ((fInfo.name, fInfo(ast = newStmt)))
         case stmt: AST.Stmt.Theorem =>
           val id = stmt.id.value
           val context = info.name :+ id
-          val newStmt = TypeChecker.checkTheoremStmt(strictAliasing, typeHierarchy, context, scope, stmt, reporter)
-          newStmts = newStmts :+ newStmt
           val tInfo = typeHierarchy.nameMap.get(info.name :+ id).get.asInstanceOf[Info.Theorem]
+          val newStmt = TypeChecker.checkTheoremStmt(strictAliasing, typeHierarchy, context, scope, tInfo.ast, reporter)
+          newStmts = newStmts :+ newStmt
           nameEntries = nameEntries :+ ((tInfo.name, tInfo(ast = newStmt)))
         case stmt: AST.Stmt.Inv =>
           val id = stmt.id.value
           val context = info.name :+ id
-          val newStmt = TypeChecker.checkInvStmt(strictAliasing, typeHierarchy, context, scope, stmt, reporter)
-          newStmts = newStmts :+ newStmt
           val iInfo = typeHierarchy.nameMap.get(info.name :+ id).get.asInstanceOf[Info.Inv]
+          val newStmt = TypeChecker.checkInvStmt(strictAliasing, typeHierarchy, context, scope, iInfo.ast, reporter)
+          newStmts = newStmts :+ newStmt
           nameEntries = nameEntries :+ ((iInfo.name, iInfo(ast = newStmt)))
         case stmt: AST.Stmt.ExtMethod if stmt.contract.nonEmpty =>
           val id = stmt.sig.id.value
           val mInfo = typeHierarchy.nameMap.get(info.name :+ id).get.asInstanceOf[Info.ExtMethod]
+          val mstmt = mInfo.ast
           val context = info.name :+ id
-          val (ok, sc) = TypeChecker.methodScope(typeHierarchy, context, info.scope, stmt.sig, reporter)
+          val (ok, sc) = TypeChecker.methodScope(typeHierarchy, context, info.scope, mstmt.sig, reporter)
           if (ok) {
             val tc = TypeChecker(typeHierarchy, context, F, TypeChecker.ModeContext.Spec, strictAliasing)
-            var newStmt = stmt(contract = tc.checkMethodContract(sc, stmt.contract, reporter))
+            var newStmt = mstmt(contract = tc.checkMethodContract(sc, mstmt.contract, reporter))
             val reads: ISZ[AST.ResolvedInfo] = for (r <- newStmt.contract.reads) yield r.attr.resOpt.get
             val writes: ISZ[AST.ResolvedInfo] = for (w <- newStmt.contract.modifies) yield w.attr.resOpt.get
             newStmt = newStmt(attr = newStmt.attr(resOpt = Some(mInfo.methodRes(reads = reads, writes = writes))))
             newStmts = newStmts :+ newStmt
             nameEntries = nameEntries :+ ((mInfo.name, mInfo(ast = newStmt)))
           } else {
-            newStmts = newStmts :+ stmt
+            newStmts = newStmts :+ mstmt
           }
         case _ => newStmts = newStmts :+ stmt
       }
