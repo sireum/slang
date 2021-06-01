@@ -374,4 +374,11 @@ object Util {
     }
   }
 
+  @pure def isSeq(t: Typed): B = {
+    t match {
+      case t: Typed.Name => return t.ids == Typed.isName || t.ids == Typed.msName
+      case _ => return F
+    }
+  }
+
 }
