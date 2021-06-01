@@ -731,4 +731,41 @@ object TypeHierarchy {
       case _ => return F
     }
   }
+
+  @pure def isModifiable(t: AST.Typed, typeVarMutable: B): B = {
+    t match {
+      case t: AST.Typed.Name =>
+        if (t.ids == AST.Typed.msName) {
+          return T
+        }
+        typeMap.get(t.ids) match {
+          case Some(info) =>
+            info match {
+              case info: TypeInfo.Adt =>
+                if (info.ast.isDatatype) {
+                  return info.specVars.nonEmpty
+                } else {
+                  return T
+                }
+              case info: TypeInfo.Sig =>
+                if (info.ast.isImmutable || info.ast.isExt) {
+                  return info.specVars.nonEmpty
+                } else {
+                  return T
+                }
+              case _ => return F
+            }
+          case _ => return F
+        }
+      case t: AST.Typed.Tuple =>
+        for (arg <- t.args) {
+          if (isModifiable(arg, typeVarMutable)) {
+            return T
+          }
+        }
+        return F
+      case _: AST.Typed.TypeVar => return typeVarMutable
+      case _ => return F
+    }
+  }
 }

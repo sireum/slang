@@ -4307,49 +4307,89 @@ import TypeChecker._
             val (newRhs, _) = checkAssignExp(None(), scope, assignStmt.rhs, reporter)
             return assignStmt(lhs = lhs(receiverOpt = Some(newReceiver)), rhs = newRhs)
           }
-          def checkSelectAssignH(varInfo: Info.Var, substMap: HashMap[String, AST.Typed]): AST.Stmt = {
-            if (varInfo.ast.isVal) {
+          def checkSelectAssignH(isVal: B, owner: QName, typedOpt: Option[AST.Typed], resOpt: Option[AST.ResolvedInfo],
+                                 substMap: HashMap[String, AST.Typed]): AST.Stmt = {
+            if (isVal) {
               reporter.error(
                 lhs.id.attr.posOpt,
                 typeCheckerKind,
-                st"Cannot assign to val '${lhs.id.value}' of '${(varInfo.owner, ".")}'.".render
+                st"Cannot assign to val '${lhs.id.value}' of '${(owner, ".")}'.".render
               )
             }
-            val expected = varInfo.typedOpt.get.subst(substMap)
+            val expected = typedOpt.get.subst(substMap)
             val (newRhs, _) = checkAssignExp(Some(expected), scope, assignStmt.rhs, reporter)
             return assignStmt(
               lhs = lhs(
                 receiverOpt = Some(newReceiver),
-                attr = lhs.attr(resOpt = varInfo.resOpt, typedOpt = Some(expected))
+                attr = lhs.attr(resOpt = resOpt, typedOpt = Some(expected))
               ),
               rhs = newRhs
             )
+          }
+          def checkSelectVarInfo(t: AST.Typed.Name, typeParams: ISZ[AST.TypeParam], info: Info.Var): AST.Stmt = {
+            if (inSpec) {
+              reporter.error(lhs.posOpt, typeCheckerKind, s"Cannot assign to variable '${lhs.id.value}' in spec context.")
+            }
+            if (info.ast.isVal) {
+              reporter.error(lhs.posOpt, typeCheckerKind, s"Cannot assign to read-only variable '${lhs.id.value}'.")
+            }
+            val smOpt = buildTypeSubstMap(t.ids, lhs.id.attr.posOpt, typeParams, t.args, reporter)
+            smOpt match {
+              case Some(sm) => val r = checkSelectAssignH(info.ast.isVal, t.ids, info.typedOpt, info.resOpt, sm); return r
+              case _ =>
+            }
+            return partResultSelect()
+          }
+          def checkSelectSpecVarInfo(t: AST.Typed.Name, typeParams: ISZ[AST.TypeParam], info: Info.SpecVar): AST.Stmt = {
+            if (!inSpec) {
+              reporter.error(lhs.posOpt, typeCheckerKind, s"Cannot assign to variable '${lhs.id.value}' in non-spec context.")
+            }
+            if (info.ast.isVal) {
+              reporter.error(lhs.posOpt, typeCheckerKind, s"Cannot assign to read-only variable '${lhs.id.value}'.")
+            }
+            val smOpt = buildTypeSubstMap(t.ids, lhs.id.attr.posOpt, typeParams, t.args, reporter)
+            smOpt match {
+              case Some(sm) => val r = checkSelectAssignH(info.ast.isVal, t.ids, info.typedOpt, info.resOpt, sm); return r
+              case _ =>
+            }
+            return partResultSelect()
           }
           receiverTypeOpt match {
             case Some(t: AST.Typed.Name) =>
               typeHierarchy.typeMap.get(t.ids) match {
                 case Some(info: TypeInfo.Adt) =>
                   info.vars.get(lhs.id.value) match {
-                    case Some(varInfo) =>
-                      val smOpt = buildTypeSubstMap(t.ids, lhs.id.attr.posOpt, info.ast.typeParams, t.args, reporter)
-                      smOpt match {
-                        case Some(sm) => val r = checkSelectAssignH(varInfo, sm); return r
-                        case _ =>
-                      }
+                    case Some(varInfo) => return checkSelectVarInfo(t, info.ast.typeParams, varInfo)
                     case _ =>
-                      reporter.error(
-                        lhs.id.attr.posOpt,
-                        typeCheckerKind,
-                        st"'${lhs.id.value}' is not a var of '${(info.name, ".")}'.".render
-                      )
                   }
+                  info.specVars.get(lhs.id.value) match {
+                    case Some(varInfo) => return checkSelectSpecVarInfo(t, info.ast.typeParams, varInfo)
+                    case _ =>
+                  }
+                  reporter.error(
+                    lhs.id.attr.posOpt,
+                    typeCheckerKind,
+                    st"'${lhs.id.value}' is not a var of '${(info.name, ".")}'.".render
+                  )
+                case Some(info: TypeInfo.Sig) =>
+                  info.specVars.get(lhs.id.value) match {
+                    case Some(varInfo) => return checkSelectSpecVarInfo(t, info.ast.typeParams, varInfo)
+                    case _ =>
+                  }
+                  reporter.error(
+                    lhs.id.attr.posOpt,
+                    typeCheckerKind,
+                    st"'${lhs.id.value}' is not a var of '${(info.name, ".")}'.".render
+                  )
                 case _ =>
               }
               val r = partResultSelect()
               return r
             case Some(t: AST.Typed.Object) =>
               typeHierarchy.nameMap.get(t.owner :+ t.id :+ lhs.id.value) match {
-                case Some(varInfo: Info.Var) => val r = checkSelectAssignH(varInfo, emptySubstMap); return r
+                case Some(varInfo: Info.Var) =>
+                  val r = checkSelectAssignH(varInfo.ast.isVal, t.name, varInfo.typedOpt, varInfo.resOpt, emptySubstMap)
+                  return r
                 case _ =>
                   reporter.error(
                     lhs.id.attr.posOpt,
@@ -4790,12 +4830,12 @@ import TypeChecker._
 
   def checkModifyExp(title: String, sc: Scope, exp: AST.Exp.Ident, reporter: Reporter): AST.Exp.Ident = {
     def checkLocalVar(res: AST.ResolvedInfo.LocalVar, t: AST.Typed): Unit = {
-      if (!typeHierarchy.isMutable(t, T) && res.isVal) {
+      if (!typeHierarchy.isModifiable(t, T) && res.isVal) {
         reporter.error(exp.posOpt, typeCheckerKind, s"Cannot $title variable '${res.id}'")
       }
     }
     def checkVar(res: AST.ResolvedInfo.Var, t: AST.Typed): Unit = {
-      if (!typeHierarchy.isMutable(t, T) && res.isVal) {
+      if (!typeHierarchy.isModifiable(t, T) && res.isVal) {
         reporter.error(exp.posOpt, typeCheckerKind, st"Cannot $title field '${(res.owner, ".")}.${res.id}'".render)
       }
     }
