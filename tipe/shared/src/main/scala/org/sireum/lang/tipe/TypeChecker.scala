@@ -4293,6 +4293,11 @@ import TypeChecker._
                         case Some(varInfo) => val r = checkSpecVarInfo(varInfo); return r
                         case _ =>
                       }
+                    case Some(info: TypeInfo.Sig) =>
+                      info.specVars.get(lhs.id.value) match {
+                        case Some(varInfo) => val r = checkSpecVarInfo(varInfo); return r
+                        case _ =>
+                      }
                     case _ =>
                   }
                 case _ =>
