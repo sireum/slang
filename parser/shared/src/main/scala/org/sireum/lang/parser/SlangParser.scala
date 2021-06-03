@@ -852,7 +852,7 @@ class SlangParser(
     val sig =
       AST.MethodSig(isPure || isStrictPure, cid(name), ISZ(tparams.map(translateTypeParam): _*), hasParams, params, translateType(tpe))
     val purity = if (isStrictPure) AST.Purity.StrictPure else if (isPure) AST.Purity.Pure else AST.Purity.Impure
-    AST.Stmt.Method(purity, hasOverride, isHelper, sig, emptyContract, None(), resolvedAttr(stat.pos))
+    AST.Stmt.Method(false, purity, hasOverride, isHelper, sig, emptyContract, None(), resolvedAttr(stat.pos))
   }
 
   val specDefn: Set[Predef.String] = Set(
@@ -1062,7 +1062,7 @@ class SlangParser(
         } else {
           errorInSlang(exp.pos, "Only block '{ ... }' is allowed for a method body")
         }
-        AST.Stmt.Method(purity, hasOverride, isHelper, sig, emptyContract, None(), resolvedAttr(tree.pos))
+        AST.Stmt.Method(false, purity, hasOverride, isHelper, sig, emptyContract, None(), resolvedAttr(tree.pos))
       }
 
       exp match {
@@ -1081,7 +1081,7 @@ class SlangParser(
                 else Some(bodyCheck(ISZ(exp.stats.map(translateStat(Enclosing.Method)): _*), ISZ()))
               )
           }
-          AST.Stmt.Method(purity, hasOverride, isHelper, sig, mc, bodyOpt, resolvedAttr(tree.pos))
+          AST.Stmt.Method(false, purity, hasOverride, isHelper, sig, mc, bodyOpt, resolvedAttr(tree.pos))
         case q"Contract.Only(..${exprs: Seq[Term]})" =>
           enclosing match {
             case Enclosing.Sig | Enclosing.MSig | Enclosing.DatatypeTrait | Enclosing.RecordTrait =>
@@ -1091,7 +1091,7 @@ class SlangParser(
                   "@memoize can only be used for @datatype/@record classes."
                 )
               }
-              AST.Stmt.Method(purity, hasOverride, isHelper, sig, translateMethodContract(exprs, attr(exp.pos)), None(), resolvedAttr(tree.pos))
+              AST.Stmt.Method(false, purity, hasOverride, isHelper, sig, translateMethodContract(exprs, attr(exp.pos)), None(), resolvedAttr(tree.pos))
             case _ => err()
           }
         case _ =>
@@ -1108,7 +1108,7 @@ class SlangParser(
             stmt2 = stmt2(expOpt = Some(ident(id = stmt1.id, attr = ident.attr(posOpt = expAttr.posOpt))),
               attr = stmt2.attr(posOpt = expAttr.posOpt))
 
-            AST.Stmt.Method(purity, hasOverride, isHelper, sig, emptyContract,
+            AST.Stmt.Method(false, purity, hasOverride, isHelper, sig, emptyContract,
               Some(AST.Body(ISZ(stmt1, stmt2), ISZ())), resolvedAttr(tree.pos))
           } else err()
       }

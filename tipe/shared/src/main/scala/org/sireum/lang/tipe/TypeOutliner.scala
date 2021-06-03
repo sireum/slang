@@ -1160,13 +1160,23 @@ object TypeOutliner {
           val id = stmt.sig.id.value
           val sInfo = typeHierarchy.nameMap.get(info.name :+ id).get.asInstanceOf[Info.JustMethod]
           newStmts = newStmts :+ sInfo.ast
-        case stmt: AST.Stmt.Method if stmt.hasContract =>
+        case stmt: AST.Stmt.Method =>
           val id = stmt.sig.id.value
           val context = info.name :+ id
           val mInfo = typeHierarchy.nameMap.get(info.name :+ id).get.asInstanceOf[Info.Method]
-          val newStmt = TypeChecker.checkMethodContractSequent(strictAliasing, typeHierarchy, context, scope, F, mInfo.ast, reporter)
-          newStmts = newStmts :+ newStmt
-          nameEntries = nameEntries :+ ((mInfo.name, mInfo(ast = newStmt)))
+          if (stmt.purity == AST.Purity.StrictPure) {
+            val newStmt = TypeChecker.checkStrictPureMethod(strictAliasing, typeHierarchy, context, scope, F, mInfo.ast,
+              reporter)
+            newStmts = newStmts :+ newStmt
+            nameEntries = nameEntries :+ ((mInfo.name, mInfo(ast = newStmt)))
+          } else if (stmt.hasContract) {
+            val newStmt = TypeChecker.checkMethodContractSequent(strictAliasing, typeHierarchy, context, scope, F,
+              mInfo.ast, reporter)
+            newStmts = newStmts :+ newStmt
+            nameEntries = nameEntries :+ ((mInfo.name, mInfo(ast = newStmt)))
+          } else {
+            newStmts = newStmts :+ mInfo.ast
+          }
         case stmt: AST.Stmt.Fact =>
           val id = stmt.id.value
           val context = info.name :+ id
@@ -1231,7 +1241,14 @@ object TypeOutliner {
         case astmt: AST.Stmt.Method =>
           val id = astmt.sig.id.value
           val mInfo = members.methods.get(id).get
-          if (astmt.hasContract) {
+          if (astmt.purity == AST.Purity.StrictPure) {
+            val stmt = mInfo.ast
+            val context = name :+ stmt.sig.id.value
+            val newStmt = TypeChecker.checkStrictPureMethod(strictAliasing, typeHierarchy, context, scope,
+              isMutableContext, stmt, reporter)
+            newStmts = newStmts :+ newStmt
+            members.methods = members.methods + id ~> mInfo(ast = newStmt)
+          } else if (astmt.hasContract) {
             val stmt = mInfo.ast
             val context = name :+ stmt.sig.id.value
             val newStmt = TypeChecker.checkMethodContractSequent(strictAliasing, typeHierarchy, context, scope,

@@ -164,7 +164,8 @@ object Stmt {
 
   }
 
-  @datatype class Method(purity: Purity.Type,
+  @datatype class Method(typeChecked: B,
+                         purity: Purity.Type,
                          hasOverride: B,
                          isHelper: B,
                          sig: MethodSig,

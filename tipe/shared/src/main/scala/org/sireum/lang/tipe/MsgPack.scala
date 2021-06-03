@@ -790,6 +790,7 @@ object MsgPack {
 
     def write_astStmtMethod(o: org.sireum.lang.ast.Stmt.Method): Unit = {
       writer.writeZ(Constants._astStmtMethod)
+      writer.writeB(o.typeChecked)
       write_astPurityType(o.purity)
       writer.writeB(o.hasOverride)
       writer.writeB(o.isHelper)
@@ -2726,6 +2727,7 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astStmtMethod)
       }
+      val typeChecked = reader.readB()
       val purity = read_astPurityType()
       val hasOverride = reader.readB()
       val isHelper = reader.readB()
@@ -2733,7 +2735,7 @@ object MsgPack {
       val mcontract = read_astMethodContract()
       val bodyOpt = reader.readOption(read_astBody _)
       val attr = read_astResolvedAttr()
-      return org.sireum.lang.ast.Stmt.Method(purity, hasOverride, isHelper, sig, mcontract, bodyOpt, attr)
+      return org.sireum.lang.ast.Stmt.Method(typeChecked, purity, hasOverride, isHelper, sig, mcontract, bodyOpt, attr)
     }
 
     def read_astStmtExtMethod(): org.sireum.lang.ast.Stmt.ExtMethod = {

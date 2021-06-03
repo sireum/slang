@@ -642,6 +642,12 @@ object TypeChecker {
     }
   }
 
+  def checkStrictPureMethod(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope, isMutableContext: B, stmt: AST.Stmt.Method, reporter: Reporter): AST.Stmt.Method = {
+    assert(stmt.purity == AST.Purity.StrictPure)
+    val tc = TypeChecker(th, context, isMutableContext, TypeChecker.ModeContext.Code, strictAliasing)
+    return tc.checkMethod(scope, stmt, reporter)
+  }
+
   def checkFactStmt(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope, stmt: AST.Stmt.Fact, reporter: Reporter): AST.Stmt.Fact = {
     val tc = TypeChecker(th, context, F, ModeContext.Spec, strictAliasing)
     val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
@@ -4568,6 +4574,9 @@ import TypeChecker._
       case stmt: AST.Stmt.Match => return checkMatch(None(), scope, stmt, reporter)
 
       case stmt: AST.Stmt.Method =>
+        if (stmt.typeChecked) {
+          return stmt
+        }
         val tc = TypeChecker(typeHierarchy, context :+ stmt.sig.id.value, isInMutableContext, mode, strictAliasing)
         val r = tc.checkMethod(scope, stmt, reporter)
         return r
@@ -4865,7 +4874,7 @@ import TypeChecker._
     return exp
   }
 
-  def checkMethod(sc: Scope, stmt: AST.Stmt.Method, reporter: Reporter): AST.Stmt = {
+  def checkMethod(sc: Scope, stmt: AST.Stmt.Method, reporter: Reporter): AST.Stmt.Method = {
     def checkMethodH(): AST.Stmt.Method = {
       if (stmt.bodyOpt.isEmpty) {
         return stmt
@@ -4873,7 +4882,7 @@ import TypeChecker._
       val (ok, scope) = methodScope(typeHierarchy, context, sc, stmt.sig, reporter)
       if (ok) {
         val (_, newBody) = checkBody(F, None(), scope, stmt.bodyOpt.get, reporter)
-        return stmt(bodyOpt = Some(newBody))
+        return stmt(typeChecked = T, bodyOpt = Some(newBody))
       } else {
         return stmt
       }
