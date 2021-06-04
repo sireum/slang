@@ -1467,6 +1467,8 @@ object Exp {
                           params: ISZ[Param],
                           returnType: Type) {
 
+  @strictpure def paramIdTypes: ISZ[(Id, Typed)] = for (p <- params) yield (p.id, p.tipe.typedOpt.get)
+
   @pure def funType: Typed.Fun = {
     var pts = ISZ[Typed]()
     for (p <- params) {
