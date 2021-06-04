@@ -32,6 +32,99 @@ import org.sireum.U64._
 
 object Util {
 
+  @record class ProofStepUniquenessChecker(var map: HashMap[Z, Position],
+                                           val messageKind: String,
+                                           val reporter: Reporter) extends MTransformer {
+    override def preProofAstStep(o: ProofAst.Step): MTransformer.PreResult[ProofAst.Step] = {
+      val no = o.no.value
+      map.get(no) match {
+        case Some(otherPos) => reporter.error(o.no.posOpt, messageKind,
+          s"Proof step #$no has been declared at [${otherPos.beginLine}, ${otherPos.beginColumn}]")
+        case _ => map = map + no ~> o.no.posOpt.get
+      }
+      return super.preProofAstStep(o)
+    }
+  }
+
+
+  @record class StrictPureChecker(val messageKind: String,
+                                  val reporter: Reporter) extends MTransformer {
+    override def postStmtMethod(o: Stmt.Method): MOption[Stmt] = {
+      reporter.error(o.posOpt, messageKind, "@strictpure methods cannot define nested methods")
+      return super.postStmtMethod(o)
+    }
+
+    override def postStmtVar(o: Stmt.Var): MOption[Stmt] = {
+      if (!o.isVal) {
+        reporter.error(o.posOpt, messageKind, "@strictpure methods cannot define vars")
+      }
+      return super.postStmtVar(o)
+    }
+
+    override def postStmtWhile(o: Stmt.While): MOption[Stmt] = {
+      reporter.error(o.posOpt, messageKind, "@strictpure methods cannot use while-loops")
+      return super.postStmtWhile(o)
+    }
+
+    override def postStmtFor(o: Stmt.For): MOption[Stmt] = {
+      reporter.error(o.posOpt, messageKind, "@strictpure methods cannot use for-loops")
+      return super.postStmtFor(o)
+    }
+
+    override def postStmtVarPattern(o: Stmt.VarPattern): MOption[Stmt] = {
+      if (!o.isVal) {
+        reporter.error(o.posOpt, messageKind, "@strictpure methods cannot define vars")
+      }
+      return super.postStmtVarPattern(o)
+    }
+
+    override def postStmtSpecVar(o: Stmt.SpecVar): MOption[Stmt] = {
+      reporter.error(o.posOpt, messageKind, "@strictpure methods cannot define @spec val/var")
+      return super.postStmtSpecVar(o)
+    }
+
+    override def postStmtSpecBlock(o: Stmt.SpecBlock): MOption[Stmt.Spec] = {
+      reporter.error(o.posOpt, messageKind, "@strictpure methods cannot use Spec { ... } blocks")
+      return super.postStmtSpecBlock(o)
+    }
+
+    override def postStmtSpecLabel(o: Stmt.SpecLabel): MOption[Stmt.Spec] = {
+      reporter.error(o.posOpt, messageKind, "@strictpure methods cannot use spec labels")
+      return super.postStmtSpecLabel(o)
+    }
+
+    override def postStmtAssign(o: Stmt.Assign): MOption[Stmt] = {
+      reporter.error(o.posOpt, messageKind, "@strictpure methods cannot use assignments")
+      return super.postStmtAssign(o)
+    }
+  }
+
+  @record class ContractFormChecker(val messageKind: String,
+                                    val reporter: Reporter) extends MTransformer {
+    override def preExpQuantEach(o: Exp.QuantEach): MTransformer.PreResult[Exp.Quant] = {
+      transformExp(o.seq)
+      transformAssignExp(o.fun.exp)
+      return MTransformer.PreResult(F, MNone())
+    }
+
+    override def preExpQuantRange(o: Exp.QuantRange): MTransformer.PreResult[Exp.Quant] = {
+      transformExp(o.lo)
+      transformExp(o.hi)
+      transformAssignExp(o.fun.exp)
+      return MTransformer.PreResult(F, MNone())
+    }
+
+    override def preExpQuantType(o: Exp.QuantType): MTransformer.PreResult[Exp.Quant] = {
+      transformAssignExp(o.fun.exp)
+      return MTransformer.PreResult(F, MNone())
+    }
+
+    override def preExpFun(o: Exp.Fun): MTransformer.PreResult[Exp] = {
+      reporter.error(o.posOpt, messageKind, "Contracts should not define function/closure")
+      return MTransformer.PreResult(F, MNone())
+    }
+  }
+
   @datatype class TypePrePostSubstitutor(substMap: HashMap[String, Typed]) extends Transformer.PrePost[B] {
     @pure override def preTypedTypeVar(ctx: B, o: Typed.TypeVar): Transformer.PreResult[B, Typed] = {
       substMap.get(o.id) match {

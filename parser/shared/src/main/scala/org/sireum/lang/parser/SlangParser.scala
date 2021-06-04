@@ -38,32 +38,6 @@ import scala.util.{Success, Try}
 
 object SlangParser {
 
-  final class ProofStepUniquenessChecker(var map: org.sireum.HashMap[Z, org.sireum.message.Position],
-                                         val reporter: Reporter) extends AST.MTransformer {
-    var _owned: Boolean = false
-
-    override def string: String = toString
-
-    override def $owned: Boolean = _owned
-
-    override def $owned_=(b: Boolean): MutableMarker = {
-      _owned = b
-      this
-    }
-
-    override def $clone: MutableMarker = new ProofStepUniquenessChecker(map, reporter)
-
-    override def preProofAstStep(o: AST.ProofAst.Step): AST.MTransformer.PreResult[AST.ProofAst.Step] = {
-      val no = o.no.value
-      map.get(no) match {
-        case Some(otherPos) => reporter.error(o.no.posOpt, messageKind,
-          s"Proof step #$no has been declared at [${otherPos.beginLine}, ${otherPos.beginColumn}]")
-        case _ => map = map + no ~> o.no.posOpt.get
-      }
-      return super.preProofAstStep(o)
-    }
-  }
-
   val messageKind = "Slang Parser"
 
   val unops: Map[String, AST.Exp.UnaryOp.Type] = Map(
@@ -1099,7 +1073,7 @@ class SlangParser(
             val expAttr = attr(exp.pos)
             var stmt1 = translateStat(Enclosing.Block)(q"val r: ${tpeopt.get} = $exp").asInstanceOf[AST.Stmt.Var]
             stmt1 = stmt1(id = stmt1.id(attr = expAttr), attr = stmt1.attr(posOpt = expAttr.posOpt))
-            val spc = ParserTreeChecker.StrictPureChecker(Reporter.create)
+            val spc = AST.Util.StrictPureChecker(messageKind, Reporter.create)
             spc.transformAssignExp(stmt1.initOpt.get)
             reporter.reports(spc.reporter.messages)
 
@@ -2939,11 +2913,16 @@ class SlangParser(
     AST.MethodContract.Simple(reads, requires, modifies, ensures, csAttr)
   }
 
-  def translateMethodContract(exprs: Seq[Term], mcAttr: AST.Attr): AST.MethodContract =
-    if (exprs.exists({
+  def translateMethodContract(exprs: Seq[Term], mcAttr: AST.Attr): AST.MethodContract = {
+    val r = if (exprs.exists({
       case q"Case(..$_)" => true
       case _ => false
     })) translateContractCases(exprs, mcAttr) else translateContractSimple(exprs, mcAttr)
+    val cfc = AST.Util.ContractFormChecker(messageKind, Reporter.create)
+    cfc.transformMethodContract(r)
+    reporter.reports(cfc.reporter.messages)
+    r
+  }
 
   def translateInvariant(enclosing: Enclosing.Type, stat: Defn.Def): AST.Stmt.Inv = {
     def isInvariantContext: Boolean = enclosing match {
@@ -3292,7 +3271,7 @@ class SlangParser(
 
   def translateAndCheckProofSteps(steps: Seq[Term]): ISZ[AST.ProofAst.Step] = {
     val r = ISZ(steps.map(translateProofStep(false)): _*)
-    val checker = new ProofStepUniquenessChecker(org.sireum.HashMap.empty, Reporter.create)
+    val checker = new AST.Util.ProofStepUniquenessChecker(org.sireum.HashMap.empty, messageKind, Reporter.create)
     for (step <- r) {
       checker.transformProofAstStep(step)
     }
