@@ -1325,9 +1325,7 @@ object Exp {
     }
   }
 
-  @datatype trait Spec extends Exp
-
-  @datatype trait Quant extends Spec {
+  @datatype trait Quant extends Exp {
     @pure def isForall: B
     @pure def fun: Exp.Fun
   }
@@ -1367,7 +1365,7 @@ object Exp {
     }
   }
 
-  @datatype class Input(exp: Exp, @hidden attr: Attr) extends Spec {
+  @datatype class Input(exp: Exp, @hidden attr: Attr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1378,7 +1376,7 @@ object Exp {
     }
   }
 
-  @datatype class OldVal(exp: Exp, @hidden attr: Attr) extends Spec {
+  @datatype class OldVal(exp: Exp, @hidden attr: Attr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1389,7 +1387,7 @@ object Exp {
     }
   }
 
-  @datatype class AtLoc(line: Z, idOpt: Option[Id], exp: Exp, @hidden attr: Attr) extends Spec {
+  @datatype class AtLoc(line: Z, idOpt: Option[Id], exp: Exp, @hidden attr: Attr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1400,7 +1398,7 @@ object Exp {
     }
   }
 
-  @datatype class LoopIndex(tipeOpt: Option[Type], exp: Exp.Ident, @hidden attr: TypedAttr) extends Spec {
+  @datatype class LoopIndex(tipeOpt: Option[Type], exp: Exp.Ident, @hidden attr: TypedAttr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1414,7 +1412,7 @@ object Exp {
     }
   }
 
-  @datatype class StateSeq(id: Id, fragments: ISZ[StateSeq.Fragment], @hidden attr: Attr) extends Spec {
+  @datatype class StateSeq(id: Id, fragments: ISZ[StateSeq.Fragment], @hidden attr: Attr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1432,7 +1430,7 @@ object Exp {
 
   }
 
-  @datatype class Result(tipeOpt: Option[Type], @hidden attr: TypedAttr) extends Spec {
+  @datatype class Result(tipeOpt: Option[Type], @hidden attr: TypedAttr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt

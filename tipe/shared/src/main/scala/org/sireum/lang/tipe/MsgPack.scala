@@ -1558,20 +1558,6 @@ object MsgPack {
       write_astTypedAttr(o.attr)
     }
 
-    def write_astExpSpec(o: org.sireum.lang.ast.Exp.Spec): Unit = {
-      o match {
-        case o: org.sireum.lang.ast.Exp.QuantType => write_astExpQuantType(o)
-        case o: org.sireum.lang.ast.Exp.QuantRange => write_astExpQuantRange(o)
-        case o: org.sireum.lang.ast.Exp.QuantEach => write_astExpQuantEach(o)
-        case o: org.sireum.lang.ast.Exp.Input => write_astExpInput(o)
-        case o: org.sireum.lang.ast.Exp.OldVal => write_astExpOldVal(o)
-        case o: org.sireum.lang.ast.Exp.AtLoc => write_astExpAtLoc(o)
-        case o: org.sireum.lang.ast.Exp.LoopIndex => write_astExpLoopIndex(o)
-        case o: org.sireum.lang.ast.Exp.StateSeq => write_astExpStateSeq(o)
-        case o: org.sireum.lang.ast.Exp.Result => write_astExpResult(o)
-      }
-    }
-
     def write_astExpQuant(o: org.sireum.lang.ast.Exp.Quant): Unit = {
       o match {
         case o: org.sireum.lang.ast.Exp.QuantType => write_astExpQuantType(o)
@@ -4238,26 +4224,6 @@ object MsgPack {
       val exp = read_astExp()
       val attr = read_astTypedAttr()
       return org.sireum.lang.ast.Exp.ForYield(enumGens, exp, attr)
-    }
-
-    def read_astExpSpec(): org.sireum.lang.ast.Exp.Spec = {
-      val i = reader.curr
-      val t = reader.readZ()
-      t match {
-        case Constants._astExpQuantType => val r = read_astExpQuantTypeT(T); return r
-        case Constants._astExpQuantRange => val r = read_astExpQuantRangeT(T); return r
-        case Constants._astExpQuantEach => val r = read_astExpQuantEachT(T); return r
-        case Constants._astExpInput => val r = read_astExpInputT(T); return r
-        case Constants._astExpOldVal => val r = read_astExpOldValT(T); return r
-        case Constants._astExpAtLoc => val r = read_astExpAtLocT(T); return r
-        case Constants._astExpLoopIndex => val r = read_astExpLoopIndexT(T); return r
-        case Constants._astExpStateSeq => val r = read_astExpStateSeqT(T); return r
-        case Constants._astExpResult => val r = read_astExpResultT(T); return r
-        case _ =>
-          reader.error(i, s"$t is not a valid type of org.sireum.lang.ast.Exp.Spec.")
-          val r = read_astExpResultT(T)
-          return r
-      }
     }
 
     def read_astExpQuant(): org.sireum.lang.ast.Exp.Quant = {
@@ -7203,21 +7169,6 @@ object MsgPack {
       return r
     }
     val r = to(data, f_astExpForYield _)
-    return r
-  }
-
-  def from_astExpSpec(o: org.sireum.lang.ast.Exp.Spec, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astExpSpec(o)
-    return w.result
-  }
-
-  def to_astExpSpec(data: ISZ[U8]): Either[org.sireum.lang.ast.Exp.Spec, MessagePack.ErrorMsg] = {
-    def f_astExpSpec(reader: Reader): org.sireum.lang.ast.Exp.Spec = {
-      val r = reader.read_astExpSpec()
-      return r
-    }
-    val r = to(data, f_astExpSpec _)
     return r
   }
 
