@@ -249,7 +249,7 @@ class SlangParser(
         parser.newLinesOpt()
         parser.in = oldIn
         val source = parser.parseSource()
-        if (source.stats.size == 1 && input.text.contains("|-") && (source.stats.head match {
+        if (source.stats.size == 1 && (input.text.contains("|-") || input.text.contains("⊢")) && (source.stats.head match {
           case q"Deduce(..$_)" => false
           case _ => true
         })) sequentSource(source)
@@ -2992,7 +2992,7 @@ class SlangParser(
     }
     val q"Deduce(..${dexprs: Seq[Term]})" = stat
     val isProofStep = dexprs.headOption match {
-      case scala.Some(head: Term) => !head.pos.text.contains("|-")
+      case scala.Some(head: Term) => !(head.pos.text.contains("|-") || head.pos.text.contains("⊢"))
       case _ => false
     }
     if (isProofStep) {
@@ -3037,41 +3037,45 @@ class SlangParser(
   }
 
   def translateSequent(sequent: Term): AST.Sequent = {
+    def isSequent(t: Term): Boolean = t match {
+      case t: Term.Name => t.value == "|-" || t.value == "⊢"
+      case _ => false
+    }
     sequent match {
-      case q"|- $conclusion Proof(..$pexprs)" =>
+      case q"$sym $conclusion Proof(..$pexprs)" if isSequent(sym) =>
         AST.Sequent(ISZ(), translateExp(conclusion),
           translateAndCheckProofSteps(pexprs), attr(sequent.pos))
-      case q"|- $conclusion" =>
+      case q"$sym $conclusion" if isSequent(sym) =>
         AST.Sequent(ISZ(), translateExp(conclusion),
           ISZ(), attr(sequent.pos))
-      case q"|- ($conclusion) Proof(..$pexprs)" =>
+      case q"$sym ($conclusion) Proof(..$pexprs)" if isSequent(sym) =>
         AST.Sequent(ISZ(), translateExp(conclusion),
           translateAndCheckProofSteps(pexprs), attr(sequent.pos))
-      case q"|- ($conclusion)" =>
+      case q"$sym ($conclusion)" if isSequent(sym) =>
         AST.Sequent(ISZ(), translateExp(conclusion),
           ISZ(), attr(sequent.pos))
-      case q"(..$premises) |- $conclusion Proof(..$pexprs)" =>
+      case q"(..$premises) $sym $conclusion Proof(..$pexprs)" if isSequent(sym) =>
         AST.Sequent(ISZ(premises.map(translateExp): _*), translateExp(conclusion),
           translateAndCheckProofSteps(pexprs), attr(sequent.pos))
-      case q"$premise |- $conclusion Proof(..$pexprs)" =>
+      case q"$premise $sym $conclusion Proof(..$pexprs)" if isSequent(sym) =>
         AST.Sequent(ISZ(translateExp(premise)), translateExp(conclusion),
           translateAndCheckProofSteps(pexprs), attr(sequent.pos))
-      case q"(..$premises) |- $conclusion" =>
+      case q"(..$premises) $sym $conclusion" if isSequent(sym) =>
         AST.Sequent(ISZ(premises.map(translateExp): _*), translateExp(conclusion),
           ISZ(), attr(sequent.pos))
-      case q"$premise |- $conclusion" =>
+      case q"$premise $sym $conclusion" if isSequent(sym) =>
         AST.Sequent(ISZ(translateExp(premise)), translateExp(conclusion),
           ISZ(), attr(sequent.pos))
-      case q"(..$premises) |- ($conclusion) Proof(..$pexprs)" =>
+      case q"(..$premises) $sym ($conclusion) Proof(..$pexprs)" if isSequent(sym) =>
         AST.Sequent(ISZ(premises.map(translateExp): _*), translateExp(conclusion),
           translateAndCheckProofSteps(pexprs), attr(sequent.pos))
-      case q"$premise |- ($conclusion) Proof(..$pexprs)" =>
+      case q"$premise $sym ($conclusion) Proof(..$pexprs)" if isSequent(sym) =>
         AST.Sequent(ISZ(translateExp(premise)), translateExp(conclusion),
           translateAndCheckProofSteps(pexprs), attr(sequent.pos))
-      case q"(..$premises) |- ($conclusion)" =>
+      case q"(..$premises) $sym ($conclusion)" if isSequent(sym) =>
         AST.Sequent(ISZ(premises.map(translateExp): _*), translateExp(conclusion),
           ISZ(), attr(sequent.pos))
-      case q"$premise |- ($conclusion)" =>
+      case q"$premise $sym ($conclusion)" if isSequent(sym) =>
         AST.Sequent(ISZ(translateExp(premise)), translateExp(conclusion),
           ISZ(), attr(sequent.pos))
       case _ =>
