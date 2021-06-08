@@ -42,7 +42,7 @@ object Util {
           s"Proof step #$no has been declared at [${otherPos.beginLine}, ${otherPos.beginColumn}]")
         case _ => map = map + no ~> o.no.posOpt.get
       }
-      return super.preProofAstStep(o)
+      return MTransformer.PreResultProofAstStepRegular
     }
   }
 
@@ -51,51 +51,51 @@ object Util {
                                   val reporter: Reporter) extends MTransformer {
     override def postStmtMethod(o: Stmt.Method): MOption[Stmt] = {
       reporter.error(o.posOpt, messageKind, "@strictpure methods cannot define nested methods")
-      return super.postStmtMethod(o)
+      return MTransformer.PostResultStmtMethod
     }
 
     override def postStmtVar(o: Stmt.Var): MOption[Stmt] = {
       if (!o.isVal) {
         reporter.error(o.posOpt, messageKind, "@strictpure methods cannot define vars")
       }
-      return super.postStmtVar(o)
+      return MTransformer.PostResultStmtVar
     }
 
     override def postStmtWhile(o: Stmt.While): MOption[Stmt] = {
       reporter.error(o.posOpt, messageKind, "@strictpure methods cannot use while-loops")
-      return super.postStmtWhile(o)
+      return MTransformer.PostResultStmtWhile
     }
 
     override def postStmtFor(o: Stmt.For): MOption[Stmt] = {
       reporter.error(o.posOpt, messageKind, "@strictpure methods cannot use for-loops")
-      return super.postStmtFor(o)
+      return MTransformer.PostResultStmtFor
     }
 
     override def postStmtVarPattern(o: Stmt.VarPattern): MOption[Stmt] = {
       if (!o.isVal) {
         reporter.error(o.posOpt, messageKind, "@strictpure methods cannot define vars")
       }
-      return super.postStmtVarPattern(o)
+      return MTransformer.PostResultStmtVarPattern
     }
 
     override def postStmtSpecVar(o: Stmt.SpecVar): MOption[Stmt] = {
       reporter.error(o.posOpt, messageKind, "@strictpure methods cannot define @spec val/var")
-      return super.postStmtSpecVar(o)
+      return MTransformer.PostResultStmtSpecVar
     }
 
     override def postStmtSpecBlock(o: Stmt.SpecBlock): MOption[Stmt.Spec] = {
       reporter.error(o.posOpt, messageKind, "@strictpure methods cannot use Spec { ... } blocks")
-      return super.postStmtSpecBlock(o)
+      return MTransformer.PostResultStmtSpecBlock
     }
 
     override def postStmtSpecLabel(o: Stmt.SpecLabel): MOption[Stmt.Spec] = {
       reporter.error(o.posOpt, messageKind, "@strictpure methods cannot use spec labels")
-      return super.postStmtSpecLabel(o)
+      return MTransformer.PostResultStmtSpecLabel
     }
 
     override def postStmtAssign(o: Stmt.Assign): MOption[Stmt] = {
       reporter.error(o.posOpt, messageKind, "@strictpure methods cannot use assignments")
-      return super.postStmtAssign(o)
+      return MTransformer.PostResultStmtAssign
     }
   }
 

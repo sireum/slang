@@ -66,8 +66,8 @@ object TypeChecker {
 
   @datatype class TypeFinder(th: TypeHierarchy, tname: QName) extends AST.Transformer.PrePost[B] {
     override def preTypedName(ctx: B, o: AST.Typed.Name): AST.Transformer.PreResult[B, AST.Typed] = {
-      return if (tname == o.ids || th.poset.isChildOf(tname, o.ids)) super.preTypedName(T, o)
-      else super.preTypedName(ctx, o)
+      return if (tname == o.ids || th.poset.isChildOf(tname, o.ids)) AST.Transformer.PreResult(T, T, None())
+      else AST.Transformer.PreResult(ctx, T, None())
     }
   }
   @record class StrictPureChecker(typeVarMutable: B, th: TypeHierarchy, reporter: Reporter) extends AST.MTransformer {
@@ -95,7 +95,7 @@ object TypeChecker {
           }
         case _ =>
       }
-      return super.postResolvedAttr(o)
+      return AST.MTransformer.PostResultResolvedAttr
     }
 
     def checkResOpt(attr: AST.ResolvedAttr): Unit = {
@@ -115,12 +115,12 @@ object TypeChecker {
         case Some(_: AST.Exp.This) => checkResOpt(o.attr)
         case _ =>
       }
-      return super.postExpSelect(o)
+      return AST.MTransformer.PostResultExpSelect
     }
 
     override def postExpIdent(o: AST.Exp.Ident): MOption[AST.Exp] = {
       checkResOpt(o.attr)
-      return super.postExpIdent(o)
+      return AST.MTransformer.PostResultExpIdent
     }
   }
 
