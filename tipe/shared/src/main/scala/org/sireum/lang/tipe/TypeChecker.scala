@@ -3493,7 +3493,7 @@ import TypeChecker._
         case _ =>
       }
       scope.resolveName(typeHierarchy.nameMap, ISZ(id)) match {
-        case Some(_) =>
+        case Some(info) if !info.isInstanceOf[Info.Package] =>
           reporter.error(
             posOpt,
             typeCheckerKind,
