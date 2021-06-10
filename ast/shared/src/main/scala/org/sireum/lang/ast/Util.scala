@@ -32,6 +32,21 @@ import org.sireum.U64._
 
 object Util {
 
+  @record class PatternVarBindingCollector(var result: ISZ[Id]) extends MTransformer {
+    override def postPatternVarBinding(o: Pattern.VarBinding): MOption[Pattern] = {
+      result = result :+ o.id
+      return MTransformer.PostResultPatternVarBinding
+    }
+
+    override def postPatternStructure(o: Pattern.Structure): MOption[Pattern] = {
+      o.idOpt match {
+        case Some(id) => result = result :+ id
+        case _ =>
+      }
+      return MTransformer.PostResultPatternStructure
+    }
+  }
+
   @record class ProofStepUniquenessChecker(var map: HashMap[Z, Position],
                                            val messageKind: String,
                                            val reporter: Reporter) extends MTransformer {
@@ -486,6 +501,32 @@ object Util {
       case _ =>
     }
     return F
+  }
+
+  def checkScript(script: TopUnit.Program, reporter: Reporter): Unit = {
+    for (stmt <- script.body.stmts) {
+      def checkId(id: Id): Unit = {
+        if (id.value === "args") {
+          reporter.error(id.attr.posOpt, "Slang front-end", "Cannot introduce a top-level entity named args in Slang script")
+        }
+      }
+      stmt match {
+        case stmt: Stmt.Method => checkId(stmt.sig.id)
+        case stmt: Stmt.Var => checkId(stmt.id)
+        case stmt: Stmt.SpecMethod => checkId(stmt.sig.id)
+        case stmt: Stmt.Fact => checkId(stmt.id)
+        case stmt: Stmt.SpecVar => checkId(stmt.id)
+        case stmt: Stmt.Theorem => checkId(stmt.id)
+        case stmt: Stmt.VarPattern =>
+          val pvbc = Util.PatternVarBindingCollector(ISZ())
+          pvbc.transformPattern(stmt.pattern)
+          for (id <- pvbc.result) {
+            checkId(id)
+          }
+        case stmt: Stmt.Object => checkId(stmt.id)
+        case _ =>
+      }
+    }
   }
 
 }

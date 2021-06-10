@@ -107,6 +107,13 @@ object FrontEnd {
     program: AST.TopUnit.Program,
     reporter: Reporter
   ): (TypeHierarchy, AST.TopUnit.Program) = {
+
+    AST.Util.checkScript(program, reporter)
+
+    if (reporter.hasError) {
+      return (TypeHierarchy.empty, program)
+    }
+
     val th: TypeHierarchy = thOpt match {
       case Some(thi) => thi
       case _ =>
