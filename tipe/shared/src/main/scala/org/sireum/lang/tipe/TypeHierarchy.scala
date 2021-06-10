@@ -196,6 +196,8 @@ object TypeHierarchy {
     return (p._1, r._2 ++ p._2)
   }
 
+  @strictpure def empty: TypeHierarchy = TypeHierarchy(HashMap.empty, HashMap.empty, Poset.empty, HashMap.empty)
+
 }
 
 @datatype class TypeHierarchy(
