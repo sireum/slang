@@ -739,6 +739,7 @@ object ProofAst {
       case _: Stmt.Return => return ISZ()
     }
   }
+
 }
 
 @enum object Purity {
@@ -752,13 +753,27 @@ object ProofAst {
 
 object EnumGen {
 
-  @datatype trait Range
+  @datatype trait Range {
+    @pure def prettyST: ST
+  }
 
   object Range {
 
-    @datatype class Expr(exp: Exp, @hidden attr: Attr) extends Range
+    @datatype class Expr(exp: Exp, @hidden attr: Attr) extends Range {
+      @pure override def prettyST: ST = {
+        return exp.prettyST
+      }
+    }
 
-    @datatype class Step(isInclusive: B, start: Exp, end: Exp, byOpt: Option[Exp], @hidden attr: Attr) extends Range
+    @datatype class Step(isInclusive: B, start: Exp, end: Exp, byOpt: Option[Exp], @hidden attr: Attr) extends Range {
+      @pure override def prettyST: ST = {
+        val bOpt: Option[ST] = byOpt match {
+          case Some(by) => Some(st" by ${by.prettyST}")
+          case _ => None()
+        }
+        return st"${start.prettyST} ${if (isInclusive) "to" else "until"} ${end.prettyST}$bOpt"
+      }
+    }
 
   }
 
@@ -766,7 +781,19 @@ object EnumGen {
                       range: Range,
                       condOpt: Option[Exp],
                       invariants: ISZ[Exp],
-                      maxItOpt: Option[Exp.LitZ])
+                      maxItOpt: Option[Exp.LitZ]) {
+    @pure def prettyST: ST = {
+      val id: String = idOpt match {
+        case Some(id) => id.value
+        case _ => "_"
+      }
+      val cOpt: Option[ST] = condOpt match {
+        case Some(cond) => Some(st" if ${cond.prettyST}")
+        case _ => None()
+      }
+      return st"$id <- ${range.prettyST}$cOpt"
+    }
+  }
 
 }
 
@@ -777,6 +804,8 @@ object EnumGen {
   @pure def typedOpt: Option[Typed]
 
   @pure def typed(t: Typed): Type
+
+  @pure def prettyST: ST
 }
 
 object Type {
@@ -809,6 +838,12 @@ object Type {
       }
     }
 
+    @pure override def prettyST: ST = {
+      val typeArgsOpts: Option[ST] =
+        if (typeArgs.isEmpty) None() else Some(st"[${(for (ta <- typeArgs) yield ta.prettyST, ", ")}]")
+      return st"${(for (id <- name.ids) yield id.value, ".")}$typeArgsOpts"
+    }
+
   }
 
   @datatype class Fun(isPure: B, isByName: B, args: ISZ[Type], ret: Type, @hidden attr: TypedAttr) extends Type {
@@ -839,6 +874,13 @@ object Type {
       }
     }
 
+    @pure override def prettyST: ST = {
+      if (isByName) {
+        return st"=> ${ret.prettyST}"
+      }
+      val pureOpt: Option[ST] = if (isPure) Some(st" @pure") else None()
+      return st"(${(for (arg <- args) yield arg.prettyST, ", ")}) => ${ret.prettyST} $pureOpt"
+    }
   }
 
   @datatype class Tuple(args: ISZ[Type], @hidden attr: TypedAttr) extends Type {
@@ -869,6 +911,9 @@ object Type {
       }
     }
 
+    @pure override def prettyST: ST = {
+      return st"(${(for (arg <- args) yield arg.prettyST, ", ")})"
+    }
   }
 
 }
@@ -958,6 +1003,15 @@ object Pattern {
 
   @pure def typedOpt: Option[Typed]
 
+  @pure def precedenceLevel: Z = {
+    return -1
+  }
+
+  @pure def prettyST: ST
+
+  override def string: String = {
+    return prettyST.render
+  }
 }
 
 @sig sealed trait Lit {
@@ -979,6 +1033,10 @@ object Exp {
     @pure override def typedOpt: Option[Typed] = {
       return Typed.bOpt
     }
+
+    @pure override def prettyST: ST = {
+      return if (value) st"T" else st"F"
+    }
   }
 
   @datatype class LitC(val value: C, @hidden attr: Attr) extends Exp with Lit {
@@ -989,6 +1047,10 @@ object Exp {
 
     @pure override def typedOpt: Option[Typed] = {
       return Typed.cOpt
+    }
+
+    @pure override def prettyST: ST = {
+      return st"'${ops.COps(value).escapeString}'"
     }
   }
 
@@ -1001,6 +1063,10 @@ object Exp {
     @pure override def typedOpt: Option[Typed] = {
       return Typed.zOpt
     }
+
+    @pure override def prettyST: ST = {
+      return st"${value}"
+    }
   }
 
   @datatype class LitF32(val value: F32, @hidden attr: Attr) extends Exp with Lit {
@@ -1011,6 +1077,10 @@ object Exp {
 
     @pure override def typedOpt: Option[Typed] = {
       return Typed.f32Opt
+    }
+
+    @pure override def prettyST: ST = {
+      return st"${value}f"
     }
   }
 
@@ -1023,6 +1093,10 @@ object Exp {
     @pure override def typedOpt: Option[Typed] = {
       return Typed.f64Opt
     }
+
+    @pure override def prettyST: ST = {
+      return st"${value}d"
+    }
   }
 
   @datatype class LitR(val value: R, @hidden attr: Attr) extends Exp with Lit {
@@ -1034,6 +1108,10 @@ object Exp {
     @pure override def typedOpt: Option[Typed] = {
       return Typed.rOpt
     }
+
+    @pure override def prettyST: ST = {
+      return st"""r"$value""""
+    }
   }
 
   @datatype class LitString(val value: String, @hidden attr: Attr) extends Exp with Lit {
@@ -1044,6 +1122,10 @@ object Exp {
 
     @pure override def typedOpt: Option[Typed] = {
       return Typed.stringOpt
+    }
+
+    @pure override def prettyST: ST = {
+      return st""""${ops.StringOps(value).escapeST}""""
     }
   }
 
@@ -1057,6 +1139,21 @@ object Exp {
     @pure override def typedOpt: Option[Typed] = {
       return attr.typedOpt
     }
+
+    @pure override def prettyST: ST = {
+      var sts = ISZ[ST]()
+      var i: Z = 0
+      while (i < lits.size || i < args.size) {
+        if (i < lits.size) {
+          sts = sts :+ ops.StringOps(lits(i).value).escapeST
+        }
+        if (i < args.size) {
+          sts = sts :+ st"$${${args(i).prettyST}}"
+        }
+        i = i + 1
+      }
+      return st"""$prefix"${(sts, "")}""""
+    }
   }
 
   @datatype class This(@hidden attr: TypedAttr) extends Exp {
@@ -1068,6 +1165,10 @@ object Exp {
     @pure override def typedOpt: Option[Typed] = {
       return attr.typedOpt
     }
+
+    @pure override def prettyST: ST = {
+      return st"this"
+    }
   }
 
   @datatype class Super(idOpt: Option[Id], @hidden attr: TypedAttr) extends Exp {
@@ -1078,6 +1179,13 @@ object Exp {
 
     @pure override def typedOpt: Option[Typed] = {
       return attr.typedOpt
+    }
+
+    @pure override def prettyST: ST = {
+      idOpt match {
+        case Some(id) => return st"super[${id.value}]"
+        case _ => return st"super"
+      }
     }
   }
 
@@ -1103,6 +1211,15 @@ object Exp {
       case Exp.UnaryOp.Minus => "-"
       case Exp.UnaryOp.Not => "!"
       case Exp.UnaryOp.Plus => "+"
+    }
+
+    @pure override def prettyST: ST = {
+      val paren: B = exp match {
+        case _: Exp.Ident => F
+        case _: Lit => F
+        case _ => T
+      }
+      return if (paren) st"$opString(${exp.prettyST})" else st"$opString${exp.prettyST}"
     }
   }
 
@@ -1135,6 +1252,27 @@ object Exp {
     val AppendAll: String = "++"
     val RemoveAll: String = "--"
     val MapsTo: String = "~>"
+
+    def precendenceLevel(op: String): Z = {
+      val c = conversions.String.toCis(op)(0)
+      c match {
+        case '*' => return 2
+        case '/' => return 2
+        case '%' => return 2
+        case '+' => return 3
+        case '-' => return 3
+        case ':' => return 4
+        case '=' => return 5
+        case '!' => return 5
+        case '<' => return 6
+        case '>' => return 6
+        case '&' => return 7
+        case '^' => return 8
+        case '|' => return 9
+        case _ if ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') => return 10
+        case _ => return 1
+      }
+    }
   }
 
   @sig sealed trait Ref {
@@ -1153,6 +1291,15 @@ object Exp {
 
     @pure override def typedOpt: Option[Typed] = {
       return attr.typedOpt
+    }
+
+    @pure override def precedenceLevel: Z = {
+      return BinaryOp.precendenceLevel(op)
+    }
+
+    @pure override def prettyST: ST = {
+      val l = precedenceLevel
+      return st"${if (left.precedenceLevel < l) left.prettyST else s"(${left.prettyST})"} $op ${if (right.precedenceLevel < l) right.prettyST else s"(${right.prettyST})"}"
     }
   }
 
@@ -1203,6 +1350,10 @@ object Exp {
         ResolvedAttr(posOpt, ResolvedInfo.substOpt(attr.resOpt, substMap), Typed.substOpt(attr.typedOpt, substMap))
       )
     }
+
+    @pure override def prettyST: ST = {
+      return st"${id.value}"
+    }
   }
 
   @datatype class Eta(ref: Ref, @hidden attr: TypedAttr) extends Exp {
@@ -1214,6 +1365,10 @@ object Exp {
     @pure override def typedOpt: Option[Typed] = {
       return attr.typedOpt
     }
+
+    @pure override def prettyST: ST = {
+      return st"${ref.asExp.prettyST} _"
+    }
   }
 
   @datatype class Tuple(args: ISZ[Exp], @hidden attr: TypedAttr) extends Exp {
@@ -1224,6 +1379,10 @@ object Exp {
 
     @pure override def typedOpt: Option[Typed] = {
       return attr.typedOpt
+    }
+
+    @pure override def prettyST: ST = {
+      return st"(${(for (arg <- args) yield arg.prettyST, ", ")})"
     }
   }
 
@@ -1251,6 +1410,11 @@ object Exp {
       )
     }
 
+    @pure override def prettyST: ST = {
+      val targsOpt: Option[ST] = if (targs.isEmpty) None() else Some(st"[${(targs, "")}]")
+      return st"${receiverOpt.map((rcv: Exp) => st"${rcv.prettyST}.")}${id.value}$targsOpt"
+    }
+
   }
 
   @datatype class Invoke(receiverOpt: Option[Exp],
@@ -1265,6 +1429,12 @@ object Exp {
 
     @pure override def typedOpt: Option[Typed] = {
       return attr.typedOpt
+    }
+
+    @pure override def prettyST: ST = {
+      val targsOpt: Option[ST] = if (targs.isEmpty) None() else Some(st"[${(targs, "")}]")
+      val as = st"(${(for (arg <- args) yield arg.prettyST, ", ")})"
+      return st"${receiverOpt.map((rcv: Exp) => st"${rcv.prettyST}.")}${ident.id.value}$targsOpt$as"
     }
   }
 
@@ -1281,6 +1451,12 @@ object Exp {
     @pure override def typedOpt: Option[Typed] = {
       return attr.typedOpt
     }
+
+    @pure override def prettyST: ST = {
+      val targsOpt: Option[ST] = if (targs.isEmpty) None() else Some(st"[${(for (targ <- targs) yield targ.prettyST, "")}]")
+      val as = st"(${(for (arg <- args) yield st"${arg.id.value} = ${arg.arg.prettyST}", ", ")})"
+      return st"${receiverOpt.map((rcv: Exp) => st"${rcv.prettyST}.")}${ident.id.value}$targsOpt$as"
+    }
   }
 
   @datatype class If(cond: Exp, thenExp: Exp, elseExp: Exp, @hidden attr: TypedAttr) extends Exp {
@@ -1291,6 +1467,10 @@ object Exp {
 
     @pure override def typedOpt: Option[Typed] = {
       return attr.typedOpt
+    }
+
+    @pure override def prettyST: ST = {
+      return st"if (${cond.prettyST}) ${thenExp.prettyST} else ${elseExp.prettyST}"
     }
   }
 
@@ -1312,6 +1492,24 @@ object Exp {
     @pure override def typedOpt: Option[Typed] = {
       return attr.typedOpt
     }
+
+    @pure override def prettyST: ST = {
+      @pure def paramST(p: Fun.Param): ST = {
+        val id: String = p.idOpt match {
+          case Some(id) => id.value
+          case _ => "_"
+        }
+        p.tipeOpt match {
+          case Some(tipe) => return st"$id: ${tipe.prettyST}"
+          case _ => return st"$id"
+        }
+      }
+      val ps = st"(${(for (p <- params) yield paramST(p), ", ")})"
+      exp match {
+        case exp: Stmt.Expr => return st"($ps => ${exp.exp.prettyST})"
+        case _ => return st"$ps => { ... }"
+      }
+    }
   }
 
   @datatype class ForYield(enumGens: ISZ[EnumGen.For], exp: Exp, @hidden attr: TypedAttr) extends Exp {
@@ -1322,6 +1520,10 @@ object Exp {
 
     @pure override def typedOpt: Option[Typed] = {
       return attr.typedOpt
+    }
+
+    @pure override def prettyST: ST = {
+      return st"for (${(for (enumGen <- enumGens) yield enumGen.prettyST, "; ")}) yield ${exp.prettyST}"
     }
   }
 
@@ -1340,6 +1542,10 @@ object Exp {
       return Typed.bOpt
     }
 
+    @pure override def prettyST: ST = {
+      return st"${if (isForall) "∀" else "∃"}${fun.prettyST}"
+    }
+
   }
 
   @datatype class QuantRange(val isForall: B, lo: Exp, hi: Exp, hiExact: B, val fun: Exp.Fun, @hidden attr: ResolvedAttr) extends Quant {
@@ -1350,6 +1556,10 @@ object Exp {
 
     @pure override def typedOpt: Option[Typed] = {
       return Typed.bOpt
+    }
+
+    @pure override def prettyST: ST = {
+      return st"${if (isForall) "∀" else "∃"}(${lo.prettyST} ${if (hiExact) "to" else "until"} ${hi.prettyST}})${fun.prettyST}"
     }
 
   }
@@ -1363,6 +1573,10 @@ object Exp {
     @pure override def typedOpt: Option[Typed] = {
       return Typed.bOpt
     }
+
+    @pure override def prettyST: ST = {
+      return st"${if (isForall) "∀" else "∃"}(${seq.prettyST})${fun.prettyST}"
+    }
   }
 
   @datatype class Input(exp: Exp, @hidden attr: Attr) extends Exp {
@@ -1373,6 +1587,10 @@ object Exp {
 
     @pure override def typedOpt: Option[Typed] = {
       return exp.typedOpt
+    }
+
+    @pure override def prettyST: ST = {
+      return st"In(${exp.prettyST})"
     }
   }
 
@@ -1385,6 +1603,10 @@ object Exp {
     @pure override def typedOpt: Option[Typed] = {
       return exp.typedOpt
     }
+
+    @pure override def prettyST: ST = {
+      return st"Old(${exp.prettyST})"
+    }
   }
 
   @datatype class AtLoc(line: Z, idOpt: Option[Id], exp: Exp, @hidden attr: Attr) extends Exp {
@@ -1395,6 +1617,14 @@ object Exp {
 
     @pure override def typedOpt: Option[Typed] = {
       return exp.typedOpt
+    }
+
+    @pure override def prettyST: ST = {
+      val id: String = idOpt match {
+        case Some(id) => id.value
+        case _ => line.string
+      }
+      return st"At($id, ${exp.prettyST})"
     }
   }
 
@@ -1410,6 +1640,14 @@ object Exp {
         case _ => return attr.typedOpt
       }
     }
+
+    @pure override def prettyST: ST = {
+      val tOpt: Option[ST] = tipeOpt match {
+        case Some(t) => Some(st"[${t.prettyST}]")
+        case _ => None()
+      }
+      return st"Idx$tOpt(${exp.prettyST})"
+    }
   }
 
   @datatype class StateSeq(id: Id, fragments: ISZ[StateSeq.Fragment], @hidden attr: Attr) extends Exp {
@@ -1422,11 +1660,19 @@ object Exp {
       return Typed.bOpt
     }
 
+    @pure override def prettyST: ST = {
+      return st"${id.value} ~ ${(for (f <- fragments) yield f.prettyST, " ~ ")}"
+    }
+
   }
 
   object StateSeq {
 
-    @datatype class Fragment(id: Id, exp: Exp)
+    @datatype class Fragment(id: Id, exp: Exp) {
+      @pure def prettyST: ST = {
+        return st"${id.value} ~ ${exp.prettyST}"
+      }
+    }
 
   }
 
@@ -1438,6 +1684,14 @@ object Exp {
 
     @pure override def typedOpt: Option[Typed] = {
       return attr.typedOpt
+    }
+
+    @pure override def prettyST: ST = {
+      val tOpt: Option[ST] = tipeOpt match {
+        case Some(t) => Some(st"[${t.prettyST}]")
+        case _ => None()
+      }
+      return st"Res$tOpt"
     }
   }
 
