@@ -1,6 +1,5 @@
 <unit>             ::=  <program>
                      |  <sequent>
-                     |  <truth-table>
 
 <program>          ::=  <package>?
                         import org . sireum . _
@@ -19,9 +18,9 @@
                      |  <while-stmt>
                      |  <for-stmt>
                      |  <return-stmt>
-                     |  Deduce (...)          // for ..., see https://github.com/sireum/runtime/blob/master/library/shared/src/main/scala/org/sireum/contract.scala
-                     |  Contract ( <STRING> )
-                     |  Contract { <stmt>* }
+                     |  Deduce (...)        // for ..., see https://github.com/sireum/runtime/blob/master/library/shared/src/main/scala/org/sireum/contract.scala
+                     |  Spec ( <STRING> )
+                     |  Spec { <stmt>* }
                      |  <exp>
 
 <import-stmt>      ::=  import <name> ⸨ . { <import-sel> ⸨ , <import-sel> ⸩* } ⸩?
@@ -87,9 +86,10 @@
 <type-decl>        ::=  type <ID> <type-params>? = <type>
 
 // Notes:
-// Built-in basic types: B, <int-type>, F32, F64, R, Unit
-// Built-in <int-type>: Z, Z8, Z16, Z32, Z64, N, N8, N16, N32, N64, S8, S16, S32, S64, U8, U16, U32, U64
-// Built-in sequences: IS [ <int-type> , <type> ], ISZ [ <type> ], MS [ <int-type> , <type> ], MSZ [ <type> ]
+// Built-in types are in the org.sireum package
+// Built-in immutable basic types:  B, C, String, F32, F64, R, Unit
+// Built-in immutable sequence:     IS [ <int-type> , <type> ]
+// Built-in mutable sequence:       MS [ <int-type> , <type> ]
 
 <type>             ::=  <name> <type-args>?
                      |  ( <type> ⸨ , <type> ⸩+ )
@@ -124,7 +124,7 @@
 <param-mod>        ::=  @hidden // only for @memoize def
 
 <param-type>       ::=  <type>
-                     |  => <type>
+                     |  => <type> ⸨ @pure ⸩?
 
 <def-body>         ::=  {
                           ⸨ Contract(...) ⸩?
@@ -156,16 +156,16 @@
 <match-case>       ::=  case <pattern> ⸨ if <exp> ⸩? => <stmt>*
 
 <while-stmt>       ::=  while ( <exp> ) {
-                          ⸨ Invariant(Modifies(...), ...) ⸩?
+                          ⸨ Invariant( ⸨ MaxIt(<INT>) , ⸩? Modifies(...), ...) ⸩?
                           <stmt>*
                         }
                      |  do {
-                          ⸨ Invariant(Modifies(...), ...) ⸩?
+                          ⸨ Invariant(  ⸨ MaxIt(<INT>) , ⸩? Modifies(...), ...) ⸩?
                           <stmt>*
                         } while ( <exp> )
 
 <for-stmt>         ::=  for ( <for-enum-gen> ) {
-                          ⸨ Invariant(Modifies(...), ...) ⸩?
+                          ⸨ Invariant(  ⸨ MaxIt(<INT>) , ⸩? Modifies(...), ...) ⸩?
                           <stmt>*
                         }
 
@@ -202,10 +202,9 @@
                      |  { ( <params> ) => <stmt>* <exp> }
                      |  <quant-op> ( <exp> ) ( ( <params> ) => <exp> )
                      |  <quant-op> { ( <params> ) => <stmt>* <exp> }   // only in contract context
-                     |  At(...)                                        // only in contract context
                      |  Old(...)                                       // only in contract context
                      |  In(...)                                        // only in contract context
-                     |  Res                                            // only in contract ensures context
+                     |  Res ⸨ [ <type> ] ⸩?                            // only in contract ensures context
                      |  <ID> ~ <exp> ⸨ ~ <exp> ⸩*                      // only in contract context
 
 <quant-op>         ::=  ∀
@@ -270,7 +269,7 @@
                      |  >=
                      |  &&
                      |  ||
-                     |  -->:         // right-associative
+                     |  -->:        // right-associative
                      |  simply_:    // right-associative
                      |  &
                      |  |
@@ -284,27 +283,7 @@
                      |  <SYMID>     // an identifier whose characters are all symbols (except a single colon)
                                     // right associative if it ends with a colon
 
-<sequent>          ::=  ⸨ <exp> ⸨  , <exp> ⸩* ⸩? |- <exp> <proof>?
+<sequent>          ::=  ⸨ <exp> ⸨  , <exp> ⸩* ⸩? <sequent-op> <exp> <proof>?
 
-<truth-table>      ::=  ⸨ * ⸩*
-                        <hline>
-                        <ID>* | <sequent>            // sequent without proof
-                        <hline>
-                        <truth-table-row>*           // newline separated
-                        <hline>
-                        ⸨ <truth-table-conc> ⸩*
-
-<hline>            ::=  ----                         // can be more than four dashes
-
-<truth-table-row>  ::=  <blit>* | <blit>+            // <blit> can be sequenced without whitespace
-
-<blit>             ::=  T
-                     |  F
-
-<truth-table-conc> ::=  Invalid ⸨ [ <blit>+ ] ⸩*
-                     |  Invalid ⸨ [ <blit>+ ] ⸩*
-                     |  Tautology
-                     |  Contradictory
-                     |  Contingent
-                        ⸨ - ⸩? T : ⸨ [ <blit>+ ] ⸩*
-                        ⸨ - ⸩? F : ⸨ [ <blit>+ ] ⸩*
+<sequent-op>       ::=  |-
+                     |  ⊢
