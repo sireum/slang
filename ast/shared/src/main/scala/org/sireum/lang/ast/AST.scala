@@ -620,12 +620,12 @@ object ProofAst {
   object StepId {
     @datatype class Num(val no: Z, @hidden val attr: Attr) extends StepId {
       override def string: String = {
-        return s"# $no"
+        return s"#$no"
       }
     }
     @datatype class Str(val value: String, @hidden val attr: Attr) extends StepId {
       override def string: String = {
-        return value
+        return s""""${ops.StringOps(value).escapeST.render}""""
       }
     }
   }
