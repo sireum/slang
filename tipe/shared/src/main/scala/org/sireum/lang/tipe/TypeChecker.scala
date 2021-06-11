@@ -3308,9 +3308,15 @@ import TypeChecker._
 
         case exp: AST.Exp.LitR => return (exp, exp.typedOpt)
 
-        case exp: AST.Exp.LitString => return (exp, Some(AST.Typed.string))
+        case exp: AST.Exp.LitString => return (exp, exp.typedOpt)
 
         case exp: AST.Exp.LitZ => return (exp, exp.typedOpt)
+
+        case exp: AST.Exp.LitStepId =>
+          if (!inSpec) {
+            reporter.error(exp.posOpt, typeCheckerKind, "Can only use step name literal in proof context")
+          }
+          return (exp, exp.typedOpt)
 
         case exp: AST.Exp.Select => return checkSelect(exp, None())
 

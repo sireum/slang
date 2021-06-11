@@ -47,15 +47,15 @@ object Util {
     }
   }
 
-  @record class ProofStepUniquenessChecker(var map: HashMap[Z, Position],
+  @record class ProofStepUniquenessChecker(var map: HashMap[ProofAst.StepId, Position],
                                            val messageKind: String,
                                            val reporter: Reporter) extends MTransformer {
     override def preProofAstStep(o: ProofAst.Step): MTransformer.PreResult[ProofAst.Step] = {
-      val no = o.no.value
+      val no = o.id
       map.get(no) match {
-        case Some(otherPos) => reporter.error(o.no.posOpt, messageKind,
-          s"Proof step #$no has been declared at [${otherPos.beginLine}, ${otherPos.beginColumn}]")
-        case _ => map = map + no ~> o.no.posOpt.get
+        case Some(otherPos) => reporter.error(no.posOpt, messageKind,
+          s"Proof step $no has been declared at [${otherPos.beginLine}, ${otherPos.beginColumn}]")
+        case _ => map = map + no ~> o.id.posOpt.get
       }
       return MTransformer.PreResultProofAstStepRegular
     }
@@ -526,6 +526,30 @@ object Util {
         case _ =>
       }
     }
+  }
+
+  @pure def areAllStepIds(es: ISZ[Exp]): B = {
+    for (e <- es) {
+      e match {
+        case e: Exp.LitZ =>
+        case e: Exp.LitStepId =>
+        case _ => return F
+      }
+    }
+    return T
+  }
+
+  @pure def toStepIds(es: ISZ[Exp], kind: String, reporter: Reporter): Option[ISZ[ProofAst.StepId]] = {
+    var r = ISZ[ProofAst.StepId]()
+    for (e <- es) {
+      e match {
+        case e: Exp.LitZ if e.value >= 0 => r = r :+ ProofAst.StepId.Num(e.value, e.attr)
+        case e: Exp.LitStepId => r = r :+ ProofAst.StepId.Str(e.value, e.attr)
+        case _ =>
+          reporter.error(e.posOpt, kind, "Expecting only a non-negative integer literal or a step name literal")
+      }
+    }
+    return if (r.size != es.size) None() else Some(r)
   }
 
 }

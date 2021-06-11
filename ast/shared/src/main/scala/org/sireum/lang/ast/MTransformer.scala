@@ -249,6 +249,14 @@ object MTransformer {
 
   val PostResultProofAst: MOption[ProofAst] = MNone()
 
+  val PreResultProofAstStepIdNum: PreResult[ProofAst.StepId] = PreResult(T, MNone())
+
+  val PostResultProofAstStepIdNum: MOption[ProofAst.StepId] = MNone()
+
+  val PreResultProofAstStepIdStr: PreResult[ProofAst.StepId] = PreResult(T, MNone())
+
+  val PostResultProofAstStepIdStr: MOption[ProofAst.StepId] = MNone()
+
   val PreResultProofAstStepRegular: PreResult[ProofAst.Step] = PreResult(T, MNone())
 
   val PostResultProofAstStepRegular: MOption[ProofAst.Step] = MNone()
@@ -384,6 +392,10 @@ object MTransformer {
   val PreResultExpLitString: PreResult[Exp] = PreResult(T, MNone())
 
   val PostResultExpLitString: MOption[Exp] = MNone()
+
+  val PreResultExpLitStepId: PreResult[Exp] = PreResult(T, MNone())
+
+  val PostResultExpLitStepId: MOption[Exp] = MNone()
 
   val PreResultExpStringInterpolate: PreResult[Exp] = PreResult(T, MNone())
 
@@ -1043,6 +1055,21 @@ import MTransformer._
     }
   }
 
+  def preProofAstStepId(o: ProofAst.StepId): PreResult[ProofAst.StepId] = {
+    o match {
+      case o: ProofAst.StepId.Num => return preProofAstStepIdNum(o)
+      case o: ProofAst.StepId.Str => return preProofAstStepIdStr(o)
+    }
+  }
+
+  def preProofAstStepIdNum(o: ProofAst.StepId.Num): PreResult[ProofAst.StepId] = {
+    return PreResultProofAstStepIdNum
+  }
+
+  def preProofAstStepIdStr(o: ProofAst.StepId.Str): PreResult[ProofAst.StepId] = {
+    return PreResultProofAstStepIdStr
+  }
+
   def preProofAstStepRegular(o: ProofAst.Step.Regular): PreResult[ProofAst.Step] = {
     return PreResultProofAstStepRegular
   }
@@ -1262,6 +1289,7 @@ import MTransformer._
       case o: Exp.LitF64 => return preExpLitF64(o)
       case o: Exp.LitR => return preExpLitR(o)
       case o: Exp.LitString => return preExpLitString(o)
+      case o: Exp.LitStepId => return preExpLitStepId(o)
       case o: Exp.StringInterpolate => return preExpStringInterpolate(o)
       case o: Exp.This => return preExpThis(o)
       case o: Exp.Super => return preExpSuper(o)
@@ -1356,6 +1384,13 @@ import MTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[Lit]())
         }
         return r
+      case o: Exp.LitStepId =>
+        val r: PreResult[Lit] = preExpLitStepId(o) match {
+         case PreResult(continu, MSome(r: Lit)) => PreResult(continu, MSome[Lit](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Lit")
+         case PreResult(continu, _) => PreResult(continu, MNone[Lit]())
+        }
+        return r
     }
   }
 
@@ -1385,6 +1420,10 @@ import MTransformer._
 
   def preExpLitString(o: Exp.LitString): PreResult[Exp] = {
     return PreResultExpLitString
+  }
+
+  def preExpLitStepId(o: Exp.LitStepId): PreResult[Exp] = {
+    return PreResultExpLitStepId
   }
 
   def preExpStringInterpolate(o: Exp.StringInterpolate): PreResult[Exp] = {
@@ -2110,6 +2149,21 @@ import MTransformer._
     }
   }
 
+  def postProofAstStepId(o: ProofAst.StepId): MOption[ProofAst.StepId] = {
+    o match {
+      case o: ProofAst.StepId.Num => return postProofAstStepIdNum(o)
+      case o: ProofAst.StepId.Str => return postProofAstStepIdStr(o)
+    }
+  }
+
+  def postProofAstStepIdNum(o: ProofAst.StepId.Num): MOption[ProofAst.StepId] = {
+    return PostResultProofAstStepIdNum
+  }
+
+  def postProofAstStepIdStr(o: ProofAst.StepId.Str): MOption[ProofAst.StepId] = {
+    return PostResultProofAstStepIdStr
+  }
+
   def postProofAstStepRegular(o: ProofAst.Step.Regular): MOption[ProofAst.Step] = {
     return PostResultProofAstStepRegular
   }
@@ -2329,6 +2383,7 @@ import MTransformer._
       case o: Exp.LitF64 => return postExpLitF64(o)
       case o: Exp.LitR => return postExpLitR(o)
       case o: Exp.LitString => return postExpLitString(o)
+      case o: Exp.LitStepId => return postExpLitStepId(o)
       case o: Exp.StringInterpolate => return postExpStringInterpolate(o)
       case o: Exp.This => return postExpThis(o)
       case o: Exp.Super => return postExpSuper(o)
@@ -2423,6 +2478,13 @@ import MTransformer._
          case _ => MNone[Lit]()
         }
         return r
+      case o: Exp.LitStepId =>
+        val r: MOption[Lit] = postExpLitStepId(o) match {
+         case MSome(result: Lit) => MSome[Lit](result)
+         case MSome(_) => halt("Can only produce object of type Lit")
+         case _ => MNone[Lit]()
+        }
+        return r
     }
   }
 
@@ -2452,6 +2514,10 @@ import MTransformer._
 
   def postExpLitString(o: Exp.LitString): MOption[Exp] = {
     return PostResultExpLitString
+  }
+
+  def postExpLitStepId(o: Exp.LitStepId): MOption[Exp] = {
+    return PostResultExpLitStepId
   }
 
   def postExpStringInterpolate(o: Exp.StringInterpolate): MOption[Exp] = {
@@ -3642,51 +3708,51 @@ import MTransformer._
       val hasChanged: B = preR.resultOpt.nonEmpty
       val rOpt: MOption[ProofAst.Step] = o2 match {
         case o2: ProofAst.Step.Regular =>
-          val r0: MOption[Exp.LitZ] = transformExpLitZ(o2.no)
+          val r0: MOption[ProofAst.StepId] = transformProofAstStepId(o2.id)
           val r1: MOption[Exp] = transformExp(o2.claim)
           val r2: MOption[ProofAst.Step.Justification] = transformProofAstStepJustification(o2.just)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(no = r0.getOrElse(o2.no), claim = r1.getOrElse(o2.claim), just = r2.getOrElse(o2.just)))
+            MSome(o2(id = r0.getOrElse(o2.id), claim = r1.getOrElse(o2.claim), just = r2.getOrElse(o2.just)))
           else
             MNone()
         case o2: ProofAst.Step.Assume =>
-          val r0: MOption[Exp.LitZ] = transformExpLitZ(o2.no)
+          val r0: MOption[ProofAst.StepId] = transformProofAstStepId(o2.id)
           val r1: MOption[Exp] = transformExp(o2.claim)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(no = r0.getOrElse(o2.no), claim = r1.getOrElse(o2.claim)))
+            MSome(o2(id = r0.getOrElse(o2.id), claim = r1.getOrElse(o2.claim)))
           else
             MNone()
         case o2: ProofAst.Step.Assert =>
-          val r0: MOption[Exp.LitZ] = transformExpLitZ(o2.no)
+          val r0: MOption[ProofAst.StepId] = transformProofAstStepId(o2.id)
           val r1: MOption[Exp] = transformExp(o2.claim)
           val r2: MOption[IS[Z, ProofAst.Step]] = transformISZ(o2.steps, transformProofAstStep _)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(no = r0.getOrElse(o2.no), claim = r1.getOrElse(o2.claim), steps = r2.getOrElse(o2.steps)))
+            MSome(o2(id = r0.getOrElse(o2.id), claim = r1.getOrElse(o2.claim), steps = r2.getOrElse(o2.steps)))
           else
             MNone()
         case o2: ProofAst.Step.SubProof =>
-          val r0: MOption[Exp.LitZ] = transformExpLitZ(o2.no)
+          val r0: MOption[ProofAst.StepId] = transformProofAstStepId(o2.id)
           val r1: MOption[IS[Z, ProofAst.Step]] = transformISZ(o2.steps, transformProofAstStep _)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(no = r0.getOrElse(o2.no), steps = r1.getOrElse(o2.steps)))
+            MSome(o2(id = r0.getOrElse(o2.id), steps = r1.getOrElse(o2.steps)))
           else
             MNone()
         case o2: ProofAst.Step.Let =>
-          val r0: MOption[Exp.LitZ] = transformExpLitZ(o2.no)
+          val r0: MOption[ProofAst.StepId] = transformProofAstStepId(o2.id)
           val r1: MOption[IS[Z, ProofAst.Step.Let.Param]] = transformISZ(o2.params, transformProofAstStepLetParam _)
           val r2: MOption[IS[Z, ProofAst.Step]] = transformISZ(o2.steps, transformProofAstStep _)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(no = r0.getOrElse(o2.no), params = r1.getOrElse(o2.params), steps = r2.getOrElse(o2.steps)))
+            MSome(o2(id = r0.getOrElse(o2.id), params = r1.getOrElse(o2.params), steps = r2.getOrElse(o2.steps)))
           else
             MNone()
         case o2: ProofAst.Step.StructInduction =>
-          val r0: MOption[Exp.LitZ] = transformExpLitZ(o2.no)
+          val r0: MOption[ProofAst.StepId] = transformProofAstStepId(o2.id)
           val r1: MOption[Exp] = transformExp(o2.claim)
           val r2: MOption[Exp] = transformExp(o2.exp)
           val r3: MOption[IS[Z, ProofAst.Step.StructInduction.MatchCase]] = transformISZ(o2.cases, transformProofAstStepStructInductionMatchCase _)
           val r4: MOption[Option[ProofAst.Step.StructInduction.MatchDefault]] = transformOption(o2.defaultOpt, transformProofAstStepStructInductionMatchDefault _)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
-            MSome(o2(no = r0.getOrElse(o2.no), claim = r1.getOrElse(o2.claim), exp = r2.getOrElse(o2.exp), cases = r3.getOrElse(o2.cases), defaultOpt = r4.getOrElse(o2.defaultOpt)))
+            MSome(o2(id = r0.getOrElse(o2.id), claim = r1.getOrElse(o2.claim), exp = r2.getOrElse(o2.exp), cases = r3.getOrElse(o2.cases), defaultOpt = r4.getOrElse(o2.defaultOpt)))
           else
             MNone()
       }
@@ -3699,6 +3765,43 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: ProofAst.Step = r.getOrElse(o)
     val postR: MOption[ProofAst.Step] = postProofAstStep(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformProofAstStepId(o: ProofAst.StepId): MOption[ProofAst.StepId] = {
+    val preR: PreResult[ProofAst.StepId] = preProofAstStepId(o)
+    val r: MOption[ProofAst.StepId] = if (preR.continu) {
+      val o2: ProofAst.StepId = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: MOption[ProofAst.StepId] = o2 match {
+        case o2: ProofAst.StepId.Num =>
+          val r0: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(attr = r0.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: ProofAst.StepId.Str =>
+          val r0: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(attr = r0.getOrElse(o2.attr)))
+          else
+            MNone()
+      }
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: ProofAst.StepId = r.getOrElse(o)
+    val postR: MOption[ProofAst.StepId] = postProofAstStepId(o2)
     if (postR.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -3808,21 +3911,21 @@ import MTransformer._
             MNone()
         case o2: ProofAst.Step.Justification.Incept =>
           val r0: MOption[Exp.Invoke] = transformExpInvoke(o2.invoke)
-          val r1: MOption[IS[Z, Exp.LitZ]] = transformISZ(o2.witnesses, transformExpLitZ _)
+          val r1: MOption[IS[Z, ProofAst.StepId]] = transformISZ(o2.witnesses, transformProofAstStepId _)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
             MSome(o2(invoke = r0.getOrElse(o2.invoke), witnesses = r1.getOrElse(o2.witnesses)))
           else
             MNone()
         case o2: ProofAst.Step.Justification.InceptNamed =>
           val r0: MOption[Exp.InvokeNamed] = transformExpInvokeNamed(o2.invoke)
-          val r1: MOption[IS[Z, Exp.LitZ]] = transformISZ(o2.witnesses, transformExpLitZ _)
+          val r1: MOption[IS[Z, ProofAst.StepId]] = transformISZ(o2.witnesses, transformProofAstStepId _)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
             MSome(o2(invoke = r0.getOrElse(o2.invoke), witnesses = r1.getOrElse(o2.witnesses)))
           else
             MNone()
         case o2: ProofAst.Step.Justification.InceptEta =>
           val r0: MOption[Exp.Eta] = transformExpEta(o2.eta)
-          val r1: MOption[IS[Z, Exp.LitZ]] = transformISZ(o2.witnesses, transformExpLitZ _)
+          val r1: MOption[IS[Z, ProofAst.StepId]] = transformISZ(o2.witnesses, transformProofAstStepId _)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
             MSome(o2(eta = r0.getOrElse(o2.eta), witnesses = r1.getOrElse(o2.witnesses)))
           else
@@ -3854,21 +3957,21 @@ import MTransformer._
       val rOpt: MOption[ProofAst.Step.Inception] = o2 match {
         case o2: ProofAst.Step.Justification.Incept =>
           val r0: MOption[Exp.Invoke] = transformExpInvoke(o2.invoke)
-          val r1: MOption[IS[Z, Exp.LitZ]] = transformISZ(o2.witnesses, transformExpLitZ _)
+          val r1: MOption[IS[Z, ProofAst.StepId]] = transformISZ(o2.witnesses, transformProofAstStepId _)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
             MSome(o2(invoke = r0.getOrElse(o2.invoke), witnesses = r1.getOrElse(o2.witnesses)))
           else
             MNone()
         case o2: ProofAst.Step.Justification.InceptNamed =>
           val r0: MOption[Exp.InvokeNamed] = transformExpInvokeNamed(o2.invoke)
-          val r1: MOption[IS[Z, Exp.LitZ]] = transformISZ(o2.witnesses, transformExpLitZ _)
+          val r1: MOption[IS[Z, ProofAst.StepId]] = transformISZ(o2.witnesses, transformProofAstStepId _)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
             MSome(o2(invoke = r0.getOrElse(o2.invoke), witnesses = r1.getOrElse(o2.witnesses)))
           else
             MNone()
         case o2: ProofAst.Step.Justification.InceptEta =>
           val r0: MOption[Exp.Eta] = transformExpEta(o2.eta)
-          val r1: MOption[IS[Z, Exp.LitZ]] = transformISZ(o2.witnesses, transformExpLitZ _)
+          val r1: MOption[IS[Z, ProofAst.StepId]] = transformISZ(o2.witnesses, transformProofAstStepId _)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
             MSome(o2(eta = r0.getOrElse(o2.eta), witnesses = r1.getOrElse(o2.witnesses)))
           else
@@ -4226,6 +4329,12 @@ import MTransformer._
             MSome(o2(attr = r0.getOrElse(o2.attr)))
           else
             MNone()
+        case o2: Exp.LitStepId =>
+          val r0: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(attr = r0.getOrElse(o2.attr)))
+          else
+            MNone()
         case o2: Exp.StringInterpolate =>
           val r0: MOption[IS[Z, Exp.LitString]] = transformISZ(o2.lits, transformExpLitString _)
           val r1: MOption[IS[Z, Exp]] = transformISZ(o2.args, transformExp _)
@@ -4460,6 +4569,12 @@ import MTransformer._
           else
             MNone()
         case o2: Exp.LitString =>
+          val r0: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(attr = r0.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Exp.LitStepId =>
           val r0: MOption[Attr] = transformAttr(o2.attr)
           if (hasChanged || r0.nonEmpty)
             MSome(o2(attr = r0.getOrElse(o2.attr)))
@@ -5455,10 +5570,10 @@ import MTransformer._
     val r: MOption[ProofAst.Step.Assume] = if (preR.continu) {
       val o2: ProofAst.Step.Assume = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[Exp.LitZ] = transformExpLitZ(o2.no)
+      val r0: MOption[ProofAst.StepId] = transformProofAstStepId(o2.id)
       val r1: MOption[Exp] = transformExp(o2.claim)
       if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-        MSome(o2(no = r0.getOrElse(o2.no), claim = r1.getOrElse(o2.claim)))
+        MSome(o2(id = r0.getOrElse(o2.id), claim = r1.getOrElse(o2.claim)))
       else
         MNone()
     } else if (preR.resultOpt.nonEmpty) {

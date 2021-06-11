@@ -48,7 +48,7 @@ object SlangParser {
     String("¬") -> AST.Exp.UnaryOp.Not
   )
 
-  val builtinPrefix: Seq[String] = Seq("z", "r", "c", "string", "f32", "f64")
+  val builtinPrefix: Seq[String] = Seq("z", "r", "c", "string", "f32", "f64", "sn")
 
   val disallowedTypeIds: Seq[String] = Seq(
     "Contract",
@@ -203,7 +203,7 @@ object SlangParser {
   private[SlangParser] lazy val rExp = AST.Exp.Ident(rDollarId, emptyResolvedAttr)
   private[SlangParser] lazy val rStmt = AST.Stmt.Expr(rExp, emptyTypedAttr)
   private[SlangParser] lazy val emptyContract = AST.MethodContract.Simple.empty
-  private[SlangParser] lazy val emptyProofStep = AST.ProofAst.Step.SubProof(AST.Exp.LitZ(0, emptyAttr), ISZ())
+  private[SlangParser] lazy val emptyProofStep = AST.ProofAst.Step.SubProof(AST.ProofAst.StepId.Num(0, emptyAttr), ISZ())
 
 }
 
@@ -2456,8 +2456,7 @@ class SlangParser(
       AST.Exp.LitB(false, attr(lit.pos))
   }
 
-  def translateLit(prefix: Term.Name, args: Seq[_], parts: Seq[Lit], pos: Position, syntx: => Predef.String): AST.Exp
-    with AST.Lit = {
+  def translateLit(prefix: Term.Name, args: Seq[_], parts: Seq[Lit], pos: Position, syntx: => Predef.String): AST.Exp with AST.Lit = {
     def errR = AST.Exp.LitB(false, attr(pos))
 
     if (text.substring(pos.start, pos.end).startsWith(prefix.value + "\"\"\"")) {
@@ -2508,6 +2507,7 @@ class SlangParser(
             AST.Exp.LitF64(0.0, attr(pos))
         }
       case "string" => AST.Exp.LitString(value, attr(pos))
+      case "sn" => AST.Exp.LitStepId(value, attr(pos))
     }
     return r
   }
@@ -3115,11 +3115,11 @@ class SlangParser(
     AST.Stmt.SpecBlock(translateBlock(enclosing, b, isAssignExp = false))
   }
 
-  def translateStructuralInduction(n: AST.Exp.LitZ, claim: AST.Exp, m: Term): AST.ProofAst.Step.StructInduction = {
+  def translateStructuralInduction(n: AST.ProofAst.StepId, claim: AST.Exp, m: Term): AST.ProofAst.Step.StructInduction = {
     def hypoSteps(steps: Seq[Term]): (Option[AST.ProofAst.Step.Assume], ISZ[AST.ProofAst.Step]) = {
       steps.headOption match {
-        case scala.Some(q"${no: Lit.Int} #> Assume($claim)") =>
-          (Some(AST.ProofAst.Step.Assume(toLitZ(no), translateExp(claim))),
+        case scala.Some(q"$no #> Assume($claim)") if isStepId(no) =>
+          (Some(AST.ProofAst.Step.Assume(toStepId(no), translateExp(claim))),
             ISZ(steps.tail.map(translateProofStep(false)): _*))
         case _ =>
           (None(), ISZ(steps.map(translateProofStep(false)): _*))
@@ -3168,6 +3168,22 @@ class SlangParser(
         ISZ((for (i <- 1 until claims.length) yield translateProofStep(false)(claims(i))): _*)
     else ISZ()
 
+  def isStepId(term: Term): Boolean = {
+    term match {
+      case _: Lit.Int => return true
+      case term: Term.Interpolate if term.prefix.value == "sn" && term.args.isEmpty => return true
+      case _ => return false
+    }
+  }
+  def toStepId(term: Term): AST.ProofAst.StepId = {
+    term match {
+      case term: Lit.Int => return AST.ProofAst.StepId.Num(term.value, attr(term.pos))
+      case term: Term.Interpolate =>
+        val List(Lit.String(value)) = term.parts
+        return AST.ProofAst.StepId.Str(value, attr(term.pos))
+    }
+  }
+
   def translateProofStep(allowAssume: B)(proofStep: Term): AST.ProofAst.Step = {
     def translateLetParam(param: Term.Param): AST.ProofAst.Step.Let.Param = {
       if (param.mods.nonEmpty) {
@@ -3180,35 +3196,36 @@ class SlangParser(
       }
       AST.ProofAst.Step.Let.Param(cid(param.name), opt(param.decltpe.map(translateType)))
     }
-    def translateWitnesses(terms: Seq[Term]): ISZ[AST.Exp.LitZ] = {
+    def translateWitnesses(terms: Seq[Term]): ISZ[AST.ProofAst.StepId] = {
       val ws = ISZ[AST.Exp](terms.map(translateExp): _*)
-      var witnesses = ISZ[AST.Exp.LitZ]()
+      var witnesses = ISZ[AST.ProofAst.StepId]()
       for (i <- Z(0) until ws.size) {
         val w = ws(i)
         w match {
-          case w: AST.Exp.LitZ => witnesses = witnesses :+ w
+          case w: AST.Exp.LitZ => witnesses = witnesses :+ AST.ProofAst.StepId.Num(w.value, w.attr)
+          case w: AST.Exp.LitStepId => witnesses = witnesses :+ AST.ProofAst.StepId.Str(w.value, w.attr)
           case _ =>
-            reporter.error(w.posOpt, messageKind, s"Expecting a proof step # (integer literal) but found '${terms(i.toInt).syntax}'")
+            reporter.error(w.posOpt, messageKind, s"Expecting a proof step id but found '${terms(i.toInt).syntax}'")
         }
       }
       witnesses
     }
     val r: AST.ProofAst.Step = proofStep match {
-      case q"${no: Lit.Int} #> $claim by ${jid: Lit.String}(..${jargs: Seq[Term]})" =>
-        AST.ProofAst.Step.Regular(toLitZ(no), translateExp(claim),
+      case q"$no #> $claim by ${jid: Lit.String}(..${jargs: Seq[Term]})" if isStepId(no) =>
+        AST.ProofAst.Step.Regular(toStepId(no), translateExp(claim),
           AST.ProofAst.Step.Justification.Apply(translateExp(jid),
             ISZ(jargs.map(translateExp): _*)))
-      case q"${no: Lit.Int} #> $claim by ${jid: Lit.String}" =>
-        AST.ProofAst.Step.Regular(toLitZ(no), translateExp(claim),
+      case q"$no #> $claim by ${jid: Lit.String}" if isStepId(no) =>
+        AST.ProofAst.Step.Regular(toStepId(no), translateExp(claim),
           AST.ProofAst.Step.Justification.Apply(translateLit(jid), ISZ()))
-      case q"${no: Lit.Int} #> $claim by ${t: Term.Eta} and (..${jargs: Seq[Term]})" =>
-        val stepNo = toLitZ(no)
+      case q"$no #> $claim by ${t: Term.Eta} and (..${jargs: Seq[Term]})" if isStepId(no) =>
+        val stepNo = toStepId(no)
         val stepClaim = translateExp(claim)
         val tExp = translateExp(t).asInstanceOf[AST.Exp.Eta]
         AST.ProofAst.Step.Regular(stepNo, stepClaim,
           AST.ProofAst.Step.Justification.InceptEta(tExp, translateWitnesses(jargs)))
-      case q"${no: Lit.Int} #> $claim by ${t: Term.Apply} and (..${jargs: Seq[Term]})" =>
-        val stepNo = toLitZ(no)
+      case q"$no #> $claim by ${t: Term.Apply} and (..${jargs: Seq[Term]})" if isStepId(no) =>
+        val stepNo = toStepId(no)
         val stepClaim = translateExp(claim)
         val tExp = translateExp(t)
         tExp match {
@@ -3223,8 +3240,8 @@ class SlangParser(
             AST.ProofAst.Step.Regular(stepNo, stepClaim,
               AST.ProofAst.Step.Justification.Apply(AST.Exp.LitString("?", emptyAttr), translateWitnesses(jargs).asInstanceOf[ISZ[AST.Exp]]))
         }
-      case q"${no: Lit.Int} #> $claim by ${t: Term.Apply}" =>
-        val stepNo = toLitZ(no)
+      case q"$no #> $claim by ${t: Term.Apply}" if isStepId(no) =>
+        val stepNo = toStepId(no)
         val stepClaim = translateExp(claim)
         val tExp = translateExp(t)
         tExp match {
@@ -3239,39 +3256,38 @@ class SlangParser(
             AST.ProofAst.Step.Regular(stepNo, stepClaim,
               AST.ProofAst.Step.Justification.Apply(AST.Exp.LitString("?", emptyAttr), ISZ()))
         }
-      case q"${no: Lit.Int} #> $claim by ${term: Term.Ref}" =>
-        AST.ProofAst.Step.Regular(toLitZ(no), translateExp(claim),
+      case q"$no #> $claim by ${term: Term.Ref}" if isStepId(no) =>
+        AST.ProofAst.Step.Regular(toStepId(no), translateExp(claim),
           AST.ProofAst.Step.Justification.Apply(translateExp(term), ISZ()))
-      case q"${no: Lit.Int} #> $claim by StructuralInduction($m)" =>
-        translateStructuralInduction(toLitZ(no), translateExp(claim), m)
-      case q"${no: Lit.Int} #> Assume($claim)" =>
-        val stepNo = toLitZ(no)
+      case q"$no #> $claim by StructuralInduction($m)" if isStepId(no) =>
+        translateStructuralInduction(toStepId(no), translateExp(claim), m)
+      case q"$no #> Assume($claim)" if isStepId(no) =>
+        val stepNo = toStepId(no)
         if (!allowAssume) {
           reporter.error(stepNo.posOpt, messageKind, "Assume justification cannot be used at this location")
         }
         AST.ProofAst.Step.Assume(stepNo, translateExp(claim))
-      case q"${no: Lit.Int} #> Assert($claim, SubProof(..${claims: Seq[Term]}))" =>
-        AST.ProofAst.Step.Assert(toLitZ(no), translateExp(claim), ISZ(claims.map(translateProofStep(false)): _*))
-      case q"${no: Lit.Int} #> SubProof(..${claims: Seq[Term]})" =>
-        val stepNo = toLitZ(no)
+      case q"$no #> Assert($claim, SubProof(..${claims: Seq[Term]}))" if isStepId(no) =>
+        AST.ProofAst.Step.Assert(toStepId(no), translateExp(claim), ISZ(claims.map(translateProofStep(false)): _*))
+      case q"$no #> SubProof(..${claims: Seq[Term]})" if isStepId(no) =>
+        val stepNo = toStepId(no)
         val subClaims = translateAssumeSubClaims(claims)
         if (subClaims.nonEmpty && !subClaims(0).isInstanceOf[AST.ProofAst.Step.Assume]) {
-          reporter.error(subClaims(0).no.posOpt, messageKind, "Expecting an Assume(...) claim")
+          reporter.error(subClaims(0).id.posOpt, messageKind, "Expecting an Assume(...) claim")
         }
         AST.ProofAst.Step.SubProof(stepNo, subClaims)
-      case q"${no: Lit.Int} #> Let ((..$params) => SubProof(..${claims: Seq[Term]}))" =>
-        AST.ProofAst.Step.Let(toLitZ(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims))
-      case q"${no: Lit.Int} #> Let {(..$params) => SubProof(..${claims: Seq[Term]})}" =>
-        AST.ProofAst.Step.Let(toLitZ(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims))
+      case q"$no #> Let ((..$params) => SubProof(..${claims: Seq[Term]}))" if isStepId(no) =>
+        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims))
+      case q"$no #> Let {(..$params) => SubProof(..${claims: Seq[Term]})}" if isStepId(no) =>
+        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims))
       case _ =>
         error(proofStep.pos, s"Invalid proof step form: '$proofStep'.")
         emptyProofStep
     }
-    if (r.no.posOpt.isEmpty) {
-      println("Here")
-    }
-    if (r.no.value < 0) {
-      reporter.error(r.no.posOpt, messageKind, "Proof step # has to be non-negative")
+    r.id match {
+      case id: AST.ProofAst.StepId.Num if id.no < 0 =>
+        reporter.error(id.posOpt, messageKind, "Proof step # has to be non-negative")
+      case _ =>
     }
     r
   }

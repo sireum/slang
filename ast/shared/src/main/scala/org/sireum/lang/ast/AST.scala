@@ -609,26 +609,44 @@ object MethodContract {
 object ProofAst {
 
   @datatype trait Step {
-    def no: Exp.LitZ
+    def id: StepId
+  }
+
+  @datatype trait StepId {
+    @pure def attr: Attr
+    @strictpure def posOpt: Option[Position] = attr.posOpt
+  }
+
+  object StepId {
+    @datatype class Num(val no: Z, @hidden val attr: Attr) extends StepId {
+      override def string: String = {
+        return s"# $no"
+      }
+    }
+    @datatype class Str(val value: String, @hidden val attr: Attr) extends StepId {
+      override def string: String = {
+        return value
+      }
+    }
   }
 
   object Step {
 
-    @datatype class Regular(val no: Exp.LitZ, val claim: Exp, val just: Justification) extends Step {
+    @datatype class Regular(val id: StepId, val claim: Exp, val just: Justification) extends Step {
       @strictpure def claimDeBruijn: Exp = Util.deBruijn(claim)
     }
 
-    @datatype class Assume(val no: Exp.LitZ, val claim: Exp) extends Step {
+    @datatype class Assume(val id: StepId, val claim: Exp) extends Step {
       @strictpure def claimDeBruijn: Exp = Util.deBruijn(claim)
     }
 
-    @datatype class Assert(val no: Exp.LitZ, val claim: Exp, val steps: ISZ[Step]) extends Step {
+    @datatype class Assert(val id: StepId, val claim: Exp, val steps: ISZ[Step]) extends Step {
       @strictpure def claimDeBruijn: Exp = Util.deBruijn(claim)
     }
 
-    @datatype class SubProof(val no: Exp.LitZ, val steps: ISZ[Step]) extends Step
+    @datatype class SubProof(val id: StepId, val steps: ISZ[Step]) extends Step
 
-    @datatype class Let(val no: Exp.LitZ, val params: ISZ[Let.Param], val steps: ISZ[Step]) extends Step
+    @datatype class Let(val id: StepId, val params: ISZ[Let.Param], val steps: ISZ[Step]) extends Step
 
     object Let {
 
@@ -636,7 +654,7 @@ object ProofAst {
 
     }
 
-    @datatype class StructInduction(val no: Exp.LitZ,
+    @datatype class StructInduction(val id: StepId,
                                     val claim: Exp,
                                     val exp: Exp,
                                     val cases: ISZ[StructInduction.MatchCase],
@@ -659,7 +677,7 @@ object ProofAst {
     }
 
     @datatype trait Inception extends Justification {
-      @pure def witnesses: ISZ[Exp.LitZ]
+      @pure def witnesses: ISZ[ProofAst.StepId]
     }
 
     object Justification {
@@ -692,16 +710,16 @@ object ProofAst {
         }
       }
 
-      @datatype class Incept(val invoke: Exp.Invoke, val witnesses: ISZ[Exp.LitZ]) extends Inception {
+      @datatype class Incept(val invoke: Exp.Invoke, val witnesses: ISZ[ProofAst.StepId]) extends Inception {
         @strictpure def invokeIdent: Exp.Ident = invoke.ident
         @strictpure def args: ISZ[Exp] = invoke.args
         @strictpure override def posOpt: Option[Position] = invoke.ident.posOpt
       }
 
-      @datatype class InceptNamed(val invoke: Exp.InvokeNamed, val witnesses: ISZ[Exp.LitZ]) extends Inception {
+      @datatype class InceptNamed(val invoke: Exp.InvokeNamed, val witnesses: ISZ[ProofAst.StepId]) extends Inception {
         @strictpure def invokeIdent: Exp.Ident = invoke.ident
         @pure def args: ISZ[Exp] = {
-          var r = MSZ.create[Option[Exp]](invoke.args.size, None())
+          val r = MSZ.create[Option[Exp]](invoke.args.size, None())
           for (e <- invoke.args) {
             r(e.index) = Some(e.arg)
           }
@@ -710,7 +728,7 @@ object ProofAst {
         @strictpure override def posOpt: Option[Position] = invoke.ident.posOpt
       }
 
-      @datatype class InceptEta(val eta: Exp.Eta, val witnesses: ISZ[Exp.LitZ]) extends Inception {
+      @datatype class InceptEta(val eta: Exp.Eta, val witnesses: ISZ[ProofAst.StepId]) extends Inception {
         @strictpure override def posOpt: Option[Position] = eta.posOpt
       }
 
@@ -1126,6 +1144,21 @@ object Exp {
 
     @pure override def prettyST: ST = {
       return st""""${ops.StringOps(value).escapeST}""""
+    }
+  }
+
+  @datatype class LitStepId(val value: String, @hidden attr: Attr) extends Exp with Lit {
+
+    @pure override def posOpt: Option[Position] = {
+      return attr.posOpt
+    }
+
+    @pure override def typedOpt: Option[Typed] = {
+      return Typed.zOpt
+    }
+
+    @pure override def prettyST: ST = {
+      return st"""sn"${ops.StringOps(value).escapeST}""""
     }
   }
 
