@@ -494,7 +494,6 @@ object Util {
       case _: Exp.Quant => return T
       case _: Exp.Input => return T
       case _: Exp.OldVal => return T
-      case _: Exp.AtLoc => return T
       case _: Exp.LoopIndex => return T
       case _: Exp.StateSeq => return T
       case _: Exp.Result => return T

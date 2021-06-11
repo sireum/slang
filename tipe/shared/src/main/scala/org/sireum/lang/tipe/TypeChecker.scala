@@ -3335,15 +3335,6 @@ import TypeChecker._
             return (exp, None())
           }
 
-        case exp: AST.Exp.AtLoc =>
-          if (inSpec) {
-            val (e, tOpt) = checkExp(expectedOpt, scope, exp.exp, reporter)
-            return (exp(exp = e), tOpt)
-          } else {
-            reporter.error(exp.posOpt, typeCheckerKind, "At can only be used inside specification context.")
-            return (exp, None())
-          }
-
         case exp: AST.Exp.OldVal =>
           if (inSpec) {
             val (e, tOpt) = checkExp(expectedOpt, scope, exp.exp, reporter)

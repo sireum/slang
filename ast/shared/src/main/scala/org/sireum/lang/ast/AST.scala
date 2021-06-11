@@ -1609,25 +1609,6 @@ object Exp {
     }
   }
 
-  @datatype class AtLoc(line: Z, idOpt: Option[Id], exp: Exp, @hidden attr: Attr) extends Exp {
-
-    @pure override def posOpt: Option[Position] = {
-      return attr.posOpt
-    }
-
-    @pure override def typedOpt: Option[Typed] = {
-      return exp.typedOpt
-    }
-
-    @pure override def prettyST: ST = {
-      val id: String = idOpt match {
-        case Some(id) => id.value
-        case _ => line.string
-      }
-      return st"At($id, ${exp.prettyST})"
-    }
-  }
-
   @datatype class LoopIndex(tipeOpt: Option[Type], exp: Exp.Ident, @hidden attr: TypedAttr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {

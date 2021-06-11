@@ -689,7 +689,6 @@ object Transformer {
           return r
         case o: Exp.Input => return preExpInput(ctx, o)
         case o: Exp.OldVal => return preExpOldVal(ctx, o)
-        case o: Exp.AtLoc => return preExpAtLoc(ctx, o)
         case o: Exp.LoopIndex => return preExpLoopIndex(ctx, o)
         case o: Exp.StateSeq => return preExpStateSeq(ctx, o)
         case o: Exp.Result => return preExpResult(ctx, o)
@@ -882,10 +881,6 @@ object Transformer {
     }
 
     @pure def preExpOldVal(ctx: Context, o: Exp.OldVal): PreResult[Context, Exp] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preExpAtLoc(ctx: Context, o: Exp.AtLoc): PreResult[Context, Exp] = {
       return PreResult(ctx, T, None())
     }
 
@@ -1761,7 +1756,6 @@ object Transformer {
           return r
         case o: Exp.Input => return postExpInput(ctx, o)
         case o: Exp.OldVal => return postExpOldVal(ctx, o)
-        case o: Exp.AtLoc => return postExpAtLoc(ctx, o)
         case o: Exp.LoopIndex => return postExpLoopIndex(ctx, o)
         case o: Exp.StateSeq => return postExpStateSeq(ctx, o)
         case o: Exp.Result => return postExpResult(ctx, o)
@@ -1954,10 +1948,6 @@ object Transformer {
     }
 
     @pure def postExpOldVal(ctx: Context, o: Exp.OldVal): TPostResult[Context, Exp] = {
-      return TPostResult(ctx, None())
-    }
-
-    @pure def postExpAtLoc(ctx: Context, o: Exp.AtLoc): TPostResult[Context, Exp] = {
       return TPostResult(ctx, None())
     }
 
@@ -3813,14 +3803,6 @@ import Transformer._
             TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), attr = r1.resultOpt.getOrElse(o2.attr))))
           else
             TPostResult(r1.ctx, None())
-        case o2: Exp.AtLoc =>
-          val r0: TPostResult[Context, Option[Id]] = transformOption(preR.ctx, o2.idOpt, transformId _)
-          val r1: TPostResult[Context, Exp] = transformExp(r0.ctx, o2.exp)
-          val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            TPostResult(r2.ctx, Some(o2(idOpt = r0.resultOpt.getOrElse(o2.idOpt), exp = r1.resultOpt.getOrElse(o2.exp), attr = r2.resultOpt.getOrElse(o2.attr))))
-          else
-            TPostResult(r2.ctx, None())
         case o2: Exp.LoopIndex =>
           val r0: TPostResult[Context, Option[Type]] = transformOption(preR.ctx, o2.tipeOpt, transformType _)
           val r1: TPostResult[Context, Exp.Ident] = transformExpIdent(r0.ctx, o2.exp)

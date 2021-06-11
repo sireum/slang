@@ -443,7 +443,7 @@ class SlangParser(
       case stat: Term.Do => translateDoWhile(enclosing, stat)
       case stat: Term.For => translateFor(enclosing, stat)
       case stat: Term.Return => translateReturn(enclosing, stat)
-      case q"Contract(${_: Lit.String})" => translateSpecLabel(enclosing, stat)
+      case q"Spec(${_: Lit.String})" => translateSpecLabel(enclosing, stat)
       case q"Spec { ..$_ }" => translateSpecBlock(enclosing, stat)
       case q"Deduce(..$_)" => translateDeduce(enclosing, stat)
       case q"Contract(DataRefinement($_)(..$_)(..$_))" => translateDataRefinement(enclosing, stat)
@@ -1721,10 +1721,14 @@ class SlangParser(
       case t: Type.Function =>
         val (isPure, ret) = t.res match {
           case res: Type.Annotate =>
-            (res.annots.exists({
-              case mod"@pure" => true
-              case _ => false
-            }), res.tpe)
+            var hasPure = false
+            for (a <- res.annots) {
+              a match {
+                case mod"@pure" => hasPure = true
+                case _ => errorInSlang(a.pos, s"Only @pure is allowed as function type annotation")
+              }
+            }
+            (hasPure, res.tpe)
           case _ => (false, t.res)
         }
         AST.Type.Fun(
@@ -1746,7 +1750,19 @@ class SlangParser(
       unitType
     case ta: Type.ByName =>
       if (allowByName) {
-        AST.Type.Fun(true, true, ISZ(), translateType(ta.tpe), typedAttr(ta.pos))
+        val (isPure, tpe) = ta.tpe match {
+          case Type.Annotate(t, anns) =>
+            var hasPure = false
+            for (a <- anns) {
+              a match {
+                case mod"@pure" => hasPure = true
+                case _ => errorInSlang(a.pos, s"Only @pure is allowed as by-name type annotation")
+              }
+            }
+            (hasPure, t)
+          case _ => (false, ta.tpe)
+        }
+        AST.Type.Fun(isPure, true, ISZ(), translateType(tpe), typedAttr(ta.pos))
       } else {
         errorInSlang(ta.pos, "By name types '=> 〈type〉' are only allowed on (non-@memoize) method parameters")
         unitType
@@ -2367,9 +2383,6 @@ class SlangParser(
         AST.Exp.Input(translateExp(arg), attr(if (exp.pos == Position.None) name.pos else exp.pos))
       case q"${name: Term.Name}($arg)" if name.value == "Old" =>
         AST.Exp.OldVal(translateExp(arg), attr(if (exp.pos == Position.None) name.pos else exp.pos))
-      case q"${name: Term.Name}(${label: Lit.String}, $arg)" if name.value == "At" =>
-        AST.Exp.AtLoc(exp.pos.startLine, Some(cidNoCheck(label.value, label.pos)), translateExp(arg),
-          attr(if (exp.pos == Position.None) name.pos else exp.pos))
       case q"$expr.$name[..$tpes](...${aexprssnel: List[List[Term]]})" if tpes.nonEmpty && aexprssnel.nonEmpty =>
         translateInvoke(
           scala.Some(expr),
@@ -3090,10 +3103,10 @@ class SlangParser(
       case _ => false
     }
     if (!isLabelContext) {
-      if (isWorksheet) error(stat.pos, s"Contract label can only appear at the top-level or inside code blocks.")
-      else error(stat.pos, s"Contract label can only appear inside code blocks.")
+      if (isWorksheet) error(stat.pos, s"Spec label can only appear at the top-level or inside code blocks.")
+      else error(stat.pos, s"Spec label can only appear inside code blocks.")
     }
-    val q"Contract(${s: Lit.String})" = stat
+    val q"Spec(${s: Lit.String})" = stat
     AST.Stmt.SpecLabel(cid(s.value, s.pos))
   }
 
