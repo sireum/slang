@@ -1021,10 +1021,6 @@ object Pattern {
 
   @pure def typedOpt: Option[Typed]
 
-  @pure def precedenceLevel: Z = {
-    return -1
-  }
-
   @pure def prettyST: ST
 
   override def string: String = {
@@ -1326,13 +1322,17 @@ object Exp {
       return attr.typedOpt
     }
 
-    @pure override def precedenceLevel: Z = {
-      return BinaryOp.precendenceLevel(op)
-    }
-
     @pure override def prettyST: ST = {
-      val l = precedenceLevel
-      return st"${if (left.precedenceLevel < l) left.prettyST else s"(${left.prettyST})"} $op ${if (right.precedenceLevel < l) right.prettyST else s"(${right.prettyST})"}"
+      val l = BinaryOp.precendenceLevel(op)
+      val leftST: ST = left match {
+        case left: Binary if BinaryOp.precendenceLevel(left.op) >= l => st"(${left.prettyST})"
+        case _ => left.prettyST
+      }
+      val rightST: ST = right match {
+        case right: Binary if BinaryOp.precendenceLevel(right.op) >= l => st"(${right.prettyST})"
+        case _ => right.prettyST
+      }
+      return st"$leftST $op $rightST"
     }
   }
 
