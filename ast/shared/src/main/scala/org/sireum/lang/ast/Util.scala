@@ -32,6 +32,143 @@ import org.sireum.U64._
 
 object Util {
 
+  @record class EnumSymbolMapper(val content: ISZ[C], var map: HashMap[Z, (String, String)]) extends MTransformer {
+    override def postStmtEnum(o: Stmt.Enum): MOption[Stmt] = {
+      for (id <- o.elements) {
+        val offset = id.attr.posOpt.get.offset
+        if (content(offset) === '\'') {
+          map = map + offset ~> ((s"'${id.value}", s""""${id.value}""""))
+        }
+      }
+      return MTransformer.PostResultStmtEnum
+    }
+  }
+
+  @record class ProofStepsNumberMapper(val content: ISZ[C],
+                                       var num: Z,
+                                       var numMap: HashMap[Z, Z],
+                                       var map: HashMap[Z, (String, String)],
+                                       val reporter: Reporter) extends MTransformer {
+    override def preStmtDeduceSequent(o: Stmt.DeduceSequent): MTransformer.PreResult[Stmt.Spec] = {
+      for (sequent <- o.sequents) {
+        num = 1
+        numMap = HashMap.empty
+        for (step <- sequent.steps) {
+          transformProofAstStep(step)
+        }
+      }
+      num = 1
+      return MTransformer.PreResultStmtDeduceSequent(continu = F)
+    }
+
+    override def preStmtDeduceSteps(o: Stmt.DeduceSteps): MTransformer.PreResult[Stmt.Spec] = {
+      num = 1
+      numMap = HashMap.empty
+      for (step <- o.steps) {
+        transformProofAstStep(step)
+      }
+      num = 1
+      return MTransformer.PreResultStmtDeduceSteps(continu = F)
+    }
+
+    override def preProofAstStep(o: ProofAst.Step): MTransformer.PreResult[ProofAst.Step] = {
+      o.id match {
+        case id: ProofAst.StepId.Num =>
+          if (id.no != num) {
+            map = map + id.posOpt.get.offset ~> ((id.no.string, num.string))
+          }
+          numMap = numMap + id.no ~> num
+          num = num + 1
+        case _ =>
+      }
+      return MTransformer.PreResultProofAstStepRegular
+    }
+
+    def processArg(isWarning: B, arg: Exp): Unit = {
+      arg match {
+        case arg: Exp.LitZ =>
+          numMap.get(arg.value) match {
+            case Some(newNo) =>
+              if (arg.value != newNo) {
+                map = map + arg.posOpt.get.offset ~> ((arg.value.string, newNo.string))
+              }
+            case _ =>
+              if (isWarning) {
+                reporter.warn(arg.posOpt, "Slang Rewrite", s"Could not find proof step #${arg.value}")
+              } else {
+                reporter.error(arg.posOpt, "Slang Rewrite", s"Could not find proof step #${arg.value}")
+              }
+          }
+        case _ =>
+      }
+    }
+
+    def processStepId(sid: ProofAst.StepId): Unit = {
+      sid match {
+        case sid: ProofAst.StepId.Num =>
+          numMap.get(sid.no) match {
+            case Some(newNo) =>
+              if (sid.no != newNo) {
+                map = map + sid.posOpt.get.offset ~> ((sid.no.string, newNo.string))
+              }
+            case _ =>
+              reporter.error(sid.posOpt, "Slang Rewrite", s"Could not find proof step $sid")
+          }
+        case _ =>
+      }
+    }
+
+    override def preProofAstStepJustificationIncept(o: ProofAst.Step.Justification.Incept): MTransformer.PreResult[ProofAst.Step.Inception] = {
+      if (o.witnesses.isEmpty) {
+        for (arg <- o.args) {
+          processArg(F, arg)
+        }
+      } else {
+        for (w <- o.witnesses) {
+          processStepId(w)
+        }
+      }
+      return MTransformer.PreResultProofAstStepJustificationIncept
+    }
+
+    override def preProofAstStepJustificationInceptNamed(o: ProofAst.Step.Justification.InceptNamed): MTransformer.PreResult[ProofAst.Step.Inception] = {
+      for (w <- o.witnesses) {
+        processStepId(w)
+      }
+      return MTransformer.PreResultProofAstStepJustificationInceptNamed
+    }
+
+    override def preProofAstStepJustificationInceptEta(o: ProofAst.Step.Justification.InceptEta): MTransformer.PreResult[ProofAst.Step.Inception] = {
+      for (w <- o.witnesses) {
+        processStepId(w)
+      }
+      return MTransformer.PreResultProofAstStepJustificationInceptEta
+    }
+
+    override def preProofAstStepJustificationApply(o: ProofAst.Step.Justification.Apply): MTransformer.PreResult[ProofAst.Step.Justification] = {
+      for (arg <- o.args) {
+        processArg(T, arg)
+      }
+      return MTransformer.PreResultProofAstStepJustificationApply
+    }
+  }
+
+  @record class ConstructorValMapper(val content: ISZ[C], var map: HashMap[Z, (String, String)]) extends MTransformer {
+    override def postAdtParam(o: AdtParam): MOption[AdtParam] = {
+      if (o.isVal) {
+        val offset = o.id.attr.posOpt.get.offset
+        var i = offset - 1
+        while (content(i).isWhitespace) {
+          i = i - 1
+        }
+        if (!(content(i - 2) == 'v' && content(i - 1) == 'a' && content(i) == 'l')) {
+          map = map + offset ~> (("", "val "))
+        }
+      }
+      return MTransformer.PostResultAdtParam
+    }
+  }
+
   @record class PatternVarBindingCollector(var result: ISZ[Id]) extends MTransformer {
     override def postPatternVarBinding(o: Pattern.VarBinding): MOption[Pattern] = {
       result = result :+ o.id
@@ -140,7 +277,7 @@ object Util {
     }
   }
 
-  @datatype class TypePrePostSubstitutor(substMap: HashMap[String, Typed]) extends Transformer.PrePost[B] {
+  @datatype class TypePrePostSubstitutor(val substMap: HashMap[String, Typed]) extends Transformer.PrePost[B] {
     @pure override def preTypedTypeVar(ctx: B, o: Typed.TypeVar): Transformer.PreResult[B, Typed] = {
       substMap.get(o.id) match {
         case Some(t) => return Transformer.PreResult(ctx, T, Some(t))
@@ -150,7 +287,7 @@ object Util {
     }
   }
 
-  @datatype class LocalVarContextPrePostSubstitutor(oldContext: ISZ[String], newContext: ISZ[String]) extends Transformer.PrePost[B] {
+  @datatype class LocalVarContextPrePostSubstitutor(val oldContext: ISZ[String], val newContext: ISZ[String]) extends Transformer.PrePost[B] {
     @pure override def postResolvedInfoLocalVar(ctx: B, o: ResolvedInfo.LocalVar): Transformer.TPostResult[B, ResolvedInfo] = {
       if (o.context == oldContext) {
         return Transformer.TPostResult(ctx, Some(o(context = newContext)))
@@ -179,7 +316,7 @@ object Util {
   object FunDebruijner {
     @strictpure def create: Transformer[Z] = Transformer(FunPrePostDebruijner())
 
-    @datatype class PrePostSubstitutor(oldContext: ISZ[String], newContext: ISZ[String], m: HashMap[String, String]) extends Transformer.PrePost[B] {
+    @datatype class PrePostSubstitutor(val oldContext: ISZ[String], val newContext: ISZ[String], val m: HashMap[String, String]) extends Transformer.PrePost[B] {
       override def postExpIdent(ctx: B, o: Exp.Ident): Transformer.TPostResult[B, Exp] = {
         o.attr.resOpt.get match {
           case res: ResolvedInfo.LocalVar if res.context == oldContext =>
@@ -531,8 +668,8 @@ object Util {
   @pure def areAllStepIds(es: ISZ[Exp]): B = {
     for (e <- es) {
       e match {
-        case e: Exp.LitZ =>
-        case e: Exp.LitStepId =>
+        case _: Exp.LitZ =>
+        case _: Exp.LitStepId =>
         case _ => return F
       }
     }
@@ -550,6 +687,49 @@ object Util {
       }
     }
     return if (r.size != es.size) None() else Some(r)
+  }
+
+  @pure def insertConstructorVal(text: String, topUnit: TopUnit): (String, Z) = {
+    val content = conversions.String.toCis(text)
+    val trans = ConstructorValMapper(content, HashMap.empty)
+    trans.transformTopUnit(topUnit)
+    val n = trans.map.size
+    if (n === 0) {
+      return (text, 0)
+    }
+    ops.StringOps.replace(content, trans.map) match {
+      case Either.Left(value) => return (value, n)
+      case Either.Right(message) => halt(s"Internal error: $message")
+    }
+  }
+
+  @pure def renumberProofSteps(text: String, topUnit: TopUnit, reporter: Reporter): (String, Z) = {
+    val content = conversions.String.toCis(text)
+    val trans = ProofStepsNumberMapper(content, 1, HashMap.empty, HashMap.empty, Reporter.create)
+    trans.transformTopUnit(topUnit)
+    reporter.reports(trans.reporter.messages)
+    val n = trans.map.size
+    if (n === 0 || reporter.hasError) {
+      return (text, 0)
+    }
+    ops.StringOps.replace(content, trans.map) match {
+      case Either.Left(value) => return (value, n)
+      case Either.Right(message) => halt(s"Internal error: $message")
+    }
+  }
+
+  @pure def replaceEnumSymbols(text: String, topUnit: TopUnit): (String, Z) = {
+    val content = conversions.String.toCis(text)
+    val trans = EnumSymbolMapper(content, HashMap.empty)
+    trans.transformTopUnit(topUnit)
+    val n = trans.map.size
+    if (n === 0) {
+      return (text, 0)
+    }
+    ops.StringOps.replace(content, trans.map) match {
+      case Either.Left(value) => return (value, n)
+      case Either.Right(message) => halt(s"Internal error: $message")
+    }
   }
 
 }

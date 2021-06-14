@@ -36,6 +36,24 @@ import org.sireum.lang.tipe._
 
 object FrontEnd {
 
+  @enum object Rewrite {
+    "InsertConstructorVals"
+    "RenumberProofSteps"
+    "ReplaceEnumSymbols"
+  }
+
+  def rewrite(kind: Rewrite.Type, isWorksheet: B, fileUriOpt: Option[String], text: String, reporter: Reporter): Option[(String, Z)] = {
+    Parser.parseTopUnit[AST.TopUnit](text, isWorksheet, F, fileUriOpt, reporter) match {
+      case Some(program) if !reporter.hasError =>
+        kind match {
+          case Rewrite.InsertConstructorVals => return Some(AST.Util.insertConstructorVal(text, program))
+          case Rewrite.RenumberProofSteps => return Some(AST.Util.renumberProofSteps(text, program, reporter))
+          case Rewrite.ReplaceEnumSymbols => return Some(AST.Util.replaceEnumSymbols(text, program))
+        }
+      case _ => return None()
+    }
+  }
+
   @pure def parseProgramAndGloballyResolve(
     par: B,
     sources: ISZ[(Option[String], String)],
