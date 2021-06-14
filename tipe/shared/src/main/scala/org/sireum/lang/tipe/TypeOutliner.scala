@@ -1226,52 +1226,75 @@ object TypeOutliner {
 
   def checkContract(strictAliasing: B, isMutableContext: B, name: QName, scope: Scope, members: TypeOutliner.TypeMembers,
                     reporter: Reporter): Unit = {
+    def checkMethod(id: String, stmt: AST.Stmt.Method): AST.Stmt.Method = {
+      if (stmt.purity == AST.Purity.StrictPure) {
+        val context = name :+ stmt.sig.id.value
+        return TypeChecker.checkStrictPureMethod(strictAliasing, typeHierarchy, context, scope,
+          isMutableContext, stmt, reporter)
+
+      } else if (stmt.hasContract) {
+        val context = name :+ stmt.sig.id.value
+        return TypeChecker.checkMethodContractSequent(strictAliasing, typeHierarchy, context, scope,
+          isMutableContext, stmt, reporter)
+      } else {
+        return stmt
+      }
+    }
+    def checkInv(id: String, stmt: AST.Stmt.Inv): AST.Stmt.Inv = {
+      val context = name :+ id
+      return TypeChecker.checkInvStmt(strictAliasing, typeHierarchy, context, scope, stmt, reporter)
+    }
+    def checkDataRefinement(stmt: AST.Stmt.DataRefinement): AST.Stmt.DataRefinement = {
+      return TypeChecker.checkDataRefinement(strictAliasing, typeHierarchy, name, scope, stmt, reporter)
+    }
+    var methods = members.methods
+    var invs = members.invariants
+    var dataRefinements = members.drs
     var newStmts = ISZ[AST.Stmt]()
-    for (astmt <- members.stmts) {
-      astmt match {
-        case astmt: AST.Stmt.SpecVar =>
-          val id = astmt.id.value
+    for (stmt <- members.stmts) {
+      stmt match {
+        case stmt: AST.Stmt.SpecVar =>
+          val id = stmt.id.value
           newStmts = newStmts :+ members.specVars.get(id).get.ast
-        case astmt: AST.Stmt.Var =>
-          val id = astmt.id.value
+        case stmt: AST.Stmt.Var =>
+          val id = stmt.id.value
           newStmts = newStmts :+ members.vars.get(id).get.ast
-        case astmt: AST.Stmt.SpecMethod =>
-          val id = astmt.sig.id.value
+        case stmt: AST.Stmt.SpecMethod =>
+          val id = stmt.sig.id.value
           newStmts = newStmts :+ members.specMethods.get(id).get.ast
-        case astmt: AST.Stmt.Method =>
-          val id = astmt.sig.id.value
+        case stmt: AST.Stmt.Method =>
+          val id = stmt.sig.id.value
+          methods = methods -- ISZ(id)
           val mInfo = members.methods.get(id).get
-          if (astmt.purity == AST.Purity.StrictPure) {
-            val stmt = mInfo.ast
-            val context = name :+ stmt.sig.id.value
-            val newStmt = TypeChecker.checkStrictPureMethod(strictAliasing, typeHierarchy, context, scope,
-              isMutableContext, stmt, reporter)
-            newStmts = newStmts :+ newStmt
-            members.methods = members.methods + id ~> mInfo(ast = newStmt)
-          } else if (astmt.hasContract) {
-            val stmt = mInfo.ast
-            val context = name :+ stmt.sig.id.value
-            val newStmt = TypeChecker.checkMethodContractSequent(strictAliasing, typeHierarchy, context, scope,
-              isMutableContext, stmt, reporter)
-            newStmts = newStmts :+ newStmt
-            members.methods = members.methods + id ~> mInfo(ast = newStmt)
-          } else {
-            newStmts = newStmts :+ mInfo.ast
-          }
-        case astmt: AST.Stmt.Inv =>
-          val id = astmt.id.value
+          val newStmt = checkMethod(id, mInfo.ast)
+          newStmts = newStmts :+ newStmt
+          members.methods = members.methods + id ~> mInfo(ast = newStmt)
+        case stmt: AST.Stmt.Inv =>
+          val id = stmt.id.value
+          invs = invs -- ISZ(id)
           val iInfo = members.invariants.get(id).get
-          val stmt = iInfo.ast
-          val context = name :+ id
-          val newStmt = TypeChecker.checkInvStmt(strictAliasing, typeHierarchy, context, scope, stmt, reporter)
+          val newStmt = checkInv(id, iInfo.ast)
           newStmts = newStmts :+ newStmt
           members.invariants = members.invariants + id ~> iInfo(ast = newStmt)
-        case astmt: AST.Stmt.DataRefinement =>
-          val dr = TypeChecker.checkDataRefinement(strictAliasing, typeHierarchy, name, scope, astmt, reporter)
+        case stmt: AST.Stmt.DataRefinement =>
+          dataRefinements = dataRefinements - stmt
+          val dr = checkDataRefinement(stmt)
           members.drs = members.drs :+ dr
           newStmts = newStmts :+ dr
-        case _ => newStmts = newStmts :+ astmt
+        case _ => newStmts = newStmts :+ stmt
       }
+    }
+    for (mInfo <- methods.values) {
+      val id = mInfo.ast.sig.id.value
+      members.methods = members.methods + id ~> mInfo(ast = checkMethod(id, mInfo.ast))
+    }
+    for (iInfo <- invs.values) {
+      val id = iInfo.ast.id.value
+      members.invariants = members.invariants + id ~> iInfo(ast = checkInv(id, iInfo.ast))
+    }
+    for (dr <- dataRefinements) {
+      members.drs = members.drs - dr
+      members.drs = members.drs :+ checkDataRefinement(dr)
     }
     members.stmts = newStmts
   }
