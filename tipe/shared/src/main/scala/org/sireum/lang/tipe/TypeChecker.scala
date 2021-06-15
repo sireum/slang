@@ -2589,7 +2589,7 @@ import TypeChecker._
         }
       }
       for (access <- accesses) {
-        argPaths = argPaths :+ mVarAccess(if (argPaths.nonEmpty) argPaths(0) else Some(ISZ("this")), Some(access))
+        argPaths = argPaths :+ mVarAccess(if (args.nonEmpty) expPath(args(0), ISZ()) else Some(ISZ("this")), Some(access))
       }
       for (i <- 0 until args.size) {
         for (j <- i + 1 until args.size) {
