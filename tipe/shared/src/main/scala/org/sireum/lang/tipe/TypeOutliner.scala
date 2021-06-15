@@ -1286,11 +1286,15 @@ object TypeOutliner {
     }
     for (mInfo <- methods.values) {
       val id = mInfo.ast.sig.id.value
-      members.methods = members.methods + id ~> mInfo(ast = checkMethod(id, mInfo.ast))
+      val res = mInfo.resOpt.get.asInstanceOf[AST.ResolvedInfo.Method]
+      members.methods = members.methods + id ~> mInfo(
+        owner = name, ast = checkMethod(id, mInfo.ast(attr = mInfo.ast.attr(resOpt = Some(res(owner = name))))))
     }
     for (iInfo <- invs.values) {
       val id = iInfo.ast.id.value
-      members.invariants = members.invariants + id ~> iInfo(ast = checkInv(id, iInfo.ast))
+      val res = iInfo.resOpt.get.asInstanceOf[AST.ResolvedInfo.Inv]
+      members.invariants = members.invariants + id ~> iInfo(
+        owner = name, ast = checkInv(id, iInfo.ast(attr = iInfo.ast.attr(resOpt = Some(res(owner = name))))))
     }
     for (dr <- dataRefinements) {
       members.drs = members.drs - dr
