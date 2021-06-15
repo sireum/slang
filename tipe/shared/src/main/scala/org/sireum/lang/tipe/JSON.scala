@@ -270,10 +270,10 @@ object JSON {
         ("tpe", print_astTypedName(o.tpe)),
         ("ancestors", printISZ(F, o.ancestors, print_astTypedName _)),
         ("specVars", printHashSMap(F, o.specVars, printString _, print_symbolInfoSpecVar _)),
-        ("specMethods", printHashMap(F, o.specMethods, printString _, print_symbolInfoSpecMethod _)),
-        ("methods", printHashMap(F, o.methods, printString _, print_symbolInfoMethod _)),
-        ("refinements", printHashMap(F, o.refinements, printString _, print_symbolTypeInfoName _)),
-        ("invariants", printHashMap(F, o.invariants, printString _, print_symbolInfoInv _)),
+        ("specMethods", printHashSMap(F, o.specMethods, printString _, print_symbolInfoSpecMethod _)),
+        ("methods", printHashSMap(F, o.methods, printString _, print_symbolInfoMethod _)),
+        ("refinements", printHashSMap(F, o.refinements, printString _, print_symbolTypeInfoName _)),
+        ("invariants", printHashSMap(F, o.invariants, printString _, print_symbolInfoInv _)),
         ("dataRefinements", printISZ(F, o.dataRefinements, print_astStmtDataRefinement _)),
         ("scope", print_symbolScopeGlobal(o.scope)),
         ("ast", print_astStmtSig(o.ast))
@@ -302,10 +302,10 @@ object JSON {
         ("ancestors", printISZ(F, o.ancestors, print_astTypedName _)),
         ("specVars", printHashSMap(F, o.specVars, printString _, print_symbolInfoSpecVar _)),
         ("vars", printHashSMap(F, o.vars, printString _, print_symbolInfoVar _)),
-        ("specMethods", printHashMap(F, o.specMethods, printString _, print_symbolInfoSpecMethod _)),
-        ("methods", printHashMap(F, o.methods, printString _, print_symbolInfoMethod _)),
-        ("refinements", printHashMap(F, o.refinements, printString _, print_symbolTypeInfoName _)),
-        ("invariants", printHashMap(F, o.invariants, printString _, print_symbolInfoInv _)),
+        ("specMethods", printHashSMap(F, o.specMethods, printString _, print_symbolInfoSpecMethod _)),
+        ("methods", printHashSMap(F, o.methods, printString _, print_symbolInfoMethod _)),
+        ("refinements", printHashSMap(F, o.refinements, printString _, print_symbolTypeInfoName _)),
+        ("invariants", printHashSMap(F, o.invariants, printString _, print_symbolInfoInv _)),
         ("dataRefinements", printISZ(F, o.dataRefinements, print_astStmtDataRefinement _)),
         ("scope", print_symbolScopeGlobal(o.scope)),
         ("ast", print_astStmtAdt(o.ast))
@@ -334,10 +334,10 @@ object JSON {
         ("type", st""""org.sireum.lang.symbol.TypeInfo.Members""""),
         ("specVars", printHashSMap(F, o.specVars, printString _, print_symbolInfoSpecVar _)),
         ("vars", printHashSMap(F, o.vars, printString _, print_symbolInfoVar _)),
-        ("specMethods", printHashMap(F, o.specMethods, printString _, print_symbolInfoSpecMethod _)),
-        ("methods", printHashMap(F, o.methods, printString _, print_symbolInfoMethod _)),
-        ("refinements", printHashMap(F, o.refinements, printString _, print_symbolTypeInfoName _)),
-        ("invariants", printHashMap(F, o.invariants, printString _, print_symbolInfoInv _))
+        ("specMethods", printHashSMap(F, o.specMethods, printString _, print_symbolInfoSpecMethod _)),
+        ("methods", printHashSMap(F, o.methods, printString _, print_symbolInfoMethod _)),
+        ("refinements", printHashSMap(F, o.refinements, printString _, print_symbolTypeInfoName _)),
+        ("invariants", printHashSMap(F, o.invariants, printString _, print_symbolInfoInv _))
       ))
     }
 
@@ -2609,16 +2609,16 @@ object JSON {
       val specVars = parser.parseHashSMap(parser.parseString _, parse_symbolInfoSpecVar _)
       parser.parseObjectNext()
       parser.parseObjectKey("specMethods")
-      val specMethods = parser.parseHashMap(parser.parseString _, parse_symbolInfoSpecMethod _)
+      val specMethods = parser.parseHashSMap(parser.parseString _, parse_symbolInfoSpecMethod _)
       parser.parseObjectNext()
       parser.parseObjectKey("methods")
-      val methods = parser.parseHashMap(parser.parseString _, parse_symbolInfoMethod _)
+      val methods = parser.parseHashSMap(parser.parseString _, parse_symbolInfoMethod _)
       parser.parseObjectNext()
       parser.parseObjectKey("refinements")
-      val refinements = parser.parseHashMap(parser.parseString _, parse_symbolTypeInfoName _)
+      val refinements = parser.parseHashSMap(parser.parseString _, parse_symbolTypeInfoName _)
       parser.parseObjectNext()
       parser.parseObjectKey("invariants")
-      val invariants = parser.parseHashMap(parser.parseString _, parse_symbolInfoInv _)
+      val invariants = parser.parseHashSMap(parser.parseString _, parse_symbolInfoInv _)
       parser.parseObjectNext()
       parser.parseObjectKey("dataRefinements")
       val dataRefinements = parser.parseISZ(parse_astStmtDataRefinement _)
@@ -2693,16 +2693,16 @@ object JSON {
       val vars = parser.parseHashSMap(parser.parseString _, parse_symbolInfoVar _)
       parser.parseObjectNext()
       parser.parseObjectKey("specMethods")
-      val specMethods = parser.parseHashMap(parser.parseString _, parse_symbolInfoSpecMethod _)
+      val specMethods = parser.parseHashSMap(parser.parseString _, parse_symbolInfoSpecMethod _)
       parser.parseObjectNext()
       parser.parseObjectKey("methods")
-      val methods = parser.parseHashMap(parser.parseString _, parse_symbolInfoMethod _)
+      val methods = parser.parseHashSMap(parser.parseString _, parse_symbolInfoMethod _)
       parser.parseObjectNext()
       parser.parseObjectKey("refinements")
-      val refinements = parser.parseHashMap(parser.parseString _, parse_symbolTypeInfoName _)
+      val refinements = parser.parseHashSMap(parser.parseString _, parse_symbolTypeInfoName _)
       parser.parseObjectNext()
       parser.parseObjectKey("invariants")
-      val invariants = parser.parseHashMap(parser.parseString _, parse_symbolInfoInv _)
+      val invariants = parser.parseHashSMap(parser.parseString _, parse_symbolInfoInv _)
       parser.parseObjectNext()
       parser.parseObjectKey("dataRefinements")
       val dataRefinements = parser.parseISZ(parse_astStmtDataRefinement _)
@@ -2771,16 +2771,16 @@ object JSON {
       val vars = parser.parseHashSMap(parser.parseString _, parse_symbolInfoVar _)
       parser.parseObjectNext()
       parser.parseObjectKey("specMethods")
-      val specMethods = parser.parseHashMap(parser.parseString _, parse_symbolInfoSpecMethod _)
+      val specMethods = parser.parseHashSMap(parser.parseString _, parse_symbolInfoSpecMethod _)
       parser.parseObjectNext()
       parser.parseObjectKey("methods")
-      val methods = parser.parseHashMap(parser.parseString _, parse_symbolInfoMethod _)
+      val methods = parser.parseHashSMap(parser.parseString _, parse_symbolInfoMethod _)
       parser.parseObjectNext()
       parser.parseObjectKey("refinements")
-      val refinements = parser.parseHashMap(parser.parseString _, parse_symbolTypeInfoName _)
+      val refinements = parser.parseHashSMap(parser.parseString _, parse_symbolTypeInfoName _)
       parser.parseObjectNext()
       parser.parseObjectKey("invariants")
-      val invariants = parser.parseHashMap(parser.parseString _, parse_symbolInfoInv _)
+      val invariants = parser.parseHashSMap(parser.parseString _, parse_symbolInfoInv _)
       parser.parseObjectNext()
       return org.sireum.lang.symbol.TypeInfo.Members(specVars, vars, specMethods, methods, refinements, invariants)
     }

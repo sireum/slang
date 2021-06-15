@@ -989,7 +989,8 @@ import TypeChecker._
                   Some(newCondExp)
                 case _ => None()
               }
-              val (newInvs, _) = this(mode = ModeContext.Spec).checkLoopInv(scope, enumGen.invariants, ISZ(), reporter)
+              val thisL = this
+              val (newInvs, _) = thisL(mode = ModeContext.Spec).checkLoopInv(scope, enumGen.invariants, ISZ(), reporter)
               return enumGen(
                 range = range(start = newStartExp, end = newEndExp, byOpt = newByOpt),
                 condOpt = newCondOpt,
@@ -1049,7 +1050,8 @@ import TypeChecker._
               } else {
                 None()
               }
-              val (newInvs, _) = this(mode = ModeContext.Spec).checkLoopInv(scope, enumGen.invariants, ISZ(), reporter)
+              val thisL = this
+              val (newInvs, _) = thisL(mode = ModeContext.Spec).checkLoopInv(scope, enumGen.invariants, ISZ(), reporter)
               return enumGen(range = range(exp = newExp), condOpt = newCondOpt, invariants = newInvs)
             case Some(expType) =>
               reportErrType(st"$expType")
@@ -4448,7 +4450,8 @@ import TypeChecker._
       val (newScopeOpt, newEnumGens, _, _) = checkEnumGens(F, scope, forStmt.enumGens, reporter)
       newScopeOpt match {
         case Some(newScope) =>
-          val (_, newMods) = this(mode = ModeContext.Spec).checkLoopInv(newScope, ISZ(), forStmt.modifies, reporter)
+          val thisL = this
+          val (_, newMods) = thisL(mode = ModeContext.Spec).checkLoopInv(newScope, ISZ(), forStmt.modifies, reporter)
           val (_, newBody) = checkBody(F, None(), newScope, forStmt.body, reporter)
           return forStmt(context = context, enumGens = newEnumGens, modifies = newMods, body = newBody)
         case _ => return forStmt(context = context, enumGens = newEnumGens)
@@ -4456,7 +4459,8 @@ import TypeChecker._
     }
 
     def checkDoWhile(doWhileStmt: AST.Stmt.DoWhile): AST.Stmt = {
-      val (newInvs, newMods) = this(mode = ModeContext.Spec).
+      val thisL = this
+      val (newInvs, newMods) = thisL(mode = ModeContext.Spec).
         checkLoopInv(scope, doWhileStmt.invariants, doWhileStmt.modifies, reporter)
       val (_, newBody) = checkBody(F, None(), createNewScope(scope), doWhileStmt.body, reporter)
       val (newCond, _) = checkExp(AST.Typed.bOpt, scope, doWhileStmt.cond, reporter)
@@ -4465,7 +4469,8 @@ import TypeChecker._
 
     def checkWhile(whileStmt: AST.Stmt.While): AST.Stmt = {
       val (newCond, _) = checkExp(AST.Typed.bOpt, scope, whileStmt.cond, reporter)
-      val (newInvs, newMods) = this(mode = ModeContext.Spec).
+      val thisL = this
+      val (newInvs, newMods) = thisL(mode = ModeContext.Spec).
         checkLoopInv(scope, whileStmt.invariants, whileStmt.modifies, reporter)
       val (_, newBody) = checkBody(F, None(), createNewScope(scope), whileStmt.body, reporter)
       return whileStmt(context = context, cond = newCond, invariants = newInvs, modifies = newMods, body = newBody)
@@ -4914,8 +4919,8 @@ import TypeChecker._
     val newStmts = checkStmts(ISZ(scope), None(), info.ast.stmts, reporter)
     var specVars: HashSMap[String, Info.SpecVar] = info.specVars
     var vars: HashSMap[String, Info.Var] = info.vars
-    var specMethods: HashMap[String, Info.SpecMethod] = info.specMethods
-    var methods: HashMap[String, Info.Method] = info.methods
+    var specMethods: HashSMap[String, Info.SpecMethod] = info.specMethods
+    var methods: HashSMap[String, Info.Method] = info.methods
     for (stmt <- newStmts) {
       stmt match {
         case stmt: AST.Stmt.Var =>
@@ -4971,8 +4976,8 @@ import TypeChecker._
     scope = scope(localThisOpt = Some(info.tpe))
     val newStmts = checkStmts(ISZ(scope), None(), info.ast.stmts, reporter)
     var specVars: HashSMap[String, Info.SpecVar] = info.specVars
-    var specMethods: HashMap[String, Info.SpecMethod] = info.specMethods
-    var methods: HashMap[String, Info.Method] = info.methods
+    var specMethods: HashSMap[String, Info.SpecMethod] = info.specMethods
+    var methods: HashSMap[String, Info.Method] = info.methods
     for (stmt <- newStmts) {
       stmt match {
         case stmt: AST.Stmt.SpecVar =>

@@ -55,11 +55,11 @@ object Scope {
     }
   }
 
-  @datatype class Local(nameMap: HashMap[String, Info],
-                        typeMap: HashMap[String, TypeInfo],
-                        localThisOpt: Option[AST.Typed],
-                        methodReturnOpt: Option[AST.Typed],
-                        indexMap: HashMap[String, AST.Typed],
+  @datatype class Local(val nameMap: HashMap[String, Info],
+                        val typeMap: HashMap[String, TypeInfo],
+                        val localThisOpt: Option[AST.Typed],
+                        val methodReturnOpt: Option[AST.Typed],
+                        val indexMap: HashMap[String, AST.Typed],
                         val outerOpt: Option[Scope]) extends Scope {
 
     @pure override def packageName: ISZ[String] = {
@@ -132,7 +132,7 @@ object Scope {
     }
   }
 
-  @datatype class Global(val packageName: ISZ[String], imports: ISZ[AST.Stmt.Import], enclosingName: ISZ[String])
+  @datatype class Global(val packageName: ISZ[String], val imports: ISZ[AST.Stmt.Import], val enclosingName: ISZ[String])
     extends Scope {
 
     @pure override def outerOpt: Option[Scope] = {
@@ -337,7 +337,7 @@ object Scope {
 
 object Info {
 
-  @datatype class Package(val name: ISZ[String], typedOpt: Option[AST.Typed], resOpt: Option[AST.ResolvedInfo])
+  @datatype class Package(val name: ISZ[String], val typedOpt: Option[AST.Typed], val resOpt: Option[AST.ResolvedInfo])
     extends Info {
 
     @pure override def posOpt: Option[Position] = {
@@ -345,10 +345,10 @@ object Info {
     }
   }
 
-  @datatype class Var(owner: ISZ[String],
-                      isInObject: B,
-                      scope: Scope,
-                      ast: AST.Stmt.Var) extends Info {
+  @datatype class Var(val owner: ISZ[String],
+                      val isInObject: B,
+                      val scope: Scope,
+                      val ast: AST.Stmt.Var) extends Info {
 
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
@@ -374,10 +374,10 @@ object Info {
     }
   }
 
-  @datatype class SpecVar(owner: ISZ[String],
-                          isInObject: B,
-                          scope: Scope,
-                          ast: AST.Stmt.SpecVar) extends Info {
+  @datatype class SpecVar(val owner: ISZ[String],
+                          val isInObject: B,
+                          val scope: Scope,
+                          val ast: AST.Stmt.SpecVar) extends Info {
 
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
@@ -400,7 +400,7 @@ object Info {
     }
   }
 
-  @datatype class Method(owner: ISZ[String], isInObject: B, scope: Scope, hasBody: B, ast: AST.Stmt.Method)
+  @datatype class Method(val owner: ISZ[String], val isInObject: B, val scope: Scope, val hasBody: B, val ast: AST.Stmt.Method)
     extends Info {
 
     @pure override def posOpt: Option[Position] = {
@@ -437,7 +437,7 @@ object Info {
 
   }
 
-  @datatype class SpecMethod(val owner: ISZ[String], isInObject: B, scope: Scope, ast: AST.Stmt.SpecMethod)
+  @datatype class SpecMethod(val owner: ISZ[String], val isInObject: B, val scope: Scope, val ast: AST.Stmt.SpecMethod)
     extends Info {
 
     @pure override def posOpt: Option[Position] = {
@@ -465,16 +465,16 @@ object Info {
     }
   }
 
-  @datatype class Object(owner: ISZ[String],
-                         isSynthetic: B,
-                         scope: Scope.Global,
-                         outlined: B,
-                         contractOutlined: B,
-                         typeChecked: B,
-                         ast: AST.Stmt.Object,
-                         typedOpt: Option[AST.Typed],
-                         resOpt: Option[AST.ResolvedInfo],
-                         constructorRes: AST.ResolvedInfo.Method) extends Info {
+  @datatype class Object(val owner: ISZ[String],
+                         val isSynthetic: B,
+                         val scope: Scope.Global,
+                         val outlined: B,
+                         val contractOutlined: B,
+                         val typeChecked: B,
+                         val ast: AST.Stmt.Object,
+                         val typedOpt: Option[AST.Typed],
+                         val resOpt: Option[AST.ResolvedInfo],
+                         val constructorRes: AST.ResolvedInfo.Method) extends Info {
 
     @pure override def name: ISZ[String] = {
       return owner :+ ast.id.value
@@ -486,7 +486,7 @@ object Info {
 
   }
 
-  @datatype class ExtMethod(owner: ISZ[String], scope: Scope.Global, ast: AST.Stmt.ExtMethod) extends Info {
+  @datatype class ExtMethod(val owner: ISZ[String], val scope: Scope.Global, val ast: AST.Stmt.ExtMethod) extends Info {
 
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
@@ -513,7 +513,7 @@ object Info {
     }
   }
 
-  @datatype class JustMethod(owner: ISZ[String], scope: Scope.Global, ast: AST.Stmt.JustMethod) extends Info {
+  @datatype class JustMethod(val owner: ISZ[String], val scope: Scope.Global, val ast: AST.Stmt.JustMethod) extends Info {
 
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
@@ -563,10 +563,10 @@ object Info {
   }
 
   @datatype class Enum(val name: ISZ[String],
-                       elements: Map[String, AST.ResolvedInfo],
-                       typedOpt: Option[AST.Typed],
-                       resOpt: Option[AST.ResolvedInfo],
-                       elementTypedOpt: Option[AST.Typed],
+                       val elements: Map[String, AST.ResolvedInfo],
+                       val typedOpt: Option[AST.Typed],
+                       val resOpt: Option[AST.ResolvedInfo],
+                       val elementTypedOpt: Option[AST.Typed],
                        val posOpt: Option[Position]) extends Info {
 
     val byNameTypedOpt: Option[AST.Typed] = Some(
@@ -618,10 +618,10 @@ object Info {
     )
   }
 
-  @datatype class EnumElement(owner: ISZ[String],
-                              id: String,
-                              typedOpt: Option[AST.Typed],
-                              resOpt: Option[AST.ResolvedInfo],
+  @datatype class EnumElement(val owner: ISZ[String],
+                              val id: String,
+                              val typedOpt: Option[AST.Typed],
+                              val resOpt: Option[AST.ResolvedInfo],
                               val posOpt: Option[Position]) extends Info {
 
     @pure override def name: ISZ[String] = {
@@ -631,10 +631,10 @@ object Info {
   }
 
   @datatype class LocalVar(val name: ISZ[String],
-                           isVal: B,
-                           ast: AST.Id,
-                           typedOpt: Option[AST.Typed],
-                           resOpt: Option[AST.ResolvedInfo]) extends Info {
+                           val isVal: B,
+                           val ast: AST.Id,
+                           val typedOpt: Option[AST.Typed],
+                           val resOpt: Option[AST.ResolvedInfo]) extends Info {
 
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
@@ -642,10 +642,10 @@ object Info {
 
   }
 
-  @datatype class Fact(owner: ISZ[String],
-                       id: String,
-                       scope: Scope.Global,
-                       ast: AST.Stmt.Fact) extends Info {
+  @datatype class Fact(val owner: ISZ[String],
+                       val id: String,
+                       val scope: Scope.Global,
+                       val ast: AST.Stmt.Fact) extends Info {
 
     val typedOpt: Option[AST.Typed] = Some(AST.Typed.Fact(owner, id))
 
@@ -662,10 +662,10 @@ object Info {
     }
   }
 
-  @datatype class Theorem(owner: ISZ[String],
-                          id: String,
-                          scope: Scope.Global,
-                          ast: AST.Stmt.Theorem) extends Info {
+  @datatype class Theorem(val owner: ISZ[String],
+                          val id: String,
+                          val scope: Scope.Global,
+                          val ast: AST.Stmt.Theorem) extends Info {
 
     val typedOpt: Option[AST.Typed] = Some(AST.Typed.Theorem(owner, id))
 
@@ -682,10 +682,10 @@ object Info {
     }
   }
 
-  @datatype class Inv(owner: ISZ[String],
-                      id: String,
-                      scope: Scope,
-                      ast: AST.Stmt.Inv) extends Info {
+  @datatype class Inv(val owner: ISZ[String],
+                      val id: String,
+                      val scope: Scope,
+                      val ast: AST.Stmt.Inv) extends Info {
 
     @memoize def typedOpt: Option[AST.Typed] = {
       return Some(AST.Typed.Inv(ast.attr.resOpt.get.asInstanceOf[AST.ResolvedInfo.Inv].isInObject, owner, id))
@@ -729,7 +729,7 @@ object Info {
 
 object TypeInfo {
 
-  @datatype class SubZ(owner: ISZ[String], ast: AST.Stmt.SubZ) extends TypeInfo {
+  @datatype class SubZ(val owner: ISZ[String], val ast: AST.Stmt.SubZ) extends TypeInfo {
 
     val typedOpt: Option[AST.Typed] = Some(AST.Typed.Name(name, ISZ()))
 
@@ -756,7 +756,7 @@ object TypeInfo {
     )
   }
 
-  @datatype class Enum(owner: ISZ[String], elements: Map[String, AST.ResolvedInfo], val posOpt: Option[Position])
+  @datatype class Enum(val owner: ISZ[String], val elements: Map[String, AST.ResolvedInfo], val posOpt: Option[Position])
     extends TypeInfo {
 
     val nameTypedOpt: Option[AST.Typed] = Some(
@@ -777,20 +777,20 @@ object TypeInfo {
     }
   }
 
-  @datatype class Sig(owner: ISZ[String],
-                      outlined: B,
-                      contractOutlined: B,
-                      typeChecked: B,
-                      tpe: AST.Typed.Name,
-                      ancestors: ISZ[AST.Typed.Name],
-                      specVars: HashSMap[String, Info.SpecVar],
-                      specMethods: HashMap[String, Info.SpecMethod],
-                      methods: HashMap[String, Info.Method],
-                      refinements: HashMap[String, Name],
-                      invariants: HashMap[String, Info.Inv],
-                      dataRefinements: ISZ[AST.Stmt.DataRefinement],
-                      scope: Scope.Global,
-                      ast: AST.Stmt.Sig) extends TypeInfo {
+  @datatype class Sig(val owner: ISZ[String],
+                      val outlined: B,
+                      val contractOutlined: B,
+                      val typeChecked: B,
+                      val tpe: AST.Typed.Name,
+                      val ancestors: ISZ[AST.Typed.Name],
+                      val specVars: HashSMap[String, Info.SpecVar],
+                      val specMethods: HashSMap[String, Info.SpecMethod],
+                      val methods: HashSMap[String, Info.Method],
+                      val refinements: HashSMap[String, Name],
+                      val invariants: HashSMap[String, Info.Inv],
+                      val dataRefinements: ISZ[AST.Stmt.DataRefinement],
+                      val scope: Scope.Global,
+                      val ast: AST.Stmt.Sig) extends TypeInfo {
 
     @pure override def name: ISZ[String] = {
       return owner :+ ast.id.value
@@ -853,27 +853,27 @@ object TypeInfo {
     }
   }
 
-  @datatype class Name(ids: ISZ[String])
+  @datatype class Name(val ids: ISZ[String])
 
-  @datatype class Adt(owner: ISZ[String],
-                      outlined: B,
-                      contractOutlined: B,
-                      typeChecked: B,
-                      tpe: AST.Typed.Name,
-                      constructorTypeOpt: Option[AST.Typed],
-                      constructorResOpt: Option[AST.ResolvedInfo],
-                      extractorTypeMap: Map[String, AST.Typed],
-                      extractorResOpt: Option[AST.ResolvedInfo],
-                      ancestors: ISZ[AST.Typed.Name],
-                      specVars: HashSMap[String, Info.SpecVar],
-                      vars: HashSMap[String, Info.Var],
-                      specMethods: HashMap[String, Info.SpecMethod],
-                      methods: HashMap[String, Info.Method],
-                      refinements: HashMap[String, Name],
-                      invariants: HashMap[String, Info.Inv],
-                      dataRefinements: ISZ[AST.Stmt.DataRefinement],
-                      scope: Scope.Global,
-                      ast: AST.Stmt.Adt) extends TypeInfo {
+  @datatype class Adt(val owner: ISZ[String],
+                      val outlined: B,
+                      val contractOutlined: B,
+                      val typeChecked: B,
+                      val tpe: AST.Typed.Name,
+                      val constructorTypeOpt: Option[AST.Typed],
+                      val constructorResOpt: Option[AST.ResolvedInfo],
+                      val extractorTypeMap: Map[String, AST.Typed],
+                      val extractorResOpt: Option[AST.ResolvedInfo],
+                      val ancestors: ISZ[AST.Typed.Name],
+                      val specVars: HashSMap[String, Info.SpecVar],
+                      val vars: HashSMap[String, Info.Var],
+                      val specMethods: HashSMap[String, Info.SpecMethod],
+                      val methods: HashSMap[String, Info.Method],
+                      val refinements: HashSMap[String, Name],
+                      val invariants: HashSMap[String, Info.Inv],
+                      val dataRefinements: ISZ[AST.Stmt.DataRefinement],
+                      val scope: Scope.Global,
+                      val ast: AST.Stmt.Adt) extends TypeInfo {
 
     @pure override def canHaveCompanion: B = {
       return T
@@ -946,7 +946,7 @@ object TypeInfo {
     }
   }
 
-  @datatype class TypeAlias(val name: ISZ[String], scope: Scope.Global, ast: AST.Stmt.TypeAlias) extends TypeInfo {
+  @datatype class TypeAlias(val name: ISZ[String], val scope: Scope.Global, val ast: AST.Stmt.TypeAlias) extends TypeInfo {
 
     @pure def outlined: B = {
       return ast.tipe.typedOpt.nonEmpty
@@ -961,7 +961,7 @@ object TypeInfo {
     }
   }
 
-  @datatype class TypeVar(id: String, ast: AST.TypeParam) extends TypeInfo {
+  @datatype class TypeVar(val id: String, val ast: AST.TypeParam) extends TypeInfo {
 
     @pure override def name: ISZ[String] = {
       return ISZ(id)
@@ -976,11 +976,11 @@ object TypeInfo {
     }
   }
 
-  @datatype class Members(specVars: HashSMap[String, Info.SpecVar],
-                          vars: HashSMap[String, Info.Var],
-                          specMethods: HashMap[String, Info.SpecMethod],
-                          methods: HashMap[String, Info.Method],
-                          refinements: HashMap[String, Name],
-                          invariants: HashMap[String, Info.Inv])
+  @datatype class Members(val specVars: HashSMap[String, Info.SpecVar],
+                          val vars: HashSMap[String, Info.Var],
+                          val specMethods: HashSMap[String, Info.SpecMethod],
+                          val methods: HashSMap[String, Info.Method],
+                          val refinements: HashSMap[String, Name],
+                          val invariants: HashSMap[String, Info.Inv])
 
 }

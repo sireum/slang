@@ -59,9 +59,9 @@ object TypeOutliner {
 
   @record class TypeMembers(var specVars: HashSMap[String, Info.SpecVar],
                             var vars: HashSMap[String, Info.Var],
-                            var specMethods: HashMap[String, Info.SpecMethod],
-                            var methods: HashMap[String, Info.Method],
-                            var invariants: HashMap[String, Info.Inv],
+                            var specMethods: HashSMap[String, Info.SpecMethod],
+                            var methods: HashSMap[String, Info.Method],
+                            var invariants: HashSMap[String, Info.Inv],
                             var drs: ISZ[AST.Stmt.DataRefinement],
                             var stmts: ISZ[AST.Stmt])
 
@@ -641,9 +641,9 @@ object TypeOutliner {
                     ): TypeInfo.Members = {
     var specVars = HashSMap.empty[String, Info.SpecVar]
     var vars = HashSMap.empty[String, Info.Var]
-    var specMethods = HashMap.empty[String, Info.SpecMethod]
-    var methods = HashMap.empty[String, Info.Method]
-    var invariants = HashMap.empty[String, Info.Inv]
+    var specMethods = HashSMap.empty[String, Info.SpecMethod]
+    var methods = HashSMap.empty[String, Info.Method]
+    var invariants = HashSMap.empty[String, Info.Inv]
 
     def isDeclared(id: String): B = {
       return specVars.contains(id) || vars.contains(id) || specMethods.contains(id) || methods.contains(id) || invariants.contains(id)
@@ -755,7 +755,7 @@ object TypeOutliner {
     }
 
     return TypeInfo
-      .Members(specVars, vars, specMethods, methods, HashMap.empty, invariants)
+      .Members(specVars, vars, specMethods, methods, HashSMap.empty, invariants)
   }
 
   def outlineInheritedMembers(

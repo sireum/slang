@@ -562,9 +562,9 @@ import GlobalDeclarationResolver._
   ): TypeInfo.Members = {
     var specVars = HashSMap.empty[String, Info.SpecVar]
     var vars = vs
-    var specMethods = HashMap.empty[String, Info.SpecMethod]
-    var methods = HashMap.empty[String, Info.Method]
-    var invs = HashMap.empty[String, Info.Inv]
+    var specMethods = HashSMap.empty[String, Info.SpecMethod]
+    var methods = HashSMap.empty[String, Info.Method]
+    var invs = HashSMap.empty[String, Info.Inv]
 
     @pure def checkId(id: AST.Id): Unit = {
       val name = id.value
@@ -660,7 +660,7 @@ import GlobalDeclarationResolver._
         case _ =>
       }
     }
-    TypeInfo.Members(specVars, vars, specMethods, methods, HashMap.empty, invs)
+    TypeInfo.Members(specVars, vars, specMethods, methods, HashSMap.empty, invs)
   }
 
   def declareName(entity: String, name: QName, info: Info, posOpt: Option[Position]): Unit = {
