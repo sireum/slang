@@ -29,16 +29,16 @@ package org.sireum.lang.ast
 import org.sireum._
 
 @enum object MethodMode {
-  'Method
-  'Spec
-  'Ext
-  'Just
-  'Constructor
-  'Copy
-  'Extractor
-  'ObjectConstructor
-  'Select
-  'Store
+  "Method"
+  "Spec"
+  "Ext"
+  "Just"
+  "Constructor"
+  "Copy"
+  "Extractor"
+  "ObjectConstructor"
+  "Select"
+  "Store"
 }
 
 @datatype trait Typed {
@@ -227,7 +227,7 @@ import org.sireum._
 
 object Typed {
 
-  @datatype class Name(ids: ISZ[String], args: ISZ[Typed]) extends Typed {
+  @datatype class Name(val ids: ISZ[String], val args: ISZ[Typed]) extends Typed {
 
     @pure override def isPureFun: B = {
       return F
@@ -257,7 +257,7 @@ object Typed {
     }
   }
 
-  @datatype class Tuple(args: ISZ[Typed]) extends Typed {
+  @datatype class Tuple(val args: ISZ[Typed]) extends Typed {
 
     @pure override def isPureFun: B = {
       return F
@@ -286,7 +286,7 @@ object Typed {
     }
   }
 
-  @datatype class Fun(isPure: B, isByName: B, args: ISZ[Typed], ret: Typed) extends Typed {
+  @datatype class Fun(val isPure: B, val isByName: B, val args: ISZ[Typed], val ret: Typed) extends Typed {
 
     @pure override def isPureFun: B = {
       return isPure
@@ -317,7 +317,7 @@ object Typed {
     }
   }
 
-  @datatype class TypeVar(id: String) extends Typed {
+  @datatype class TypeVar(val id: String) extends Typed {
 
     @pure override def isPureFun: B = {
       return F
@@ -346,7 +346,7 @@ object Typed {
     }
   }
 
-  @datatype class Package(name: ISZ[String]) extends Typed {
+  @datatype class Package(val name: ISZ[String]) extends Typed {
 
     @pure override def isPureFun: B = {
       return F
@@ -369,7 +369,7 @@ object Typed {
     }
   }
 
-  @datatype class Object(owner: ISZ[String], id: String) extends Typed {
+  @datatype class Object(val owner: ISZ[String], val id: String) extends Typed {
 
     @pure def name: ISZ[String] = {
       return owner :+ id
@@ -396,7 +396,7 @@ object Typed {
     }
   }
 
-  @datatype class Enum(name: ISZ[String]) extends Typed {
+  @datatype class Enum(val name: ISZ[String]) extends Typed {
 
     @pure override def isPureFun: B = {
       return F
@@ -419,13 +419,13 @@ object Typed {
     }
   }
 
-  @datatype class Method(isInObject: B,
-                         mode: MethodMode.Type,
-                         typeParams: ISZ[String],
-                         owner: ISZ[String],
-                         name: String,
-                         paramNames: ISZ[String],
-                         tpe: Typed.Fun) extends Typed {
+  @datatype class Method(val isInObject: B,
+                         val mode: MethodMode.Type,
+                         val typeParams: ISZ[String],
+                         val owner: ISZ[String],
+                         val name: String,
+                         val paramNames: ISZ[String],
+                         val tpe: Typed.Fun) extends Typed {
 
     @pure override def isPureFun: B = {
       return F
@@ -463,7 +463,7 @@ object Typed {
     }
   }
 
-  @datatype class Methods(methods: ISZ[Method]) extends Typed {
+  @datatype class Methods(val methods: ISZ[Method]) extends Typed {
 
     @pure override def isPureFun: B = {
       return F
@@ -489,7 +489,7 @@ object Typed {
     }
   }
 
-  @datatype class Fact(owner: ISZ[String], id: String) extends Typed {
+  @datatype class Fact(val owner: ISZ[String], val id: String) extends Typed {
 
     @pure def name: ISZ[String] = {
       return owner :+ id
@@ -517,7 +517,7 @@ object Typed {
   }
 
 
-  @datatype class Theorem(owner: ISZ[String], id: String) extends Typed {
+  @datatype class Theorem(val owner: ISZ[String], val id: String) extends Typed {
 
     @pure def name: ISZ[String] = {
       return owner :+ id
@@ -544,7 +544,7 @@ object Typed {
     }
   }
 
-  @datatype class Inv(isInObject: B, owner: ISZ[String], id: String) extends Typed {
+  @datatype class Inv(val isInObject: B, val owner: ISZ[String], val id: String) extends Typed {
 
     @pure def name: ISZ[String] = {
       return owner :+ id

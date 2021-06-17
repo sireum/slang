@@ -35,42 +35,42 @@ import org.sireum.lang.symbol.Resolver._
 object TypeChecker {
 
   @enum object BasicKind {
-    'B
-    'C
-    'Z
-    'Range
-    'Bits
-    'F32
-    'F64
-    'R
-    'String
+    "B"
+    "C"
+    "Z"
+    "Range"
+    "Bits"
+    "F32"
+    "F64"
+    "R"
+    "String"
   }
 
   @enum object BuiltInKind {
-    'Print
-    'Assertume
-    'Halt
+    "Print"
+    "Assertume"
+    "Halt"
   }
 
   @enum object TypeRelation {
-    'Subtype
-    'Equal
-    'Supertype
+    "Subtype"
+    "Equal"
+    "Supertype"
   }
 
   @enum object ModeContext {
-    'Code
-    'Spec
-    'SpecPost
+    "Code"
+    "Spec"
+    "SpecPost"
   }
 
-  @datatype class TypeFinder(th: TypeHierarchy, tname: QName) extends AST.Transformer.PrePost[B] {
+  @datatype class TypeFinder(val th: TypeHierarchy, val tname: QName) extends AST.Transformer.PrePost[B] {
     override def preTypedName(ctx: B, o: AST.Typed.Name): AST.Transformer.PreResult[B, AST.Typed] = {
       return if (tname == o.ids || th.poset.isChildOf(tname, o.ids)) AST.Transformer.PreResult(T, T, None())
       else AST.Transformer.PreResult(ctx, T, None())
     }
   }
-  @record class StrictPureChecker(typeVarMutable: B, th: TypeHierarchy, reporter: Reporter) extends AST.MTransformer {
+  @record class StrictPureChecker(val typeVarMutable: B, val th: TypeHierarchy, val reporter: Reporter) extends AST.MTransformer {
     def errVars(posOpt: Option[Position]): Unit = {
       reporter.error(posOpt, TypeChecker.typeCheckerKind, "@strictpure methods cannot refer to vars")
     }
@@ -692,7 +692,7 @@ object TypeChecker {
 
 import TypeChecker._
 
-@datatype class TypeChecker(typeHierarchy: TypeHierarchy, context: QName, isInMutableContext: B, mode: ModeContext.Type, strictAliasing: B) {
+@datatype class TypeChecker(val typeHierarchy: TypeHierarchy, val context: QName, val isInMutableContext: B, val mode: ModeContext.Type, val strictAliasing: B) {
 
   @pure def inSpec: B = {
     mode match {

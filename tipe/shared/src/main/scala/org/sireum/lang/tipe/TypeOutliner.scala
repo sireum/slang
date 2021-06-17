@@ -35,7 +35,7 @@ import org.sireum.lang.tipe.TypeOutliner.ExpTypedSubst
 
 object TypeOutliner {
 
-  @datatype class ExpTypedSubst(substMap: HashMap[String, AST.Typed]) extends AST.Transformer.PrePost[B] {
+  @datatype class ExpTypedSubst(val substMap: HashMap[String, AST.Typed]) extends AST.Transformer.PrePost[B] {
     override def preTypedTypeVar(ctx: B, o: AST.Typed.TypeVar): AST.Transformer.PreResult[B, AST.Typed] = {
       val id = o.id
       substMap.get(id) match {
@@ -246,7 +246,7 @@ object TypeOutliner {
 
 }
 
-@datatype class TypeOutliner(typeHierarchy: TypeHierarchy) {
+@datatype class TypeOutliner(val typeHierarchy: TypeHierarchy) {
 
   def outlineSpecVar(info: Info.SpecVar, reporter: Reporter): Option[Info] = {
     val sv = info.ast
