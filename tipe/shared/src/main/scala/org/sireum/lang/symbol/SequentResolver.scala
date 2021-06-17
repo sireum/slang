@@ -34,7 +34,7 @@ import org.sireum.lang.ast._
 
 object SequentResolver {
 
-  @datatype class QScope(nameMap: HashMap[String, Id], outerOpt: Option[QScope]) {
+  @datatype class QScope(val nameMap: HashMap[String, Id], val outerOpt: Option[QScope]) {
 
     @pure def resolve(name: String): Option[Id] = {
       nameMap.get(name) match {
@@ -52,7 +52,7 @@ object SequentResolver {
     var scope: QScope,
     var freeVarMap: HashMap[String, (Id, Z)],
     var hasQuant: B,
-    reporter: Reporter
+    val reporter: Reporter
   ) extends MTransformer {
 
     override def preExpQuantType(o: Exp.QuantType): MTransformer.PreResult[Exp.Quant] = {

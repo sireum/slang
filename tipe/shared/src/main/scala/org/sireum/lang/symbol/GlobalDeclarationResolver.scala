@@ -39,7 +39,7 @@ object GlobalDeclarationResolver {
 
 import GlobalDeclarationResolver._
 
-@record class GlobalDeclarationResolver(var globalNameMap: NameMap, var globalTypeMap: TypeMap, reporter: Reporter) {
+@record class GlobalDeclarationResolver(var globalNameMap: NameMap, var globalTypeMap: TypeMap, val reporter: Reporter) {
 
   var packageName: QName = ISZ()
   var currentName: QName = ISZ()
