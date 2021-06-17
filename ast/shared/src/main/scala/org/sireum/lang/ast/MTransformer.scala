@@ -34,8 +34,8 @@ import org.sireum._
 
 object MTransformer {
 
-  @record class PreResult[T](continu: B,
-                             resultOpt: MOption[T])
+  @record class PreResult[T](val continu: B,
+                             val resultOpt: MOption[T])
 
   def transformISZ[T](s: IS[Z, T], f: T => MOption[T]): MOption[IS[Z, T]] = {
     val s2: MS[Z, T] = s.toMS

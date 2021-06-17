@@ -36,12 +36,12 @@ import org.sireum._
 
 object Transformer {
 
-  @datatype class PreResult[Context, T](ctx: Context,
-                                        continu: B,
-                                        resultOpt: Option[T])
+  @datatype class PreResult[Context, T](val ctx: Context,
+                                        val continu: B,
+                                        val resultOpt: Option[T])
 
-  @datatype class TPostResult[Context, T](ctx: Context,
-                                     resultOpt: Option[T])
+  @datatype class TPostResult[Context, T](val ctx: Context,
+                                          val resultOpt: Option[T])
 
   @sig trait PrePost[Context] {
 
@@ -2269,7 +2269,7 @@ object Transformer {
 
 import Transformer._
 
-@datatype class Transformer[Context](pp: PrePost[Context]) {
+@datatype class Transformer[Context](val pp: PrePost[Context]) {
 
   @pure def transformTopUnit(ctx: Context, o: TopUnit): TPostResult[Context, TopUnit] = {
     val preR: PreResult[Context, TopUnit] = pp.preTopUnit(ctx, o)

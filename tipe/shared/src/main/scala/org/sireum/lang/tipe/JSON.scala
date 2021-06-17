@@ -2078,7 +2078,7 @@ object JSON {
 
   }
 
-  @record class Parser(input: String) {
+  @record class Parser(val input: String) {
     val parser: Json.Parser = Json.Parser.create(input)
 
     def errorOpt: Option[Json.ErrorMsg] = {
