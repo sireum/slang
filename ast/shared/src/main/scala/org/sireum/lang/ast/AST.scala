@@ -43,18 +43,18 @@ object TopUnit {
 
   }
 
-  @datatype class Program(val fileUriOpt: Option[String], packageName: Name, body: Body) extends TopUnit
+  @datatype class Program(val fileUriOpt: Option[String], val packageName: Name, val body: Body) extends TopUnit
 
-  @datatype class SequentUnit(val fileUriOpt: Option[String], sequent: Sequent) extends TopUnit
+  @datatype class SequentUnit(val fileUriOpt: Option[String], val sequent: Sequent) extends TopUnit
 
   @datatype class TruthTableUnit(val fileUriOpt: Option[String],
-                                 stars: ISZ[Position],
-                                 vars: ISZ[Id],
-                                 separator: Position,
-                                 isSequent: B,
-                                 sequent: Sequent,
-                                 rows: ISZ[TruthTable.Row],
-                                 conclusionOpt: Option[TruthTable.Conclusion]) extends TopUnit
+                                 val stars: ISZ[Position],
+                                 val vars: ISZ[Id],
+                                 val separator: Position,
+                                 val isSequent: B,
+                                 val sequent: Sequent,
+                                 val rows: ISZ[TruthTable.Row],
+                                 val conclusionOpt: Option[TruthTable.Conclusion]) extends TopUnit
 
 }
 
@@ -116,7 +116,7 @@ object TopUnit {
 
 object Stmt {
 
-  @datatype class Import(importers: ISZ[Import.Importer], @hidden attr: Attr) extends Stmt {
+  @datatype class Import(val importers: ISZ[Import.Importer], @hidden val attr: Attr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -126,19 +126,19 @@ object Stmt {
 
   object Import {
 
-    @datatype class Importer(name: Name, selectorOpt: Option[Selector])
+    @datatype class Importer(val name: Name, val selectorOpt: Option[Selector])
 
     @datatype trait Selector
 
-    @datatype class MultiSelector(selectors: ISZ[NamedSelector]) extends Selector
+    @datatype class MultiSelector(val selectors: ISZ[NamedSelector]) extends Selector
 
     @datatype class WildcardSelector extends Selector
 
-    @datatype class NamedSelector(from: Id, to: Id)
+    @datatype class NamedSelector(val from: Id, val to: Id)
 
   }
 
-  @datatype class Var(isSpec: B, isVal: B, id: Id, tipeOpt: Option[Type], initOpt: Option[AssignExp], @hidden attr: ResolvedAttr)
+  @datatype class Var(val isSpec: B, val isVal: B, val id: Id, val tipeOpt: Option[Type], val initOpt: Option[AssignExp], @hidden val attr: ResolvedAttr)
     extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
@@ -147,7 +147,7 @@ object Stmt {
 
   }
 
-  @datatype class VarPattern(isSpec: B, isVal: B, pattern: Pattern, tipeOpt: Option[Type], init: AssignExp, @hidden attr: Attr)
+  @datatype class VarPattern(val isSpec: B, val isVal: B, val pattern: Pattern, val tipeOpt: Option[Type], val init: AssignExp, @hidden val attr: Attr)
     extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
@@ -156,7 +156,7 @@ object Stmt {
 
   }
 
-  @datatype class SpecVar(isVal: B, id: Id, tipe: Type, @hidden attr: ResolvedAttr) extends Stmt {
+  @datatype class SpecVar(val isVal: B, val id: Id, val tipe: Type, @hidden val attr: ResolvedAttr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -164,14 +164,14 @@ object Stmt {
 
   }
 
-  @datatype class Method(typeChecked: B,
-                         purity: Purity.Type,
-                         hasOverride: B,
-                         isHelper: B,
-                         sig: MethodSig,
-                         mcontract: MethodContract,
-                         bodyOpt: Option[Body],
-                         @hidden attr: ResolvedAttr) extends Stmt {
+  @datatype class Method(val typeChecked: B,
+                         val purity: Purity.Type,
+                         val hasOverride: B,
+                         val isHelper: B,
+                         val sig: MethodSig,
+                         val mcontract: MethodContract,
+                         val bodyOpt: Option[Body],
+                         @hidden val attr: ResolvedAttr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -211,7 +211,7 @@ object Stmt {
     }
   }
 
-  @datatype class ExtMethod(isPure: B, sig: MethodSig, contract: MethodContract, @hidden attr: ResolvedAttr) extends Stmt {
+  @datatype class ExtMethod(val isPure: B, val sig: MethodSig, val contract: MethodContract, @hidden val attr: ResolvedAttr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -219,7 +219,7 @@ object Stmt {
 
   }
 
-  @datatype class JustMethod(etaOpt: Option[Exp.LitString], sig: MethodSig, @hidden attr: ResolvedAttr) extends Stmt {
+  @datatype class JustMethod(val etaOpt: Option[Exp.LitString], val sig: MethodSig, @hidden val attr: ResolvedAttr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -227,7 +227,7 @@ object Stmt {
 
   }
 
-  @datatype class SpecMethod(sig: MethodSig, @hidden attr: ResolvedAttr) extends Stmt {
+  @datatype class SpecMethod(val sig: MethodSig, @hidden val attr: ResolvedAttr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -235,7 +235,7 @@ object Stmt {
 
   }
 
-  @datatype class Enum(id: Id, elements: ISZ[Id], @hidden attr: Attr) extends Stmt {
+  @datatype class Enum(val id: Id, val elements: ISZ[Id], @hidden val attr: Attr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -243,18 +243,18 @@ object Stmt {
 
   }
 
-  @datatype class SubZ(id: Id,
-                       isSigned: B,
-                       isBitVector: B,
-                       isWrapped: B,
-                       hasMin: B,
-                       hasMax: B,
-                       bitWidth: Z,
-                       min: Z,
-                       max: Z,
-                       isIndex: B,
-                       index: Z,
-                       @hidden attr: Attr) extends Stmt {
+  @datatype class SubZ(val id: Id,
+                       val isSigned: B,
+                       val isBitVector: B,
+                       val isWrapped: B,
+                       val hasMin: B,
+                       val hasMax: B,
+                       val bitWidth: Z,
+                       val min: Z,
+                       val max: Z,
+                       val isIndex: B,
+                       val index: Z,
+                       @hidden val attr: Attr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -265,7 +265,7 @@ object Stmt {
     }
   }
 
-  @datatype class Object(isApp: B, extNameOpt: Option[String], id: Id, stmts: ISZ[Stmt], @hidden attr: Attr) extends Stmt {
+  @datatype class Object(val isApp: B, val extNameOpt: Option[String], val id: Id, val stmts: ISZ[Stmt], @hidden val attr: Attr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -273,13 +273,13 @@ object Stmt {
 
   }
 
-  @datatype class Sig(isImmutable: B,
-                      isExt: B,
-                      id: Id,
-                      typeParams: ISZ[TypeParam],
-                      parents: ISZ[Type.Named],
-                      stmts: ISZ[Stmt],
-                      @hidden attr: Attr) extends Stmt {
+  @datatype class Sig(val isImmutable: B,
+                      val isExt: B,
+                      val id: Id,
+                      val typeParams: ISZ[TypeParam],
+                      val parents: ISZ[Type.Named],
+                      val stmts: ISZ[Stmt],
+                      @hidden val attr: Attr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -287,14 +287,14 @@ object Stmt {
 
   }
 
-  @datatype class Adt(isRoot: B,
-                      isDatatype: B,
-                      id: Id,
-                      typeParams: ISZ[TypeParam],
-                      params: ISZ[AdtParam],
-                      parents: ISZ[Type.Named],
-                      stmts: ISZ[Stmt],
-                      @hidden attr: Attr) extends Stmt {
+  @datatype class Adt(val isRoot: B,
+                      val isDatatype: B,
+                      val id: Id,
+                      val typeParams: ISZ[TypeParam],
+                      val params: ISZ[AdtParam],
+                      val parents: ISZ[Type.Named],
+                      val stmts: ISZ[Stmt],
+                      @hidden val attr: Attr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -302,7 +302,7 @@ object Stmt {
 
   }
 
-  @datatype class TypeAlias(id: Id, typeParams: ISZ[TypeParam], tipe: Type, @hidden attr: Attr) extends Stmt {
+  @datatype class TypeAlias(val id: Id, val typeParams: ISZ[TypeParam], val tipe: Type, @hidden val attr: Attr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -310,7 +310,7 @@ object Stmt {
 
   }
 
-  @datatype class Assign(lhs: Exp, rhs: AssignExp, @hidden attr: Attr) extends Stmt {
+  @datatype class Assign(val lhs: Exp, val rhs: AssignExp, @hidden val attr: Attr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -318,7 +318,7 @@ object Stmt {
 
   }
 
-  @datatype class Block(body: Body, @hidden attr: Attr) extends Stmt with AssignExp {
+  @datatype class Block(val body: Body, @hidden val attr: Attr) extends Stmt with AssignExp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -337,7 +337,7 @@ object Stmt {
     }
   }
 
-  @datatype class If(cond: Exp, thenBody: Body, elseBody: Body, @hidden attr: Attr) extends Stmt with AssignExp {
+  @datatype class If(val cond: Exp, val thenBody: Body, val elseBody: Body, @hidden val attr: Attr) extends Stmt with AssignExp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -356,7 +356,7 @@ object Stmt {
     }
   }
 
-  @datatype class Match(exp: Exp, cases: ISZ[Case], @hidden attr: Attr) extends Stmt with AssignExp {
+  @datatype class Match(val exp: Exp, val cases: ISZ[Case], @hidden val attr: Attr) extends Stmt with AssignExp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -390,7 +390,7 @@ object Stmt {
                         val modifies: ISZ[Exp.Ident],
                         val maxItOpt: Option[Exp.LitZ],
                         val body: Body,
-                        @hidden attr: Attr) extends Stmt with Loop {
+                        @hidden val attr: Attr) extends Stmt with Loop {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -404,7 +404,7 @@ object Stmt {
                           val modifies: ISZ[Exp.Ident],
                           val maxItOpt: Option[Exp.LitZ],
                           val body: Body,
-                          @hidden attr: Attr) extends Stmt with Loop {
+                          @hidden val attr: Attr) extends Stmt with Loop {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -416,7 +416,7 @@ object Stmt {
                       val enumGens: ISZ[EnumGen.For],
                       val modifies: ISZ[Exp.Ident],
                       val body: Body,
-                      @hidden attr: Attr) extends Stmt with Loop {
+                      @hidden val attr: Attr) extends Stmt with Loop {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -428,7 +428,7 @@ object Stmt {
     @strictpure override def maxItOpt: Option[Exp.LitZ] = None()
   }
 
-  @datatype class Return(expOpt: Option[Exp], @hidden attr: TypedAttr) extends Stmt with AssignExp {
+  @datatype class Return(val expOpt: Option[Exp], @hidden val attr: TypedAttr) extends Stmt with AssignExp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -444,7 +444,7 @@ object Stmt {
 
   }
 
-  @datatype class Expr(exp: Exp, @hidden attr: TypedAttr) extends Stmt with AssignExp {
+  @datatype class Expr(val exp: Exp, @hidden val attr: TypedAttr) extends Stmt with AssignExp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -466,71 +466,71 @@ object Stmt {
 
   @datatype trait Spec extends Stmt
 
-  @datatype class Fact(id: Id,
-                       typeParams: ISZ[TypeParam],
-                       descOpt: Option[Exp.LitString],
-                       claims: ISZ[Exp],
-                       @hidden attr: ResolvedAttr) extends Spec {
+  @datatype class Fact(val id: Id,
+                       val typeParams: ISZ[TypeParam],
+                       val descOpt: Option[Exp.LitString],
+                       val claims: ISZ[Exp],
+                       @hidden val attr: ResolvedAttr) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
   }
 
-  @datatype class Inv(id: Id,
-                      claims: ISZ[Exp],
-                      @hidden attr: ResolvedAttr) extends Spec {
+  @datatype class Inv(val id: Id,
+                      val claims: ISZ[Exp],
+                      @hidden val attr: ResolvedAttr) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
   }
 
-  @datatype class Theorem(isLemma: B,
-                          id: Id,
-                          typeParams: ISZ[TypeParam],
-                          descOpt: Option[Exp.LitString],
-                          claim: Exp,
-                          isFun: B,
-                          proof: ProofAst,
-                          @hidden attr: ResolvedAttr) extends Spec {
+  @datatype class Theorem(val isLemma: B,
+                          val id: Id,
+                          val typeParams: ISZ[TypeParam],
+                          val descOpt: Option[Exp.LitString],
+                          val claim: Exp,
+                          val isFun: B,
+                          val proof: ProofAst,
+                          @hidden val attr: ResolvedAttr) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
   }
 
-  @datatype class DataRefinement(rep: Exp.Ident,
-                                 refs: ISZ[Exp.Ident],
-                                 claims: ISZ[Exp],
-                                 @hidden attr: Attr) extends Spec {
+  @datatype class DataRefinement(val rep: Exp.Ident,
+                                 val refs: ISZ[Exp.Ident],
+                                 val claims: ISZ[Exp],
+                                 @hidden val attr: Attr) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
   }
 
-  @datatype class SpecLabel(id: Id) extends Spec {
+  @datatype class SpecLabel(val id: Id) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return id.attr.posOpt
     }
   }
 
-  @datatype class SpecBlock(block: Block) extends Spec {
+  @datatype class SpecBlock(val block: Block) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return block.posOpt
     }
   }
 
-  @datatype class DeduceSequent(justOpt: Option[Exp.LitString], sequents: ISZ[Sequent], @hidden attr: Attr) extends Spec {
+  @datatype class DeduceSequent(val justOpt: Option[Exp.LitString], val sequents: ISZ[Sequent], @hidden val attr: Attr) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
   }
 
-  @datatype class DeduceSteps(steps: ISZ[ProofAst.Step], @hidden attr: Attr) extends Spec {
+  @datatype class DeduceSteps(val steps: ISZ[ProofAst.Step], @hidden val attr: Attr) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
   }
 
-  @datatype class Havoc(args: ISZ[Exp.Ident], @hidden attr: Attr) extends Spec {
+  @datatype class Havoc(val args: ISZ[Exp.Ident], @hidden val attr: Attr) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
@@ -599,12 +599,12 @@ object MethodContract {
   }
 }
 
-@datatype class Sequent(premises: ISZ[Exp],
-                        conclusion: Exp,
-                        steps: ISZ[ProofAst.Step],
-                        @hidden attr: Attr)
+@datatype class Sequent(val premises: ISZ[Exp],
+                        val conclusion: Exp,
+                        val steps: ISZ[ProofAst.Step],
+                        @hidden val attr: Attr)
 
-@datatype class ProofAst(steps: ISZ[ProofAst.Step], @hidden attr: Attr)
+@datatype class ProofAst(val steps: ISZ[ProofAst.Step], @hidden val attr: Attr)
 
 object ProofAst {
 
@@ -650,7 +650,7 @@ object ProofAst {
 
     object Let {
 
-      @datatype class Param(id: Id, tipeOpt: Option[Type])
+      @datatype class Param(val id: Id, val tipeOpt: Option[Type])
 
     }
 
@@ -664,12 +664,12 @@ object ProofAst {
 
     object StructInduction {
 
-      @datatype class MatchCase(pattern: Pattern.Structure,
-                                hypoOpt: Option[Assume],
-                                steps: ISZ[Step])
+      @datatype class MatchCase(val pattern: Pattern.Structure,
+                                val hypoOpt: Option[Assume],
+                                val steps: ISZ[Step])
 
-      @datatype class MatchDefault(hypoOpt: Option[Assume],
-                                   steps: ISZ[Step])
+      @datatype class MatchDefault(val hypoOpt: Option[Assume],
+                                   val steps: ISZ[Step])
     }
 
     @datatype trait Justification {
@@ -767,7 +767,7 @@ object ProofAst {
   'StrictPure
 }
 
-@datatype class Case(pattern: Pattern, condOpt: Option[Exp], body: Body)
+@datatype class Case(val pattern: Pattern, val condOpt: Option[Exp], val body: Body)
 
 object EnumGen {
 
@@ -777,13 +777,13 @@ object EnumGen {
 
   object Range {
 
-    @datatype class Expr(exp: Exp, @hidden attr: Attr) extends Range {
+    @datatype class Expr(val exp: Exp, @hidden val attr: Attr) extends Range {
       @pure override def prettyST: ST = {
         return exp.prettyST
       }
     }
 
-    @datatype class Step(isInclusive: B, start: Exp, end: Exp, byOpt: Option[Exp], @hidden attr: Attr) extends Range {
+    @datatype class Step(val isInclusive: B, val start: Exp, val end: Exp, val byOpt: Option[Exp], @hidden val attr: Attr) extends Range {
       @pure override def prettyST: ST = {
         val bOpt: Option[ST] = byOpt match {
           case Some(by) => Some(st" by ${by.prettyST}")
@@ -795,11 +795,11 @@ object EnumGen {
 
   }
 
-  @datatype class For(idOpt: Option[Id],
-                      range: Range,
-                      condOpt: Option[Exp],
-                      invariants: ISZ[Exp],
-                      maxItOpt: Option[Exp.LitZ]) {
+  @datatype class For(val idOpt: Option[Id],
+                      val range: Range,
+                      val condOpt: Option[Exp],
+                      val invariants: ISZ[Exp],
+                      val maxItOpt: Option[Exp.LitZ]) {
     @pure def prettyST: ST = {
       val id: String = idOpt match {
         case Some(id) => id.value
@@ -828,7 +828,7 @@ object EnumGen {
 
 object Type {
 
-  @datatype class Named(name: Name, typeArgs: ISZ[Type], @hidden attr: TypedAttr) extends Type {
+  @datatype class Named(val name: Name, val typeArgs: ISZ[Type], @hidden val attr: TypedAttr) extends Type {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -864,7 +864,7 @@ object Type {
 
   }
 
-  @datatype class Fun(isPure: B, isByName: B, args: ISZ[Type], ret: Type, @hidden attr: TypedAttr) extends Type {
+  @datatype class Fun(val isPure: B, val isByName: B, val args: ISZ[Type], val ret: Type, @hidden val attr: TypedAttr) extends Type {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -901,7 +901,7 @@ object Type {
     }
   }
 
-  @datatype class Tuple(args: ISZ[Type], @hidden attr: TypedAttr) extends Type {
+  @datatype class Tuple(val args: ISZ[Type], @hidden val attr: TypedAttr) extends Type {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -943,7 +943,7 @@ object Type {
 
 object Pattern {
 
-  @datatype class Literal(lit: Lit) extends Pattern {
+  @datatype class Literal(val lit: Lit) extends Pattern {
 
     @pure override def posOpt: Option[Position] = {
       return lit.posOpt
@@ -953,7 +953,7 @@ object Pattern {
 
   }
 
-  @datatype class LitInterpolate(prefix: String, value: String, @hidden attr: TypedAttr) extends Pattern {
+  @datatype class LitInterpolate(val prefix: String, val value: String, @hidden val attr: TypedAttr) extends Pattern {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -963,7 +963,7 @@ object Pattern {
 
   }
 
-  @datatype class Ref(name: Name, @hidden attr: ResolvedAttr) extends Pattern {
+  @datatype class Ref(val name: Name, @hidden val attr: ResolvedAttr) extends Pattern {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -973,7 +973,7 @@ object Pattern {
 
   }
 
-  @datatype class VarBinding(id: Id, tipeOpt: Option[Type], @hidden attr: TypedAttr) extends Pattern {
+  @datatype class VarBinding(val id: Id, val tipeOpt: Option[Type], @hidden val attr: TypedAttr) extends Pattern {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -982,7 +982,7 @@ object Pattern {
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
   }
 
-  @datatype class Wildcard(typeOpt: Option[Type], @hidden attr: TypedAttr) extends Pattern {
+  @datatype class Wildcard(val typeOpt: Option[Type], @hidden val attr: TypedAttr) extends Pattern {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -991,7 +991,7 @@ object Pattern {
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
   }
 
-  @datatype class SeqWildcard(@hidden attr: TypedAttr) extends Pattern {
+  @datatype class SeqWildcard(@hidden val attr: TypedAttr) extends Pattern {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1000,10 +1000,10 @@ object Pattern {
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
   }
 
-  @datatype class Structure(idOpt: Option[Id],
-                            nameOpt: Option[Name],
-                            patterns: ISZ[Pattern],
-                            @hidden attr: ResolvedAttr) extends Pattern {
+  @datatype class Structure(val idOpt: Option[Id],
+                            val nameOpt: Option[Name],
+                            val patterns: ISZ[Pattern],
+                            @hidden val attr: ResolvedAttr) extends Pattern {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1038,7 +1038,7 @@ object Pattern {
 
 object Exp {
 
-  @datatype class LitB(val value: B, @hidden attr: Attr) extends Exp with Lit {
+  @datatype class LitB(val value: B, @hidden val attr: Attr) extends Exp with Lit {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1053,7 +1053,7 @@ object Exp {
     }
   }
 
-  @datatype class LitC(val value: C, @hidden attr: Attr) extends Exp with Lit {
+  @datatype class LitC(val value: C, @hidden val attr: Attr) extends Exp with Lit {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1068,7 +1068,7 @@ object Exp {
     }
   }
 
-  @datatype class LitZ(val value: Z, @hidden attr: Attr) extends Exp with Lit {
+  @datatype class LitZ(val value: Z, @hidden val attr: Attr) extends Exp with Lit {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1083,7 +1083,7 @@ object Exp {
     }
   }
 
-  @datatype class LitF32(val value: F32, @hidden attr: Attr) extends Exp with Lit {
+  @datatype class LitF32(val value: F32, @hidden val attr: Attr) extends Exp with Lit {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1098,7 +1098,7 @@ object Exp {
     }
   }
 
-  @datatype class LitF64(val value: F64, @hidden attr: Attr) extends Exp with Lit {
+  @datatype class LitF64(val value: F64, @hidden val attr: Attr) extends Exp with Lit {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1113,7 +1113,7 @@ object Exp {
     }
   }
 
-  @datatype class LitR(val value: R, @hidden attr: Attr) extends Exp with Lit {
+  @datatype class LitR(val value: R, @hidden val attr: Attr) extends Exp with Lit {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1128,7 +1128,7 @@ object Exp {
     }
   }
 
-  @datatype class LitString(val value: String, @hidden attr: Attr) extends Exp with Lit {
+  @datatype class LitString(val value: String, @hidden val attr: Attr) extends Exp with Lit {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1143,7 +1143,7 @@ object Exp {
     }
   }
 
-  @datatype class LitStepId(val value: String, @hidden attr: Attr) extends Exp with Lit {
+  @datatype class LitStepId(val value: String, @hidden val attr: Attr) extends Exp with Lit {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1158,7 +1158,7 @@ object Exp {
     }
   }
 
-  @datatype class StringInterpolate(prefix: String, lits: ISZ[LitString], args: ISZ[Exp], @hidden attr: TypedAttr)
+  @datatype class StringInterpolate(val prefix: String, val lits: ISZ[LitString], val args: ISZ[Exp], @hidden val attr: TypedAttr)
     extends Exp {
 
     @pure override def posOpt: Option[Position] = {
@@ -1185,7 +1185,7 @@ object Exp {
     }
   }
 
-  @datatype class This(@hidden attr: TypedAttr) extends Exp {
+  @datatype class This(@hidden val attr: TypedAttr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1200,7 +1200,7 @@ object Exp {
     }
   }
 
-  @datatype class Super(idOpt: Option[Id], @hidden attr: TypedAttr) extends Exp {
+  @datatype class Super(val idOpt: Option[Id], @hidden val attr: TypedAttr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1225,7 +1225,7 @@ object Exp {
     'Complement
   }
 
-  @datatype class Unary(op: UnaryOp.Type, exp: Exp, @hidden attr: ResolvedAttr) extends Exp {
+  @datatype class Unary(val op: UnaryOp.Type, val exp: Exp, @hidden val attr: ResolvedAttr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1312,7 +1312,7 @@ object Exp {
     @pure def subst(substMap: HashMap[String, Typed]): Ref
   }
 
-  @datatype class Binary(left: Exp, op: String, right: Exp, @hidden attr: ResolvedAttr) extends Exp {
+  @datatype class Binary(val left: Exp, val op: String, val right: Exp, @hidden val attr: ResolvedAttr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1342,7 +1342,7 @@ object Exp {
 
   }
 
-  @datatype class Ident(id: Id, @hidden attr: ResolvedAttr) extends Exp with Ref {
+  @datatype class Ident(val id: Id, @hidden val attr: ResolvedAttr) extends Exp with Ref {
 
     @pure override def targs: ISZ[Type] = {
       return Ident.targs
@@ -1389,7 +1389,7 @@ object Exp {
     }
   }
 
-  @datatype class Eta(ref: Ref, @hidden attr: TypedAttr) extends Exp {
+  @datatype class Eta(val ref: Ref, @hidden val attr: TypedAttr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1404,7 +1404,7 @@ object Exp {
     }
   }
 
-  @datatype class Tuple(args: ISZ[Exp], @hidden attr: TypedAttr) extends Exp {
+  @datatype class Tuple(val args: ISZ[Exp], @hidden val attr: TypedAttr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1419,7 +1419,7 @@ object Exp {
     }
   }
 
-  @datatype class Select(receiverOpt: Option[Exp], id: Id, val targs: ISZ[Type], @hidden attr: ResolvedAttr)
+  @datatype class Select(val receiverOpt: Option[Exp], val id: Id, val targs: ISZ[Type], @hidden val attr: ResolvedAttr)
     extends Exp with Ref {
 
     @pure override def asExp: Exp = {
@@ -1450,11 +1450,11 @@ object Exp {
 
   }
 
-  @datatype class Invoke(receiverOpt: Option[Exp],
-                         ident: Ident,
-                         targs: ISZ[Type],
-                         args: ISZ[Exp],
-                         @hidden attr: ResolvedAttr) extends Exp {
+  @datatype class Invoke(val receiverOpt: Option[Exp],
+                         val ident: Ident,
+                         val targs: ISZ[Type],
+                         val args: ISZ[Exp],
+                         @hidden val attr: ResolvedAttr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1471,11 +1471,11 @@ object Exp {
     }
   }
 
-  @datatype class InvokeNamed(receiverOpt: Option[Exp],
-                              ident: Ident,
-                              targs: ISZ[Type],
-                              args: ISZ[NamedArg],
-                              @hidden attr: ResolvedAttr) extends Exp {
+  @datatype class InvokeNamed(val receiverOpt: Option[Exp],
+                              val ident: Ident,
+                              val targs: ISZ[Type],
+                              val args: ISZ[NamedArg],
+                              @hidden val attr: ResolvedAttr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1492,7 +1492,7 @@ object Exp {
     }
   }
 
-  @datatype class If(cond: Exp, thenExp: Exp, elseExp: Exp, @hidden attr: TypedAttr) extends Exp {
+  @datatype class If(val cond: Exp, val thenExp: Exp, val elseExp: Exp, @hidden val attr: TypedAttr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1509,14 +1509,14 @@ object Exp {
 
   object Fun {
 
-    @datatype class Param(idOpt: Option[Id], tipeOpt: Option[Type], typedOpt: Option[Typed])
+    @datatype class Param(val idOpt: Option[Id], val tipeOpt: Option[Type], val typedOpt: Option[Typed])
 
   }
 
-  @datatype class Fun(context: ISZ[String],
-                      params: ISZ[Fun.Param],
-                      exp: AssignExp,
-                      @hidden attr: TypedAttr) extends Exp {
+  @datatype class Fun(val context: ISZ[String],
+                      val params: ISZ[Fun.Param],
+                      val exp: AssignExp,
+                      @hidden val attr: TypedAttr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1545,7 +1545,7 @@ object Exp {
     }
   }
 
-  @datatype class ForYield(enumGens: ISZ[EnumGen.For], exp: Exp, @hidden attr: TypedAttr) extends Exp {
+  @datatype class ForYield(val enumGens: ISZ[EnumGen.For], val exp: Exp, @hidden val attr: TypedAttr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1581,7 +1581,7 @@ object Exp {
 
   }
 
-  @datatype class QuantRange(val isForall: B, lo: Exp, hi: Exp, hiExact: B, val fun: Exp.Fun, @hidden attr: ResolvedAttr) extends Quant {
+  @datatype class QuantRange(val isForall: B, val lo: Exp, val hi: Exp, val hiExact: B, val fun: Exp.Fun, @hidden val attr: ResolvedAttr) extends Quant {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1597,7 +1597,7 @@ object Exp {
 
   }
 
-  @datatype class QuantEach(val isForall: B, seq: Exp, val fun: Exp.Fun, @hidden attr: ResolvedAttr) extends Quant {
+  @datatype class QuantEach(val isForall: B, val seq: Exp, val fun: Exp.Fun, @hidden val attr: ResolvedAttr) extends Quant {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1612,7 +1612,7 @@ object Exp {
     }
   }
 
-  @datatype class Input(exp: Exp, @hidden attr: Attr) extends Exp {
+  @datatype class Input(val exp: Exp, @hidden val attr: Attr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1627,7 +1627,7 @@ object Exp {
     }
   }
 
-  @datatype class OldVal(exp: Exp, @hidden attr: Attr) extends Exp {
+  @datatype class OldVal(val exp: Exp, @hidden val attr: Attr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1642,7 +1642,7 @@ object Exp {
     }
   }
 
-  @datatype class LoopIndex(tipeOpt: Option[Type], exp: Exp.Ident, @hidden attr: TypedAttr) extends Exp {
+  @datatype class LoopIndex(val tipeOpt: Option[Type], val exp: Exp.Ident, @hidden val attr: TypedAttr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1664,7 +1664,7 @@ object Exp {
     }
   }
 
-  @datatype class StateSeq(id: Id, fragments: ISZ[StateSeq.Fragment], @hidden attr: Attr) extends Exp {
+  @datatype class StateSeq(val id: Id, val fragments: ISZ[StateSeq.Fragment], @hidden val attr: Attr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1682,7 +1682,7 @@ object Exp {
 
   object StateSeq {
 
-    @datatype class Fragment(id: Id, exp: Exp) {
+    @datatype class Fragment(val id: Id, val exp: Exp) {
       @pure def prettyST: ST = {
         return st"${id.value} ~ ${exp.prettyST}"
       }
@@ -1690,7 +1690,7 @@ object Exp {
 
   }
 
-  @datatype class Result(tipeOpt: Option[Type], @hidden attr: TypedAttr) extends Exp {
+  @datatype class Result(val tipeOpt: Option[Type], @hidden val attr: TypedAttr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1711,27 +1711,27 @@ object Exp {
 
 }
 
-@datatype class NamedArg(id: Id, arg: Exp, index: Z)
+@datatype class NamedArg(val id: Id, val arg: Exp, val index: Z)
 
-@datatype class Id(value: String, @hidden attr: Attr)
+@datatype class Id(val value: String, @hidden val attr: Attr)
 
-@datatype class Name(ids: ISZ[Id], @hidden attr: Attr)
+@datatype class Name(val ids: ISZ[Id], @hidden val attr: Attr)
 
-@datatype class Body(stmts: ISZ[Stmt], @hidden undecls: ISZ[ResolvedInfo.LocalVar]) {
+@datatype class Body(val stmts: ISZ[Stmt], @hidden val undecls: ISZ[ResolvedInfo.LocalVar]) {
 
   @pure def leaves: ISZ[Option[Stmt]] = {
     return if (stmts.isEmpty) ISZ(None()) else stmts(stmts.size - 1).leaves
   }
 }
 
-@datatype class AdtParam(isHidden: B, isVal: B, id: Id, tipe: Type)
+@datatype class AdtParam(val isHidden: B, val isVal: B, val id: Id, val tipe: Type)
 
-@datatype class MethodSig(isPure: B,
-                          id: Id,
-                          typeParams: ISZ[TypeParam],
-                          hasParams: B,
-                          params: ISZ[Param],
-                          returnType: Type) {
+@datatype class MethodSig(val isPure: B,
+                          val id: Id,
+                          val typeParams: ISZ[TypeParam],
+                          val hasParams: B,
+                          val params: ISZ[Param],
+                          val returnType: Type) {
 
   @strictpure def paramIdTypes: ISZ[(Id, Typed)] = for (p <- params) yield (p.id, p.tipe.typedOpt.get)
 
@@ -1744,15 +1744,15 @@ object Exp {
   }
 }
 
-@datatype class Param(isHidden: B, id: Id, tipe: Type)
+@datatype class Param(val isHidden: B, val id: Id, val tipe: Type)
 
-@datatype class TypeParam(id: Id)
+@datatype class TypeParam(val id: Id)
 
-@datatype class Attr(posOpt: Option[Position])
+@datatype class Attr(val posOpt: Option[Position])
 
-@datatype class TypedAttr(posOpt: Option[Position], typedOpt: Option[Typed])
+@datatype class TypedAttr(val posOpt: Option[Position], val typedOpt: Option[Typed])
 
-@datatype class ResolvedAttr(posOpt: Option[Position], resOpt: Option[ResolvedInfo], typedOpt: Option[Typed])
+@datatype class ResolvedAttr(val posOpt: Option[Position], val resOpt: Option[ResolvedInfo], val typedOpt: Option[Typed])
 
 @datatype trait ResolvedInfo {
 
@@ -1825,27 +1825,27 @@ object ResolvedInfo {
 
   }
 
-  @datatype class BuiltIn(kind: BuiltIn.Kind.Type) extends ResolvedInfo
+  @datatype class BuiltIn(val kind: BuiltIn.Kind.Type) extends ResolvedInfo
 
-  @datatype class Package(name: ISZ[String]) extends ResolvedInfo
+  @datatype class Package(val name: ISZ[String]) extends ResolvedInfo
 
-  @datatype class Enum(name: ISZ[String]) extends ResolvedInfo
+  @datatype class Enum(val name: ISZ[String]) extends ResolvedInfo
 
-  @datatype class EnumElement(owner: ISZ[String], name: String, ordinal: Z) extends ResolvedInfo
+  @datatype class EnumElement(val owner: ISZ[String], val name: String, val ordinal: Z) extends ResolvedInfo
 
-  @datatype class Object(name: ISZ[String]) extends ResolvedInfo
+  @datatype class Object(val name: ISZ[String]) extends ResolvedInfo
 
-  @datatype class Var(isInObject: B, isSpec: B, isVal: B, owner: ISZ[String], id: String) extends ResolvedInfo
+  @datatype class Var(val isInObject: B, val isSpec: B, val isVal: B, val owner: ISZ[String], val id: String) extends ResolvedInfo
 
-  @datatype class Method(isInObject: B,
-                         mode: MethodMode.Type,
-                         typeParams: ISZ[String],
-                         owner: ISZ[String],
-                         id: String,
-                         paramNames: ISZ[String],
-                         tpeOpt: Option[Typed.Fun],
-                         reads: ISZ[ResolvedInfo],
-                         writes: ISZ[ResolvedInfo]) extends ResolvedInfo {
+  @datatype class Method(val isInObject: B,
+                         val mode: MethodMode.Type,
+                         val typeParams: ISZ[String],
+                         val owner: ISZ[String],
+                         val id: String,
+                         val paramNames: ISZ[String],
+                         val tpeOpt: Option[Typed.Fun],
+                         val reads: ISZ[ResolvedInfo],
+                         val writes: ISZ[ResolvedInfo]) extends ResolvedInfo {
 
     @pure override def subst(substMap: HashMap[String, Typed]): ResolvedInfo = {
       tpeOpt match {
@@ -1857,9 +1857,9 @@ object ResolvedInfo {
 
   }
 
-  @datatype class Methods(methods: ISZ[Method]) extends ResolvedInfo
+  @datatype class Methods(val methods: ISZ[Method]) extends ResolvedInfo
 
-  @datatype class Tuple(size: Z, index: Z) extends ResolvedInfo
+  @datatype class Tuple(val size: Z, val index: Z) extends ResolvedInfo
 
   object LocalVar {
 
@@ -1871,17 +1871,17 @@ object ResolvedInfo {
 
   }
 
-  @datatype class LocalVar(context: ISZ[String], scope: ResolvedInfo.LocalVar.Scope.Type, isSpec: B, isVal: B, id: String)
+  @datatype class LocalVar(val context: ISZ[String], val scope: ResolvedInfo.LocalVar.Scope.Type, val isSpec: B, val isVal: B, val id: String)
     extends ResolvedInfo {
     @strictpure def isEqual(other: LocalVar): B = id == other.id && context == other.context
     @strictpure override def hash: Z = (context :+ id).hash
   }
 
-  @datatype class Fact(name: ISZ[String]) extends ResolvedInfo
+  @datatype class Fact(val name: ISZ[String]) extends ResolvedInfo
 
-  @datatype class Theorem(name: ISZ[String]) extends ResolvedInfo
+  @datatype class Theorem(val name: ISZ[String]) extends ResolvedInfo
 
-  @datatype class Inv(isInObject: B, owner: ISZ[String], id: String) extends ResolvedInfo
+  @datatype class Inv(val isInObject: B, val owner: ISZ[String], val id: String) extends ResolvedInfo
 
   @pure def substOpt(resOpt: Option[ResolvedInfo], substMap: HashMap[String, Typed]): Option[ResolvedInfo] = {
     resOpt match {
@@ -1895,9 +1895,9 @@ object ResolvedInfo {
 
 object TruthTable {
 
-  @datatype class Row(assignment: Assignment, separator: Position, values: Assignment)
+  @datatype class Row(val assignment: Assignment, val separator: Position, val values: Assignment)
 
-  @datatype class Assignment(values: ISZ[Exp.LitB], @hidden attr: Attr)
+  @datatype class Assignment(val values: ISZ[Exp.LitB], @hidden val attr: Attr)
 
   @datatype trait Conclusion {
     def attr: Attr
@@ -1905,14 +1905,14 @@ object TruthTable {
 
   object Conclusion {
 
-    @datatype class Validity(isValid: B, assignments: ISZ[Assignment], @hidden val attr: Attr) extends Conclusion
+    @datatype class Validity(val isValid: B, val assignments: ISZ[Assignment], @hidden val attr: Attr) extends Conclusion
 
     @datatype class Tautology(@hidden val attr: Attr) extends Conclusion
 
     @datatype class Contradictory(@hidden val attr: Attr) extends Conclusion
 
-    @datatype class Contingent(trueAssignments: ISZ[Assignment],
-                               falseAssignments: ISZ[Assignment],
+    @datatype class Contingent(val trueAssignments: ISZ[Assignment],
+                               val falseAssignments: ISZ[Assignment],
                                @hidden val attr: Attr) extends Conclusion
 
   }
