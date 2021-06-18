@@ -761,10 +761,10 @@ object ProofAst {
 }
 
 @enum object Purity {
-  'Impure
-  'Pure
-  'Memoize
-  'StrictPure
+  "Impure"
+  "Pure"
+  "Memoize"
+  "StrictPure"
 }
 
 @datatype class Case(val pattern: Pattern, val condOpt: Option[Exp], val body: Body)
@@ -1219,10 +1219,10 @@ object Exp {
   }
 
   @enum object UnaryOp {
-    'Not
-    'Plus
-    'Minus
-    'Complement
+    "Not"
+    "Plus"
+    "Minus"
+    "Complement"
   }
 
   @datatype class Unary(val op: UnaryOp.Type, val exp: Exp, @hidden val attr: ResolvedAttr) extends Exp {
@@ -1766,61 +1766,61 @@ object ResolvedInfo {
   object BuiltIn {
 
     @enum object Kind {
-      'Apply
-      'AsInstanceOf
-      'Assert
-      'AssertMsg
-      'Assume
-      'AssumeMsg
-      'BinaryAdd
-      'BinarySub
-      'BinaryMul
-      'BinaryDiv
-      'BinaryRem
-      'BinaryEq
-      'BinaryNe
-      'BinaryLt
-      'BinaryLe
-      'BinaryGt
-      'BinaryGe
-      'BinaryShl
-      'BinaryShr
-      'BinaryUshr
-      'BinaryAnd
-      'BinaryOr
-      'BinaryXor
-      'BinaryImply
-      'BinaryCondAnd
-      'BinaryCondOr
-      'BinaryCondImply
-      'BinaryMapsTo
-      'Cprint
-      'Cprintln
-      'EnumByName
-      'EnumByOrdinal
-      'EnumElements
-      'EnumNumOfElements
-      'EnumName
-      'EnumOrdinal
-      'Eprint
-      'Eprintln
-      'Halt
-      'Hash
-      'IsInstanceOf
-      'Indices
-      'Min
-      'Max
-      'Random
-      'Native
-      'Print
-      'Println
-      'String
-      'UnapplySeq
-      'UnapplyTuple
-      'UnaryPlus
-      'UnaryMinus
-      'UnaryNot
-      'UnaryComplement
+      "Apply"
+      "AsInstanceOf"
+      "Assert"
+      "AssertMsg"
+      "Assume"
+      "AssumeMsg"
+      "BinaryAdd"
+      "BinarySub"
+      "BinaryMul"
+      "BinaryDiv"
+      "BinaryRem"
+      "BinaryEq"
+      "BinaryNe"
+      "BinaryLt"
+      "BinaryLe"
+      "BinaryGt"
+      "BinaryGe"
+      "BinaryShl"
+      "BinaryShr"
+      "BinaryUshr"
+      "BinaryAnd"
+      "BinaryOr"
+      "BinaryXor"
+      "BinaryImply"
+      "BinaryCondAnd"
+      "BinaryCondOr"
+      "BinaryCondImply"
+      "BinaryMapsTo"
+      "Cprint"
+      "Cprintln"
+      "EnumByName"
+      "EnumByOrdinal"
+      "EnumElements"
+      "EnumNumOfElements"
+      "EnumName"
+      "EnumOrdinal"
+      "Eprint"
+      "Eprintln"
+      "Halt"
+      "Hash"
+      "IsInstanceOf"
+      "Indices"
+      "Min"
+      "Max"
+      "Random"
+      "Native"
+      "Print"
+      "Println"
+      "String"
+      "UnapplySeq"
+      "UnapplyTuple"
+      "UnaryPlus"
+      "UnaryMinus"
+      "UnaryNot"
+      "UnaryComplement"
     }
 
   }
@@ -1864,9 +1864,9 @@ object ResolvedInfo {
   object LocalVar {
 
     @enum object Scope {
-      'Current
-      'Outer
-      'Closure
+      "Current"
+      "Outer"
+      "Closure"
     }
 
   }
