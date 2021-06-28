@@ -20,12 +20,6 @@ jobs:
         with:
           path: bin/linux/java
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-java
-      - name: Cache Z3
-        id: cache-z3
-        uses: actions/cache@v2
-        with:
-          path: bin/linux/z3
-          key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-z3
       - name: Cache Scala
         id: cache-scala
         uses: actions/cache@v2
@@ -60,12 +54,6 @@ jobs:
         with:
           path: bin/mac/java
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-java
-      - name: Cache Z3
-        id: cache-z3
-        uses: actions/cache@v2
-        with:
-          path: bin/mac/z3
-          key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-z3
       - name: Cache Scala
         id: cache-scala
         uses: actions/cache@v2
@@ -100,12 +88,6 @@ jobs:
         with:
           path: bin\win\java
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-java
-      - name: Cache Z3
-        id: cache-z3
-        uses: actions/cache@v2
-        with:
-          path: bin\win\z3
-          key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-z3
       - name: Cache Scala
         id: cache-scala
         uses: actions/cache@v2
