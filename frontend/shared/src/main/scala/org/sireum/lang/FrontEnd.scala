@@ -42,6 +42,13 @@ object FrontEnd {
     "ReplaceEnumSymbols"
   }
 
+  @datatype class ParseResult(val input: String,
+                              val fileUriOpt: Option[String],
+                              val program: AST.TopUnit.Program,
+                              val nameMap: NameMap,
+                              val typeMap: TypeMap,
+                              val messages: ISZ[Message])
+
   def rewrite(kind: Rewrite.Type, isWorksheet: B, fileUriOpt: Option[String], text: String, reporter: Reporter): Option[(String, Z)] = {
     Parser.parseTopUnit[AST.TopUnit](text, isWorksheet, F, fileUriOpt, reporter) match {
       case Some(program) if !reporter.hasError =>
@@ -54,37 +61,95 @@ object FrontEnd {
     }
   }
 
+  @pure def parseGloballyResolve(p: (Option[String], String)): ParseResult = {
+    val reporter = Reporter.create
+    val topUnitOpt = Parser(p._2).parseTopUnit[AST.TopUnit](F, F, p._1, reporter)
+    val nameMap = HashMap.empty[QName, Info]
+    val typeMap = HashMap.empty[QName, TypeInfo]
+    if (reporter.hasError) {
+      return ParseResult(p._2, p._1, AST.TopUnit.Program.empty, nameMap, typeMap, reporter.messages)
+    }
+    topUnitOpt match {
+      case Some(program: AST.TopUnit.Program) =>
+        val gdr = GlobalDeclarationResolver(nameMap, typeMap, Reporter.create)
+        gdr.resolveProgram(program)
+        reporter.reports(gdr.reporter.messages)
+        return ParseResult(p._2, p._1, program, gdr.globalNameMap, gdr.globalTypeMap, reporter.messages)
+      case _ =>
+        return ParseResult(p._2, p._1, AST.TopUnit.Program.empty, nameMap, typeMap, reporter.messages)
+    }
+  }
+
+  @pure def combineParseResult(r: (ISZ[Message], ISZ[AST.TopUnit.Program], NameMap, TypeMap),
+                               u: ParseResult): (ISZ[Message], ISZ[AST.TopUnit.Program], NameMap, TypeMap) = {
+    var rNameMap = r._3
+    var rTypeMap = r._4
+    val uNameMap = u.nameMap
+    val uTypeMap = u.typeMap
+    val reporter = Reporter.create
+    for (p <- uNameMap.entries) {
+      val name = p._1
+      val uInfo = p._2
+      rNameMap.get(name) match {
+        case Some(rInfo) if !isPosUriSuffixEq(rInfo.posOpt, uInfo.posOpt) =>
+          (rInfo, uInfo) match {
+            case (_: Info.Package, _: Info.Package) =>
+            case _ =>
+              rInfo.posOpt match {
+                case Some(pos) =>
+                  val file: String = pos.uriOpt match {
+                    case Some(fileUri) => s" in $fileUri"
+                    case _ => ""
+                  }
+                  reporter.error(
+                    uInfo.posOpt,
+                    resolverKind,
+                    st"Name '${(name, ".")}' has already been declared at [${pos.beginLine}, ${pos.beginColumn}]$file".render
+                  )
+                case _ =>
+              }
+          }
+        case _ => rNameMap = rNameMap + name ~> uInfo
+      }
+    }
+    for (p <- uTypeMap.entries) {
+      val name = p._1
+      val uInfo = p._2
+      rTypeMap.get(name) match {
+        case Some(rInfo) if !isPosUriSuffixEq(rInfo.posOpt, uInfo.posOpt) =>
+          rInfo.posOpt match {
+            case Some(pos) =>
+              val file: String = pos.uriOpt match {
+                case Some(fileUri) => s" in $fileUri"
+                case _ => ""
+              }
+              reporter.error(
+                uInfo.posOpt,
+                resolverKind,
+                st"Type named '${(name, ".")}' has already been declared at [${pos.beginLine}, ${pos.beginColumn}]$file".render
+              )
+            case _ =>
+          }
+        case _ => rTypeMap = rTypeMap + name ~> uInfo
+      }
+    }
+    val programs: ISZ[AST.TopUnit.Program] = if (u.program == AST.TopUnit.Program.empty) r._2 else r._2 :+ u.program
+    return (r._1 ++ u.messages ++ reporter.messages, programs, rNameMap, rTypeMap)
+  }
+
   @pure def parseProgramAndGloballyResolve(
     par: B,
     sources: ISZ[(Option[String], String)],
     globalNameMap: NameMap,
     globalTypeMap: TypeMap
   ): (Reporter, ISZ[AST.TopUnit.Program], NameMap, TypeMap) = {
-    @pure def parseGloballyResolve(p: (Option[String], String)): (Reporter, AST.TopUnit.Program, NameMap, TypeMap) = {
-      val reporter = Reporter.create
-      val topUnitOpt = Parser(p._2).parseTopUnit[AST.TopUnit](F, F, p._1, reporter)
-      val nameMap = HashMap.empty[QName, Info]
-      val typeMap = HashMap.empty[QName, TypeInfo]
-      if (reporter.hasError) {
-        return (reporter, AST.TopUnit.Program.empty, nameMap, typeMap)
-      }
-      topUnitOpt match {
-        case Some(program: AST.TopUnit.Program) =>
-          val gdr = GlobalDeclarationResolver(nameMap, typeMap, Reporter.create)
-          gdr.resolveProgram(program)
-          reporter.reports(gdr.reporter.messages)
-          return (reporter, program, gdr.globalNameMap, gdr.globalTypeMap)
-        case _ => return (reporter, AST.TopUnit.Program.empty, nameMap, typeMap)
-      }
-    }
-
-    val init = (Reporter.create, ISZ[AST.TopUnit.Program](), globalNameMap, globalTypeMap)
-    val t: (Reporter, ISZ[AST.TopUnit.Program], NameMap, TypeMap) =
-      if (par) ops.ISZOps(sources).parMapFoldLeft[(Reporter, AST.TopUnit.Program, NameMap, TypeMap),
-        (Reporter, ISZ[AST.TopUnit.Program], NameMap, TypeMap)](parseGloballyResolve _, combine _, init)
-      else ops.ISZOps(ops.ISZOps(sources).map(parseGloballyResolve _)).foldLeft(combine _, init)
+    val init = (ISZ[Message](), ISZ[AST.TopUnit.Program](), globalNameMap, globalTypeMap)
+    val t: (ISZ[Message], ISZ[AST.TopUnit.Program], NameMap, TypeMap) =
+      if (par) ops.ISZOps(ops.ISZOps(sources).parMap(parseGloballyResolve _)).foldLeft(combineParseResult _, init)
+      else ops.ISZOps(ops.ISZOps(sources).map(parseGloballyResolve _)).foldLeft(combineParseResult _, init)
     val p = addBuiltIns(t._3, t._4)
-    val reporter = t._1
+    val reporter = Reporter.create
+    reporter.reports(t._1)
     val nameMap = p._1
     val typeMap = p._2
     for (program <- t._2) {
@@ -148,7 +213,7 @@ object FrontEnd {
       program(
         body = program.body(
           stmts = program.body.stmts.filter(
-            stmt =>
+            (stmt: AST.Stmt) =>
               stmt match {
                 case _: AST.Stmt.Method => F
                 case _: AST.Stmt.SpecMethod => F
@@ -168,14 +233,13 @@ object FrontEnd {
     }
 
     val th2: TypeHierarchy = {
-      val (rep, _, nameMap, typeMap) =
-        Resolver.combine(
-          (Reporter.create, ISZ(), th.nameMap, th.typeMap),
-          (Reporter.create, AST.TopUnit.Program.empty, gdr.globalNameMap, gdr.globalTypeMap)
+      val (messages, _, nameMap, typeMap) =
+        combineParseResult(
+          (ISZ(), ISZ(), th.nameMap, th.typeMap),
+          ParseResult("", None(), AST.TopUnit.Program.empty, gdr.globalNameMap, gdr.globalTypeMap, ISZ())
         )
-
-      if (rep.hasIssue) {
-        reporter.reports(rep.messages)
+      reporter.reports(messages)
+      if (reporter.hasIssue) {
         return (th, program)
       }
 

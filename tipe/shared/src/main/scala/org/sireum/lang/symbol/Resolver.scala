@@ -376,64 +376,6 @@ object Resolver {
     return F
   }
 
-  @pure def combine(
-    r: (Reporter, ISZ[AST.TopUnit.Program], NameMap, TypeMap),
-    u: (Reporter, AST.TopUnit.Program, NameMap, TypeMap)
-  ): (Reporter, ISZ[AST.TopUnit.Program], NameMap, TypeMap) = {
-    var rNameMap = r._3
-    var rTypeMap = r._4
-    val uNameMap = u._3
-    val uTypeMap = u._4
-    val reporter = Reporter.combine(r._1, u._1)
-    for (p <- uNameMap.entries) {
-      val name = p._1
-      val uInfo = p._2
-      rNameMap.get(name) match {
-        case Some(rInfo) if !isPosUriSuffixEq(rInfo.posOpt, uInfo.posOpt) =>
-          (rInfo, uInfo) match {
-            case (_: Info.Package, _: Info.Package) =>
-            case _ =>
-              rInfo.posOpt match {
-                case Some(pos) =>
-                  val file: String = pos.uriOpt match {
-                    case Some(fileUri) => s" in $fileUri"
-                    case _ => ""
-                  }
-                  reporter.error(
-                    uInfo.posOpt,
-                    resolverKind,
-                    st"Name '${(name, ".")}' has already been declared at [${pos.beginLine}, ${pos.beginColumn}]$file".render
-                  )
-                case _ =>
-              }
-          }
-        case _ => rNameMap = rNameMap + name ~> uInfo
-      }
-    }
-    for (p <- uTypeMap.entries) {
-      val name = p._1
-      val uInfo = p._2
-      rTypeMap.get(name) match {
-        case Some(rInfo) if !isPosUriSuffixEq(rInfo.posOpt, uInfo.posOpt) =>
-          rInfo.posOpt match {
-            case Some(pos) =>
-              val file: String = pos.uriOpt match {
-                case Some(fileUri) => s" in $fileUri"
-                case _ => ""
-              }
-              reporter.error(
-                uInfo.posOpt,
-                resolverKind,
-                st"Type named '${(name, ".")}' has already been declared at [${pos.beginLine}, ${pos.beginColumn}]$file".render
-              )
-            case _ =>
-          }
-        case _ => rTypeMap = rTypeMap + name ~> uInfo
-      }
-    }
-    return (reporter, r._2 :+ u._2, rNameMap, rTypeMap)
-  }
-
   def typeParamMap(typeParams: ISZ[AST.TypeParam], reporter: Reporter): HashSMap[String, TypeInfo] = {
     val r = typeParamMapInit(typeParams, HashSMap.empty[String, TypeInfo], reporter)
     return r
