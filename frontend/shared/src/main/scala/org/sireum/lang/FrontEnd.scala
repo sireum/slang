@@ -42,12 +42,41 @@ object FrontEnd {
     "ReplaceEnumSymbols"
   }
 
-  @datatype class ParseResult(val input: String,
+  @datatype class Input(val content: String,
+                        val fileUriOpt: Option[String],
+                        val timestamp: Z)
+
+  @datatype class ParseResult(val content: String,
                               val fileUriOpt: Option[String],
+                              val timestamp: Z,
                               val program: AST.TopUnit.Program,
                               val nameMap: NameMap,
                               val typeMap: TypeMap,
                               val messages: ISZ[Message])
+
+  object ParseResultMap {
+    @strictpure def empty: ParseResultMap = ParseResultMap(HashMap.empty)
+  }
+
+  @datatype class ParseResultMap(val map: HashMap[String, ParseResult]) {
+    def update(input: Input): ParseResultMap = {
+      val pr = parseGloballyResolve(input)
+      return ParseResultMap(map + pr.fileUriOpt.get ~> pr)
+    }
+
+    def updates(par: B, inputs: ISZ[Input]): ParseResultMap = {
+      val prs: ISZ[ParseResult] = if (par) ops.ISZOps(inputs).parMap(parseGloballyResolve _) else ops.ISZOps(inputs).map(parseGloballyResolve _)
+      var m = map
+      for (pr <- prs) {
+        m = m + pr.fileUriOpt.get ~> pr
+      }
+      return ParseResultMap(m)
+    }
+
+    def merge(nameMap: NameMap, typeMap: TypeMap): (ISZ[Message], ISZ[AST.TopUnit.Program], NameMap, TypeMap) = {
+      return ops.ISZOps(map.values).foldLeft(combineParseResult _, (ISZ[Message](), ISZ[AST.TopUnit.Program](), nameMap, typeMap))
+    }
+  }
 
   def rewrite(kind: Rewrite.Type, isWorksheet: B, fileUriOpt: Option[String], text: String, reporter: Reporter): Option[(String, Z)] = {
     Parser.parseTopUnit[AST.TopUnit](text, isWorksheet, F, fileUriOpt, reporter) match {
@@ -61,22 +90,25 @@ object FrontEnd {
     }
   }
 
-  @pure def parseGloballyResolve(p: (Option[String], String)): ParseResult = {
+  @pure def parseGloballyResolve(input: Input): ParseResult = {
     val reporter = Reporter.create
-    val topUnitOpt = Parser(p._2).parseTopUnit[AST.TopUnit](F, F, p._1, reporter)
+    val topUnitOpt = Parser(input.content).parseTopUnit[AST.TopUnit](F, F, input.fileUriOpt, reporter)
     val nameMap = HashMap.empty[QName, Info]
     val typeMap = HashMap.empty[QName, TypeInfo]
     if (reporter.hasError) {
-      return ParseResult(p._2, p._1, AST.TopUnit.Program.empty, nameMap, typeMap, reporter.messages)
+      return ParseResult(input.content, input.fileUriOpt, input.timestamp, AST.TopUnit.Program.empty, nameMap, typeMap,
+        reporter.messages)
     }
     topUnitOpt match {
       case Some(program: AST.TopUnit.Program) =>
         val gdr = GlobalDeclarationResolver(nameMap, typeMap, Reporter.create)
         gdr.resolveProgram(program)
         reporter.reports(gdr.reporter.messages)
-        return ParseResult(p._2, p._1, program, gdr.globalNameMap, gdr.globalTypeMap, reporter.messages)
+        return ParseResult(input.content, input.fileUriOpt, input.timestamp, program, gdr.globalNameMap,
+          gdr.globalTypeMap, reporter.messages)
       case _ =>
-        return ParseResult(p._2, p._1, AST.TopUnit.Program.empty, nameMap, typeMap, reporter.messages)
+        return ParseResult(input.content, input.fileUriOpt, input.timestamp, AST.TopUnit.Program.empty, nameMap,
+          typeMap, reporter.messages)
     }
   }
 
@@ -137,16 +169,12 @@ object FrontEnd {
     return (r._1 ++ u.messages ++ reporter.messages, programs, rNameMap, rTypeMap)
   }
 
-  @pure def parseProgramAndGloballyResolve(
-    par: B,
-    sources: ISZ[(Option[String], String)],
-    globalNameMap: NameMap,
-    globalTypeMap: TypeMap
-  ): (Reporter, ISZ[AST.TopUnit.Program], NameMap, TypeMap) = {
-    val init = (ISZ[Message](), ISZ[AST.TopUnit.Program](), globalNameMap, globalTypeMap)
-    val t: (ISZ[Message], ISZ[AST.TopUnit.Program], NameMap, TypeMap) =
-      if (par) ops.ISZOps(ops.ISZOps(sources).parMap(parseGloballyResolve _)).foldLeft(combineParseResult _, init)
-      else ops.ISZOps(ops.ISZOps(sources).map(parseGloballyResolve _)).foldLeft(combineParseResult _, init)
+  @pure def parseProgramAndGloballyResolve(par: B,
+                                           inputs: ISZ[Input],
+                                           globalNameMap: NameMap,
+                                           globalTypeMap: TypeMap): (Reporter, ISZ[AST.TopUnit.Program], NameMap, TypeMap) = {
+    val prm = ParseResultMap.empty.updates(par, inputs)
+    val t = prm.merge(globalNameMap, globalTypeMap)
     val p = addBuiltIns(t._3, t._4)
     val reporter = Reporter.create
     reporter.reports(t._1)
@@ -168,7 +196,7 @@ object FrontEnd {
     val (initNameMap, initTypeMap) =
       Resolver.addBuiltIns(HashMap.empty, HashMap.empty)
     val (reporter, _, nameMap, typeMap) =
-      parseProgramAndGloballyResolve(T, Library.files, initNameMap, initTypeMap)
+      parseProgramAndGloballyResolve(T, for (f <- Library.files) yield Input(f._2, f._1, 0), initNameMap, initTypeMap)
     val th =
       TypeHierarchy.build(TypeHierarchy(nameMap, typeMap, Poset.empty, HashMap.empty), reporter)
     val thOutlined = TypeOutliner.checkOutline(T, T, th, reporter)
@@ -236,7 +264,7 @@ object FrontEnd {
       val (messages, _, nameMap, typeMap) =
         combineParseResult(
           (ISZ(), ISZ(), th.nameMap, th.typeMap),
-          ParseResult("", None(), AST.TopUnit.Program.empty, gdr.globalNameMap, gdr.globalTypeMap, ISZ())
+          ParseResult("", None(), 0, AST.TopUnit.Program.empty, gdr.globalNameMap, gdr.globalTypeMap, ISZ())
         )
       reporter.reports(messages)
       if (reporter.hasIssue) {

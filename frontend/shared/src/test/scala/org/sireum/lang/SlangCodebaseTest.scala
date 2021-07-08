@@ -37,10 +37,7 @@ class SlangCodebaseTest extends TestSuite {
       val (initNameMap, initTypeMap) = Resolver.addBuiltIns(HashMap.empty, HashMap.empty)
       val (reporter, _, globalNameMap, globalTypeMap) = FrontEnd.parseProgramAndGloballyResolve(
         T,
-        ISZ(
-          (org.sireum.Library_Ext.map.toSeq ++ org.sireum.lang.$SlangFiles.map.toSeq)
-            .map(p => (Some(String(p._1.mkString("/"))), String(p._2))): _*
-        ),
+        for (p <- org.sireum.Library.files) yield FrontEnd.Input(p._2, p._1, 0),
         initNameMap,
         initTypeMap
       )
