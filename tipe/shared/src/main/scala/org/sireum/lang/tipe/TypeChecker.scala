@@ -864,6 +864,12 @@ import TypeChecker._
             return Some(AST.Typed.Name(typeInfo.name, ISZ()))
           case _ =>
         }
+      case Some(info: Info.LocalVar) =>
+        info.posOpt match {
+          case Some(pos) => reporter.error(posOpt, typeCheckerKind, s"Could not resolve literal interpolator for '$prefix' due to name conflict with a local variable declared at [${pos.beginLine}, ${pos.beginColumn}].")
+          case _ => reporter.error(posOpt, typeCheckerKind, s"Could not resolve literal interpolator for '$prefix' due to name conflict with a local variable.")
+        }
+        return None()
       case _ =>
     }
     reporter.error(posOpt, typeCheckerKind, s"Could not resolve literal interpolator for '$prefix'.")
