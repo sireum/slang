@@ -40,6 +40,9 @@ import org.sireum.message._
                       isDiet: B,
                       fileUriOpt: Option[String],
                       reporter: Reporter): Option[T] = $
+
+  @pure def detectSlang(fileUriOpt: Option[String], txt: String): (B, String, String) = $
+
 }
 
 @datatype class Parser(text: String) {

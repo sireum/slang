@@ -52,7 +52,7 @@ class SlangCodebaseTest extends TestSuite {
       }
 
       report()
-      var th = TypeHierarchy.build(TypeHierarchy(globalNameMap, globalTypeMap, Poset.empty, HashMap.empty), reporter)
+      var th = TypeHierarchy.build(F, TypeHierarchy(globalNameMap, globalTypeMap, Poset.empty, HashMap.empty), reporter)
       report()
       th = TypeOutliner.checkOutline(T, T, th, reporter)
       report()

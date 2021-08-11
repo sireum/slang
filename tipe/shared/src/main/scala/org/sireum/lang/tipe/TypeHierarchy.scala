@@ -55,7 +55,7 @@ object TypeHierarchy {
     }
   }
 
-  def build(init: TypeHierarchy, reporter: Reporter): TypeHierarchy = {
+  def build(force: B, init: TypeHierarchy, reporter: Reporter): TypeHierarchy = {
     val typeMap = init.typeMap
 
     def resolveType(scope: Scope, t: AST.Type): AST.Typed = {
@@ -156,7 +156,7 @@ object TypeHierarchy {
           val typed = typedInfo(info)
           r = r(poset = r.poset.addNode(typed.ids))
         case info: TypeInfo.Sig =>
-          if (!info.outlined) {
+          if (!info.outlined || force) {
             val typed = typedInfo(info)
             val scope = typeParamsScope(info.ast.typeParams, info.scope, reporter)
             val parents = resolveTypeNameds(info.posOpt, scope, info.ast.parents)
@@ -167,7 +167,7 @@ object TypeHierarchy {
             r = r(poset = r.poset.addParents(typed.ids, parentTypeNames))
           }
         case info: TypeInfo.Adt =>
-          if (!info.outlined) {
+          if (!info.outlined || force) {
             val typed = typedInfo(info)
             val scope = typeParamsScope(info.ast.typeParams, info.scope, reporter)
             val parents = resolveTypeNameds(info.posOpt, scope, info.ast.parents)

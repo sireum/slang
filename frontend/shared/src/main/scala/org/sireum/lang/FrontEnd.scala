@@ -198,7 +198,7 @@ object FrontEnd {
     val (reporter, _, nameMap, typeMap) =
       parseProgramAndGloballyResolve(T, for (f <- Library.files) yield Input(f._2, f._1, 0), initNameMap, initTypeMap)
     val th =
-      TypeHierarchy.build(TypeHierarchy(nameMap, typeMap, Poset.empty, HashMap.empty), reporter)
+      TypeHierarchy.build(F, TypeHierarchy(nameMap, typeMap, Poset.empty, HashMap.empty), reporter)
     val thOutlined = TypeOutliner.checkOutline(T, T, th, reporter)
     val tc = TypeChecker(thOutlined, ISZ(), F, TypeChecker.ModeContext.Code, T)
     val r = (tc, reporter)
@@ -271,7 +271,7 @@ object FrontEnd {
         return (th, program)
       }
 
-      TypeHierarchy.build(th(nameMap = nameMap, typeMap = typeMap), reporter)
+      TypeHierarchy.build(F, th(nameMap = nameMap, typeMap = typeMap), reporter)
     }
 
     if (reporter.hasError) {

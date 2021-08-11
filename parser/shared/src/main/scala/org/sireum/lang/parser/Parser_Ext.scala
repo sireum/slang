@@ -89,5 +89,10 @@ object Parser_Ext {
   ): Option[T] =
     SlangParser(isWorksheet, isDiet, fileUriOpt, text.value, reporter).unitOpt.map(_.asInstanceOf[T])
 
+  @pure def detectSlang(fileUriOpt: Option[String], txt: String): (B, String, String) = {
+    val t = SlangParser.detectSlang(fileUriOpt, txt)
+    return (t._1, t._2, t._3)
+  }
+
   def err(s: Predef.String = "Can only be used for non-erroneous Slang statement."): Nothing = halt(s)
 }
