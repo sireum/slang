@@ -52,6 +52,12 @@ object cli {
     groups = ISZ()
   )
 
+  val strictAliasingOpt: Opt = Opt(
+    name = "strictAliasing", longKey = "strict-aliasing", shortKey = None(),
+    tpe = Type.Flag(F),
+    description = "Enable strict aliasing check"
+  )
+
   val slangTipe: Tool = Tool(
     name = "slangTipe",
     command = "tipe",
@@ -73,9 +79,7 @@ object cli {
       Opt(name = "sourcepath", longKey = "sourcepath", shortKey = Some('s'),
         tpe = Type.Path(T, None()),
         description = "Sourcepath of Slang .scala files"),
-      Opt(name = "strictAliasing", longKey = "strict-aliasing", shortKey = None(),
-        tpe = Type.Flag(F),
-        description = "Enable strict aliasing check"),
+      strictAliasingOpt,
       Opt(name = "verbose", longKey = "verbose", shortKey = None(),
         tpe = Type.Flag(F), description = "Enable verbose mode"),
     ),
