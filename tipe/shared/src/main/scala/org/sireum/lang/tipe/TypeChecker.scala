@@ -4621,7 +4621,7 @@ import TypeChecker._
 
       case stmt: AST.Stmt.SpecBlock =>
         val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.Spec, strictAliasing)
-        return tc.checkStmt(scope, stmt.block, reporter)
+        return stmt(block = tc.checkStmt(scope, stmt.block, reporter).asInstanceOf[AST.Stmt.Block])
 
       case stmt: AST.Stmt.DeduceSequent =>
         val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.Spec, strictAliasing)
