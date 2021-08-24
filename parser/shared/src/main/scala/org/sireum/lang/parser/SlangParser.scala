@@ -301,6 +301,9 @@ class SlangParser(
   def error(pos: Position, message: Predef.String): Unit =
     reporter.error(posOpt(pos), SlangParser.messageKind, message)
 
+  def warn(pos: Position, message: Predef.String): Unit =
+    reporter.warn(posOpt(pos), SlangParser.messageKind, message)
+
   val unitType = AST.Type.Named(AST.Name(ISZ(AST.Id("Unit", emptyAttr)), emptyAttr), ISZ(), emptyTypedAttr)
 
   def errorNotSlang(pos: Position, message: Predef.String): Unit =
@@ -2183,6 +2186,7 @@ class SlangParser(
   }
 
   def translateDoWhile(enclosing: Enclosing.Type, stat: Term.Do): AST.Stmt = {
+    warn(stat.pos, "Do-while-loop is deprecated in Slang and will be removed in the near future")
     var hasError = stmtCheck(enclosing, stat, "Do-while-statements")
     var modifies: ISZ[AST.Exp.Ident] = ISZ()
     var invariants: ISZ[AST.Exp] = ISZ()
@@ -2202,7 +2206,7 @@ class SlangParser(
         }
       case _ =>
         hasError = true
-        errorInSlang(stat.body.pos, "Do-While-loop body should be a code block")
+        errorInSlang(stat.body.pos, "Do-while-loop body should be a code block")
     }
     if (hasError) rStmt
     else
