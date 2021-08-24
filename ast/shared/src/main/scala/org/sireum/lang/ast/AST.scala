@@ -114,6 +114,14 @@ object TopUnit {
 
 }
 
+object LoopContract {
+  @strictpure def empty: LoopContract = LoopContract(ISZ(), ISZ(), None())
+}
+
+@datatype class LoopContract(val invariants: ISZ[Exp],
+                             val modifies: ISZ[Exp.Ident],
+                             val maxItOpt: Option[Exp.LitZ]) extends HasModifies
+
 object Stmt {
 
   @datatype class Import(val importers: ISZ[Import.Importer], @hidden val attr: Attr) extends Stmt {
@@ -376,56 +384,49 @@ object Stmt {
 
   }
 
-  @sig trait Loop extends HasModifies {
-    @pure def context: ISZ[String]
-
-    @pure def invariants: ISZ[Exp]
-
-    @pure def maxItOpt: Option[Exp.LitZ]
-  }
-
   @datatype class While(val context: ISZ[String],
                         val cond: Exp,
-                        val invariants: ISZ[Exp],
-                        val modifies: ISZ[Exp.Ident],
-                        val maxItOpt: Option[Exp.LitZ],
+                        val contract: LoopContract,
                         val body: Body,
-                        @hidden val attr: Attr) extends Stmt with Loop {
+                        @hidden val attr: Attr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
+
+    @strictpure def invariants: ISZ[Exp] = contract.invariants
+
+    @strictpure def modifies: ISZ[Exp.Ident] = contract.modifies
 
   }
 
   @datatype class DoWhile(val context: ISZ[String],
                           val cond: Exp,
-                          val invariants: ISZ[Exp],
-                          val modifies: ISZ[Exp.Ident],
-                          val maxItOpt: Option[Exp.LitZ],
+                          val contract: LoopContract,
                           val body: Body,
-                          @hidden val attr: Attr) extends Stmt with Loop {
+                          @hidden val attr: Attr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
+
+    @strictpure def invariants: ISZ[Exp] = contract.invariants
+
+    @strictpure def modifies: ISZ[Exp.Ident] = contract.modifies
 
   }
 
   @datatype class For(val context: ISZ[String],
                       val enumGens: ISZ[EnumGen.For],
-                      val modifies: ISZ[Exp.Ident],
                       val body: Body,
-                      @hidden val attr: Attr) extends Stmt with Loop {
+                      @hidden val attr: Attr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
 
-    @strictpure override def invariants: ISZ[Exp] =
-      for (enumGen <- enumGens; inv <- enumGen.invariants) yield inv
+    @strictpure def modifies: ISZ[Exp.Ident] = enumGens(0).contract.modifies
 
-    @strictpure override def maxItOpt: Option[Exp.LitZ] = None()
   }
 
   @datatype class Return(val expOpt: Option[Exp], @hidden val attr: TypedAttr) extends Stmt with AssignExp {
@@ -798,8 +799,7 @@ object EnumGen {
   @datatype class For(val idOpt: Option[Id],
                       val range: Range,
                       val condOpt: Option[Exp],
-                      val invariants: ISZ[Exp],
-                      val maxItOpt: Option[Exp.LitZ]) {
+                      val contract: LoopContract) {
     @pure def prettyST: ST = {
       val id: String = idOpt match {
         case Some(id) => id.value

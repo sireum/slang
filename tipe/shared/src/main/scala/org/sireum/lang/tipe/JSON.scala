@@ -419,12 +419,19 @@ object JSON {
 
     @pure def print_astHasModifies(o: org.sireum.lang.ast.HasModifies): ST = {
       o match {
-        case o: org.sireum.lang.ast.Stmt.While => return print_astStmtWhile(o)
-        case o: org.sireum.lang.ast.Stmt.DoWhile => return print_astStmtDoWhile(o)
-        case o: org.sireum.lang.ast.Stmt.For => return print_astStmtFor(o)
+        case o: org.sireum.lang.ast.LoopContract => return print_astLoopContract(o)
         case o: org.sireum.lang.ast.MethodContract.Simple => return print_astMethodContractSimple(o)
         case o: org.sireum.lang.ast.MethodContract.Cases => return print_astMethodContractCases(o)
       }
+    }
+
+    @pure def print_astLoopContract(o: org.sireum.lang.ast.LoopContract): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.LoopContract""""),
+        ("invariants", printISZ(F, o.invariants, print_astExp _)),
+        ("modifies", printISZ(F, o.modifies, print_astExpIdent _)),
+        ("maxItOpt", printOption(F, o.maxItOpt, print_astExpLitZ _))
+      ))
     }
 
     @pure def print_astStmtImport(o: org.sireum.lang.ast.Stmt.Import): ST = {
@@ -657,22 +664,12 @@ object JSON {
       ))
     }
 
-    @pure def print_astStmtLoop(o: org.sireum.lang.ast.Stmt.Loop): ST = {
-      o match {
-        case o: org.sireum.lang.ast.Stmt.While => return print_astStmtWhile(o)
-        case o: org.sireum.lang.ast.Stmt.DoWhile => return print_astStmtDoWhile(o)
-        case o: org.sireum.lang.ast.Stmt.For => return print_astStmtFor(o)
-      }
-    }
-
     @pure def print_astStmtWhile(o: org.sireum.lang.ast.Stmt.While): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Stmt.While""""),
         ("context", printISZ(T, o.context, printString _)),
         ("cond", print_astExp(o.cond)),
-        ("invariants", printISZ(F, o.invariants, print_astExp _)),
-        ("modifies", printISZ(F, o.modifies, print_astExpIdent _)),
-        ("maxItOpt", printOption(F, o.maxItOpt, print_astExpLitZ _)),
+        ("contract", print_astLoopContract(o.contract)),
         ("body", print_astBody(o.body)),
         ("attr", print_astAttr(o.attr))
       ))
@@ -683,9 +680,7 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.Stmt.DoWhile""""),
         ("context", printISZ(T, o.context, printString _)),
         ("cond", print_astExp(o.cond)),
-        ("invariants", printISZ(F, o.invariants, print_astExp _)),
-        ("modifies", printISZ(F, o.modifies, print_astExpIdent _)),
-        ("maxItOpt", printOption(F, o.maxItOpt, print_astExpLitZ _)),
+        ("contract", print_astLoopContract(o.contract)),
         ("body", print_astBody(o.body)),
         ("attr", print_astAttr(o.attr))
       ))
@@ -696,7 +691,6 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.Stmt.For""""),
         ("context", printISZ(T, o.context, printString _)),
         ("enumGens", printISZ(F, o.enumGens, print_astEnumGenFor _)),
-        ("modifies", printISZ(F, o.modifies, print_astExpIdent _)),
         ("body", print_astBody(o.body)),
         ("attr", print_astAttr(o.attr))
       ))
@@ -1112,8 +1106,7 @@ object JSON {
         ("idOpt", printOption(F, o.idOpt, print_astId _)),
         ("range", print_astEnumGenRange(o.range)),
         ("condOpt", printOption(F, o.condOpt, print_astExp _)),
-        ("invariants", printISZ(F, o.invariants, print_astExp _)),
-        ("maxItOpt", printOption(F, o.maxItOpt, print_astExpLitZ _))
+        ("contract", print_astLoopContract(o.contract))
       ))
     }
 
@@ -2910,15 +2903,34 @@ object JSON {
     }
 
     def parse_astHasModifies(): org.sireum.lang.ast.HasModifies = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Stmt.While", "org.sireum.lang.ast.Stmt.DoWhile", "org.sireum.lang.ast.Stmt.For", "org.sireum.lang.ast.MethodContract.Simple", "org.sireum.lang.ast.MethodContract.Cases"))
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.LoopContract", "org.sireum.lang.ast.MethodContract.Simple", "org.sireum.lang.ast.MethodContract.Cases"))
       t.native match {
-        case "org.sireum.lang.ast.Stmt.While" => val r = parse_astStmtWhileT(T); return r
-        case "org.sireum.lang.ast.Stmt.DoWhile" => val r = parse_astStmtDoWhileT(T); return r
-        case "org.sireum.lang.ast.Stmt.For" => val r = parse_astStmtForT(T); return r
+        case "org.sireum.lang.ast.LoopContract" => val r = parse_astLoopContractT(T); return r
         case "org.sireum.lang.ast.MethodContract.Simple" => val r = parse_astMethodContractSimpleT(T); return r
         case "org.sireum.lang.ast.MethodContract.Cases" => val r = parse_astMethodContractCasesT(T); return r
         case _ => val r = parse_astMethodContractCasesT(T); return r
       }
+    }
+
+    def parse_astLoopContract(): org.sireum.lang.ast.LoopContract = {
+      val r = parse_astLoopContractT(F)
+      return r
+    }
+
+    def parse_astLoopContractT(typeParsed: B): org.sireum.lang.ast.LoopContract = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.LoopContract")
+      }
+      parser.parseObjectKey("invariants")
+      val invariants = parser.parseISZ(parse_astExp _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("modifies")
+      val modifies = parser.parseISZ(parse_astExpIdent _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("maxItOpt")
+      val maxItOpt = parser.parseOption(parse_astExpLitZ _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.LoopContract(invariants, modifies, maxItOpt)
     }
 
     def parse_astStmtImport(): org.sireum.lang.ast.Stmt.Import = {
@@ -3467,16 +3479,6 @@ object JSON {
       return org.sireum.lang.ast.Stmt.Match(exp, cases, attr)
     }
 
-    def parse_astStmtLoop(): org.sireum.lang.ast.Stmt.Loop = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Stmt.While", "org.sireum.lang.ast.Stmt.DoWhile", "org.sireum.lang.ast.Stmt.For"))
-      t.native match {
-        case "org.sireum.lang.ast.Stmt.While" => val r = parse_astStmtWhileT(T); return r
-        case "org.sireum.lang.ast.Stmt.DoWhile" => val r = parse_astStmtDoWhileT(T); return r
-        case "org.sireum.lang.ast.Stmt.For" => val r = parse_astStmtForT(T); return r
-        case _ => val r = parse_astStmtForT(T); return r
-      }
-    }
-
     def parse_astStmtWhile(): org.sireum.lang.ast.Stmt.While = {
       val r = parse_astStmtWhileT(F)
       return r
@@ -3492,14 +3494,8 @@ object JSON {
       parser.parseObjectKey("cond")
       val cond = parse_astExp()
       parser.parseObjectNext()
-      parser.parseObjectKey("invariants")
-      val invariants = parser.parseISZ(parse_astExp _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("modifies")
-      val modifies = parser.parseISZ(parse_astExpIdent _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("maxItOpt")
-      val maxItOpt = parser.parseOption(parse_astExpLitZ _)
+      parser.parseObjectKey("contract")
+      val contract = parse_astLoopContract()
       parser.parseObjectNext()
       parser.parseObjectKey("body")
       val body = parse_astBody()
@@ -3507,7 +3503,7 @@ object JSON {
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.While(context, cond, invariants, modifies, maxItOpt, body, attr)
+      return org.sireum.lang.ast.Stmt.While(context, cond, contract, body, attr)
     }
 
     def parse_astStmtDoWhile(): org.sireum.lang.ast.Stmt.DoWhile = {
@@ -3525,14 +3521,8 @@ object JSON {
       parser.parseObjectKey("cond")
       val cond = parse_astExp()
       parser.parseObjectNext()
-      parser.parseObjectKey("invariants")
-      val invariants = parser.parseISZ(parse_astExp _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("modifies")
-      val modifies = parser.parseISZ(parse_astExpIdent _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("maxItOpt")
-      val maxItOpt = parser.parseOption(parse_astExpLitZ _)
+      parser.parseObjectKey("contract")
+      val contract = parse_astLoopContract()
       parser.parseObjectNext()
       parser.parseObjectKey("body")
       val body = parse_astBody()
@@ -3540,7 +3530,7 @@ object JSON {
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.DoWhile(context, cond, invariants, modifies, maxItOpt, body, attr)
+      return org.sireum.lang.ast.Stmt.DoWhile(context, cond, contract, body, attr)
     }
 
     def parse_astStmtFor(): org.sireum.lang.ast.Stmt.For = {
@@ -3558,16 +3548,13 @@ object JSON {
       parser.parseObjectKey("enumGens")
       val enumGens = parser.parseISZ(parse_astEnumGenFor _)
       parser.parseObjectNext()
-      parser.parseObjectKey("modifies")
-      val modifies = parser.parseISZ(parse_astExpIdent _)
-      parser.parseObjectNext()
       parser.parseObjectKey("body")
       val body = parse_astBody()
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.For(context, enumGens, modifies, body, attr)
+      return org.sireum.lang.ast.Stmt.For(context, enumGens, body, attr)
     }
 
     def parse_astStmtReturn(): org.sireum.lang.ast.Stmt.Return = {
@@ -4436,13 +4423,10 @@ object JSON {
       parser.parseObjectKey("condOpt")
       val condOpt = parser.parseOption(parse_astExp _)
       parser.parseObjectNext()
-      parser.parseObjectKey("invariants")
-      val invariants = parser.parseISZ(parse_astExp _)
+      parser.parseObjectKey("contract")
+      val contract = parse_astLoopContract()
       parser.parseObjectNext()
-      parser.parseObjectKey("maxItOpt")
-      val maxItOpt = parser.parseOption(parse_astExpLitZ _)
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.EnumGen.For(idOpt, range, condOpt, invariants, maxItOpt)
+      return org.sireum.lang.ast.EnumGen.For(idOpt, range, condOpt, contract)
     }
 
     def parse_astType(): org.sireum.lang.ast.Type = {
@@ -6953,6 +6937,24 @@ object JSON {
     return r
   }
 
+  def from_astLoopContract(o: org.sireum.lang.ast.LoopContract, isCompact: B): String = {
+    val st = Printer.print_astLoopContract(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astLoopContract(s: String): Either[org.sireum.lang.ast.LoopContract, Json.ErrorMsg] = {
+    def f_astLoopContract(parser: Parser): org.sireum.lang.ast.LoopContract = {
+      val r = parser.parse_astLoopContract()
+      return r
+    }
+    val r = to(s, f_astLoopContract _)
+    return r
+  }
+
   def from_astStmtImport(o: org.sireum.lang.ast.Stmt.Import, isCompact: B): String = {
     val st = Printer.print_astStmtImport(o)
     if (isCompact) {
@@ -7364,24 +7366,6 @@ object JSON {
       return r
     }
     val r = to(s, f_astStmtMatch _)
-    return r
-  }
-
-  def from_astStmtLoop(o: org.sireum.lang.ast.Stmt.Loop, isCompact: B): String = {
-    val st = Printer.print_astStmtLoop(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astStmtLoop(s: String): Either[org.sireum.lang.ast.Stmt.Loop, Json.ErrorMsg] = {
-    def f_astStmtLoop(parser: Parser): org.sireum.lang.ast.Stmt.Loop = {
-      val r = parser.parse_astStmtLoop()
-      return r
-    }
-    val r = to(s, f_astStmtLoop _)
     return r
   }
 

@@ -996,11 +996,12 @@ import TypeChecker._
                 case _ => None()
               }
               val thisL = this
-              val (newInvs, _) = thisL(mode = ModeContext.Spec).checkLoopInv(scope, enumGen.invariants, ISZ(), reporter)
+              val (newInvs, newMods) = thisL(mode = ModeContext.Spec).checkLoopInv(scope,
+                enumGen.contract.invariants, enumGen.contract.modifies, reporter)
               return enumGen(
                 range = range(start = newStartExp, end = newEndExp, byOpt = newByOpt),
                 condOpt = newCondOpt,
-                invariants = newInvs
+                contract = enumGen.contract(invariants = newInvs, modifies = newMods)
               )
             case _ =>
               ok = F
@@ -1057,8 +1058,10 @@ import TypeChecker._
                 None()
               }
               val thisL = this
-              val (newInvs, _) = thisL(mode = ModeContext.Spec).checkLoopInv(scope, enumGen.invariants, ISZ(), reporter)
-              return enumGen(range = range(exp = newExp), condOpt = newCondOpt, invariants = newInvs)
+              val (newInvs, newMods) = thisL(mode = ModeContext.Spec).
+                checkLoopInv(scope, enumGen.contract.invariants, enumGen.contract.modifies, reporter)
+              return enumGen(range = range(exp = newExp), condOpt = newCondOpt,
+                contract = enumGen.contract(invariants = newInvs, modifies = newMods))
             case Some(expType) =>
               reportErrType(st"$expType")
               ok = F
@@ -4457,9 +4460,8 @@ import TypeChecker._
       newScopeOpt match {
         case Some(newScope) =>
           val thisL = this
-          val (_, newMods) = thisL(mode = ModeContext.Spec).checkLoopInv(newScope, ISZ(), forStmt.modifies, reporter)
           val (_, newBody) = checkBody(F, None(), newScope, forStmt.body, reporter)
-          return forStmt(context = context, enumGens = newEnumGens, modifies = newMods, body = newBody)
+          return forStmt(context = context, enumGens = newEnumGens, body = newBody)
         case _ => return forStmt(context = context, enumGens = newEnumGens)
       }
     }
@@ -4467,19 +4469,21 @@ import TypeChecker._
     def checkDoWhile(doWhileStmt: AST.Stmt.DoWhile): AST.Stmt = {
       val thisL = this
       val (newInvs, newMods) = thisL(mode = ModeContext.Spec).
-        checkLoopInv(scope, doWhileStmt.invariants, doWhileStmt.modifies, reporter)
+        checkLoopInv(scope, doWhileStmt.contract.invariants, doWhileStmt.contract.modifies, reporter)
       val (_, newBody) = checkBody(F, None(), createNewScope(scope), doWhileStmt.body, reporter)
       val (newCond, _) = checkExp(AST.Typed.bOpt, scope, doWhileStmt.cond, reporter)
-      return doWhileStmt(context = context, cond = newCond, invariants = newInvs, modifies = newMods, body = newBody)
+      return doWhileStmt(context = context, cond = newCond,
+        contract = doWhileStmt.contract(invariants = newInvs, modifies = newMods), body = newBody)
     }
 
     def checkWhile(whileStmt: AST.Stmt.While): AST.Stmt = {
       val (newCond, _) = checkExp(AST.Typed.bOpt, scope, whileStmt.cond, reporter)
       val thisL = this
       val (newInvs, newMods) = thisL(mode = ModeContext.Spec).
-        checkLoopInv(scope, whileStmt.invariants, whileStmt.modifies, reporter)
+        checkLoopInv(scope, whileStmt.contract.invariants, whileStmt.contract.modifies, reporter)
       val (_, newBody) = checkBody(F, None(), createNewScope(scope), whileStmt.body, reporter)
-      return whileStmt(context = context, cond = newCond, invariants = newInvs, modifies = newMods, body = newBody)
+      return whileStmt(context = context, cond = newCond,
+        contract = whileStmt.contract(invariants = newInvs, modifies = newMods), body = newBody)
     }
 
     def checkReturn(returnStmt: AST.Stmt.Return): AST.Stmt = {

@@ -2176,9 +2176,7 @@ class SlangParser(
       AST.Stmt.While(
         ISZ(),
         translateExp(stat.expr),
-        invariants,
-        mods,
-        maxItOpt,
+        AST.LoopContract(invariants, mods, maxItOpt),
         bodyCheck(ISZ(stats.map(translateStat(Enclosing.Block)): _*), ISZ()),
         attr(stat.pos)
       )
@@ -2211,9 +2209,7 @@ class SlangParser(
       AST.Stmt.DoWhile(
         ISZ(),
         translateExp(stat.expr),
-        invariants,
-        modifies,
-        maxItOpt,
+        AST.LoopContract(invariants, modifies, maxItOpt),
         bodyCheck(ISZ(stats.map(translateStat(Enclosing.Block)): _*), ISZ()),
         attr(stat.pos)
       )
@@ -2256,8 +2252,8 @@ class SlangParser(
       AST.Stmt.For(
         ISZ(),
         for (i <- Z(0) until enumGens.size) yield
-          if (i < invariants.size) enumGens(i)(invariants = invariants(i)._1, maxItOpt = invariants(i)._2) else enumGens(i),
-        modifies,
+          if (i < invariants.size) enumGens(i)(contract = AST.LoopContract(invariants(i)._1,
+            if (i === 0) modifies else ISZ(), invariants(i)._2)) else enumGens(i),
         bodyCheck(ISZ(stats.map(translateStat(Enclosing.Block)): _*), ISZ()),
         attr(stat.pos)
       )
@@ -2284,19 +2280,19 @@ class SlangParser(
     case head :: enumerator"if $cond" :: rest =>
       head match {
         case enumerator"${_: Pat.Wildcard} <- $expr" =>
-          AST.EnumGen.For(None(), translateRange(expr), Some(translateExp(cond)), ISZ(), None()) +: translateEnumGens(rest)
+          AST.EnumGen.For(None(), translateRange(expr), Some(translateExp(cond)), AST.LoopContract.empty) +: translateEnumGens(rest)
         case enumerator"${id: Pat.Var} <- $expr" =>
           checkReservedId(id.name.pos, id.name.value)
-          AST.EnumGen.For(Some(cid(id)), translateRange(expr), Some(translateExp(cond)), ISZ(), None()) +: translateEnumGens(rest)
+          AST.EnumGen.For(Some(cid(id)), translateRange(expr), Some(translateExp(cond)), AST.LoopContract.empty) +: translateEnumGens(rest)
         case _ =>
           errorNotSlang(head.pos, s"For-loop enumerator: '${syntax(head)}'")
           ISZ()
       }
     case enumerator"${_: Pat.Wildcard} <- $expr" :: rest =>
-      AST.EnumGen.For(None(), translateRange(expr), None(), ISZ(), None()) +: translateEnumGens(rest)
+      AST.EnumGen.For(None(), translateRange(expr), None(), AST.LoopContract.empty) +: translateEnumGens(rest)
     case enumerator"${id: Pat.Var} <- $expr" :: rest =>
       checkReservedId(id.name.pos, id.name.value)
-      AST.EnumGen.For(Some(cid(id)), translateRange(expr), None(), ISZ(), None()) +: translateEnumGens(rest)
+      AST.EnumGen.For(Some(cid(id)), translateRange(expr), None(), AST.LoopContract.empty) +: translateEnumGens(rest)
     case Nil => ISZ()
     case _ =>
       errorNotSlang(enums.head.pos, s"For-loop enumerator: '${syntax(enums.head)}'")

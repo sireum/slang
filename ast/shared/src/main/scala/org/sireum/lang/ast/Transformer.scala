@@ -158,22 +158,8 @@ object Transformer {
 
     @pure def preHasModifies(ctx: Context, o: HasModifies): PreResult[Context, HasModifies] = {
       o match {
-        case o: Stmt.While =>
-          val r: PreResult[Context, HasModifies] = preStmtWhile(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: HasModifies)) => PreResult(preCtx, continu, Some[HasModifies](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type HasModifies")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[HasModifies]())
-          }
-          return r
-        case o: Stmt.DoWhile =>
-          val r: PreResult[Context, HasModifies] = preStmtDoWhile(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: HasModifies)) => PreResult(preCtx, continu, Some[HasModifies](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type HasModifies")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[HasModifies]())
-          }
-          return r
-        case o: Stmt.For =>
-          val r: PreResult[Context, HasModifies] = preStmtFor(ctx, o) match {
+        case o: LoopContract =>
+          val r: PreResult[Context, HasModifies] = preLoopContract(ctx, o) match {
            case PreResult(preCtx, continu, Some(r: HasModifies)) => PreResult(preCtx, continu, Some[HasModifies](r))
            case PreResult(_, _, Some(_)) => halt("Can only produce object of type HasModifies")
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[HasModifies]())
@@ -194,6 +180,10 @@ object Transformer {
           }
           return r
       }
+    }
+
+    @pure def preLoopContract(ctx: Context, o: LoopContract): PreResult[Context, LoopContract] = {
+      return PreResult(ctx, T, None())
     }
 
     @pure def preStmtImport(ctx: Context, o: Stmt.Import): PreResult[Context, Stmt] = {
@@ -289,32 +279,6 @@ object Transformer {
 
     @pure def preStmtMatch(ctx: Context, o: Stmt.Match): PreResult[Context, Stmt] = {
       return PreResult(ctx, T, None())
-    }
-
-    @pure def preStmtLoop(ctx: Context, o: Stmt.Loop): PreResult[Context, Stmt.Loop] = {
-      o match {
-        case o: Stmt.While =>
-          val r: PreResult[Context, Stmt.Loop] = preStmtWhile(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: Stmt.Loop)) => PreResult(preCtx, continu, Some[Stmt.Loop](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Stmt.Loop")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Stmt.Loop]())
-          }
-          return r
-        case o: Stmt.DoWhile =>
-          val r: PreResult[Context, Stmt.Loop] = preStmtDoWhile(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: Stmt.Loop)) => PreResult(preCtx, continu, Some[Stmt.Loop](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Stmt.Loop")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Stmt.Loop]())
-          }
-          return r
-        case o: Stmt.For =>
-          val r: PreResult[Context, Stmt.Loop] = preStmtFor(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: Stmt.Loop)) => PreResult(preCtx, continu, Some[Stmt.Loop](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Stmt.Loop")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Stmt.Loop]())
-          }
-          return r
-      }
     }
 
     @pure def preStmtWhile(ctx: Context, o: Stmt.While): PreResult[Context, Stmt] = {
@@ -1252,22 +1216,8 @@ object Transformer {
 
     @pure def postHasModifies(ctx: Context, o: HasModifies): TPostResult[Context, HasModifies] = {
       o match {
-        case o: Stmt.While =>
-          val r: TPostResult[Context, HasModifies] = postStmtWhile(ctx, o) match {
-           case TPostResult(postCtx, Some(result: HasModifies)) => TPostResult(postCtx, Some[HasModifies](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type HasModifies")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[HasModifies]())
-          }
-          return r
-        case o: Stmt.DoWhile =>
-          val r: TPostResult[Context, HasModifies] = postStmtDoWhile(ctx, o) match {
-           case TPostResult(postCtx, Some(result: HasModifies)) => TPostResult(postCtx, Some[HasModifies](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type HasModifies")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[HasModifies]())
-          }
-          return r
-        case o: Stmt.For =>
-          val r: TPostResult[Context, HasModifies] = postStmtFor(ctx, o) match {
+        case o: LoopContract =>
+          val r: TPostResult[Context, HasModifies] = postLoopContract(ctx, o) match {
            case TPostResult(postCtx, Some(result: HasModifies)) => TPostResult(postCtx, Some[HasModifies](result))
            case TPostResult(_, Some(_)) => halt("Can only produce object of type HasModifies")
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[HasModifies]())
@@ -1288,6 +1238,10 @@ object Transformer {
           }
           return r
       }
+    }
+
+    @pure def postLoopContract(ctx: Context, o: LoopContract): TPostResult[Context, LoopContract] = {
+      return TPostResult(ctx, None())
     }
 
     @pure def postStmtImport(ctx: Context, o: Stmt.Import): TPostResult[Context, Stmt] = {
@@ -1383,32 +1337,6 @@ object Transformer {
 
     @pure def postStmtMatch(ctx: Context, o: Stmt.Match): TPostResult[Context, Stmt] = {
       return TPostResult(ctx, None())
-    }
-
-    @pure def postStmtLoop(ctx: Context, o: Stmt.Loop): TPostResult[Context, Stmt.Loop] = {
-      o match {
-        case o: Stmt.While =>
-          val r: TPostResult[Context, Stmt.Loop] = postStmtWhile(ctx, o) match {
-           case TPostResult(postCtx, Some(result: Stmt.Loop)) => TPostResult(postCtx, Some[Stmt.Loop](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type Stmt.Loop")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Stmt.Loop]())
-          }
-          return r
-        case o: Stmt.DoWhile =>
-          val r: TPostResult[Context, Stmt.Loop] = postStmtDoWhile(ctx, o) match {
-           case TPostResult(postCtx, Some(result: Stmt.Loop)) => TPostResult(postCtx, Some[Stmt.Loop](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type Stmt.Loop")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Stmt.Loop]())
-          }
-          return r
-        case o: Stmt.For =>
-          val r: TPostResult[Context, Stmt.Loop] = postStmtFor(ctx, o) match {
-           case TPostResult(postCtx, Some(result: Stmt.Loop)) => TPostResult(postCtx, Some[Stmt.Loop](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type Stmt.Loop")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Stmt.Loop]())
-          }
-          return r
-      }
     }
 
     @pure def postStmtWhile(ctx: Context, o: Stmt.While): TPostResult[Context, Stmt] = {
@@ -2476,35 +2404,30 @@ import Transformer._
             TPostResult(r2.ctx, None())
         case o2: Stmt.While =>
           val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.cond)
-          val r1: TPostResult[Context, IS[Z, Exp]] = transformISZ(r0.ctx, o2.invariants, transformExp _)
-          val r2: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(r1.ctx, o2.modifies, transformExpIdent _)
-          val r3: TPostResult[Context, Option[Exp.LitZ]] = transformOption(r2.ctx, o2.maxItOpt, transformExpLitZ _)
-          val r4: TPostResult[Context, Body] = transformBody(r3.ctx, o2.body)
-          val r5: TPostResult[Context, Attr] = transformAttr(r4.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty || r5.resultOpt.nonEmpty)
-            TPostResult(r5.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), invariants = r1.resultOpt.getOrElse(o2.invariants), modifies = r2.resultOpt.getOrElse(o2.modifies), maxItOpt = r3.resultOpt.getOrElse(o2.maxItOpt), body = r4.resultOpt.getOrElse(o2.body), attr = r5.resultOpt.getOrElse(o2.attr))))
-          else
-            TPostResult(r5.ctx, None())
-        case o2: Stmt.DoWhile =>
-          val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.cond)
-          val r1: TPostResult[Context, IS[Z, Exp]] = transformISZ(r0.ctx, o2.invariants, transformExp _)
-          val r2: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(r1.ctx, o2.modifies, transformExpIdent _)
-          val r3: TPostResult[Context, Option[Exp.LitZ]] = transformOption(r2.ctx, o2.maxItOpt, transformExpLitZ _)
-          val r4: TPostResult[Context, Body] = transformBody(r3.ctx, o2.body)
-          val r5: TPostResult[Context, Attr] = transformAttr(r4.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty || r5.resultOpt.nonEmpty)
-            TPostResult(r5.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), invariants = r1.resultOpt.getOrElse(o2.invariants), modifies = r2.resultOpt.getOrElse(o2.modifies), maxItOpt = r3.resultOpt.getOrElse(o2.maxItOpt), body = r4.resultOpt.getOrElse(o2.body), attr = r5.resultOpt.getOrElse(o2.attr))))
-          else
-            TPostResult(r5.ctx, None())
-        case o2: Stmt.For =>
-          val r0: TPostResult[Context, IS[Z, EnumGen.For]] = transformISZ(preR.ctx, o2.enumGens, transformEnumGenFor _)
-          val r1: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(r0.ctx, o2.modifies, transformExpIdent _)
+          val r1: TPostResult[Context, LoopContract] = transformLoopContract(r0.ctx, o2.contract)
           val r2: TPostResult[Context, Body] = transformBody(r1.ctx, o2.body)
           val r3: TPostResult[Context, Attr] = transformAttr(r2.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
-            TPostResult(r3.ctx, Some(o2(enumGens = r0.resultOpt.getOrElse(o2.enumGens), modifies = r1.resultOpt.getOrElse(o2.modifies), body = r2.resultOpt.getOrElse(o2.body), attr = r3.resultOpt.getOrElse(o2.attr))))
+            TPostResult(r3.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), contract = r1.resultOpt.getOrElse(o2.contract), body = r2.resultOpt.getOrElse(o2.body), attr = r3.resultOpt.getOrElse(o2.attr))))
           else
             TPostResult(r3.ctx, None())
+        case o2: Stmt.DoWhile =>
+          val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.cond)
+          val r1: TPostResult[Context, LoopContract] = transformLoopContract(r0.ctx, o2.contract)
+          val r2: TPostResult[Context, Body] = transformBody(r1.ctx, o2.body)
+          val r3: TPostResult[Context, Attr] = transformAttr(r2.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+            TPostResult(r3.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), contract = r1.resultOpt.getOrElse(o2.contract), body = r2.resultOpt.getOrElse(o2.body), attr = r3.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r3.ctx, None())
+        case o2: Stmt.For =>
+          val r0: TPostResult[Context, IS[Z, EnumGen.For]] = transformISZ(preR.ctx, o2.enumGens, transformEnumGenFor _)
+          val r1: TPostResult[Context, Body] = transformBody(r0.ctx, o2.body)
+          val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(enumGens = r0.resultOpt.getOrElse(o2.enumGens), body = r1.resultOpt.getOrElse(o2.body), attr = r2.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r2.ctx, None())
         case o2: Stmt.Return =>
           val r0: TPostResult[Context, Option[Exp]] = transformOption(preR.ctx, o2.expOpt, transformExp _)
           val r1: TPostResult[Context, TypedAttr] = transformTypedAttr(r0.ctx, o2.attr)
@@ -2616,37 +2539,14 @@ import Transformer._
       val o2: HasModifies = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val rOpt: TPostResult[Context, HasModifies] = o2 match {
-        case o2: Stmt.While =>
-          val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.cond)
-          val r1: TPostResult[Context, IS[Z, Exp]] = transformISZ(r0.ctx, o2.invariants, transformExp _)
-          val r2: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(r1.ctx, o2.modifies, transformExpIdent _)
-          val r3: TPostResult[Context, Option[Exp.LitZ]] = transformOption(r2.ctx, o2.maxItOpt, transformExpLitZ _)
-          val r4: TPostResult[Context, Body] = transformBody(r3.ctx, o2.body)
-          val r5: TPostResult[Context, Attr] = transformAttr(r4.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty || r5.resultOpt.nonEmpty)
-            TPostResult(r5.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), invariants = r1.resultOpt.getOrElse(o2.invariants), modifies = r2.resultOpt.getOrElse(o2.modifies), maxItOpt = r3.resultOpt.getOrElse(o2.maxItOpt), body = r4.resultOpt.getOrElse(o2.body), attr = r5.resultOpt.getOrElse(o2.attr))))
-          else
-            TPostResult(r5.ctx, None())
-        case o2: Stmt.DoWhile =>
-          val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.cond)
-          val r1: TPostResult[Context, IS[Z, Exp]] = transformISZ(r0.ctx, o2.invariants, transformExp _)
-          val r2: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(r1.ctx, o2.modifies, transformExpIdent _)
-          val r3: TPostResult[Context, Option[Exp.LitZ]] = transformOption(r2.ctx, o2.maxItOpt, transformExpLitZ _)
-          val r4: TPostResult[Context, Body] = transformBody(r3.ctx, o2.body)
-          val r5: TPostResult[Context, Attr] = transformAttr(r4.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty || r5.resultOpt.nonEmpty)
-            TPostResult(r5.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), invariants = r1.resultOpt.getOrElse(o2.invariants), modifies = r2.resultOpt.getOrElse(o2.modifies), maxItOpt = r3.resultOpt.getOrElse(o2.maxItOpt), body = r4.resultOpt.getOrElse(o2.body), attr = r5.resultOpt.getOrElse(o2.attr))))
-          else
-            TPostResult(r5.ctx, None())
-        case o2: Stmt.For =>
-          val r0: TPostResult[Context, IS[Z, EnumGen.For]] = transformISZ(preR.ctx, o2.enumGens, transformEnumGenFor _)
+        case o2: LoopContract =>
+          val r0: TPostResult[Context, IS[Z, Exp]] = transformISZ(preR.ctx, o2.invariants, transformExp _)
           val r1: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(r0.ctx, o2.modifies, transformExpIdent _)
-          val r2: TPostResult[Context, Body] = transformBody(r1.ctx, o2.body)
-          val r3: TPostResult[Context, Attr] = transformAttr(r2.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
-            TPostResult(r3.ctx, Some(o2(enumGens = r0.resultOpt.getOrElse(o2.enumGens), modifies = r1.resultOpt.getOrElse(o2.modifies), body = r2.resultOpt.getOrElse(o2.body), attr = r3.resultOpt.getOrElse(o2.attr))))
+          val r2: TPostResult[Context, Option[Exp.LitZ]] = transformOption(r1.ctx, o2.maxItOpt, transformExpLitZ _)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(invariants = r0.resultOpt.getOrElse(o2.invariants), modifies = r1.resultOpt.getOrElse(o2.modifies), maxItOpt = r2.resultOpt.getOrElse(o2.maxItOpt))))
           else
-            TPostResult(r3.ctx, None())
+            TPostResult(r2.ctx, None())
         case o2: MethodContract.Simple =>
           val r0: TPostResult[Context, MethodContract.Accesses] = transformMethodContractAccesses(preR.ctx, o2.readsClause)
           val r1: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r0.ctx, o2.requiresClause)
@@ -2676,6 +2576,35 @@ import Transformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: HasModifies = r.resultOpt.getOrElse(o)
     val postR: TPostResult[Context, HasModifies] = pp.postHasModifies(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformLoopContract(ctx: Context, o: LoopContract): TPostResult[Context, LoopContract] = {
+    val preR: PreResult[Context, LoopContract] = pp.preLoopContract(ctx, o)
+    val r: TPostResult[Context, LoopContract] = if (preR.continu) {
+      val o2: LoopContract = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: TPostResult[Context, IS[Z, Exp]] = transformISZ(preR.ctx, o2.invariants, transformExp _)
+      val r1: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(r0.ctx, o2.modifies, transformExpIdent _)
+      val r2: TPostResult[Context, Option[Exp.LitZ]] = transformOption(r1.ctx, o2.maxItOpt, transformExpLitZ _)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+        TPostResult(r2.ctx, Some(o2(invariants = r0.resultOpt.getOrElse(o2.invariants), modifies = r1.resultOpt.getOrElse(o2.modifies), maxItOpt = r2.resultOpt.getOrElse(o2.maxItOpt))))
+      else
+        TPostResult(r2.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: LoopContract = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, LoopContract] = pp.postLoopContract(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -2768,62 +2697,6 @@ import Transformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: Stmt.Import.NamedSelector = r.resultOpt.getOrElse(o)
     val postR: TPostResult[Context, Stmt.Import.NamedSelector] = pp.postStmtImportNamedSelector(r.ctx, o2)
-    if (postR.resultOpt.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return TPostResult(postR.ctx, Some(o2))
-    } else {
-      return TPostResult(postR.ctx, None())
-    }
-  }
-
-  @pure def transformStmtLoop(ctx: Context, o: Stmt.Loop): TPostResult[Context, Stmt.Loop] = {
-    val preR: PreResult[Context, Stmt.Loop] = pp.preStmtLoop(ctx, o)
-    val r: TPostResult[Context, Stmt.Loop] = if (preR.continu) {
-      val o2: Stmt.Loop = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val rOpt: TPostResult[Context, Stmt.Loop] = o2 match {
-        case o2: Stmt.While =>
-          val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.cond)
-          val r1: TPostResult[Context, IS[Z, Exp]] = transformISZ(r0.ctx, o2.invariants, transformExp _)
-          val r2: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(r1.ctx, o2.modifies, transformExpIdent _)
-          val r3: TPostResult[Context, Option[Exp.LitZ]] = transformOption(r2.ctx, o2.maxItOpt, transformExpLitZ _)
-          val r4: TPostResult[Context, Body] = transformBody(r3.ctx, o2.body)
-          val r5: TPostResult[Context, Attr] = transformAttr(r4.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty || r5.resultOpt.nonEmpty)
-            TPostResult(r5.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), invariants = r1.resultOpt.getOrElse(o2.invariants), modifies = r2.resultOpt.getOrElse(o2.modifies), maxItOpt = r3.resultOpt.getOrElse(o2.maxItOpt), body = r4.resultOpt.getOrElse(o2.body), attr = r5.resultOpt.getOrElse(o2.attr))))
-          else
-            TPostResult(r5.ctx, None())
-        case o2: Stmt.DoWhile =>
-          val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.cond)
-          val r1: TPostResult[Context, IS[Z, Exp]] = transformISZ(r0.ctx, o2.invariants, transformExp _)
-          val r2: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(r1.ctx, o2.modifies, transformExpIdent _)
-          val r3: TPostResult[Context, Option[Exp.LitZ]] = transformOption(r2.ctx, o2.maxItOpt, transformExpLitZ _)
-          val r4: TPostResult[Context, Body] = transformBody(r3.ctx, o2.body)
-          val r5: TPostResult[Context, Attr] = transformAttr(r4.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty || r5.resultOpt.nonEmpty)
-            TPostResult(r5.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), invariants = r1.resultOpt.getOrElse(o2.invariants), modifies = r2.resultOpt.getOrElse(o2.modifies), maxItOpt = r3.resultOpt.getOrElse(o2.maxItOpt), body = r4.resultOpt.getOrElse(o2.body), attr = r5.resultOpt.getOrElse(o2.attr))))
-          else
-            TPostResult(r5.ctx, None())
-        case o2: Stmt.For =>
-          val r0: TPostResult[Context, IS[Z, EnumGen.For]] = transformISZ(preR.ctx, o2.enumGens, transformEnumGenFor _)
-          val r1: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(r0.ctx, o2.modifies, transformExpIdent _)
-          val r2: TPostResult[Context, Body] = transformBody(r1.ctx, o2.body)
-          val r3: TPostResult[Context, Attr] = transformAttr(r2.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
-            TPostResult(r3.ctx, Some(o2(enumGens = r0.resultOpt.getOrElse(o2.enumGens), modifies = r1.resultOpt.getOrElse(o2.modifies), body = r2.resultOpt.getOrElse(o2.body), attr = r3.resultOpt.getOrElse(o2.attr))))
-          else
-            TPostResult(r3.ctx, None())
-      }
-      rOpt
-    } else if (preR.resultOpt.nonEmpty) {
-      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
-    } else {
-      TPostResult(preR.ctx, None())
-    }
-    val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: Stmt.Loop = r.resultOpt.getOrElse(o)
-    val postR: TPostResult[Context, Stmt.Loop] = pp.postStmtLoop(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -3552,12 +3425,11 @@ import Transformer._
       val r0: TPostResult[Context, Option[Id]] = transformOption(preR.ctx, o2.idOpt, transformId _)
       val r1: TPostResult[Context, EnumGen.Range] = transformEnumGenRange(r0.ctx, o2.range)
       val r2: TPostResult[Context, Option[Exp]] = transformOption(r1.ctx, o2.condOpt, transformExp _)
-      val r3: TPostResult[Context, IS[Z, Exp]] = transformISZ(r2.ctx, o2.invariants, transformExp _)
-      val r4: TPostResult[Context, Option[Exp.LitZ]] = transformOption(r3.ctx, o2.maxItOpt, transformExpLitZ _)
-      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty)
-        TPostResult(r4.ctx, Some(o2(idOpt = r0.resultOpt.getOrElse(o2.idOpt), range = r1.resultOpt.getOrElse(o2.range), condOpt = r2.resultOpt.getOrElse(o2.condOpt), invariants = r3.resultOpt.getOrElse(o2.invariants), maxItOpt = r4.resultOpt.getOrElse(o2.maxItOpt))))
+      val r3: TPostResult[Context, LoopContract] = transformLoopContract(r2.ctx, o2.contract)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+        TPostResult(r3.ctx, Some(o2(idOpt = r0.resultOpt.getOrElse(o2.idOpt), range = r1.resultOpt.getOrElse(o2.range), condOpt = r2.resultOpt.getOrElse(o2.condOpt), contract = r3.resultOpt.getOrElse(o2.contract))))
       else
-        TPostResult(r4.ctx, None())
+        TPostResult(r3.ctx, None())
     } else if (preR.resultOpt.nonEmpty) {
       TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
     } else {
@@ -4868,41 +4740,6 @@ import Transformer._
     }
   }
 
-  @pure def transformExpLitZ(ctx: Context, o: Exp.LitZ): TPostResult[Context, Exp.LitZ] = {
-    val preR: PreResult[Context, Exp.LitZ] = pp.preExpLitZ(ctx, o) match {
-     case PreResult(preCtx, continu, Some(r: Exp.LitZ)) => PreResult(preCtx, continu, Some[Exp.LitZ](r))
-     case PreResult(_, _, Some(_)) => halt("Can only produce object of type Exp.LitZ")
-     case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp.LitZ]())
-    }
-    val r: TPostResult[Context, Exp.LitZ] = if (preR.continu) {
-      val o2: Exp.LitZ = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: TPostResult[Context, Attr] = transformAttr(preR.ctx, o2.attr)
-      if (hasChanged || r0.resultOpt.nonEmpty)
-        TPostResult(r0.ctx, Some(o2(attr = r0.resultOpt.getOrElse(o2.attr))))
-      else
-        TPostResult(r0.ctx, None())
-    } else if (preR.resultOpt.nonEmpty) {
-      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
-    } else {
-      TPostResult(preR.ctx, None())
-    }
-    val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: Exp.LitZ = r.resultOpt.getOrElse(o)
-    val postR: TPostResult[Context, Exp.LitZ] = pp.postExpLitZ(r.ctx, o2) match {
-     case TPostResult(postCtx, Some(result: Exp.LitZ)) => TPostResult(postCtx, Some[Exp.LitZ](result))
-     case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp.LitZ")
-     case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp.LitZ]())
-    }
-    if (postR.resultOpt.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return TPostResult(postR.ctx, Some(o2))
-    } else {
-      return TPostResult(postR.ctx, None())
-    }
-  }
-
   @pure def transformStmtBlock(ctx: Context, o: Stmt.Block): TPostResult[Context, Stmt.Block] = {
     val preR: PreResult[Context, Stmt.Block] = pp.preStmtBlock(ctx, o) match {
      case PreResult(preCtx, continu, Some(r: Stmt.Block)) => PreResult(preCtx, continu, Some[Stmt.Block](r))
@@ -4929,6 +4766,41 @@ import Transformer._
      case TPostResult(postCtx, Some(result: Stmt.Block)) => TPostResult(postCtx, Some[Stmt.Block](result))
      case TPostResult(_, Some(_)) => halt("Can only produce object of type Stmt.Block")
      case TPostResult(postCtx, _) => TPostResult(postCtx, None[Stmt.Block]())
+    }
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformExpLitZ(ctx: Context, o: Exp.LitZ): TPostResult[Context, Exp.LitZ] = {
+    val preR: PreResult[Context, Exp.LitZ] = pp.preExpLitZ(ctx, o) match {
+     case PreResult(preCtx, continu, Some(r: Exp.LitZ)) => PreResult(preCtx, continu, Some[Exp.LitZ](r))
+     case PreResult(_, _, Some(_)) => halt("Can only produce object of type Exp.LitZ")
+     case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp.LitZ]())
+    }
+    val r: TPostResult[Context, Exp.LitZ] = if (preR.continu) {
+      val o2: Exp.LitZ = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: TPostResult[Context, Attr] = transformAttr(preR.ctx, o2.attr)
+      if (hasChanged || r0.resultOpt.nonEmpty)
+        TPostResult(r0.ctx, Some(o2(attr = r0.resultOpt.getOrElse(o2.attr))))
+      else
+        TPostResult(r0.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: Exp.LitZ = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, Exp.LitZ] = pp.postExpLitZ(r.ctx, o2) match {
+     case TPostResult(postCtx, Some(result: Exp.LitZ)) => TPostResult(postCtx, Some[Exp.LitZ](result))
+     case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp.LitZ")
+     case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp.LitZ]())
     }
     if (postR.resultOpt.nonEmpty) {
       return postR
