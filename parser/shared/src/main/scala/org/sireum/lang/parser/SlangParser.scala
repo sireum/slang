@@ -2380,7 +2380,12 @@ class SlangParser(
       case exp: Term.ApplyUnary => translateUnaryExp(exp)
       case exp: Term.ApplyInfix => translateBinaryExp(exp)
       case q"${name: Term.Name}($arg)" if name.value == "In" =>
-        AST.Exp.Input(translateExp(arg), attr(if (exp.pos == Position.None) name.pos else exp.pos))
+        val r = AST.Exp.Input(translateExp(arg), attr(if (exp.pos == Position.None) name.pos else exp.pos))
+        r.exp match {
+          case _: AST.Exp.Ident =>
+          case _ => errorInSlang(arg.pos, "In(...) argument has to be a variable reference")
+        }
+        r
       case q"${name: Term.Name}($arg)" if name.value == "Old" =>
         AST.Exp.OldVal(translateExp(arg), attr(if (exp.pos == Position.None) name.pos else exp.pos))
       case q"$expr.$name[..$tpes](...${aexprssnel: List[List[Term]]})" if tpes.nonEmpty && aexprssnel.nonEmpty =>
