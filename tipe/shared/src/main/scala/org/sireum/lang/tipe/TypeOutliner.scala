@@ -65,7 +65,7 @@ object TypeOutliner {
                             var drs: ISZ[AST.Stmt.DataRefinement],
                             var stmts: ISZ[AST.Stmt])
 
-  def checkOutline(par: B, strictAliasing: B, typeHierarchy: TypeHierarchy, reporter: Reporter): TypeHierarchy = {
+  def checkOutline(par: Z, strictAliasing: B, typeHierarchy: TypeHierarchy, reporter: Reporter): TypeHierarchy = {
     def parentsOutlined(name: QName, typeMap: TypeMap): B = {
       def isOutlined(ids: QName): B = {
         typeMap.get(ids).get match {
@@ -150,11 +150,11 @@ object TypeOutliner {
           l = addJob(name, l)
         }
         val init = (th, ISZ[Message]())
-        val r: (TypeHierarchy, ISZ[Message]) =
-          if (par) ops.ISZOps(ops.ISZOps(jobs).parMap((f: () => (TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure)@pure) => f())).
-            foldLeft(TypeHierarchy.combine _, init)
-          else ops.ISZOps(ops.ISZOps(jobs).map((f: () => (TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure)@pure) => f())).
-            foldLeft(TypeHierarchy.combine _, init)
+        val r = ops.ISZOps(jobs).parMapFoldLeftCores(
+          (f: () => (TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure)@pure) => f(),
+          TypeHierarchy.combine _,
+          init,
+          par)
         reporter.reports(r._2)
         th = r._1
         workList = l
@@ -172,11 +172,11 @@ object TypeOutliner {
         }
       }
       val init = (th, ISZ[Message]())
-      val r: (TypeHierarchy, ISZ[Message]) =
-        if (par) ops.ISZOps(ops.ISZOps(jobs).parMap((f: () => (TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure)@pure) => f())).
-          foldLeft(TypeHierarchy.combine _, init)
-        else ops.ISZOps(ops.ISZOps(jobs).map((f: () => (TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure)@pure) => f())).
-          foldLeft(TypeHierarchy.combine _, init)
+      val r = ops.ISZOps(jobs).parMapFoldLeftCores(
+        (f: () => (TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure)@pure) => f(),
+        TypeHierarchy.combine _,
+        init,
+        par)
       reporter.reports(r._2)
       th = r._1
       var gnm = th.nameMap
@@ -218,11 +218,11 @@ object TypeOutliner {
       }
 
       val init = (th, ISZ[Message]())
-      val r: (TypeHierarchy, ISZ[Message]) =
-        if (par) ops.ISZOps(ops.ISZOps(jobs).parMap((f: () => (TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure)@pure) => f())).
-          foldLeft(TypeHierarchy.combine _, init)
-        else ops.ISZOps(ops.ISZOps(jobs).map((f: () => (TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure)@pure) => f())).
-          foldLeft(TypeHierarchy.combine _, init)
+      val r = ops.ISZOps(jobs).parMapFoldLeftCores(
+        (f: () => (TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure)@pure) => f(),
+        TypeHierarchy.combine _,
+        init,
+        par)
       reporter.reports(r._2)
       th = r._1
     }

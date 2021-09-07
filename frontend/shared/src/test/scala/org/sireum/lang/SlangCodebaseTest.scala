@@ -36,7 +36,7 @@ class SlangCodebaseTest extends TestSuite {
     * - {
       val (initNameMap, initTypeMap) = Resolver.addBuiltIns(HashMap.empty, HashMap.empty)
       val (reporter, _, globalNameMap, globalTypeMap) = FrontEnd.parseProgramAndGloballyResolve(
-        T,
+        0,
         for (p <- org.sireum.Library.files) yield FrontEnd.Input(p._2, p._1, 0),
         initNameMap,
         initTypeMap
@@ -54,7 +54,7 @@ class SlangCodebaseTest extends TestSuite {
       report()
       var th = TypeHierarchy.build(F, TypeHierarchy(globalNameMap, globalTypeMap, Poset.empty, HashMap.empty), reporter)
       report()
-      th = TypeOutliner.checkOutline(T, T, th, reporter)
+      th = TypeOutliner.checkOutline(0, T, th, reporter)
       report()
 
       def nameInfo(th: TypeHierarchy, name: Predef.String): Resolver.NameMap = {
@@ -74,7 +74,7 @@ class SlangCodebaseTest extends TestSuite {
       val name = ""
       val nameMap: Resolver.NameMap = if (all) th.nameMap else nameInfo(th, name)
       val typeMap: Resolver.TypeMap = if (all) th.typeMap else typeInfo(th, name)
-      th = TypeChecker.checkComponents(T, T, th, nameMap, typeMap, reporter)
+      th = TypeChecker.checkComponents(0, T, th, nameMap, typeMap, reporter)
       if (!reporter.hasError) {
         if (all) {
           PostTipeAttrChecker.checkNameTypeMaps(th.nameMap, th.typeMap, reporter)
