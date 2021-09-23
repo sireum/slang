@@ -43,13 +43,18 @@ object FrontEnd {
   }
 
   @datatype class Input(val content: String,
-                        val fileUriOpt: Option[String],
-                        val timestamp: Z)
+                        val fileUriOpt: Option[String]) {
+    @memoize def fingerprint: ISZ[U8] = {
+      val sha3 = crypto.SHA3.init256
+      sha3.update(conversions.String.toU8is(content))
+      return sha3.finalise()
+    }
+    @memoize def parseGloballyResolve: ParseResult = {
+      return FrontEnd.parseGloballyResolve(this)
+    }
+  }
 
-  @datatype class ParseResult(val content: String,
-                              val fileUriOpt: Option[String],
-                              val timestamp: Z,
-                              val program: AST.TopUnit.Program,
+  @datatype class ParseResult(val program: AST.TopUnit.Program,
                               val nameMap: NameMap,
                               val typeMap: TypeMap,
                               val messages: ISZ[Message])
@@ -61,14 +66,14 @@ object FrontEnd {
   @datatype class ParseResultMap(val map: HashMap[String, ParseResult]) {
     def update(input: Input): ParseResultMap = {
       val pr = parseGloballyResolve(input)
-      return ParseResultMap(map + pr.fileUriOpt.get ~> pr)
+      return ParseResultMap(map + pr.program.fileUriOpt.get ~> pr)
     }
 
     def updates(par: Z, inputs: ISZ[Input]): ParseResultMap = {
       val prs = ops.ISZOps(inputs).parMapCores(parseGloballyResolve _, par)
       var m = map
       for (pr <- prs) {
-        m = m + pr.fileUriOpt.get ~> pr
+        m = m + pr.program.fileUriOpt.get ~> pr
       }
       return ParseResultMap(m)
     }
@@ -96,7 +101,7 @@ object FrontEnd {
     val nameMap = HashMap.empty[QName, Info]
     val typeMap = HashMap.empty[QName, TypeInfo]
     if (reporter.hasError) {
-      return ParseResult(input.content, input.fileUriOpt, input.timestamp, AST.TopUnit.Program.empty, nameMap, typeMap,
+      return ParseResult(AST.TopUnit.Program.empty, nameMap, typeMap,
         reporter.messages)
     }
     topUnitOpt match {
@@ -104,11 +109,9 @@ object FrontEnd {
         val gdr = GlobalDeclarationResolver(nameMap, typeMap, Reporter.create)
         gdr.resolveProgram(program)
         reporter.reports(gdr.reporter.messages)
-        return ParseResult(input.content, input.fileUriOpt, input.timestamp, program, gdr.globalNameMap,
-          gdr.globalTypeMap, reporter.messages)
+        return ParseResult(program, gdr.globalNameMap, gdr.globalTypeMap, reporter.messages)
       case _ =>
-        return ParseResult(input.content, input.fileUriOpt, input.timestamp, AST.TopUnit.Program.empty, nameMap,
-          typeMap, reporter.messages)
+        return ParseResult(AST.TopUnit.Program.empty, nameMap, typeMap, reporter.messages)
     }
   }
 
@@ -196,7 +199,7 @@ object FrontEnd {
     val (initNameMap, initTypeMap) =
       Resolver.addBuiltIns(HashMap.empty, HashMap.empty)
     val (reporter, _, nameMap, typeMap) =
-      parseProgramAndGloballyResolve(0, for (f <- Library.files) yield Input(f._2, f._1, 0), initNameMap, initTypeMap)
+      parseProgramAndGloballyResolve(0, for (f <- Library.files) yield Input(f._2, f._1), initNameMap, initTypeMap)
     val th =
       TypeHierarchy.build(F, TypeHierarchy(nameMap, typeMap, Poset.empty, HashMap.empty), reporter)
     val thOutlined = TypeOutliner.checkOutline(0, T, th, reporter)
@@ -264,7 +267,7 @@ object FrontEnd {
       val (messages, _, nameMap, typeMap) =
         combineParseResult(
           (ISZ(), ISZ(), th.nameMap, th.typeMap),
-          ParseResult("", None(), 0, AST.TopUnit.Program.empty, gdr.globalNameMap, gdr.globalTypeMap, ISZ())
+          ParseResult(AST.TopUnit.Program.empty, gdr.globalNameMap, gdr.globalTypeMap, ISZ())
         )
       reporter.reports(messages)
       if (reporter.hasIssue) {
