@@ -45,9 +45,7 @@ object FrontEnd {
   @datatype class Input(val content: String,
                         val fileUriOpt: Option[String]) {
     @memoize def fingerprint: ISZ[U8] = {
-      val sha3 = crypto.SHA3.init256
-      sha3.update(conversions.String.toU8is(content))
-      return sha3.finalise()
+      return Ext.fingerprint(content)
     }
     @memoize def parseGloballyResolve: ParseResult = {
       return FrontEnd.parseGloballyResolve(this)
@@ -367,6 +365,10 @@ object FrontEnd {
     }
 
     return (typeChecker.typeHierarchy(nameMap = nameMap), program(body = newBody(stmts = newStmts)))
+  }
+
+  @ext("FrontEnd_Ext") object Ext {
+    def fingerprint(s: String): ISZ[U8] = $
   }
 
 }
