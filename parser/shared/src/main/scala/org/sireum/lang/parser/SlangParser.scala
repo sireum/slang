@@ -50,6 +50,8 @@ object SlangParser {
 
   val builtinPrefix: Seq[String] = Seq("z", "r", "c", "string", "f32", "f64", "sn")
 
+  val nonConstantPrefixes: org.sireum.HashSet[org.sireum.String] = org.sireum.HashSet ++ org.sireum.ISZ[org.sireum.String]("proc", "sn")
+
   val disallowedTypeIds: Seq[String] = Seq(
     "Contract",
     "Deduce",
@@ -63,6 +65,11 @@ object SlangParser {
     "Exists",
     "∀",
     "∃"
+  )
+
+  val disallowedVarIds: Seq[String] = Seq(
+    "T",
+    "F"
   )
 
   val disallowedMethodIds: Seq[String] = Seq(
@@ -332,7 +339,11 @@ class SlangParser(
             (hashSireum && (fileUri.value.endsWith(".scala") ||
               fileUri.value.endsWith(".sc") || fileUri.value.endsWith(".cmd")))
       )
-      if (shouldParse)
+      if (shouldParse) {
+        var stmts = checkMemberStmts(ISZ(rest.map(translateStat(Enclosing.Top)): _*))
+        if (isWorksheet) {
+          stmts = addConstantInv(stmts)
+        }
         Result(
           text,
           hashSireum,
@@ -340,11 +351,11 @@ class SlangParser(
             AST.TopUnit.Program(
               fileUriOpt,
               AST.Name(ISZ(), emptyAttr),
-              bodyCheck(checkMemberStmts(ISZ(rest.map(translateStat(Enclosing.Top)): _*)), ISZ())
+              bodyCheck(stmts, ISZ())
             )
           )
         )
-      else
+      } else
         Result(text, hashSireum, None())
     }
 
@@ -400,10 +411,10 @@ class SlangParser(
       case stat: Defn.Val => translateVal(enclosing, stat)
       case stat: Defn.Var => translateVar(enclosing, stat)
       case stat: Decl.Def =>
-        checkReservedId(stat.name.pos, stat.name.value)
+        checkReservedId(true, stat.name.pos, stat.name.value)
         translateDef(enclosing, stat)
       case stat: Defn.Def =>
-        checkReservedId(stat.name.pos, stat.name.value)
+        checkReservedId(true, stat.name.pos, stat.name.value)
         translateDef(enclosing, stat)
       case stat: Defn.Object =>
         checkTypeId(stat.name.pos, stat.name.value)
@@ -603,7 +614,7 @@ class SlangParser(
     else
       patsnel.head match {
         case x: Pat.Var =>
-          checkReservedId(x.name.pos, x.name.value)
+          checkReservedId(true, x.name.pos, x.name.value)
           val r = AST.Stmt.Var(
             isSpec = hasSpec,
             isVal = true,
@@ -709,7 +720,7 @@ class SlangParser(
     else
       patsnel.head match {
         case x: Pat.Var =>
-          checkReservedId(x.name.pos, x.name.value)
+          checkReservedId(true, x.name.pos, x.name.value)
           val r = AST.Stmt.Var(
             isSpec = hasSpec,
             isVal = false,
@@ -1431,8 +1442,53 @@ class SlangParser(
       AST.Stmt.Enum(cid(name), ISZ(elements: _*), attr(stat.pos))
     } else if (!hasError) {
       val tstat = if (extNameOpt.nonEmpty) translateStat(Enclosing.ExtObject) _ else translateStat(Enclosing.Object) _
-      AST.Stmt.Object(hasApp, extNameOpt, cid(name), checkMemberStmts(ISZ(stats.map(tstat): _*)), attr(stat.pos))
+      val oattr = attr(stat.pos)
+      AST.Stmt.Object(hasApp, extNameOpt, cid(name), addConstantInv(checkMemberStmts(ISZ(stats.map(tstat): _*))), oattr)
     } else AST.Stmt.Object(hasApp, extNameOpt, cid(name), ISZ(), attr(stat.pos))
+  }
+
+  def addConstantInv(stmts: ISZ[AST.Stmt]): ISZ[AST.Stmt] = {
+    def constantInitOpt(aeOpt: Option[AST.AssignExp]): Option[AST.Exp] = {
+      aeOpt match {
+        case Some(AST.Stmt.Expr(exp)) =>
+          exp match {
+            case _: AST.Exp.LitZ =>
+            case _: AST.Exp.LitB =>
+            case _: AST.Exp.LitC =>
+            case _: AST.Exp.LitString =>
+            case _: AST.Exp.LitF32 =>
+            case _: AST.Exp.LitF64 =>
+            case _: AST.Exp.LitR =>
+            case exp: AST.Exp.Ident if exp.id.value === "T" || exp.id.value === "F" =>
+            case exp: AST.Exp.StringInterpolate if exp.args.isEmpty && !nonConstantPrefixes.contains(exp.prefix) =>
+            case _ => return None()
+          }
+          return Some(exp)
+        case _ =>
+      }
+      return None()
+    }
+    var claims = ISZ[AST.Exp]()
+    for (stmt <- stmts) {
+      stmt match {
+        case stmt: AST.Stmt.Var if stmt.isVal =>
+          constantInitOpt(stmt.initOpt) match {
+            case Some(exp) =>
+              claims = claims :+ AST.Exp.Binary(
+                AST.Exp.Ident(stmt.id, AST.ResolvedAttr(stmt.id.attr.posOpt, None(), None())),
+                AST.Exp.BinaryOp.Eq,
+                exp, AST.ResolvedAttr(exp.posOpt, None(), None()))
+            case _ =>
+          }
+        case _ =>
+      }
+    }
+    if (claims.isEmpty) {
+      stmts
+    } else {
+      val attr = AST.Attr(claims(claims.size - 1).posOpt)
+      stmts :+ AST.Stmt.Inv(AST.Id("constants.", attr), claims, AST.ResolvedAttr(attr.posOpt, None(), None()))
+    }
   }
 
   def translateSig(enclosing: Enclosing.Type, stat: Defn.Trait): AST.Stmt = {
@@ -1819,13 +1875,13 @@ class SlangParser(
       case p"${ref: Term.Ref}.$ename" =>
         AST.Pattern.Ref(AST.Name(ref2IS(ref) :+ cid(ename), attr(pat.pos)), resolvedAttr(pat.pos))
       case pat: Term.Name =>
-        checkReservedId(pat.pos, pat.value)
+        checkReservedId(false, pat.pos, pat.value)
         AST.Pattern.Ref(AST.Name(ISZ(cid(pat)), attr(pat.pos)), resolvedAttr(pat.pos))
       case p"${name: Pat.Var} : $tpe" =>
-        checkReservedId(name.name.pos, name.name.value)
+        checkReservedId(true, name.name.pos, name.name.value)
         AST.Pattern.VarBinding(cid(name), Some(translateType(tpe)), typedAttr(pat.pos))
       case q"${name: Pat.Var}" =>
-        checkReservedId(name.name.pos, name.name.value)
+        checkReservedId(true, name.name.pos, name.name.value)
         AST.Pattern.VarBinding(cid(name), None(), typedAttr(pat.pos))
       case p"_ : $tpe" => AST.Pattern.Wildcard(Some(translateType(tpe)), typedAttr(pat.pos))
       case p"_" => AST.Pattern.Wildcard(None(), typedAttr(pat.pos))
@@ -1956,7 +2012,7 @@ class SlangParser(
     var hasError = false
     var hasHidden = false
     var isVar = false
-    checkReservedId(tp.name.pos, tp.name.value)
+    checkReservedId(true, tp.name.pos, tp.name.value)
     for (mod <- mods) mod match {
       case mod"@hidden" =>
         if (hasHidden) {
@@ -2286,7 +2342,7 @@ class SlangParser(
         case enumerator"${_: Pat.Wildcard} <- $expr" =>
           AST.EnumGen.For(None(), translateRange(expr), Some(translateExp(cond)), AST.LoopContract.empty) +: translateEnumGens(rest)
         case enumerator"${id: Pat.Var} <- $expr" =>
-          checkReservedId(id.name.pos, id.name.value)
+          checkReservedId(true, id.name.pos, id.name.value)
           AST.EnumGen.For(Some(cid(id)), translateRange(expr), Some(translateExp(cond)), AST.LoopContract.empty) +: translateEnumGens(rest)
         case _ =>
           errorNotSlang(head.pos, s"For-loop enumerator: '${syntax(head)}'")
@@ -2295,7 +2351,7 @@ class SlangParser(
     case enumerator"${_: Pat.Wildcard} <- $expr" :: rest =>
       AST.EnumGen.For(None(), translateRange(expr), None(), AST.LoopContract.empty) +: translateEnumGens(rest)
     case enumerator"${id: Pat.Var} <- $expr" :: rest =>
-      checkReservedId(id.name.pos, id.name.value)
+      checkReservedId(true, id.name.pos, id.name.value)
       AST.EnumGen.For(Some(cid(id)), translateRange(expr), None(), AST.LoopContract.empty) +: translateEnumGens(rest)
     case Nil => ISZ()
     case _ =>
@@ -3459,11 +3515,13 @@ class SlangParser(
     id.headOption.exists(isSymbolFirstChar)
   }
 
-  def checkReservedId(pos: Position, id: String): Unit = {
+  def checkReservedId(checkVarId: B, pos: Position, id: String): Unit = {
     def err(): Unit = errorInSlang(pos, s"'$id' is a reserved identifier")
 
     val idv = id.value
-    if (disallowedMethodIds.contains(id)) {
+    if (checkVarId && disallowedVarIds.contains(id)) {
+      err()
+    } else if (disallowedMethodIds.contains(id)) {
       err()
     } else if (unaryMethods.contains(id)) {
       return
