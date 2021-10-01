@@ -29,8 +29,8 @@ import org.sireum._
 
 object FrontEnd_Ext {
   def fingerprint(s: String): ISZ[U8] = {
-    val md = java.security.MessageDigest.getInstance("SHA3-256")
-    val digest = md.digest(s.value.getBytes("UTF-8"))
+    val md = _root_.java.security.MessageDigest.getInstance("SHA3-256")
+    val digest = md.digest(s.value.getBytes())
     new IS[Z, U8](Z, digest, digest.length, U8.Boxer)
   }
 }
