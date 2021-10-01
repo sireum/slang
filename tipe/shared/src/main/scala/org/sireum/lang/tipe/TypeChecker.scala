@@ -3680,8 +3680,11 @@ import TypeChecker._
         e._2 match {
           case _: Info.Method =>
           case _: Info.SpecMethod =>
+          case _: Info.SpecVar =>
+          case _: Info.Var =>
           case Info.LocalVar(_, _, _, _, Some(res: AST.ResolvedInfo.LocalVar)) => r = r :+ res
-          case _ => halt("Infeasible")
+          case _: Info.LocalVar =>
+          case _ => halt(s"Infeasible: ${e._2}")
         }
       }
       r
@@ -4925,7 +4928,14 @@ import TypeChecker._
     val reporter = Reporter.create
     val typeParams = typeParamMap(info.ast.typeParams, reporter)
     var scope = Scope.Local.create(typeParams.map, info.scope)
-    scope = scope(localThisOpt = Some(info.tpe))
+    var nameMap = HashMap.empty[String, Info]
+    for (p <- info.vars.map.entries) {
+      nameMap = nameMap + p._1 ~> p._2
+    }
+    for (p <- info.specVars.map.entries) {
+      nameMap = nameMap + p._1 ~> p._2
+    }
+    scope = scope(localThisOpt = Some(info.tpe), nameMap = nameMap)
     val newStmts = checkStmts(ISZ(scope), None(), info.ast.stmts, reporter)
     var specVars: HashSMap[String, Info.SpecVar] = info.specVars
     var vars: HashSMap[String, Info.Var] = info.vars
@@ -4983,7 +4993,11 @@ import TypeChecker._
     val reporter = Reporter.create
     val typeParams = typeParamMap(info.ast.typeParams, reporter)
     var scope = Scope.Local.create(typeParams.map, info.scope)
-    scope = scope(localThisOpt = Some(info.tpe))
+    var nameMap = HashMap.empty[String, Info]
+    for (p <- info.specVars.entries) {
+      nameMap = nameMap + p._1 ~> p._2
+    }
+    scope = scope(localThisOpt = Some(info.tpe), nameMap = nameMap)
     val newStmts = checkStmts(ISZ(scope), None(), info.ast.stmts, reporter)
     var specVars: HashSMap[String, Info.SpecVar] = info.specVars
     var specMethods: HashSMap[String, Info.SpecMethod] = info.specMethods
@@ -5024,7 +5038,15 @@ import TypeChecker._
     }
     val reporter = Reporter.create
     var scope = createNewScope(info.scope(enclosingName = name))
-    scope = scope(localThisOpt = Some(AST.Typed.Object(info.owner, info.ast.id.value)))
+    var nameMap = HashMap.empty[String, Info]
+    for (stmt <- info.ast.stmts) {
+      stmt match {
+        case stmt: AST.Stmt.Var => nameMap = nameMap + stmt.id.value ~> typeHierarchy.nameMap.get(info.name :+ stmt.id.value).get
+        case stmt: AST.Stmt.SpecVar => nameMap = nameMap + stmt.id.value ~> typeHierarchy.nameMap.get(info.name :+ stmt.id.value).get
+        case _ =>
+      }
+    }
+    scope = scope(localThisOpt = Some(AST.Typed.Object(info.owner, info.ast.id.value)), nameMap = nameMap)
     var stmtOpts = ISZ[Option[AST.Stmt]]()
     for (stmt <- info.ast.stmts) {
       stmt match {

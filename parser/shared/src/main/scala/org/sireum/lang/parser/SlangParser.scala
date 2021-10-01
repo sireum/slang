@@ -50,8 +50,6 @@ object SlangParser {
 
   val builtinPrefix: Seq[String] = Seq("z", "r", "c", "string", "f32", "f64", "sn")
 
-  val nonConstantPrefixes: org.sireum.HashSet[org.sireum.String] = org.sireum.HashSet ++ org.sireum.ISZ[org.sireum.String]("proc", "sn")
-
   val disallowedTypeIds: Seq[String] = Seq(
     "Contract",
     "Deduce",
@@ -1443,36 +1441,16 @@ class SlangParser(
     } else if (!hasError) {
       val tstat = if (extNameOpt.nonEmpty) translateStat(Enclosing.ExtObject) _ else translateStat(Enclosing.Object) _
       val oattr = attr(stat.pos)
-      AST.Stmt.Object(hasApp, extNameOpt, cid(name), addConstantInv(checkMemberStmts(ISZ(stats.map(tstat): _*))), oattr)
+      AST.Stmt.Object(hasApp, extNameOpt, cid(name), checkMemberStmts(ISZ(stats.map(tstat): _*)), oattr)
     } else AST.Stmt.Object(hasApp, extNameOpt, cid(name), ISZ(), attr(stat.pos))
   }
 
   def addConstantInv(stmts: ISZ[AST.Stmt]): ISZ[AST.Stmt] = {
-    def constantInitOpt(aeOpt: Option[AST.AssignExp]): Option[AST.Exp] = {
-      aeOpt match {
-        case Some(AST.Stmt.Expr(exp)) =>
-          exp match {
-            case _: AST.Exp.LitZ =>
-            case _: AST.Exp.LitB =>
-            case _: AST.Exp.LitC =>
-            case _: AST.Exp.LitString =>
-            case _: AST.Exp.LitF32 =>
-            case _: AST.Exp.LitF64 =>
-            case _: AST.Exp.LitR =>
-            case exp: AST.Exp.Ident if exp.id.value === "T" || exp.id.value === "F" =>
-            case exp: AST.Exp.StringInterpolate if exp.args.isEmpty && !nonConstantPrefixes.contains(exp.prefix) =>
-            case _ => return None()
-          }
-          return Some(exp)
-        case _ =>
-      }
-      return None()
-    }
     var claims = ISZ[AST.Exp]()
     for (stmt <- stmts) {
       stmt match {
         case stmt: AST.Stmt.Var if stmt.isVal =>
-          constantInitOpt(stmt.initOpt) match {
+          AST.Util.constantInitOpt(stmt.initOpt) match {
             case Some(exp) =>
               claims = claims :+ AST.Exp.Binary(
                 AST.Exp.Ident(stmt.id, AST.ResolvedAttr(stmt.id.attr.posOpt, None(), None())),

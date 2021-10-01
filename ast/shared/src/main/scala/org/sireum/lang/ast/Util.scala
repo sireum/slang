@@ -355,6 +355,8 @@ object Util {
     }
   }
 
+  val nonConstantPrefixes: HashSet[String] = HashSet ++ ISZ[String]("proc", "sn")
+
   val symbolCharMap: HashMap[C, String] = HashMap ++ ISZ(
     '+' ~> "__plus",
     '-' ~> "__minus",
@@ -732,4 +734,24 @@ object Util {
     }
   }
 
+  @pure def constantInitOpt(aeOpt: Option[AssignExp]): Option[Exp] = {
+    aeOpt match {
+      case Some(Stmt.Expr(exp)) =>
+        exp match {
+          case _: Exp.LitZ =>
+          case _: Exp.LitB =>
+          case _: Exp.LitC =>
+          case _: Exp.LitString =>
+          case _: Exp.LitF32 =>
+          case _: Exp.LitF64 =>
+          case _: Exp.LitR =>
+          case exp: Exp.Ident if exp.id.value === "T" || exp.id.value === "F" =>
+          case exp: Exp.StringInterpolate if exp.args.isEmpty && !nonConstantPrefixes.contains(exp.prefix) =>
+          case _ => return None()
+        }
+        return Some(exp)
+      case _ =>
+    }
+    return None()
+  }
 }
