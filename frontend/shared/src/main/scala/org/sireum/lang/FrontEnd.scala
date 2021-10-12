@@ -47,6 +47,7 @@ object FrontEnd {
     @memoize def fingerprint: ISZ[U8] = {
       return Ext.fingerprint(content)
     }
+
     @memoize def parseGloballyResolve: ParseResult = {
       return FrontEnd.parseGloballyResolve(this)
     }
@@ -70,7 +71,7 @@ object FrontEnd {
     def updates(par: Z, inputs: ISZ[Input]): ParseResultMap = {
       val prs = ops.ISZOps(inputs).parMapCores(parseGloballyResolve _, par)
       var m = map
-      for (pr <- prs) {
+      for (pr <- prs if pr.program.fileUriOpt.nonEmpty) {
         m = m + pr.program.fileUriOpt.get ~> pr
       }
       return ParseResultMap(m)
@@ -213,12 +214,10 @@ object FrontEnd {
     return (TypeChecker(th2, ISZ(), F, TypeChecker.ModeContext.Code, T), reporter)
   }
 
-  def checkWorksheet(
-    par: Z,
-    thOpt: Option[TypeHierarchy],
-    program: AST.TopUnit.Program,
-    reporter: Reporter
-  ): (TypeHierarchy, AST.TopUnit.Program) = {
+  def checkWorksheet(par: Z,
+                     thOpt: Option[TypeHierarchy],
+                     program: AST.TopUnit.Program,
+                     reporter: Reporter): (TypeHierarchy, AST.TopUnit.Program) = {
 
     AST.Util.checkScript(program, reporter)
 
@@ -250,7 +249,7 @@ object FrontEnd {
                 case _: AST.Stmt.VarPattern => F
                 case _: AST.Stmt.SpecVar => F
                 case _ => T
-            }
+              }
           )
         )
       )
