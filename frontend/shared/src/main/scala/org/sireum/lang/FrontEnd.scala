@@ -100,7 +100,7 @@ object FrontEnd {
     val nameMap = HashMap.empty[QName, Info]
     val typeMap = HashMap.empty[QName, TypeInfo]
     if (reporter.hasError) {
-      return ParseResult(AST.TopUnit.Program.empty, nameMap, typeMap,
+      return ParseResult(AST.TopUnit.Program.empty(fileUriOpt = input.fileUriOpt), nameMap, typeMap,
         reporter.messages)
     }
     topUnitOpt match {
