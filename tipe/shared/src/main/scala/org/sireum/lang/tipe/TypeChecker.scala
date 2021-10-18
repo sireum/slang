@@ -1234,33 +1234,18 @@ import TypeChecker._
         case "hash" if typeArgs.isEmpty => return (AST.Typed.zOpt, hashResOpt, typeArgs)
         case "asInstanceOf" if typeArgs.size == z"1" =>
           val asT = typeArgs(0)
-          if (t == asT) {
-            reporter.warn(ident.attr.posOpt, typeCheckerKind, s"Useless 'asInstanceOf' on same type '$t'.")
-          }
           if (!t.isInstanceOf[AST.Typed.Name]) {
             reporter.error(ident.attr.posOpt, typeCheckerKind, s"Cannot use 'asInstanceOf' on '$t'.")
-          } else if (!typeHierarchy.isSubType(t, asT) && !typeHierarchy.isSubType(asT, t)) {
-            reporter.error(
-              ident.attr.posOpt,
-              typeCheckerKind,
-              s"Cannot use 'asInstanceOf' on unrelated types '$t' and '$asT'."
-            )
+          } else {
+            checkTypeRelation("asInstanceOf", ident.attr.posOpt, t, asT, reporter)
           }
           return (Some(asT), asInstanceOfResOpt, ISZ())
         case "isInstanceOf" if typeArgs.size == z"1" =>
           val asT = typeArgs(0)
-          if (t == asT) {
-            reporter
-              .warn(ident.attr.posOpt, typeCheckerKind, s"Useless 'isInstanceOf' on same type '$t' (trivially true).")
-          }
           if (!t.isInstanceOf[AST.Typed.Name]) {
             reporter.error(ident.attr.posOpt, typeCheckerKind, s"Cannot use 'isInstanceOf' on '$t'.")
-          } else if (!typeHierarchy.isSubType(t, asT) && !typeHierarchy.isSubType(asT, t)) {
-            reporter.error(
-              ident.attr.posOpt,
-              typeCheckerKind,
-              s"Cannot use 'isInstanceOf' on unrelated types '$t' and '$asT'."
-            )
+          } else {
+            checkTypeRelation("isInstanceOf", ident.attr.posOpt, t, asT, reporter)
           }
           return (AST.Typed.bOpt, isInstanceOfResOpt, ISZ())
         case _ =>
@@ -3686,6 +3671,29 @@ import TypeChecker._
     return (scope, body(stmts = newStmts, undecls = undecls))
   }
 
+  def checkTypeRelation(title: String, posOpt: Option[Position], expectedType: AST.Typed, t: AST.Typed, reporter: Reporter): B = {
+    if (t != expectedType && typeHierarchy.isSubType(expectedType, t)) {
+      // OK
+    } else {
+      if (t == expectedType) {
+        reporter.warn(
+          posOpt,
+          typeCheckerKind,
+          s"Unnecessary $title because it is always going to be successful (i.e.,  $t ≡ $expectedType)."
+        )
+        return F
+      } else if (typeHierarchy.glb(ISZ(expectedType, t)).isEmpty) {
+        reporter.error(
+          posOpt,
+          typeCheckerKind,
+          s"Fruitless $title because it is always going to be unsuccessful (i.e., $t and $expectedType do not have a common subtype)."
+        )
+        return F
+      }
+    }
+    return T
+  }
+
   def checkPattern(
     isSpec: B,
     unrefinedIdOpt: Option[AST.Id],
@@ -3744,23 +3752,8 @@ import TypeChecker._
       newTipeOpt match {
         case Some(newTipe) if newTipe.typedOpt.nonEmpty =>
           val t = newTipe.typedOpt.get
-          if (t != expectedType && typeHierarchy.isSubType(expectedType, t)) {
-            // OK
-          } else {
-            if (t == expectedType) {
-              reporter.warn(
-                tipe.posOpt,
-                typeCheckerKind,
-                s"Unnecessary type matching because it is always going to be successful (i.e.,  $t ≡ $expectedType)."
-              )
-            } else if (typeHierarchy.glb(ISZ(expectedType, t)).isEmpty) {
-              reporter.error(
-                tipe.posOpt,
-                typeCheckerKind,
-                s"Fruitless type matching because it is always going to be unsuccessful (i.e., $t and $expectedType do not have a common subtype)."
-              )
-              ok = F
-            }
+          if (!checkTypeRelation("type matching", tipe.posOpt, expectedType, t, reporter)) {
+            ok = F
           }
           return newTipe
         case _ => return tipe

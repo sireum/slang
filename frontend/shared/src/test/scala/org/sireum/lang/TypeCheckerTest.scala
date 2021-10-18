@@ -45,6 +45,40 @@ class TypeCheckerTest extends TestSuite {
 
         * - passingWorksheet(
           """import org.sireum._
+            |@sig trait Base {
+            |  def name: String
+            |}
+            |
+            |@sig trait U {
+            |  def uName: String
+            |}
+            |
+            |@datatype class Ai (val name: String,
+            |                    val uName: String) extends Base with U
+            |
+            |@datatype class Bi (val name: String) extends Base
+            |
+            |val bases: ISZ[Base] = ISZ(Ai("a", "au"), Bi("b"))
+            |
+            |for(b <- bases) {
+            |  if(b.isInstanceOf[U]) {
+            |    println(s"${b} is a U")
+            |  } else {
+            |    println(s"${b} not is a U")
+            |  }
+            |}
+            |
+            |for(b <- bases) {
+            |  b match {
+            |    case u: U => println(s"${u} is a U")
+            |    case _ => println(s"${b} is not a U")
+            |  }
+            |}
+            |""".stripMargin)
+
+
+        * - passingWorksheet(
+          """import org.sireum._
             |object Foo {
             |  val x: ZS = ZS(1, 2, 3)
             |  val y: ZS = ZS(4, 5, 6)
