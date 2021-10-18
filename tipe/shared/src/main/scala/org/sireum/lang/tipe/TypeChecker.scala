@@ -64,12 +64,6 @@ object TypeChecker {
     "SpecPost"
   }
 
-  @datatype class TypeFinder(val th: TypeHierarchy, val tname: QName) extends AST.Transformer.PrePost[B] {
-    override def preTypedName(ctx: B, o: AST.Typed.Name): AST.Transformer.PreResult[B, AST.Typed] = {
-      return if (tname == o.ids || th.poset.isChildOf(tname, o.ids)) AST.Transformer.PreResult(T, T, None())
-      else AST.Transformer.PreResult(ctx, T, None())
-    }
-  }
   @record class StrictPureChecker(val typeVarMutable: B, val th: TypeHierarchy, val reporter: Reporter) extends AST.MTransformer {
     def errVars(posOpt: Option[Position]): Unit = {
       reporter.error(posOpt, TypeChecker.typeCheckerKind, "@strictpure methods cannot refer to vars")
@@ -4960,20 +4954,6 @@ import TypeChecker._
           val smInfo = info.specMethods.get(id).get
           specMethods = specMethods + id ~> smInfo(ast = stmt)
         case _ =>
-      }
-    }
-    if (info.ast.isDatatype) {
-      val transformer = AST.Transformer(TypeChecker.TypeFinder(typeHierarchy, info.name))
-      for (v <- vars.values if !info.extractorTypeMap.contains(v.ast.id.value)) {
-        v.typedOpt match {
-          case Some(t) =>
-            val r = transformer.transformTyped(F, t)
-            if (r.ctx) {
-              reporter.error(v.ast.tipeOpt.get.posOpt, TypeChecker.typeCheckerKind,
-                st"@datatype class ${(info.name, ".")} cannot have a non-constructor field whose type contains ${(info.name, ".")} or its super-type.".render)
-            }
-          case _ =>
-        }
       }
     }
     val messages = reporter.messages

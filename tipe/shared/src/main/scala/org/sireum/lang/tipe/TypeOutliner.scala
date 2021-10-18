@@ -35,6 +35,13 @@ import org.sireum.lang.tipe.TypeOutliner.ExpTypedSubst
 
 object TypeOutliner {
 
+  @datatype class TypeFinder(val th: TypeHierarchy, val tname: QName) extends AST.Transformer.PrePost[B] {
+    override def preTypedName(ctx: B, o: AST.Typed.Name): AST.Transformer.PreResult[B, AST.Typed] = {
+      return if (tname == o.ids || th.poset.isChildOf(tname, o.ids)) AST.Transformer.PreResult(T, T, None())
+      else AST.Transformer.PreResult(ctx, T, None())
+    }
+  }
+
   @datatype class ExpTypedSubst(val substMap: HashMap[String, AST.Typed]) extends AST.Transformer.PrePost[B] {
     override def preTypedTypeVar(ctx: B, o: AST.Typed.TypeVar): AST.Transformer.PreResult[B, AST.Typed] = {
       val id = o.id
@@ -1321,7 +1328,30 @@ object TypeOutliner {
         dataRefinements = members.drs,
         ast = info.ast(stmts = members.stmts))
     val messages = reporter.messages
-    return (th: TypeHierarchy) => (th(typeMap = th.typeMap + info.name ~> newInfo), messages)
+    @pure def checkAdtContractH(th: TypeHierarchy): (TypeHierarchy, ISZ[Message]) = {
+      val rep = Reporter.create
+      rep.reports(messages)
+      if (!newInfo.ast.isRoot && newInfo.ast.isDatatype) {
+        for (varInfo <- newInfo.vars.values) {
+          varInfo.typedOpt match {
+            case Some(t) =>
+              if (th.isMutable(t, F)) {
+                rep.error(varInfo.ast.tipeOpt.get.posOpt, TypeChecker.typeCheckerKind,
+                  st"A @datatype class ${(varInfo.owner, ".")} cannot have a val of mutable type $t".render)
+              }
+              val transformer = AST.Transformer(TypeOutliner.TypeFinder(typeHierarchy, info.name))
+              val r = transformer.transformTyped(F, t)
+              if (r.ctx) {
+                reporter.error(varInfo.ast.tipeOpt.get.posOpt, TypeChecker.typeCheckerKind,
+                  st"@datatype class ${(info.name, ".")} cannot have a non-constructor field whose type contains ${(info.name, ".")} or its super-type.".render)
+              }
+            case _ =>
+          }
+        }
+      }
+      return (th(typeMap = th.typeMap + info.name ~> newInfo), rep.messages)
+    }
+    return checkAdtContractH _
   }
 
   @pure def checkSigContract(strictAliasing: B, info: TypeInfo.Sig): TypeHierarchy => (TypeHierarchy, ISZ[Message])@pure = {
