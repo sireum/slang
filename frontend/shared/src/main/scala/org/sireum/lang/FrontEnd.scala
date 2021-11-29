@@ -214,6 +214,35 @@ object FrontEnd {
     return (TypeChecker(th2, ISZ(), F, TypeChecker.ModeContext.Code, T), reporter)
   }
 
+  @memoize def checkedSharedMaps: (NameMap, TypeMap) = {
+    val (tc, _) = checkedLibraryReporter
+    var nameMap = tc.nameMap
+    var typeMap = tc.typeMap
+    var uriOpts = HashSet.empty[Option[String]]
+    for (p <- Library.sharedFiles) {
+      uriOpts = uriOpts + p._1
+    }
+    for (info <- nameMap.values) {
+      info.posOpt match {
+        case Some(pos) =>
+          if (!uriOpts.contains(pos.uriOpt)) {
+            nameMap = nameMap - info.name ~> info
+          }
+        case _ =>
+      }
+    }
+    for (info <- typeMap.values) {
+      info.posOpt match {
+        case Some(pos) =>
+          if (!uriOpts.contains(pos.uriOpt)) {
+            typeMap = typeMap - info.name ~> info
+          }
+        case _ =>
+      }
+    }
+    return (nameMap, typeMap)
+  }
+
   def checkWorksheet(par: Z,
                      thOpt: Option[TypeHierarchy],
                      program: AST.TopUnit.Program,
