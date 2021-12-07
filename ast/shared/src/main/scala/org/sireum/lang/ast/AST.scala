@@ -75,16 +75,25 @@ object TopUnit {
 
   @pure def modifies: ISZ[Exp.Ident]
 
-  @pure def modifiedLocalVars: HashSMap[ResolvedInfo.LocalVar, (Typed, Position)] = {
-    @pure def filterLocalVar(exp: Exp.Ident): ISZ[(ResolvedInfo.LocalVar, (Typed, Position))] = {
+  @pure def modifiedLocalVars(receiverLocalTypeOpt: Option[(ResolvedInfo.LocalVar, Typed)]): (B, HashSMap[ResolvedInfo.LocalVar, (Typed, Position)]) = {
+    var r = HashSMap.empty[ResolvedInfo.LocalVar, (Typed, Position)]
+    var modThisPosOpt: Option[Position] = None()
+    for (exp <- modifies) {
       exp.attr.resOpt match {
-        case Some(res: ResolvedInfo.LocalVar) => return ISZ((res, (exp.typedOpt.get, exp.posOpt.get)))
-        case _ => return ISZ()
+        case Some(res: ResolvedInfo.LocalVar) => r = r + res ~> ((exp.typedOpt.get, exp.posOpt.get))
+        case Some(res: ResolvedInfo.Var) if !res.isInObject => modThisPosOpt = exp.posOpt
+        case _ =>
       }
     }
-
-    return HashSMap.empty[ResolvedInfo.LocalVar, (Typed, Position)] ++
-      (for (mod <- modifies; res <- filterLocalVar(mod)) yield res)
+    var receiverModified: B = F
+    modThisPosOpt match {
+      case Some(modThisPos) =>
+        val (lv, t) = receiverLocalTypeOpt.get
+        r = r + lv ~> ((t, modThisPos))
+        receiverModified = T
+      case _ =>
+    }
+    return (receiverModified, r)
   }
 
   @pure def modifiedObjectVars: HashSMap[ResolvedInfo.Var, (Typed, Position)] = {
