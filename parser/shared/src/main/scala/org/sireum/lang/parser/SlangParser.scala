@@ -853,11 +853,30 @@ class SlangParser(
     })) {
       tree.body match {
         case q"${id: Term.Name}(..$_)" if specDefnInv.contains(id.value) =>
+          def checkReturnType(): Unit = {
+            tree.decltpe match {
+              case scala.Some(decltpe) => errorInSlang(decltpe.pos, s"${id.value}s cannot have an explicit return type")
+              case _ =>
+            }
+          }
           id.value match {
-            case "Fact" => return translateFact(enclosing, tree)
-            case "Theorem" => return translateTheoremLemma(false, enclosing, tree)
-            case "Lemma" => return translateTheoremLemma(true, enclosing, tree)
-            case "Invariant" if tree.tparams.isEmpty && tree.paramss.isEmpty =>
+            case "Fact" =>
+              checkReturnType()
+              return translateFact(enclosing, tree)
+            case "Theorem" =>
+              checkReturnType()
+              return translateTheoremLemma(false, enclosing, tree)
+            case "Lemma" =>
+              checkReturnType()
+              return translateTheoremLemma(true, enclosing, tree)
+            case "Invariant" =>
+              if (tree.tparams.nonEmpty) {
+                errorInSlang(id.pos, "Invariants cannot have type parameters")
+              }
+              if (tree.paramss.nonEmpty) {
+                errorInSlang(id.pos, "Invariants cannot have parameters")
+              }
+              checkReturnType()
               return translateInvariant(enclosing, tree)
             case _ =>
           }

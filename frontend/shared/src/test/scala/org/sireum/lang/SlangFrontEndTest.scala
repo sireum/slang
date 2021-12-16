@@ -312,6 +312,8 @@ class SlangFrontEndTest extends TestSuite {
 
       "Method" - {
 
+        * - failing("@spec def t:foo = Invariant(v == s32\"1\")", "explicit return type", isWorksheet = true)
+
         * - failing("def f(x: Z)(y: Z): Z = {}", "multiple parameter tuples", isWorksheet = true)
 
         * - failing("def f(x: Z) = {}", "explicit return type", isWorksheet = true)
