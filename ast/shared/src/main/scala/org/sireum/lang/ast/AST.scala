@@ -1334,11 +1334,11 @@ object Exp {
     @pure override def prettyST: ST = {
       val l = BinaryOp.precendenceLevel(op)
       val leftST: ST = left match {
-        case left: Binary if BinaryOp.precendenceLevel(left.op) >= l => st"(${left.prettyST})"
+        case left: Binary if BinaryOp.precendenceLevel(left.op) > l => st"(${left.prettyST})"
         case _ => left.prettyST
       }
       val rightST: ST = right match {
-        case right: Binary if BinaryOp.precendenceLevel(right.op) >= l => st"(${right.prettyST})"
+        case right: Binary if BinaryOp.precendenceLevel(right.op) > l => st"(${right.prettyST})"
         case _ => right.prettyST
       }
       return st"$leftST $op $rightST"
