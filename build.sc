@@ -25,7 +25,6 @@
 
 import $file.runtime.Runtime
 import $file.Slang
-import ammonite.ops.up
 
 object runtime extends mill.Module {
 
@@ -47,7 +46,7 @@ object runtime extends mill.Module {
 
 object slang extends mill.Module {
 
-  final override def millSourcePath = super.millSourcePath / up
+  final override def millSourcePath = super.millSourcePath / os.up
 
   object ast extends Slang.Module.Ast with runtime.testProvider {
     final override def libraryObject = runtime.library
