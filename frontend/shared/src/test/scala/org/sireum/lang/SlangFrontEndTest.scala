@@ -267,11 +267,11 @@ class SlangFrontEndTest extends TestSuite {
 
       "Val/Var" - {
 
-        val topMember = "expected class or object"
+        val illegalStart = "illegal start"
 
-        * - failing("package a; import org.sireum._; val x: Z = 4", topMember, addImport = false)
+        * - failing("package a; import org.sireum._; val x: Z = 4", illegalStart, addImport = false)
 
-        * - failing("package a; import org.sireum._; var x: Z = 4", topMember, addImport = false)
+        * - failing("package a; import org.sireum._; var x: Z = 4", illegalStart, addImport = false)
 
         val dollar = "'$' is only allowed"
 
