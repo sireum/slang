@@ -2417,7 +2417,9 @@ class SlangParser(
         }
         AST.Exp.Eta(ref, typedAttr(exp.pos))
       case exp: Term.Tuple => AST.Exp.Tuple(ISZ(exp.args.map(translateExp): _*), typedAttr(exp.pos))
-      case q"Res[$t]" => AST.Exp.Result(Some(translateType(t)), typedAttr(exp.pos))
+      case Term.ApplyType(res@Term.Name("Res"), List(t)) =>
+        val pos = if (exp.pos == Position.None) res.pos else exp.pos
+        AST.Exp.Result(Some(translateType(t)), typedAttr(pos))
       case q"Idx[$t]($arg)" =>
         translateIdent("Idx", arg) match {
           case Some(idx) => AST.Exp.LoopIndex(Some(translateType(t)), idx, typedAttr(exp.pos))
@@ -2461,7 +2463,9 @@ class SlangParser(
         )
       case q"${name: Term.Name}[..$tpes](...${aexprssnel: List[List[Term]]})" if aexprssnel.nonEmpty =>
         name.value match {
-          case "Res" => translateInvoke(scala.Some(name), AST.Id("apply", attr(name.pos)), name.pos, tpes, aexprssnel, exp.pos)
+          case "Res" =>
+            val rcv = Term.ApplyType(name, tpes.toList)
+            translateInvoke(scala.Some(rcv), AST.Id("apply", attr(name.pos)), name.pos, List(), aexprssnel, exp.pos)
           case _ => translateInvoke(scala.None, cid(name), name.pos, tpes, aexprssnel, exp.pos)
         }
       case q"${name: Term.Name}(...${aexprssnel: List[List[Term]]})" if aexprssnel.nonEmpty =>
