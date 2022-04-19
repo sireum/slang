@@ -278,12 +278,12 @@ object Util {
   }
 
   @datatype class TypePrePostSubstitutor(val substMap: HashMap[String, Typed]) extends Transformer.PrePost[B] {
-    @pure override def preTypedTypeVar(ctx: B, o: Typed.TypeVar): Transformer.PreResult[B, Typed] = {
+    override def postTypedTypeVar(ctx: B, o: Typed.TypeVar): Transformer.TPostResult[B, Typed] = {
       substMap.get(o.id) match {
-        case Some(t) => return Transformer.PreResult(ctx, T, Some(t))
+        case Some(t) => return Transformer.TPostResult(ctx, Some(t))
         case _ =>
       }
-      return Transformer.PreResult(ctx, T, None())
+      return Transformer.TPostResult(ctx, None())
     }
   }
 
