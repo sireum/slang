@@ -3129,30 +3129,42 @@ class SlangParser(
       case q"$sym ($conclusion)" if isSequent(sym) =>
         AST.Sequent(ISZ(), translateExp(conclusion),
           ISZ(), attr(sequent.pos))
-      case q"(..$premises) $sym $conclusion Proof(..$pexprs)" if isSequent(sym) =>
-        AST.Sequent(ISZ(premises.map(translateExp): _*), translateExp(conclusion),
-          translateAndCheckProofSteps(pexprs), attr(sequent.pos))
       case q"$premise $sym $conclusion Proof(..$pexprs)" if isSequent(sym) =>
-        AST.Sequent(ISZ(translateExp(premise)), translateExp(conclusion),
-          translateAndCheckProofSteps(pexprs), attr(sequent.pos))
-      case q"(..$premises) $sym $conclusion" if isSequent(sym) =>
-        AST.Sequent(ISZ(premises.map(translateExp): _*), translateExp(conclusion),
-          ISZ(), attr(sequent.pos))
+        premise match {
+          case premise: Term.Tuple =>
+            AST.Sequent(ISZ(premise.args.map(translateExp): _*), translateExp(conclusion),
+              translateAndCheckProofSteps(pexprs), attr(sequent.pos))
+          case _ =>
+            AST.Sequent(ISZ(translateExp(premise)), translateExp(conclusion),
+              translateAndCheckProofSteps(pexprs), attr(sequent.pos))
+        }
       case q"$premise $sym $conclusion" if isSequent(sym) =>
-        AST.Sequent(ISZ(translateExp(premise)), translateExp(conclusion),
-          ISZ(), attr(sequent.pos))
-      case q"(..$premises) $sym ($conclusion) Proof(..$pexprs)" if isSequent(sym) =>
-        AST.Sequent(ISZ(premises.map(translateExp): _*), translateExp(conclusion),
-          translateAndCheckProofSteps(pexprs), attr(sequent.pos))
+        premise match {
+          case premise: Term.Tuple =>
+            AST.Sequent(ISZ(premise.args.map(translateExp): _*), translateExp(conclusion),
+              ISZ(), attr(sequent.pos))
+          case _ =>
+            AST.Sequent(ISZ(translateExp(premise)), translateExp(conclusion),
+              ISZ(), attr(sequent.pos))
+        }
       case q"$premise $sym ($conclusion) Proof(..$pexprs)" if isSequent(sym) =>
-        AST.Sequent(ISZ(translateExp(premise)), translateExp(conclusion),
-          translateAndCheckProofSteps(pexprs), attr(sequent.pos))
-      case q"(..$premises) $sym ($conclusion)" if isSequent(sym) =>
-        AST.Sequent(ISZ(premises.map(translateExp): _*), translateExp(conclusion),
-          ISZ(), attr(sequent.pos))
+        premise match {
+          case premise: Term.Tuple =>
+            AST.Sequent(ISZ(premise.args.map(translateExp): _*), translateExp(conclusion),
+              translateAndCheckProofSteps(pexprs), attr(sequent.pos))
+          case _ =>
+            AST.Sequent(ISZ(translateExp(premise)), translateExp(conclusion),
+              translateAndCheckProofSteps(pexprs), attr(sequent.pos))
+        }
       case q"$premise $sym ($conclusion)" if isSequent(sym) =>
-        AST.Sequent(ISZ(translateExp(premise)), translateExp(conclusion),
-          ISZ(), attr(sequent.pos))
+        premise match {
+          case premise: Term.Tuple =>
+            AST.Sequent(ISZ(premise.args.map(translateExp): _*), translateExp(conclusion),
+              ISZ(), attr(sequent.pos))
+          case _ =>
+            AST.Sequent(ISZ(translateExp(premise)), translateExp(conclusion),
+              ISZ(), attr(sequent.pos))
+        }
       case _ =>
         error(sequent.pos, "Expecting '... |- ... Proof(...)' or '... |- ...'.")
         AST.Sequent(ISZ(), AST.Exp.LitB(false, emptyAttr), ISZ(), attr(sequent.pos))
