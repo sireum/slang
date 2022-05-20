@@ -2489,6 +2489,7 @@ import TypeChecker._
               val funType = m.tpe.subst(sm)
               return (make(newArgs, Some(funType.ret), funType), Some(funType.ret))
             case _ =>
+              repArgs.error(expId.attr.posOpt, typeCheckerKind, st"Could not unify (${(argTypes, ", ")}) with (${(m.tpe.args, ", ")})".render)
               return (make(newArgs, None(), AST.Typed.Fun(F, F, ISZ(), AST.Typed.nothing)), None())
           }
         }
