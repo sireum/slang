@@ -1411,18 +1411,7 @@ import TypeChecker._
     }
   }
 
-  @pure def normalizeSpecId(id: String): String = {
-    if (!inSpec) {
-      return id
-    }
-    val idOps = ops.StringOps(id)
-    if (idOps.endsWith("_in")) {
-      return idOps.substring(0, id.size - 3)
-    } else if (idOps.endsWith("_old")) {
-      return idOps.substring(0, id.size - 4)
-    }
-    return id
-  }
+  @strictpure def normalizeSpecId(id: String): String = id
 
   def checkId(scope: Scope, id: AST.Id, reporter: Reporter): (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
     val nid = ISZ(normalizeSpecId(id.value))
