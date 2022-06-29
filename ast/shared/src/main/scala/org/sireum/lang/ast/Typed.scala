@@ -129,20 +129,20 @@ import org.sireum._
     }
   }
 
-  @pure def deBruijn: Typed = {
+  @pure def normalized: Typed = {
     var map = HashMap.empty[String, Z]
 
-    def dbFun(t: Typed.Fun): Typed.Fun = {
+    def normalizeFun(t: Typed.Fun): Typed.Fun = {
       var args = ISZ[Typed]()
       for (arg <- t.args) {
-        val ta = db(arg)
+        val ta = normalize(arg)
         args = args :+ ta
       }
-      val tr = db(t.ret)
+      val tr = normalize(t.ret)
       return t(args = args, ret = tr)
     }
 
-    def dbMethod(t: Typed.Method): Typed.Method = {
+    def normalizeMethod(t: Typed.Method): Typed.Method = {
       var newTypeParams = ISZ[String]()
       for (t <- t.typeParams) {
         val i: Z = map.get(t) match {
@@ -154,16 +154,16 @@ import org.sireum._
         }
         newTypeParams = newTypeParams :+ s"$$$i"
       }
-      t(typeParams = newTypeParams, tpe = dbFun(t.tpe))
+      t(typeParams = newTypeParams, tpe = normalizeFun(t.tpe))
     }
 
-    def db(t: Typed): Typed = {
+    def normalize(t: Typed): Typed = {
       t match {
         case t: Typed.Name =>
           if (t.args.nonEmpty) {
             var args = ISZ[Typed]()
             for (arg <- t.args) {
-              val ta = db(arg)
+              val ta = normalize(arg)
               args = args :+ ta
             }
             return t(args = args)
@@ -173,11 +173,11 @@ import org.sireum._
         case t: Typed.Tuple =>
           var args = ISZ[Typed]()
           for (arg <- t.args) {
-            val ta = db(arg)
+            val ta = normalize(arg)
             args = args :+ ta
           }
           return t(args = args)
-        case t: Typed.Fun => return dbFun(t)
+        case t: Typed.Fun => return normalizeFun(t)
         case t: Typed.TypeVar =>
           val i: Z = map.get(t.id) match {
             case Some(n) => n
@@ -188,13 +188,13 @@ import org.sireum._
           }
           return t(id = s"$$$i")
         case t: Typed.Enum => return t
-        case t: Typed.Method => return dbMethod(t)
+        case t: Typed.Method => return normalizeMethod(t)
         case t: Typed.Object => return t
         case t: Typed.Package => return t
         case t: Typed.Methods =>
           var newMethods = ISZ[Typed.Method]()
           for (m <- t.methods) {
-            val newM = dbMethod(m)
+            val newM = normalizeMethod(m)
             newMethods = newMethods :+ newM
           }
           return t(newMethods)
@@ -204,7 +204,7 @@ import org.sireum._
       }
     }
 
-    val r = db(this)
+    val r = normalize(this)
     return r
   }
 

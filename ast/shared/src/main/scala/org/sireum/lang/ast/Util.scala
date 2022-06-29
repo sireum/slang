@@ -313,8 +313,8 @@ object Util {
     }
   }
 
-  object FunDebruijner {
-    @strictpure def create: Transformer[Z] = Transformer(FunPrePostDebruijner())
+  object FunNormalizer {
+    @strictpure def create: Transformer[Z] = Transformer(FunPrePostNormalizer())
 
     @datatype class PrePostSubstitutor(val oldContext: ISZ[String], val newContext: ISZ[String], val m: HashMap[String, String]) extends Transformer.PrePost[B] {
       override def postExpIdent(ctx: B, o: Exp.Ident): Transformer.TPostResult[B, Exp] = {
@@ -330,7 +330,7 @@ object Util {
     }
   }
 
-  @datatype class FunPrePostDebruijner extends Transformer.PrePost[Z] {
+  @datatype class FunPrePostNormalizer extends Transformer.PrePost[Z] {
     override def preExpFun(ctx: Z, o: Exp.Fun): Transformer.PreResult[Z, Exp] = {
       val num = ctx
       val newContextId: String = s".$num"
@@ -348,7 +348,7 @@ object Util {
         i = i + 1
       }
       val newContext = ISZ(newContextId)
-      val newExp = Transformer(FunDebruijner.PrePostSubstitutor(o.context, newContext, m)).transformAssignExp(F, o.exp).
+      val newExp = Transformer(FunNormalizer.PrePostSubstitutor(o.context, newContext, m)).transformAssignExp(F, o.exp).
         resultOpt.getOrElse(o.exp)
       val newO = o(context = newContext, params = newParams, exp = newExp)
       return Transformer.PreResult(ctx + 1, T, Some(newO))
@@ -613,10 +613,10 @@ object Util {
     return Transformer(QuantTypePrePostNormalizer()).transformExp(F, exp).resultOpt.getOrElseEager(exp)
   }
 
-  @pure def deBruijn(exp: Exp): Exp = {
-    val exp2 = FunDebruijner.create.transformExp(1, exp).resultOpt.getOrElseEager(exp)
+  @pure def normalizeFun(exp: Exp): Exp = {
+    val exp2 = FunNormalizer.create.transformExp(1, exp).resultOpt.getOrElseEager(exp)
     Transformer(QuantTypePrePostNormalizer()).transformExp(F, exp2).resultOpt match {
-      case Some(exp3) => FunDebruijner.create.transformExp(1, exp3).resultOpt.getOrElseEager(exp3)
+      case Some(exp3) => FunNormalizer.create.transformExp(1, exp3).resultOpt.getOrElseEager(exp3)
       case _ => return exp2
     }
   }

@@ -643,15 +643,15 @@ object ProofAst {
   object Step {
 
     @datatype class Regular(val id: StepId, val claim: Exp, val just: Justification) extends Step {
-      @strictpure def claimDeBruijn: Exp = Util.deBruijn(claim)
+      @strictpure def claimNorm: Exp = Util.normalizeFun(claim)
     }
 
     @datatype class Assume(val id: StepId, val claim: Exp) extends Step {
-      @strictpure def claimDeBruijn: Exp = Util.deBruijn(claim)
+      @strictpure def claimNorm: Exp = Util.normalizeFun(claim)
     }
 
     @datatype class Assert(val id: StepId, val claim: Exp, val steps: ISZ[Step]) extends Step {
-      @strictpure def claimDeBruijn: Exp = Util.deBruijn(claim)
+      @strictpure def claimNorm: Exp = Util.normalizeFun(claim)
     }
 
     @datatype class SubProof(val id: StepId, val steps: ISZ[Step]) extends Step
@@ -669,7 +669,7 @@ object ProofAst {
                                     val exp: Exp,
                                     val cases: ISZ[StructInduction.MatchCase],
                                     val defaultOpt: Option[StructInduction.MatchDefault]) extends Step {
-      @strictpure def claimDeBruijn: Exp = Util.deBruijn(claim)
+      @strictpure def claimNorm: Exp = Util.normalizeFun(claim)
     }
 
     object StructInduction {

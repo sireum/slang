@@ -939,8 +939,8 @@ object TypeOutliner {
                              m2: Info.Method,
                              substMap: HashMap[String, AST.Typed]
                            ): (B, AST.Typed, AST.Typed) = {
-      val t1 = m1.typedOpt.get.asInstanceOf[AST.Typed.Method].tpe.deBruijn
-      val t2 = m2.typedOpt.get.asInstanceOf[AST.Typed.Method].tpe.subst(substMap).deBruijn
+      val t1 = m1.typedOpt.get.asInstanceOf[AST.Typed.Method].tpe.normalized
+      val t2 = m2.typedOpt.get.asInstanceOf[AST.Typed.Method].tpe.subst(substMap).normalized
       return (t1 == t2, t1, t2)
     }
 
@@ -949,8 +949,8 @@ object TypeOutliner {
                                supM: Info.Method,
                                substMap: HashMap[String, AST.Typed]
                              ): (B, AST.Typed, AST.Typed) = {
-      val t1 = m.typedOpt.get.deBruijn
-      val t2 = supM.typedOpt.get.subst(substMap).deBruijn
+      val t1 = m.typedOpt.get.normalized
+      val t2 = supM.typedOpt.get.subst(substMap).normalized
       return (typeHierarchy.isRefinement(t1, t2), t1, t2)
     }
 
