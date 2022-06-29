@@ -3369,7 +3369,7 @@ import TypeChecker._
 
     val newStmt: AST.Stmt = aexp match {
       case aexp: AST.Stmt.Expr =>
-        val r = checkExpr(expectedOpt, scope, aexp, reporter)
+        val r = checkExpr(F, expectedOpt, scope, aexp, reporter)
         return (r, r.typedOpt)
       case aexp: AST.Stmt.If => checkIf(expectedOpt, scope, aexp, reporter)
       case aexp: AST.Stmt.Block => checkBlock(expectedOpt, scope, aexp, reporter)
@@ -4006,12 +4006,83 @@ import TypeChecker._
   }
 
   def checkExpr(
+    isStmt: B,
     expectedOpt: Option[AST.Typed],
     scope: Scope.Local,
     stmt: AST.Stmt.Expr,
     reporter: Reporter
   ): AST.Stmt.Expr = {
     val (newExp, typedOpt) = checkExp(expectedOpt, scope, stmt.exp, reporter)
+    if (isStmt) {
+      newExp match {
+        case newExp: AST.Exp.Binary =>
+          newExp.attr.resOpt match {
+            case Some(AST.ResolvedInfo.BuiltIn(kind)) =>
+              val ok: B = kind match {
+                case AST.ResolvedInfo.BuiltIn.Kind.Apply => T
+                case AST.ResolvedInfo.BuiltIn.Kind.AsInstanceOf => F
+                case AST.ResolvedInfo.BuiltIn.Kind.Assert => T
+                case AST.ResolvedInfo.BuiltIn.Kind.AssertMsg => T
+                case AST.ResolvedInfo.BuiltIn.Kind.Assume => T
+                case AST.ResolvedInfo.BuiltIn.Kind.AssumeMsg => T
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryAdd => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinarySub => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryMul => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryDiv => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryRem => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryEq => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryNe => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryLt => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryLe => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryGt => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryGe => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryShl => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryShr => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryUshr => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryAnd => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryOr => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryXor => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryImply => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondAnd => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondOr => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondImply => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryMapsTo => F
+                case AST.ResolvedInfo.BuiltIn.Kind.Cprint => T
+                case AST.ResolvedInfo.BuiltIn.Kind.Cprintln => T
+                case AST.ResolvedInfo.BuiltIn.Kind.EnumByName => F
+                case AST.ResolvedInfo.BuiltIn.Kind.EnumByOrdinal => F
+                case AST.ResolvedInfo.BuiltIn.Kind.EnumElements => F
+                case AST.ResolvedInfo.BuiltIn.Kind.EnumNumOfElements => F
+                case AST.ResolvedInfo.BuiltIn.Kind.EnumName => F
+                case AST.ResolvedInfo.BuiltIn.Kind.EnumOrdinal => F
+                case AST.ResolvedInfo.BuiltIn.Kind.Eprint => T
+                case AST.ResolvedInfo.BuiltIn.Kind.Eprintln => T
+                case AST.ResolvedInfo.BuiltIn.Kind.Halt => T
+                case AST.ResolvedInfo.BuiltIn.Kind.Hash => F
+                case AST.ResolvedInfo.BuiltIn.Kind.IsInstanceOf => F
+                case AST.ResolvedInfo.BuiltIn.Kind.Indices => F
+                case AST.ResolvedInfo.BuiltIn.Kind.Min => F
+                case AST.ResolvedInfo.BuiltIn.Kind.Max => F
+                case AST.ResolvedInfo.BuiltIn.Kind.Random => F
+                case AST.ResolvedInfo.BuiltIn.Kind.Native => F
+                case AST.ResolvedInfo.BuiltIn.Kind.Print => T
+                case AST.ResolvedInfo.BuiltIn.Kind.Println => T
+                case AST.ResolvedInfo.BuiltIn.Kind.String => F
+                case AST.ResolvedInfo.BuiltIn.Kind.UnapplySeq => F
+                case AST.ResolvedInfo.BuiltIn.Kind.UnapplyTuple => F
+                case AST.ResolvedInfo.BuiltIn.Kind.UnaryPlus => F
+                case AST.ResolvedInfo.BuiltIn.Kind.UnaryMinus => F
+                case AST.ResolvedInfo.BuiltIn.Kind.UnaryNot => F
+                case AST.ResolvedInfo.BuiltIn.Kind.UnaryComplement => F
+              }
+              if (!ok) {
+                reporter.error(newExp.posOpt, typeCheckerKind, s"Ill-formed Slang statement")
+              }
+            case _ =>
+          }
+        case _ =>
+      }
+    }
     return stmt(exp = newExp, attr = stmt.attr(typedOpt = typedOpt))
   }
 
@@ -4514,7 +4585,7 @@ import TypeChecker._
 
       case stmt: AST.Stmt.Enum => return stmt
 
-      case stmt: AST.Stmt.Expr => return checkExpr(None(), scope, stmt, reporter)
+      case stmt: AST.Stmt.Expr => return checkExpr(T, None(), scope, stmt, reporter)
 
       case stmt: AST.Stmt.ExtMethod => return stmt
 
