@@ -355,8 +355,9 @@ object FrontEnd {
           val id = stmt.id.value
           gdr.globalNameMap.get(ISZ(id)) match {
             case Some(info: Info.Fact) =>
-              val newStmt = stmt(attr = stmt.attr(resOpt = info.ast.attr.resOpt))
+              val newStmt = stmt(attr = info.ast.attr)
               nameMap = nameMap + ISZ(id) ~> info(ast = newStmt)
+              newStmts = newStmts :+ newStmt
             case _ =>
               newStmts = newStmts :+ stmt
           }
@@ -364,8 +365,9 @@ object FrontEnd {
           val id = stmt.id.value
           gdr.globalNameMap.get(ISZ(id)) match {
             case Some(info: Info.Theorem) =>
-              val newStmt = stmt(attr = stmt.attr(resOpt = info.ast.attr.resOpt))
+              val newStmt = stmt(attr = info.ast.attr)
               nameMap = nameMap + ISZ(id) ~> info(ast = newStmt)
+              newStmts = newStmts :+ newStmt
             case _ =>
               newStmts = newStmts :+ stmt
           }
