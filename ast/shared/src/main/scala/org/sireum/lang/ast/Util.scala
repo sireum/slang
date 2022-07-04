@@ -287,6 +287,19 @@ object Util {
     }
   }
 
+  @datatype class TypePrePostSubstitutorSkipRim(val substMap: HashMap[String, Typed]) extends Transformer.PrePost[B] {
+    override def preResolvedInfoMethod(ctx: B, o: ResolvedInfo.Method): Transformer.PreResult[B, ResolvedInfo] = {
+      return Transformer.PreResult(ctx, F, None())
+    }
+    override def postTypedTypeVar(ctx: B, o: Typed.TypeVar): Transformer.TPostResult[B, Typed] = {
+      substMap.get(o.id) match {
+        case Some(t) => return Transformer.TPostResult(ctx, Some(t))
+        case _ =>
+      }
+      return Transformer.TPostResult(ctx, None())
+    }
+  }
+
   @datatype class LocalVarContextPrePostSubstitutor(val oldContext: ISZ[String], val newContext: ISZ[String]) extends Transformer.PrePost[B] {
     @pure override def postResolvedInfoLocalVar(ctx: B, o: ResolvedInfo.LocalVar): Transformer.TPostResult[B, ResolvedInfo] = {
       if (o.context == oldContext) {
@@ -533,6 +546,14 @@ object Util {
   @pure def substExp(ast: Exp, substMap: HashMap[String, Typed]): Exp = {
     if (substMap.nonEmpty) {
       return Transformer(TypePrePostSubstitutor(substMap)).transformExp(F, ast).resultOpt.getOrElse(ast)
+    } else {
+      return ast
+    }
+  }
+
+  @pure def substExpSkipResolvedInfo(ast: Exp, substMap: HashMap[String, Typed]): Exp = {
+    if (substMap.nonEmpty) {
+      return Transformer(TypePrePostSubstitutorSkipRim(substMap)).transformExp(F, ast).resultOpt.getOrElse(ast)
     } else {
       return ast
     }
