@@ -1052,7 +1052,7 @@ class SlangParser(
       case _ => (false, ISZ[AST.Param]())
     }
     val sig = AST.MethodSig(
-      isMemoize || isPure || isStrictPure,
+      isMemoize || isPure || isStrictPure || isSpec,
       cid(name),
       ISZ(tparams.map(translateTypeParam): _*),
       hasParams,
