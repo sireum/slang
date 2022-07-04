@@ -1428,7 +1428,7 @@ object Exp {
     }
   }
 
-  @datatype class Select(val receiverOpt: Option[Exp], val id: Id, val targs: ISZ[Type], @hidden val attr: ResolvedAttr)
+  @datatype class Select(val receiverOpt: Option[Exp], val id: Id, @hidden val targs: ISZ[Type], @hidden val attr: ResolvedAttr)
     extends Exp with Ref {
 
     @pure override def asExp: Exp = {
@@ -1461,7 +1461,7 @@ object Exp {
 
   @datatype class Invoke(val receiverOpt: Option[Exp],
                          val ident: Ident,
-                         val targs: ISZ[Type],
+                         @hidden val targs: ISZ[Type],
                          val args: ISZ[Exp],
                          @hidden val attr: ResolvedAttr) extends Exp {
 
@@ -1482,7 +1482,7 @@ object Exp {
 
   @datatype class InvokeNamed(val receiverOpt: Option[Exp],
                               val ident: Ident,
-                              val targs: ISZ[Type],
+                              @hidden val targs: ISZ[Type],
                               val args: ISZ[NamedArg],
                               @hidden val attr: ResolvedAttr) extends Exp {
 
@@ -1518,7 +1518,18 @@ object Exp {
 
   object Fun {
 
-    @datatype class Param(val idOpt: Option[Id], val tipeOpt: Option[Type], val typedOpt: Option[Typed])
+    @datatype class Param(val idOpt: Option[Id], val tipeOpt: Option[Type], val typedOpt: Option[Typed]) {
+      @pure def isEqual(other: Param): B = {
+        if (idOpt != other.idOpt) {
+          return F
+        }
+        (typedOpt, other.typedOpt) match {
+          case (Some(t1), Some(t2)) => return t1 == t2
+          case _ => return tipeOpt == other.tipeOpt
+        }
+      }
+      @strictpure override def hash: Z = if (typedOpt.nonEmpty) (idOpt, typedOpt).hash else (idOpt, tipeOpt).hash
+    }
 
   }
 
@@ -1761,7 +1772,7 @@ object Exp {
 
 @datatype class TypedAttr(val posOpt: Option[Position], val typedOpt: Option[Typed])
 
-@datatype class ResolvedAttr(val posOpt: Option[Position], val resOpt: Option[ResolvedInfo], val typedOpt: Option[Typed])
+@datatype class ResolvedAttr(@hidden val posOpt: Option[Position], val resOpt: Option[ResolvedInfo], val typedOpt: Option[Typed])
 
 @datatype trait ResolvedInfo {
 
