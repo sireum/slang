@@ -340,6 +340,15 @@ object Util {
         }
         return Transformer.TPostResult(ctx, None())
       }
+
+      override def postExpBinary(ctx: B, o: Exp.Binary): Transformer.TPostResult[B, Exp] = {
+        o.op match {
+          case Exp.BinaryOp.Eq3 => return Transformer.TPostResult(ctx, Some(o(op = Exp.BinaryOp.Eq)))
+          case Exp.BinaryOp.Ne3 => return Transformer.TPostResult(ctx, Some(o(op = Exp.BinaryOp.Ne)))
+          case _ => return Transformer.TPostResult(ctx, None())
+        }
+
+      }
     }
   }
 
@@ -634,7 +643,7 @@ object Util {
     return Transformer(QuantTypePrePostNormalizer()).transformExp(F, exp).resultOpt.getOrElseEager(exp)
   }
 
-  @pure def normalizeFun(exp: Exp): Exp = {
+  @pure def normalizeExp(exp: Exp): Exp = {
     val exp2 = FunNormalizer.create.transformExp(1, exp).resultOpt.getOrElseEager(exp)
     Transformer(QuantTypePrePostNormalizer()).transformExp(F, exp2).resultOpt match {
       case Some(exp3) => FunNormalizer.create.transformExp(1, exp3).resultOpt.getOrElseEager(exp3)

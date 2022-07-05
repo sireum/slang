@@ -480,6 +480,7 @@ object Stmt {
                        val typeParams: ISZ[TypeParam],
                        val descOpt: Option[Exp.LitString],
                        val claims: ISZ[Exp],
+                       val isFun: B,
                        @hidden val attr: ResolvedAttr) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -643,15 +644,15 @@ object ProofAst {
   object Step {
 
     @datatype class Regular(val id: StepId, val claim: Exp, val just: Justification) extends Step {
-      @strictpure def claimNorm: Exp = Util.normalizeFun(claim)
+      @strictpure def claimNorm: Exp = Util.normalizeExp(claim)
     }
 
     @datatype class Assume(val id: StepId, val claim: Exp) extends Step {
-      @strictpure def claimNorm: Exp = Util.normalizeFun(claim)
+      @strictpure def claimNorm: Exp = Util.normalizeExp(claim)
     }
 
     @datatype class Assert(val id: StepId, val claim: Exp, val steps: ISZ[Step]) extends Step {
-      @strictpure def claimNorm: Exp = Util.normalizeFun(claim)
+      @strictpure def claimNorm: Exp = Util.normalizeExp(claim)
     }
 
     @datatype class SubProof(val id: StepId, val steps: ISZ[Step]) extends Step
@@ -669,7 +670,7 @@ object ProofAst {
                                     val exp: Exp,
                                     val cases: ISZ[StructInduction.MatchCase],
                                     val defaultOpt: Option[StructInduction.MatchDefault]) extends Step {
-      @strictpure def claimNorm: Exp = Util.normalizeFun(claim)
+      @strictpure def claimNorm: Exp = Util.normalizeExp(claim)
     }
 
     object StructInduction {
@@ -833,6 +834,7 @@ object EnumGen {
   @pure def typed(t: Typed): Type
 
   @pure def prettyST: ST
+
 }
 
 object Type {
@@ -869,6 +871,13 @@ object Type {
       val typeArgsOpts: Option[ST] =
         if (typeArgs.isEmpty) None() else Some(st"[${(for (ta <- typeArgs) yield ta.prettyST, ", ")}]")
       return st"${(for (id <- name.ids) yield id.value, ".")}$typeArgsOpts"
+    }
+
+    override def string: String = {
+      typedOpt match {
+        case Some(t) => return t.string
+        case _ => return st"Named($name, $typeArgs)".render
+      }
     }
 
   }

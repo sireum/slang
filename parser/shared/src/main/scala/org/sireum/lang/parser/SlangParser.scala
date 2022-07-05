@@ -3050,10 +3050,10 @@ class SlangParser(
       val tattr = typedAttr(iexpr.pos)
       claims = claims :+ (
         if (params.nonEmpty) AST.Exp.QuantType(true, AST.Exp.Fun(ISZ(), params,
-          AST.Stmt.Expr(claim, tattr), tattr), attr(stat.name.pos))
+          AST.Stmt.Expr(claim, tattr), tattr), attr(iexpr.pos))
         else claim)
     }
-    AST.Stmt.Fact(cid(stat.name), typeArgs, descOpt, claims, resolvedAttr(stat.pos))
+    AST.Stmt.Fact(cid(stat.name), typeArgs, descOpt, claims, params.nonEmpty, resolvedAttr(stat.pos))
   }
 
   def translateDeduce(enclosing: Enclosing.Type, stat: Stat): AST.Stmt.Spec = {
@@ -3258,7 +3258,9 @@ class SlangParser(
     }
   }
   def toStepId(pos: Position): AST.ProofAst.StepId = {
-    return AST.ProofAst.StepId.Str(s"${pos.startLine}, ${pos.startColumn}", attr(pos))
+    val at = attr(pos)
+    val atpos = at.posOpt.get
+    return AST.ProofAst.StepId.Str(s"[${atpos.beginLine}, ${atpos.beginColumn}]", at)
   }
 
   def translateProofStep(allowAssume: B)(proofStep: Term): AST.ProofAst.Step = {
@@ -3462,10 +3464,10 @@ class SlangParser(
         }
       case _ => error(stat.pos, "Cannot have more than one list of parameters")
     }
-    val tattr = typedAttr(stat.body.pos)
+    val tattr = AST.TypedAttr(claim.posOpt, None())
     val (isFun, body): (B, AST.Exp) =
       if (params.isEmpty) (false, claim)
-      else (true, AST.Exp.QuantType(true, AST.Exp.Fun(ISZ(), params, AST.Stmt.Expr(claim, tattr), tattr), attr(stat.body.pos)))
+      else (true, AST.Exp.QuantType(true, AST.Exp.Fun(ISZ(), params, AST.Stmt.Expr(claim, tattr), tattr), AST.Attr(claim.posOpt)))
     AST.Stmt.Theorem(isLemma, cid(stat.name), typeArgs, descOpt, body, isFun, proof, resolvedAttr(stat.pos))
   }
 

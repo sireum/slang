@@ -220,6 +220,10 @@ object TypeChecker {
     string"~>" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryMapsTo))
   )
 
+  val eqBinops: HashSet[String] = HashSet ++ ISZ[String](
+    AST.Exp.BinaryOp.Eq, AST.Exp.BinaryOp.Eq3, AST.Exp.BinaryOp.Ne, AST.Exp.BinaryOp.Ne3
+  )
+
   val emptySubstMap: HashMap[String, AST.Typed] = HashMap.empty
 
   def buildTypeSubstMap(
@@ -312,7 +316,12 @@ object TypeChecker {
                   case _ => halt(s"Unexpected situation when type checking object type alias members")
                 }
               case stmt: AST.Stmt.Object =>
-                reconstructObject(r.nameMap.get(info.name :+ stmt.id.value).get)
+                val name = info.name :+ stmt.id.value
+                reconstructObject(r.nameMap.get(name).get)
+                r.nameMap.get(name) match {
+                  case Some(objectInfo: Info.Object) => newStmts = newStmts :+ objectInfo.ast
+                  case _ => halt(s"Unexpected situation when type checking object members of object")
+                }
               case _ => newStmts = newStmts :+ stmt
             }
           }
@@ -1645,7 +1654,7 @@ import TypeChecker._
         )
       }
 
-      if (binaryExp.op == AST.Exp.BinaryOp.Eq || binaryExp.op == AST.Exp.BinaryOp.Ne) {
+      if (eqBinops.contains(binaryExp.op)) {
         reporter.reports(rep.messages)
         val (right, rightTypeOpt) = checkExp(None(), scope, binaryExp.right, reporter)
         rightTypeOpt match {
@@ -2662,6 +2671,85 @@ import TypeChecker._
           return r
         }
 
+        def checkFactTheorem(kind: String, name: ISZ[String], typeParams: ISZ[AST.TypeParam], claim: AST.Exp.Quant): (AST.Exp, Option[AST.Typed]) = {
+          val size = invokeExp.args.size
+          if (claim.fun.params.size != size) {
+            reporter.error(
+              invokeExp.ident.attr.posOpt,
+              typeCheckerKind,
+              st"$kind $name is expecting ${claim.fun.params.size} arguments, but $size found.".render
+            )
+            return partResultH
+          }
+          var newArgs = ISZ[AST.Exp]()
+          if (typeParams.nonEmpty) {
+            if (targs.nonEmpty) {
+              val smOpt = TypeChecker.buildTypeSubstMap(name, invokeExp.ident.posOpt, typeParams, typeArgs, reporter)
+              smOpt match {
+                case Some(sm) =>
+                  var i = 0
+                  var argTypes = ISZ[AST.Typed]()
+                  while (i < size) {
+                    val (newArg, typedOpt) = checkExp(Some(claim.fun.params(i).typedOpt.get.subst(sm)), scope, invokeExp.args(i), reporter)
+                    if (typedOpt.isEmpty) {
+                      return partResultH
+                    }
+                    argTypes = argTypes :+ typedOpt.get
+                    newArgs = newArgs :+ newArg
+                    i = i + 1
+                  }
+                case _ => return partResultH
+              }
+            } else {
+              var i = 0
+              var argTypes = ISZ[AST.Typed]()
+              while (i < size) {
+                val (newArg, typedOpt) = checkExp(None(), scope, invokeExp.args(i), reporter)
+                if (typedOpt.isEmpty) {
+                  return partResultH
+                }
+                argTypes = argTypes :+ typedOpt.get
+                newArgs = newArgs :+ newArg
+                i = i + 1
+              }
+              TypeChecker.unifies(typeHierarchy, invokeExp.posOpt, TypeRelation.Subtype,
+                for (p <- claim.fun.params) yield p.typedOpt.get, for (arg <- newArgs) yield arg.typedOpt.get,
+                reporter)
+            }
+          } else {
+            if (targs.isEmpty) {
+              var i = 0
+              var argTypes = ISZ[AST.Typed]()
+              while (i < size) {
+                val (newArg, typedOpt) = checkExp(Some(claim.fun.params(i).typedOpt.get), scope, invokeExp.args(i), reporter)
+                if (typedOpt.isEmpty) {
+                  return partResultH
+                }
+                argTypes = argTypes :+ typedOpt.get
+                newArgs = newArgs :+ newArg
+                i = i + 1
+              }
+            } else {
+              reporter.error(
+                invokeExp.ident.attr.posOpt,
+                typeCheckerKind,
+                st"$kind ${(name, ".")} does not accept type parameters.".render
+              )
+              return partResultH
+            }
+          }
+          return (
+            invokeExp(
+              ident = ident,
+              targs = targs,
+              args = newArgs,
+              receiverOpt = receiverOpt,
+              attr = invokeExp.attr(resOpt = resOpt, typedOpt = Some(t))
+            ),
+            Some(AST.Typed.unit)
+          )
+        }
+
         t match {
           case m: AST.Typed.Methods =>
             val res: AST.ResolvedInfo.Methods = resOpt match {
@@ -2693,6 +2781,33 @@ import TypeChecker._
             }
           case m: AST.Typed.Method =>
             val r = checkInvokeMethod(m, resOpt, reporter); return r
+          case t: AST.Typed.Fact if inSpec =>
+            val info = typeHierarchy.nameMap.get(t.name).get.asInstanceOf[Info.Fact]
+            info.ast.claims(0) match {
+              case claim: AST.Exp.Quant if info.ast.isFun =>
+                return checkFactTheorem("Fact", info.name, info.ast.typeParams, claim)
+              case _ =>
+                reporter.error(
+                  invokeExp.ident.attr.posOpt,
+                  typeCheckerKind,
+                  st"Cannot invoke on Fact ${(info.name, ".")}.".render
+                )
+                return partResultH
+            }
+          case t: AST.Typed.Theorem if inSpec =>
+            val info = typeHierarchy.nameMap.get(t.name).get.asInstanceOf[Info.Theorem]
+            val kind: String = if (info.ast.isLemma) "Lemma" else "Theorem"
+            info.ast.claim match {
+              case claim: AST.Exp.Quant if info.ast.isFun =>
+                return checkFactTheorem(kind, info.name, info.ast.typeParams, claim)
+              case _ =>
+                reporter.error(
+                  invokeExp.ident.attr.posOpt,
+                  typeCheckerKind,
+                  st"Cannot invoke on $kind ${(info.name, ".")}.".render
+                )
+                return partResultH
+            }
           case t: AST.Typed.Fun =>
             if (invokeExp.targs.nonEmpty) {
               reporter.error(
@@ -4711,7 +4826,7 @@ import TypeChecker._
 
   def checkStep(scope: Scope.Local, step: AST.ProofAst.Step, reporter: Reporter): AST.ProofAst.Step = {
     def checkJustification(just: AST.ProofAst.Step.Justification): AST.ProofAst.Step.Justification = {
-      val errMessage = "Expecting an object @just/@pure method with Unit return type"
+      val errMessage = "Expecting an object @just/@pure method with Unit return type, fact or theorem"
       just match {
         case just: AST.ProofAst.Step.Justification.Apply =>
           val (newId, _) = checkExp(None(), scope, just.id, reporter)
@@ -4726,6 +4841,8 @@ import TypeChecker._
           val newInvoke = checkExp(None(), scope, just.invoke, reporter)._1.asInstanceOf[AST.Exp.Invoke]
           newInvoke.ident.typedOpt match {
             case Some(t: AST.Typed.Method) if t.isInObject && (t.tpe.isPure || t.mode == AST.MethodMode.Just) && t.tpe.ret == AST.Typed.unit =>
+            case Some(_: AST.Typed.Fact) =>
+            case Some(_: AST.Typed.Theorem) =>
             case Some(_) => reporter.error(newInvoke.posOpt, typeCheckerKind, errMessage)
             case _ =>
           }

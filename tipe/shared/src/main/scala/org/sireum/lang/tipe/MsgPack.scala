@@ -981,6 +981,7 @@ object MsgPack {
       writer.writeISZ(o.typeParams, write_astTypeParam _)
       writer.writeOption(o.descOpt, write_astExpLitString _)
       writer.writeISZ(o.claims, write_astExp _)
+      writer.writeB(o.isFun)
       write_astResolvedAttr(o.attr)
     }
 
@@ -3079,8 +3080,9 @@ object MsgPack {
       val typeParams = reader.readISZ(read_astTypeParam _)
       val descOpt = reader.readOption(read_astExpLitString _)
       val claims = reader.readISZ(read_astExp _)
+      val isFun = reader.readB()
       val attr = read_astResolvedAttr()
-      return org.sireum.lang.ast.Stmt.Fact(id, typeParams, descOpt, claims, attr)
+      return org.sireum.lang.ast.Stmt.Fact(id, typeParams, descOpt, claims, isFun, attr)
     }
 
     def read_astStmtInv(): org.sireum.lang.ast.Stmt.Inv = {
