@@ -185,7 +185,11 @@ object Util {
       map.get(no) match {
         case Some(otherPos) => reporter.error(no.posOpt, messageKind,
           s"Proof step $no has been declared at [${otherPos.beginLine}, ${otherPos.beginColumn}]")
-        case _ => map = map + no ~> o.id.posOpt.get
+        case _ =>
+          o.id.posOpt match {
+            case Some(pos) => map = map + no ~> pos
+            case _ =>
+          }
       }
       return MTransformer.PreResultProofAstStepRegular
     }
