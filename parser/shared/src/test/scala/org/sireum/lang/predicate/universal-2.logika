@@ -1,10 +1,10 @@
 (∀{x => gt(inc(x), x)},  ∀{x => gt(x, dec(x))}) |- (∀{x => gt(inc(x), x) & gt(x, dec(x))}) Proof(
-  1 #> (∀{x => gt(inc(x), x)})                   by "premise",
-  2 #> (∀{x => gt(x, dec(x))})                   by "premise",
+  1 #> (∀{x => gt(inc(x), x)})                   by Premise,
+  2 #> (∀{x => gt(x, dec(x))})                   by Premise,
   3 #> Let { a => SubProof(
-    4 #> (gt(inc(a), a))                         by "∀e"(1, a),
-    5 #> (gt(a, dec(a)))                         by "∀e"(2, a),
-    6 #> (gt(inc(a), a) & gt(a, dec(a)))         by "&i"(4, 5),
+    4 #> (gt(inc(a), a))                         by AllE(1, a),
+    5 #> (gt(a, dec(a)))                         by AllE(2, a),
+    6 #> (gt(inc(a), a) & gt(a, dec(a)))         by AndI(4, 5),
   )},
-  7 #> (∀{x => gt(inc(x), x) & gt(x, dec(x))})   by "∀i"(3),
+  7 #> (∀{x => gt(inc(x), x) & gt(x, dec(x))})   by AllI(3),
 )

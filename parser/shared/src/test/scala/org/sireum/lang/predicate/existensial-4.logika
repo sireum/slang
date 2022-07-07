@@ -1,11 +1,11 @@
 (∀{x => human(x) ->: mortal(x)},  ∃{y => human(y)}) |- (∃{z => mortal(z)}) Proof(
-  1 #> (∀{x => human(x) ->: mortal(x)})       by "premise",
-  2 #> (∃{y => human(y)})                     by "premise",
+  1 #> (∀{x => human(x) ->: mortal(x)})       by Premise,
+  2 #> (∃{y => human(y)})                     by Premise,
   3 #> Let { a => SubProof(
     4 #> Assume(human(a)),
-    5 #> (human(a) ->: mortal(a))             by "∀e"(1, a),
-    6 #> (mortal(a))                          by "->:e"(6, 4),
-    7 #> (∃{z => mortal(z)})                  by "∃i"(7, a),
+    5 #> (human(a) ->: mortal(a))             by AllE(1, a),
+    6 #> (mortal(a))                          by ImplyE(6, 4),
+    7 #> (∃{z => mortal(z)})                  by ExistsI(7, a),
   )},
-  8 #> (∃{z => mortal(z)})                    by "∃e"(2, 3),
+  8 #> (∃{z => mortal(z)})                    by ExistsE(2, 3),
 )

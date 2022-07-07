@@ -1,6 +1,6 @@
 (human(Socrates),  mortal(Socrates)) |- (∃{x => human(x) & mortal(x)}) Proof(
-  1 #> (human(Socrates))                      by "premise",
-  2 #> (mortal(Socrates))                     by "premise",
-  3 #> (human(Socrates) & mortal(Socrates))   by "&i"(1, 2),
-  4 #> (∃{x => human(x) & mortal(x)})         by "∃i"(3, Socrates),
+  1 #> (human(Socrates))                      by Premise,
+  2 #> (mortal(Socrates))                     by Premise,
+  3 #> (human(Socrates) & mortal(Socrates))   by AndI(1, 2),
+  4 #> (∃{x => human(x) & mortal(x)})         by ExistsE(3, Socrates),
 )

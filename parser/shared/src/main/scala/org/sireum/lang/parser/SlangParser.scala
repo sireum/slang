@@ -3290,19 +3290,12 @@ class SlangParser(
       witnesses
     }
     val r: AST.ProofAst.Step = proofStep match {
-      case q"$no #> $claim by ${jid: Lit.String}(..${jargs: Seq[Term]})" if isStepId(no) =>
-        AST.ProofAst.Step.Regular(toStepId(no), translateExp(claim),
-          AST.ProofAst.Step.Justification.Apply(translateExp(jid),
-            ISZ(jargs.map(translateExp): _*)))
-      case q"$no #> $claim by ${jid: Lit.String}" if isStepId(no) =>
-        AST.ProofAst.Step.Regular(toStepId(no), translateExp(claim),
-          AST.ProofAst.Step.Justification.Apply(translateLit(jid), ISZ()))
       case q"$no #> $claim by ${t: Term.Eta} and (..${jargs: Seq[Term]})" if isStepId(no) =>
         val stepNo = toStepId(no)
         val stepClaim = translateExp(claim)
         val tExp = translateExp(t).asInstanceOf[AST.Exp.Eta]
         AST.ProofAst.Step.Regular(stepNo, stepClaim,
-          AST.ProofAst.Step.Justification.InceptEta(tExp, translateWitnesses(jargs)))
+          AST.ProofAst.Step.Justification.ApplyEta(tExp, translateWitnesses(jargs)))
       case q"$no #> $claim by ${t: Term.Apply} and (..${jargs: Seq[Term]})" if isStepId(no) =>
         val stepNo = toStepId(no)
         val stepClaim = translateExp(claim)
@@ -3310,14 +3303,14 @@ class SlangParser(
         tExp match {
           case tExp: AST.Exp.Invoke =>
             AST.ProofAst.Step.Regular(stepNo, stepClaim,
-              AST.ProofAst.Step.Justification.Incept(tExp, translateWitnesses(jargs)))
+              AST.ProofAst.Step.Justification.Apply(tExp, translateWitnesses(jargs)))
           case tExp: AST.Exp.InvokeNamed =>
             AST.ProofAst.Step.Regular(stepNo, stepClaim,
-              AST.ProofAst.Step.Justification.InceptNamed(tExp, translateWitnesses(jargs)))
+              AST.ProofAst.Step.Justification.ApplyNamed(tExp, translateWitnesses(jargs)))
           case _ =>
             reporter.error(tExp.posOpt, messageKind, s"Expecting a method invocation but found '${t.syntax}'")
             AST.ProofAst.Step.Regular(stepNo, stepClaim,
-              AST.ProofAst.Step.Justification.Apply(AST.Exp.LitString("?", emptyAttr), translateWitnesses(jargs).asInstanceOf[ISZ[AST.Exp]]))
+              AST.ProofAst.Step.Justification.Ref(AST.Exp.Ident(AST.Id("?", emptyAttr), emptyResolvedAttr)))
         }
       case q"$no #> $claim by ${t: Term.Apply}" if isStepId(no) =>
         val stepNo = toStepId(no)
@@ -3326,18 +3319,18 @@ class SlangParser(
         tExp match {
           case tExp: AST.Exp.Invoke =>
             AST.ProofAst.Step.Regular(stepNo, stepClaim,
-              AST.ProofAst.Step.Justification.Incept(tExp, ISZ()))
+              AST.ProofAst.Step.Justification.Apply(tExp, ISZ()))
           case tExp: AST.Exp.InvokeNamed =>
             AST.ProofAst.Step.Regular(stepNo, stepClaim,
-              AST.ProofAst.Step.Justification.InceptNamed(tExp, ISZ()))
+              AST.ProofAst.Step.Justification.ApplyNamed(tExp, ISZ()))
           case _ =>
             reporter.error(tExp.posOpt, messageKind, s"Expecting a method invocation but found '${t.syntax}'")
             AST.ProofAst.Step.Regular(stepNo, stepClaim,
-              AST.ProofAst.Step.Justification.Apply(AST.Exp.LitString("?", emptyAttr), ISZ()))
+              AST.ProofAst.Step.Justification.Ref(AST.Exp.Ident(AST.Id("?", emptyAttr), emptyResolvedAttr)))
         }
       case q"$no #> $claim by ${term: Term.Ref}" if isStepId(no) =>
         AST.ProofAst.Step.Regular(toStepId(no), translateExp(claim),
-          AST.ProofAst.Step.Justification.Apply(translateExp(term), ISZ()))
+          AST.ProofAst.Step.Justification.Ref(translateExp(term).asInstanceOf[AST.Exp.Ref]))
       case q"$no #> $claim by StructuralInduction($m)" if isStepId(no) =>
         translateStructuralInduction(toStepId(no), translateExp(claim), m)
       case q"$no #> Assume($claim)" if isStepId(no) =>
@@ -3359,19 +3352,12 @@ class SlangParser(
         AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims))
       case q"$no #> Let {(..$params) => SubProof(..${claims: Seq[Term]})}" if isStepId(no) =>
         AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims))
-      case q"$claim by ${jid: Lit.String}(..${jargs: Seq[Term]})" =>
-        AST.ProofAst.Step.Regular(toStepId(claim.pos), translateExp(claim),
-          AST.ProofAst.Step.Justification.Apply(translateExp(jid),
-            ISZ(jargs.map(translateExp): _*)))
-      case q"$claim by ${jid: Lit.String}" =>
-        AST.ProofAst.Step.Regular(toStepId(claim.pos), translateExp(claim),
-          AST.ProofAst.Step.Justification.Apply(translateLit(jid), ISZ()))
       case q"$claim by ${t: Term.Eta} and (..${jargs: Seq[Term]})" =>
         val stepNo = toStepId(claim.pos)
         val stepClaim = translateExp(claim)
         val tExp = translateExp(t).asInstanceOf[AST.Exp.Eta]
         AST.ProofAst.Step.Regular(stepNo, stepClaim,
-          AST.ProofAst.Step.Justification.InceptEta(tExp, translateWitnesses(jargs)))
+          AST.ProofAst.Step.Justification.ApplyEta(tExp, translateWitnesses(jargs)))
       case q"$claim by ${t: Term.Apply} and (..${jargs: Seq[Term]})" =>
         val stepNo = toStepId(claim.pos)
         val stepClaim = translateExp(claim)
@@ -3379,14 +3365,14 @@ class SlangParser(
         tExp match {
           case tExp: AST.Exp.Invoke =>
             AST.ProofAst.Step.Regular(stepNo, stepClaim,
-              AST.ProofAst.Step.Justification.Incept(tExp, translateWitnesses(jargs)))
+              AST.ProofAst.Step.Justification.Apply(tExp, translateWitnesses(jargs)))
           case tExp: AST.Exp.InvokeNamed =>
             AST.ProofAst.Step.Regular(stepNo, stepClaim,
-              AST.ProofAst.Step.Justification.InceptNamed(tExp, translateWitnesses(jargs)))
+              AST.ProofAst.Step.Justification.ApplyNamed(tExp, translateWitnesses(jargs)))
           case _ =>
             reporter.error(tExp.posOpt, messageKind, s"Expecting a method invocation but found '${t.syntax}'")
             AST.ProofAst.Step.Regular(stepNo, stepClaim,
-              AST.ProofAst.Step.Justification.Apply(AST.Exp.LitString("?", emptyAttr), translateWitnesses(jargs).asInstanceOf[ISZ[AST.Exp]]))
+              AST.ProofAst.Step.Justification.Ref(AST.Exp.Ident(AST.Id("?", emptyAttr), emptyResolvedAttr)))
         }
       case q"$claim by ${t: Term.Apply}" =>
         val stepNo = toStepId(claim.pos)
@@ -3395,18 +3381,18 @@ class SlangParser(
         tExp match {
           case tExp: AST.Exp.Invoke =>
             AST.ProofAst.Step.Regular(stepNo, stepClaim,
-              AST.ProofAst.Step.Justification.Incept(tExp, ISZ()))
+              AST.ProofAst.Step.Justification.Apply(tExp, ISZ()))
           case tExp: AST.Exp.InvokeNamed =>
             AST.ProofAst.Step.Regular(stepNo, stepClaim,
-              AST.ProofAst.Step.Justification.InceptNamed(tExp, ISZ()))
+              AST.ProofAst.Step.Justification.ApplyNamed(tExp, ISZ()))
           case _ =>
             reporter.error(tExp.posOpt, messageKind, s"Expecting a method invocation but found '${t.syntax}'")
             AST.ProofAst.Step.Regular(stepNo, stepClaim,
-              AST.ProofAst.Step.Justification.Apply(AST.Exp.LitString("?", emptyAttr), ISZ()))
+              AST.ProofAst.Step.Justification.Ref(AST.Exp.Ident(AST.Id("?", emptyAttr), emptyResolvedAttr)))
         }
       case q"$claim by ${term: Term.Ref}" =>
         AST.ProofAst.Step.Regular(toStepId(claim.pos), translateExp(claim),
-          AST.ProofAst.Step.Justification.Apply(translateExp(term), ISZ()))
+          AST.ProofAst.Step.Justification.Ref(translateExp(term).asInstanceOf[AST.Exp.Ref]))
       case _ =>
         error(proofStep.pos, s"Invalid proof step form: '$proofStep'.")
         emptyProofStep

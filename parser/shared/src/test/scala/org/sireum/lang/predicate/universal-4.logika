@@ -1,13 +1,13 @@
 (∀{x => healthy(x) ->: happy(x)}) |- ((∀{y => healthy(y)}) ->: (∀{x => happy(x)})) Proof(
- 1 #> (∀{x => healthy(x) ->: happy(x)})                   by "premise",
+ 1 #> (∀{x => healthy(x) ->: happy(x)})                   by Premise,
  2 #> SubProof(
    3 #> Assume(∀{y => healthy(y)}),
    4 #> Let { a => SubProof(
-     5 #> (healthy(a))                                    by "∀e"(3, a),
-     6 #> (healthy(a) ->: happy(a))                       by "∀e"(1, a),
-     7 #> (happy(a))                                      by "->:e"(6, 5),
+     5 #> (healthy(a))                                    by AllE(3, a),
+     6 #> (healthy(a) ->: happy(a))                       by AllE(1, a),
+     7 #> (happy(a))                                      by ImplyE(6, 5),
    )},
-   8 #> (∀{x => happy(x)})                                by "∀i"(4),
+   8 #> (∀{x => happy(x)})                                by AllI(4),
  ),
- 9 #> ((∀{y => healthy(y)}) ->: (∀{x => happy(x)}))       by "->:i"(2),
+ 9 #> ((∀{y => healthy(y)}) ->: (∀{x => happy(x)}))       by ImplyI(2),
 )

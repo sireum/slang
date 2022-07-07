@@ -1,10 +1,10 @@
 (p, q ->: !p) |- (!q) Proof(
-  1 #> (p)              by "premise",
-  2 #> (q ->: !p)       by "premise",
+  1 #> (p)              by Premise,
+  2 #> (q ->: !p)       by Premise,
   3 #> SubProof(
     4 #> Assume(q),
-    5 #> (!p)           by "->:e"(2, 4),
-    6 #> (F)            by "!e"(1, 5),
+    5 #> (!p)           by ImplyE(2, 4),
+    6 #> (F)            by NegE(1, 5),
   ),
-  7 #> (!q)             by "!i"(3),
+  7 #> (!q)             by NegI(3),
 )

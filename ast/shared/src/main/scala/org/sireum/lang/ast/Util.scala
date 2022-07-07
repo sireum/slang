@@ -118,7 +118,7 @@ object Util {
       }
     }
 
-    override def preProofAstStepJustificationIncept(o: ProofAst.Step.Justification.Incept): MTransformer.PreResult[ProofAst.Step.Inception] = {
+    override def preProofAstStepJustificationApply(o: ProofAst.Step.Justification.Apply): MTransformer.PreResult[ProofAst.Step.Inception] = {
       if (o.witnesses.isEmpty) {
         for (arg <- o.args) {
           processArg(F, arg)
@@ -128,28 +128,21 @@ object Util {
           processStepId(w)
         }
       }
-      return MTransformer.PreResultProofAstStepJustificationIncept
-    }
-
-    override def preProofAstStepJustificationInceptNamed(o: ProofAst.Step.Justification.InceptNamed): MTransformer.PreResult[ProofAst.Step.Inception] = {
-      for (w <- o.witnesses) {
-        processStepId(w)
-      }
-      return MTransformer.PreResultProofAstStepJustificationInceptNamed
-    }
-
-    override def preProofAstStepJustificationInceptEta(o: ProofAst.Step.Justification.InceptEta): MTransformer.PreResult[ProofAst.Step.Inception] = {
-      for (w <- o.witnesses) {
-        processStepId(w)
-      }
-      return MTransformer.PreResultProofAstStepJustificationInceptEta
-    }
-
-    override def preProofAstStepJustificationApply(o: ProofAst.Step.Justification.Apply): MTransformer.PreResult[ProofAst.Step.Justification] = {
-      for (arg <- o.args) {
-        processArg(T, arg)
-      }
       return MTransformer.PreResultProofAstStepJustificationApply
+    }
+
+    override def preProofAstStepJustificationApplyNamed(o: ProofAst.Step.Justification.ApplyNamed): MTransformer.PreResult[ProofAst.Step.Inception] = {
+      for (w <- o.witnesses) {
+        processStepId(w)
+      }
+      return MTransformer.PreResultProofAstStepJustificationApplyNamed
+    }
+
+    override def preProofAstStepJustificationApplyEta(o: ProofAst.Step.Justification.ApplyEta): MTransformer.PreResult[ProofAst.Step.Inception] = {
+      for (w <- o.witnesses) {
+        processStepId(w)
+      }
+      return MTransformer.PreResultProofAstStepJustificationApplyEta
     }
   }
 

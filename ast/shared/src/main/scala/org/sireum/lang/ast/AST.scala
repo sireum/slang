@@ -693,11 +693,10 @@ object ProofAst {
 
     object Justification {
 
-      @datatype class Apply(val id: Exp, val args: ISZ[Exp]) extends Justification {
-        @strictpure override def posOpt: Option[Position] = id.posOpt
+      @datatype class Ref(val id: Exp.Ref) extends Justification {
+        @strictpure override def posOpt: Option[Position] = id.asExp.posOpt
         @pure def idString: String = {
           id match {
-            case id: Exp.LitString => return id.value
             case id: Exp.Ident => return id.id.value
             case id: Exp.Select => return id.id.value
             case _ => halt("Infeasible")
@@ -707,7 +706,6 @@ object ProofAst {
           id match {
             case id: Exp.Ident => return id.attr.resOpt.get.asInstanceOf[ResolvedInfo.Method].owner == name
             case id: Exp.Select => return id.attr.resOpt.get.asInstanceOf[ResolvedInfo.Method].owner == name
-            case _: Exp.LitString => return T
             case _ => halt("Infeasible")
           }
         }
@@ -715,19 +713,18 @@ object ProofAst {
           id match {
             case id: Exp.Ident => return id.attr.resOpt
             case id: Exp.Select => return id.attr.resOpt
-            case _: Exp.LitString => return None()
             case _ => halt("Infeasible")
           }
         }
       }
 
-      @datatype class Incept(val invoke: Exp.Invoke, val witnesses: ISZ[ProofAst.StepId]) extends Inception {
+      @datatype class Apply(val invoke: Exp.Invoke, val witnesses: ISZ[ProofAst.StepId]) extends Inception {
         @strictpure def invokeIdent: Exp.Ident = invoke.ident
         @strictpure def args: ISZ[Exp] = invoke.args
         @strictpure override def posOpt: Option[Position] = invoke.ident.posOpt
       }
 
-      @datatype class InceptNamed(val invoke: Exp.InvokeNamed, val witnesses: ISZ[ProofAst.StepId]) extends Inception {
+      @datatype class ApplyNamed(val invoke: Exp.InvokeNamed, val witnesses: ISZ[ProofAst.StepId]) extends Inception {
         @strictpure def invokeIdent: Exp.Ident = invoke.ident
         @pure def args: ISZ[Exp] = {
           val r = MSZ.create[Option[Exp]](invoke.args.size, None())
@@ -739,7 +736,7 @@ object ProofAst {
         @strictpure override def posOpt: Option[Position] = invoke.ident.posOpt
       }
 
-      @datatype class InceptEta(val eta: Exp.Eta, val witnesses: ISZ[ProofAst.StepId]) extends Inception {
+      @datatype class ApplyEta(val eta: Exp.Eta, val witnesses: ISZ[ProofAst.StepId]) extends Inception {
         @strictpure override def posOpt: Option[Position] = eta.posOpt
       }
 
