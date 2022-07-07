@@ -2782,7 +2782,7 @@ import TypeChecker._
           case m: AST.Typed.Method =>
             val r = checkInvokeMethod(m, resOpt, reporter); return r
           case t: AST.Typed.Fact if inSpec =>
-            val info = typeHierarchy.nameMap.get(t.name).get.asInstanceOf[Info.Fact]
+            val info = scope.resolveName(typeHierarchy.nameMap, t.name).get.asInstanceOf[Info.Fact]
             info.ast.claims(0) match {
               case claim: AST.Exp.Quant if info.ast.isFun =>
                 return checkFactTheorem("Fact", info.name, info.ast.typeParams, claim)
@@ -2795,7 +2795,7 @@ import TypeChecker._
                 return partResultH
             }
           case t: AST.Typed.Theorem if inSpec =>
-            val info = typeHierarchy.nameMap.get(t.name).get.asInstanceOf[Info.Theorem]
+            val info = scope.resolveName(typeHierarchy.nameMap, t.name).get.asInstanceOf[Info.Theorem]
             val kind: String = if (info.ast.isLemma) "Lemma" else "Theorem"
             info.ast.claim match {
               case claim: AST.Exp.Quant if info.ast.isFun =>
@@ -3699,6 +3699,7 @@ import TypeChecker._
     }
     scope = sc(nameMap = scope.nameMap)
     var nameMap = scope.nameMap
+    var tcNameMap = typeHierarchy.nameMap
     var stmts2 = ISZ[AST.Stmt]()
     val mscopes = MSZ.create(stmts.size, scope)
     for (i <- z"0" until stmts.size) {
@@ -3719,17 +3720,23 @@ import TypeChecker._
         case stmt: AST.Stmt.Fact =>
           val id = stmt.id.value
           val name = context :+ id
-          val newStmt = TypeChecker.checkFactStmt(strictAliasing, typeHierarchy, name, scope, stmt, reporter)
+          val newStmt = TypeChecker.checkFactStmt(strictAliasing, typeHierarchy, name, scope,
+            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Fact(name)))), reporter)
           stmts2 = stmts2 :+ newStmt
           val info = typeHierarchy.nameMap.get(name).get.asInstanceOf[Info.Fact]
-          nameMap = nameMap + id ~> info(ast = newStmt)
+          val newInfo = info(ast = newStmt)
+          nameMap = nameMap + id ~> newInfo
+          tcNameMap = tcNameMap + name ~> newInfo
         case stmt: AST.Stmt.Theorem =>
           val id = stmt.id.value
           val name = context :+ id
-          val newStmt = TypeChecker.checkTheoremStmt(strictAliasing, typeHierarchy, name, scope, stmt, reporter)
+          val newStmt = TypeChecker.checkTheoremStmt(strictAliasing, typeHierarchy, name, scope,
+            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Theorem(name)))), reporter)
           stmts2 = stmts2 :+ newStmt
           val info = typeHierarchy.nameMap.get(name).get.asInstanceOf[Info.Theorem]
-          nameMap = nameMap + id ~> info(ast = newStmt)
+          val newInfo = info(ast = newStmt)
+          nameMap = nameMap + id ~> newInfo
+          tcNameMap = tcNameMap + name ~> newInfo
         case stmt: AST.Stmt.Inv =>
           val id = stmt.id.value
           val name = context :+ id
@@ -3756,7 +3763,8 @@ import TypeChecker._
       }
     }
     val scopes = mscopes.toIS
-    val newStmts = checkStmts(scopes, expectedOpt, stmts2, reporter)
+    val thisL = this
+    val newStmts = thisL(typeHierarchy = typeHierarchy(nameMap = tcNameMap)).checkStmts(scopes, expectedOpt, stmts2, reporter)
     val newScope: Scope.Local = if (scopes.isEmpty) scope else scopes(scopes.size - 1)
     val undecls: ISZ[AST.ResolvedInfo.LocalVar] = {
       var r = ISZ[AST.ResolvedInfo.LocalVar]()
