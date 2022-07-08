@@ -780,9 +780,12 @@ object Typed {
       r.ids ~> ((rConstructorMethodOpt, rConstructorResOpt))
     )
   // @formatter:on
-  val builtInTypes: HashSet[Typed] = HashSet ++ ISZ[Typed](
-    b, c, z, f32, f64, string, r
+  val floatingPointTypes: HashSet[Typed] = HashSet ++ ISZ[Typed](
+    f32, f64
   )
+  val builtInTypes: HashSet[Typed] = HashSet ++ ISZ[Typed](
+    b, c, z, string, r
+  ) ++ floatingPointTypes.elements
 
   @pure def short(ids: ISZ[String]): ISZ[String] = {
     return if (ids.size >= 2 && ids(0) == string"org" && ids(1) == string"sireum") ops.ISZOps(ids).drop(2)

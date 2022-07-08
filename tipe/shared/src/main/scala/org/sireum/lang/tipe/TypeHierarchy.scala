@@ -772,7 +772,9 @@ object TypeHierarchy {
   }
 
   @memoize def isSubstitutable(t: AST.Typed): B = {
-    if (AST.Typed.builtInTypes.contains(t)) {
+    if (AST.Typed.floatingPointTypes.contains(t)) {
+      return F
+    } else if (AST.Typed.builtInTypes.contains(t)) {
       return T
     }
     t match {
