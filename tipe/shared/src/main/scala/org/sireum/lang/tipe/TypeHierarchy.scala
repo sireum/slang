@@ -771,77 +771,87 @@ object TypeHierarchy {
     }
   }
 
-  @memoize def isSubstitutable(t: AST.Typed): B = {
-    if (AST.Typed.floatingPointTypes.contains(t)) {
-      return F
-    } else if (AST.Typed.builtInTypes.contains(t)) {
-      return T
-    }
-    t match {
-      case t: AST.Typed.Name =>
-        if (t.ids == AST.Typed.isName || t.ids == AST.Typed.msName) {
-          return isSubstitutable(t.args(1))
-        }
-        if (!ops.ISZOps(t.args).forall((targ: AST.Typed) => isSubstitutable(targ))) {
-          return F
-        }
-        typeMap.get(t.ids).get match {
-          case info: TypeInfo.Adt =>
-            if (info.ast.isRoot) {
-              val sm = TypeChecker.buildTypeSubstMap(info.name, None(), info.ast.typeParams, t.args, Reporter.create).get
-              for (childName <- poset.childrenOf(info.name).elements) {
-                val childInfo = typeMap.get(childName).get.asInstanceOf[TypeInfo.Adt]
-                for (parent <- childInfo.parents if parent.ids == info.name) {
-                  val csm = TypeChecker.buildTypeSubstMap(info.name, None(), info.ast.typeParams, parent.args, Reporter.create).get
-                  var ctargs = ISZ[AST.Typed]()
-                  for (ctp <- childInfo.ast.typeParams) {
-                    val ctpid = ctp.id.value
-                    csm.get(ctpid) match {
-                      case Some(subst1) =>
-                        sm.get(subst1.asInstanceOf[AST.Typed.TypeVar].id) match {
-                          case Some(ct) => ctargs = ctargs :+ ct
-                          case _ => return F
-                        }
-                      case _ => return F
+  @memoize def isSubstitutable(tipe: AST.Typed): B = {
+    var seen = HashSet.empty[AST.Typed]
+    def isSubstitutableH(t: AST.Typed): B = {
+      if (seen.contains(t)) {
+        return T
+      }
+      seen = seen + t
+      if (AST.Typed.floatingPointTypes.contains(t)) {
+        return F
+      } else if (AST.Typed.builtInTypes.contains(t)) {
+        return T
+      }
+      t match {
+        case t: AST.Typed.Name =>
+          if (t.ids == AST.Typed.isName || t.ids == AST.Typed.msName) {
+            return isSubstitutableH(t.args(1))
+          }
+          if (!ops.ISZOps(t.args).forall((targ: AST.Typed) => isSubstitutableH(targ))) {
+            return F
+          }
+          typeMap.get(t.ids).get match {
+            case info: TypeInfo.Adt =>
+              if (info.ast.isRoot) {
+                val sm = TypeChecker.buildTypeSubstMap(info.name, None(), info.ast.typeParams, t.args, Reporter.create).get
+                for (childName <- poset.childrenOf(info.name).elements) {
+                  val childInfo = typeMap.get(childName).get.asInstanceOf[TypeInfo.Adt]
+                  for (parent <- childInfo.parents if parent.ids == info.name) {
+                    val csm = TypeChecker.buildTypeSubstMap(info.name, None(), info.ast.typeParams, parent.args, Reporter.create).get
+                    var ctargs = ISZ[AST.Typed]()
+                    for (ctp <- childInfo.ast.typeParams) {
+                      val ctpid = ctp.id.value
+                      csm.get(ctpid) match {
+                        case Some(subst1) =>
+                          sm.get(subst1.asInstanceOf[AST.Typed.TypeVar].id) match {
+                            case Some(ct) => ctargs = ctargs :+ ct
+                            case _ => return F
+                          }
+                        case _ => return F
+                      }
+                    }
+                    if (!isSubstitutableH(AST.Typed.Name(childInfo.name, ctargs))) {
+                      return F
                     }
                   }
-                  if (!isSubstitutable(AST.Typed.Name(childInfo.name, ctargs))) {
+                }
+                return T
+              } else {
+                for (p <- info.ast.params if p.isHidden) {
+                  return F
+                }
+                if (info.methods.contains("isEqual")) {
+                  return F
+                }
+                for (vInfo <- info.vars.values) {
+                  val vt = vInfo.typedOpt.get
+                  if (!isSubstitutableH(vt)) {
                     return F
                   }
                 }
+                return T
               }
-              return T
-            } else {
-              for (p <- info.ast.params if p.isHidden) {
-                return F
-              }
-              if (info.methods.contains("isEqual")) {
-                return F
-              }
-              for (vInfo <- info.vars.values) {
-                if (!isSubstitutable(vInfo.typedOpt.get)) {
-                  return F
-                }
-              }
-              return T
-            }
-          case _: TypeInfo.SubZ => return T
-          case _: TypeInfo.Sig => return F
-          case _: TypeInfo.Enum => return T
-          case info: TypeInfo.TypeAlias => halt(s"Unexpected usage of isSubstitutable on $info")
-          case info: TypeInfo.TypeVar => halt(s"Unexpected usage of isSubstitutable on $info")
-        }
-      case t: AST.Typed.Enum => return T
-      case t: AST.Typed.TypeVar => return F
-      case t: AST.Typed.Tuple => return ops.ISZOps(t.args).forall((et: AST.Typed) => isSubstitutable(et))
-      case _: AST.Typed.Fun => return F
-      case _: AST.Typed.Method => return F
-      case _: AST.Typed.Methods => return F
-      case _: AST.Typed.Object => return F
-      case _: AST.Typed.Theorem => return F
-      case _: AST.Typed.Fact => return F
-      case _: AST.Typed.Inv => return F
-      case _: AST.Typed.Package => return F
+            case _: TypeInfo.SubZ => return T
+            case _: TypeInfo.Sig => return F
+            case _: TypeInfo.Enum => return T
+            case info: TypeInfo.TypeAlias => halt(s"Unexpected usage of isSubstitutable on $info")
+            case info: TypeInfo.TypeVar => halt(s"Unexpected usage of isSubstitutable on $info")
+          }
+        case t: AST.Typed.Enum => return T
+        case t: AST.Typed.TypeVar => return F
+        case t: AST.Typed.Tuple => return ops.ISZOps(t.args).forall((et: AST.Typed) => isSubstitutableH(et))
+        case _: AST.Typed.Fun => return F
+        case _: AST.Typed.Method => return F
+        case _: AST.Typed.Methods => return F
+        case _: AST.Typed.Object => return F
+        case _: AST.Typed.Theorem => return F
+        case _: AST.Typed.Fact => return F
+        case _: AST.Typed.Inv => return F
+        case _: AST.Typed.Package => return F
+      }
     }
+
+    return isSubstitutableH(tipe)
   }
 }
