@@ -1656,7 +1656,9 @@ import TypeChecker._
 
       if (eqBinops.contains(binaryExp.op)) {
         reporter.reports(rep.messages)
-        val (right, rightTypeOpt) = checkExp(None(), scope, binaryExp.right, reporter)
+        val (right, rightTypeOpt): (AST.Exp, Option[AST.Typed]) =
+          if (leftType.isInstanceOf[AST.Typed.Tuple]) checkExp(leftTypeOpt, scope, binaryExp.right, reporter)
+          else checkExp(None(), scope, binaryExp.right, reporter)
         rightTypeOpt match {
           case Some(rightType) =>
             val isCompat = typeHierarchy.isCompatible(leftType, rightType)
@@ -3450,6 +3452,50 @@ import TypeChecker._
         case exp: AST.Exp.Result => return checkResult(exp)
 
         case exp: AST.Exp.LoopIndex => return checkLoopIndex(exp)
+
+        case _: AST.Exp.Sym => halt("Infeasible")
+
+        case exp: AST.Exp.TypeCond =>
+          if (inSpec) {
+            var newArgs = ISZ[AST.Exp]()
+            for (arg <- exp.args) {
+              val (newArg, tOpt) = checkExp(None(), scope, arg, reporter)
+              tOpt match {
+                case Some(t) =>
+                  newArgs = newArgs :+ newArg
+                  var ok = F
+                  t match {
+                    case t: AST.Typed.Name => typeHierarchy.typeMap.get(t.ids) match {
+                      case Some(_: TypeInfo.Sig) => ok = T
+                      case Some(_: TypeInfo.Adt) => ok = T
+                      case _ =>
+                    }
+                    case _ =>
+                  }
+                  if (!ok) {
+                    reporter.error(newArg.posOpt, typeCheckerKind, "Expecting @sig, @msig, @datatype, or @record types")
+                  }
+                case _ =>
+              }
+            }
+            val (newFun, tOpt) = checkExp(None(), scope, exp.fun, reporter)
+            val fun = newFun.asInstanceOf[AST.Exp.Fun]
+            if (tOpt.isEmpty || newArgs.size != exp.args.size) {
+              return (exp(args = newArgs, fun = fun), None())
+            }
+            for (p <- ops.ISZOps(fun.params).zip(newArgs)) {
+              val (param, arg) = p
+              val paramType = param.typedOpt.get
+              val argType = arg.typedOpt.get
+              if (paramType == argType || !typeHierarchy.isSubType(paramType, argType)) {
+                reporter.error(param.tipeOpt.get.posOpt, typeCheckerKind, s"Parameter ${param.idOpt.get.value}'s type should be a proper subtype of '$argType', instead '$paramType was declared'")
+              }
+            }
+            return (exp(args = newArgs, fun = fun), AST.Typed.bOpt)
+          } else {
+            reporter.error(exp.posOpt, typeCheckerKind, "?(...) { (...) => ... } can only be used inside specification context.")
+            return (exp, None())
+          }
       }
     }
 

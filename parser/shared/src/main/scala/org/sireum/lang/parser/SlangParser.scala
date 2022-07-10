@@ -2391,6 +2391,35 @@ class SlangParser(
       }
     }
 
+    def typeCond(pos: Position, margs: List[Term], mf: Term.Function): AST.Exp = {
+      var ok = true
+      if (margs.size != mf.params.size) {
+        error(mf.pos, s"Expecting ${margs.size} number of function parameters, but found ${mf.params.size}.")
+        ok = false
+      }
+      for (p <- mf.params) {
+        if (p.name.value == "") {
+          error(p.pos, "Parameter of ? function operator should be explicitly named")
+          ok = false
+        }
+        if (p.decltpe.isEmpty) {
+          error(p.pos, "Parameter of ? function operator should be explicitly typed")
+          ok = false
+        }
+      }
+      val args = ISZ[AST.Exp]((for (marg <- margs) yield translateExp(marg)): _*)
+      val f = translateFun(mf).asInstanceOf[AST.Exp.Fun]
+      if (!f.exp.isInstanceOf[AST.Stmt.Expr]) {
+        reporter.error(f.exp.asStmt.posOpt, messageKind, "Expecting an expression body")
+        ok = false
+      }
+      if (ok) {
+        return AST.Exp.TypeCond(args, f, attr(exp.pos))
+      } else {
+        return rExp
+      }
+    }
+
     exp match {
       case exp: Lit => translateLit(exp)
       case exp: Term.Interpolate =>
@@ -2420,6 +2449,8 @@ class SlangParser(
       case Term.ApplyType(res@Term.Name("Res"), List(t)) =>
         val pos = if (exp.pos == Position.None) res.pos else exp.pos
         AST.Exp.Result(Some(translateType(t)), typedAttr(pos))
+      case Term.Apply(Term.Apply(op@Term.Name("?"), margs), List(mf: Term.Function)) if margs.nonEmpty => return typeCond(op.pos, margs, mf)
+      case Term.Apply(Term.Apply(op@Term.Name("?"), margs), List(Term.Block(List(mf: Term.Function)))) if margs.nonEmpty => return typeCond(op.pos, margs, mf)
       case q"Idx[$t]($arg)" =>
         translateIdent("Idx", arg) match {
           case Some(idx) => AST.Exp.LoopIndex(Some(translateType(t)), idx, typedAttr(exp.pos))

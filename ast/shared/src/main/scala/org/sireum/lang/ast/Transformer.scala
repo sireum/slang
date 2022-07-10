@@ -644,6 +644,8 @@ object Transformer {
         case o: Exp.Invoke => return preExpInvoke(ctx, o)
         case o: Exp.InvokeNamed => return preExpInvokeNamed(ctx, o)
         case o: Exp.If => return preExpIf(ctx, o)
+        case o: Exp.TypeCond => return preExpTypeCond(ctx, o)
+        case o: Exp.Sym => return preExpSym(ctx, o)
         case o: Exp.Fun => return preExpFun(ctx, o)
         case o: Exp.ForYield => return preExpForYield(ctx, o)
         case o: Exp.QuantType =>
@@ -832,6 +834,14 @@ object Transformer {
     }
 
     @pure def preExpIf(ctx: Context, o: Exp.If): PreResult[Context, Exp] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preExpTypeCond(ctx: Context, o: Exp.TypeCond): PreResult[Context, Exp] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preExpSym(ctx: Context, o: Exp.Sym): PreResult[Context, Exp] = {
       return PreResult(ctx, T, None())
     }
 
@@ -1702,6 +1712,8 @@ object Transformer {
         case o: Exp.Invoke => return postExpInvoke(ctx, o)
         case o: Exp.InvokeNamed => return postExpInvokeNamed(ctx, o)
         case o: Exp.If => return postExpIf(ctx, o)
+        case o: Exp.TypeCond => return postExpTypeCond(ctx, o)
+        case o: Exp.Sym => return postExpSym(ctx, o)
         case o: Exp.Fun => return postExpFun(ctx, o)
         case o: Exp.ForYield => return postExpForYield(ctx, o)
         case o: Exp.QuantType =>
@@ -1890,6 +1902,14 @@ object Transformer {
     }
 
     @pure def postExpIf(ctx: Context, o: Exp.If): TPostResult[Context, Exp] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postExpTypeCond(ctx: Context, o: Exp.TypeCond): TPostResult[Context, Exp] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postExpSym(ctx: Context, o: Exp.Sym): TPostResult[Context, Exp] = {
       return TPostResult(ctx, None())
     }
 
@@ -3717,6 +3737,20 @@ import Transformer._
             TPostResult(r3.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), thenExp = r1.resultOpt.getOrElse(o2.thenExp), elseExp = r2.resultOpt.getOrElse(o2.elseExp), attr = r3.resultOpt.getOrElse(o2.attr))))
           else
             TPostResult(r3.ctx, None())
+        case o2: Exp.TypeCond =>
+          val r0: TPostResult[Context, IS[Z, Exp]] = transformISZ(preR.ctx, o2.args, transformExp _)
+          val r1: TPostResult[Context, Exp.Fun] = transformExpFun(r0.ctx, o2.fun)
+          val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args), fun = r1.resultOpt.getOrElse(o2.fun), attr = r2.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r2.ctx, None())
+        case o2: Exp.Sym =>
+          val r0: TPostResult[Context, TypedAttr] = transformTypedAttr(preR.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(attr = r0.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r0.ctx, None())
         case o2: Exp.Fun =>
           val r0: TPostResult[Context, IS[Z, Exp.Fun.Param]] = transformISZ(preR.ctx, o2.params, transformExpFunParam _)
           val r1: TPostResult[Context, AssignExp] = transformAssignExp(r0.ctx, o2.exp)

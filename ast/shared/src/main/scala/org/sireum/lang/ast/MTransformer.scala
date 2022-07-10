@@ -449,6 +449,14 @@ object MTransformer {
 
   val PostResultExpIf: MOption[Exp] = MNone()
 
+  val PreResultExpTypeCond: PreResult[Exp] = PreResult(T, MNone())
+
+  val PostResultExpTypeCond: MOption[Exp] = MNone()
+
+  val PreResultExpSym: PreResult[Exp] = PreResult(T, MNone())
+
+  val PostResultExpSym: MOption[Exp] = MNone()
+
   val PreResultExpFunParam: PreResult[Exp.Fun.Param] = PreResult(T, MNone())
 
   val PostResultExpFunParam: MOption[Exp.Fun.Param] = MNone()
@@ -1270,6 +1278,8 @@ import MTransformer._
       case o: Exp.Invoke => return preExpInvoke(o)
       case o: Exp.InvokeNamed => return preExpInvokeNamed(o)
       case o: Exp.If => return preExpIf(o)
+      case o: Exp.TypeCond => return preExpTypeCond(o)
+      case o: Exp.Sym => return preExpSym(o)
       case o: Exp.Fun => return preExpFun(o)
       case o: Exp.ForYield => return preExpForYield(o)
       case o: Exp.QuantType =>
@@ -1459,6 +1469,14 @@ import MTransformer._
 
   def preExpIf(o: Exp.If): PreResult[Exp] = {
     return PreResultExpIf
+  }
+
+  def preExpTypeCond(o: Exp.TypeCond): PreResult[Exp] = {
+    return PreResultExpTypeCond
+  }
+
+  def preExpSym(o: Exp.Sym): PreResult[Exp] = {
+    return PreResultExpSym
   }
 
   def preExpFunParam(o: Exp.Fun.Param): PreResult[Exp.Fun.Param] = {
@@ -2328,6 +2346,8 @@ import MTransformer._
       case o: Exp.Invoke => return postExpInvoke(o)
       case o: Exp.InvokeNamed => return postExpInvokeNamed(o)
       case o: Exp.If => return postExpIf(o)
+      case o: Exp.TypeCond => return postExpTypeCond(o)
+      case o: Exp.Sym => return postExpSym(o)
       case o: Exp.Fun => return postExpFun(o)
       case o: Exp.ForYield => return postExpForYield(o)
       case o: Exp.QuantType =>
@@ -2517,6 +2537,14 @@ import MTransformer._
 
   def postExpIf(o: Exp.If): MOption[Exp] = {
     return PostResultExpIf
+  }
+
+  def postExpTypeCond(o: Exp.TypeCond): MOption[Exp] = {
+    return PostResultExpTypeCond
+  }
+
+  def postExpSym(o: Exp.Sym): MOption[Exp] = {
+    return PostResultExpSym
   }
 
   def postExpFunParam(o: Exp.Fun.Param): MOption[Exp.Fun.Param] = {
@@ -4303,6 +4331,20 @@ import MTransformer._
           val r3: MOption[TypedAttr] = transformTypedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
             MSome(o2(cond = r0.getOrElse(o2.cond), thenExp = r1.getOrElse(o2.thenExp), elseExp = r2.getOrElse(o2.elseExp), attr = r3.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Exp.TypeCond =>
+          val r0: MOption[IS[Z, Exp]] = transformISZ(o2.args, transformExp _)
+          val r1: MOption[Exp.Fun] = transformExpFun(o2.fun)
+          val r2: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(args = r0.getOrElse(o2.args), fun = r1.getOrElse(o2.fun), attr = r2.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Exp.Sym =>
+          val r0: MOption[TypedAttr] = transformTypedAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(attr = r0.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Exp.Fun =>

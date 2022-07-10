@@ -1522,6 +1522,35 @@ object Exp {
     }
   }
 
+  @datatype class TypeCond(val args: ISZ[Exp], val fun: Exp.Fun, @hidden val attr: Attr) extends Exp {
+
+    @pure override def posOpt: Option[Position] = {
+      return attr.posOpt
+    }
+
+    @pure override def typedOpt: Option[Typed] = {
+      return Typed.bOpt
+    }
+
+    @pure override def prettyST: ST = {
+      return st"?(${(for (arg <- args) yield arg.prettyST, ", ")} ${fun.prettySTH(F)}"
+    }
+  }
+
+  @datatype class Sym(val num: Z, @hidden val attr: TypedAttr) extends Exp {
+    @pure override def posOpt: Option[Position] = {
+      return attr.posOpt
+    }
+
+    @pure override def typedOpt: Option[Typed] = {
+      return attr.typedOpt
+    }
+
+    @pure override def prettyST: ST = {
+      return st"cx!$num"
+    }
+  }
+
   object Fun {
 
     @datatype class Param(val idOpt: Option[Id], val tipeOpt: Option[Type], val typedOpt: Option[Typed]) {
@@ -1552,7 +1581,7 @@ object Exp {
       return attr.typedOpt
     }
 
-    @pure override def prettyST: ST = {
+    @pure def prettySTH(isParen: B): ST = {
       @pure def paramST(p: Fun.Param): ST = {
         val id: String = p.idOpt match {
           case Some(id) => id.value
@@ -1565,9 +1594,18 @@ object Exp {
       }
       val ps = st"(${(for (p <- params) yield paramST(p), ", ")})"
       exp match {
-        case exp: Stmt.Expr => return st"($ps => ${exp.exp.prettyST})"
+        case exp: Stmt.Expr =>
+          return if (isParen)
+            st"($ps => ${exp.exp.prettyST})" else
+            st"""{ $ps =>
+                |  ${exp.exp.prettyST}
+                |}"""
         case _ => return st"$ps => { ... }"
       }
+    }
+
+    @pure override def prettyST: ST = {
+      return prettySTH(T)
     }
   }
 

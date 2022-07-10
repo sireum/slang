@@ -1238,6 +1238,8 @@ object JSON {
         case o: org.sireum.lang.ast.Exp.Invoke => return print_astExpInvoke(o)
         case o: org.sireum.lang.ast.Exp.InvokeNamed => return print_astExpInvokeNamed(o)
         case o: org.sireum.lang.ast.Exp.If => return print_astExpIf(o)
+        case o: org.sireum.lang.ast.Exp.TypeCond => return print_astExpTypeCond(o)
+        case o: org.sireum.lang.ast.Exp.Sym => return print_astExpSym(o)
         case o: org.sireum.lang.ast.Exp.Fun => return print_astExpFun(o)
         case o: org.sireum.lang.ast.Exp.ForYield => return print_astExpForYield(o)
         case o: org.sireum.lang.ast.Exp.QuantType => return print_astExpQuantType(o)
@@ -1454,6 +1456,23 @@ object JSON {
         ("cond", print_astExp(o.cond)),
         ("thenExp", print_astExp(o.thenExp)),
         ("elseExp", print_astExp(o.elseExp)),
+        ("attr", print_astTypedAttr(o.attr))
+      ))
+    }
+
+    @pure def print_astExpTypeCond(o: org.sireum.lang.ast.Exp.TypeCond): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.Exp.TypeCond""""),
+        ("args", printISZ(F, o.args, print_astExp _)),
+        ("fun", print_astExpFun(o.fun)),
+        ("attr", print_astAttr(o.attr))
+      ))
+    }
+
+    @pure def print_astExpSym(o: org.sireum.lang.ast.Exp.Sym): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.Exp.Sym""""),
+        ("num", printZ(o.num)),
         ("attr", print_astTypedAttr(o.attr))
       ))
     }
@@ -4652,7 +4671,7 @@ object JSON {
     }
 
     def parse_astExp(): org.sireum.lang.ast.Exp = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Exp.LitB", "org.sireum.lang.ast.Exp.LitC", "org.sireum.lang.ast.Exp.LitZ", "org.sireum.lang.ast.Exp.LitF32", "org.sireum.lang.ast.Exp.LitF64", "org.sireum.lang.ast.Exp.LitR", "org.sireum.lang.ast.Exp.LitString", "org.sireum.lang.ast.Exp.LitStepId", "org.sireum.lang.ast.Exp.StringInterpolate", "org.sireum.lang.ast.Exp.This", "org.sireum.lang.ast.Exp.Super", "org.sireum.lang.ast.Exp.Unary", "org.sireum.lang.ast.Exp.Binary", "org.sireum.lang.ast.Exp.Ident", "org.sireum.lang.ast.Exp.Eta", "org.sireum.lang.ast.Exp.Tuple", "org.sireum.lang.ast.Exp.Select", "org.sireum.lang.ast.Exp.Invoke", "org.sireum.lang.ast.Exp.InvokeNamed", "org.sireum.lang.ast.Exp.If", "org.sireum.lang.ast.Exp.Fun", "org.sireum.lang.ast.Exp.ForYield", "org.sireum.lang.ast.Exp.QuantType", "org.sireum.lang.ast.Exp.QuantRange", "org.sireum.lang.ast.Exp.QuantEach", "org.sireum.lang.ast.Exp.Input", "org.sireum.lang.ast.Exp.OldVal", "org.sireum.lang.ast.Exp.LoopIndex", "org.sireum.lang.ast.Exp.StateSeq", "org.sireum.lang.ast.Exp.Result"))
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Exp.LitB", "org.sireum.lang.ast.Exp.LitC", "org.sireum.lang.ast.Exp.LitZ", "org.sireum.lang.ast.Exp.LitF32", "org.sireum.lang.ast.Exp.LitF64", "org.sireum.lang.ast.Exp.LitR", "org.sireum.lang.ast.Exp.LitString", "org.sireum.lang.ast.Exp.LitStepId", "org.sireum.lang.ast.Exp.StringInterpolate", "org.sireum.lang.ast.Exp.This", "org.sireum.lang.ast.Exp.Super", "org.sireum.lang.ast.Exp.Unary", "org.sireum.lang.ast.Exp.Binary", "org.sireum.lang.ast.Exp.Ident", "org.sireum.lang.ast.Exp.Eta", "org.sireum.lang.ast.Exp.Tuple", "org.sireum.lang.ast.Exp.Select", "org.sireum.lang.ast.Exp.Invoke", "org.sireum.lang.ast.Exp.InvokeNamed", "org.sireum.lang.ast.Exp.If", "org.sireum.lang.ast.Exp.TypeCond", "org.sireum.lang.ast.Exp.Sym", "org.sireum.lang.ast.Exp.Fun", "org.sireum.lang.ast.Exp.ForYield", "org.sireum.lang.ast.Exp.QuantType", "org.sireum.lang.ast.Exp.QuantRange", "org.sireum.lang.ast.Exp.QuantEach", "org.sireum.lang.ast.Exp.Input", "org.sireum.lang.ast.Exp.OldVal", "org.sireum.lang.ast.Exp.LoopIndex", "org.sireum.lang.ast.Exp.StateSeq", "org.sireum.lang.ast.Exp.Result"))
       t.native match {
         case "org.sireum.lang.ast.Exp.LitB" => val r = parse_astExpLitBT(T); return r
         case "org.sireum.lang.ast.Exp.LitC" => val r = parse_astExpLitCT(T); return r
@@ -4674,6 +4693,8 @@ object JSON {
         case "org.sireum.lang.ast.Exp.Invoke" => val r = parse_astExpInvokeT(T); return r
         case "org.sireum.lang.ast.Exp.InvokeNamed" => val r = parse_astExpInvokeNamedT(T); return r
         case "org.sireum.lang.ast.Exp.If" => val r = parse_astExpIfT(T); return r
+        case "org.sireum.lang.ast.Exp.TypeCond" => val r = parse_astExpTypeCondT(T); return r
+        case "org.sireum.lang.ast.Exp.Sym" => val r = parse_astExpSymT(T); return r
         case "org.sireum.lang.ast.Exp.Fun" => val r = parse_astExpFunT(T); return r
         case "org.sireum.lang.ast.Exp.ForYield" => val r = parse_astExpForYieldT(T); return r
         case "org.sireum.lang.ast.Exp.QuantType" => val r = parse_astExpQuantTypeT(T); return r
@@ -5133,6 +5154,45 @@ object JSON {
       val attr = parse_astTypedAttr()
       parser.parseObjectNext()
       return org.sireum.lang.ast.Exp.If(cond, thenExp, elseExp, attr)
+    }
+
+    def parse_astExpTypeCond(): org.sireum.lang.ast.Exp.TypeCond = {
+      val r = parse_astExpTypeCondT(F)
+      return r
+    }
+
+    def parse_astExpTypeCondT(typeParsed: B): org.sireum.lang.ast.Exp.TypeCond = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Exp.TypeCond")
+      }
+      parser.parseObjectKey("args")
+      val args = parser.parseISZ(parse_astExp _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("fun")
+      val fun = parse_astExpFun()
+      parser.parseObjectNext()
+      parser.parseObjectKey("attr")
+      val attr = parse_astAttr()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Exp.TypeCond(args, fun, attr)
+    }
+
+    def parse_astExpSym(): org.sireum.lang.ast.Exp.Sym = {
+      val r = parse_astExpSymT(F)
+      return r
+    }
+
+    def parse_astExpSymT(typeParsed: B): org.sireum.lang.ast.Exp.Sym = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Exp.Sym")
+      }
+      parser.parseObjectKey("num")
+      val num = parser.parseZ()
+      parser.parseObjectNext()
+      parser.parseObjectKey("attr")
+      val attr = parse_astTypedAttr()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Exp.Sym(num, attr)
     }
 
     def parse_astExpFunParam(): org.sireum.lang.ast.Exp.Fun.Param = {
@@ -8860,6 +8920,42 @@ object JSON {
       return r
     }
     val r = to(s, f_astExpIf _)
+    return r
+  }
+
+  def from_astExpTypeCond(o: org.sireum.lang.ast.Exp.TypeCond, isCompact: B): String = {
+    val st = Printer.print_astExpTypeCond(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astExpTypeCond(s: String): Either[org.sireum.lang.ast.Exp.TypeCond, Json.ErrorMsg] = {
+    def f_astExpTypeCond(parser: Parser): org.sireum.lang.ast.Exp.TypeCond = {
+      val r = parser.parse_astExpTypeCond()
+      return r
+    }
+    val r = to(s, f_astExpTypeCond _)
+    return r
+  }
+
+  def from_astExpSym(o: org.sireum.lang.ast.Exp.Sym, isCompact: B): String = {
+    val st = Printer.print_astExpSym(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astExpSym(s: String): Either[org.sireum.lang.ast.Exp.Sym, Json.ErrorMsg] = {
+    def f_astExpSym(parser: Parser): org.sireum.lang.ast.Exp.Sym = {
+      val r = parser.parse_astExpSym()
+      return r
+    }
+    val r = to(s, f_astExpSym _)
     return r
   }
 
