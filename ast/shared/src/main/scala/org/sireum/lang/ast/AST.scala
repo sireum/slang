@@ -1786,6 +1786,16 @@ object Exp {
   @pure def leaves: ISZ[Option[Stmt]] = {
     return if (stmts.isEmpty) ISZ(None()) else stmts(stmts.size - 1).leaves
   }
+
+  @memoize def allReturns: B = {
+    for (lOpt <- leaves) {
+      lOpt match {
+        case Some(_: Stmt.Return) =>
+        case _ => return F
+      }
+    }
+    return T
+  }
 }
 
 @datatype class AdtParam(val isHidden: B, val isVal: B, val id: Id, val tipe: Type)
