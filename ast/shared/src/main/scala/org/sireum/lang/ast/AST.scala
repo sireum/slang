@@ -109,8 +109,8 @@ object TopUnit {
   }
 
 
-  @pure def modifiedRecordVars: HashSMap[ResolvedInfo.Var, (Typed, Position)] = {
-    @pure def filterRecordVar(exp: Exp.Ident): ISZ[(ResolvedInfo.Var, (Typed, Position))] = {
+  @pure def modifiedInstanceVars: HashSMap[ResolvedInfo.Var, (Typed, Position)] = {
+    @pure def filterInstanceVar(exp: Exp.Ident): ISZ[(ResolvedInfo.Var, (Typed, Position))] = {
       exp.attr.resOpt match {
         case Some(res: ResolvedInfo.Var) if !res.isInObject => return ISZ((res, (exp.typedOpt.get, exp.posOpt.get)))
         case _ => return ISZ()
@@ -118,7 +118,7 @@ object TopUnit {
     }
 
     return HashSMap.empty[ResolvedInfo.Var, (Typed, Position)] ++
-      (for (mod <- modifies; res <- filterRecordVar(mod)) yield res)
+      (for (mod <- modifies; res <- filterInstanceVar(mod)) yield res)
   }
 
 }
