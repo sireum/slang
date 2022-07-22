@@ -1853,6 +1853,8 @@ object ResolvedInfo {
       "BinaryRem"
       "BinaryEq"
       "BinaryNe"
+      "BinaryFpEq"
+      "BinaryFpNe"
       "BinaryLt"
       "BinaryLe"
       "BinaryGt"

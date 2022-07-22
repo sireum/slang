@@ -201,6 +201,8 @@ object TypeChecker {
     string"===" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEq)),
     string"!=" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryNe)),
     string"=!=" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryNe)),
+    string"~~" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryFpEq)),
+    string"!~" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryFpNe)),
     string"<<" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryShl)),
     string">>" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryShr)),
     string">>>" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryUshr)),
@@ -1714,6 +1716,8 @@ import TypeChecker._
                     (normOp(binaryExp.op), Some(leftType))
                   } else if (AST.Util.isCompareBinop(binaryExp.op) && leftKind != BasicKind.B) {
                     (normOp(binaryExp.op), Some(AST.Typed.b))
+                  } else if (AST.Util.isFpEqBinop(binaryExp.op) && AST.Typed.floatingPointTypes.contains(leftType)) {
+                    (binaryExp.op, Some(AST.Typed.b))
                   } else {
                     errUndef()
                     (binaryExp.op, None())
@@ -4201,6 +4205,8 @@ import TypeChecker._
                 case AST.ResolvedInfo.BuiltIn.Kind.BinaryRem => F
                 case AST.ResolvedInfo.BuiltIn.Kind.BinaryEq => F
                 case AST.ResolvedInfo.BuiltIn.Kind.BinaryNe => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryFpEq => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryFpNe => F
                 case AST.ResolvedInfo.BuiltIn.Kind.BinaryLt => F
                 case AST.ResolvedInfo.BuiltIn.Kind.BinaryLe => F
                 case AST.ResolvedInfo.BuiltIn.Kind.BinaryGt => F

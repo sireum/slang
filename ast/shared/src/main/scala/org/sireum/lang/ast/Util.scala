@@ -541,6 +541,14 @@ object Util {
     }
   }
 
+  @pure def isFpEqBinop(op: String): B = {
+    op match {
+      case string"!~" => return T
+      case string"~~" => return T
+      case _ => return F
+    }
+  }
+
   @pure def substAssignExp(ast: AssignExp, substMap: HashMap[String, Typed]): AssignExp = {
     if (substMap.nonEmpty) {
       return Transformer(TypePrePostSubstitutor(substMap)).transformAssignExp(F, ast).resultOpt.getOrElse(ast)
