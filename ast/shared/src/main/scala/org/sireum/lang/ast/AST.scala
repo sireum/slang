@@ -1277,6 +1277,8 @@ object Exp {
     val Eq3: String = "==="
     val Ne: String = "!="
     val Ne3: String = "=!="
+    val FpEq: String = "~~"
+    val FpNe: String = "!~"
     val Shl: String = "<<"
     val Shr: String = ">>"
     val Ushr: String = ">>>"
