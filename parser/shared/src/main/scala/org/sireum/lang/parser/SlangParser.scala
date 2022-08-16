@@ -2721,7 +2721,7 @@ class SlangParser(
             import org.sireum._
             error(
               t.op.pos,
-              st"Invalid righ-hand-side for '$id': '(${(t.args.map(_.syntax), ", ")})'".render.value
+              st"Invalid right-hand-side for '$id': '(${(t.args.map(_.syntax), ", ")})'".render.value
             )
             rExp
         }
