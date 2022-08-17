@@ -835,9 +835,9 @@ class SlangParser(
       case scala.Some(ps) => (true, ISZ[AST.Param](ps.map(translateParam(isMemoize = false)): _*))
       case _ => (false, ISZ[AST.Param]())
     }
-    val sig =
-      AST.MethodSig(isPure || isStrictPure, cid(name), ISZ(tparams.map(translateTypeParam): _*), hasParams, params, translateType(tpe))
     val purity = if (isStrictPure) AST.Purity.StrictPure else if (isPure) AST.Purity.Pure else AST.Purity.Impure
+    val sig =
+      AST.MethodSig(isPure || isStrictPure, cid(name), ISZ(tparams.map(translateTypeParam(true, true)): _*), hasParams, params, translateType(tpe))
     AST.Stmt.Method(false, purity, hasOverride, isHelper, sig, emptyContract, None(), resolvedAttr(stat.pos))
   }
 
@@ -1054,7 +1054,7 @@ class SlangParser(
     val sig = AST.MethodSig(
       isMemoize || isPure || isStrictPure || isSpec,
       cid(name),
-      ISZ(tparams.map(translateTypeParam): _*),
+      ISZ(tparams.map(translateTypeParam(true, true)): _*),
       hasParams,
       params,
       tpeopt.map(translateType).getOrElse(unitType)
@@ -1558,7 +1558,7 @@ class SlangParser(
       hasSig,
       hasExt,
       cid(tname),
-      ISZ(tparams.map(translateTypeParam): _*),
+      ISZ(tparams.map(translateTypeParam(hasSig, !hasSig)): _*),
       ISZ(ctorcalls.map(translateExtend): _*),
       checkMemberStmts(ISZ(stats.map(translateStat(if (hasSig) Enclosing.Sig else Enclosing.MSig)): _*)),
       attr(stat.pos)
@@ -1600,7 +1600,7 @@ class SlangParser(
       isRoot = true,
       isDatatype = true,
       cid(tname),
-      ISZ(tparams.map(translateTypeParam): _*),
+      ISZ(tparams.map(translateTypeParam(true, false)): _*),
       ISZ(),
       ISZ(ctorcalls.map(translateExtend): _*),
       checkMemberStmts(ISZ(stats.map(translateStat(Enclosing.DatatypeTrait)): _*)),
@@ -1646,7 +1646,7 @@ class SlangParser(
       isRoot = false,
       isDatatype = true,
       cid(tname),
-      ISZ(tparams.map(translateTypeParam): _*),
+      ISZ(tparams.map(translateTypeParam(true, false)): _*),
       params,
       ISZ(ctorcalls.map(translateExtend): _*),
       checkMemberStmts(ISZ(stats.map(translateStat(Enclosing.DatatypeClass)): _*)),
@@ -1688,7 +1688,7 @@ class SlangParser(
       isRoot = true,
       isDatatype = false,
       cid(tname),
-      ISZ(tparams.map(translateTypeParam): _*),
+      ISZ(tparams.map(translateTypeParam(false, true)): _*),
       ISZ(),
       ISZ(ctorcalls.map(translateExtend): _*),
       checkMemberStmts(ISZ(stats.map(translateStat(Enclosing.RecordTrait)): _*)),
@@ -1734,7 +1734,7 @@ class SlangParser(
       isRoot = false,
       isDatatype = false,
       cid(tname),
-      ISZ(tparams.map(translateTypeParam): _*),
+      ISZ(tparams.map(translateTypeParam(false, true)): _*),
       params,
       ISZ(ctorcalls.map(translateExtend): _*),
       checkMemberStmts(ISZ(stats.map(translateStat(Enclosing.RecordClass)): _*)),
@@ -1750,7 +1750,7 @@ class SlangParser(
     if (mods.nonEmpty) {
       error(stat.pos, "Slang type definitions should be of the form: 'type〈ID〉... =〈type〉'.")
     }
-    AST.Stmt.TypeAlias(cid(tname), ISZ(tparams.map(translateTypeParam): _*), translateType(tpe), attr(stat.pos))
+    AST.Stmt.TypeAlias(cid(tname), ISZ(tparams.map(translateTypeParam(true, true)): _*), translateType(tpe), attr(stat.pos))
   }
 
   def translateType(t: Type): AST.Type = {
@@ -1919,12 +1919,40 @@ class SlangParser(
     }
   }
 
-  def translateTypeParam(tp: Type.Param): AST.TypeParam = tp match {
+  def translateTypeParam(defaultImmut: Boolean, canBeMutable: Boolean)(tp: Type.Param): AST.TypeParam = tp match {
     case tparam"..$mods $_[..$tparams] >: ${stpeopt: scala.Option[Type]} <: ${tpeopt: scala.Option[Type]} <% ..$tpes : ..$tpes2" =>
-      if (mods.nonEmpty || tparams.nonEmpty || stpeopt.nonEmpty || tpeopt.nonEmpty || tpes.nonEmpty || tpes2.nonEmpty)
-        errorInSlang(tp.pos, "Only type parameters of the forms '〈ID〉' is")
+      if (tparams.nonEmpty || stpeopt.nonEmpty || tpeopt.nonEmpty || tpes.nonEmpty || tpes2.nonEmpty)
+        errorInSlang(tp.pos, "Only type parameters of the forms ' ⸨ @imm | @mut ⸩?〈ID〉' are")
       checkTypeId(tp.name.pos, tp.name.value)
-      AST.TypeParam(cid(tp.name))
+      var hasImm = false
+      var hasMut = false
+      var immut = defaultImmut
+      for (mod <- mods) mod match {
+        case mod"@imm" =>
+          if (hasImm) {
+            error(mod.pos, "Redundant @imm.")
+          }
+          if (hasMut) {
+            error(mod.pos, "Cannot have both @mut and @imm")
+          }
+          hasImm = true
+          immut = true
+        case mod"@mut" =>
+          if (hasMut) {
+            error(mod.pos, "Redundant @mut.")
+          }
+          if (hasImm) {
+            error(mod.pos, "Cannot have both @imm and @mut")
+          }
+          if (!canBeMutable) {
+            error(mod.pos, "Cannot have @mut")
+          }
+          hasMut = true
+          immut = false
+        case _ =>
+          error(mod.pos, s"Unallowed modifier '${syntax(mod)}' for a Slang method.")
+      }
+      AST.TypeParam(cid(tp.name), immut)
   }
 
   def translateParam(isMemoize: Boolean)(tp: Term.Param): AST.Param = {
@@ -3060,7 +3088,7 @@ class SlangParser(
       if (isWorksheet) error(stat.pos, "Fact can only appear at the top-level, inside objects, or @ext objects.")
       else error(stat.pos, "Fact can only appear inside objects or @ext objects.")
     }
-    val typeArgs = ISZ(stat.tparams.map(translateTypeParam): _*)
+    val typeArgs = ISZ(stat.tparams.map(translateTypeParam(true, false)): _*)
     val q"Fact(..${fexprs: Seq[Term]})" = stat.body
     val (descOpt, exprs) = fexprs.headOption match {
       case scala.Some(lit: Lit.String) => (Some(translateLit(lit).asInstanceOf[AST.Exp.LitString]), fexprs.tail)
@@ -3466,7 +3494,7 @@ class SlangParser(
       if (isWorksheet) error(stat.pos, s"$desc can only appear at the top-level, inside object, or @ext object.")
       else error(stat.pos, s"$desc can only appear inside object or @ext object.")
     }
-    val typeArgs = ISZ(stat.tparams.map(translateTypeParam): _*)
+    val typeArgs = ISZ(stat.tparams.map(translateTypeParam(true, false)): _*)
     val (descOpt, claim, proof) = stat.body match {
       case q"${_: Term.Name}(${d: Lit.String}, $e, $p)" =>
         (Some(translateLit(d).asInstanceOf[AST.Exp.LitString]), translateExp(e), translateProof(p))

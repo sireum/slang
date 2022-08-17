@@ -317,7 +317,7 @@ object Typed {
     }
   }
 
-  @datatype class TypeVar(val id: String) extends Typed {
+  @datatype class TypeVar(val id: String, val isImmutable: B) extends Typed {
 
     @pure override def isPureFun: B = {
       return F

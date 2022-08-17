@@ -64,12 +64,12 @@ object TypeChecker {
     "SpecPost"
   }
 
-  @record class StrictPureChecker(val typeVarMutable: B, val th: TypeHierarchy, val reporter: Reporter) extends AST.MTransformer {
+  @record class StrictPureChecker(val th: TypeHierarchy, val reporter: Reporter) extends AST.MTransformer {
     def errVars(posOpt: Option[Position]): Unit = {
       reporter.error(posOpt, TypeChecker.typeCheckerKind, "@strictpure methods cannot refer to vars")
     }
     def checkType(t: AST.Typed, posOpt: Option[Position]): Unit = {
-      if (th.isMutable(t, typeVarMutable)) {
+      if (th.isMutable(t)) {
         reporter.error(posOpt, TypeChecker.typeCheckerKind, "@strictpure methods cannot refer to outer vals of mutable type")
       }
     }
@@ -399,6 +399,10 @@ object TypeChecker {
 
     (expected, tpe) match {
       case (_, tpe: AST.Typed.TypeVar) =>
+        //if (tpe.isImmutable && th.isMutable(expected)) {
+        //  reporter.error(posOpt, typeCheckerKind, s"Could not unify mutable type '$expected' with immutable type variable '$tpe'")
+        //  return None()
+        //}
         return Some(HashMap.empty[String, AST.Typed] + tpe.id ~> expected)
       case (expected: AST.Typed.Name, tpe: AST.Typed.Name) =>
         val sameIds = tpe.ids == expected.ids
@@ -2046,8 +2050,8 @@ import TypeChecker._
             case _ =>
               tpe.name match {
                 case AST.Typed.`isName` =>
-                  val indexTypeVar = AST.Typed.TypeVar("I")
-                  val valueTypeVar = AST.Typed.TypeVar("V")
+                  val indexTypeVar = AST.Typed.TypeVar("I", T)
+                  val valueTypeVar = AST.Typed.TypeVar("V", T)
                   val argTypes: ISZ[AST.Typed] = for (_ <- z"0" until numOfArgs)
                     yield valueTypeVar
                   val constructorType =
@@ -2080,8 +2084,8 @@ import TypeChecker._
                     newTypeArgs
                   )
                 case AST.Typed.`msName` =>
-                  val indexTypeVar = AST.Typed.TypeVar("I")
-                  val valueTypeVar = AST.Typed.TypeVar("V")
+                  val indexTypeVar = AST.Typed.TypeVar("I", T)
+                  val valueTypeVar = AST.Typed.TypeVar("V", F)
                   val argTypes: ISZ[AST.Typed] =
                     for (_ <- z"0" until numOfArgs) yield valueTypeVar
                   val constructorType: AST.Typed.Fun =
@@ -2114,7 +2118,7 @@ import TypeChecker._
                     newTypeArgs
                   )
                 case AST.Typed.`iszName` =>
-                  val valueTypeVar = AST.Typed.TypeVar("V")
+                  val valueTypeVar = AST.Typed.TypeVar("V", T)
                   val argTypes: ISZ[AST.Typed] =
                     for (_ <- z"0" until numOfArgs) yield valueTypeVar
                   val constructorType: AST.Typed.Fun =
@@ -2148,7 +2152,7 @@ import TypeChecker._
                     newTypeArgs
                   )
                 case AST.Typed.`mszName` =>
-                  val valueTypeVar = AST.Typed.TypeVar("V")
+                  val valueTypeVar = AST.Typed.TypeVar("V", F)
                   val argTypes: ISZ[AST.Typed] =
                     for (_ <- z"0" until numOfArgs) yield valueTypeVar
                   val constructorType: AST.Typed.Fun =
@@ -2579,7 +2583,7 @@ import TypeChecker._
       var argPaths = ISZ[Option[ISZ[String]]]()
       for (arg <- args) {
         arg.typedOpt match {
-          case Some(t) if typeHierarchy.isMutable(t, T) => argPaths = argPaths :+ expPath(arg, ISZ())
+          case Some(t) if typeHierarchy.isMutable(t) => argPaths = argPaths :+ expPath(arg, ISZ())
           case _ => argPaths = argPaths :+ None()
         }
       }
@@ -3812,7 +3816,7 @@ import TypeChecker._
           stmts2 = stmts2 :+ stmt
       }
     }
-    val scopes = mscopes.toIS
+    val scopes = mscopes.toIS[Scope.Local]
     val thisL = this
     val newStmts = thisL(typeHierarchy = typeHierarchy(nameMap = tcNameMap)).checkStmts(scopes, expectedOpt, stmts2, reporter)
     val newScope: Scope.Local = if (scopes.isEmpty) scope else scopes(scopes.size - 1)
@@ -3887,7 +3891,7 @@ import TypeChecker._
                 case Some(uid) => uid.value == id.value
                 case _ => F
               }
-              if (!refined && typeHierarchy.isMutable(t, T)) {
+              if (!refined && typeHierarchy.isMutable(t)) {
                 val possibly: String = if (t.hasTypeVars) " possibly" else ""
                 reporter.error(
                   id.attr.posOpt,
@@ -5084,12 +5088,12 @@ import TypeChecker._
 
   def checkModifyExp(title: String, sc: Scope, exp: AST.Exp.Ident, reporter: Reporter): AST.Exp.Ident = {
     def checkLocalVar(res: AST.ResolvedInfo.LocalVar, t: AST.Typed): Unit = {
-      if (!typeHierarchy.isModifiable(t, T) && res.isVal) {
+      if (!typeHierarchy.isModifiable(t) && res.isVal) {
         reporter.error(exp.posOpt, typeCheckerKind, s"Cannot $title variable '${res.id}'")
       }
     }
     def checkVar(res: AST.ResolvedInfo.Var, t: AST.Typed): Unit = {
-      if (!typeHierarchy.isModifiable(t, T) && res.isVal) {
+      if (!typeHierarchy.isModifiable(t) && res.isVal) {
         reporter.error(exp.posOpt, typeCheckerKind, st"Cannot $title field '${(res.owner, ".")}.${res.id}'".render)
       }
     }
@@ -5129,7 +5133,7 @@ import TypeChecker._
     }
     val r = checkMethodH()
     if (!reporter.hasError && r.purity == AST.Purity.StrictPure) {
-      val spc = TypeChecker.StrictPureChecker(isInMutableContext, typeHierarchy, Reporter.create)
+      val spc = TypeChecker.StrictPureChecker(typeHierarchy, Reporter.create)
       spc.transformStmt(r)
       reporter.reports(spc.reporter.messages)
     }

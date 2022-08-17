@@ -1724,6 +1724,7 @@ object MsgPack {
     def write_astTypeParam(o: org.sireum.lang.ast.TypeParam): Unit = {
       writer.writeZ(Constants._astTypeParam)
       write_astId(o.id)
+      writer.writeB(o.isImmutable)
     }
 
     def write_astAttr(o: org.sireum.lang.ast.Attr): Unit = {
@@ -1945,6 +1946,7 @@ object MsgPack {
     def write_astTypedTypeVar(o: org.sireum.lang.ast.Typed.TypeVar): Unit = {
       writer.writeZ(Constants._astTypedTypeVar)
       writer.writeString(o.id)
+      writer.writeB(o.isImmutable)
     }
 
     def write_astTypedPackage(o: org.sireum.lang.ast.Typed.Package): Unit = {
@@ -4605,7 +4607,8 @@ object MsgPack {
         reader.expectZ(Constants._astTypeParam)
       }
       val id = read_astId()
-      return org.sireum.lang.ast.TypeParam(id)
+      val isImmutable = reader.readB()
+      return org.sireum.lang.ast.TypeParam(id, isImmutable)
     }
 
     def read_astAttr(): org.sireum.lang.ast.Attr = {
@@ -5055,7 +5058,8 @@ object MsgPack {
         reader.expectZ(Constants._astTypedTypeVar)
       }
       val id = reader.readString()
-      return org.sireum.lang.ast.Typed.TypeVar(id)
+      val isImmutable = reader.readB()
+      return org.sireum.lang.ast.Typed.TypeVar(id, isImmutable)
     }
 
     def read_astTypedPackage(): org.sireum.lang.ast.Typed.Package = {

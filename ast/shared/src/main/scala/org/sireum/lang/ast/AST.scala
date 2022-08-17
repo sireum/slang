@@ -731,7 +731,7 @@ object ProofAst {
           for (e <- invoke.args) {
             r(e.index) = Some(e.arg)
           }
-          return for (arg <- r.toIS) yield arg.get
+          return for (arg <- r.toIS[Option[Exp]]) yield arg.get
         }
         @strictpure override def posOpt: Option[Position] = invoke.ident.posOpt
       }
@@ -1822,7 +1822,7 @@ object Exp {
 
 @datatype class Param(val isHidden: B, val id: Id, val tipe: Type)
 
-@datatype class TypeParam(val id: Id)
+@datatype class TypeParam(val id: Id, val isImmutable: B)
 
 @datatype class Attr(val posOpt: Option[Position])
 

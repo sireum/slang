@@ -1661,7 +1661,8 @@ object JSON {
     @pure def print_astTypeParam(o: org.sireum.lang.ast.TypeParam): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.TypeParam""""),
-        ("id", print_astId(o.id))
+        ("id", print_astId(o.id)),
+        ("isImmutable", printB(o.isImmutable))
       ))
     }
 
@@ -2019,7 +2020,8 @@ object JSON {
     @pure def print_astTypedTypeVar(o: org.sireum.lang.ast.Typed.TypeVar): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Typed.TypeVar""""),
-        ("id", printString(o.id))
+        ("id", printString(o.id)),
+        ("isImmutable", printB(o.isImmutable))
       ))
     }
 
@@ -5624,7 +5626,10 @@ object JSON {
       parser.parseObjectKey("id")
       val id = parse_astId()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.TypeParam(id)
+      parser.parseObjectKey("isImmutable")
+      val isImmutable = parser.parseB()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.TypeParam(id, isImmutable)
     }
 
     def parse_astAttr(): org.sireum.lang.ast.Attr = {
@@ -6232,7 +6237,10 @@ object JSON {
       parser.parseObjectKey("id")
       val id = parser.parseString()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Typed.TypeVar(id)
+      parser.parseObjectKey("isImmutable")
+      val isImmutable = parser.parseB()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Typed.TypeVar(id, isImmutable)
     }
 
     def parse_astTypedPackage(): org.sireum.lang.ast.Typed.Package = {

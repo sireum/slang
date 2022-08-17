@@ -388,7 +388,7 @@ object TypeHierarchy {
               case _: AST.Typed.TypeVar =>
               case _ =>
             }
-            if (isIS && t.args.size > 1 && isMutable(t.args(1), F)) {
+            if (isIS && t.args.size > 1 && isMutable(t.args(1))) {
               reporter.error(
                 posOpt,
                 TypeChecker.typeCheckerKind,
@@ -396,9 +396,9 @@ object TypeHierarchy {
               )
             }
           } else {
-            if (!isMutable(t, T)) {
+            if (!isMutable(t)) {
               for (arg <- t.args) {
-                if (isMutable(arg, F)) {
+                if (isMutable(arg)) {
                   reporter.error(
                     posOpt,
                     TypeChecker.typeCheckerKind,
@@ -455,7 +455,7 @@ object TypeHierarchy {
               )
               return None()
             }
-            return Some(tipe(attr = tipe.attr(typedOpt = Some(AST.Typed.TypeVar(ti.name(0))))))
+            return Some(tipe(attr = tipe.attr(typedOpt = Some(AST.Typed.TypeVar(ti.name(0), ti.ast.isImmutable)))))
           case Some(ti) =>
             val p: (String, Z, ISZ[String]) = ti match {
               case ti: TypeInfo.SubZ => (if (ti.ast.isBitVector) "@bits" else "@range", 0, ti.name)
@@ -707,7 +707,7 @@ object TypeHierarchy {
     return isSubType(t1, t2) || isSubType(t2, t1)
   }
 
-  @pure def isMutable(t: AST.Typed, typeVarMutable: B): B = {
+  @pure def isMutable(t: AST.Typed): B = {
     t match {
       case t: AST.Typed.Name =>
         if (t.ids == AST.Typed.msName) {
@@ -724,17 +724,17 @@ object TypeHierarchy {
         }
       case t: AST.Typed.Tuple =>
         for (arg <- t.args) {
-          if (isMutable(arg, typeVarMutable)) {
+          if (isMutable(arg)) {
             return T
           }
         }
         return F
-      case _: AST.Typed.TypeVar => return typeVarMutable
+      case t: AST.Typed.TypeVar => return !t.isImmutable
       case _ => return F
     }
   }
 
-  @pure def isModifiable(t: AST.Typed, typeVarMutable: B): B = {
+  @pure def isModifiable(t: AST.Typed): B = {
     t match {
       case t: AST.Typed.Name =>
         if (t.ids == AST.Typed.msName) {
@@ -761,12 +761,12 @@ object TypeHierarchy {
         }
       case t: AST.Typed.Tuple =>
         for (arg <- t.args) {
-          if (isModifiable(arg, typeVarMutable)) {
+          if (isModifiable(arg)) {
             return T
           }
         }
         return F
-      case _: AST.Typed.TypeVar => return typeVarMutable
+      case t: AST.Typed.TypeVar => return !t.isImmutable
       case _ => return F
     }
   }

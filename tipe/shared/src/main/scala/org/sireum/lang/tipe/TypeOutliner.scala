@@ -1335,7 +1335,7 @@ object TypeOutliner {
         for (varInfo <- newInfo.vars.values) {
           varInfo.typedOpt match {
             case Some(t) =>
-              if (th.isMutable(t, F)) {
+              if (th.isMutable(t)) {
                 rep.error(varInfo.ast.tipeOpt.get.posOpt, TypeChecker.typeCheckerKind,
                   st"A @datatype class ${(varInfo.owner, ".")} cannot have a val of mutable type $t".render)
               }

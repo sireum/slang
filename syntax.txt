@@ -104,7 +104,7 @@
 
 <pattern>          ::=  <lit>
                      |  <name>
-                     | ⸨ <name> ⸩? . `<ID>`
+                     |  ⸨ <name> ⸩? . `<ID>`
                      |  <ID> : <type>
                      |  _ ⸨ : <type> ⸩?
                      |  ⸨ <ID> @ ⸩? <name> ( <patterns>? )
@@ -115,7 +115,8 @@
 
 <type-params>      ::=  [ <type-param> ⸨ , <type-param> ⸩* ]
 
-<type-param>       ::=  <ID>
+<type-param>       ::=  ⸨ @mut ⸩? <ID>
+                     |  @imm <ID>
 
 <params>           ::=  ( ⸨ <param> ⸨ , param> ⸩* ⸩? )
 
