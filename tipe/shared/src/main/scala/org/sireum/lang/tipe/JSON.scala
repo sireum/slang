@@ -1555,7 +1555,7 @@ object JSON {
     @pure def print_astExpAt(o: org.sireum.lang.ast.Exp.At): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Exp.At""""),
-        ("ref", print_astExpRef(o.ref)),
+        ("exp", print_astExp(o.exp)),
         ("lines", printISZ(F, o.lines, print_astExpLitZ _)),
         ("attr", print_astAttr(o.attr))
       ))
@@ -5378,8 +5378,8 @@ object JSON {
       if (!typeParsed) {
         parser.parseObjectType("org.sireum.lang.ast.Exp.At")
       }
-      parser.parseObjectKey("ref")
-      val ref = parse_astExpRef()
+      parser.parseObjectKey("exp")
+      val exp = parse_astExp()
       parser.parseObjectNext()
       parser.parseObjectKey("lines")
       val lines = parser.parseISZ(parse_astExpLitZ _)
@@ -5387,7 +5387,7 @@ object JSON {
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Exp.At(ref, lines, attr)
+      return org.sireum.lang.ast.Exp.At(exp, lines, attr)
     }
 
     def parse_astExpLoopIndex(): org.sireum.lang.ast.Exp.LoopIndex = {

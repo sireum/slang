@@ -3440,7 +3440,13 @@ import TypeChecker._
         case exp: AST.Exp.Input =>
           if (inSpec) {
             val (e, tOpt) = checkExp(expectedOpt, scope, exp.ref.asExp, reporter)
-            return (exp(ref = e.asInstanceOf[AST.Exp.Ref]), tOpt)
+            val r = e.asInstanceOf[AST.Exp.Ref]
+            r.resOpt match {
+              case Some(_: AST.ResolvedInfo.LocalVar) =>
+              case Some(_: AST.ResolvedInfo.Var) =>
+              case _ => reporter.error(exp.ref.posOpt, typeCheckerKind, "Input can only refer to a variable.")
+            }
+            return (exp(ref = r), tOpt)
           } else {
             reporter.error(exp.posOpt, typeCheckerKind, "Input can only be used inside specification context.")
             return (exp, None())
@@ -3448,10 +3454,20 @@ import TypeChecker._
 
         case exp: AST.Exp.At =>
           if (inSpec) {
-            val (e, tOpt) = checkExp(expectedOpt, scope, exp.ref.asExp, reporter)
-            return (exp(ref = e.asInstanceOf[AST.Exp.Ref]), tOpt)
+            val (e, tOpt) = checkExp(expectedOpt, scope, exp.exp, reporter)
+            e match {
+              case e: AST.Exp.Ref =>
+                e.resOpt match {
+                  case Some(_: AST.ResolvedInfo.LocalVar) =>
+                  case Some(_: AST.ResolvedInfo.Var) =>
+                  case _ => reporter.error(e.posOpt, typeCheckerKind, "At can only refer to a variable or this.")
+                }
+              case _: AST.Exp.This =>
+              case _ =>
+            }
+            return (exp(exp = e), tOpt)
           } else {
-            reporter.error(exp.posOpt, typeCheckerKind, "Old can only be used inside specification context.")
+            reporter.error(exp.posOpt, typeCheckerKind, "At can only be used inside specification context.")
             return (exp, None())
           }
 

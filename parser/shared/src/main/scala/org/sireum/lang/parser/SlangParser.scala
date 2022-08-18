@@ -2508,10 +2508,14 @@ class SlangParser(
           }
           i = i + 1
         }
+        if (args.isEmpty) {
+          errorInSlang(exp.pos, s"At(...) requires at least two arguments")
+        }
         translateExp(arg) match {
-          case e: AST.Exp.Ref => AST.Exp.At(e, lines, attr(if (exp.pos == Position.None) name.pos else exp.pos))
+          case e: AST.Exp.Ref => AST.Exp.At(e.asExp, lines, attr(if (exp.pos == Position.None) name.pos else exp.pos))
+          case e: AST.Exp.This => AST.Exp.At(e, lines, attr(if (exp.pos == Position.None) name.pos else exp.pos))
           case _ =>
-            errorInSlang(arg.pos, "The first At(...) argument has to be a variable reference")
+            errorInSlang(arg.pos, "The first At(...) argument has to be a variable reference or this")
             rExp
         }
       case q"$expr.$name[..$tpes](...${aexprssnel: List[List[Term]]})" if tpes.nonEmpty && aexprssnel.nonEmpty =>

@@ -1709,18 +1709,18 @@ object Exp {
     }
   }
 
-  @datatype class At(val ref: Ref, lines: ISZ[Exp.LitZ], @hidden val attr: Attr) extends Exp {
+  @datatype class At(val exp: Exp, lines: ISZ[Exp.LitZ], @hidden val attr: Attr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
 
     @pure override def typedOpt: Option[Typed] = {
-      return ref.asExp.typedOpt
+      return exp.typedOpt
     }
 
     @pure override def prettyST: ST = {
-      return st"At(${ref.asExp.prettyST}, ${(for (l <- lines) yield l.prettyST, ", ")})"
+      return st"At(${exp.prettyST}, ${(for (l <- lines) yield l.prettyST, ", ")})"
     }
   }
 

@@ -3799,11 +3799,11 @@ import Transformer._
           else
             TPostResult(r1.ctx, None())
         case o2: Exp.At =>
-          val r0: TPostResult[Context, Exp.Ref] = transformExpRef(preR.ctx, o2.ref)
+          val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.exp)
           val r1: TPostResult[Context, IS[Z, Exp.LitZ]] = transformISZ(r0.ctx, o2.lines, transformExpLitZ _)
           val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            TPostResult(r2.ctx, Some(o2(ref = r0.resultOpt.getOrElse(o2.ref), lines = r1.resultOpt.getOrElse(o2.lines), attr = r2.resultOpt.getOrElse(o2.attr))))
+            TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), lines = r1.resultOpt.getOrElse(o2.lines), attr = r2.resultOpt.getOrElse(o2.attr))))
           else
             TPostResult(r2.ctx, None())
         case o2: Exp.LoopIndex =>
