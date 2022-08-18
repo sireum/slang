@@ -294,7 +294,7 @@ object MsgPack {
 
     val _astExpInput: Z = 96
 
-    val _astExpOldVal: Z = 97
+    val _astExpAt: Z = 97
 
     val _astExpLoopIndex: Z = 98
 
@@ -737,7 +737,7 @@ object MsgPack {
     def write_astLoopContract(o: org.sireum.lang.ast.LoopContract): Unit = {
       writer.writeZ(Constants._astLoopContract)
       writer.writeISZ(o.invariants, write_astExp _)
-      writer.writeISZ(o.modifies, write_astExpIdent _)
+      writer.writeISZ(o.modifies, write_astExpRef _)
       writer.writeOption(o.maxItOpt, write_astExpLitZ _)
     }
 
@@ -1041,7 +1041,7 @@ object MsgPack {
 
     def write_astStmtHavoc(o: org.sireum.lang.ast.Stmt.Havoc): Unit = {
       writer.writeZ(Constants._astStmtHavoc)
-      writer.writeISZ(o.args, write_astExpIdent _)
+      writer.writeISZ(o.args, write_astExpRef _)
       write_astAttr(o.attr)
     }
 
@@ -1054,7 +1054,7 @@ object MsgPack {
 
     def write_astMethodContractAccesses(o: org.sireum.lang.ast.MethodContract.Accesses): Unit = {
       writer.writeZ(Constants._astMethodContractAccesses)
-      writer.writeISZ(o.idents, write_astExpIdent _)
+      writer.writeISZ(o.refs, write_astExpRef _)
       write_astAttr(o.attr)
     }
 
@@ -1400,7 +1400,7 @@ object MsgPack {
         case o: org.sireum.lang.ast.Exp.QuantRange => write_astExpQuantRange(o)
         case o: org.sireum.lang.ast.Exp.QuantEach => write_astExpQuantEach(o)
         case o: org.sireum.lang.ast.Exp.Input => write_astExpInput(o)
-        case o: org.sireum.lang.ast.Exp.OldVal => write_astExpOldVal(o)
+        case o: org.sireum.lang.ast.Exp.At => write_astExpAt(o)
         case o: org.sireum.lang.ast.Exp.LoopIndex => write_astExpLoopIndex(o)
         case o: org.sireum.lang.ast.Exp.StateSeq => write_astExpStateSeq(o)
         case o: org.sireum.lang.ast.Exp.Result => write_astExpResult(o)
@@ -1635,13 +1635,14 @@ object MsgPack {
 
     def write_astExpInput(o: org.sireum.lang.ast.Exp.Input): Unit = {
       writer.writeZ(Constants._astExpInput)
-      write_astExp(o.exp)
+      write_astExpRef(o.ref)
       write_astAttr(o.attr)
     }
 
-    def write_astExpOldVal(o: org.sireum.lang.ast.Exp.OldVal): Unit = {
-      writer.writeZ(Constants._astExpOldVal)
-      write_astExp(o.exp)
+    def write_astExpAt(o: org.sireum.lang.ast.Exp.At): Unit = {
+      writer.writeZ(Constants._astExpAt)
+      write_astExpRef(o.ref)
+      writer.writeISZ(o.lines, write_astExpLitZ _)
       write_astAttr(o.attr)
     }
 
@@ -2616,7 +2617,7 @@ object MsgPack {
         reader.expectZ(Constants._astLoopContract)
       }
       val invariants = reader.readISZ(read_astExp _)
-      val modifies = reader.readISZ(read_astExpIdent _)
+      val modifies = reader.readISZ(read_astExpRef _)
       val maxItOpt = reader.readOption(read_astExpLitZ _)
       return org.sireum.lang.ast.LoopContract(invariants, modifies, maxItOpt)
     }
@@ -3220,7 +3221,7 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astStmtHavoc)
       }
-      val args = reader.readISZ(read_astExpIdent _)
+      val args = reader.readISZ(read_astExpRef _)
       val attr = read_astAttr()
       return org.sireum.lang.ast.Stmt.Havoc(args, attr)
     }
@@ -3247,9 +3248,9 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astMethodContractAccesses)
       }
-      val idents = reader.readISZ(read_astExpIdent _)
+      val refs = reader.readISZ(read_astExpRef _)
       val attr = read_astAttr()
-      return org.sireum.lang.ast.MethodContract.Accesses(idents, attr)
+      return org.sireum.lang.ast.MethodContract.Accesses(refs, attr)
     }
 
     def read_astMethodContractClaims(): org.sireum.lang.ast.MethodContract.Claims = {
@@ -3925,7 +3926,7 @@ object MsgPack {
         case Constants._astExpQuantRange => val r = read_astExpQuantRangeT(T); return r
         case Constants._astExpQuantEach => val r = read_astExpQuantEachT(T); return r
         case Constants._astExpInput => val r = read_astExpInputT(T); return r
-        case Constants._astExpOldVal => val r = read_astExpOldValT(T); return r
+        case Constants._astExpAt => val r = read_astExpAtT(T); return r
         case Constants._astExpLoopIndex => val r = read_astExpLoopIndexT(T); return r
         case Constants._astExpStateSeq => val r = read_astExpStateSeqT(T); return r
         case Constants._astExpResult => val r = read_astExpResultT(T); return r
@@ -4414,23 +4415,24 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astExpInput)
       }
-      val exp = read_astExp()
+      val ref = read_astExpRef()
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Exp.Input(exp, attr)
+      return org.sireum.lang.ast.Exp.Input(ref, attr)
     }
 
-    def read_astExpOldVal(): org.sireum.lang.ast.Exp.OldVal = {
-      val r = read_astExpOldValT(F)
+    def read_astExpAt(): org.sireum.lang.ast.Exp.At = {
+      val r = read_astExpAtT(F)
       return r
     }
 
-    def read_astExpOldValT(typeParsed: B): org.sireum.lang.ast.Exp.OldVal = {
+    def read_astExpAtT(typeParsed: B): org.sireum.lang.ast.Exp.At = {
       if (!typeParsed) {
-        reader.expectZ(Constants._astExpOldVal)
+        reader.expectZ(Constants._astExpAt)
       }
-      val exp = read_astExp()
+      val ref = read_astExpRef()
+      val lines = reader.readISZ(read_astExpLitZ _)
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Exp.OldVal(exp, attr)
+      return org.sireum.lang.ast.Exp.At(ref, lines, attr)
     }
 
     def read_astExpLoopIndex(): org.sireum.lang.ast.Exp.LoopIndex = {
@@ -7439,18 +7441,18 @@ object MsgPack {
     return r
   }
 
-  def from_astExpOldVal(o: org.sireum.lang.ast.Exp.OldVal, pooling: B): ISZ[U8] = {
+  def from_astExpAt(o: org.sireum.lang.ast.Exp.At, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astExpOldVal(o)
+    w.write_astExpAt(o)
     return w.result
   }
 
-  def to_astExpOldVal(data: ISZ[U8]): Either[org.sireum.lang.ast.Exp.OldVal, MessagePack.ErrorMsg] = {
-    def f_astExpOldVal(reader: Reader): org.sireum.lang.ast.Exp.OldVal = {
-      val r = reader.read_astExpOldVal()
+  def to_astExpAt(data: ISZ[U8]): Either[org.sireum.lang.ast.Exp.At, MessagePack.ErrorMsg] = {
+    def f_astExpAt(reader: Reader): org.sireum.lang.ast.Exp.At = {
+      val r = reader.read_astExpAt()
       return r
     }
-    val r = to(data, f_astExpOldVal _)
+    val r = to(data, f_astExpAt _)
     return r
   }
 

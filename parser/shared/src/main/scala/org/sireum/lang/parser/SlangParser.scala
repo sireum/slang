@@ -54,7 +54,6 @@ object SlangParser {
     "Contract",
     "Deduce",
     "Invariant",
-    "Old",
     "In",
     "At",
     "Idx",
@@ -86,7 +85,6 @@ object SlangParser {
     "Deduce",
     "Invariant",
     "In",
-    "Old",
     "At",
     "Idx",
     "Res",
@@ -2237,7 +2235,7 @@ class SlangParser(
     var hasError = stmtCheck(enclosing, stat, "While-statements")
     var invariants: ISZ[AST.Exp] = ISZ()
     var maxItOpt: Option[AST.Exp.LitZ] = None()
-    var mods: ISZ[AST.Exp.Ident] = ISZ()
+    var mods: ISZ[AST.Exp.Ref] = ISZ()
     var stats: Seq[Stat] = Seq()
     stat.body match {
       case body: Term.Block =>
@@ -2269,7 +2267,7 @@ class SlangParser(
   def translateDoWhile(enclosing: Enclosing.Type, stat: Term.Do): AST.Stmt = {
     warn(stat.pos, "Do-while-loop is deprecated in Slang and will be removed in the near future")
     var hasError = stmtCheck(enclosing, stat, "Do-while-statements")
-    var modifies: ISZ[AST.Exp.Ident] = ISZ()
+    var modifies: ISZ[AST.Exp.Ref] = ISZ()
     var invariants: ISZ[AST.Exp] = ISZ()
     var maxItOpt: Option[AST.Exp.LitZ] = None()
     var stats: Seq[Stat] = Seq()
@@ -2302,7 +2300,7 @@ class SlangParser(
 
   def translateFor(enclosing: Enclosing.Type, stat: Term.For): AST.Stmt = {
     var hasError = stmtCheck(enclosing, stat, "For-statements")
-    var modifies: ISZ[AST.Exp.Ident] = ISZ()
+    var modifies: ISZ[AST.Exp.Ref] = ISZ()
     var invariants = ISZ[(ISZ[AST.Exp], Option[AST.Exp.LitZ])]()
     var stats: Seq[Stat] = Seq()
     stat.body match {
@@ -2494,14 +2492,28 @@ class SlangParser(
       case exp: Term.ApplyUnary => translateUnaryExp(exp)
       case exp: Term.ApplyInfix => translateBinaryExp(exp)
       case q"${name: Term.Name}($arg)" if name.value == "In" =>
-        val r = AST.Exp.Input(translateExp(arg), attr(if (exp.pos == Position.None) name.pos else exp.pos))
-        r.exp match {
-          case _: AST.Exp.Ident =>
-          case _ => errorInSlang(arg.pos, "In(...) argument has to be a variable reference")
+        translateExp(arg) match {
+          case e: AST.Exp.Ref => AST.Exp.Input(e, attr(if (exp.pos == Position.None) name.pos else exp.pos))
+          case _ =>
+            errorInSlang(arg.pos, "In(...) argument has to be a variable reference")
+            rExp
         }
-        r
-      case q"${name: Term.Name}($arg)" if name.value == "Old" =>
-        AST.Exp.OldVal(translateExp(arg), attr(if (exp.pos == Position.None) name.pos else exp.pos))
+      case q"${name: Term.Name}($arg, ..$args)" if name.value == "At" =>
+        var lines = ISZ[AST.Exp.LitZ]()
+        var i = 2
+        for (a <- args) {
+          translateExp(a) match {
+            case e: AST.Exp.LitZ => lines = lines :+ e
+            case _ => errorInSlang(a.pos, s"At(...) #$i argument has to be a Z literal")
+          }
+          i = i + 1
+        }
+        translateExp(arg) match {
+          case e: AST.Exp.Ref => AST.Exp.At(e, lines, attr(if (exp.pos == Position.None) name.pos else exp.pos))
+          case _ =>
+            errorInSlang(arg.pos, "The first At(...) argument has to be a variable reference")
+            rExp
+        }
       case q"$expr.$name[..$tpes](...${aexprssnel: List[List[Term]]})" if tpes.nonEmpty && aexprssnel.nonEmpty =>
         translateInvoke(
           scala.Some(expr),
@@ -2530,7 +2542,7 @@ class SlangParser(
       case q"${name: Term.Name}(...${aexprssnel: List[List[Term]]})" if aexprssnel.nonEmpty =>
         name.value match {
           case "Res" => translateInvoke(scala.Some(name), AST.Id("apply", attr(name.pos)), name.pos, List(), aexprssnel, exp.pos)
-          case "In" | "Old" | "At" =>
+          case "In" | "At" =>
             val receiver = q"$name(..${aexprssnel.head})"
             translateInvoke(scala.Some(receiver), AST.Id("apply", attr(name.pos)), name.pos, List(), aexprssnel.tail, exp.pos)
           case _ => translateInvoke(scala.None, cid(name), name.pos, List(), aexprssnel, exp.pos)
@@ -2926,6 +2938,26 @@ class SlangParser(
     r
   }
 
+  def translateRef(construct: String, expr: Term): Option[AST.Exp.Ref] = {
+    translateExp(expr) match {
+      case e: AST.Exp.Ref => Some(e)
+      case _ =>
+        error(expr.pos, s"Only variable reference is supported for $construct argument.")
+        None()
+    }
+  }
+
+  def translateRefs(construct: String, exprs: Seq[Term]): ISZ[AST.Exp.Ref] = {
+    var r = ISZ[AST.Exp.Ref]()
+    for (expr <- exprs) {
+      translateRef(construct, expr) match {
+        case Some(e) => r = r :+ e
+        case _ =>
+      }
+    }
+    r
+  }
+
   def translateExps(exprs: Seq[Term]): ISZ[AST.Exp] = {
     var r = ISZ[AST.Exp]()
     for (expr <- exprs) {
@@ -2977,7 +3009,7 @@ class SlangParser(
     var reads = AST.MethodContract.Accesses.empty
     exprs(i) match {
       case q"Reads(..${rexprs: Seq[Term]})" =>
-        reads = AST.MethodContract.Accesses(translateIdents("Reads", rexprs), attr(exprs(i).pos))
+        reads = AST.MethodContract.Accesses(translateRefs("Reads", rexprs), attr(exprs(i).pos))
         i += 1
       case _ =>
     }
@@ -2985,7 +3017,7 @@ class SlangParser(
     if (i < length) {
       exprs(i) match {
         case q"Modifies(..${rexprs: Seq[Term]})" =>
-          modifies = AST.MethodContract.Accesses(translateIdents("Modifies", rexprs), attr(exprs(i).pos))
+          modifies = AST.MethodContract.Accesses(translateRefs("Modifies", rexprs), attr(exprs(i).pos))
           i += 1
         case _ =>
       }
@@ -3008,7 +3040,7 @@ class SlangParser(
     if (i < length) {
       exprs(i) match {
         case q"Reads(..${rexprs: Seq[Term]})" =>
-          reads = AST.MethodContract.Accesses(translateIdents("Reads", rexprs), attr(exprs(i).pos))
+          reads = AST.MethodContract.Accesses(translateRefs("Reads", rexprs), attr(exprs(i).pos))
           i += 1
         case _ =>
       }
@@ -3026,7 +3058,7 @@ class SlangParser(
     if (i < length) {
       exprs(i) match {
         case q"Modifies(..${mexprs: Seq[Term]})" =>
-          modifies = AST.MethodContract.Accesses(translateIdents("Modifies", mexprs), attr(exprs(i).pos))
+          modifies = AST.MethodContract.Accesses(translateRefs("Modifies", mexprs), attr(exprs(i).pos))
           i += 1
         case _ =>
       }
@@ -3167,7 +3199,7 @@ class SlangParser(
       else error(stat.pos, "Contract.Havoc can only appear inside methods or code blocks.")
     }
     val q"Contract.Havoc(..${hexprs: Seq[Term]})" = stat
-    AST.Stmt.Havoc(translateIdents("Contract.Havoc", hexprs), attr(stat.pos))
+    AST.Stmt.Havoc(translateRefs("Contract.Havoc", hexprs), attr(stat.pos))
   }
 
   def translateSequent(sequent: Term): AST.Sequent = {
@@ -3516,8 +3548,8 @@ class SlangParser(
     AST.Stmt.Theorem(isLemma, cid(stat.name), typeArgs, descOpt, body, isFun, proof, resolvedAttr(stat.pos))
   }
 
-  def translateLoopInvariant(exprs: Seq[Term], loopPos: Position): (ISZ[AST.Exp], ISZ[AST.Exp.Ident], Option[AST.Exp.LitZ]) = {
-    var mods = ISZ[AST.Exp.Ident]()
+  def translateLoopInvariant(exprs: Seq[Term], loopPos: Position): (ISZ[AST.Exp], ISZ[AST.Exp.Ref], Option[AST.Exp.LitZ]) = {
+    var mods = ISZ[AST.Exp.Ref]()
     var invs = ISZ[AST.Exp]()
     var maxItOpt: Option[AST.Exp.LitZ] = None()
     var rest = exprs
@@ -3538,9 +3570,10 @@ class SlangParser(
     rest = rest match {
       case q"Modifies(..${mexprs: Seq[Term]})" :: tail =>
         for (mexpr <- mexprs) {
-          mexpr match {
-            case mexpr: Term.Name => mods = mods :+ AST.Exp.Ident(cid(mexpr.value, mexpr.pos), resolvedAttr(mexpr.pos))
-            case _ => error(mexpr.pos, "Modifies argument should be a simple identifier.")
+          translateExp(mexpr) match {
+            case e: AST.Exp.Ident => mods = mods :+ e
+            case e: AST.Exp.Select => mods = mods :+ e
+            case _ => error(mexpr.pos, "Modifies argument should be a variable reference.")
           }
         }
         tail

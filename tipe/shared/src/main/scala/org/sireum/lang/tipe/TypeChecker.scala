@@ -642,8 +642,8 @@ object TypeChecker {
       if (reporter.hasError) {
         return newStmt
       }
-      val reads: ISZ[AST.ResolvedInfo] = for (r <- newStmt.contract.reads) yield r.attr.resOpt.get
-      val writes: ISZ[AST.ResolvedInfo] = for (w <- newStmt.contract.modifies) yield w.attr.resOpt.get
+      val reads: ISZ[AST.ResolvedInfo] = for (r <- newStmt.contract.reads) yield r.resOpt.get
+      val writes: ISZ[AST.ResolvedInfo] = for (w <- newStmt.contract.modifies) yield w.resOpt.get
       val methodRes = stmt.attr.resOpt.get.asInstanceOf[AST.ResolvedInfo.Method]
       return newStmt(attr = newStmt.attr(resOpt = Some(methodRes(reads = reads, writes = writes))))
     } else {
@@ -3439,17 +3439,17 @@ import TypeChecker._
 
         case exp: AST.Exp.Input =>
           if (inSpec) {
-            val (e, tOpt) = checkExp(expectedOpt, scope, exp.exp, reporter)
-            return (exp(exp = e), tOpt)
+            val (e, tOpt) = checkExp(expectedOpt, scope, exp.ref.asExp, reporter)
+            return (exp(ref = e.asInstanceOf[AST.Exp.Ref]), tOpt)
           } else {
             reporter.error(exp.posOpt, typeCheckerKind, "Input can only be used inside specification context.")
             return (exp, None())
           }
 
-        case exp: AST.Exp.OldVal =>
+        case exp: AST.Exp.At =>
           if (inSpec) {
-            val (e, tOpt) = checkExp(expectedOpt, scope, exp.exp, reporter)
-            return (exp(exp = e), tOpt)
+            val (e, tOpt) = checkExp(expectedOpt, scope, exp.ref.asExp, reporter)
+            return (exp(ref = e.asInstanceOf[AST.Exp.Ref]), tOpt)
           } else {
             reporter.error(exp.posOpt, typeCheckerKind, "Old can only be used inside specification context.")
             return (exp, None())
@@ -5028,7 +5028,7 @@ import TypeChecker._
   def checkMethodContract(scope: Scope, contract: AST.MethodContract, reporter: Reporter): AST.MethodContract = {
     assert(inSpec)
     def checkReads(reads: AST.MethodContract.Accesses): AST.MethodContract.Accesses = {
-      return reads(idents = for (read <- reads.idents) yield checkExp(None(), scope, read, reporter)._1.asInstanceOf[AST.Exp.Ident])
+      return reads(refs = for (read <- reads.refs) yield checkExp(None(), scope, read.asExp, reporter)._1.asInstanceOf[AST.Exp.Ref])
     }
     def checkRequires(requires: AST.MethodContract.Claims): AST.MethodContract.Claims = {
       return requires(claims = for (require <- requires.claims) yield checkExp(Some(AST.Typed.b), scope, require, reporter)._1)
@@ -5072,50 +5072,47 @@ import TypeChecker._
     }
   }
 
-  def checkLoopInv(scope: Scope, invs: ISZ[AST.Exp], modifies: ISZ[AST.Exp.Ident],
-                   reporter: Reporter): (ISZ[AST.Exp], ISZ[AST.Exp.Ident]) = {
+  def checkLoopInv(scope: Scope, invs: ISZ[AST.Exp], modifies: ISZ[AST.Exp.Ref],
+                   reporter: Reporter): (ISZ[AST.Exp], ISZ[AST.Exp.Ref]) = {
     val newInvs: ISZ[AST.Exp] = for (inv <- invs) yield checkExp(AST.Typed.bOpt, scope, inv, reporter)._1
     return (newInvs, checkModifiesH("modify", scope, modifies, reporter))
   }
 
   def checkModifies(title: String, scope: Scope, modifies: AST.MethodContract.Accesses, reporter: Reporter): AST.MethodContract.Accesses = {
-    return modifies(idents = checkModifiesH(title, scope, modifies.idents, reporter))
+    return modifies(refs = checkModifiesH(title, scope, modifies.refs, reporter))
   }
 
-  def checkModifiesH(title: String, scope: Scope, modifies: ISZ[AST.Exp.Ident], reporter: Reporter): ISZ[AST.Exp.Ident] = {
+  def checkModifiesH(title: String, scope: Scope, modifies: ISZ[AST.Exp.Ref], reporter: Reporter): ISZ[AST.Exp.Ref] = {
     return for (modify <- modifies) yield checkModifyExp(title, scope, modify, reporter)
   }
 
-  def checkModifyExp(title: String, sc: Scope, exp: AST.Exp.Ident, reporter: Reporter): AST.Exp.Ident = {
+  def checkModifyExp(title: String, sc: Scope, ref: AST.Exp.Ref, reporter: Reporter): AST.Exp.Ref = {
     def checkLocalVar(res: AST.ResolvedInfo.LocalVar, t: AST.Typed): Unit = {
       if (!typeHierarchy.isModifiable(t) && res.isVal) {
-        reporter.error(exp.posOpt, typeCheckerKind, s"Cannot $title variable '${res.id}'")
+        reporter.error(ref.posOpt, typeCheckerKind, s"Cannot $title variable '${res.id}'")
       }
     }
     def checkVar(res: AST.ResolvedInfo.Var, t: AST.Typed): Unit = {
       if (!typeHierarchy.isModifiable(t) && res.isVal) {
-        reporter.error(exp.posOpt, typeCheckerKind, st"Cannot $title field '${(res.owner, ".")}.${res.id}'".render)
+        reporter.error(ref.posOpt, typeCheckerKind, st"Cannot $title field '${(res.owner :+ res.id, ".")}'".render)
       }
     }
     def err(): Unit = {
-      reporter.error(exp.posOpt, typeCheckerKind, s"Can only $title a variable or a field")
+      reporter.error(ref.posOpt, typeCheckerKind, s"Can only $title a variable or a field")
     }
-    val (newExp, tOpt) = checkExp(None(), sc, exp, reporter)
+    val (newExp, tOpt) = checkExp(None(), sc, ref.asExp, reporter)
     tOpt match {
       case Some(t) =>
-        newExp match {
-          case newExp: AST.Exp.Ident =>
-            newExp.attr.resOpt.get match {
-              case res: AST.ResolvedInfo.LocalVar => checkLocalVar(res, t)
-              case res: AST.ResolvedInfo.Var => checkVar(res, t)
-              case _ => err()
-            }
-            return newExp
+        val newRef = newExp.asInstanceOf[AST.Exp.Ref]
+        newRef.resOpt.get match {
+          case res: AST.ResolvedInfo.LocalVar => checkLocalVar(res, t)
+          case res: AST.ResolvedInfo.Var => checkVar(res, t)
           case _ => err()
         }
+        return newRef
       case _ => err()
     }
-    return exp
+    return ref
   }
 
   def checkMethod(sc: Scope, stmt: AST.Stmt.Method, reporter: Reporter): AST.Stmt.Method = {
@@ -5141,8 +5138,8 @@ import TypeChecker._
   }
 
   def checkDataRefinement(scope: Scope, stmt: AST.Stmt.DataRefinement, reporter: Reporter): AST.Stmt.DataRefinement = {
-    val rep = checkModifyExp("represent data using", scope, stmt.rep, reporter)
-    val refs = checkModifiesH("refine data using", scope, stmt.refs, reporter)
+    val rep = checkModifyExp("represent data using", scope, stmt.rep, reporter).asInstanceOf[AST.Exp.Ident]
+    val refs: ISZ[AST.Exp.Ident] = for (m <- stmt.refs) yield checkModifyExp("refine data using", scope, m, reporter).asInstanceOf[AST.Exp.Ident]
     var claims = ISZ[AST.Exp]()
     val expectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
     for (claim <- stmt.claims) {

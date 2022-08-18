@@ -485,9 +485,9 @@ object MTransformer {
 
   val PostResultExpInput: MOption[Exp] = MNone()
 
-  val PreResultExpOldVal: PreResult[Exp] = PreResult(T, MNone())
+  val PreResultExpAt: PreResult[Exp] = PreResult(T, MNone())
 
-  val PostResultExpOldVal: MOption[Exp] = MNone()
+  val PostResultExpAt: MOption[Exp] = MNone()
 
   val PreResultExpLoopIndex: PreResult[Exp] = PreResult(T, MNone())
 
@@ -1304,7 +1304,7 @@ import MTransformer._
         }
         return r
       case o: Exp.Input => return preExpInput(o)
-      case o: Exp.OldVal => return preExpOldVal(o)
+      case o: Exp.At => return preExpAt(o)
       case o: Exp.LoopIndex => return preExpLoopIndex(o)
       case o: Exp.StateSeq => return preExpStateSeq(o)
       case o: Exp.Result => return preExpResult(o)
@@ -1515,8 +1515,8 @@ import MTransformer._
     return PreResultExpInput
   }
 
-  def preExpOldVal(o: Exp.OldVal): PreResult[Exp] = {
-    return PreResultExpOldVal
+  def preExpAt(o: Exp.At): PreResult[Exp] = {
+    return PreResultExpAt
   }
 
   def preExpLoopIndex(o: Exp.LoopIndex): PreResult[Exp] = {
@@ -2372,7 +2372,7 @@ import MTransformer._
         }
         return r
       case o: Exp.Input => return postExpInput(o)
-      case o: Exp.OldVal => return postExpOldVal(o)
+      case o: Exp.At => return postExpAt(o)
       case o: Exp.LoopIndex => return postExpLoopIndex(o)
       case o: Exp.StateSeq => return postExpStateSeq(o)
       case o: Exp.Result => return postExpResult(o)
@@ -2583,8 +2583,8 @@ import MTransformer._
     return PostResultExpInput
   }
 
-  def postExpOldVal(o: Exp.OldVal): MOption[Exp] = {
-    return PostResultExpOldVal
+  def postExpAt(o: Exp.At): MOption[Exp] = {
+    return PostResultExpAt
   }
 
   def postExpLoopIndex(o: Exp.LoopIndex): MOption[Exp] = {
@@ -3124,7 +3124,7 @@ import MTransformer._
           else
             MNone()
         case o2: Stmt.Havoc =>
-          val r0: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.args, transformExpIdent _)
+          val r0: MOption[IS[Z, Exp.Ref]] = transformISZ(o2.args, transformExpRef _)
           val r1: MOption[Attr] = transformAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
             MSome(o2(args = r0.getOrElse(o2.args), attr = r1.getOrElse(o2.attr)))
@@ -3157,7 +3157,7 @@ import MTransformer._
       val rOpt: MOption[HasModifies] = o2 match {
         case o2: LoopContract =>
           val r0: MOption[IS[Z, Exp]] = transformISZ(o2.invariants, transformExp _)
-          val r1: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.modifies, transformExpIdent _)
+          val r1: MOption[IS[Z, Exp.Ref]] = transformISZ(o2.modifies, transformExpRef _)
           val r2: MOption[Option[Exp.LitZ]] = transformOption(o2.maxItOpt, transformExpLitZ _)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
             MSome(o2(invariants = r0.getOrElse(o2.invariants), modifies = r1.getOrElse(o2.modifies), maxItOpt = r2.getOrElse(o2.maxItOpt)))
@@ -3207,7 +3207,7 @@ import MTransformer._
       val o2: LoopContract = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: MOption[IS[Z, Exp]] = transformISZ(o2.invariants, transformExp _)
-      val r1: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.modifies, transformExpIdent _)
+      val r1: MOption[IS[Z, Exp.Ref]] = transformISZ(o2.modifies, transformExpRef _)
       val r2: MOption[Option[Exp.LitZ]] = transformOption(o2.maxItOpt, transformExpLitZ _)
       if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
         MSome(o2(invariants = r0.getOrElse(o2.invariants), modifies = r1.getOrElse(o2.modifies), maxItOpt = r2.getOrElse(o2.maxItOpt)))
@@ -3394,7 +3394,7 @@ import MTransformer._
           else
             MNone()
         case o2: Stmt.Havoc =>
-          val r0: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.args, transformExpIdent _)
+          val r0: MOption[IS[Z, Exp.Ref]] = transformISZ(o2.args, transformExpRef _)
           val r1: MOption[Attr] = transformAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
             MSome(o2(args = r0.getOrElse(o2.args), attr = r1.getOrElse(o2.attr)))
@@ -3468,10 +3468,10 @@ import MTransformer._
     val r: MOption[MethodContract.Accesses] = if (preR.continu) {
       val o2: MethodContract.Accesses = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.idents, transformExpIdent _)
+      val r0: MOption[IS[Z, Exp.Ref]] = transformISZ(o2.refs, transformExpRef _)
       val r1: MOption[Attr] = transformAttr(o2.attr)
       if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-        MSome(o2(idents = r0.getOrElse(o2.idents), attr = r1.getOrElse(o2.attr)))
+        MSome(o2(refs = r0.getOrElse(o2.refs), attr = r1.getOrElse(o2.attr)))
       else
         MNone()
     } else if (preR.resultOpt.nonEmpty) {
@@ -4388,17 +4388,18 @@ import MTransformer._
           else
             MNone()
         case o2: Exp.Input =>
-          val r0: MOption[Exp] = transformExp(o2.exp)
+          val r0: MOption[Exp.Ref] = transformExpRef(o2.ref)
           val r1: MOption[Attr] = transformAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(exp = r0.getOrElse(o2.exp), attr = r1.getOrElse(o2.attr)))
+            MSome(o2(ref = r0.getOrElse(o2.ref), attr = r1.getOrElse(o2.attr)))
           else
             MNone()
-        case o2: Exp.OldVal =>
-          val r0: MOption[Exp] = transformExp(o2.exp)
-          val r1: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(exp = r0.getOrElse(o2.exp), attr = r1.getOrElse(o2.attr)))
+        case o2: Exp.At =>
+          val r0: MOption[Exp.Ref] = transformExpRef(o2.ref)
+          val r1: MOption[IS[Z, Exp.LitZ]] = transformISZ(o2.lines, transformExpLitZ _)
+          val r2: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(ref = r0.getOrElse(o2.ref), lines = r1.getOrElse(o2.lines), attr = r2.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Exp.LoopIndex =>

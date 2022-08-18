@@ -73,15 +73,15 @@ object TopUnit {
 
 @sig trait HasModifies {
 
-  @pure def modifies: ISZ[Exp.Ident]
+  @pure def modifies: ISZ[Exp.Ref]
 
   @pure def modifiedLocalVars(receiverLocalTypeOpt: Option[(ResolvedInfo.LocalVar, Typed)]): (B, HashSMap[ResolvedInfo.LocalVar, (Typed, Position)]) = {
     var r = HashSMap.empty[ResolvedInfo.LocalVar, (Typed, Position)]
     var modThisPosOpt: Option[Position] = None()
-    for (exp <- modifies) {
-      exp.attr.resOpt match {
-        case Some(res: ResolvedInfo.LocalVar) => r = r + res ~> ((exp.typedOpt.get, exp.posOpt.get))
-        case Some(res: ResolvedInfo.Var) if !res.isInObject => modThisPosOpt = exp.posOpt
+    for (ref <- modifies) {
+      ref.resOpt match {
+        case Some(res: ResolvedInfo.LocalVar) => r = r + res ~> ((ref.typedOpt.get, ref.posOpt.get))
+        case Some(res: ResolvedInfo.Var) if !res.isInObject => modThisPosOpt = ref.posOpt
         case _ =>
       }
     }
@@ -97,8 +97,8 @@ object TopUnit {
   }
 
   @pure def modifiedObjectVars: HashSMap[ResolvedInfo.Var, (Typed, Position)] = {
-    @pure def filterObjectVar(exp: Exp.Ident): ISZ[(ResolvedInfo.Var, (Typed, Position))] = {
-      exp.attr.resOpt match {
+    @pure def filterObjectVar(exp: Exp.Ref): ISZ[(ResolvedInfo.Var, (Typed, Position))] = {
+      exp.resOpt match {
         case Some(res: ResolvedInfo.Var) if res.isInObject => return ISZ((res, (exp.typedOpt.get, exp.posOpt.get)))
         case _ => return ISZ()
       }
@@ -110,9 +110,9 @@ object TopUnit {
 
 
   @pure def modifiedInstanceVars: HashSMap[ResolvedInfo.Var, (Typed, Position)] = {
-    @pure def filterInstanceVar(exp: Exp.Ident): ISZ[(ResolvedInfo.Var, (Typed, Position))] = {
-      exp.attr.resOpt match {
-        case Some(res: ResolvedInfo.Var) if !res.isInObject => return ISZ((res, (exp.typedOpt.get, exp.posOpt.get)))
+    @pure def filterInstanceVar(ref: Exp.Ref): ISZ[(ResolvedInfo.Var, (Typed, Position))] = {
+      ref.resOpt match {
+        case Some(res: ResolvedInfo.Var) if !res.isInObject => return ISZ((res, (ref.typedOpt.get, ref.posOpt.get)))
         case _ => return ISZ()
       }
     }
@@ -128,7 +128,7 @@ object LoopContract {
 }
 
 @datatype class LoopContract(val invariants: ISZ[Exp],
-                             val modifies: ISZ[Exp.Ident],
+                             val modifies: ISZ[Exp.Ref],
                              val maxItOpt: Option[Exp.LitZ]) extends HasModifies
 
 object Stmt {
@@ -405,7 +405,7 @@ object Stmt {
 
     @strictpure def invariants: ISZ[Exp] = contract.invariants
 
-    @strictpure def modifies: ISZ[Exp.Ident] = contract.modifies
+    @strictpure def modifies: ISZ[Exp.Ref] = contract.modifies
 
   }
 
@@ -421,7 +421,7 @@ object Stmt {
 
     @strictpure def invariants: ISZ[Exp] = contract.invariants
 
-    @strictpure def modifies: ISZ[Exp.Ident] = contract.modifies
+    @strictpure def modifies: ISZ[Exp.Ref] = contract.modifies
 
   }
 
@@ -434,7 +434,7 @@ object Stmt {
       return attr.posOpt
     }
 
-    @strictpure def modifies: ISZ[Exp.Ident] = enumGens(0).contract.modifies
+    @strictpure def modifies: ISZ[Exp.Ref] = enumGens(0).contract.modifies
 
   }
 
@@ -541,7 +541,7 @@ object Stmt {
     }
   }
 
-  @datatype class Havoc(val args: ISZ[Exp.Ident], @hidden val attr: Attr) extends Spec {
+  @datatype class Havoc(val args: ISZ[Exp.Ref], @hidden val attr: Attr) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
@@ -554,8 +554,8 @@ object Stmt {
   @pure def nonEmpty: B = {
     return !isEmpty
   }
-  @pure def reads: ISZ[Exp.Ident]
-  @pure def modifies: ISZ[Exp.Ident]
+  @pure def reads: ISZ[Exp.Ref]
+  @pure def modifies: ISZ[Exp.Ref]
 }
 
 object MethodContract {
@@ -564,7 +564,7 @@ object MethodContract {
     @strictpure def empty: Accesses = Accesses(ISZ(), Attr(None()))
   }
 
-  @datatype class Accesses(val idents: ISZ[Exp.Ident], val attr: Attr)
+  @datatype class Accesses(val refs: ISZ[Exp.Ref], val attr: Attr)
 
   object Claims {
     @strictpure def empty: Claims = Claims(ISZ(), Attr(None()))
@@ -580,9 +580,9 @@ object MethodContract {
                          val modifiesClause: Accesses,
                          val ensuresClause: Claims,
                          val attr: Attr) extends MethodContract {
-    @strictpure override def reads: ISZ[Exp.Ident] = readsClause.idents
+    @strictpure override def reads: ISZ[Exp.Ref] = readsClause.refs
     @strictpure def requires: ISZ[Exp] = requiresClause.claims
-    @strictpure override def modifies: ISZ[Exp.Ident] = modifiesClause.idents
+    @strictpure override def modifies: ISZ[Exp.Ref] = modifiesClause.refs
     @strictpure def ensures: ISZ[Exp] = ensuresClause.claims
 
     @pure override def isEmpty: B = {
@@ -594,8 +594,8 @@ object MethodContract {
                         val modifiesClause: Accesses,
                         val cases: ISZ[Case],
                         val attr: Attr) extends MethodContract {
-    @strictpure override def reads: ISZ[Exp.Ident] = readsClause.idents
-    @strictpure override def modifies: ISZ[Exp.Ident] = modifiesClause.idents
+    @strictpure override def reads: ISZ[Exp.Ref] = readsClause.refs
+    @strictpure override def modifies: ISZ[Exp.Ref] = modifiesClause.refs
 
     @pure override def isEmpty: B = {
       return reads.isEmpty && modifies.isEmpty && cases.isEmpty
@@ -1326,6 +1326,12 @@ object Exp {
 
     @pure def asExp: Exp
 
+    @strictpure def posOpt: Option[Position] = asExp.posOpt
+
+    @pure def resOpt: Option[ResolvedInfo]
+
+    @strictpure def typedOpt: Option[Typed] = asExp.typedOpt
+
     @pure def subst(substMap: HashMap[String, Typed]): Ref
   }
 
@@ -1343,10 +1349,12 @@ object Exp {
       val l = BinaryOp.precendenceLevel(op)
       val leftST: ST = left match {
         case left: Binary if BinaryOp.precendenceLevel(left.op) > l => st"(${left.prettyST})"
+        case left: If => st"(${left.prettyST})"
         case _ => left.prettyST
       }
       val rightST: ST = right match {
         case right: Binary if BinaryOp.precendenceLevel(right.op) > l => st"(${right.prettyST})"
+        case right: If => st"(${right.prettyST})"
         case _ => right.prettyST
       }
       return st"$leftST $op $rightST"
@@ -1389,6 +1397,10 @@ object Exp {
 
     @pure override def typedOpt: Option[Typed] = {
       return attr.typedOpt
+    }
+
+    @pure override def resOpt: Option[ResolvedInfo] = {
+      return attr.resOpt
     }
 
     @pure def subst(substMap: HashMap[String, Typed]): Ref = {
@@ -1445,6 +1457,10 @@ object Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
+    }
+
+    @pure override def resOpt: Option[ResolvedInfo] = {
+      return attr.resOpt
     }
 
     @pure override def typedOpt: Option[Typed] = {
@@ -1678,33 +1694,33 @@ object Exp {
     }
   }
 
-  @datatype class Input(val exp: Exp, @hidden val attr: Attr) extends Exp {
+  @datatype class Input(val ref: Ref, @hidden val attr: Attr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
 
     @pure override def typedOpt: Option[Typed] = {
-      return exp.typedOpt
+      return ref.asExp.typedOpt
     }
 
     @pure override def prettyST: ST = {
-      return st"In(${exp.prettyST})"
+      return st"In(${ref.asExp.prettyST})"
     }
   }
 
-  @datatype class OldVal(val exp: Exp, @hidden val attr: Attr) extends Exp {
+  @datatype class At(val ref: Ref, lines: ISZ[Exp.LitZ], @hidden val attr: Attr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
 
     @pure override def typedOpt: Option[Typed] = {
-      return exp.typedOpt
+      return ref.asExp.typedOpt
     }
 
     @pure override def prettyST: ST = {
-      return st"Old(${exp.prettyST})"
+      return st"At(${ref.asExp.prettyST}, ${(for (l <- lines) yield l.prettyST, ", ")})"
     }
   }
 

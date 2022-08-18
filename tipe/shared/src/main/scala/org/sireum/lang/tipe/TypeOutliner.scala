@@ -1214,8 +1214,8 @@ object TypeOutliner {
           if (ok) {
             val tc = TypeChecker(typeHierarchy, context, F, TypeChecker.ModeContext.Spec, strictAliasing)
             var newStmt = mstmt(contract = tc.checkMethodContract(sc, mstmt.contract, reporter))
-            val reads: ISZ[AST.ResolvedInfo] = for (r <- newStmt.contract.reads) yield r.attr.resOpt.get
-            val writes: ISZ[AST.ResolvedInfo] = for (w <- newStmt.contract.modifies) yield w.attr.resOpt.get
+            val reads: ISZ[AST.ResolvedInfo] = for (r <- newStmt.contract.reads) yield r.resOpt.get
+            val writes: ISZ[AST.ResolvedInfo] = for (w <- newStmt.contract.modifies) yield w.resOpt.get
             newStmt = newStmt(attr = newStmt.attr(resOpt = Some(mInfo.methodRes(reads = reads, writes = writes))))
             newStmts = newStmts :+ newStmt
             nameEntries = nameEntries :+ ((mInfo.name, mInfo(ast = newStmt)))
