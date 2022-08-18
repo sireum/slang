@@ -399,10 +399,10 @@ object TypeChecker {
 
     (expected, tpe) match {
       case (_, tpe: AST.Typed.TypeVar) =>
-        //if (tpe.isImmutable && th.isMutable(expected)) {
-        //  reporter.error(posOpt, typeCheckerKind, s"Could not unify mutable type '$expected' with immutable type variable '$tpe'")
-        //  return None()
-        //}
+        if (tpe.isImmutable && th.isMutable(expected)) {
+          reporter.error(posOpt, typeCheckerKind, s"Could not unify mutable type '$expected' with immutable type variable '$tpe'")
+          return None()
+        }
         return Some(HashMap.empty[String, AST.Typed] + tpe.id ~> expected)
       case (expected: AST.Typed.Name, tpe: AST.Typed.Name) =>
         val sameIds = tpe.ids == expected.ids
