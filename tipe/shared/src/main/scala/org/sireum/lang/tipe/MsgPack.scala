@@ -1635,7 +1635,7 @@ object MsgPack {
 
     def write_astExpInput(o: org.sireum.lang.ast.Exp.Input): Unit = {
       writer.writeZ(Constants._astExpInput)
-      write_astExpRef(o.ref)
+      write_astExp(o.exp)
       write_astAttr(o.attr)
     }
 
@@ -4415,9 +4415,9 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astExpInput)
       }
-      val ref = read_astExpRef()
+      val exp = read_astExp()
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Exp.Input(ref, attr)
+      return org.sireum.lang.ast.Exp.Input(exp, attr)
     }
 
     def read_astExpAt(): org.sireum.lang.ast.Exp.At = {

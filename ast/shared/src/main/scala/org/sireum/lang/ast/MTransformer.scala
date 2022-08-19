@@ -4388,10 +4388,10 @@ import MTransformer._
           else
             MNone()
         case o2: Exp.Input =>
-          val r0: MOption[Exp.Ref] = transformExpRef(o2.ref)
+          val r0: MOption[Exp] = transformExp(o2.exp)
           val r1: MOption[Attr] = transformAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(ref = r0.getOrElse(o2.ref), attr = r1.getOrElse(o2.attr)))
+            MSome(o2(exp = r0.getOrElse(o2.exp), attr = r1.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Exp.At =>

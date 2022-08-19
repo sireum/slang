@@ -2494,8 +2494,9 @@ class SlangParser(
       case q"${name: Term.Name}($arg)" if name.value == "In" =>
         translateExp(arg) match {
           case e: AST.Exp.Ref => AST.Exp.Input(e, attr(if (exp.pos == Position.None) name.pos else exp.pos))
+          case e: AST.Exp.This => AST.Exp.Input(e, attr(if (exp.pos == Position.None) name.pos else exp.pos))
           case _ =>
-            errorInSlang(arg.pos, "In(...) argument has to be a variable reference")
+            errorInSlang(arg.pos, "In(...) argument has to be a variable reference or this")
             rExp
         }
       case q"${name: Term.Name}($arg, ..$args)" if name.value == "At" =>

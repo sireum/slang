@@ -1694,18 +1694,18 @@ object Exp {
     }
   }
 
-  @datatype class Input(val ref: Ref, @hidden val attr: Attr) extends Exp {
+  @datatype class Input(val exp: Exp, @hidden val attr: Attr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
 
     @pure override def typedOpt: Option[Typed] = {
-      return ref.asExp.typedOpt
+      return exp.typedOpt
     }
 
     @pure override def prettyST: ST = {
-      return st"In(${ref.asExp.prettyST})"
+      return st"In(${exp.prettyST})"
     }
   }
 
