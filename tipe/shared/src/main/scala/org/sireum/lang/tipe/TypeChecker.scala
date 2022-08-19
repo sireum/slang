@@ -5051,7 +5051,35 @@ import TypeChecker._
   def checkMethodContract(scope: Scope, contract: AST.MethodContract, reporter: Reporter): AST.MethodContract = {
     assert(inSpec)
     def checkReads(reads: AST.MethodContract.Accesses): AST.MethodContract.Accesses = {
-      return reads(refs = for (read <- reads.refs) yield checkExp(None(), scope, read.asExp, reporter)._1.asInstanceOf[AST.Exp.Ref])
+      def err(posOpt: Option[Position]): Unit = {
+        reporter.error(posOpt, typeCheckerKind, s"Can only read a variable or an object field (qualified name)")
+      }
+      var r = ISZ[AST.Exp.Ref]()
+      for (read <- reads.refs) {
+        val newRef = checkExp(None(), scope, read.asExp, reporter)._1.asInstanceOf[AST.Exp.Ref]
+        newRef.resOpt match {
+          case Some(_: AST.ResolvedInfo.LocalVar) =>
+          case Some(_: AST.ResolvedInfo.Var) =>
+          case Some(_) => err(newRef.posOpt)
+          case _ =>
+        }
+        newRef match {
+          case newRef: AST.Exp.Select =>
+            newRef.receiverOpt match {
+              case Some(receiver: AST.Exp.Ref) =>
+                receiver.resOpt match {
+                  case Some(_: AST.ResolvedInfo.Package) =>
+                  case Some(_: AST.ResolvedInfo.Object) =>
+                  case Some(_) => err(newRef.posOpt)
+                  case _ =>
+                }
+              case _ =>
+            }
+          case _ =>
+        }
+        r = r :+ newRef
+      }
+      return reads(refs = r)
     }
     def checkRequires(requires: AST.MethodContract.Claims): AST.MethodContract.Claims = {
       return requires(claims = for (require <- requires.claims) yield checkExp(Some(AST.Typed.b), scope, require, reporter)._1)
@@ -5121,7 +5149,7 @@ import TypeChecker._
       }
     }
     def err(): Unit = {
-      reporter.error(ref.posOpt, typeCheckerKind, s"Can only $title a variable or a field")
+      reporter.error(ref.posOpt, typeCheckerKind, s"Can only $title a variable or an object field (qualified name)")
     }
     val (newExp, tOpt) = checkExp(None(), sc, ref.asExp, reporter)
     tOpt match {
@@ -5131,6 +5159,19 @@ import TypeChecker._
           case res: AST.ResolvedInfo.LocalVar => checkLocalVar(res, t)
           case res: AST.ResolvedInfo.Var => checkVar(res, t)
           case _ => err()
+        }
+        newRef match {
+          case newRef: AST.Exp.Select =>
+            newRef.receiverOpt match {
+              case Some(receiver: AST.Exp.Ref) =>
+                receiver.resOpt.get match {
+                  case _: AST.ResolvedInfo.Package =>
+                  case _: AST.ResolvedInfo.Object =>
+                  case _ => err()
+                }
+              case _ =>
+            }
+          case _ =>
         }
         return newRef
       case _ => err()
