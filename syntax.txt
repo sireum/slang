@@ -202,12 +202,13 @@
                      |  ( <params> ) => <exp>
                      |  { ( <params> ) => <stmt>* <exp> }
                      |  <quant-op> ( <exp> ) ( ( <params> ) => <exp> )
-                     |  <quant-op> { ( <params> ) => <stmt>* <exp> }   // only in contract context
-                     |  At [ <type> ] ( <STRING> ⸨ , <int-lit> ⸩+ )    // only in contract context
-                     |  At ( <exp> ⸨ , <int-lit> ⸩+ )                  // only in contract context
-                     |  In ( <exp> )                                   // only in contract context
-                     |  Res ⸨ [ <type> ] ⸩?                            // only in contract ensures context
-                     |  <ID> ~ <exp> ⸨ ~ <exp> ⸩*                      // only in contract context
+                     |  <quant-op> { ( <params> ) => <stmt>* <exp> }        // only in contract context
+                     |  At [ <type> ] ( <STRING> ⸨ , <int-lit> ⸩+ )         // only in contract context
+                     |  At ( <exp> ⸨ , <int-lit> ⸩+ )                       // only in contract context
+                     |  In ( <exp> )                                        // only in contract context
+                     |  <ID> ~ <exp> ⸨ ~ <exp> ⸩*                           // only in contract context
+                     |  ? ( <exp> ⸨ , <exp> ⸩* ) { ( <params> ) => <exp> }  // only in contract context
+                     |  Res ⸨ [ <type> ] ⸩?                                 // only in contract ensures context
 
 <quant-op>         ::=  ∀
                      |  All
