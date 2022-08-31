@@ -203,8 +203,9 @@
                      |  { ( <params> ) => <stmt>* <exp> }
                      |  <quant-op> ( <exp> ) ( ( <params> ) => <exp> )
                      |  <quant-op> { ( <params> ) => <stmt>* <exp> }   // only in contract context
-                     |  Old(...)                                       // only in contract context
-                     |  In(...)                                        // only in contract context
+                     |  At [ <type> ] ( <STRING> ⸨ , <int-lit> ⸩+ )    // only in contract context
+                     |  At ( <exp> ⸨ , <int-lit> ⸩+ )                  // only in contract context
+                     |  In ( <exp> )                                   // only in contract context
                      |  Res ⸨ [ <type> ] ⸩?                            // only in contract ensures context
                      |  <ID> ~ <exp> ⸨ ~ <exp> ⸩*                      // only in contract context
 
@@ -216,9 +217,7 @@
 <lit>              ::=  true
                      |  false
                      |  <CHAR>
-                     |  <INT>
-                     |  <LONG>
-                     |  z"<NUM>"
+                     |  <int-lit>
                      |  z8"<NUM>"
                      |  z16"<NUM>"
                      |  z32"<NUM>"
@@ -242,6 +241,10 @@
                      |  <FLOAT>
                      |  <DOUBLE>
                      |  <STRING>
+
+<int-lit>          ::=  <INT>
+                     |  <LONG>
+                     |  z"<NUM>"
 
 <args>             ::=  <type-args>? ( ⸨ <apply-arg> ⸨ , <apply-arg> ⸩* ⸩? )
 
