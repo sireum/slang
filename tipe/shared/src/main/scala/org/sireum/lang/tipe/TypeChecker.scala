@@ -3329,6 +3329,58 @@ import TypeChecker._
       return (idx, None())
     }
 
+    def checkInput(input: AST.Exp.Input): (AST.Exp, Option[AST.Typed]) = {
+      if (inSpec) {
+        val (e, tOpt) = checkExp(expectedOpt, scope, input.exp, reporter)
+        e match {
+          case e: AST.Exp.Ref =>
+            e.resOpt match {
+              case Some(_: AST.ResolvedInfo.LocalVar) =>
+              case Some(_: AST.ResolvedInfo.Var) =>
+              case _ => reporter.error(e.posOpt, typeCheckerKind, "Input can only refer to a variable or this.")
+            }
+          case _: AST.Exp.This =>
+          case _ =>
+        }
+        return (input(exp = e), tOpt)
+      } else {
+        reporter.error(exp.posOpt, typeCheckerKind, "Input can only be used inside specification context.")
+        return (input, None())
+      }
+    }
+
+    def checkAt(at: AST.Exp.At): (AST.Exp, Option[AST.Typed]) = {
+      if (inSpec) {
+        val (e, tOpt) = checkExp(expectedOpt, scope, at.exp, reporter)
+        e match {
+          case e: AST.Exp.Ref =>
+            e.resOpt match {
+              case Some(_: AST.ResolvedInfo.LocalVar) =>
+              case Some(res: AST.ResolvedInfo.Var) =>
+                if (!(res.isInObject || res.owner.isEmpty)) {
+                  reporter.error(e.posOpt, typeCheckerKind, "At(...) cannot refer to an instance field.")
+                }
+              case _ => reporter.error(e.posOpt, typeCheckerKind, "At(...) can only refer to a variable or this.")
+            }
+          case _: AST.Exp.This =>
+          case _: AST.Exp.LitString =>
+          case _ =>
+        }
+        at.tipeOpt match {
+          case Some(tipe) =>
+            val tipeOpt = typeHierarchy.typed(scope, tipe, reporter)
+            tipeOpt match {
+              case Some(newTipe) => return (at(exp = e, tipeOpt = tipeOpt), newTipe.typedOpt)
+              case _ => return (at(exp = e, tipeOpt = tipeOpt), None())
+            }
+          case _ => return (at(exp = e), tOpt)
+        }
+      } else {
+        reporter.error(exp.posOpt, typeCheckerKind, "At can only be used inside specification context.")
+        return (exp, None())
+      }
+    }
+
     def checkExpH(): (AST.Exp, Option[AST.Typed]) = {
       exp match {
 
@@ -3437,46 +3489,9 @@ import TypeChecker._
 
         case exp: AST.Exp.Quant => return checkQuant(exp)
 
-        case exp: AST.Exp.Input =>
-          if (inSpec) {
-            val (e, tOpt) = checkExp(expectedOpt, scope, exp.exp, reporter)
-            e match {
-              case e: AST.Exp.Ref =>
-                e.resOpt match {
-                  case Some(_: AST.ResolvedInfo.LocalVar) =>
-                  case Some(_: AST.ResolvedInfo.Var) =>
-                  case _ => reporter.error(e.posOpt, typeCheckerKind, "Input can only refer to a variable or this.")
-                }
-              case _: AST.Exp.This =>
-              case _ =>
-            }
-            return (exp(exp = e), tOpt)
-          } else {
-            reporter.error(exp.posOpt, typeCheckerKind, "Input can only be used inside specification context.")
-            return (exp, None())
-          }
+        case exp: AST.Exp.Input => return checkInput(exp)
 
-        case exp: AST.Exp.At =>
-          if (inSpec) {
-            val (e, tOpt) = checkExp(expectedOpt, scope, exp.exp, reporter)
-            e match {
-              case e: AST.Exp.Ref =>
-                e.resOpt match {
-                  case Some(_: AST.ResolvedInfo.LocalVar) =>
-                  case Some(res: AST.ResolvedInfo.Var) =>
-                    if (!(res.isInObject || res.owner.isEmpty)) {
-                      reporter.error(e.posOpt, typeCheckerKind, "At cannot refer to an instance field.")
-                    }
-                  case _ => reporter.error(e.posOpt, typeCheckerKind, "At can only refer to a variable or this.")
-                }
-              case _: AST.Exp.This =>
-              case _ =>
-            }
-            return (exp(exp = e), tOpt)
-          } else {
-            reporter.error(exp.posOpt, typeCheckerKind, "At can only be used inside specification context.")
-            return (exp, None())
-          }
+        case exp: AST.Exp.At => return checkAt(exp)
 
         case _: AST.Exp.StateSeq => halt("Unimplemented") // TODO
 

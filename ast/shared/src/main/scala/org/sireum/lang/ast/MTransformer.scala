@@ -4397,9 +4397,10 @@ import MTransformer._
         case o2: Exp.At =>
           val r0: MOption[Exp] = transformExp(o2.exp)
           val r1: MOption[IS[Z, Exp.LitZ]] = transformISZ(o2.lines, transformExpLitZ _)
-          val r2: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(exp = r0.getOrElse(o2.exp), lines = r1.getOrElse(o2.lines), attr = r2.getOrElse(o2.attr)))
+          val r2: MOption[Option[Type]] = transformOption(o2.tipeOpt, transformType _)
+          val r3: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp), lines = r1.getOrElse(o2.lines), tipeOpt = r2.getOrElse(o2.tipeOpt), attr = r3.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Exp.LoopIndex =>

@@ -1709,7 +1709,7 @@ object Exp {
     }
   }
 
-  @datatype class At(val exp: Exp, lines: ISZ[Exp.LitZ], @hidden val attr: Attr) extends Exp {
+  @datatype class At(val exp: Exp, lines: ISZ[Exp.LitZ], val tipeOpt: Option[Type], @hidden val attr: Attr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt

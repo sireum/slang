@@ -2499,6 +2499,30 @@ class SlangParser(
             errorInSlang(arg.pos, "In(...) argument has to be a variable reference or this")
             rExp
         }
+      case q"${name: Term.Name}[$tpe]($arg, ..$args)" if name.value == "At" =>
+        var lines = ISZ[AST.Exp.LitZ]()
+        var i = 2
+        for (a <- args) {
+          translateExp(a) match {
+            case e: AST.Exp.LitZ => lines = lines :+ e
+            case _ => errorInSlang(a.pos, s"At[...](...) #$i argument has to be a Z literal")
+          }
+          i = i + 1
+        }
+        if (args.isEmpty) {
+          errorInSlang(exp.pos, s"At[...](...) requires at least two arguments")
+        }
+        translateExp(arg) match {
+          case e: AST.Exp.LitString =>
+            val ids = e.value.value.split('.').map(_.trim)
+            if (ids.isEmpty) {
+              errorInSlang(arg.pos, "The first At[...](...) argument has to be a string literal simple/qualified name")
+            }
+            AST.Exp.At(e, lines, Some(translateType(tpe)), attr(if (exp.pos == Position.None) name.pos else exp.pos))
+          case _ =>
+            errorInSlang(arg.pos, "The first At[...](...) argument has to be a string literal")
+            rExp
+        }
       case q"${name: Term.Name}($arg, ..$args)" if name.value == "At" =>
         var lines = ISZ[AST.Exp.LitZ]()
         var i = 2
@@ -2513,8 +2537,8 @@ class SlangParser(
           errorInSlang(exp.pos, s"At(...) requires at least two arguments")
         }
         translateExp(arg) match {
-          case e: AST.Exp.Ref => AST.Exp.At(e.asExp, lines, attr(if (exp.pos == Position.None) name.pos else exp.pos))
-          case e: AST.Exp.This => AST.Exp.At(e, lines, attr(if (exp.pos == Position.None) name.pos else exp.pos))
+          case e: AST.Exp.Ref => AST.Exp.At(e.asExp, lines, None(), attr(if (exp.pos == Position.None) name.pos else exp.pos))
+          case e: AST.Exp.This => AST.Exp.At(e, lines, None(), attr(if (exp.pos == Position.None) name.pos else exp.pos))
           case _ =>
             errorInSlang(arg.pos, "The first At(...) argument has to be a variable reference or this")
             rExp
@@ -2542,6 +2566,9 @@ class SlangParser(
           case "Res" =>
             val rcv = Term.ApplyType(name, tpes.toList)
             translateInvoke(scala.Some(rcv), AST.Id("apply", attr(name.pos)), name.pos, List(), aexprssnel, exp.pos)
+          case "At" =>
+            val rcv = Term.ApplyType(name, tpes.toList)
+            translateInvoke(scala.Some(rcv), AST.Id("apply", attr(name.pos)), name.pos, List(), aexprssnel.tail, exp.pos)
           case _ => translateInvoke(scala.None, cid(name), name.pos, tpes, aexprssnel, exp.pos)
         }
       case q"${name: Term.Name}(...${aexprssnel: List[List[Term]]})" if aexprssnel.nonEmpty =>
