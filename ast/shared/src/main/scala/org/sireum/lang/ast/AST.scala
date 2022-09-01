@@ -1720,7 +1720,10 @@ object Exp {
     }
 
     @pure override def prettyST: ST = {
-      return st"At(${exp.prettyST}, ${(for (l <- lines) yield l.prettyST, ", ")})"
+      tipeOpt match {
+        case Some(tipe) => return st"At[${tipe.prettyST}](${exp.prettyST}, ${(for (l <- lines) yield l.prettyST, ", ")})"
+        case _ => return st"At(${exp.prettyST}, ${(for (l <- lines) yield l.prettyST, ", ")})"
+      }
     }
   }
 
