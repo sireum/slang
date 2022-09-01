@@ -2512,11 +2512,20 @@ class SlangParser(
         if (args.isEmpty) {
           errorInSlang(exp.pos, s"At[...](...) requires at least two arguments")
         }
+        def err(): Unit = {
+          errorInSlang(arg.pos, "The first At[...](...) argument has to be a string literal simple/qualified name with an optional #<int> suffix")
+        }
         translateExp(arg) match {
           case e: AST.Exp.LitString =>
             val ids = e.value.value.split('.').map(_.trim)
             if (ids.isEmpty) {
-              errorInSlang(arg.pos, "The first At[...](...) argument has to be a string literal simple/qualified name")
+              err()
+            } else {
+              ids.last.split('#').map(_.trim) match {
+                case Array(_, num) if Z(num).nonEmpty =>
+                case Array(_) =>
+                case _ => err()
+              }
             }
             AST.Exp.At(e, lines, Some(translateType(tpe)), attr(if (exp.pos == Position.None) name.pos else exp.pos))
           case _ =>
