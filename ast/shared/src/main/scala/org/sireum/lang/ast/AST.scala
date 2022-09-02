@@ -1716,7 +1716,10 @@ object Exp {
     }
 
     @pure override def typedOpt: Option[Typed] = {
-      return exp.typedOpt
+      tipeOpt match {
+        case Some(tipe) => return tipe.typedOpt
+        case _ => return exp.typedOpt
+      }
     }
 
     @pure override def prettyST: ST = {
@@ -1968,7 +1971,11 @@ object ResolvedInfo {
 
   }
 
-  @datatype class LocalVar(val context: ISZ[String], val scope: ResolvedInfo.LocalVar.Scope.Type, val isSpec: B, val isVal: B, val id: String)
+  @datatype class LocalVar(val context: ISZ[String],
+                           @hidden val scope: ResolvedInfo.LocalVar.Scope.Type,
+                           @hidden val isSpec: B,
+                           @hidden val isVal: B,
+                           val id: String)
     extends ResolvedInfo {
     @strictpure def isEqual(other: LocalVar): B = id == other.id && context == other.context
     @strictpure override def hash: Z = (context :+ id).hash
