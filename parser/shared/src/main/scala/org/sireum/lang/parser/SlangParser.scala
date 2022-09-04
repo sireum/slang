@@ -2500,11 +2500,14 @@ class SlangParser(
             rExp
         }
       case q"${name: Term.Name}[$tpe]($arg, ..$args)" if name.value == "At" =>
-        var lines = ISZ[AST.Exp.LitZ]()
+        var freshLines = ISZ[AST.Exp.LitZ]()
+        var num = AST.Exp.LitZ(0, attr(exp.pos))
         var i = 2
         for (a <- args) {
           translateExp(a) match {
-            case e: AST.Exp.LitZ => lines = lines :+ e
+            case e: AST.Exp.LitZ =>
+              if (i == 2) num = e
+              else freshLines = freshLines :+ e
             case _ => errorInSlang(a.pos, s"At[...](...) #$i argument has to be a Z literal")
           }
           i = i + 1
@@ -2513,31 +2516,28 @@ class SlangParser(
           errorInSlang(exp.pos, s"At[...](...) requires at least two arguments")
         }
         def err(): Unit = {
-          errorInSlang(arg.pos, "The first At[...](...) argument has to be a string literal simple/qualified name with an optional #<int> suffix")
+          errorInSlang(arg.pos, "The first At[...](...) argument has to be a string literal simple/qualified name")
         }
         translateExp(arg) match {
           case e: AST.Exp.LitString =>
             val ids = e.value.value.split('.').map(_.trim)
             if (ids.isEmpty) {
               err()
-            } else {
-              ids.last.split('#').map(_.trim) match {
-                case Array(_, num) if Z(num).nonEmpty =>
-                case Array(_) =>
-                case _ => err()
-              }
             }
-            AST.Exp.At(e, lines, Some(translateType(tpe)), attr(if (exp.pos == Position.None) name.pos else exp.pos))
+            AST.Exp.At(Some(translateType(tpe)), e, num, freshLines, attr(if (exp.pos == Position.None) name.pos else exp.pos))
           case _ =>
             errorInSlang(arg.pos, "The first At[...](...) argument has to be a string literal")
             rExp
         }
       case q"${name: Term.Name}($arg, ..$args)" if name.value == "At" =>
-        var lines = ISZ[AST.Exp.LitZ]()
+        var freshLines = ISZ[AST.Exp.LitZ]()
+        var num = AST.Exp.LitZ(0, attr(exp.pos))
         var i = 2
         for (a <- args) {
           translateExp(a) match {
-            case e: AST.Exp.LitZ => lines = lines :+ e
+            case e: AST.Exp.LitZ =>
+              if (i == 2) num = e
+              else freshLines = freshLines :+ e
             case _ => errorInSlang(a.pos, s"At(...) #$i argument has to be a Z literal")
           }
           i = i + 1
@@ -2546,8 +2546,10 @@ class SlangParser(
           errorInSlang(exp.pos, s"At(...) requires at least two arguments")
         }
         translateExp(arg) match {
-          case e: AST.Exp.Ref => AST.Exp.At(e.asExp, lines, None(), attr(if (exp.pos == Position.None) name.pos else exp.pos))
-          case e: AST.Exp.This => AST.Exp.At(e, lines, None(), attr(if (exp.pos == Position.None) name.pos else exp.pos))
+          case e: AST.Exp.Ref => AST.Exp.At(None(), e.asExp, num, freshLines,
+            attr(if (exp.pos == Position.None) name.pos else exp.pos))
+          case e: AST.Exp.This => AST.Exp.At(None(), e, num, freshLines,
+            attr(if (exp.pos == Position.None) name.pos else exp.pos))
           case _ =>
             errorInSlang(arg.pos, "The first At(...) argument has to be a variable reference or this")
             rExp

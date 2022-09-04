@@ -1709,7 +1709,11 @@ object Exp {
     }
   }
 
-  @datatype class At(val exp: Exp, lines: ISZ[Exp.LitZ], val tipeOpt: Option[Type], @hidden val attr: Attr) extends Exp {
+  @datatype class At(val tipeOpt: Option[Type],
+                     val exp: Exp,
+                     val num: Exp.LitZ,
+                     @hidden val linesFresh: ISZ[Exp.LitZ],
+                     @hidden val attr: Attr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1724,8 +1728,8 @@ object Exp {
 
     @pure override def prettyST: ST = {
       tipeOpt match {
-        case Some(tipe) => return st"At[${tipe.prettyST}](${exp.prettyST}, ${(for (l <- lines) yield l.prettyST, ", ")})"
-        case _ => return st"At(${exp.prettyST}, ${(for (l <- lines) yield l.prettyST, ", ")})"
+        case Some(tipe) => return st"At[${tipe.prettyST}](${exp.prettyST}, ${(for (n <- num +: linesFresh) yield n.prettyST, ", ")})"
+        case _ => return st"At(${exp.prettyST}, ${(for (n <- num +: linesFresh) yield n.prettyST, ", ")})"
       }
     }
   }

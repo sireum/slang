@@ -1641,9 +1641,10 @@ object MsgPack {
 
     def write_astExpAt(o: org.sireum.lang.ast.Exp.At): Unit = {
       writer.writeZ(Constants._astExpAt)
-      write_astExp(o.exp)
-      writer.writeISZ(o.lines, write_astExpLitZ _)
       writer.writeOption(o.tipeOpt, write_astType _)
+      write_astExp(o.exp)
+      write_astExpLitZ(o.num)
+      writer.writeISZ(o.linesFresh, write_astExpLitZ _)
       write_astAttr(o.attr)
     }
 
@@ -4430,11 +4431,12 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astExpAt)
       }
-      val exp = read_astExp()
-      val lines = reader.readISZ(read_astExpLitZ _)
       val tipeOpt = reader.readOption(read_astType _)
+      val exp = read_astExp()
+      val num = read_astExpLitZ()
+      val linesFresh = reader.readISZ(read_astExpLitZ _)
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Exp.At(exp, lines, tipeOpt, attr)
+      return org.sireum.lang.ast.Exp.At(tipeOpt, exp, num, linesFresh, attr)
     }
 
     def read_astExpLoopIndex(): org.sireum.lang.ast.Exp.LoopIndex = {

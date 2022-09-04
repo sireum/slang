@@ -3799,14 +3799,15 @@ import Transformer._
           else
             TPostResult(r1.ctx, None())
         case o2: Exp.At =>
-          val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.exp)
-          val r1: TPostResult[Context, IS[Z, Exp.LitZ]] = transformISZ(r0.ctx, o2.lines, transformExpLitZ _)
-          val r2: TPostResult[Context, Option[Type]] = transformOption(r1.ctx, o2.tipeOpt, transformType _)
-          val r3: TPostResult[Context, Attr] = transformAttr(r2.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
-            TPostResult(r3.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), lines = r1.resultOpt.getOrElse(o2.lines), tipeOpt = r2.resultOpt.getOrElse(o2.tipeOpt), attr = r3.resultOpt.getOrElse(o2.attr))))
+          val r0: TPostResult[Context, Option[Type]] = transformOption(preR.ctx, o2.tipeOpt, transformType _)
+          val r1: TPostResult[Context, Exp] = transformExp(r0.ctx, o2.exp)
+          val r2: TPostResult[Context, Exp.LitZ] = transformExpLitZ(r1.ctx, o2.num)
+          val r3: TPostResult[Context, IS[Z, Exp.LitZ]] = transformISZ(r2.ctx, o2.linesFresh, transformExpLitZ _)
+          val r4: TPostResult[Context, Attr] = transformAttr(r3.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty)
+            TPostResult(r4.ctx, Some(o2(tipeOpt = r0.resultOpt.getOrElse(o2.tipeOpt), exp = r1.resultOpt.getOrElse(o2.exp), num = r2.resultOpt.getOrElse(o2.num), linesFresh = r3.resultOpt.getOrElse(o2.linesFresh), attr = r4.resultOpt.getOrElse(o2.attr))))
           else
-            TPostResult(r3.ctx, None())
+            TPostResult(r4.ctx, None())
         case o2: Exp.LoopIndex =>
           val r0: TPostResult[Context, Option[Type]] = transformOption(preR.ctx, o2.tipeOpt, transformType _)
           val r1: TPostResult[Context, Exp.Ident] = transformExpIdent(r0.ctx, o2.exp)

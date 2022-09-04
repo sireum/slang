@@ -1555,9 +1555,10 @@ object JSON {
     @pure def print_astExpAt(o: org.sireum.lang.ast.Exp.At): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Exp.At""""),
-        ("exp", print_astExp(o.exp)),
-        ("lines", printISZ(F, o.lines, print_astExpLitZ _)),
         ("tipeOpt", printOption(F, o.tipeOpt, print_astType _)),
+        ("exp", print_astExp(o.exp)),
+        ("num", print_astExpLitZ(o.num)),
+        ("linesFresh", printISZ(F, o.linesFresh, print_astExpLitZ _)),
         ("attr", print_astAttr(o.attr))
       ))
     }
@@ -5379,19 +5380,22 @@ object JSON {
       if (!typeParsed) {
         parser.parseObjectType("org.sireum.lang.ast.Exp.At")
       }
+      parser.parseObjectKey("tipeOpt")
+      val tipeOpt = parser.parseOption(parse_astType _)
+      parser.parseObjectNext()
       parser.parseObjectKey("exp")
       val exp = parse_astExp()
       parser.parseObjectNext()
-      parser.parseObjectKey("lines")
-      val lines = parser.parseISZ(parse_astExpLitZ _)
+      parser.parseObjectKey("num")
+      val num = parse_astExpLitZ()
       parser.parseObjectNext()
-      parser.parseObjectKey("tipeOpt")
-      val tipeOpt = parser.parseOption(parse_astType _)
+      parser.parseObjectKey("linesFresh")
+      val linesFresh = parser.parseISZ(parse_astExpLitZ _)
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Exp.At(exp, lines, tipeOpt, attr)
+      return org.sireum.lang.ast.Exp.At(tipeOpt, exp, num, linesFresh, attr)
     }
 
     def parse_astExpLoopIndex(): org.sireum.lang.ast.Exp.LoopIndex = {
