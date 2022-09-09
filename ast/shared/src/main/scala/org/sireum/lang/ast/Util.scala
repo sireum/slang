@@ -491,6 +491,7 @@ object Util {
     op match {
       case Exp.BinaryOp.Eq => return T
       case Exp.BinaryOp.Eq3 => return T
+      case Exp.BinaryOp.Equiv => return T
       case Exp.BinaryOp.Ne => return T
       case Exp.BinaryOp.Ne3 => return T
       case Exp.BinaryOp.And => return T
@@ -531,6 +532,7 @@ object Util {
     op match {
       case Exp.BinaryOp.Eq => return T
       case Exp.BinaryOp.Eq3 => return T
+      case Exp.BinaryOp.Equiv => return T
       case Exp.BinaryOp.Ne => return T
       case Exp.BinaryOp.Ne3 => return T
       case Exp.BinaryOp.Lt => return T

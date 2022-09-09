@@ -1275,6 +1275,7 @@ object Exp {
     val Rem: String = "%"
     val Eq: String = "=="
     val Eq3: String = "==="
+    val Equiv: String = "=~="
     val Ne: String = "!="
     val Ne3: String = "=!="
     val FpEq: String = "~~"
@@ -1315,7 +1316,7 @@ object Exp {
         case '&' => return 7
         case '^' => return 8
         case '|' => return 9
-        case _ if ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') => return 10
+        case _ if ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || (c === '≡' || c === '≢') => return 10
         case _ => return 1
       }
     }
@@ -1880,6 +1881,7 @@ object ResolvedInfo {
       "BinaryDiv"
       "BinaryRem"
       "BinaryEq"
+      "BinaryEquiv"
       "BinaryNe"
       "BinaryFpEq"
       "BinaryFpNe"

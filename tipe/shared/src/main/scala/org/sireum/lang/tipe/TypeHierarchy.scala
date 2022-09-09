@@ -816,15 +816,18 @@ object TypeHierarchy {
                 }
                 return T
               } else {
-                for (p <- info.ast.params if p.isHidden) {
-                  return F
-                }
                 if (info.methods.contains("isEqual")) {
                   return F
                 }
+                var paramIds = HashSet.empty[String]
+                for (p <- info.ast.params) {
+                  if (p.isHidden) {
+                    return F
+                  }
+                  paramIds = paramIds + p.id.value
+                }
                 for (vInfo <- info.vars.values) {
-                  val vt = vInfo.typedOpt.get
-                  if (!isSubstitutableH(vt)) {
+                  if (!paramIds.contains(vInfo.ast.id.value) || !isSubstitutableH(vInfo.typedOpt.get)) {
                     return F
                   }
                 }
