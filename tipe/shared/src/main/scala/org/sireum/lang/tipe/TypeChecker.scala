@@ -1675,6 +1675,14 @@ import TypeChecker._
             }
           case _ =>
         }
+        if (binaryExp.op === AST.Exp.BinaryOp.Equiv) {
+          if (typeHierarchy.isGroundType(leftType)) {
+            reporter.error(binaryExp.posOpt, typeCheckerKind, s"Cannot use =~= on $leftType")
+          }
+          if (!inSpec) {
+            reporter.error(binaryExp.posOpt, typeCheckerKind, s"Cannot use =~= in non-spec context")
+          }
+        }
         return (
           binaryExp(
             left = newLeft,
