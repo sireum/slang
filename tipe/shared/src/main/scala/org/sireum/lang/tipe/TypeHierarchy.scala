@@ -34,6 +34,16 @@ import org.sireum.lang.{ast => AST}
 
 object TypeHierarchy {
 
+  val basicTypes: HashSet[AST.Typed] = HashSet ++ ISZ[AST.Typed](
+    AST.Typed.b,
+    AST.Typed.z,
+    AST.Typed.c,
+    AST.Typed.f32,
+    AST.Typed.f64,
+    AST.Typed.r,
+    AST.Typed.string,
+  )
+
   @pure def typedInfo(info: TypeInfo): AST.Typed.Name = {
     @pure def typedParam(tp: AST.TypeParam): AST.Typed = {
       return AST.Typed.Name(ISZ(tp.id.value), ISZ())
@@ -771,6 +781,25 @@ object TypeHierarchy {
     }
   }
 
+  @memoize def isGroundType(tipe: AST.Typed): B = {
+    if (TypeHierarchy.basicTypes.contains(tipe)) {
+      return T
+    }
+    tipe match {
+      case tipe: AST.Typed.Name =>
+        tipe.ids match {
+          case AST.Typed.isName => return F
+          case AST.Typed.msName => return F
+          case _ => typeMap.get(tipe.ids).get match {
+            case _: TypeInfo.SubZ => return T
+            case _: TypeInfo.Enum => return T
+            case _ => return F
+          }
+        }
+      case _ => return F
+    }
+  }
+
   @memoize def isSubstitutable(tipe: AST.Typed): B = {
     var seen = HashSet.empty[AST.Typed]
     def isSubstitutableH(t: AST.Typed): B = {
@@ -839,9 +868,9 @@ object TypeHierarchy {
             case info: TypeInfo.TypeAlias => halt(s"Unexpected usage of isSubstitutable on $info")
             case info: TypeInfo.TypeVar => halt(s"Unexpected usage of isSubstitutable on $info")
           }
-        case t: AST.Typed.Enum => return T
-        case t: AST.Typed.TypeVar => return F
-        case t: AST.Typed.Tuple => return ops.ISZOps(t.args).forall((et: AST.Typed) => isSubstitutableH(et))
+        case _: AST.Typed.Enum => return T
+        case _: AST.Typed.TypeVar => return F
+        case t: AST.Typed.Tuple => return ops.ISZOps(t.args).forall((et: AST.Typed) => isSubstitutable(et))
         case _: AST.Typed.Fun => return F
         case _: AST.Typed.Method => return F
         case _: AST.Typed.Methods => return F
