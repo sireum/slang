@@ -227,7 +227,7 @@ object TypeChecker {
 
   val emptySubstMap: HashMap[String, AST.Typed] = HashMap.empty
 
-  def sConstructorResTypedOpt(name: ISZ[String], numOfArgs: Z): (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
+  def sConstructorTypedResOpt(name: ISZ[String], numOfArgs: Z): (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
     name match {
       case AST.Typed.`isName` =>
         val indexTypeVar = AST.Typed.TypeVar("I", T)
@@ -279,6 +279,85 @@ object TypeChecker {
             Some(constructorType), ISZ(), ISZ()))
         )
       case _ => return (None(), None())
+    }
+  }
+
+  def adtCopyTypedResOpt(typeHierarchy: TypeHierarchy, posOpt: Option[Position], tpe: AST.Typed.Name,
+                         argNames: ISZ[String], reporter: Reporter): (Option[AST.Typed], Option[AST.ResolvedInfo], B) = {
+    typeHierarchy.typeMap.get(tpe.ids) match {
+      case Some(info: TypeInfo.Adt) if !info.ast.isRoot =>
+        val params: ISZ[AST.AdtParam] = if (argNames.isEmpty) {
+          info.ast.params
+        } else {
+          val argNameSet = HashSSet.emptyInit[String](argNames.size) ++ argNames
+          val ps = info.ast.params.filter(p => argNameSet.contains(p.id.value))
+          if (argNameSet.size != ps.size) {
+            val names = argNameSet -- info.ast.params.map[String](p => p.id.value)
+            reporter.error(posOpt, typeCheckerKind,
+              st"Could not find parameter(s) '${(names.elements, "', '")}' in '$tpe'.".render)
+            return (None(), None(), T)
+          } else if (ps.size == z"0" && info.ast.params.size != z"0") {
+            reporter.error(posOpt, typeCheckerKind, st"Cannot perform copy of '$tpe' without argument.".render)
+            return (None(), None(), T)
+          }
+          ps
+        }
+        val paramNames = params.map[String](p => p.id.value)
+        val paramTypes = params.map[AST.Typed](p => p.tipe.typedOpt.get)
+        val smOpt = unify(typeHierarchy, posOpt, TypeRelation.Equal, tpe, info.tpe, reporter)
+        smOpt match {
+          case Some(sm) =>
+            val copyType = AST.Typed.Fun(T, F, paramTypes, tpe).subst(sm)
+            val id = info.ast.id.value
+            return (
+              Some(AST.Typed.Method(F, AST.MethodMode.Copy, ISZ(), info.owner, id, paramNames, copyType)),
+              Some(AST.ResolvedInfo.Method(F, AST.MethodMode.Copy, ISZ(), info.owner, id, paramNames,
+                Some(copyType), ISZ(), ISZ())),
+              T
+            )
+          case _ => return (None(), None(), T)
+        }
+      case _ => return (None(), None(), F)
+    }
+  }
+
+  def sStoreTypedResOpt(tpe: AST.Typed.Name, numOfArgs: Z): (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
+    val indexType = tpe.args(0)
+    val valueType = tpe.args(1)
+    val tupleVars = AST.Typed.Tuple(ISZ(indexType, valueType))
+    val argTypes: ISZ[AST.Typed] = for (_ <- z"0" until numOfArgs)
+      yield tupleVars
+    val storeType = AST.Typed.Fun(T, F, argTypes, tpe)
+    val id = tpe.ids(tpe.ids.size - 1)
+    return (
+      Some(AST.Typed.Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, id, ISZ(), storeType)),
+      Some(AST.ResolvedInfo.Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, id, ISZ(), Some(storeType),
+        ISZ(), ISZ()))
+    )
+  }
+
+  def sSelectTypedResOpt(tpe: AST.Typed.Name, storeSelect: B): (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
+    val indexType = tpe.args(0)
+    val valueType = tpe.args(1)
+    val tupleVars = AST.Typed.Tuple(ISZ(indexType, valueType))
+    val storeType = AST.Typed.Fun(T, F, ISZ(tupleVars), tpe)
+    val selectType = AST.Typed.Fun(T, F, ISZ(indexType), valueType)
+    val id = tpe.ids(tpe.ids.size - 1)
+    val selectTypeMethod = AST.Typed.Method(F, AST.MethodMode.Select, ISZ(), AST.Typed.sireumName, id, ISZ(), selectType)
+    val selectResMethod = AST.ResolvedInfo.Method(F, AST.MethodMode.Select, ISZ(), AST.Typed.sireumName, id, ISZ(),
+      Some(selectType), ISZ(), ISZ())
+    if (storeSelect) {
+      return (
+        Some(AST.Typed.Methods(ISZ(
+          selectTypeMethod,
+          AST.Typed.Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, id, ISZ(), storeType)))),
+        Some(AST.ResolvedInfo.Methods(ISZ(
+          selectResMethod,
+          AST.ResolvedInfo.Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, id, ISZ(),
+            Some(storeType), ISZ(), ISZ()))))
+      )
+    } else {
+      return (Some(selectTypeMethod), Some(selectResMethod))
     }
   }
 
@@ -2025,7 +2104,7 @@ import TypeChecker._
           AST.Typed.basicConstructorMap.get(tpe.name) match {
             case Some(r @ (_, _)) => return (r._1, r._2, newTypeArgs)
             case _ =>
-              TypeChecker.sConstructorResTypedOpt(tpe.name, numOfArgs) match {
+              sConstructorTypedResOpt(tpe.name, numOfArgs) match {
                 case (typedOpt@Some(_), resOpt@Some(_)) => return (typedOpt, resOpt, newTypeArgs)
                 case _ =>
                   typeHierarchy.typeMap.get(tpe.name) match {
@@ -2059,106 +2138,19 @@ import TypeChecker._
               }
           }
         case tpe: AST.Typed.Name =>
-          tpe.ids match {
-            case AST.Typed.`isName` if tpe.args.size == z"2" =>
-              if (numOfArgs == z"1") {
-                val indexType = tpe.args(0)
-                val valueType = tpe.args(1)
-                val tupleVars = AST.Typed.Tuple(ISZ(indexType, valueType))
-                val storeType = AST.Typed.Fun(T, F, ISZ(tupleVars), tpe)
-                val selectType = AST.Typed.Fun(T, F, ISZ(indexType), valueType)
-                return (
-                  Some(AST.Typed.Methods(ISZ(
-                    AST.Typed.Method(F, AST.MethodMode.Select, ISZ(), AST.Typed.sireumName, "IS", ISZ(), selectType),
-                    AST.Typed.Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "IS", ISZ(), storeType)))),
-                  Some(AST.ResolvedInfo.Methods(ISZ(
-                    AST.ResolvedInfo.Method(F, AST.MethodMode.Select, ISZ(), AST.Typed.sireumName, "IS", ISZ(),
-                      Some(selectType), ISZ(), ISZ()),
-                    AST.ResolvedInfo.Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "IS", ISZ(),
-                      Some(storeType), ISZ(), ISZ())))),
-                  newTypeArgs
-                )
-              } else {
-                val indexType = tpe.args(0)
-                val valueType = tpe.args(1)
-                val tupleVars = AST.Typed.Tuple(ISZ(indexType, valueType))
-                val argTypes: ISZ[AST.Typed] = for (_ <- z"0" until numOfArgs)
-                  yield tupleVars
-                val storeType = AST.Typed.Fun(T, F, argTypes, tpe)
-                return (
-                  Some(AST.Typed.Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "IS", ISZ(), storeType)),
-                  Some(AST.ResolvedInfo.Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "IS", ISZ(), Some(storeType), ISZ(), ISZ())),
-                  newTypeArgs
-                )
-              }
-            case AST.Typed.`msName` if tpe.args.size == z"2" =>
-              if (numOfArgs == z"1") {
-                val indexType = tpe.args(0)
-                val valueType = tpe.args(1)
-                val tupleVars = AST.Typed.Tuple(ISZ(indexType, valueType))
-                val storeType = AST.Typed.Fun(T, F, ISZ(tupleVars), tpe)
-                val selectType = AST.Typed.Fun(T, F, ISZ(indexType), valueType)
-                return (
-                  Some(AST.Typed.Methods(ISZ(
-                    AST.Typed.Method(F, AST.MethodMode.Select, ISZ(), AST.Typed.sireumName, "MS", ISZ(), selectType),
-                    AST.Typed.Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "MS", ISZ(), storeType)))),
-                  Some(AST.ResolvedInfo.Methods(ISZ(
-                    AST.ResolvedInfo.Method(F, AST.MethodMode.Select, ISZ(), AST.Typed.sireumName, "MS", ISZ(),
-                      Some(selectType), ISZ(), ISZ()),
-                    AST.ResolvedInfo.Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "MS", ISZ(),
-                      Some(storeType), ISZ(), ISZ())))),
-                  newTypeArgs
-                )
-              } else {
-                val indexType = tpe.args(0)
-                val valueType = tpe.args(1)
-                val tupleVars = AST.Typed.Tuple(ISZ(indexType, valueType))
-                val argTypes: ISZ[AST.Typed] = for (_ <- z"0" until numOfArgs)
-                  yield tupleVars
-                val storeType = AST.Typed.Fun(T, F, argTypes, tpe)
-                return (
-                  Some(AST.Typed.Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "MS", ISZ(), storeType)),
-                  Some(AST.ResolvedInfo.Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, "MS", ISZ(),
-                    Some(storeType), ISZ(), ISZ())),
-                  newTypeArgs
-                )
-              }
-            case _ =>
-              typeHierarchy.typeMap.get(tpe.ids) match {
-                case Some(info: TypeInfo.Adt) if !info.ast.isRoot =>
-                  val params: ISZ[AST.AdtParam] = if (argNames.isEmpty) {
-                    info.ast.params
-                  } else {
-                    val argNameSet = HashSSet.emptyInit[String](argNames.size) ++ argNames
-                    val ps = info.ast.params.filter(p => argNameSet.contains(p.id.value))
-                    if (argNameSet.size != ps.size) {
-                      val names = argNameSet -- info.ast.params.map[String](p => p.id.value)
-                      reporter.error(posOpt, typeCheckerKind,
-                        st"Could not find parameter(s) '${(names.elements, "', '")}' in '$tpe'.".render)
-                      return (None(), resOpt, newTypeArgs)
-                    } else if (ps.size == z"0" && info.ast.params.size != z"0") {
-                      reporter.error(posOpt, typeCheckerKind, st"Cannot perform copy of '$tpe' without argument.".render)
-                      return (None(), resOpt, newTypeArgs)
-                    }
-                    ps
-                  }
-                  val paramNames = params.map[String](p => p.id.value)
-                  val paramTypes = params.map[AST.Typed](p => p.tipe.typedOpt.get)
-                  val smOpt = unify(typeHierarchy, posOpt, TypeRelation.Equal, tpe, info.tpe, reporter)
-                  smOpt match {
-                    case Some(sm) =>
-                      val copyType = AST.Typed.Fun(T, F, paramTypes, tpe).subst(sm)
-                      val id = info.ast.id.value
-                      return (
-                        Some(AST.Typed.Method(F, AST.MethodMode.Copy, ISZ(), info.owner, id, paramNames, copyType)),
-                        Some(AST.ResolvedInfo.Method(F, AST.MethodMode.Copy, ISZ(), info.owner, id, paramNames,
-                          Some(copyType), ISZ(), ISZ())),
-                        newTypeArgs
-                      )
-                    case _ => return (None(), resOpt, newTypeArgs)
-                  }
-                case _ =>
-              }
+          if (tpe.args.size == z"2" && (tpe.ids === AST.Typed.isName || tpe.ids === AST.Typed.msName)) {
+            if (numOfArgs == z"1") {
+              val p = sSelectTypedResOpt(tpe, T)
+              return (p._1, p._2, newTypeArgs)
+            } else {
+              val p = sStoreTypedResOpt(tpe, numOfArgs)
+              return (p._1, p._2, newTypeArgs)
+            }
+          } else {
+            val p = adtCopyTypedResOpt(typeHierarchy, posOpt, tpe, argNames, reporter)
+            if (p._3) {
+              return (p._1, p._2, newTypeArgs)
+            }
           }
         case _ =>
       }
