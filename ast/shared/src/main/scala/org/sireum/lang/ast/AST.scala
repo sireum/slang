@@ -832,6 +832,13 @@ object EnumGen {
 
   @pure def prettyST: ST
 
+  override def string: String = {
+    typedOpt match {
+      case Some(t) => return t.string
+      case _ => return prettyST.render
+    }
+  }
+
 }
 
 object Type {
@@ -868,13 +875,6 @@ object Type {
       val typeArgsOpts: Option[ST] =
         if (typeArgs.isEmpty) None() else Some(st"[${(for (ta <- typeArgs) yield ta.prettyST, ", ")}]")
       return st"${(for (id <- name.ids) yield id.value, ".")}$typeArgsOpts"
-    }
-
-    override def string: String = {
-      typedOpt match {
-        case Some(t) => return t.string
-        case _ => return st"Named($name, $typeArgs)".render
-      }
     }
 
   }
