@@ -321,6 +321,10 @@ object Util {
           return Transformer.TPostResult(ctx, None())
       }
     }
+
+    override def postResolvedInfoMethod(ctx: B, o: ResolvedInfo.Method): Transformer.TPostResult[B, ResolvedInfo] = {
+      return Transformer.TPostResult(ctx, Some(o(tpeOpt = None(), reads = ISZ(), writes = ISZ())))
+    }
   }
 
   object FunNormalizer {
