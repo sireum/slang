@@ -1616,7 +1616,9 @@ object Exp {
           case _ => return st"$id"
         }
       }
-      val ps = st"(${(for (p <- params) yield paramST(p), ", ")})"
+      val ps: ST =
+        if (params.size === 1 && params(0).tipeOpt.isEmpty) st"${paramST(params(0))}"
+        else st"(${(for (p <- params) yield paramST(p), ", ")})"
       exp match {
         case exp: Stmt.Expr =>
           return if (isParen)
@@ -1680,7 +1682,7 @@ object Exp {
     }
 
     @pure override def prettyST: ST = {
-      return st"${if (isForall) "∀" else "∃"}(${lo.prettyST} ${if (hiExact) "to" else "until"} ${hi.prettyST}})${fun.prettyST}"
+      return st"${if (isForall) "∀" else "∃"}(${lo.prettyST} ${if (hiExact) "to" else "until"} ${hi.prettyST})${fun.prettyST}"
     }
 
   }
