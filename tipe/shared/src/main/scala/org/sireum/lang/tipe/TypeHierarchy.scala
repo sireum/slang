@@ -34,11 +34,12 @@ import org.sireum.lang.{ast => AST}
 
 object TypeHierarchy {
 
-
   object ExpNormalizer {
-    @strictpure def create: AST.Transformer[Z] = AST.Transformer(ExpPrePostNormalizer())
+    @strictpure def create(th: TypeHierarchy): AST.Transformer[Z] = AST.Transformer(ExpPrePostNormalizer(th))
 
-    @datatype class PrePostSubstitutor(val oldContext: ISZ[String], val newContext: ISZ[String], val m: HashMap[String, String]) extends AST.Transformer.PrePost[B] {
+    @datatype class PrePostSubstitutor(val oldContext: ISZ[String],
+                                       val newContext: ISZ[String],
+                                       val m: HashMap[String, String]) extends AST.Transformer.PrePost[B] {
       override def postExpIdent(ctx: B, o: AST.Exp.Ident): AST.Transformer.TPostResult[B, AST.Exp] = {
         o.attr.resOpt.get match {
           case res: AST.ResolvedInfo.LocalVar if res.context == oldContext =>
@@ -56,12 +57,11 @@ object TypeHierarchy {
           case AST.Exp.BinaryOp.Ne3 => return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.Ne)))
           case _ => return AST.Transformer.TPostResult(ctx, None())
         }
-
       }
     }
   }
 
-  @datatype class ExpPrePostNormalizer extends AST.Transformer.PrePost[Z] {
+  @datatype class ExpPrePostNormalizer(val th: TypeHierarchy) extends AST.Transformer.PrePost[Z] {
     override def preExpFun(ctx: Z, o: AST.Exp.Fun): AST.Transformer.PreResult[Z, AST.Exp] = {
       val num = ctx
       val newContextId: String = s".$num"
@@ -84,6 +84,108 @@ object TypeHierarchy {
         resultOpt.getOrElse(o.exp)
       val newO = o(context = newContext, params = newParams, exp = newExp)
       return AST.Transformer.PreResult(ctx + 1, T, Some(newO))
+    }
+
+    override def preExpIdent(ctx: Z, o: AST.Exp.Ident): AST.Transformer.PreResult[Z, AST.Exp] = {
+      val (cond, owner) = shouldTransformIdent(o)
+      if (cond) {
+        return AST.Transformer.PreResult(ctx, T, Some(
+          AST.Exp.Select(Some(th.nameToExp(owner, o.posOpt.get).asExp), o.id, o.targs, o.attr)
+        ))
+      }
+      return AST.Transformer.PreResult(ctx, T, None())
+    }
+
+    override def preExpInvoke(ctx: Z, o: AST.Exp.Invoke): AST.Transformer.PreResult[Z, AST.Exp] = {
+      val en = ExpNormalizer.create(th)
+      var newArgs = ISZ[AST.Exp]()
+      var cctx = ctx
+      var changed = F
+      for (arg <- o.args) {
+        val p = en.transformExp(cctx, arg)
+        cctx = p.ctx
+        p.resultOpt match {
+          case Some(newArg) =>
+            newArgs = newArgs :+ newArg
+            changed = T
+          case _ => newArgs = newArgs :+ arg
+        }
+      }
+      var newReceiverOpt = Option.none[AST.Exp]()
+      o.receiverOpt match {
+        case Some(receiver) =>
+          val p = en.transformExp(cctx, receiver)
+          cctx = p.ctx
+          if (p.resultOpt.nonEmpty) {
+            newReceiverOpt = p.resultOpt
+            changed = T
+          } else {
+            newReceiverOpt = o.receiverOpt
+          }
+        case _ =>
+          val (cond, owner) = shouldTransformIdent(o.ident)
+          if (cond) {
+            newReceiverOpt = Some(th.nameToExp(owner, o.posOpt.get).asExp)
+            changed = T
+          }
+      }
+      return AST.Transformer.PreResult(cctx, F,
+        if (changed) Some(o(receiverOpt = newReceiverOpt, args = newArgs))
+        else None())
+    }
+
+    override def preExpInvokeNamed(ctx: Z, o: AST.Exp.InvokeNamed): AST.Transformer.PreResult[Z, AST.Exp] = {
+      val en = ExpNormalizer.create(th)
+      var newArgs = ISZ[AST.NamedArg]()
+      var cctx = ctx
+      var changed = F
+      for (arg <- o.args) {
+        val p = en.transformNamedArg(cctx, arg)
+        cctx = p.ctx
+        p.resultOpt match {
+          case Some(newArg) =>
+            newArgs = newArgs :+ newArg
+            changed = T
+          case _ => newArgs = newArgs :+ arg
+        }
+      }
+      var newReceiverOpt = Option.none[AST.Exp]()
+      o.receiverOpt match {
+        case Some(receiver) =>
+          val p = en.transformExp(cctx, receiver)
+          cctx = p.ctx
+          if (p.resultOpt.nonEmpty) {
+            newReceiverOpt = p.resultOpt
+            changed = T
+          } else {
+            newReceiverOpt = o.receiverOpt
+          }
+        case _ =>
+          val (cond, owner) = shouldTransformIdent(o.ident)
+          if (cond) {
+            newReceiverOpt = Some(th.nameToExp(owner, o.posOpt.get).asExp)
+            changed = T
+          }
+      }
+      return AST.Transformer.PreResult(cctx, F,
+        if (changed) Some(o(receiverOpt = newReceiverOpt, args = newArgs))
+        else None())
+    }
+
+    @pure def shouldTransformIdent(o: AST.Exp.Ident): (B, ISZ[String]) = {
+      o.attr.resOpt.get match {
+        case res: AST.ResolvedInfo.Var =>
+          return (res.isInObject && res.owner.nonEmpty && res.owner =!= AST.Typed.sireumName, res.owner)
+        case res: AST.ResolvedInfo.Method =>
+          return (res.isInObject && res.owner.nonEmpty && res.owner =!= AST.Typed.sireumName, res.owner)
+        case res: AST.ResolvedInfo.EnumElement =>
+          return (T, res.owner)
+        case _ => return (F, ISZ())
+      }
+    }
+
+    override def postResolvedInfoMethod(ctx: Z, o: AST.ResolvedInfo.Method): AST.Transformer.TPostResult[Z, AST.ResolvedInfo] = {
+      return AST.Transformer.TPostResult(ctx, Some(o(tpeOpt = None(), reads = ISZ(), writes = ISZ())))
     }
   }
 
@@ -110,10 +212,6 @@ object TypeHierarchy {
         case _ =>
           return AST.Transformer.TPostResult(ctx, None())
       }
-    }
-
-    override def postResolvedInfoMethod(ctx: B, o: AST.ResolvedInfo.Method): AST.Transformer.TPostResult[B, AST.ResolvedInfo] = {
-      return AST.Transformer.TPostResult(ctx, Some(o(tpeOpt = None(), reads = ISZ(), writes = ISZ())))
     }
   }
 
@@ -972,12 +1070,48 @@ object TypeHierarchy {
     return AST.Transformer(TypeHierarchy.QuantTypePrePostNormalizer()).transformExp(F, exp).resultOpt.getOrElseEager(exp)
   }
 
+  @pure def nameToExp(name: ISZ[String], p: Position): AST.Exp.Ref = {
+    @pure def nameResTypeOpts(ids: ISZ[String]): (Option[AST.ResolvedInfo], Option[AST.Typed]) = {
+      nameMap.get(ids).get match {
+        case info: Info.Object => return (Some(AST.ResolvedInfo.Object(ids)),
+          Some(AST.Typed.Object(info.owner, info.ast.id.value)))
+        case _: Info.Package => return (Some(AST.ResolvedInfo.Package(ids)),
+          Some(AST.Typed.Package(ids)))
+        case _: Info.Enum => return (Some(AST.ResolvedInfo.Enum(ids)),
+          Some(AST.Typed.Enum(ids)))
+        case info: Info.EnumElement => return (nameMap.get(info.owner).get.asInstanceOf[Info.Enum].elements.get(info.id),
+          Some(AST.Typed.Name(ids, ISZ())))
+        case info: Info.Var => return (info.resOpt, info.typedOpt)
+        case info: Info.SpecVar => return (info.resOpt, info.typedOpt)
+        case info => halt(s"Infeasible: $info")
+      }
+    }
+
+    val pOpt: Option[Position] = Some(p)
+    val first = name(0)
+    val firstResTypedOpts = nameResTypeOpts(ISZ(first))
+    val attr = AST.Attr(pOpt)
+    var r: AST.Exp.Ref = AST.Exp.Ident(AST.Id(first, attr),
+      AST.ResolvedAttr(pOpt, firstResTypedOpts._1, firstResTypedOpts._2))
+    for (i <- 1 until name.size) {
+      val ids: ISZ[String] = for (j <- 0 to i) yield name(j)
+      val (rOpt, tOpt) = nameResTypeOpts(ids)
+      val resolvedAttr = AST.ResolvedAttr(pOpt, rOpt, tOpt)
+      ids match {
+        case ISZ("org", "sireum", _*) if i === 2 => r = AST.Exp.Ident(AST.Id(ids(i), attr), resolvedAttr)
+        case _ => r = AST.Exp.Select(Some(r.asExp), AST.Id(ids(i), attr), ISZ(), resolvedAttr)
+      }
+    }
+    return r
+  }
 
   @pure def normalizeExp(exp: AST.Exp): AST.Exp = {
-    val exp2 = TypeHierarchy.ExpNormalizer.create.transformExp(1, exp).resultOpt.getOrElseEager(exp)
+    val exp2 = TypeHierarchy.ExpNormalizer.create(this).transformExp(1, exp).resultOpt.getOrElseEager(exp)
     AST.Transformer(TypeHierarchy.QuantTypePrePostNormalizer()).transformExp(F, exp2).resultOpt match {
-      case Some(exp3) => TypeHierarchy.ExpNormalizer.create.transformExp(1, exp3).resultOpt.getOrElseEager(exp3)
+      case Some(exp3) => TypeHierarchy.ExpNormalizer.create(this).transformExp(1, exp3).resultOpt.getOrElseEager(exp3)
       case _ => return exp2
     }
   }
+
+
 }
