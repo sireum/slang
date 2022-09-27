@@ -34,6 +34,89 @@ import org.sireum.lang.{ast => AST}
 
 object TypeHierarchy {
 
+
+  object ExpNormalizer {
+    @strictpure def create: AST.Transformer[Z] = AST.Transformer(ExpPrePostNormalizer())
+
+    @datatype class PrePostSubstitutor(val oldContext: ISZ[String], val newContext: ISZ[String], val m: HashMap[String, String]) extends AST.Transformer.PrePost[B] {
+      override def postExpIdent(ctx: B, o: AST.Exp.Ident): AST.Transformer.TPostResult[B, AST.Exp] = {
+        o.attr.resOpt.get match {
+          case res: AST.ResolvedInfo.LocalVar if res.context == oldContext =>
+            val newId = m.get(res.id).get
+            val newO = o(id = o.id(value = newId), attr = o.attr(resOpt = Some(res(context = newContext, id = newId))))
+            return AST.Transformer.TPostResult(ctx, Some(newO))
+          case _ =>
+        }
+        return AST.Transformer.TPostResult(ctx, None())
+      }
+
+      override def postExpBinary(ctx: B, o: AST.Exp.Binary): AST.Transformer.TPostResult[B, AST.Exp] = {
+        o.op match {
+          case AST.Exp.BinaryOp.Eq3 => return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.Eq)))
+          case AST.Exp.BinaryOp.Ne3 => return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.Ne)))
+          case _ => return AST.Transformer.TPostResult(ctx, None())
+        }
+
+      }
+    }
+  }
+
+  @datatype class ExpPrePostNormalizer extends AST.Transformer.PrePost[Z] {
+    override def preExpFun(ctx: Z, o: AST.Exp.Fun): AST.Transformer.PreResult[Z, AST.Exp] = {
+      val num = ctx
+      val newContextId: String = s".$num"
+      var m = HashMap.empty[String, String]
+      var i: Z = 1
+      var newParams = ISZ[AST.Exp.Fun.Param]()
+      for (p <- o.params) {
+        p.idOpt match {
+          case Some(id) =>
+            val newId = id(value = s"$newContextId.$i")
+            newParams = newParams :+ p(idOpt = Some(newId))
+            m = m + id.value ~> newId.value
+          case _ => newParams = newParams :+ p
+        }
+        i = i + 1
+      }
+      val newContext = ISZ(newContextId)
+      val newExp = AST.Transformer(ExpNormalizer.PrePostSubstitutor(o.context, newContext, m)).
+        transformAssignExp(F, o.exp).
+        resultOpt.getOrElse(o.exp)
+      val newO = o(context = newContext, params = newParams, exp = newExp)
+      return AST.Transformer.PreResult(ctx + 1, T, Some(newO))
+    }
+  }
+
+  @datatype class LocalVarContextPrePostSubstitutor(val oldContext: ISZ[String], val newContext: ISZ[String]) extends AST.Transformer.PrePost[B] {
+    @pure override def postResolvedInfoLocalVar(ctx: B, o: AST.ResolvedInfo.LocalVar): AST.Transformer.TPostResult[B, AST.ResolvedInfo] = {
+      if (o.context == oldContext) {
+        return AST.Transformer.TPostResult(ctx, Some(o(context = newContext)))
+      }
+      return AST.Transformer.TPostResult(ctx, None())
+    }
+  }
+
+  @datatype class QuantTypePrePostNormalizer extends AST.Transformer.PrePost[B] {
+    override def postExpQuantType(ctx: B, o: AST.Exp.QuantType): AST.Transformer.TPostResult[B, AST.Exp.Quant] = {
+      o.fun.exp match {
+        case AST.Stmt.Expr(body: AST.Exp.QuantType) if o.isForall == body.isForall =>
+          val params = o.fun.params ++ body.fun.params
+          val exp = AST.Transformer(LocalVarContextPrePostSubstitutor(body.fun.context, o.fun.context)).
+            transformAssignExp(F, body.fun.exp).resultOpt.getOrElse(body.fun.exp)
+          val funType = o.fun.typedOpt.get.asInstanceOf[AST.Typed.Fun]
+          val typedOpt: Option[AST.Typed] = Some(funType(args = funType.args ++ body.fun.typedOpt.get.asInstanceOf[AST.Typed.Fun].args))
+          val newO = o(fun = o.fun(params = params, exp = exp, attr = o.fun.attr(typedOpt = typedOpt)))
+          return AST.Transformer.TPostResult(ctx, Some(newO))
+        case _ =>
+          return AST.Transformer.TPostResult(ctx, None())
+      }
+    }
+
+    override def postResolvedInfoMethod(ctx: B, o: AST.ResolvedInfo.Method): AST.Transformer.TPostResult[B, AST.ResolvedInfo] = {
+      return AST.Transformer.TPostResult(ctx, Some(o(tpeOpt = None(), reads = ISZ(), writes = ISZ())))
+    }
+  }
+
   val basicTypes: HashSet[AST.Typed] = HashSet ++ ISZ[AST.Typed](
     AST.Typed.b,
     AST.Typed.z,
@@ -883,5 +966,18 @@ object TypeHierarchy {
     }
 
     return isSubstitutableH(tipe)
+  }
+
+  @pure def normalizeQuantType(exp: AST.Exp): AST.Exp = {
+    return AST.Transformer(TypeHierarchy.QuantTypePrePostNormalizer()).transformExp(F, exp).resultOpt.getOrElseEager(exp)
+  }
+
+
+  @pure def normalizeExp(exp: AST.Exp): AST.Exp = {
+    val exp2 = TypeHierarchy.ExpNormalizer.create.transformExp(1, exp).resultOpt.getOrElseEager(exp)
+    AST.Transformer(TypeHierarchy.QuantTypePrePostNormalizer()).transformExp(F, exp2).resultOpt match {
+      case Some(exp3) => TypeHierarchy.ExpNormalizer.create.transformExp(1, exp3).resultOpt.getOrElseEager(exp3)
+      case _ => return exp2
+    }
   }
 }

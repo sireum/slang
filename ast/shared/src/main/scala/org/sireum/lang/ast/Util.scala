@@ -297,87 +297,6 @@ object Util {
     }
   }
 
-  @datatype class LocalVarContextPrePostSubstitutor(val oldContext: ISZ[String], val newContext: ISZ[String]) extends Transformer.PrePost[B] {
-    @pure override def postResolvedInfoLocalVar(ctx: B, o: ResolvedInfo.LocalVar): Transformer.TPostResult[B, ResolvedInfo] = {
-      if (o.context == oldContext) {
-        return Transformer.TPostResult(ctx, Some(o(context = newContext)))
-      }
-      return Transformer.TPostResult(ctx, None())
-    }
-  }
-
-  @datatype class QuantTypePrePostNormalizer extends Transformer.PrePost[B] {
-    override def postExpQuantType(ctx: B, o: Exp.QuantType): Transformer.TPostResult[B, Exp.Quant] = {
-      o.fun.exp match {
-        case Stmt.Expr(body: Exp.QuantType) if o.isForall == body.isForall =>
-          val params = o.fun.params ++ body.fun.params
-          val exp = Transformer(LocalVarContextPrePostSubstitutor(body.fun.context, o.fun.context)).
-            transformAssignExp(F, body.fun.exp).resultOpt.getOrElse(body.fun.exp)
-          val funType = o.fun.typedOpt.get.asInstanceOf[Typed.Fun]
-          val typedOpt: Option[Typed] = Some(funType(args = funType.args ++ body.fun.typedOpt.get.asInstanceOf[Typed.Fun].args))
-          val newO = o(fun = o.fun(params = params, exp = exp, attr = o.fun.attr(typedOpt = typedOpt)))
-          return Transformer.TPostResult(ctx, Some(newO))
-        case _ =>
-          return Transformer.TPostResult(ctx, None())
-      }
-    }
-
-    override def postResolvedInfoMethod(ctx: B, o: ResolvedInfo.Method): Transformer.TPostResult[B, ResolvedInfo] = {
-      return Transformer.TPostResult(ctx, Some(o(tpeOpt = None(), reads = ISZ(), writes = ISZ())))
-    }
-  }
-
-  object FunNormalizer {
-    @strictpure def create: Transformer[Z] = Transformer(FunPrePostNormalizer())
-
-    @datatype class PrePostSubstitutor(val oldContext: ISZ[String], val newContext: ISZ[String], val m: HashMap[String, String]) extends Transformer.PrePost[B] {
-      override def postExpIdent(ctx: B, o: Exp.Ident): Transformer.TPostResult[B, Exp] = {
-        o.attr.resOpt.get match {
-          case res: ResolvedInfo.LocalVar if res.context == oldContext =>
-            val newId = m.get(res.id).get
-            val newO = o(id = o.id(value = newId), attr = o.attr(resOpt = Some(res(context = newContext, id = newId))))
-            return Transformer.TPostResult(ctx, Some(newO))
-          case _ =>
-        }
-        return Transformer.TPostResult(ctx, None())
-      }
-
-      override def postExpBinary(ctx: B, o: Exp.Binary): Transformer.TPostResult[B, Exp] = {
-        o.op match {
-          case Exp.BinaryOp.Eq3 => return Transformer.TPostResult(ctx, Some(o(op = Exp.BinaryOp.Eq)))
-          case Exp.BinaryOp.Ne3 => return Transformer.TPostResult(ctx, Some(o(op = Exp.BinaryOp.Ne)))
-          case _ => return Transformer.TPostResult(ctx, None())
-        }
-
-      }
-    }
-  }
-
-  @datatype class FunPrePostNormalizer extends Transformer.PrePost[Z] {
-    override def preExpFun(ctx: Z, o: Exp.Fun): Transformer.PreResult[Z, Exp] = {
-      val num = ctx
-      val newContextId: String = s".$num"
-      var m = HashMap.empty[String, String]
-      var i: Z = 1
-      var newParams = ISZ[Exp.Fun.Param]()
-      for (p <- o.params) {
-        p.idOpt match {
-          case Some(id) =>
-            val newId = id(value = s"$newContextId.$i")
-            newParams = newParams :+ p(idOpt = Some(newId))
-            m = m + id.value ~> newId.value
-          case _ => newParams = newParams :+ p
-        }
-        i = i + 1
-      }
-      val newContext = ISZ(newContextId)
-      val newExp = Transformer(FunNormalizer.PrePostSubstitutor(o.context, newContext, m)).transformAssignExp(F, o.exp).
-        resultOpt.getOrElse(o.exp)
-      val newO = o(context = newContext, params = newParams, exp = newExp)
-      return Transformer.PreResult(ctx + 1, T, Some(newO))
-    }
-  }
-
   val nonConstantPrefixes: HashSet[String] = HashSet ++ ISZ[String]("proc", "sn")
 
   val symbolCharMap: HashMap[C, String] = HashMap ++ ISZ(
@@ -647,18 +566,6 @@ object Util {
         } else {
           return st"$id"
         }
-    }
-  }
-
-  @pure def normalizeQuantType(exp: Exp): Exp = {
-    return Transformer(QuantTypePrePostNormalizer()).transformExp(F, exp).resultOpt.getOrElseEager(exp)
-  }
-
-  @pure def normalizeExp(exp: Exp): Exp = {
-    val exp2 = FunNormalizer.create.transformExp(1, exp).resultOpt.getOrElseEager(exp)
-    Transformer(QuantTypePrePostNormalizer()).transformExp(F, exp2).resultOpt match {
-      case Some(exp3) => FunNormalizer.create.transformExp(1, exp3).resultOpt.getOrElseEager(exp3)
-      case _ => return exp2
     }
   }
 
