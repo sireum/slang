@@ -27,6 +27,7 @@
 package org.sireum.lang.tipe
 
 import org.sireum._
+import org.sireum.lang.ast.{Exp, Transformer}
 import org.sireum.message._
 import org.sireum.lang.symbol._
 import org.sireum.lang.symbol.Resolver._
@@ -96,11 +97,19 @@ object TypeHierarchy {
       return AST.Transformer.PreResult(ctx, T, None())
     }
 
+    override def preExpSelect(ctx: Z, o: AST.Exp.Select): AST.Transformer.PreResult[Z, AST.Exp] = {
+      if (o.targs.nonEmpty) {
+        return AST.Transformer.PreResult(ctx, T, Some(o(targs = ISZ())))
+      } else {
+        return AST.Transformer.PreResult(ctx, T, None())
+      }
+    }
+
     override def preExpInvoke(ctx: Z, o: AST.Exp.Invoke): AST.Transformer.PreResult[Z, AST.Exp] = {
       val en = ExpNormalizer.create(th)
       var newArgs = ISZ[AST.Exp]()
       var cctx = ctx
-      var changed = F
+      var changed = o.targs.nonEmpty
       for (arg <- o.args) {
         val p = en.transformExp(cctx, arg)
         cctx = p.ctx
@@ -130,7 +139,7 @@ object TypeHierarchy {
           }
       }
       return AST.Transformer.PreResult(cctx, F,
-        if (changed) Some(o(receiverOpt = newReceiverOpt, args = newArgs))
+        if (changed) Some(o(receiverOpt = newReceiverOpt, targs = ISZ(), args = newArgs))
         else None())
     }
 
@@ -138,7 +147,7 @@ object TypeHierarchy {
       val en = ExpNormalizer.create(th)
       var newArgs = ISZ[AST.NamedArg]()
       var cctx = ctx
-      var changed = F
+      var changed = o.targs.nonEmpty
       for (arg <- o.args) {
         val p = en.transformNamedArg(cctx, arg)
         cctx = p.ctx
@@ -168,7 +177,7 @@ object TypeHierarchy {
           }
       }
       return AST.Transformer.PreResult(cctx, F,
-        if (changed) Some(o(receiverOpt = newReceiverOpt, args = newArgs))
+        if (changed) Some(o(receiverOpt = newReceiverOpt, targs = ISZ(), args = newArgs))
         else None())
     }
 
@@ -186,6 +195,22 @@ object TypeHierarchy {
 
     override def postResolvedInfoMethod(ctx: Z, o: AST.ResolvedInfo.Method): AST.Transformer.TPostResult[Z, AST.ResolvedInfo] = {
       return AST.Transformer.TPostResult(ctx, Some(o(tpeOpt = None(), reads = ISZ(), writes = ISZ())))
+    }
+
+    override def postResolvedInfoLocalVar(ctx: Z, o: AST.ResolvedInfo.LocalVar): AST.Transformer.TPostResult[Z, AST.ResolvedInfo] = {
+      if (o.scope === AST.ResolvedInfo.LocalVar.Scope.Current && !o.isVal && !o.isSpec) {
+        return AST.Transformer.TPostResult(ctx, Some(o(scope = AST.ResolvedInfo.LocalVar.Scope.Current, isVal = F, isSpec = F)))
+      } else {
+        return AST.Transformer.TPostResult(ctx, None())
+      }
+    }
+
+    override def preExpAt(ctx: Z, o: AST.Exp.At): Transformer.PreResult[Z, AST.Exp] = {
+      if (o.linesFresh.nonEmpty) {
+        return AST.Transformer.PreResult(ctx, T, Some(o(linesFresh = ISZ())))
+      } else {
+        return AST.Transformer.PreResult(ctx, T, None())
+      }
     }
   }
 

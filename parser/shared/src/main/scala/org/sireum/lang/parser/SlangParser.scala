@@ -473,7 +473,7 @@ class SlangParser(
 
       override def preStmtExpr(ctx: Unit, o: AST.Stmt.Expr): AST.Transformer.PreResult[Unit, AST.Stmt] = {
         o.exp match {
-          case AST.Exp.Invoke(expOpt, AST.Exp.Ident(AST.Id(id)), args) if topLevelMethodsIds.contains(id) =>
+          case AST.Exp.Invoke(expOpt, AST.Exp.Ident(AST.Id(id)), _, args) if topLevelMethodsIds.contains(id) =>
             expOpt.foreach(e => transformer.transformExp((), e))
             for (arg <- args) {
               transformer.transformExp((), arg)
@@ -2065,7 +2065,7 @@ class SlangParser(
     for (stmt <- stmts) {
       val (ret, hlt) = stmt match {
         case _: AST.Stmt.Return => (true, false)
-        case AST.Stmt.Expr(AST.Exp.Invoke(_, AST.Exp.Ident(AST.Id(id)), _)) if id.value == "halt" => (false, true)
+        case AST.Stmt.Expr(AST.Exp.Invoke(_, AST.Exp.Ident(AST.Id(id)), _, _)) if id.value == "halt" => (false, true)
         case _ => (false, false)
       }
       if ((ret || hlt) && Z(i) != stmts.size - 1) {
@@ -2216,7 +2216,7 @@ class SlangParser(
     val exp = translateExp(stat.expr)
     val cases = stat.cases.map(translateCase)
     exp match {
-      case AST.Exp.Select(_, AST.Id(String("native"))) =>
+      case AST.Exp.Select(_, AST.Id(String("native")), _) =>
         var i = 0
         for (c <- cases) {
           c.pattern match {

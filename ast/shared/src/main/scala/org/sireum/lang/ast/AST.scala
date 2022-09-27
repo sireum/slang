@@ -1441,7 +1441,7 @@ object Exp {
     }
   }
 
-  @datatype class Select(val receiverOpt: Option[Exp], val id: Id, @hidden val targs: ISZ[Type], @hidden val attr: ResolvedAttr)
+  @datatype class Select(val receiverOpt: Option[Exp], val id: Id, val targs: ISZ[Type], @hidden val attr: ResolvedAttr)
     extends Exp with Ref {
 
     @pure override def asExp: Exp = {
@@ -1478,7 +1478,7 @@ object Exp {
 
   @datatype class Invoke(val receiverOpt: Option[Exp],
                          val ident: Ident,
-                         @hidden val targs: ISZ[Type],
+                         val targs: ISZ[Type],
                          val args: ISZ[Exp],
                          @hidden val attr: ResolvedAttr) extends Exp {
 
@@ -1504,7 +1504,7 @@ object Exp {
 
   @datatype class InvokeNamed(val receiverOpt: Option[Exp],
                               val ident: Ident,
-                              @hidden val targs: ISZ[Type],
+                              val targs: ISZ[Type],
                               val args: ISZ[NamedArg],
                               @hidden val attr: ResolvedAttr) extends Exp {
 
@@ -1712,7 +1712,7 @@ object Exp {
   @datatype class At(val tipeOpt: Option[Type],
                      val exp: Exp,
                      val num: Exp.LitZ,
-                     @hidden val linesFresh: ISZ[Exp.LitZ],
+                     val linesFresh: ISZ[Exp.LitZ],
                      @hidden val attr: Attr) extends Exp {
 
     @pure override def posOpt: Option[Position] = {
@@ -1977,9 +1977,9 @@ object ResolvedInfo {
   }
 
   @datatype class LocalVar(val context: ISZ[String],
-                           @hidden val scope: ResolvedInfo.LocalVar.Scope.Type,
-                           @hidden val isSpec: B,
-                           @hidden val isVal: B,
+                           val scope: ResolvedInfo.LocalVar.Scope.Type,
+                           val isSpec: B,
+                           val isVal: B,
                            val id: String)
     extends ResolvedInfo {
     @strictpure def isEqual(other: LocalVar): B = id == other.id && context == other.context

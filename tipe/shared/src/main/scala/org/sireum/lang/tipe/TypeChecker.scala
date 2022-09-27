@@ -3119,7 +3119,7 @@ import TypeChecker._
 
         case exp: AST.Exp.Invoke =>
           exp match {
-            case exp @ AST.Exp.Invoke(None(), AST.Exp.Ident(AST.Id(name)), args)
+            case exp @ AST.Exp.Invoke(None(), AST.Exp.Ident(AST.Id(name)), _, args)
                 if exp.targs.isEmpty && builtInMethods.contains(name) =>
               val (kind, resOpt): (BuiltInKind.Type, Option[AST.ResolvedInfo]) =
                 name.native match {
@@ -3152,7 +3152,7 @@ import TypeChecker._
 
         case exp: AST.Exp.InvokeNamed =>
           exp match {
-            case exp @ AST.Exp.InvokeNamed(None(), AST.Exp.Ident(AST.Id(name)), _)
+            case exp @ AST.Exp.InvokeNamed(None(), AST.Exp.Ident(AST.Id(name)), _, _)
                 if exp.targs.isEmpty && builtInMethods.contains(name) =>
               reporter.error(exp.posOpt, typeCheckerKind, s"Cannot invoke '$name' with named argument(s).")
               return (exp, None())
@@ -3976,7 +3976,7 @@ import TypeChecker._
     }
 
     val (newExp, expTypeOpt): (AST.Exp, Option[AST.Typed]) = stmt.exp match {
-      case exp @ AST.Exp.Select(Some(_), AST.Id(string"native")) =>
+      case exp @ AST.Exp.Select(Some(_), AST.Id(string"native"), _) =>
         val p = checkSelectNative(exp)
         p
       case _ =>
