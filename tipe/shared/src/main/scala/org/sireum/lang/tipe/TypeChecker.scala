@@ -3054,8 +3054,7 @@ import TypeChecker._
     }
 
     def checkAt(at: AST.Exp.At): (AST.Exp, Option[AST.Typed]) = {
-      if (inSpec) {
-        val (e, tOpt) = checkExp(expectedOpt, scope, at.exp, reporter)
+      def checkAtForm(e: AST.Exp): Unit = {
         e match {
           case e: AST.Exp.Ref =>
             e.resOpt match {
@@ -3070,14 +3069,23 @@ import TypeChecker._
           case _: AST.Exp.LitString =>
           case _ =>
         }
+      }
+      if (inSpec) {
         at.tipeOpt match {
           case Some(tipe) =>
             val tipeOpt = typeHierarchy.typed(scope, tipe, reporter)
             tipeOpt match {
-              case Some(newTipe) => return (at(exp = e, tipeOpt = tipeOpt), newTipe.typedOpt)
-              case _ => return (at(exp = e, tipeOpt = tipeOpt), None())
+              case Some(newTipe) =>
+                val (e, _) = checkExp(AST.Typed.stringOpt, scope, at.exp, reporter)
+                checkAtForm(e)
+                return (at(exp = e, tipeOpt = tipeOpt), newTipe.typedOpt)
+              case _ =>
+                return (at(tipeOpt = tipeOpt), None())
             }
-          case _ => return (at(exp = e), tOpt)
+          case _ =>
+            val (e, tOpt) = checkExp(expectedOpt, scope, at.exp, reporter)
+            checkAtForm(e)
+            return (at(exp = e), tOpt)
         }
       } else {
         reporter.error(exp.posOpt, typeCheckerKind, "At can only be used inside specification context.")
