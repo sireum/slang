@@ -693,7 +693,12 @@ object Util {
           case _: Exp.LitF32 =>
           case _: Exp.LitF64 =>
           case _: Exp.LitR =>
-          case exp: Exp.Ident if exp.id.value === "T" || exp.id.value === "F" =>
+          case exp: Exp.Ident =>
+            exp.attr.resOpt match {
+              case Some(res: ResolvedInfo.Var) if res.isInObject && (res.id === "T" || res.id === "F") &&
+                res.owner === Typed.sireumName =>
+              case _ => return None()
+            }
           case exp: Exp.StringInterpolate if exp.args.isEmpty && !nonConstantPrefixes.contains(exp.prefix) =>
           case _ => return None()
         }
