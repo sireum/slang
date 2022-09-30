@@ -1467,7 +1467,7 @@ class SlangParser(
     for (stmt <- stmts) {
       stmt match {
         case stmt: AST.Stmt.Var if stmt.isVal =>
-          AST.Util.constantInitOpt(stmt.initOpt) match {
+          AST.Util.constantInitOpt(stmt) match {
             case Some(exp) =>
               claims = claims :+ AST.Exp.Binary(
                 AST.Exp.Ident(stmt.id, AST.ResolvedAttr(stmt.id.attr.posOpt, None(), None())),
