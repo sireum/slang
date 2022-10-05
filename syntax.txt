@@ -287,7 +287,6 @@
                      |  +:          // prepend, right-associative
                      |  ++          // append all
                      |  --          // remove all
-                     |  =~=         // only in contract context
                      |  <SYMID>     // an identifier whose characters are all symbols (except a single colon)
                                     // right associative if it ends with a colon
 
