@@ -184,9 +184,9 @@ object TypeHierarchy {
     @pure def shouldTransformIdent(o: AST.Exp.Ident): (B, ISZ[String]) = {
       o.attr.resOpt.get match {
         case res: AST.ResolvedInfo.Var =>
-          return (res.isInObject && res.owner.nonEmpty && res.owner =!= AST.Typed.sireumName, res.owner)
+          return (res.isInObject && res.owner.nonEmpty && res.owner != AST.Typed.sireumName, res.owner)
         case res: AST.ResolvedInfo.Method =>
-          return (res.isInObject && res.owner.nonEmpty && res.owner =!= AST.Typed.sireumName, res.owner)
+          return (res.isInObject && res.owner.nonEmpty && res.owner != AST.Typed.sireumName, res.owner)
         case res: AST.ResolvedInfo.EnumElement =>
           return (T, res.owner)
         case _ => return (F, ISZ())
@@ -198,7 +198,7 @@ object TypeHierarchy {
     }
 
     override def postResolvedInfoLocalVar(ctx: Z, o: AST.ResolvedInfo.LocalVar): AST.Transformer.TPostResult[Z, AST.ResolvedInfo] = {
-      if (o.scope === AST.ResolvedInfo.LocalVar.Scope.Current && !o.isVal && !o.isSpec) {
+      if (o.scope == AST.ResolvedInfo.LocalVar.Scope.Current && !o.isVal && !o.isSpec) {
         return AST.Transformer.TPostResult(ctx, Some(o(scope = AST.ResolvedInfo.LocalVar.Scope.Current, isVal = F, isSpec = F)))
       } else {
         return AST.Transformer.TPostResult(ctx, None())
@@ -1123,7 +1123,7 @@ object TypeHierarchy {
       val (rOpt, tOpt) = nameResTypeOpts(ids)
       val resolvedAttr = AST.ResolvedAttr(pOpt, rOpt, tOpt)
       ids match {
-        case ISZ("org", "sireum", _*) if i === 2 => r = AST.Exp.Ident(AST.Id(ids(i), attr), resolvedAttr)
+        case ISZ("org", "sireum", _*) if i == 2 => r = AST.Exp.Ident(AST.Id(ids(i), attr), resolvedAttr)
         case _ => r = AST.Exp.Select(Some(r.asExp), AST.Id(ids(i), attr), ISZ(), resolvedAttr)
       }
     }

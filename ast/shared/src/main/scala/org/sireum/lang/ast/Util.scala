@@ -36,7 +36,7 @@ object Util {
     override def postStmtEnum(o: Stmt.Enum): MOption[Stmt] = {
       for (id <- o.elements) {
         val offset = id.attr.posOpt.get.offset
-        if (content(offset) === '\'') {
+        if (content(offset) == '\'') {
           map = map + offset ~> ((s"'${id.value}", s""""${id.value}""""))
         }
       }
@@ -592,7 +592,7 @@ object Util {
   def checkScript(script: TopUnit.Program, reporter: Reporter): Unit = {
     for (stmt <- script.body.stmts) {
       def checkId(id: Id): Unit = {
-        if (id.value === "args") {
+        if (id.value == "args") {
           reporter.error(id.attr.posOpt, "Slang front-end", "Cannot introduce a top-level entity named args in Slang script")
         }
       }
@@ -644,7 +644,7 @@ object Util {
     val trans = ConstructorValMapper(content, HashMap.empty)
     trans.transformTopUnit(topUnit)
     val n = trans.map.size
-    if (n === 0) {
+    if (n == 0) {
       return (text, 0)
     }
     ops.StringOps.replace(content, trans.map) match {
@@ -659,7 +659,7 @@ object Util {
     trans.transformTopUnit(topUnit)
     reporter.reports(trans.reporter.messages)
     val n = trans.map.size
-    if (n === 0 || reporter.hasError) {
+    if (n == 0 || reporter.hasError) {
       return (text, 0)
     }
     ops.StringOps.replace(content, trans.map) match {
@@ -673,7 +673,7 @@ object Util {
     val trans = EnumSymbolMapper(content, HashMap.empty)
     trans.transformTopUnit(topUnit)
     val n = trans.map.size
-    if (n === 0) {
+    if (n == 0) {
       return (text, 0)
     }
     ops.StringOps.replace(content, trans.map) match {
@@ -695,12 +695,12 @@ object Util {
           case _: Exp.LitR =>
           case exp: Exp.Ident =>
             exp.attr.resOpt match {
-              case Some(res: ResolvedInfo.Var) if res.isInObject && (res.id === "T" || res.id === "F") &&
-                res.owner === Typed.sireumName =>
+              case Some(res: ResolvedInfo.Var) if res.isInObject && (res.id == "T" || res.id == "F") &&
+                res.owner == Typed.sireumName =>
               case _ =>
                 stmt.attr.typedOpt match {
-                  case Some(Typed.b) if exp.id.value === "T" || exp.id.value === "F" =>
-                    return Some(Exp.LitB(exp.id.value === "T", Attr(exp.attr.posOpt)))
+                  case Some(Typed.b) if exp.id.value == "T" || exp.id.value == "F" =>
+                    return Some(Exp.LitB(exp.id.value == "T", Attr(exp.attr.posOpt)))
                   case _ => return None()
                 }
             }

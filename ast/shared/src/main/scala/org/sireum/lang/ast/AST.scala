@@ -1308,7 +1308,7 @@ object Exp {
         case '&' => return 7
         case '^' => return 8
         case '|' => return 9
-        case _ if ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || (c === '≡' || c === '≢') => return 10
+        case _ if ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || (c == '≡' || c == '≢') => return 10
         case _ => return 1
       }
     }
@@ -1609,7 +1609,7 @@ object Exp {
         }
       }
       val ps: ST =
-        if (params.size === 1 && params(0).tipeOpt.isEmpty) st"${paramST(params(0))}"
+        if (params.size == 1 && params(0).tipeOpt.isEmpty) st"${paramST(params(0))}"
         else st"(${(for (p <- params) yield paramST(p), ", ")})"
       exp match {
         case exp: Stmt.Expr =>

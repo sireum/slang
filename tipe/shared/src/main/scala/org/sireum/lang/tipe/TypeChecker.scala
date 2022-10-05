@@ -1745,13 +1745,16 @@ import TypeChecker._
             }
           case _ =>
         }
-        if (binaryExp.op === AST.Exp.BinaryOp.Equiv) {
+        if (binaryExp.op == AST.Exp.BinaryOp.Equiv) {
           if (typeHierarchy.isGroundType(leftType)) {
             reporter.error(binaryExp.posOpt, typeCheckerKind, s"Cannot use =~= on $leftType")
           }
           if (!inSpec) {
             reporter.error(binaryExp.posOpt, typeCheckerKind, s"Cannot use =~= in non-spec context")
           }
+        }
+        if (!inSpec && (binaryExp.op == AST.Exp.BinaryOp.Eq3 || binaryExp.op == AST.Exp.BinaryOp.Ne3)) {
+          reporter.error(binaryExp.posOpt, typeCheckerKind, s"Cannot use ${binaryExp.op} in non-spec context")
         }
         return (
           binaryExp(
@@ -2138,7 +2141,7 @@ import TypeChecker._
               }
           }
         case tpe: AST.Typed.Name =>
-          if (tpe.args.size == z"2" && (tpe.ids === AST.Typed.isName || tpe.ids === AST.Typed.msName)) {
+          if (tpe.args.size == z"2" && (tpe.ids == AST.Typed.isName || tpe.ids == AST.Typed.msName)) {
             if (numOfArgs == z"1") {
               val p = sSelectTypedResOpt(tpe, T)
               return (p._1, p._2, newTypeArgs)
@@ -3299,7 +3302,7 @@ import TypeChecker._
     val newAssignExp = newStmt.asAssignExp
     if (expectedOpt.isEmpty) {
       val exprs = newAssignExp.exprs
-      if (exprs.size === 1) {
+      if (exprs.size == 1) {
         return (newAssignExp, exprs(0).exp.typedOpt)
       }
     }
@@ -3315,7 +3318,7 @@ import TypeChecker._
     var newStmts = ISZ[AST.Stmt]()
     val size = stmts.size - 1
     for (i <- z"0" until size if !reporter.hasError) {
-      val newStmt = checkStmt(if (scopes.size === 1) scopes(0) else scopes(i), stmts(i), reporter)
+      val newStmt = checkStmt(if (scopes.size == 1) scopes(0) else scopes(i), stmts(i), reporter)
       newStmts = newStmts :+ newStmt
     }
 
@@ -3328,7 +3331,7 @@ import TypeChecker._
     }
 
     val stmt = stmts(size)
-    val newScope: Scope.Local = if (scopes.size === 1) scopes(0) else scopes(size)
+    val newScope: Scope.Local = if (scopes.size == 1) scopes(0) else scopes(size)
 
     expectedOpt match {
       case Some(_) =>

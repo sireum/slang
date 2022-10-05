@@ -2336,7 +2336,7 @@ class SlangParser(
         ISZ(),
         for (i <- Z(0) until enumGens.size) yield
           if (i < invariants.size) enumGens(i)(contract = AST.LoopContract(invariants(i)._1,
-            if (i === 0) modifies else ISZ(), invariants(i)._2)) else enumGens(i),
+            if (i == 0) modifies else ISZ(), invariants(i)._2)) else enumGens(i),
         bodyCheck(ISZ(stats.map(translateStat(Enclosing.Block)): _*), ISZ()),
         attr(stat.pos)
       )
