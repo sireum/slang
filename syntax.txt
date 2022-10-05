@@ -264,9 +264,7 @@
                      |  /
                      |  %
                      |  ==
-                     |  ===
                      |  !=
-                     |  =!=
                      |  <<
                      |  >>
                      |  >>>
@@ -289,6 +287,10 @@
                      |  --          // remove all
                      |  <SYMID>     // an identifier whose characters are all symbols (except a single colon)
                                     // right associative if it ends with a colon
+                     |  ===         // spec only
+                     |  ≡           // spec only
+                     |  =!=         // spec only
+                     |  ≢           // spec only
 
 <sequent>          ::=  ⸨ <exp> ⸨  , <exp> ⸩* ⸩? <sequent-op> <exp> <proof>?
 

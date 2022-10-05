@@ -196,8 +196,10 @@ object TypeChecker {
     AST.Exp.BinaryOp.Rem ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryRem)),
     AST.Exp.BinaryOp.Eq ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEq)),
     AST.Exp.BinaryOp.Equiv ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEquiv)),
+    AST.Exp.BinaryOp.EquivUni ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEquiv)),
     AST.Exp.BinaryOp.Ne ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryNe)),
     AST.Exp.BinaryOp.Inequiv ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryInequiv)),
+    AST.Exp.BinaryOp.InequivUni ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryInequiv)),
     AST.Exp.BinaryOp.FpEq ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryFpEq)),
     AST.Exp.BinaryOp.FpNe ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryFpNe)),
     AST.Exp.BinaryOp.Shl ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryShl)),
@@ -220,7 +222,8 @@ object TypeChecker {
   )
 
   val eqBinops: HashSet[String] = HashSet ++ ISZ[String](
-    AST.Exp.BinaryOp.Eq, AST.Exp.BinaryOp.Equiv, AST.Exp.BinaryOp.Ne, AST.Exp.BinaryOp.Inequiv
+    AST.Exp.BinaryOp.Eq, AST.Exp.BinaryOp.Equiv, AST.Exp.BinaryOp.EquivUni,
+    AST.Exp.BinaryOp.Ne, AST.Exp.BinaryOp.Inequiv, AST.Exp.BinaryOp.InequivUni
   )
 
   val emptySubstMap: HashMap[String, AST.Typed] = HashMap.empty
@@ -1743,15 +1746,15 @@ import TypeChecker._
             }
           case _ =>
         }
-        if (!inSpec && (binaryExp.op == AST.Exp.BinaryOp.Equiv || binaryExp.op == AST.Exp.BinaryOp.Inequiv)) {
-          reporter.error(binaryExp.posOpt, typeCheckerKind, s"Cannot use ${binaryExp.op} in non-spec context")
+        val resOpt = binopResOpt.get(binaryExp.op).get
+        resOpt match {
+          case Some(AST.ResolvedInfo.BuiltIn(kind)) if !inSpec && (kind == AST.ResolvedInfo.BuiltIn.Kind.BinaryEquiv ||
+            kind == AST.ResolvedInfo.BuiltIn.Kind.BinaryInequiv) =>
+            reporter.error(binaryExp.posOpt, typeCheckerKind, s"Cannot use ${binaryExp.op} in non-spec context")
+          case _ =>
         }
         return (
-          binaryExp(
-            left = newLeft,
-            right = right,
-            attr = binaryExp.attr(resOpt = binopResOpt.get(binaryExp.op).get, typedOpt = AST.Typed.bOpt)
-          ),
+          binaryExp(left = newLeft, right = right, attr = binaryExp.attr(resOpt = resOpt, typedOpt = AST.Typed.bOpt)),
           AST.Typed.bOpt
         )
       }

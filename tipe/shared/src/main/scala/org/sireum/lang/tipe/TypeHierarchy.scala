@@ -27,7 +27,6 @@
 package org.sireum.lang.tipe
 
 import org.sireum._
-import org.sireum.lang.ast.{Exp, Transformer}
 import org.sireum.message._
 import org.sireum.lang.symbol._
 import org.sireum.lang.symbol.Resolver._
@@ -197,11 +196,29 @@ object TypeHierarchy {
       }
     }
 
-    override def preExpAt(ctx: Z, o: AST.Exp.At): Transformer.PreResult[Z, AST.Exp] = {
+    override def preExpAt(ctx: Z, o: AST.Exp.At): AST.Transformer.PreResult[Z, AST.Exp] = {
       if (o.linesFresh.nonEmpty) {
         return AST.Transformer.PreResult(ctx, T, Some(o(linesFresh = ISZ())))
       } else {
         return AST.Transformer.PreResult(ctx, T, None())
+      }
+    }
+
+    override def postExpBinary(ctx: Z, o: AST.Exp.Binary): AST.Transformer.TPostResult[Z, AST.Exp] = {
+      o.op match {
+        case string"imply_:" => return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.Imply)))
+        case string"simply_:" => return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.CondImply)))
+        case AST.Exp.BinaryOp.Eq if th.isGroundType(o.left.typedOpt.get) =>
+          return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.EquivUni, attr = o.attr(resOpt =
+            Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEquiv))))))
+        case AST.Exp.BinaryOp.Ne if th.isGroundType(o.left.typedOpt.get) =>
+          return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.InequivUni, attr = o.attr(resOpt =
+            Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryInequiv))))))
+        case AST.Exp.BinaryOp.Equiv =>
+          return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.EquivUni)))
+        case AST.Exp.BinaryOp.Inequiv =>
+          return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.InequivUni)))
+        case _ => return AST.Transformer.TPostResult(ctx, None())
       }
     }
   }
