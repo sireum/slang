@@ -413,10 +413,8 @@ object Util {
   @pure def isBoolBinop(op: String): B = {
     op match {
       case Exp.BinaryOp.Eq => return T
-      case Exp.BinaryOp.Eq3 => return T
       case Exp.BinaryOp.Equiv => return T
       case Exp.BinaryOp.Ne => return T
-      case Exp.BinaryOp.Ne3 => return T
       case Exp.BinaryOp.And => return T
       case Exp.BinaryOp.Or => return T
       case Exp.BinaryOp.Xor => return T
@@ -454,10 +452,8 @@ object Util {
   @pure def isCompareBinop(op: String): B = {
     op match {
       case Exp.BinaryOp.Eq => return T
-      case Exp.BinaryOp.Eq3 => return T
       case Exp.BinaryOp.Equiv => return T
       case Exp.BinaryOp.Ne => return T
-      case Exp.BinaryOp.Ne3 => return T
       case Exp.BinaryOp.Lt => return T
       case Exp.BinaryOp.Le => return T
       case Exp.BinaryOp.Gt => return T

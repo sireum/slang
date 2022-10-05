@@ -51,14 +51,6 @@ object TypeHierarchy {
         }
         return AST.Transformer.TPostResult(ctx, None())
       }
-
-      override def postExpBinary(ctx: B, o: AST.Exp.Binary): AST.Transformer.TPostResult[B, AST.Exp] = {
-        o.op match {
-          case AST.Exp.BinaryOp.Eq3 => return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.Eq)))
-          case AST.Exp.BinaryOp.Ne3 => return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.Ne)))
-          case _ => return AST.Transformer.TPostResult(ctx, None())
-        }
-      }
     }
   }
 

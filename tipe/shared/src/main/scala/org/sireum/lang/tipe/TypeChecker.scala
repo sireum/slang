@@ -195,10 +195,9 @@ object TypeChecker {
     AST.Exp.BinaryOp.Div ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryDiv)),
     AST.Exp.BinaryOp.Rem ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryRem)),
     AST.Exp.BinaryOp.Eq ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEq)),
-    AST.Exp.BinaryOp.Eq3 ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEq)),
     AST.Exp.BinaryOp.Equiv ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEquiv)),
     AST.Exp.BinaryOp.Ne ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryNe)),
-    AST.Exp.BinaryOp.Ne3 ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryNe)),
+    AST.Exp.BinaryOp.Inequiv ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryInequiv)),
     AST.Exp.BinaryOp.FpEq ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryFpEq)),
     AST.Exp.BinaryOp.FpNe ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryFpNe)),
     AST.Exp.BinaryOp.Shl ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryShl)),
@@ -221,8 +220,7 @@ object TypeChecker {
   )
 
   val eqBinops: HashSet[String] = HashSet ++ ISZ[String](
-    AST.Exp.BinaryOp.Eq, AST.Exp.BinaryOp.Eq3, AST.Exp.BinaryOp.Equiv,
-    AST.Exp.BinaryOp.Ne, AST.Exp.BinaryOp.Ne3
+    AST.Exp.BinaryOp.Eq, AST.Exp.BinaryOp.Equiv, AST.Exp.BinaryOp.Ne, AST.Exp.BinaryOp.Inequiv
   )
 
   val emptySubstMap: HashMap[String, AST.Typed] = HashMap.empty
@@ -1745,15 +1743,7 @@ import TypeChecker._
             }
           case _ =>
         }
-        if (binaryExp.op == AST.Exp.BinaryOp.Equiv) {
-          if (typeHierarchy.isGroundType(leftType)) {
-            reporter.error(binaryExp.posOpt, typeCheckerKind, s"Cannot use =~= on $leftType")
-          }
-          if (!inSpec) {
-            reporter.error(binaryExp.posOpt, typeCheckerKind, s"Cannot use =~= in non-spec context")
-          }
-        }
-        if (!inSpec && (binaryExp.op == AST.Exp.BinaryOp.Eq3 || binaryExp.op == AST.Exp.BinaryOp.Ne3)) {
+        if (!inSpec && (binaryExp.op == AST.Exp.BinaryOp.Equiv || binaryExp.op == AST.Exp.BinaryOp.Inequiv)) {
           reporter.error(binaryExp.posOpt, typeCheckerKind, s"Cannot use ${binaryExp.op} in non-spec context")
         }
         return (
@@ -1780,14 +1770,6 @@ import TypeChecker._
                   st"Undefined binary operation ${binaryExp.op} on '$leftType'".render)
               }
 
-              def normOp(op: String): String = {
-                op match {
-                  case AST.Exp.BinaryOp.Eq3 => return AST.Exp.BinaryOp.Eq
-                  case AST.Exp.BinaryOp.Ne3 => return AST.Exp.BinaryOp.Ne
-                  case _ => return op
-                }
-              }
-
               val rOpt = basicKind(scope, rightType)
               val (op, tOpt): (String, Option[AST.Typed]) = rOpt match {
                 case Some(rightKind) =>
@@ -1797,9 +1779,9 @@ import TypeChecker._
                   } else if ((leftKind == BasicKind.B && AST.Util.isBoolBinop(binaryExp.op)) ||
                     (AST.Util.isArithBinop(binaryExp.op) && leftKind != BasicKind.B) ||
                     (AST.Util.isBitsBinop(binaryExp.op) && (leftKind == BasicKind.Bits || leftKind == BasicKind.C))) {
-                    (normOp(binaryExp.op), Some(leftType))
+                    (binaryExp.op, Some(leftType))
                   } else if (AST.Util.isCompareBinop(binaryExp.op) && leftKind != BasicKind.B) {
-                    (normOp(binaryExp.op), Some(AST.Typed.b))
+                    (binaryExp.op, Some(AST.Typed.b))
                   } else if (AST.Util.isFpEqBinop(binaryExp.op) && AST.Typed.floatingPointTypes.contains(leftType)) {
                     (binaryExp.op, Some(AST.Typed.b))
                   } else {
@@ -3863,6 +3845,7 @@ import TypeChecker._
                 case AST.ResolvedInfo.BuiltIn.Kind.BinaryEq => F
                 case AST.ResolvedInfo.BuiltIn.Kind.BinaryEquiv => F
                 case AST.ResolvedInfo.BuiltIn.Kind.BinaryNe => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryInequiv => F
                 case AST.ResolvedInfo.BuiltIn.Kind.BinaryFpEq => F
                 case AST.ResolvedInfo.BuiltIn.Kind.BinaryFpNe => F
                 case AST.ResolvedInfo.BuiltIn.Kind.BinaryLt => F
