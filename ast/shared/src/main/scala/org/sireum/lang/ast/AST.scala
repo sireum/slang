@@ -1309,7 +1309,7 @@ object Exp {
         case '&' => return 7
         case '^' => return 8
         case '|' => return 9
-        case _ if ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || (c == '≡' || c == '≢') => return 10
+        case _ if ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '$' || c == '_' => return 10
         case _ => return 1
       }
     }
