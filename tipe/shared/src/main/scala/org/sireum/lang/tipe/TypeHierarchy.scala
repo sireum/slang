@@ -208,16 +208,16 @@ object TypeHierarchy {
       o.op match {
         case string"imply_:" => return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.Imply)))
         case string"simply_:" => return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.CondImply)))
-        case AST.Exp.BinaryOp.Eq if th.isGroundType(o.left.typedOpt.get) =>
-          return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.EquivUni, attr = o.attr(resOpt =
-            Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEquiv))))))
-        case AST.Exp.BinaryOp.Ne if th.isGroundType(o.left.typedOpt.get) =>
-          return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.InequivUni, attr = o.attr(resOpt =
-            Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryInequiv))))))
         case AST.Exp.BinaryOp.Equiv =>
-          return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.EquivUni)))
+          return if (th.isGroundType(o.left.typedOpt.get))
+            AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.Eq, attr = o.attr(resOpt =
+              Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEq))))))
+          else AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.EquivUni)))
         case AST.Exp.BinaryOp.Inequiv =>
-          return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.InequivUni)))
+          return if (th.isGroundType(o.left.typedOpt.get))
+            AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.Ne, attr = o.attr(resOpt =
+              Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryNe))))))
+          else AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.InequivUni)))
         case _ => return AST.Transformer.TPostResult(ctx, None())
       }
     }
