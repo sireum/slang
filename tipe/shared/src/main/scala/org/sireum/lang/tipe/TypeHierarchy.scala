@@ -1147,5 +1147,34 @@ object TypeHierarchy {
     }
   }
 
+  @memoize def isAdt(t: AST.Typed.Name): B = {
+    if (isGroundType(t)) {
+      return F
+    }
+    t.ids match {
+      case AST.Typed.isName => return F
+      case AST.Typed.msName => return F
+      case _ => return T
+    }
+  }
+
+  @pure def isAdtType(t: AST.Typed): B = {
+    t match {
+      case t: AST.Typed.Name => return isAdt(t)
+      case _ => return F
+    }
+  }
+
+  @memoize def isAdtLeafType(t: AST.Typed): B = {
+    t match {
+      case t: AST.Typed.Name if isAdt(t) =>
+        typeMap.get(t.ids).get match {
+          case info: TypeInfo.Adt => return !info.ast.isRoot
+          case _ =>
+        }
+      case _ =>
+    }
+    return F
+  }
 
 }
