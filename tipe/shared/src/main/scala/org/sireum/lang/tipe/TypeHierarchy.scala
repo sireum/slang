@@ -1172,12 +1172,12 @@ object TypeHierarchy {
             case _: TypeInfo.SubZ => return T
             case _: TypeInfo.Sig => return F
             case _: TypeInfo.Enum => return T
-            case info: TypeInfo.TypeAlias => halt(s"Unexpected usage of isSubstitutable on $info")
-            case info: TypeInfo.TypeVar => halt(s"Unexpected usage of isSubstitutable on $info")
+            case info: TypeInfo.TypeAlias => halt(s"Unexpected usage of isSubstitutableWithoutSpecVars on $info")
+            case info: TypeInfo.TypeVar => halt(s"Unexpected usage of isSubstitutableWithoutSpecVars on $info")
           }
         case _: AST.Typed.Enum => return T
         case _: AST.Typed.TypeVar => return F
-        case t: AST.Typed.Tuple => return ops.ISZOps(t.args).forall((et: AST.Typed) => isSubstitutable(et))
+        case t: AST.Typed.Tuple => return ops.ISZOps(t.args).forall((et: AST.Typed) => isSubstitutableWithoutSpecVarsH(et))
         case _: AST.Typed.Fun => return F
         case _: AST.Typed.Method => return F
         case _: AST.Typed.Methods => return F
@@ -1189,7 +1189,8 @@ object TypeHierarchy {
       }
     }
 
-    return isSubstitutableWithoutSpecVarsH(tipe)
+    val r = isSubstitutableWithoutSpecVarsH(tipe)
+    return r
   }
 
   @pure def normalizeQuantType(exp: AST.Exp): AST.Exp = {
