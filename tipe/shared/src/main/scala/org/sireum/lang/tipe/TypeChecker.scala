@@ -1747,12 +1747,6 @@ import TypeChecker._
           case _ =>
         }
         val resOpt = binopResOpt.get(binaryExp.op).get
-        resOpt match {
-          case Some(AST.ResolvedInfo.BuiltIn(kind)) if !inSpec && (kind == AST.ResolvedInfo.BuiltIn.Kind.BinaryEquiv ||
-            kind == AST.ResolvedInfo.BuiltIn.Kind.BinaryInequiv) =>
-            reporter.error(binaryExp.posOpt, typeCheckerKind, s"Cannot use ${binaryExp.op} in non-spec context")
-          case _ =>
-        }
         return (
           binaryExp(left = newLeft, right = right, attr = binaryExp.attr(resOpt = resOpt, typedOpt = AST.Typed.bOpt)),
           AST.Typed.bOpt
