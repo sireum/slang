@@ -1331,6 +1331,10 @@ object Exp {
 
   @datatype class Binary(val left: Exp, val op: String, val right: Exp, @hidden val attr: ResolvedAttr) extends Exp {
 
+    @memoize def isRightAssoc: B = {
+      return ops.StringOps(op).endsWith(":")
+    }
+
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
@@ -1341,13 +1345,23 @@ object Exp {
 
     @pure override def prettyST: ST = {
       val l = BinaryOp.precendenceLevel(op)
+      @pure def shouldParenthesize(cop: String, isRight: B): B = {
+        val c = BinaryOp.precendenceLevel(cop)
+        if (c > l) {
+          return T
+        }
+        if (c == l) {
+          return isRight != isRightAssoc
+        }
+        return F
+      }
       val leftST: ST = left match {
-        case left: Binary if BinaryOp.precendenceLevel(left.op) > l => st"(${left.prettyST})"
+        case left: Binary if shouldParenthesize(left.op, F) => st"(${left.prettyST})"
         case left: If => st"(${left.prettyST})"
         case _ => left.prettyST
       }
       val rightST: ST = right match {
-        case right: Binary if BinaryOp.precendenceLevel(right.op) > l => st"(${right.prettyST})"
+        case right: Binary if shouldParenthesize(right.op, T) => st"(${right.prettyST})"
         case right: If => st"(${right.prettyST})"
         case _ => right.prettyST
       }
