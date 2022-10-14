@@ -1309,8 +1309,17 @@ object Exp {
         case '&' => return 7
         case '^' => return 8
         case '|' => return 9
-        case _ if ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '$' || c == '_' => return 10
-        case _ => return 1
+        case '$' => return 10
+        case '_' => return 10
+        case _ =>
+          ops.COps(c).category match {
+            case ops.COps.Category.Ll => return 10
+            case ops.COps.Category.Lu => return 10
+            case ops.COps.Category.Lt => return 10
+            case ops.COps.Category.Lo => return 10
+            case ops.COps.Category.Nl => return 10
+            case _ => return 1
+          }
       }
     }
   }
