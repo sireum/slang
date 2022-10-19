@@ -29,7 +29,7 @@ import org.sireum.$internal.{RC, Trie}
 
 object $SlangFiles {
 
-  def map: scala.collection.Map[scala.Vector[Predef.String], Predef.String] =
+  def map: scala.collection.SortedMap[scala.Vector[Predef.String], Predef.String] =
     RC.text({
       val slangRoot = "../../../../../../../.."
       val slangDirs = for (sub <- Vector("ast", "parser", "tipe", "frontend"))
