@@ -1270,4 +1270,64 @@ object TypeHierarchy {
     return F
   }
 
+  def substChildrenOfType(posOpt: Option[Position], t: AST.Typed.Name): Either[ISZ[AST.Typed.Name], ISZ[message.Message]] = {
+    var r = ISZ[AST.Typed.Name]()
+    val reporter = Reporter.create
+    for (cn <- poset.childrenOf(t.ids).elements) {
+      var targs = ISZ[AST.Typed]()
+      var child = t
+      typeMap.get(cn) match {
+        case Some(ti: TypeInfo.Sig) =>
+          for (parent <- ti.parents if parent.ids == t.ids) {
+            targs = parent.args
+            child = ti.tpe
+          }
+        case Some(ti: TypeInfo.Adt) =>
+          for (parent <- ti.parents if parent.ids == t.ids) {
+            targs = parent.args
+            child = ti.tpe
+          }
+        case _ => halt(st"Infeasible: ${(cn, ".")}".render)
+      }
+      TypeChecker.unifies(this, posOpt, TypeChecker.TypeRelation.Equal, t.args, targs, reporter) match {
+        case Some(sm) => r = r :+ child.subst(sm)
+        case _ => return Either.Right(reporter.messages)
+      }
+    }
+    return Either.Left(r)
+  }
+
+  def substDescendantsOfType(posOpt: Option[Position], t: AST.Typed.Name): Either[ISZ[AST.Typed.Name], ISZ[message.Message]] = {
+    var r = HashSSet.empty[AST.Typed.Name]
+    var workS = ISZ(t)
+    while (workS.nonEmpty) {
+      val ts = workS
+      workS = ISZ()
+      for (t <- ts) {
+        substChildrenOfType(posOpt, t) match {
+          case Either.Left(children) =>
+            r = r ++ children
+            workS = workS ++ children
+          case err => return err
+        }
+      }
+    }
+    return Either.Left(r.elements)
+  }
+
+  @memoize def substLeavesOfType(posOpt: Option[Position], t: AST.Typed.Name): Either[ISZ[AST.Typed.Name], ISZ[message.Message]] = {
+    substDescendantsOfType(posOpt, t) match {
+      case Either.Left(ts) =>
+        var r = ISZ[AST.Typed.Name]()
+        for (t <- ts) {
+          typeMap.get(t.ids) match {
+            case Some(ti: TypeInfo.Adt) if !ti.ast.isRoot => r = r :+ t
+            case _ =>
+          }
+        }
+        return Either.Left(r)
+      case err => return err
+    }
+  }
+
 }
