@@ -36,9 +36,9 @@ import org.sireum.lang.{ast => AST}
 
   @pure def outerOpt: Option[Scope]
 
-  @pure def resolveName(globalNameMap: HashMap[ISZ[String], Info], name: ISZ[String]): Option[Info]
+  @pure def resolveName(globalNameMap: Resolver.NameMap, name: ISZ[String]): Option[Info]
 
-  @pure def resolveType(globalTypeMap: HashMap[ISZ[String], TypeInfo], name: ISZ[String]): Option[TypeInfo]
+  @pure def resolveType(globalTypeMap: Resolver.TypeMap, name: ISZ[String]): Option[TypeInfo]
 
   @pure def resolveIndex(id: String): Option[AST.Typed]
 
@@ -91,7 +91,7 @@ object Scope {
       }
     }
 
-    @pure override def resolveName(globalNameMap: HashMap[ISZ[String], Info], name: ISZ[String]): Option[Info] = {
+    @pure override def resolveName(globalNameMap: Resolver.NameMap, name: ISZ[String]): Option[Info] = {
       if (name.size == z"1") {
         val infoOpt = nameMap.get(name(0))
         if (infoOpt.nonEmpty) {
@@ -104,10 +104,8 @@ object Scope {
       }
     }
 
-    @pure override def resolveType(
-                                    globalTypeMap: HashMap[ISZ[String], TypeInfo],
-                                    name: ISZ[String]
-                                  ): Option[TypeInfo] = {
+    @pure override def resolveType(globalTypeMap: Resolver.TypeMap,
+                                   name: ISZ[String]): Option[TypeInfo] = {
       if (name.size == z"1") {
         val typeInfoOpt = typeMap.get(name(0))
         if (typeInfoOpt.nonEmpty) {
@@ -147,11 +145,11 @@ object Scope {
       return None()
     }
 
-    @pure override def resolveName(globalNameMap: HashMap[ISZ[String], Info], name: ISZ[String]): Option[Info] = {
+    @pure override def resolveName(globalNameMap: Resolver.NameMap, name: ISZ[String]): Option[Info] = {
       return resolveNameMemoized(globalNameMap, name)
     }
 
-    @pure def resolveImported(globalNameMap: HashMap[ISZ[String], Info], name: ISZ[String]): Option[Info] = {
+    @pure def resolveImported(globalNameMap: Resolver.NameMap, name: ISZ[String]): Option[Info] = {
       for (i <- imports.size - 1 to 0 by -1) {
         val impor = imports(i)
         val importers = impor.importers
@@ -209,12 +207,12 @@ object Scope {
       return None()
     }
 
-    @pure override def resolveType(globalTypeMap: HashMap[ISZ[String], TypeInfo],
+    @pure override def resolveType(globalTypeMap: Resolver.TypeMap,
                                    name: ISZ[String]): Option[TypeInfo] = {
       return resolveTypeMemoized(globalTypeMap, name)
     }
 
-    @pure def resolveImportedType(globalTypeMap: HashMap[ISZ[String], TypeInfo],
+    @pure def resolveImportedType(globalTypeMap: Resolver.TypeMap,
                                   name: ISZ[String]): Option[TypeInfo] = {
       for (i <- imports.size - 1 to 0 by -1) {
         val impor = imports(i)
@@ -273,7 +271,7 @@ object Scope {
       return None()
     }
 
-    @memoize def resolveNameMemoized(@hidden globalNameMap: HashMap[ISZ[String], Info],
+    @memoize def resolveNameMemoized(@hidden globalNameMap: Resolver.NameMap,
                                      name: ISZ[String]): Option[Info] = {
       val globalOpt = globalNameMap.get(name)
       if (globalOpt.nonEmpty) {
@@ -297,7 +295,7 @@ object Scope {
       return globalNameMap.get(packageName ++ name)
     }
 
-    @memoize def resolveTypeMemoized(@hidden globalTypeMap: HashMap[ISZ[String], TypeInfo],
+    @memoize def resolveTypeMemoized(@hidden globalTypeMap: Resolver.TypeMap,
                                      name: ISZ[String]): Option[TypeInfo] = {
       val globalTypeOpt = globalTypeMap.get(name)
       if (globalTypeOpt.nonEmpty) {

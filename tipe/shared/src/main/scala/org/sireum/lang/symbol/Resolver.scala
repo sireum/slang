@@ -35,9 +35,9 @@ object Resolver {
 
   type QName = ISZ[String]
 
-  type NameMap = HashMap[QName, Info]
+  type NameMap = HashSMap[QName, Info]
 
-  type TypeMap = HashMap[QName, TypeInfo]
+  type TypeMap = HashSMap[QName, TypeInfo]
 
   val resolverKind: String = "Slang Resolver"
 

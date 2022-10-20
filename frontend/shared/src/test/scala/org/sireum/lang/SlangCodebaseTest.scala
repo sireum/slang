@@ -34,7 +34,7 @@ class SlangCodebaseTest extends TestSuite {
 
   val tests = Tests {
     * - {
-      val (initNameMap, initTypeMap) = Resolver.addBuiltIns(HashMap.empty, HashMap.empty)
+      val (initNameMap, initTypeMap) = Resolver.addBuiltIns(HashSMap.empty, HashSMap.empty)
       val (reporter, _, globalNameMap, globalTypeMap) = FrontEnd.parseProgramAndGloballyResolve(
         0,
         for (p <- org.sireum.Library.files) yield FrontEnd.Input(p._2, p._1),
@@ -52,21 +52,21 @@ class SlangCodebaseTest extends TestSuite {
       }
 
       report()
-      var th = TypeHierarchy.build(F, TypeHierarchy(globalNameMap, globalTypeMap, Poset.empty, HashMap.empty), reporter)
+      var th = TypeHierarchy.build(F, TypeHierarchy(globalNameMap, globalTypeMap, Poset.empty, HashSMap.empty), reporter)
       report()
       th = TypeOutliner.checkOutline(0, T, th, reporter)
       report()
 
       def nameInfo(th: TypeHierarchy, name: Predef.String): Resolver.NameMap = {
         val ids = ISZ(name.split('.').toIndexedSeq.map(s => s: String): _*)
-        return HashMap ++ ISZ((ids, th.nameMap.get(ids).get))
+        return HashSMap ++ ISZ((ids, th.nameMap.get(ids).get))
       }
 
       def typeInfo(th: TypeHierarchy, name: Predef.String): Resolver.TypeMap = {
         val ids = ISZ(name.split('.').toIndexedSeq.map(s => s: String): _*)
         th.typeMap.get(ids) match {
-          case Some(info) => return HashMap ++ ISZ((ids, info))
-          case _ => return HashMap.empty
+          case Some(info) => return HashSMap ++ ISZ((ids, info))
+          case _ => return HashSMap.empty
         }
       }
 

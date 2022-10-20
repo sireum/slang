@@ -314,12 +314,12 @@ object CustomMessagePack {
     val infos = reader.reader.readISZ(reader.read_symbolInfo _)
     val typeInfos = reader.reader.readISZ(reader.read_symbolTypeInfo _)
     val poset = reader.reader.readPoset(readQName _)
-    val aliases = reader.reader.readHashMap(readQName _, reader.read_astTyped _)
-    var nameMap = HashMap.emptyInit[Resolver.QName, Info](infos.size)
+    val aliases = reader.reader.readHashSMap(readQName _, reader.read_astTyped _)
+    var nameMap: Resolver.NameMap = HashSMap.emptyInit(infos.size)
     for (info <- infos) {
       nameMap = nameMap + info.name ~> info
     }
-    var typeMap = HashMap.emptyInit[Resolver.QName, TypeInfo](typeInfos.size)
+    var typeMap: Resolver.TypeMap = HashSMap.emptyInit(typeInfos.size)
     for (typeInfo <- typeInfos) {
       typeMap = typeMap + typeInfo.name ~> typeInfo
     }
@@ -333,7 +333,7 @@ object CustomMessagePack {
     writer.writer.writeISZ(o.nameMap.values, writer.write_symbolInfo _)
     writer.writer.writeISZ(o.typeMap.values, writer.write_symbolTypeInfo _)
     writer.writer.writePoset(o.poset, writeQName _)
-    writer.writer.writeHashMap(o.aliases, writeQName _, writer.write_astTyped _)
+    writer.writer.writeHashSMap(o.aliases, writeQName _, writer.write_astTyped _)
   }
 
   def fromTypeHierarchy(o: TypeHierarchy): ISZ[U8] = {

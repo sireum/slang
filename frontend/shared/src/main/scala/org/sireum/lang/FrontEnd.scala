@@ -97,8 +97,8 @@ object FrontEnd {
   @pure def parseGloballyResolve(input: Input): ParseResult = {
     val reporter = Reporter.create
     val topUnitOpt = Parser(input.content).parseTopUnit[AST.TopUnit](F, F, input.fileUriOpt, reporter)
-    val nameMap = HashMap.empty[QName, Info]
-    val typeMap = HashMap.empty[QName, TypeInfo]
+    val nameMap: NameMap = HashSMap.empty
+    val typeMap: TypeMap = HashSMap.empty
     if (reporter.hasError) {
       return ParseResult(AST.TopUnit.Program.empty(fileUriOpt = input.fileUriOpt), nameMap, typeMap,
         reporter.messages)
@@ -196,11 +196,11 @@ object FrontEnd {
 
   def libraryReporter: (TypeChecker, Reporter) = {
     val (initNameMap, initTypeMap) =
-      Resolver.addBuiltIns(HashMap.empty, HashMap.empty)
+      Resolver.addBuiltIns(HashSMap.empty, HashSMap.empty)
     val (reporter, _, nameMap, typeMap) =
       parseProgramAndGloballyResolve(0, for (f <- Library.files) yield Input(f._2, f._1), initNameMap, initTypeMap)
     val th =
-      TypeHierarchy.build(F, TypeHierarchy(nameMap, typeMap, Poset.empty, HashMap.empty), reporter)
+      TypeHierarchy.build(F, TypeHierarchy(nameMap, typeMap, Poset.empty, HashSMap.empty), reporter)
     val thOutlined = TypeOutliner.checkOutline(0, T, th, reporter)
     val tc = TypeChecker(thOutlined, ISZ(), F, TypeChecker.ModeContext.Code, T)
     val r = (tc, reporter)
@@ -265,7 +265,7 @@ object FrontEnd {
         tc.typeHierarchy
     }
 
-    val gdr = GlobalDeclarationResolver(HashMap.empty, HashMap.empty, Reporter.create)
+    val gdr = GlobalDeclarationResolver(HashSMap.empty, HashSMap.empty, Reporter.create)
     gdr.resolveProgram(
       program(
         body = program.body(
@@ -312,8 +312,8 @@ object FrontEnd {
       return (th3, program)
     }
 
-    var nameMap: NameMap = HashMap.empty
-    var typeMap: TypeMap = HashMap.empty
+    var nameMap: NameMap = HashSMap.empty
+    var typeMap: TypeMap = HashSMap.empty
 
     for (name <- gdr.globalNameMap.keys) {
       nameMap = nameMap + name ~> th3.nameMap.get(name).get

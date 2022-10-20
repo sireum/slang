@@ -27,7 +27,7 @@ package org.sireum.lang
 
 import org.sireum.message._
 import org.sireum.test._
-import org.sireum.{ISZ, HashMap => SHashMap, None => SNone, String => SString}
+import org.sireum.{ISZ, HashSMap => SHashSMap, None => SNone, String => SString}
 import org.sireum.lang.{ast => AST}
 import org.sireum.lang.parser.SlangParser
 import org.sireum.lang.symbol._
@@ -57,8 +57,7 @@ object SlangFrontEndTest {
     var b = r.unitOpt.nonEmpty && !reporter.hasIssue
     if (!b) report(r, reporter)
     else {
-      val gdr =
-        GlobalDeclarationResolver(SHashMap.empty[ISZ[SString], Info], SHashMap.empty[ISZ[SString], TypeInfo], reporter)
+      val gdr = GlobalDeclarationResolver(SHashSMap.empty, SHashSMap.empty, reporter)
       reporter.reports(gdr.reporter.messages)
       if (reporter.hasIssue) report(r, reporter)
       r.unitOpt.foreach {

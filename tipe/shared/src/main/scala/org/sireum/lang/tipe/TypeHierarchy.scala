@@ -372,25 +372,7 @@ object TypeHierarchy {
       reporter.error(None(), resolverKind, "Could not find Z type.")
       return r
     }
-    @pure def sortName(n1: QName, n2: QName): B = {
-      val d = n1.size - n2.size
-      if (d > 0) {
-        return F
-      }
-      if (d < 0) {
-        return T
-      }
-      for (i <- n1.indices) {
-        if (n1(i) < n2(i)) {
-          return T
-        } else if (n1(i) > n2(i)) {
-          return F
-        }
-      }
-      return T
-    }
-    for (name <- ops.ISZOps(typeMap.keys).sortWith(sortName _)) {
-      val info = typeMap.get(name).get
+    for (info <- typeMap.values) {
       info match {
         case _: TypeInfo.SubZ =>
           val typed = typedInfo(info)
@@ -439,7 +421,7 @@ object TypeHierarchy {
     return (p._1, r._2 ++ p._2)
   }
 
-  @strictpure def empty: TypeHierarchy = TypeHierarchy(HashMap.empty, HashMap.empty, Poset.empty, HashMap.empty)
+  @strictpure def empty: TypeHierarchy = TypeHierarchy(HashSMap.empty, HashSMap.empty, Poset.empty, HashSMap.empty)
 
 }
 
@@ -447,7 +429,7 @@ object TypeHierarchy {
   val nameMap: NameMap,
   val typeMap: TypeMap,
   val poset: Poset[QName],
-  val aliases: HashMap[QName, AST.Typed]
+  val aliases: HashSMap[QName, AST.Typed]
 ) {
 
   @pure def rootTypeNames(): ISZ[QName] = {
