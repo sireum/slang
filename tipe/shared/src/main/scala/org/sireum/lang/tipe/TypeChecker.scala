@@ -3191,6 +3191,23 @@ import TypeChecker._
 
         case exp: AST.Exp.Result => return checkResult(exp)
 
+        case exp: AST.Exp.InlineAgree => return (exp, exp.typedOpt)
+
+        case exp: AST.Exp.InfoFlowInvariant =>
+          def checkInfoExp(ifexp: AST.Exp): AST.Exp = {
+            val (newExp, tOpt) = checkExp(None(), scope, ifexp, reporter)
+            return newExp
+          }
+
+          def checkInfoFlow(infoFlow: AST.MethodContract.InfoFlow): AST.MethodContract.InfoFlow = {
+            val inAgrees = infoFlow.inAgreeClause(claims = for (exp <- infoFlow.inAgrees) yield checkInfoExp(exp))
+            val outAgrees = infoFlow.outAgreeClause(claims = for (exp <- infoFlow.outAgrees) yield checkInfoExp(exp))
+            return AST.MethodContract.InfoFlow(infoFlow.label, inAgrees, outAgrees)
+          }
+
+          val flows: ISZ[AST.MethodContract.InfoFlow] = for(infoFlow <- exp.flowInvariants) yield checkInfoFlow(infoFlow)
+          return (exp(flowInvariants = flows), exp.typedOpt)
+
         case exp: AST.Exp.LoopIndex => return checkLoopIndex(exp)
 
         case _: AST.Exp.Sym => halt("Infeasible")
@@ -4667,12 +4684,28 @@ import TypeChecker._
     def checkCase(cas: AST.MethodContract.Case): AST.MethodContract.Case = {
       return AST.MethodContract.Case(cas.label, checkRequires(cas.requiresClause), checkEnsures(cas.ensuresClause))
     }
+    def checkInfoFlows(infoFlows: AST.MethodContract.InfoFlows): AST.MethodContract.InfoFlows = {
+      val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.SpecPost, strictAliasing)
+      def checkInfoExp(exp: AST.Exp): AST.Exp = {
+
+        val (newExp, tOpt) = checkExp(None(), scope, exp, reporter)
+
+        return newExp
+      }
+      def checkInfoFlow(infoFlow: AST.MethodContract.InfoFlow): AST.MethodContract.InfoFlow = {
+        val inAgrees =  infoFlow.inAgreeClause(claims = for(exp <- infoFlow.inAgrees) yield checkInfoExp(exp))
+        val outAgrees = infoFlow.outAgreeClause(claims = for(exp <- infoFlow.outAgrees) yield checkInfoExp(exp))
+        return AST.MethodContract.InfoFlow(infoFlow.label, inAgrees, outAgrees)
+      }
+      return AST.MethodContract.InfoFlows(for(infoFlow <- infoFlows.flows) yield checkInfoFlow(infoFlow), infoFlows.attr)
+    }
+
     contract match {
       case contract: AST.MethodContract.Simple =>
         return AST.MethodContract.Simple(
           checkReads(contract.readsClause), checkRequires(contract.requiresClause),
           checkModifies("modify", scope, contract.modifiesClause, reporter), checkEnsures(contract.ensuresClause),
-          contract.attr
+          checkInfoFlows(contract.infoFlowsClause), contract.attr
         )
       case contract: AST.MethodContract.Cases =>
         val newReads = checkReads(contract.readsClause)

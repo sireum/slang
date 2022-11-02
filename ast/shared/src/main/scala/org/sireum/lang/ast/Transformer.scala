@@ -378,6 +378,14 @@ object Transformer {
       return PreResult(ctx, T, None())
     }
 
+    @pure def preMethodContractInfoFlows(ctx: Context, o: MethodContract.InfoFlows): PreResult[Context, MethodContract.InfoFlows] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preMethodContractInfoFlow(ctx: Context, o: MethodContract.InfoFlow): PreResult[Context, MethodContract.InfoFlow] = {
+      return PreResult(ctx, T, None())
+    }
+
     @pure def preSequent(ctx: Context, o: Sequent): PreResult[Context, Sequent] = {
       return PreResult(ctx, T, None())
     }
@@ -674,6 +682,8 @@ object Transformer {
         case o: Exp.LoopIndex => return preExpLoopIndex(ctx, o)
         case o: Exp.StateSeq => return preExpStateSeq(ctx, o)
         case o: Exp.Result => return preExpResult(ctx, o)
+        case o: Exp.InlineAgree => return preExpInlineAgree(ctx, o)
+        case o: Exp.InfoFlowInvariant => return preExpInfoFlowInvariant(ctx, o)
       }
     }
 
@@ -898,6 +908,14 @@ object Transformer {
     }
 
     @pure def preExpResult(ctx: Context, o: Exp.Result): PreResult[Context, Exp] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preExpInlineAgree(ctx: Context, o: Exp.InlineAgree): PreResult[Context, Exp] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preExpInfoFlowInvariant(ctx: Context, o: Exp.InfoFlowInvariant): PreResult[Context, Exp] = {
       return PreResult(ctx, T, None())
     }
 
@@ -1446,6 +1464,14 @@ object Transformer {
       return TPostResult(ctx, None())
     }
 
+    @pure def postMethodContractInfoFlows(ctx: Context, o: MethodContract.InfoFlows): TPostResult[Context, MethodContract.InfoFlows] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postMethodContractInfoFlow(ctx: Context, o: MethodContract.InfoFlow): TPostResult[Context, MethodContract.InfoFlow] = {
+      return TPostResult(ctx, None())
+    }
+
     @pure def postSequent(ctx: Context, o: Sequent): TPostResult[Context, Sequent] = {
       return TPostResult(ctx, None())
     }
@@ -1742,6 +1768,8 @@ object Transformer {
         case o: Exp.LoopIndex => return postExpLoopIndex(ctx, o)
         case o: Exp.StateSeq => return postExpStateSeq(ctx, o)
         case o: Exp.Result => return postExpResult(ctx, o)
+        case o: Exp.InlineAgree => return postExpInlineAgree(ctx, o)
+        case o: Exp.InfoFlowInvariant => return postExpInfoFlowInvariant(ctx, o)
       }
     }
 
@@ -1966,6 +1994,14 @@ object Transformer {
     }
 
     @pure def postExpResult(ctx: Context, o: Exp.Result): TPostResult[Context, Exp] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postExpInlineAgree(ctx: Context, o: Exp.InlineAgree): TPostResult[Context, Exp] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postExpInfoFlowInvariant(ctx: Context, o: Exp.InfoFlowInvariant): TPostResult[Context, Exp] = {
       return TPostResult(ctx, None())
     }
 
@@ -2572,11 +2608,12 @@ import Transformer._
           val r1: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r0.ctx, o2.requiresClause)
           val r2: TPostResult[Context, MethodContract.Accesses] = transformMethodContractAccesses(r1.ctx, o2.modifiesClause)
           val r3: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r2.ctx, o2.ensuresClause)
-          val r4: TPostResult[Context, Attr] = transformAttr(r3.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty)
-            TPostResult(r4.ctx, Some(o2(readsClause = r0.resultOpt.getOrElse(o2.readsClause), requiresClause = r1.resultOpt.getOrElse(o2.requiresClause), modifiesClause = r2.resultOpt.getOrElse(o2.modifiesClause), ensuresClause = r3.resultOpt.getOrElse(o2.ensuresClause), attr = r4.resultOpt.getOrElse(o2.attr))))
+          val r4: TPostResult[Context, MethodContract.InfoFlows] = transformMethodContractInfoFlows(r3.ctx, o2.infoFlowsClause)
+          val r5: TPostResult[Context, Attr] = transformAttr(r4.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty || r5.resultOpt.nonEmpty)
+            TPostResult(r5.ctx, Some(o2(readsClause = r0.resultOpt.getOrElse(o2.readsClause), requiresClause = r1.resultOpt.getOrElse(o2.requiresClause), modifiesClause = r2.resultOpt.getOrElse(o2.modifiesClause), ensuresClause = r3.resultOpt.getOrElse(o2.ensuresClause), infoFlowsClause = r4.resultOpt.getOrElse(o2.infoFlowsClause), attr = r5.resultOpt.getOrElse(o2.attr))))
           else
-            TPostResult(r4.ctx, None())
+            TPostResult(r5.ctx, None())
         case o2: MethodContract.Cases =>
           val r0: TPostResult[Context, MethodContract.Accesses] = transformMethodContractAccesses(preR.ctx, o2.readsClause)
           val r1: TPostResult[Context, MethodContract.Accesses] = transformMethodContractAccesses(r0.ctx, o2.modifiesClause)
@@ -2834,11 +2871,12 @@ import Transformer._
           val r1: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r0.ctx, o2.requiresClause)
           val r2: TPostResult[Context, MethodContract.Accesses] = transformMethodContractAccesses(r1.ctx, o2.modifiesClause)
           val r3: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r2.ctx, o2.ensuresClause)
-          val r4: TPostResult[Context, Attr] = transformAttr(r3.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty)
-            TPostResult(r4.ctx, Some(o2(readsClause = r0.resultOpt.getOrElse(o2.readsClause), requiresClause = r1.resultOpt.getOrElse(o2.requiresClause), modifiesClause = r2.resultOpt.getOrElse(o2.modifiesClause), ensuresClause = r3.resultOpt.getOrElse(o2.ensuresClause), attr = r4.resultOpt.getOrElse(o2.attr))))
+          val r4: TPostResult[Context, MethodContract.InfoFlows] = transformMethodContractInfoFlows(r3.ctx, o2.infoFlowsClause)
+          val r5: TPostResult[Context, Attr] = transformAttr(r4.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty || r5.resultOpt.nonEmpty)
+            TPostResult(r5.ctx, Some(o2(readsClause = r0.resultOpt.getOrElse(o2.readsClause), requiresClause = r1.resultOpt.getOrElse(o2.requiresClause), modifiesClause = r2.resultOpt.getOrElse(o2.modifiesClause), ensuresClause = r3.resultOpt.getOrElse(o2.ensuresClause), infoFlowsClause = r4.resultOpt.getOrElse(o2.infoFlowsClause), attr = r5.resultOpt.getOrElse(o2.attr))))
           else
-            TPostResult(r4.ctx, None())
+            TPostResult(r5.ctx, None())
         case o2: MethodContract.Cases =>
           val r0: TPostResult[Context, MethodContract.Accesses] = transformMethodContractAccesses(preR.ctx, o2.readsClause)
           val r1: TPostResult[Context, MethodContract.Accesses] = transformMethodContractAccesses(r0.ctx, o2.modifiesClause)
@@ -2943,6 +2981,63 @@ import Transformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: MethodContract.Case = r.resultOpt.getOrElse(o)
     val postR: TPostResult[Context, MethodContract.Case] = pp.postMethodContractCase(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformMethodContractInfoFlows(ctx: Context, o: MethodContract.InfoFlows): TPostResult[Context, MethodContract.InfoFlows] = {
+    val preR: PreResult[Context, MethodContract.InfoFlows] = pp.preMethodContractInfoFlows(ctx, o)
+    val r: TPostResult[Context, MethodContract.InfoFlows] = if (preR.continu) {
+      val o2: MethodContract.InfoFlows = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: TPostResult[Context, IS[Z, MethodContract.InfoFlow]] = transformISZ(preR.ctx, o2.flows, transformMethodContractInfoFlow _)
+      val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+        TPostResult(r1.ctx, Some(o2(flows = r0.resultOpt.getOrElse(o2.flows), attr = r1.resultOpt.getOrElse(o2.attr))))
+      else
+        TPostResult(r1.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: MethodContract.InfoFlows = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, MethodContract.InfoFlows] = pp.postMethodContractInfoFlows(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformMethodContractInfoFlow(ctx: Context, o: MethodContract.InfoFlow): TPostResult[Context, MethodContract.InfoFlow] = {
+    val preR: PreResult[Context, MethodContract.InfoFlow] = pp.preMethodContractInfoFlow(ctx, o)
+    val r: TPostResult[Context, MethodContract.InfoFlow] = if (preR.continu) {
+      val o2: MethodContract.InfoFlow = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: TPostResult[Context, Exp.LitString] = transformExpLitString(preR.ctx, o2.label)
+      val r1: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r0.ctx, o2.inAgreeClause)
+      val r2: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r1.ctx, o2.outAgreeClause)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+        TPostResult(r2.ctx, Some(o2(label = r0.resultOpt.getOrElse(o2.label), inAgreeClause = r1.resultOpt.getOrElse(o2.inAgreeClause), outAgreeClause = r2.resultOpt.getOrElse(o2.outAgreeClause))))
+      else
+        TPostResult(r2.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: MethodContract.InfoFlow = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, MethodContract.InfoFlow] = pp.postMethodContractInfoFlow(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -3829,6 +3924,20 @@ import Transformer._
           val r1: TPostResult[Context, TypedAttr] = transformTypedAttr(r0.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
             TPostResult(r1.ctx, Some(o2(tipeOpt = r0.resultOpt.getOrElse(o2.tipeOpt), attr = r1.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: Exp.InlineAgree =>
+          val r0: TPostResult[Context, IS[Z, Exp.LitString]] = transformISZ(preR.ctx, o2.partitions, transformExpLitString _)
+          val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(partitions = r0.resultOpt.getOrElse(o2.partitions), attr = r1.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: Exp.InfoFlowInvariant =>
+          val r0: TPostResult[Context, IS[Z, MethodContract.InfoFlow]] = transformISZ(preR.ctx, o2.flowInvariants, transformMethodContractInfoFlow _)
+          val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(flowInvariants = r0.resultOpt.getOrElse(o2.flowInvariants), attr = r1.resultOpt.getOrElse(o2.attr))))
           else
             TPostResult(r1.ctx, None())
       }

@@ -2491,6 +2491,20 @@ class SlangParser(
       case Term.Apply(Term.Name(qid), List(f: Term.Function)) if quantSymbols.contains(qid) => quantType(qid, f)
       case exp: Term.ApplyUnary => translateUnaryExp(exp)
       case exp: Term.ApplyInfix => translateBinaryExp(exp)
+
+      case q"InfoFlowInvariant(..${rexprs: Seq[Term]})" =>
+        val infoFlows = AST.MethodContract.InfoFlows(translateInfoFlows(rexprs), attr(exp.pos))
+        AST.Exp.InfoFlowInvariant(flowInvariants = infoFlows.flows, attr = attr(exp.pos))
+
+      case q"${name: Term.Name}(..$args)" if name.value == "InlineAgree" =>
+        var ids = ISZ[AST.Exp.LitString]()
+        for (a <- args) {
+          translateExp(a) match {
+            case l: AST.Exp.LitString => ids = ids :+ l
+            case _ => errorInSlang(a.pos, "InlineAgree(...) argument has to be a string")
+          }
+        }
+        AST.Exp.InlineAgree(ids, attr(if (exp.pos == Position.None) name.pos else exp.pos))
       case q"${name: Term.Name}($arg)" if name.value == "In" =>
         translateExp(arg) match {
           case e: AST.Exp.Ref => AST.Exp.Input(e, attr(if (exp.pos == Position.None) name.pos else exp.pos))
@@ -3115,11 +3129,71 @@ class SlangParser(
         case _ =>
       }
     }
+
+    var infoFlows = AST.MethodContract.InfoFlows.empty
+    if (i < length) {
+      exprs(i) match {
+        case q"InfoFlows(..${rexprs: Seq[Term]})" =>
+          infoFlows = AST.MethodContract.InfoFlows(translateInfoFlows(rexprs), attr(exprs(i).pos))
+          i += 1
+        case _ =>
+      }
+    }
+
     for (j <- i until length) {
       val expr = exprs(j)
       error(expr.pos, "Unrecognized Contract argument.")
     }
-    AST.MethodContract.Simple(reads, requires, modifies, ensures, csAttr)
+    AST.MethodContract.Simple(reads, requires, modifies, ensures, infoFlows, csAttr)
+  }
+
+  def translateInfoFlows(exprs: Seq[Term]): ISZ[AST.MethodContract.InfoFlow] = {
+    val length = exprs.length
+    var i = 0
+    var infoFlows: ISZ[AST.MethodContract.InfoFlow] = ISZ()
+    while(i < length) {
+      exprs(i) match {
+        case q"Flow(..${cexprs: Seq[Term]})" => infoFlows = infoFlows :+ translateInfoFlow(cexprs)
+        case expr => error(expr.pos, "Unrecognized InfoFlow flow argument")
+      }
+      i += 1
+    }
+    return infoFlows
+  }
+
+  def translateInfoFlow(exprs: Seq[Term]): AST.MethodContract.InfoFlow = {
+    var label: AST.Exp.LitString = AST.Exp.LitString("", emptyAttr)
+    val length = exprs.length
+    var i = 0
+    if (i < length) {
+      exprs(i) match {
+        case expr: Lit.String =>
+          label = AST.Exp.LitString(expr.value, attr(expr.pos))
+          i += 1
+        case _ =>
+      }
+    }
+    var inAgrees = AST.MethodContract.Claims.empty
+    if (i < length) {
+      exprs(i) match {
+        case q"InAgree(..${iexprs: Seq[Term]})" =>
+          inAgrees = AST.MethodContract.Claims(translateExps(iexprs), attr(exprs(i).pos))
+          i += 1
+      }
+    }
+    var outAgrees = AST.MethodContract.Claims.empty
+    if (i < length) {
+      exprs(i) match {
+        case q"OutAgree(..${iexprs: Seq[Term]})" =>
+          outAgrees = AST.MethodContract.Claims(translateExps(iexprs), attr(exprs(i).pos))
+          i += 1
+      }
+    }
+    for (j <- i until length) {
+      val expr = exprs(j)
+      error(expr.pos, "Unrecognized InfoFlow Case argument")
+    }
+    return AST.MethodContract.InfoFlow(label, inAgrees, outAgrees)
   }
 
   def translateMethodContract(exprs: Seq[Term], mcAttr: AST.Attr): AST.MethodContract = {

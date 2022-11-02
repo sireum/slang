@@ -220,7 +220,8 @@ object Stmt {
               MethodContract.Claims(sequent.premises, reqAttr),
               MethodContract.Accesses.empty,
               MethodContract.Claims(ISZ(sequent.conclusion), Attr(sequent.conclusion.posOpt)),
-                Attr(sequent.attr.posOpt))
+              MethodContract.InfoFlows.empty,
+              Attr(sequent.attr.posOpt))
           case _ =>
         }
       }
@@ -573,20 +574,22 @@ object MethodContract {
   @datatype class Claims(val claims: ISZ[Exp], val attr: Attr)
 
   object Simple {
-    @strictpure def empty: Simple = Simple(Accesses.empty, Claims.empty, Accesses.empty, Claims.empty, Attr(None()))
+    @strictpure def empty: Simple = Simple(Accesses.empty, Claims.empty, Accesses.empty, Claims.empty, InfoFlows.empty, Attr(None()))
   }
   @datatype class Simple(val readsClause: Accesses,
                          val requiresClause: Claims,
                          val modifiesClause: Accesses,
                          val ensuresClause: Claims,
+                         val infoFlowsClause: InfoFlows,
                          val attr: Attr) extends MethodContract {
     @strictpure override def reads: ISZ[Exp.Ref] = readsClause.refs
     @strictpure def requires: ISZ[Exp] = requiresClause.claims
     @strictpure override def modifies: ISZ[Exp.Ref] = modifiesClause.refs
     @strictpure def ensures: ISZ[Exp] = ensuresClause.claims
+    @strictpure def infoFlows: ISZ[InfoFlow] = infoFlowsClause.flows
 
     @pure override def isEmpty: B = {
-      return reads.isEmpty && requires.isEmpty && modifies.isEmpty && ensures.isEmpty
+      return reads.isEmpty && requires.isEmpty && modifies.isEmpty && ensures.isEmpty && infoFlows.isEmpty
     }
   }
 
@@ -607,6 +610,23 @@ object MethodContract {
                        val ensuresClause: Claims) {
     @strictpure def requires: ISZ[Exp] = requiresClause.claims
     @strictpure def ensures: ISZ[Exp] = ensuresClause.claims
+  }
+
+  object InfoFlows {
+    @strictpure def empty: InfoFlows = InfoFlows(ISZ(), Attr(None()))
+  }
+  @datatype class InfoFlows(val flows: ISZ[InfoFlow],
+                            val attr: Attr) {
+    @pure def isEmpty: B = {
+      return flows.isEmpty
+    }
+  }
+
+  @datatype class InfoFlow(val label: Exp.LitString,
+                           val inAgreeClause: Claims,
+                           val outAgreeClause: Claims) {
+    @strictpure def inAgrees: ISZ[Exp] = inAgreeClause.claims
+    @strictpure def outAgrees: ISZ[Exp] = outAgreeClause.claims
   }
 }
 
@@ -1825,6 +1845,34 @@ object Exp {
     }
   }
 
+  @datatype class InlineAgree(val partitions: ISZ[LitString], @hidden val attr: Attr) extends Exp {
+    @pure def posOpt: Option[Position] = {
+      return attr.posOpt
+    }
+
+    @pure def typedOpt: Option[Typed] = {
+      return Typed.bOpt
+    }
+
+    @pure def prettyST: ST = {
+      val args: ISZ[ST] = for(p <- partitions) yield st""""$p""""
+      return st"InlineAgree(${(args, ",")})"
+    }
+  }
+
+  @datatype class InfoFlowInvariant(val flowInvariants: ISZ[MethodContract.InfoFlow], @hidden val attr: Attr) extends Exp {
+    override def posOpt: Option[Position] = {
+      return attr.posOpt
+    }
+
+    override def typedOpt: Option[Typed] = {
+      return Typed.bOpt
+    }
+
+    override def prettyST: ST = {
+      return st"InfoFlowInvariant(...)"
+    }
+  }
 }
 
 @datatype class NamedArg(val id: Id, val arg: Exp, val index: Z)

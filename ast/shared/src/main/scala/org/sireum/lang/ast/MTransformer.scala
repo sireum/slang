@@ -245,6 +245,14 @@ object MTransformer {
 
   val PostResultMethodContractCase: MOption[MethodContract.Case] = MNone()
 
+  val PreResultMethodContractInfoFlows: PreResult[MethodContract.InfoFlows] = PreResult(T, MNone())
+
+  val PostResultMethodContractInfoFlows: MOption[MethodContract.InfoFlows] = MNone()
+
+  val PreResultMethodContractInfoFlow: PreResult[MethodContract.InfoFlow] = PreResult(T, MNone())
+
+  val PostResultMethodContractInfoFlow: MOption[MethodContract.InfoFlow] = MNone()
+
   val PreResultSequent: PreResult[Sequent] = PreResult(T, MNone())
 
   val PostResultSequent: MOption[Sequent] = MNone()
@@ -504,6 +512,14 @@ object MTransformer {
   val PreResultExpResult: PreResult[Exp] = PreResult(T, MNone())
 
   val PostResultExpResult: MOption[Exp] = MNone()
+
+  val PreResultExpInlineAgree: PreResult[Exp] = PreResult(T, MNone())
+
+  val PostResultExpInlineAgree: MOption[Exp] = MNone()
+
+  val PreResultExpInfoFlowInvariant: PreResult[Exp] = PreResult(T, MNone())
+
+  val PostResultExpInfoFlowInvariant: MOption[Exp] = MNone()
 
   val PreResultNamedArg: PreResult[NamedArg] = PreResult(T, MNone())
 
@@ -1012,6 +1028,14 @@ import MTransformer._
     return PreResultMethodContractCase
   }
 
+  def preMethodContractInfoFlows(o: MethodContract.InfoFlows): PreResult[MethodContract.InfoFlows] = {
+    return PreResultMethodContractInfoFlows
+  }
+
+  def preMethodContractInfoFlow(o: MethodContract.InfoFlow): PreResult[MethodContract.InfoFlow] = {
+    return PreResultMethodContractInfoFlow
+  }
+
   def preSequent(o: Sequent): PreResult[Sequent] = {
     return PreResultSequent
   }
@@ -1308,6 +1332,8 @@ import MTransformer._
       case o: Exp.LoopIndex => return preExpLoopIndex(o)
       case o: Exp.StateSeq => return preExpStateSeq(o)
       case o: Exp.Result => return preExpResult(o)
+      case o: Exp.InlineAgree => return preExpInlineAgree(o)
+      case o: Exp.InfoFlowInvariant => return preExpInfoFlowInvariant(o)
     }
   }
 
@@ -1533,6 +1559,14 @@ import MTransformer._
 
   def preExpResult(o: Exp.Result): PreResult[Exp] = {
     return PreResultExpResult
+  }
+
+  def preExpInlineAgree(o: Exp.InlineAgree): PreResult[Exp] = {
+    return PreResultExpInlineAgree
+  }
+
+  def preExpInfoFlowInvariant(o: Exp.InfoFlowInvariant): PreResult[Exp] = {
+    return PreResultExpInfoFlowInvariant
   }
 
   def preNamedArg(o: NamedArg): PreResult[NamedArg] = {
@@ -2080,6 +2114,14 @@ import MTransformer._
     return PostResultMethodContractCase
   }
 
+  def postMethodContractInfoFlows(o: MethodContract.InfoFlows): MOption[MethodContract.InfoFlows] = {
+    return PostResultMethodContractInfoFlows
+  }
+
+  def postMethodContractInfoFlow(o: MethodContract.InfoFlow): MOption[MethodContract.InfoFlow] = {
+    return PostResultMethodContractInfoFlow
+  }
+
   def postSequent(o: Sequent): MOption[Sequent] = {
     return PostResultSequent
   }
@@ -2376,6 +2418,8 @@ import MTransformer._
       case o: Exp.LoopIndex => return postExpLoopIndex(o)
       case o: Exp.StateSeq => return postExpStateSeq(o)
       case o: Exp.Result => return postExpResult(o)
+      case o: Exp.InlineAgree => return postExpInlineAgree(o)
+      case o: Exp.InfoFlowInvariant => return postExpInfoFlowInvariant(o)
     }
   }
 
@@ -2601,6 +2645,14 @@ import MTransformer._
 
   def postExpResult(o: Exp.Result): MOption[Exp] = {
     return PostResultExpResult
+  }
+
+  def postExpInlineAgree(o: Exp.InlineAgree): MOption[Exp] = {
+    return PostResultExpInlineAgree
+  }
+
+  def postExpInfoFlowInvariant(o: Exp.InfoFlowInvariant): MOption[Exp] = {
+    return PostResultExpInfoFlowInvariant
   }
 
   def postNamedArg(o: NamedArg): MOption[NamedArg] = {
@@ -3168,9 +3220,10 @@ import MTransformer._
           val r1: MOption[MethodContract.Claims] = transformMethodContractClaims(o2.requiresClause)
           val r2: MOption[MethodContract.Accesses] = transformMethodContractAccesses(o2.modifiesClause)
           val r3: MOption[MethodContract.Claims] = transformMethodContractClaims(o2.ensuresClause)
-          val r4: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
-            MSome(o2(readsClause = r0.getOrElse(o2.readsClause), requiresClause = r1.getOrElse(o2.requiresClause), modifiesClause = r2.getOrElse(o2.modifiesClause), ensuresClause = r3.getOrElse(o2.ensuresClause), attr = r4.getOrElse(o2.attr)))
+          val r4: MOption[MethodContract.InfoFlows] = transformMethodContractInfoFlows(o2.infoFlowsClause)
+          val r5: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty || r5.nonEmpty)
+            MSome(o2(readsClause = r0.getOrElse(o2.readsClause), requiresClause = r1.getOrElse(o2.requiresClause), modifiesClause = r2.getOrElse(o2.modifiesClause), ensuresClause = r3.getOrElse(o2.ensuresClause), infoFlowsClause = r4.getOrElse(o2.infoFlowsClause), attr = r5.getOrElse(o2.attr)))
           else
             MNone()
         case o2: MethodContract.Cases =>
@@ -3430,9 +3483,10 @@ import MTransformer._
           val r1: MOption[MethodContract.Claims] = transformMethodContractClaims(o2.requiresClause)
           val r2: MOption[MethodContract.Accesses] = transformMethodContractAccesses(o2.modifiesClause)
           val r3: MOption[MethodContract.Claims] = transformMethodContractClaims(o2.ensuresClause)
-          val r4: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
-            MSome(o2(readsClause = r0.getOrElse(o2.readsClause), requiresClause = r1.getOrElse(o2.requiresClause), modifiesClause = r2.getOrElse(o2.modifiesClause), ensuresClause = r3.getOrElse(o2.ensuresClause), attr = r4.getOrElse(o2.attr)))
+          val r4: MOption[MethodContract.InfoFlows] = transformMethodContractInfoFlows(o2.infoFlowsClause)
+          val r5: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty || r5.nonEmpty)
+            MSome(o2(readsClause = r0.getOrElse(o2.readsClause), requiresClause = r1.getOrElse(o2.requiresClause), modifiesClause = r2.getOrElse(o2.modifiesClause), ensuresClause = r3.getOrElse(o2.ensuresClause), infoFlowsClause = r4.getOrElse(o2.infoFlowsClause), attr = r5.getOrElse(o2.attr)))
           else
             MNone()
         case o2: MethodContract.Cases =>
@@ -3539,6 +3593,63 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: MethodContract.Case = r.getOrElse(o)
     val postR: MOption[MethodContract.Case] = postMethodContractCase(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformMethodContractInfoFlows(o: MethodContract.InfoFlows): MOption[MethodContract.InfoFlows] = {
+    val preR: PreResult[MethodContract.InfoFlows] = preMethodContractInfoFlows(o)
+    val r: MOption[MethodContract.InfoFlows] = if (preR.continu) {
+      val o2: MethodContract.InfoFlows = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[IS[Z, MethodContract.InfoFlow]] = transformISZ(o2.flows, transformMethodContractInfoFlow _)
+      val r1: MOption[Attr] = transformAttr(o2.attr)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+        MSome(o2(flows = r0.getOrElse(o2.flows), attr = r1.getOrElse(o2.attr)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: MethodContract.InfoFlows = r.getOrElse(o)
+    val postR: MOption[MethodContract.InfoFlows] = postMethodContractInfoFlows(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformMethodContractInfoFlow(o: MethodContract.InfoFlow): MOption[MethodContract.InfoFlow] = {
+    val preR: PreResult[MethodContract.InfoFlow] = preMethodContractInfoFlow(o)
+    val r: MOption[MethodContract.InfoFlow] = if (preR.continu) {
+      val o2: MethodContract.InfoFlow = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[Exp.LitString] = transformExpLitString(o2.label)
+      val r1: MOption[MethodContract.Claims] = transformMethodContractClaims(o2.inAgreeClause)
+      val r2: MOption[MethodContract.Claims] = transformMethodContractClaims(o2.outAgreeClause)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+        MSome(o2(label = r0.getOrElse(o2.label), inAgreeClause = r1.getOrElse(o2.inAgreeClause), outAgreeClause = r2.getOrElse(o2.outAgreeClause)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: MethodContract.InfoFlow = r.getOrElse(o)
+    val postR: MOption[MethodContract.InfoFlow] = postMethodContractInfoFlow(o2)
     if (postR.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -4425,6 +4536,20 @@ import MTransformer._
           val r1: MOption[TypedAttr] = transformTypedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
             MSome(o2(tipeOpt = r0.getOrElse(o2.tipeOpt), attr = r1.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Exp.InlineAgree =>
+          val r0: MOption[IS[Z, Exp.LitString]] = transformISZ(o2.partitions, transformExpLitString _)
+          val r1: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(partitions = r0.getOrElse(o2.partitions), attr = r1.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Exp.InfoFlowInvariant =>
+          val r0: MOption[IS[Z, MethodContract.InfoFlow]] = transformISZ(o2.flowInvariants, transformMethodContractInfoFlow _)
+          val r1: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(flowInvariants = r0.getOrElse(o2.flowInvariants), attr = r1.getOrElse(o2.attr)))
           else
             MNone()
       }
