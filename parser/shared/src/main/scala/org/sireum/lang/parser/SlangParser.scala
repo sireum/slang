@@ -3153,7 +3153,7 @@ class SlangParser(
     var infoFlows: ISZ[AST.MethodContract.InfoFlow] = ISZ()
     while(i < length) {
       exprs(i) match {
-        case q"Flow(..${cexprs: Seq[Term]})" => infoFlows = infoFlows :+ translateInfoFlow(cexprs)
+        case q"FlowCase(..${cexprs: Seq[Term]})" => infoFlows = infoFlows :+ translateInfoFlow(cexprs)
         case expr => error(expr.pos, "Unrecognized InfoFlow flow argument")
       }
       i += 1
