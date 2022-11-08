@@ -1106,6 +1106,7 @@ object MsgPack {
     def write_astMethodContractInfoFlow(o: org.sireum.lang.ast.MethodContract.InfoFlow): Unit = {
       writer.writeZ(Constants._astMethodContractInfoFlow)
       write_astExpLitString(o.label)
+      write_astMethodContractClaims(o.requiresClause)
       write_astMethodContractClaims(o.inAgreeClause)
       write_astMethodContractClaims(o.outAgreeClause)
     }
@@ -3378,9 +3379,10 @@ object MsgPack {
         reader.expectZ(Constants._astMethodContractInfoFlow)
       }
       val label = read_astExpLitString()
+      val requiresClause = read_astMethodContractClaims()
       val inAgreeClause = read_astMethodContractClaims()
       val outAgreeClause = read_astMethodContractClaims()
-      return org.sireum.lang.ast.MethodContract.InfoFlow(label, inAgreeClause, outAgreeClause)
+      return org.sireum.lang.ast.MethodContract.InfoFlow(label, requiresClause, inAgreeClause, outAgreeClause)
     }
 
     def read_astSequent(): org.sireum.lang.ast.Sequent = {

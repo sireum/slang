@@ -623,8 +623,10 @@ object MethodContract {
   }
 
   @datatype class InfoFlow(val label: Exp.LitString,
+                           val requiresClause: Claims,
                            val inAgreeClause: Claims,
                            val outAgreeClause: Claims) {
+    @strictpure def requires: ISZ[Exp] = requiresClause.claims
     @strictpure def inAgrees: ISZ[Exp] = inAgreeClause.claims
     @strictpure def outAgrees: ISZ[Exp] = outAgreeClause.claims
   }

@@ -3024,12 +3024,13 @@ import Transformer._
       val o2: MethodContract.InfoFlow = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: TPostResult[Context, Exp.LitString] = transformExpLitString(preR.ctx, o2.label)
-      val r1: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r0.ctx, o2.inAgreeClause)
-      val r2: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r1.ctx, o2.outAgreeClause)
-      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-        TPostResult(r2.ctx, Some(o2(label = r0.resultOpt.getOrElse(o2.label), inAgreeClause = r1.resultOpt.getOrElse(o2.inAgreeClause), outAgreeClause = r2.resultOpt.getOrElse(o2.outAgreeClause))))
+      val r1: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r0.ctx, o2.requiresClause)
+      val r2: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r1.ctx, o2.inAgreeClause)
+      val r3: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r2.ctx, o2.outAgreeClause)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+        TPostResult(r3.ctx, Some(o2(label = r0.resultOpt.getOrElse(o2.label), requiresClause = r1.resultOpt.getOrElse(o2.requiresClause), inAgreeClause = r2.resultOpt.getOrElse(o2.inAgreeClause), outAgreeClause = r3.resultOpt.getOrElse(o2.outAgreeClause))))
       else
-        TPostResult(r2.ctx, None())
+        TPostResult(r3.ctx, None())
     } else if (preR.resultOpt.nonEmpty) {
       TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
     } else {

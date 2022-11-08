@@ -3173,6 +3173,15 @@ class SlangParser(
         case _ =>
       }
     }
+    var requires = AST.MethodContract.Claims.empty
+    if (i < length) {
+      exprs(i) match {
+        case q"Requires(..${iexprs: Seq[Term]})" =>
+          requires = AST.MethodContract.Claims(translateExps(iexprs), attr(exprs(i).pos))
+          i += 1
+        case _ =>
+      }
+    }
     var inAgrees = AST.MethodContract.Claims.empty
     if (i < length) {
       exprs(i) match {
@@ -3193,7 +3202,7 @@ class SlangParser(
       val expr = exprs(j)
       error(expr.pos, "Unrecognized InfoFlow Case argument")
     }
-    return AST.MethodContract.InfoFlow(label, inAgrees, outAgrees)
+    return AST.MethodContract.InfoFlow(label, requires, inAgrees, outAgrees)
   }
 
   def translateMethodContract(exprs: Seq[Term], mcAttr: AST.Attr): AST.MethodContract = {

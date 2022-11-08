@@ -3636,10 +3636,11 @@ import MTransformer._
       val o2: MethodContract.InfoFlow = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: MOption[Exp.LitString] = transformExpLitString(o2.label)
-      val r1: MOption[MethodContract.Claims] = transformMethodContractClaims(o2.inAgreeClause)
-      val r2: MOption[MethodContract.Claims] = transformMethodContractClaims(o2.outAgreeClause)
-      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-        MSome(o2(label = r0.getOrElse(o2.label), inAgreeClause = r1.getOrElse(o2.inAgreeClause), outAgreeClause = r2.getOrElse(o2.outAgreeClause)))
+      val r1: MOption[MethodContract.Claims] = transformMethodContractClaims(o2.requiresClause)
+      val r2: MOption[MethodContract.Claims] = transformMethodContractClaims(o2.inAgreeClause)
+      val r3: MOption[MethodContract.Claims] = transformMethodContractClaims(o2.outAgreeClause)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+        MSome(o2(label = r0.getOrElse(o2.label), requiresClause = r1.getOrElse(o2.requiresClause), inAgreeClause = r2.getOrElse(o2.inAgreeClause), outAgreeClause = r3.getOrElse(o2.outAgreeClause)))
       else
         MNone()
     } else if (preR.resultOpt.nonEmpty) {

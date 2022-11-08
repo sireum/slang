@@ -3200,9 +3200,10 @@ import TypeChecker._
           }
 
           def checkInfoFlow(infoFlow: AST.MethodContract.InfoFlow): AST.MethodContract.InfoFlow = {
+            val requires = infoFlow.requiresClause(claims = for (exp <- infoFlow.requires) yield checkInfoExp(exp))
             val inAgrees = infoFlow.inAgreeClause(claims = for (exp <- infoFlow.inAgrees) yield checkInfoExp(exp))
             val outAgrees = infoFlow.outAgreeClause(claims = for (exp <- infoFlow.outAgrees) yield checkInfoExp(exp))
-            return AST.MethodContract.InfoFlow(infoFlow.label, inAgrees, outAgrees)
+            return AST.MethodContract.InfoFlow(infoFlow.label, requires, inAgrees, outAgrees)
           }
 
           val flows: ISZ[AST.MethodContract.InfoFlow] = for(infoFlow <- exp.flowInvariants) yield checkInfoFlow(infoFlow)
@@ -4693,9 +4694,10 @@ import TypeChecker._
         return newExp
       }
       def checkInfoFlow(infoFlow: AST.MethodContract.InfoFlow): AST.MethodContract.InfoFlow = {
+        val requires =  infoFlow.requiresClause(claims = for(exp <- infoFlow.requires) yield checkInfoExp(exp))
         val inAgrees =  infoFlow.inAgreeClause(claims = for(exp <- infoFlow.inAgrees) yield checkInfoExp(exp))
         val outAgrees = infoFlow.outAgreeClause(claims = for(exp <- infoFlow.outAgrees) yield checkInfoExp(exp))
-        return AST.MethodContract.InfoFlow(infoFlow.label, inAgrees, outAgrees)
+        return AST.MethodContract.InfoFlow(infoFlow.label, requires, inAgrees, outAgrees)
       }
       return AST.MethodContract.InfoFlows(for(infoFlow <- infoFlows.flows) yield checkInfoFlow(infoFlow), infoFlows.attr)
     }
