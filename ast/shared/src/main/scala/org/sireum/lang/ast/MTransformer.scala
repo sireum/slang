@@ -4540,10 +4540,11 @@ import MTransformer._
           else
             MNone()
         case o2: Exp.InlineAgree =>
-          val r0: MOption[IS[Z, Exp.LitString]] = transformISZ(o2.partitions, transformExpLitString _)
-          val r1: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(partitions = r0.getOrElse(o2.partitions), attr = r1.getOrElse(o2.attr)))
+          val r0: MOption[Exp.LitString] = transformExpLitString(o2.channel)
+          val r1: MOption[MethodContract.Claims] = transformMethodContractClaims(o2.outAgreeClause)
+          val r2: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(channel = r0.getOrElse(o2.channel), outAgreeClause = r1.getOrElse(o2.outAgreeClause), attr = r2.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Exp.InfoFlowInvariant =>

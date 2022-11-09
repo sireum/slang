@@ -1621,7 +1621,8 @@ object JSON {
     @pure def print_astExpInlineAgree(o: org.sireum.lang.ast.Exp.InlineAgree): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Exp.InlineAgree""""),
-        ("partitions", printISZ(F, o.partitions, print_astExpLitString _)),
+        ("channel", print_astExpLitString(o.channel)),
+        ("outAgreeClause", print_astMethodContractClaims(o.outAgreeClause)),
         ("attr", print_astAttr(o.attr))
       ))
     }
@@ -5571,13 +5572,16 @@ object JSON {
       if (!typeParsed) {
         parser.parseObjectType("org.sireum.lang.ast.Exp.InlineAgree")
       }
-      parser.parseObjectKey("partitions")
-      val partitions = parser.parseISZ(parse_astExpLitString _)
+      parser.parseObjectKey("channel")
+      val channel = parse_astExpLitString()
+      parser.parseObjectNext()
+      parser.parseObjectKey("outAgreeClause")
+      val outAgreeClause = parse_astMethodContractClaims()
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Exp.InlineAgree(partitions, attr)
+      return org.sireum.lang.ast.Exp.InlineAgree(channel, outAgreeClause, attr)
     }
 
     def parse_astExpInfoFlowInvariant(): org.sireum.lang.ast.Exp.InfoFlowInvariant = {

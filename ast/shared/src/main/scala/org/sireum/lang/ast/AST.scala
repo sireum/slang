@@ -1847,7 +1847,9 @@ object Exp {
     }
   }
 
-  @datatype class InlineAgree(val partitions: ISZ[LitString], @hidden val attr: Attr) extends Exp {
+  @datatype class InlineAgree(val channel: LitString, val outAgreeClause: MethodContract.Claims, @hidden val attr: Attr) extends Exp {
+    @strictpure def outAgrees: ISZ[Exp] = outAgreeClause.claims
+
     @pure def posOpt: Option[Position] = {
       return attr.posOpt
     }
@@ -1857,8 +1859,10 @@ object Exp {
     }
 
     @pure def prettyST: ST = {
-      val args: ISZ[ST] = for(p <- partitions) yield st""""$p""""
-      return st"InlineAgree(${(args, ",")})"
+      val optArgs: Option[ST] =
+        if(outAgrees.nonEmpty) Some(st", OutAgree(${(outAgrees.map((e: Exp) => e.prettyST), ", ")})")
+        else None()
+      return st"InlineAgree($channel$optArgs)"
     }
   }
 

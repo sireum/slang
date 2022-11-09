@@ -2496,15 +2496,35 @@ class SlangParser(
         val infoFlows = AST.MethodContract.InfoFlows(translateInfoFlows(rexprs), attr(exp.pos))
         AST.Exp.InfoFlowInvariant(flowInvariants = infoFlows.flows, attr = attr(exp.pos))
 
-      case q"${name: Term.Name}(..$args)" if name.value == "InlineAgree" =>
-        var ids = ISZ[AST.Exp.LitString]()
-        for (a <- args) {
-          translateExp(a) match {
-            case l: AST.Exp.LitString => ids = ids :+ l
-            case _ => errorInSlang(a.pos, "InlineAgree(...) argument has to be a string")
+      case q"${name: Term.Name}(..${ilexprs: Seq[Term]})" if name.value == "InlineAgree" =>
+        var channel: AST.Exp.LitString = AST.Exp.LitString("invalid", AST.Attr(None()))
+        var i = 0
+        val length = ilexprs.length
+        if (length > 0) {
+          ilexprs(i) match {
+            case l: Lit.String =>
+              channel = AST.Exp.LitString(l.value, attr(l.pos))
+              i += 1
+            case _ =>
+              error(name.pos, "The first argument to InlineAgree must be the channel to be checked")
+          }
+        } else {
+          error(name.pos, "InlineAgree requires at least the channel that should be checked")
+        }
+        var outAgrees = AST.MethodContract.Claims.empty
+        if (i < length) {
+          ilexprs(i) match {
+            case q"OutAgree(..${rexprs: Seq[Term]})" =>
+              outAgrees = AST.MethodContract.Claims(translateExps(rexprs), attr(ilexprs(i).pos))
+              i += 1
+            case _ =>
           }
         }
-        AST.Exp.InlineAgree(ids, attr(if (exp.pos == Position.None) name.pos else exp.pos))
+        for (j <- i until length) {
+          val expr = ilexprs(j)
+          error(expr.pos, "Unrecognized InlineAgree argument.")
+        }
+        AST.Exp.InlineAgree(channel, outAgrees, attr(if (exp.pos == Position.None) name.pos else exp.pos))
       case q"${name: Term.Name}($arg)" if name.value == "In" =>
         translateExp(arg) match {
           case e: AST.Exp.Ref => AST.Exp.Input(e, attr(if (exp.pos == Position.None) name.pos else exp.pos))
@@ -3151,7 +3171,7 @@ class SlangParser(
     val length = exprs.length
     var i = 0
     var infoFlows: ISZ[AST.MethodContract.InfoFlow] = ISZ()
-    while(i < length) {
+    while (i < length) {
       exprs(i) match {
         case q"FlowCase(..${cexprs: Seq[Term]})" => infoFlows = infoFlows :+ translateInfoFlow(cexprs)
         case expr => error(expr.pos, "Unrecognized InfoFlow flow argument")

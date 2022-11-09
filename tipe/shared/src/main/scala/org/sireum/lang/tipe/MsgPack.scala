@@ -1701,7 +1701,8 @@ object MsgPack {
 
     def write_astExpInlineAgree(o: org.sireum.lang.ast.Exp.InlineAgree): Unit = {
       writer.writeZ(Constants._astExpInlineAgree)
-      writer.writeISZ(o.partitions, write_astExpLitString _)
+      write_astExpLitString(o.channel)
+      write_astMethodContractClaims(o.outAgreeClause)
       write_astAttr(o.attr)
     }
 
@@ -4576,9 +4577,10 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astExpInlineAgree)
       }
-      val partitions = reader.readISZ(read_astExpLitString _)
+      val channel = read_astExpLitString()
+      val outAgreeClause = read_astMethodContractClaims()
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Exp.InlineAgree(partitions, attr)
+      return org.sireum.lang.ast.Exp.InlineAgree(channel, outAgreeClause, attr)
     }
 
     def read_astExpInfoFlowInvariant(): org.sireum.lang.ast.Exp.InfoFlowInvariant = {

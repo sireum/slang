@@ -3928,12 +3928,13 @@ import Transformer._
           else
             TPostResult(r1.ctx, None())
         case o2: Exp.InlineAgree =>
-          val r0: TPostResult[Context, IS[Z, Exp.LitString]] = transformISZ(preR.ctx, o2.partitions, transformExpLitString _)
-          val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(partitions = r0.resultOpt.getOrElse(o2.partitions), attr = r1.resultOpt.getOrElse(o2.attr))))
+          val r0: TPostResult[Context, Exp.LitString] = transformExpLitString(preR.ctx, o2.channel)
+          val r1: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r0.ctx, o2.outAgreeClause)
+          val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(channel = r0.resultOpt.getOrElse(o2.channel), outAgreeClause = r1.resultOpt.getOrElse(o2.outAgreeClause), attr = r2.resultOpt.getOrElse(o2.attr))))
           else
-            TPostResult(r1.ctx, None())
+            TPostResult(r2.ctx, None())
         case o2: Exp.InfoFlowInvariant =>
           val r0: TPostResult[Context, IS[Z, MethodContract.InfoFlow]] = transformISZ(preR.ctx, o2.flowInvariants, transformMethodContractInfoFlow _)
           val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)

@@ -3191,7 +3191,11 @@ import TypeChecker._
 
         case exp: AST.Exp.Result => return checkResult(exp)
 
-        case exp: AST.Exp.InlineAgree => return (exp, exp.typedOpt)
+        case exp: AST.Exp.InlineAgree =>
+          return (
+            exp(channel = exp.channel,
+              outAgreeClause = exp.outAgreeClause(claims = for (e <- exp.outAgrees) yield checkExp(None(), scope, e, reporter)._1)),
+            exp.typedOpt)
 
         case exp: AST.Exp.InfoFlowInvariant =>
           def checkInfoExp(ifexp: AST.Exp): AST.Exp = {
@@ -3206,7 +3210,7 @@ import TypeChecker._
             return AST.MethodContract.InfoFlow(infoFlow.label, requires, inAgrees, outAgrees)
           }
 
-          val flows: ISZ[AST.MethodContract.InfoFlow] = for(infoFlow <- exp.flowInvariants) yield checkInfoFlow(infoFlow)
+          val flows: ISZ[AST.MethodContract.InfoFlow] = for (infoFlow <- exp.flowInvariants) yield checkInfoFlow(infoFlow)
           return (exp(flowInvariants = flows), exp.typedOpt)
 
         case exp: AST.Exp.LoopIndex => return checkLoopIndex(exp)
