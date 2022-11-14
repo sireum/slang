@@ -513,9 +513,13 @@ object MTransformer {
 
   val PostResultExpResult: MOption[Exp] = MNone()
 
-  val PreResultExpInlineAgree: PreResult[Exp] = PreResult(T, MNone())
+  val PreResultExpAssumeAgree: PreResult[Exp] = PreResult(T, MNone())
 
-  val PostResultExpInlineAgree: MOption[Exp] = MNone()
+  val PostResultExpAssumeAgree: MOption[Exp] = MNone()
+
+  val PreResultExpAssertAgree: PreResult[Exp] = PreResult(T, MNone())
+
+  val PostResultExpAssertAgree: MOption[Exp] = MNone()
 
   val PreResultExpInfoFlowInvariant: PreResult[Exp] = PreResult(T, MNone())
 
@@ -1332,7 +1336,8 @@ import MTransformer._
       case o: Exp.LoopIndex => return preExpLoopIndex(o)
       case o: Exp.StateSeq => return preExpStateSeq(o)
       case o: Exp.Result => return preExpResult(o)
-      case o: Exp.InlineAgree => return preExpInlineAgree(o)
+      case o: Exp.AssumeAgree => return preExpAssumeAgree(o)
+      case o: Exp.AssertAgree => return preExpAssertAgree(o)
       case o: Exp.InfoFlowInvariant => return preExpInfoFlowInvariant(o)
     }
   }
@@ -1561,8 +1566,12 @@ import MTransformer._
     return PreResultExpResult
   }
 
-  def preExpInlineAgree(o: Exp.InlineAgree): PreResult[Exp] = {
-    return PreResultExpInlineAgree
+  def preExpAssumeAgree(o: Exp.AssumeAgree): PreResult[Exp] = {
+    return PreResultExpAssumeAgree
+  }
+
+  def preExpAssertAgree(o: Exp.AssertAgree): PreResult[Exp] = {
+    return PreResultExpAssertAgree
   }
 
   def preExpInfoFlowInvariant(o: Exp.InfoFlowInvariant): PreResult[Exp] = {
@@ -2418,7 +2427,8 @@ import MTransformer._
       case o: Exp.LoopIndex => return postExpLoopIndex(o)
       case o: Exp.StateSeq => return postExpStateSeq(o)
       case o: Exp.Result => return postExpResult(o)
-      case o: Exp.InlineAgree => return postExpInlineAgree(o)
+      case o: Exp.AssumeAgree => return postExpAssumeAgree(o)
+      case o: Exp.AssertAgree => return postExpAssertAgree(o)
       case o: Exp.InfoFlowInvariant => return postExpInfoFlowInvariant(o)
     }
   }
@@ -2647,8 +2657,12 @@ import MTransformer._
     return PostResultExpResult
   }
 
-  def postExpInlineAgree(o: Exp.InlineAgree): MOption[Exp] = {
-    return PostResultExpInlineAgree
+  def postExpAssumeAgree(o: Exp.AssumeAgree): MOption[Exp] = {
+    return PostResultExpAssumeAgree
+  }
+
+  def postExpAssertAgree(o: Exp.AssertAgree): MOption[Exp] = {
+    return PostResultExpAssertAgree
   }
 
   def postExpInfoFlowInvariant(o: Exp.InfoFlowInvariant): MOption[Exp] = {
@@ -4539,7 +4553,16 @@ import MTransformer._
             MSome(o2(tipeOpt = r0.getOrElse(o2.tipeOpt), attr = r1.getOrElse(o2.attr)))
           else
             MNone()
-        case o2: Exp.InlineAgree =>
+        case o2: Exp.AssumeAgree =>
+          val r0: MOption[Exp.LitString] = transformExpLitString(o2.channel)
+          val r1: MOption[MethodContract.Claims] = transformMethodContractClaims(o2.requiresClause)
+          val r2: MOption[MethodContract.Claims] = transformMethodContractClaims(o2.inAgreeClause)
+          val r3: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+            MSome(o2(channel = r0.getOrElse(o2.channel), requiresClause = r1.getOrElse(o2.requiresClause), inAgreeClause = r2.getOrElse(o2.inAgreeClause), attr = r3.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Exp.AssertAgree =>
           val r0: MOption[Exp.LitString] = transformExpLitString(o2.channel)
           val r1: MOption[MethodContract.Claims] = transformMethodContractClaims(o2.outAgreeClause)
           val r2: MOption[Attr] = transformAttr(o2.attr)

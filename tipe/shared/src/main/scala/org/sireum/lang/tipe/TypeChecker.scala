@@ -3191,7 +3191,14 @@ import TypeChecker._
 
         case exp: AST.Exp.Result => return checkResult(exp)
 
-        case exp: AST.Exp.InlineAgree =>
+        case exp: AST.Exp.AssumeAgree =>
+          return (
+            exp(channel = exp.channel,
+              requiresClause = exp.requiresClause(claims = for (e <- exp.requires) yield checkExp(None(), scope, e, reporter)._1),
+              inAgreeClause = exp.inAgreeClause(claims = for (e <- exp.inAgrees) yield checkExp(None(), scope, e, reporter)._1)),
+            exp.typedOpt)
+
+        case exp: AST.Exp.AssertAgree =>
           return (
             exp(channel = exp.channel,
               outAgreeClause = exp.outAgreeClause(claims = for (e <- exp.outAgrees) yield checkExp(None(), scope, e, reporter)._1)),

@@ -2496,35 +2496,75 @@ class SlangParser(
         val infoFlows = AST.MethodContract.InfoFlows(translateInfoFlows(rexprs), attr(exp.pos))
         AST.Exp.InfoFlowInvariant(flowInvariants = infoFlows.flows, attr = attr(exp.pos))
 
-      case q"${name: Term.Name}(..${ilexprs: Seq[Term]})" if name.value == "InlineAgree" =>
+      case q"${name: Term.Name}(..${aaexprs: Seq[Term]})" if name.value == "AssumeAgree" =>
         var channel: AST.Exp.LitString = AST.Exp.LitString("invalid", AST.Attr(None()))
         var i = 0
-        val length = ilexprs.length
+        val length = aaexprs.length
         if (length > 0) {
-          ilexprs(i) match {
+          aaexprs(i) match {
             case l: Lit.String =>
               channel = AST.Exp.LitString(l.value, attr(l.pos))
               i += 1
             case _ =>
-              error(name.pos, "The first argument to InlineAgree must be the channel to be checked")
+              error(name.pos, s"The first argument to ${name.value} must be an existing channel")
           }
         } else {
-          error(name.pos, "InlineAgree requires at least the channel that should be checked")
+          error(name.pos, s"${name.value} requires at least the channel")
         }
-        var outAgrees = AST.MethodContract.Claims.empty
+        var requires = AST.MethodContract.Claims.empty
         if (i < length) {
-          ilexprs(i) match {
-            case q"OutAgree(..${rexprs: Seq[Term]})" =>
-              outAgrees = AST.MethodContract.Claims(translateExps(rexprs), attr(ilexprs(i).pos))
+          aaexprs(i) match {
+            case q"Requires(..${rexprs: Seq[Term]})" =>
+              requires = AST.MethodContract.Claims(translateExps(rexprs), attr(aaexprs(i).pos))
+              i += 1
+            case _ =>
+          }
+        }
+        var inAgrees = AST.MethodContract.Claims.empty
+        if (i < length) {
+          aaexprs(i) match {
+            case q"InAgree(..${rexprs: Seq[Term]})" =>
+              inAgrees = AST.MethodContract.Claims(translateExps(rexprs), attr(aaexprs(i).pos))
               i += 1
             case _ =>
           }
         }
         for (j <- i until length) {
-          val expr = ilexprs(j)
-          error(expr.pos, "Unrecognized InlineAgree argument.")
+          val expr = aaexprs(j)
+          error(expr.pos, s"Unrecognized ${name.value} argument.")
         }
-        AST.Exp.InlineAgree(channel, outAgrees, attr(if (exp.pos == Position.None) name.pos else exp.pos))
+        AST.Exp.AssumeAgree(channel, requires, inAgrees, attr(if (exp.pos == Position.None) name.pos else exp.pos))
+
+      case q"${name: Term.Name}(..${aaexprs: Seq[Term]})" if name.value == "AssertAgree" =>
+        var channel: AST.Exp.LitString = AST.Exp.LitString("invalid", AST.Attr(None()))
+        var i = 0
+        val length = aaexprs.length
+        if (length > 0) {
+          aaexprs(i) match {
+            case l: Lit.String =>
+              channel = AST.Exp.LitString(l.value, attr(l.pos))
+              i += 1
+            case _ =>
+              error(name.pos, s"The first argument to ${name.value} must be the channel to be checked")
+          }
+        } else {
+          error(name.pos, s"${name.value} requires at least the channel that should be checked")
+        }
+        var outAgrees = AST.MethodContract.Claims.empty
+        if (i < length) {
+          aaexprs(i) match {
+            case q"OutAgree(..${rexprs: Seq[Term]})" =>
+              outAgrees = AST.MethodContract.Claims(translateExps(rexprs), attr(aaexprs(i).pos))
+              i += 1
+            case _ =>
+          }
+        }
+        for (j <- i until length) {
+          val expr = aaexprs(j)
+          error(expr.pos, "Unrecognized AssertAgree argument.")
+        }
+        AST.Exp.AssertAgree(channel, outAgrees, attr(if (exp.pos == Position.None) name.pos else exp.pos))
+
       case q"${name: Term.Name}($arg)" if name.value == "In" =>
         translateExp(arg) match {
           case e: AST.Exp.Ref => AST.Exp.Input(e, attr(if (exp.pos == Position.None) name.pos else exp.pos))

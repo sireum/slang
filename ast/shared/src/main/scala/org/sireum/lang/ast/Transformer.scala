@@ -682,7 +682,8 @@ object Transformer {
         case o: Exp.LoopIndex => return preExpLoopIndex(ctx, o)
         case o: Exp.StateSeq => return preExpStateSeq(ctx, o)
         case o: Exp.Result => return preExpResult(ctx, o)
-        case o: Exp.InlineAgree => return preExpInlineAgree(ctx, o)
+        case o: Exp.AssumeAgree => return preExpAssumeAgree(ctx, o)
+        case o: Exp.AssertAgree => return preExpAssertAgree(ctx, o)
         case o: Exp.InfoFlowInvariant => return preExpInfoFlowInvariant(ctx, o)
       }
     }
@@ -911,7 +912,11 @@ object Transformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preExpInlineAgree(ctx: Context, o: Exp.InlineAgree): PreResult[Context, Exp] = {
+    @pure def preExpAssumeAgree(ctx: Context, o: Exp.AssumeAgree): PreResult[Context, Exp] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preExpAssertAgree(ctx: Context, o: Exp.AssertAgree): PreResult[Context, Exp] = {
       return PreResult(ctx, T, None())
     }
 
@@ -1768,7 +1773,8 @@ object Transformer {
         case o: Exp.LoopIndex => return postExpLoopIndex(ctx, o)
         case o: Exp.StateSeq => return postExpStateSeq(ctx, o)
         case o: Exp.Result => return postExpResult(ctx, o)
-        case o: Exp.InlineAgree => return postExpInlineAgree(ctx, o)
+        case o: Exp.AssumeAgree => return postExpAssumeAgree(ctx, o)
+        case o: Exp.AssertAgree => return postExpAssertAgree(ctx, o)
         case o: Exp.InfoFlowInvariant => return postExpInfoFlowInvariant(ctx, o)
       }
     }
@@ -1997,7 +2003,11 @@ object Transformer {
       return TPostResult(ctx, None())
     }
 
-    @pure def postExpInlineAgree(ctx: Context, o: Exp.InlineAgree): TPostResult[Context, Exp] = {
+    @pure def postExpAssumeAgree(ctx: Context, o: Exp.AssumeAgree): TPostResult[Context, Exp] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postExpAssertAgree(ctx: Context, o: Exp.AssertAgree): TPostResult[Context, Exp] = {
       return TPostResult(ctx, None())
     }
 
@@ -3927,7 +3937,16 @@ import Transformer._
             TPostResult(r1.ctx, Some(o2(tipeOpt = r0.resultOpt.getOrElse(o2.tipeOpt), attr = r1.resultOpt.getOrElse(o2.attr))))
           else
             TPostResult(r1.ctx, None())
-        case o2: Exp.InlineAgree =>
+        case o2: Exp.AssumeAgree =>
+          val r0: TPostResult[Context, Exp.LitString] = transformExpLitString(preR.ctx, o2.channel)
+          val r1: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r0.ctx, o2.requiresClause)
+          val r2: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r1.ctx, o2.inAgreeClause)
+          val r3: TPostResult[Context, Attr] = transformAttr(r2.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+            TPostResult(r3.ctx, Some(o2(channel = r0.resultOpt.getOrElse(o2.channel), requiresClause = r1.resultOpt.getOrElse(o2.requiresClause), inAgreeClause = r2.resultOpt.getOrElse(o2.inAgreeClause), attr = r3.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r3.ctx, None())
+        case o2: Exp.AssertAgree =>
           val r0: TPostResult[Context, Exp.LitString] = transformExpLitString(preR.ctx, o2.channel)
           val r1: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r0.ctx, o2.outAgreeClause)
           val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)

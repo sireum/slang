@@ -629,6 +629,13 @@ object MethodContract {
     @strictpure def requires: ISZ[Exp] = requiresClause.claims
     @strictpure def inAgrees: ISZ[Exp] = inAgreeClause.claims
     @strictpure def outAgrees: ISZ[Exp] = outAgreeClause.claims
+
+    @pure def prettyST: ST = {
+      val _requires = requires.map((e: Exp) => e.prettyST)
+      val _inAgrees = inAgrees.map((e: Exp) => e.prettyST)
+      val _outAgrees = outAgrees.map((e: Exp) => e.prettyST)
+      return st"FlowCase(${label.prettyST}, Requires(${(_requires, ", ")}), InAgree(${(_inAgrees, ", ")}), OutAgree(${(_outAgrees, ", ")}))"
+    }
   }
 }
 
@@ -1847,7 +1854,32 @@ object Exp {
     }
   }
 
-  @datatype class InlineAgree(val channel: LitString, val outAgreeClause: MethodContract.Claims, @hidden val attr: Attr) extends Exp {
+  @datatype class AssumeAgree(val channel: LitString,
+                              val requiresClause: MethodContract.Claims,
+                              val inAgreeClause: MethodContract.Claims, @hidden val attr: Attr) extends Exp {
+    @strictpure def requires: ISZ[Exp] = requiresClause.claims
+    @strictpure def inAgrees: ISZ[Exp] = inAgreeClause.claims
+
+    @pure def posOpt: Option[Position] = {
+      return attr.posOpt
+    }
+
+    @pure def typedOpt: Option[Typed] = {
+      return Typed.bOpt
+    }
+
+    @pure def prettyST: ST = {
+      val optRequires: Option[ST] =
+        if (requires.nonEmpty) Some(st", Requires(${(requires.map((e: Exp) => e.prettyST), ", ")})")
+        else None()
+      val optInAgree: Option[ST] =
+        if (inAgrees.nonEmpty) Some(st", InAgree(${(inAgrees.map((e: Exp) => e.prettyST), ", ")})")
+        else None()
+      return st"AssumeAgree($channel$optInAgree)"
+    }
+  }
+
+  @datatype class AssertAgree(val channel: LitString, val outAgreeClause: MethodContract.Claims, @hidden val attr: Attr) extends Exp {
     @strictpure def outAgrees: ISZ[Exp] = outAgreeClause.claims
 
     @pure def posOpt: Option[Position] = {
@@ -1860,9 +1892,9 @@ object Exp {
 
     @pure def prettyST: ST = {
       val optArgs: Option[ST] =
-        if(outAgrees.nonEmpty) Some(st", OutAgree(${(outAgrees.map((e: Exp) => e.prettyST), ", ")})")
+        if (outAgrees.nonEmpty) Some(st", OutAgree(${(outAgrees.map((e: Exp) => e.prettyST), ", ")})")
         else None()
-      return st"InlineAgree($channel$optArgs)"
+      return st"AssertAgree($channel$optArgs)"
     }
   }
 
@@ -1876,7 +1908,8 @@ object Exp {
     }
 
     override def prettyST: ST = {
-      return st"InfoFlowInvariant(...)"
+      val cases = flowInvariants.map((m: MethodContract.InfoFlow) => m.prettyST)
+      return st"InfoFlowInvariant(${(cases, ",\n")})"
     }
   }
 }

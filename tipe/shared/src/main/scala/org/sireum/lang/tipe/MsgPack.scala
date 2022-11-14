@@ -308,93 +308,95 @@ object MsgPack {
 
     val _astExpResult: Z = 103
 
-    val _astExpInlineAgree: Z = 104
+    val _astExpAssumeAgree: Z = 104
 
-    val _astExpInfoFlowInvariant: Z = 105
+    val _astExpAssertAgree: Z = 105
 
-    val _astNamedArg: Z = 106
+    val _astExpInfoFlowInvariant: Z = 106
 
-    val _astId: Z = 107
+    val _astNamedArg: Z = 107
 
-    val _astName: Z = 108
+    val _astId: Z = 108
 
-    val _astBody: Z = 109
+    val _astName: Z = 109
 
-    val _astAdtParam: Z = 110
+    val _astBody: Z = 110
 
-    val _astMethodSig: Z = 111
+    val _astAdtParam: Z = 111
 
-    val _astParam: Z = 112
+    val _astMethodSig: Z = 112
 
-    val _astTypeParam: Z = 113
+    val _astParam: Z = 113
 
-    val _astAttr: Z = 114
+    val _astTypeParam: Z = 114
 
-    val _astTypedAttr: Z = 115
+    val _astAttr: Z = 115
 
-    val _astResolvedAttr: Z = 116
+    val _astTypedAttr: Z = 116
 
-    val _astResolvedInfoBuiltIn: Z = 117
+    val _astResolvedAttr: Z = 117
 
-    val _astResolvedInfoPackage: Z = 118
+    val _astResolvedInfoBuiltIn: Z = 118
 
-    val _astResolvedInfoEnum: Z = 119
+    val _astResolvedInfoPackage: Z = 119
 
-    val _astResolvedInfoEnumElement: Z = 120
+    val _astResolvedInfoEnum: Z = 120
 
-    val _astResolvedInfoObject: Z = 121
+    val _astResolvedInfoEnumElement: Z = 121
 
-    val _astResolvedInfoVar: Z = 122
+    val _astResolvedInfoObject: Z = 122
 
-    val _astResolvedInfoMethod: Z = 123
+    val _astResolvedInfoVar: Z = 123
 
-    val _astResolvedInfoMethods: Z = 124
+    val _astResolvedInfoMethod: Z = 124
 
-    val _astResolvedInfoTuple: Z = 125
+    val _astResolvedInfoMethods: Z = 125
 
-    val _astResolvedInfoLocalVar: Z = 126
+    val _astResolvedInfoTuple: Z = 126
 
-    val _astResolvedInfoFact: Z = 127
+    val _astResolvedInfoLocalVar: Z = 127
 
-    val _astResolvedInfoTheorem: Z = 128
+    val _astResolvedInfoFact: Z = 128
 
-    val _astResolvedInfoInv: Z = 129
+    val _astResolvedInfoTheorem: Z = 129
 
-    val _astTruthTableRow: Z = 130
+    val _astResolvedInfoInv: Z = 130
 
-    val _astTruthTableAssignment: Z = 131
+    val _astTruthTableRow: Z = 131
 
-    val _astTruthTableConclusionValidity: Z = 132
+    val _astTruthTableAssignment: Z = 132
 
-    val _astTruthTableConclusionTautology: Z = 133
+    val _astTruthTableConclusionValidity: Z = 133
 
-    val _astTruthTableConclusionContradictory: Z = 134
+    val _astTruthTableConclusionTautology: Z = 134
 
-    val _astTruthTableConclusionContingent: Z = 135
+    val _astTruthTableConclusionContradictory: Z = 135
 
-    val _astTypedName: Z = 136
+    val _astTruthTableConclusionContingent: Z = 136
 
-    val _astTypedTuple: Z = 137
+    val _astTypedName: Z = 137
 
-    val _astTypedFun: Z = 138
+    val _astTypedTuple: Z = 138
 
-    val _astTypedTypeVar: Z = 139
+    val _astTypedFun: Z = 139
 
-    val _astTypedPackage: Z = 140
+    val _astTypedTypeVar: Z = 140
 
-    val _astTypedObject: Z = 141
+    val _astTypedPackage: Z = 141
 
-    val _astTypedEnum: Z = 142
+    val _astTypedObject: Z = 142
 
-    val _astTypedMethod: Z = 143
+    val _astTypedEnum: Z = 143
 
-    val _astTypedMethods: Z = 144
+    val _astTypedMethod: Z = 144
 
-    val _astTypedFact: Z = 145
+    val _astTypedMethods: Z = 145
 
-    val _astTypedTheorem: Z = 146
+    val _astTypedFact: Z = 146
 
-    val _astTypedInv: Z = 147
+    val _astTypedTheorem: Z = 147
+
+    val _astTypedInv: Z = 148
 
   }
 
@@ -1427,7 +1429,8 @@ object MsgPack {
         case o: org.sireum.lang.ast.Exp.LoopIndex => write_astExpLoopIndex(o)
         case o: org.sireum.lang.ast.Exp.StateSeq => write_astExpStateSeq(o)
         case o: org.sireum.lang.ast.Exp.Result => write_astExpResult(o)
-        case o: org.sireum.lang.ast.Exp.InlineAgree => write_astExpInlineAgree(o)
+        case o: org.sireum.lang.ast.Exp.AssumeAgree => write_astExpAssumeAgree(o)
+        case o: org.sireum.lang.ast.Exp.AssertAgree => write_astExpAssertAgree(o)
         case o: org.sireum.lang.ast.Exp.InfoFlowInvariant => write_astExpInfoFlowInvariant(o)
       }
     }
@@ -1699,8 +1702,16 @@ object MsgPack {
       write_astTypedAttr(o.attr)
     }
 
-    def write_astExpInlineAgree(o: org.sireum.lang.ast.Exp.InlineAgree): Unit = {
-      writer.writeZ(Constants._astExpInlineAgree)
+    def write_astExpAssumeAgree(o: org.sireum.lang.ast.Exp.AssumeAgree): Unit = {
+      writer.writeZ(Constants._astExpAssumeAgree)
+      write_astExpLitString(o.channel)
+      write_astMethodContractClaims(o.requiresClause)
+      write_astMethodContractClaims(o.inAgreeClause)
+      write_astAttr(o.attr)
+    }
+
+    def write_astExpAssertAgree(o: org.sireum.lang.ast.Exp.AssertAgree): Unit = {
+      writer.writeZ(Constants._astExpAssertAgree)
       write_astExpLitString(o.channel)
       write_astMethodContractClaims(o.outAgreeClause)
       write_astAttr(o.attr)
@@ -4001,7 +4012,8 @@ object MsgPack {
         case Constants._astExpLoopIndex => val r = read_astExpLoopIndexT(T); return r
         case Constants._astExpStateSeq => val r = read_astExpStateSeqT(T); return r
         case Constants._astExpResult => val r = read_astExpResultT(T); return r
-        case Constants._astExpInlineAgree => val r = read_astExpInlineAgreeT(T); return r
+        case Constants._astExpAssumeAgree => val r = read_astExpAssumeAgreeT(T); return r
+        case Constants._astExpAssertAgree => val r = read_astExpAssertAgreeT(T); return r
         case Constants._astExpInfoFlowInvariant => val r = read_astExpInfoFlowInvariantT(T); return r
         case _ =>
           reader.error(i, s"$t is not a valid type of org.sireum.lang.ast.Exp.")
@@ -4568,19 +4580,35 @@ object MsgPack {
       return org.sireum.lang.ast.Exp.Result(tipeOpt, attr)
     }
 
-    def read_astExpInlineAgree(): org.sireum.lang.ast.Exp.InlineAgree = {
-      val r = read_astExpInlineAgreeT(F)
+    def read_astExpAssumeAgree(): org.sireum.lang.ast.Exp.AssumeAgree = {
+      val r = read_astExpAssumeAgreeT(F)
       return r
     }
 
-    def read_astExpInlineAgreeT(typeParsed: B): org.sireum.lang.ast.Exp.InlineAgree = {
+    def read_astExpAssumeAgreeT(typeParsed: B): org.sireum.lang.ast.Exp.AssumeAgree = {
       if (!typeParsed) {
-        reader.expectZ(Constants._astExpInlineAgree)
+        reader.expectZ(Constants._astExpAssumeAgree)
+      }
+      val channel = read_astExpLitString()
+      val requiresClause = read_astMethodContractClaims()
+      val inAgreeClause = read_astMethodContractClaims()
+      val attr = read_astAttr()
+      return org.sireum.lang.ast.Exp.AssumeAgree(channel, requiresClause, inAgreeClause, attr)
+    }
+
+    def read_astExpAssertAgree(): org.sireum.lang.ast.Exp.AssertAgree = {
+      val r = read_astExpAssertAgreeT(F)
+      return r
+    }
+
+    def read_astExpAssertAgreeT(typeParsed: B): org.sireum.lang.ast.Exp.AssertAgree = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astExpAssertAgree)
       }
       val channel = read_astExpLitString()
       val outAgreeClause = read_astMethodContractClaims()
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Exp.InlineAgree(channel, outAgreeClause, attr)
+      return org.sireum.lang.ast.Exp.AssertAgree(channel, outAgreeClause, attr)
     }
 
     def read_astExpInfoFlowInvariant(): org.sireum.lang.ast.Exp.InfoFlowInvariant = {
@@ -7650,18 +7678,33 @@ object MsgPack {
     return r
   }
 
-  def from_astExpInlineAgree(o: org.sireum.lang.ast.Exp.InlineAgree, pooling: B): ISZ[U8] = {
+  def from_astExpAssumeAgree(o: org.sireum.lang.ast.Exp.AssumeAgree, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astExpInlineAgree(o)
+    w.write_astExpAssumeAgree(o)
     return w.result
   }
 
-  def to_astExpInlineAgree(data: ISZ[U8]): Either[org.sireum.lang.ast.Exp.InlineAgree, MessagePack.ErrorMsg] = {
-    def f_astExpInlineAgree(reader: Reader): org.sireum.lang.ast.Exp.InlineAgree = {
-      val r = reader.read_astExpInlineAgree()
+  def to_astExpAssumeAgree(data: ISZ[U8]): Either[org.sireum.lang.ast.Exp.AssumeAgree, MessagePack.ErrorMsg] = {
+    def f_astExpAssumeAgree(reader: Reader): org.sireum.lang.ast.Exp.AssumeAgree = {
+      val r = reader.read_astExpAssumeAgree()
       return r
     }
-    val r = to(data, f_astExpInlineAgree _)
+    val r = to(data, f_astExpAssumeAgree _)
+    return r
+  }
+
+  def from_astExpAssertAgree(o: org.sireum.lang.ast.Exp.AssertAgree, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astExpAssertAgree(o)
+    return w.result
+  }
+
+  def to_astExpAssertAgree(data: ISZ[U8]): Either[org.sireum.lang.ast.Exp.AssertAgree, MessagePack.ErrorMsg] = {
+    def f_astExpAssertAgree(reader: Reader): org.sireum.lang.ast.Exp.AssertAgree = {
+      val r = reader.read_astExpAssertAgree()
+      return r
+    }
+    val r = to(data, f_astExpAssertAgree _)
     return r
   }
 
