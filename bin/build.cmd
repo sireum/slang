@@ -1,4 +1,4 @@
-::#! 2> /dev/null                                                                                           #
+::/*#! 2> /dev/null                                                                                         #
 @ 2>/dev/null # 2>nul & echo off & goto BOF                                                                 #
 export SIREUM_HOME=$(cd -P $(dirname "$0")/.. && pwd -P)                                                    #
 if [ ! -z ${SIREUM_PROVIDED_SCALA++} ]; then                                                                #
@@ -28,7 +28,7 @@ if [ -f "$0.com" ] && [ "$0.com" -nt "$0" ]; then                               
   exec "$0.com" "$@"                                                                                        #
 else                                                                                                        #
   rm -fR "$0.com"                                                                                           #
-  exec "${SIREUM_HOME}/bin/sireum" slang run -n "$0" "$@"                                                #
+  exec "${SIREUM_HOME}/bin/sireum" slang run -n "$0" "$@"                                                   #
 fi                                                                                                          #
 :BOF
 setlocal
@@ -45,7 +45,7 @@ exit /B %errorlevel%
 :native
 %~dpnx0.com %*
 exit /B %errorlevel%
-::!#
+::!#*/
 // #Sireum
 import org.sireum._
 
