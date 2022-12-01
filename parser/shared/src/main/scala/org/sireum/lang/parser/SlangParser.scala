@@ -170,6 +170,25 @@ object SlangParser {
               i = i + 1
             }
           }
+        } else if (fileUri.value.endsWith(".cmd") && firstLine.startsWith("::/*#!")) {
+          var found = false
+          var i = 4
+          while (i + 6 < text.length && !found) {
+            if (text(i) == ':' && text(i + 1) == ':' && text(i + 2) == '!' && text(i + 3) == '#' && text(i + 4) == '*' && text(i + 5) == '/') {
+              found = true
+              i = i + 6
+              while (i < text.length && text(i).isWhitespace) i += 1
+              firstLine = compactLine(i)
+              if (firstLine.contains("#Sireum")) {
+                hashSireum = true
+                val cs = text.toCharArray
+                for (j <- 0 until i if cs(j) != '\n') cs(j) = ' '
+                text = new Predef.String(cs)
+              }
+            } else {
+              i = i + 1
+            }
+          }
         }
       case _ => hashSireum = firstLine.contains("#Sireum")
     }
