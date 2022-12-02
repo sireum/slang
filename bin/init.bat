@@ -1,1 +1,2 @@
-@powershell -noprofile -executionpolicy bypass -file %~dp0init.ps1
+@powershell -noprofile -executionpolicy bypass -command Invoke-WebRequest -Uri https://raw.githubusercontent.com/sireum/kekinian/master/bin/init.bat -OutFile %~dp0prelude.bat
+@%~dp0prelude.bat
