@@ -3205,15 +3205,10 @@ import TypeChecker._
             exp.typedOpt)
 
         case exp: AST.Exp.InfoFlowInvariant =>
-          def checkInfoExp(ifexp: AST.Exp): AST.Exp = {
-            val (newExp, tOpt) = checkExp(None(), scope, ifexp, reporter)
-            return newExp
-          }
-
           def checkInfoFlow(infoFlow: AST.MethodContract.InfoFlow): AST.MethodContract.InfoFlow = {
-            val requires = infoFlow.requiresClause(claims = for (exp <- infoFlow.requires) yield checkInfoExp(exp))
-            val inAgrees = infoFlow.inAgreeClause(claims = for (exp <- infoFlow.inAgrees) yield checkInfoExp(exp))
-            val outAgrees = infoFlow.outAgreeClause(claims = for (exp <- infoFlow.outAgrees) yield checkInfoExp(exp))
+            val requires = infoFlow.requiresClause(claims = for (exp <- infoFlow.requires) yield checkExp(None(), scope, exp, reporter)._1)
+            val inAgrees = infoFlow.inAgreeClause(claims = for (exp <- infoFlow.inAgrees) yield checkExp(None(), scope, exp, reporter)._1)
+            val outAgrees = infoFlow.outAgreeClause(claims = for (exp <- infoFlow.outAgrees) yield checkExp(None(), scope, exp, reporter)._1)
             return AST.MethodContract.InfoFlow(infoFlow.label, requires, inAgrees, outAgrees)
           }
 
@@ -4697,17 +4692,11 @@ import TypeChecker._
       return AST.MethodContract.Case(cas.label, checkRequires(cas.requiresClause), checkEnsures(cas.ensuresClause))
     }
     def checkInfoFlows(infoFlows: AST.MethodContract.InfoFlows): AST.MethodContract.InfoFlows = {
-      val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.SpecPost, strictAliasing)
-      def checkInfoExp(exp: AST.Exp): AST.Exp = {
-
-        val (newExp, tOpt) = checkExp(None(), scope, exp, reporter)
-
-        return newExp
-      }
+      val tcSpecPost = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.SpecPost, strictAliasing)
       def checkInfoFlow(infoFlow: AST.MethodContract.InfoFlow): AST.MethodContract.InfoFlow = {
-        val requires =  infoFlow.requiresClause(claims = for(exp <- infoFlow.requires) yield checkInfoExp(exp))
-        val inAgrees =  infoFlow.inAgreeClause(claims = for(exp <- infoFlow.inAgrees) yield checkInfoExp(exp))
-        val outAgrees = infoFlow.outAgreeClause(claims = for(exp <- infoFlow.outAgrees) yield checkInfoExp(exp))
+        val requires =  infoFlow.requiresClause(claims = for(exp <- infoFlow.requires) yield checkExp(None(), scope, exp, reporter)._1)
+        val inAgrees =  infoFlow.inAgreeClause(claims = for(exp <- infoFlow.inAgrees) yield checkExp(None(), scope, exp, reporter)._1)
+        val outAgrees = infoFlow.outAgreeClause(claims = for(exp <- infoFlow.outAgrees) yield tcSpecPost.checkExp(None(), scope, exp, reporter)._1)
         return AST.MethodContract.InfoFlow(infoFlow.label, requires, inAgrees, outAgrees)
       }
       return AST.MethodContract.InfoFlows(for(infoFlow <- infoFlows.flows) yield checkInfoFlow(infoFlow), infoFlows.attr)
