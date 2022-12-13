@@ -28,7 +28,7 @@ grammar SlangLl2;
 
 options { 
   output = AST;
-  ASTLabelType=Object;
+  ASTLabelType = Object;
   k = 2;
 }
 
@@ -37,21 +37,13 @@ options {
 @lexer::header { package org.sireum.lang.parser; }
 
 
-file: ( script | program )? EOF ;
+file: program EOF ;
 
 expFile: exp EOF ;
 
 stmtFile: stmt EOF ;
 
-script: impor* ( stmt+ scriptMember* | scriptMember+ ) ;
-
-scriptMember: sigDef | typeDef | ext ;
-
-program: 'package' name impor* packageMember* ;
-
-name: ID ( '.' ID )* ;
-
-packageMember: sigDef | typeDef | ext | def ;
+program: impor* topMember* pkg* ;
 
 impor: 'import' ID ( '.' importSuffix )? ;
 
@@ -61,137 +53,152 @@ importSuffix
   | '_'
   ;
 
-modsID: ID+ ;
-
 importRename: ID '=>' ID ;
 
-sigDef: 'sig' modsID typeParams? suprs? typeMembers? ; // mods = ( mut )
+topMember: typeDef | stmt ;
 
-typeParams: '[' typeParam (  ',' typeParam )* ']' ;
+packageMember: typeDef | varDef | defDef ;
 
-typeParam: modsID ; // mods = ( mut )
+pkg: 'package' mod* name impor* packageMember* ;
+
+mod: ID '[' args ']' ;
+
+args
+  : namedArg ( ',' namedArg )*
+  | exp ( ',' exp )*
+  ;
+  
+namedArg: ID '=' exp ;
+
+name: ID ( '.' ID )* ;
+
+typeDef: 'type' typeParams? modsID ( ':' enumMembers
+                                   | '=' type
+                                   | params? suprs? annot? typeMembers?
+                                   )
+                                   ;
+
+typeParams: '[' typeParam ( ',' typeParam )* ']' ;
+
+typeParam: ID annot? ;
+
+modsID: mod modsID | ID ;
+
+enumMembers: '{' ID ( ',' ID )* '}' ;
+         
+params: '(' param ( ',' param )* ')' ;
+
+param: ( 'val' | 'var' )? modsID ':' '=>'? type ;
 
 suprs: ':' supr ( ',' supr )* ;
 
 supr: name typeArgs? ;
 
-typeDef: 'type' modsID  // mods = ( mut | abstract )* 
-         ( typeParams? ( ':=' ( type | ID callArgs ) // ID = { bits, range }
-                       | params? suprs? typeMembers?                       
-                       )
-         | enumMembers
-         )
-         ;
-
-params: '(' param ( ',' param )* ')' ;
-
-param: 'var'? modsID ':' '=>'? type ; // mods = { hidden }
+annot: '@' '(' ( exp ( ',' exp )* )? ')' ;
 
 typeMembers: '{' typeMember* '}' ;
 
-typeMember: typeDef | typeCase | var | def ;
+typeMember: varDef | defDef ;
 
-typeCase: 'case' modsID params? suprs? typeMembers? ; // mods = ( mut )
+varDef: ( 'val' | 'var' ) modsID ':' type ( '=' rhs )? ;
 
-enumMembers: '{' ID+ '}';
+defDef: 'def' typeParams? modsIDOP defParams? ':' type ( '=' annot? rhs? )? ;
 
-ext: 'ext' ( '(' name ')' )? ID '{' extMember* '}' ;
-
-extMember: var | def ;
-
-var: ( 'val' | 'var' ) modsID ':' type ( ':=' rhs )? ; // mods = ( spec | static )
-
-rhs: exp;
-
-def: 'def' defModsID typeParams? defParams? ':' type contract? ( ':=' rhs | block )? ;
-
-defModsID
-  : ID+ OP?
-  | OP
-  ; // mods = ( strict | memoize | pure | spec | static )
+modsIDOP: ID '[' args ']' modsIDOP | ID | OP ;
 
 defParams: '(' defParam ( ',' defParam )? ')' ;
 
-defParam: modsID ':' '=>'? type ;
+defParam: modsID ':' type ;
 
-contract: 'spec' '{' contractElement* '}' ;
+stmt: doStmt | varPattern | ifStmt | whileStmt | forStmt | defStmt | deduceStmt | matchExp | groundExpStmt ;
 
-contractElement
-  : ID contractLabel? ':' exp ( ',' exp )*
-  | 'case' contractLabel? '{' contractElement+ '}'
-  ;
+doStmt: 'do' ( exp | mod* block ) ;
 
-contractLabel: '[' ID ( ',' ID )* ']' ;
+groundExpStmt: ID '=' exp | ground expSuffix+ ( '=' exp )? ;
+  
+varPattern: ( 'val' | 'var' ) pattern '=' rhs ;
 
-stmt: doStmt | varPattern | def | ifStmt | whileStmt | forStmt | deduceStmt | idStmt ;
+rhs: exp | block | ifStmt ;
 
-idStmt: ID ( accessSuffix assignSuffix?
-           | assignSuffix       
-           | codeBlock
-           )
-           ;
-
-assignSuffix: ':=' rhs ;
-
-doStmt: 'do' ( rhs | 'spec' block ) ;
-
-varPattern: ( 'val' | 'var' ) pattern ( ':' type )? ':=' rhs ;
-
-ifStmt: 'if'
-        ( '{' ifCase+ '}'
-        | expNoBlock ( '{' ifCase+ '}' | block els? )
-        ) 
-        ;
-
-ifCase
-  : 'case' pattern ( OP exp )? ':' blockContent  // OP = &&
-  | '_' exp? ':' blockContent
-  ;
+ifStmt: 'if' exp block els? ;
 
 block: '{' blockContent '}' ;
 
-blockContent: stmt* ret? ;
+blockContent: stmt* ( ret | 'yield' rhs )? ;
 
-ret: 'return' exp? ;
+ret: 'return' rhs? ;
 
-els: 'else'
-     ( 'if' expNoBlock block els?
-     | block
-     )
-     ;
-   
-whileStmt: 'while' expNoBlock contract? block ;
-
-forStmt: 'for' ( forRange contract? )+ block ;
-
-forRange: ID 'in' expNoBlock ( ( '..' |  '..<' ) expNoBlock ( ',' expNoBlock )? )? ;
-
-pattern
-  : ID ( '(' tpattern ( ',' tpattern )* ')' )?
-  | '(' tpattern ( ',' tpattern )* ')'
-  ;
-
-tpattern
-  : ID ( '(' tpattern ( ',' tpattern )* ')' | ':' type )?
-  | '(' tpattern ( ',' tpattern )* ')'
-  | '_' ( ':' type )?
-  ;
-
-deduceStmt: 'deduce'
-            ( '{' proofStep+ '}'
-            | truthTable
-            | sequent ( '{' proofStep* '}' )?
+els: 'else' ( 'if' exp block els?
+            | block
             )
             ;
+   
+whileStmt: 'while' exp annot? block ;
 
-sequent: ( expNoBlock ( ',' expNoBlock )* )? ( '|-' | '⊢' ) expNoBlock ;
+forStmt: 'for' forRange+ block ;
 
-truthTable: OP+         // OP = *
-            '-----'+
-            ID+ ( ':' expNoBlock )+  
-            '-----'+
-            ID+ ( ':' ID+ )+  // ID consists only T or F
-            '-----'+
+forRange: ID 'in' exp ( ( '..' |  '..<' ) exp ( 'by' exp )? )? annot? ;
+
+defStmt: 'def' typeParams? modsIDOP defParams? ':' type '=' annot? rhs ;
+
+pattern
+  : lit
+  | ID '@' name patterns
+  | name patterns?
+  | patterns
+  | ID ':' baseType
+  | '_' ( ':' baseType )?
+  ;
+  
+patterns: '(' pattern ( ',' pattern )* ')' ;
+
+exp: term ( OP term )*  ( '?' exp ':' exp )? | matchExp | fun ;
+
+term: fact expSuffix* ;
+ 
+expSuffix: '.' ID ( '[' type ( ',' type )* ']' )? ( '(' args? ')' )? ;
+ 
+fact: OP? ( ground | paren ) ;
+
+ground: lit | ID | interp | 'this' | 'super' ;
+ 
+lit: 'true' | 'false' | '⊤' | '⊥' | INT | HEX | BIN | REAL | STRING | MSTRING ;
+
+paren: '(' exp ( ',' exp )* ')' ;
+
+matchExp: 'match' exp '{' cas+ '}' ;
+
+cas: 'case' pattern ( 'if' exp )? '=>' blockContent ;
+
+fun: funId mod* defParams ( ':' type )? '.' annot? rhs ;
+
+funId: 'fun' | 'all' | 'some' | 'λ' | '∀' | '∃' ;
+
+deduceStmt: 'deduce' ( '(' expJustOpt ( ',' expJustOpt )* ')' 
+                     | '{' proofStep* '}'
+                     | ':' sequent ( '{' proofStep* '}' )?
+                     | truthTable
+                     )
+                     ;
+            
+expJustOpt: exp just? ;
+
+proofStep: proofId '.' ( exp just | subProof ) ;
+
+subProof: '{' ( '(' ID ( ',' ID)* ( ':' type )? ')' ':' )? proofStep+ '}' ;
+
+proofId: INT | STRING ;
+
+just: name ( '(' args ')' )? proofId* ;
+            
+sequent: ( exp ( ',' exp )* )? ( '|-' | '⊢' ) exp ;
+
+truthTable: OP+                    // OP = *
+            TTL
+            ID+ ( ':' exp )+  
+            TTL
+            ID+ ( ':' ID+ )+       // ID consists only T or F
+            TTL
             truthTableConclusion?
             ;
 
@@ -201,96 +208,8 @@ truthTableCase: 'case' ID ':' ( truthTableAssignment ( ',' truthTableAssignment 
 
 truthTableAssignment: ID+ ;
 
-proofStep: proofId '.' ( exp just | subProof ) ;
 
-subProof
-  : '{' '[' ID ( ',' ID)* ( ':' type )? ']' proofStep+ '}'
-  | '{' proofStep+ '}'
-  ;
-
-proofId: INT | STRING ;
-
-just: name callArgs? proofId* ;
-
-exp: quant | yild | let | ifExp | accesses ;
-
-expNoBlock: quant | yild | let | ifExp | accessesNoBlock ;
-  
-accesses: access ( OP access )* ifExp? ;
-  
-accessesNoBlock: accessNoBlock ( OP accessNoBlock )* ifExp? ;
-
-quant: OP? ( '\\all' | '∀' | '\\some' | '∃' ) quantSuffix ;
-
-quantSuffix
-  : quantRange (',' quantRange )* ':' expNoBlock
-  | ID ( ',' ID)* ':' type '.' expNoBlock
-  ;
-
-quantRange: ID 'in' exp ( ( '..' | '..<' ) exp )? ;
-
-yild: 'yield' forRange+ ':' expNoBlock ;
-
-let: 'let' binding+ 'in' expNoBlock ;
-
-binding: ID ':=' exp ;
-
-ifExp: '?' ( '{' ifExpMultiCase+ '}' | expNoBlock ':' expNoBlock );
-
-ifExpMultiCase
-  : 'case' pattern ( OP exp )? ':' exp // OP = &&
-  | '_' exp? ':' exp
-  ;
-
-access: OP? term codeBlocks? accessSuffix? ;
-
-accessSuffix
-  : memberAccessSuffix
-  | callAccessSuffix
-  | typeArgsSuffix
-  ;
-
-memberAccessSuffix: '.' ID codeBlocks? accessSuffix? ;
-
-callAccessSuffix: callArgs codeBlocks? ( memberAccessSuffix | callAccessSuffix )? ;
-
-typeArgsSuffix: typeArgs codeBlocks? ( memberAccessSuffix | callAccessSuffix )? ;
-
-codeBlocks: codeBlock+ ;
-
-accessNoBlock: OP? term accessNoBlockSuffix? ;
-
-accessNoBlockSuffix
-  : memberAccessNoBlockSuffix
-  | callAccessNoBlockSuffix
-  | typeArgsNoBlockSuffix
-  ;
-
-memberAccessNoBlockSuffix: '.' ID accessNoBlockSuffix? ;
-
-callAccessNoBlockSuffix: callArgs ( memberAccessNoBlockSuffix | callAccessNoBlockSuffix )? ;
-
-typeArgsNoBlockSuffix: typeArgs ( memberAccessNoBlockSuffix | callAccessNoBlockSuffix )? ;
-
-callArgs: '(' ( idExp ( ',' idExp )* )? ')' ;
-
-idExp: ( ID ':=' )? exp ;
-
-term: lit | ID | paren | interp | codeBlock ;
-
-lit: 'true' | 'false' | '⊤' | '⊥' | INT | HEX | BIN | REAL | STRING | MSTRING ;
-
-paren: '(' exp ( ',' exp )* ')' ;
-
-codeBlock: '{' ( lambda | blockContent ) '}' ;
-
-lambda: lparam ( ',' lparam )* '.' funSpec? blockContent ;
-
-lparam: ID ':' type ;
-
-funSpec: '[' modsID ( ',' name | ( '.' ID )* ) ']' ;  // mods = ( pure )
-
-type: baseType ( '=>' funSpec? baseType )* ;
+type: baseType ( '=>' baseType )* annot? ;
 
 baseType
   : ID typeArgs?
@@ -330,6 +249,8 @@ MSPE: '$' MSPI* ( '"""' | '""""' | '"""""' ) ;
 
 ID: IDF | IDESC;
 
+TTL: '-' '-' '-' '-' '-'+ ;
+
 OP: ( OPSYM+ | '\\' IDF ) ;
 
 HEX: '0x'  HEX_DIGIT ( '_' | HEX_DIGIT )* ( '.' IDF )?;
@@ -343,7 +264,7 @@ REAL: ( '0' | '-'? '1'..'9' ( DIGIT | '_' )* ) ( '.' DIGIT ( DIGIT | '_' )* EXPO
 CHAR: '\'' ( ESC_SEQ | ~('\''|'\\') ) '\'' ;
 
 COMMENT
-  : '//' ~( '\n' | '\r' )* '\r'? '\n' {$channel=HIDDEN;}
+  : '//' ~( '\n' | '\r' )* '\r'? '\n'          {$channel=HIDDEN;}
   | '/*' ( ~'*' | '*' ~'/' )* ( '*/' | '**/' ) {$channel=HIDDEN;}
   ;
 
