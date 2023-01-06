@@ -283,42 +283,75 @@ object TypeChecker {
     }
   }
 
-  def adtCopyTypedResOpt(typeHierarchy: TypeHierarchy, posOpt: Option[Position], tpe: AST.Typed.Name,
+  def adtCopyTypedResOpt(isCode: B, typeHierarchy: TypeHierarchy, posOpt: Option[Position], tpe: AST.Typed.Name,
                          argNames: ISZ[String], reporter: Reporter): (Option[AST.Typed], Option[AST.ResolvedInfo], B) = {
-    typeHierarchy.typeMap.get(tpe.ids) match {
-      case Some(info: TypeInfo.Adt) if !info.ast.isRoot =>
-        val params: ISZ[AST.AdtParam] = if (argNames.isEmpty) {
-          info.ast.params
-        } else {
-          val argNameSet = HashSSet.emptyInit[String](argNames.size) ++ argNames
-          val ps = info.ast.params.filter(p => argNameSet.contains(p.id.value))
-          if (argNameSet.size != ps.size) {
-            val names = argNameSet -- info.ast.params.map[String](p => p.id.value)
-            reporter.error(posOpt, typeCheckerKind,
-              st"Could not find parameter(s) '${(names.elements, "', '")}' in '$tpe'.".render)
-            return (None(), None(), T)
-          } else if (ps.size == z"0" && info.ast.params.size != z"0") {
-            reporter.error(posOpt, typeCheckerKind, st"Cannot perform copy of '$tpe' without argument.".render)
-            return (None(), None(), T)
+    if (!isCode && argNames.isEmpty) {
+      reporter.error(posOpt, typeCheckerKind, st"Cannot perform copy of '$tpe' without argument.".render)
+      return (None(), None(), T)
+    }
+    val (t, paramNames, paramTypes): (AST.Typed.Name, ISZ[String], ISZ[AST.Typed]) = typeHierarchy.typeMap.get(tpe.ids) match {
+      case Some(info: TypeInfo.Adt) =>
+        if (info.ast.isRoot) {
+          if (isCode) {
+            return (None(), None(), F)
           }
-          ps
+          val pns = info.specVars.keys
+          val pts: ISZ[AST.Typed] = for (v <- info.specVars.values) yield v.typedOpt.get
+          (info.tpe, pns, pts)
+        } else {
+          if (isCode) {
+            val pns: ISZ[String] = for (p <- info.ast.params) yield p.id.value
+            val pts: ISZ[AST.Typed] = for (p <- info.ast.params) yield p.tipe.typedOpt.get
+            (info.tpe, pns, pts)
+          } else {
+            var pns: ISZ[String] = for (p <- info.ast.params) yield p.id.value
+            var pts: ISZ[AST.Typed] = for (p <- info.ast.params) yield p.tipe.typedOpt.get
+            for (v <- (info.vars -- pns).values) {
+              pns = pns :+ v.ast.id.value
+              pts = pts :+ v.typedOpt.get
+            }
+            for (v <- (info.specVars -- pns).values) {
+              pns = pns :+ v.ast.id.value
+              pts = pts :+ v.typedOpt.get
+            }
+            (info.tpe, pns, pts)
+          }
         }
-        val paramNames = params.map[String](p => p.id.value)
-        val paramTypes = params.map[AST.Typed](p => p.tipe.typedOpt.get)
-        val smOpt = unify(typeHierarchy, posOpt, TypeRelation.Equal, tpe, info.tpe, reporter)
-        smOpt match {
-          case Some(sm) =>
-            val copyType = AST.Typed.Fun(T, F, paramTypes, tpe).subst(sm)
-            val id = info.ast.id.value
-            return (
-              Some(AST.Typed.Method(F, AST.MethodMode.Copy, ISZ(), info.owner, id, paramNames, copyType)),
-              Some(AST.ResolvedInfo.Method(F, AST.MethodMode.Copy, ISZ(), info.owner, id, paramNames,
-                Some(copyType), ISZ(), ISZ())),
-              T
-            )
-          case _ => return (None(), None(), T)
-        }
+      case Some(info: TypeInfo.Sig) if !isCode =>
+        val pns = info.specVars.keys
+        val pts: ISZ[AST.Typed] = for (v <- info.specVars.values) yield v.typedOpt.get
+        (info.tpe, pns, pts)
       case _ => return (None(), None(), F)
+    }
+    val paramNameIndexMap = HashMap.empty[String, Z] ++ (for (i <- paramNames.indices) yield (paramNames(i), i))
+    var pns = ISZ[String]()
+    var pts = ISZ[AST.Typed]()
+    for (argName <- if (isCode && argNames.isEmpty) paramNames else argNames) {
+      paramNameIndexMap.get(argName) match {
+        case Some(i) =>
+          pns = pns :+ argName
+          pts = pts :+ paramTypes(i)
+        case _ =>
+          reporter.error(posOpt, typeCheckerKind, st"Could not find parameter '$argName' in '$tpe'.".render)
+      }
+    }
+    if (pns.isEmpty && paramNames.nonEmpty) {
+      reporter.error(posOpt, typeCheckerKind, st"Cannot perform copy of '$tpe' without argument.".render)
+      return (None(), None(), T)
+    }
+    val smOpt = unify(typeHierarchy, posOpt, TypeRelation.Equal, tpe, t, reporter)
+    smOpt match {
+      case Some(sm) =>
+        val copyType = AST.Typed.Fun(T, F, pts, tpe).subst(sm)
+        val owner = ops.ISZOps(t.ids).dropRight(1)
+        val id = t.ids(t.ids.size - 1)
+        return (
+          Some(AST.Typed.Method(F, AST.MethodMode.Copy, ISZ(), owner, id, pns, copyType)),
+          Some(AST.ResolvedInfo.Method(F, AST.MethodMode.Copy, ISZ(), owner, id, pns,
+            Some(copyType), ISZ(), ISZ())),
+          T
+        )
+      case _ => return (None(), None(), T)
     }
   }
 
@@ -2129,7 +2162,7 @@ import TypeChecker._
               return (p._1, p._2, newTypeArgs)
             }
           } else {
-            val p = adtCopyTypedResOpt(typeHierarchy, posOpt, tpe, argNames, reporter)
+            val p = adtCopyTypedResOpt(mode == TypeChecker.ModeContext.Code, typeHierarchy, posOpt, tpe, argNames, reporter)
             if (p._3) {
               return (p._1, p._2, newTypeArgs)
             }
