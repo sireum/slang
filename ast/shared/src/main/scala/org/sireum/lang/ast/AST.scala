@@ -1572,7 +1572,11 @@ object Exp {
     @pure override def prettyST: ST = {
       val targsOpt: Option[ST] = if (targs.isEmpty) None() else Some(st"[${(for (targ <- targs) yield targ.prettyST, "")}]")
       val as = st"(${(for (arg <- args) yield st"${arg.id.value} = ${arg.arg.prettyST}", ", ")})"
-      return st"${receiverOpt.map((rcv: Exp) => st"${rcv.prettyST}.")}${ident.id.value}$targsOpt$as"
+      ident.attr.resOpt match {
+        case Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.Apply)) =>
+          return st"${receiverOpt.map((rcv: Exp) => st"${rcv.prettyST}")}$targsOpt$as"
+        case _ => return st"${receiverOpt.map((rcv: Exp) => st"${rcv.prettyST}.")}${ident.id.value}$targsOpt$as"
+      }
     }
   }
 
