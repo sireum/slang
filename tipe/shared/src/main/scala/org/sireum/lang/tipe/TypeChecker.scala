@@ -306,11 +306,11 @@ object TypeChecker {
           } else {
             var pns: ISZ[String] = for (p <- info.ast.params) yield p.id.value
             var pts: ISZ[AST.Typed] = for (p <- info.ast.params) yield p.tipe.typedOpt.get
-            for (v <- (info.vars -- pns).values) {
+            for (v <- (info.vars -- pns).values if !v.ast.isVal) {
               pns = pns :+ v.ast.id.value
               pts = pts :+ v.typedOpt.get
             }
-            for (v <- (info.specVars -- pns).values) {
+            for (v <- (info.specVars -- pns).values if !v.ast.isVal) {
               pns = pns :+ v.ast.id.value
               pts = pts :+ v.typedOpt.get
             }
