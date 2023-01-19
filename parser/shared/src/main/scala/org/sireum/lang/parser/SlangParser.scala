@@ -801,7 +801,7 @@ class SlangParser(
     val mods = stat.mods
     val name = stat.name
     val tparams = stat.tparams
-    val paramss = stat.paramss
+    val paramss = stat.paramClauses.map(_.values)
     val tpe = stat.decltpe
     var hasError = false
     if (paramss.size > 1) {
@@ -864,7 +864,7 @@ class SlangParser(
   val specDefnInv: Set[Predef.String] = specDefn + "Invariant"
 
   def translateDef(enclosing: Enclosing.Type, tree: Defn.Def): AST.Stmt = {
-    if (tree.paramss.size <= 1 && tree.mods.exists({
+    if (tree.paramClauses.size <= 1 && tree.mods.exists({
       case mod"@spec" => true
       case _ => false
     })) {
@@ -890,7 +890,7 @@ class SlangParser(
               if (tree.tparams.nonEmpty) {
                 errorInSlang(id.pos, "Invariants cannot have type parameters")
               }
-              if (tree.paramss.nonEmpty) {
+              if (tree.paramClauses.nonEmpty) {
                 errorInSlang(id.pos, "Invariants cannot have parameters")
               }
               checkReturnType()
@@ -903,7 +903,7 @@ class SlangParser(
     val mods = tree.mods
     val name = tree.name
     val tparams = tree.tparams
-    val paramss = tree.paramss
+    val paramss = tree.paramClauses.map(_.values)
     val tpeopt = tree.decltpe
     val exp = tree.body
     var hasError = false
@@ -970,7 +970,7 @@ class SlangParser(
           case _ => errorInSlang(term.pos, s"Only string literal is allowed as @just argument")
         }
         isJust = true
-      case mod"@just(..${terms: Seq[Term]})" =>
+      case mod"@just(..$terms)" =>
         if (isJust) {
           hasError = true
           error(mod.pos, "Redundant @just.")
@@ -1090,7 +1090,7 @@ class SlangParser(
       exp match {
         case exp: Term.Block if !isStrictPure =>
           val (mc, bodyOpt) = exp.stats.headOption match {
-            case scala.Some(c@q"Contract(..${exprs: Seq[Term]})") =>
+            case scala.Some(c@q"Contract(..$exprs)") =>
               (
                 translateMethodContract(exprs, attr(c.pos)),
                 if (isDiet) None[AST.Body]()
@@ -1104,7 +1104,7 @@ class SlangParser(
               )
           }
           AST.Stmt.Method(false, purity, hasOverride, isHelper, sig, mc, bodyOpt, resolvedAttr(tree.pos))
-        case q"Contract.Only(..${exprs: Seq[Term]})" =>
+        case q"Contract.Only(..$exprs)" =>
           enclosing match {
             case Enclosing.Sig | Enclosing.MSig | Enclosing.DatatypeTrait | Enclosing.RecordTrait =>
               if (isMemoize) {
@@ -1175,7 +1175,7 @@ class SlangParser(
       exp match {
         case exp: Term.Name if exp.value == "$" =>
           AST.Stmt.ExtMethod(isPure, sig, emptyContract, resolvedAttr(tree.pos))
-        case q"Contract.Only(..${exprs: Seq[Term]})" =>
+        case q"Contract.Only(..$exprs)" =>
           AST.Stmt.ExtMethod(isPure, sig, translateMethodContract(exprs, attr(exp.pos)), resolvedAttr(tree.pos))
         case _ =>
           hasError = true
@@ -1196,11 +1196,10 @@ class SlangParser(
     exp match {
       case Lit.Int(n) => n
       case Lit.Long(n) => n
-      case Term.Apply(Term.Name("Z"), Seq(Lit.Int(n))) => n
-      case Term.Apply(Term.Name("Z"), Seq(Lit.Long(n))) => n
-      case Term.Apply(Term.Name("Z"), Seq(Lit.String(s))) => extractString(s)
-      case Term.Apply(Term.Select(Term.Apply(Term.Name("StringContext"), Seq(Lit.String(s))), Term.Name("z")), Seq()) =>
-        extractString(s)
+      case q"Z(${n: Lit.Int})" => n.value
+      case q"Z(${n: Lit.Long})" => n.value
+      case q"Z(${n: Lit.String})" => extractString(n.value)
+      case q"StringContext(${s: Lit.String}).z()" => extractString(s.value)
       case exp: Term.Interpolate if exp.prefix.value == "z" && exp.args.isEmpty && exp.parts.size == 1 =>
         exp.parts.head match {
           case Lit.String(s) => extractString(s)
@@ -1439,7 +1438,7 @@ class SlangParser(
         errorNotSlang(mods.head.pos, "Object modifiers other than @ext are")
     }
     ctorcalls match {
-      case List(Init(Type.Name("App"), Name(""), Nil)) => hasApp = true
+      case List(init"App") => hasApp = true
       case List() =>
       case _ =>
         error(name.pos, "Slang @ext objects have to be of the form '@ext object〈ID〉[ extends App ] { ... }'.")
@@ -1508,7 +1507,7 @@ class SlangParser(
   def translateSig(enclosing: Enclosing.Type, stat: Defn.Trait): AST.Stmt = {
     val mods = stat.mods
     val tname = stat.name
-    val tparams = stat.tparams
+    val tparams = stat.tparamClause.values
     val estats = stat.templ.early
     val ctorcalls = stat.templ.inits
     val self = stat.templ.self
@@ -1596,7 +1595,7 @@ class SlangParser(
     }
     val mods = stat.mods
     val tname = stat.name
-    val tparams = stat.tparams
+    val tparams = stat.tparamClause.values
     val estats = stat.templ.early
     val ctorcalls = stat.templ.inits
     val self = stat.templ.self
@@ -1638,9 +1637,9 @@ class SlangParser(
     }
     val mods = stat.mods
     val tname = stat.name
-    val tparams = stat.tparams
+    val tparams = stat.tparamClause.values
     val ctorMods = stat.ctor.mods
-    val paramss = stat.ctor.paramss
+    val paramss = stat.ctor.paramClauses.map(_.values)
     val estats = stat.templ.early
     val ctorcalls = stat.templ.inits
     val self = stat.templ.self
@@ -1684,7 +1683,7 @@ class SlangParser(
     }
     val mods = stat.mods
     val tname = stat.name
-    val tparams = stat.tparams
+    val tparams = stat.tparamClause.values
     val estats = stat.templ.early
     val ctorcalls = stat.templ.inits
     val self = stat.templ.self
@@ -1726,9 +1725,9 @@ class SlangParser(
     }
     val mods = stat.mods
     val tname = stat.name
-    val tparams = stat.tparams
+    val tparams = stat.tparamClause.values
     val ctorMods = stat.ctor.mods
-    val paramss = stat.ctor.paramss
+    val paramss = stat.ctor.paramClauses.map(_.values)
     val estats = stat.templ.early
     val ctorcalls = stat.templ.inits
     val self = stat.templ.self
@@ -1762,7 +1761,7 @@ class SlangParser(
   def translateTypeAlias(enclosing: Enclosing.Type, stat: Defn.Type): AST.Stmt = {
     val mods = stat.mods
     val tname = stat.name
-    val tparams = stat.tparams
+    val tparams = stat.tparamClause.values
     val tpe = stat.body
     if (mods.nonEmpty) {
       error(stat.pos, "Slang type definitions should be of the form: 'type〈ID〉... =〈type〉'.")
@@ -1807,7 +1806,7 @@ class SlangParser(
         AST.Type.Fun(
           isPure,
           false,
-          ISZ(t.params.map(t => translateTypeArg(allowByName = false)(t)): _*),
+          ISZ(t.paramClause.values.map(t => translateTypeArg(allowByName = false)(t)): _*),
           translateType(ret),
           typedAttr(t.pos)
         )
@@ -2009,8 +2008,8 @@ class SlangParser(
       errorInSlang(tp.pos, s"The parameter should have the form '〈ID〉⸨ :〈type〉⸩?'")
     }
     atpeopt
-      .map(ta => AST.Exp.Fun.Param(if ("" == tp.name.value) None() else Some(cid(tp.name)), Some(translateTypeArg(allowByName = false)(ta)), None()))
-      .getOrElse(AST.Exp.Fun.Param(if ("" == tp.name.value) None() else Some(cid(tp.name)), None(), None()))
+      .map(ta => AST.Exp.Fun.Param(if ("_" == tp.name.value) None() else Some(cid(tp.name)), Some(translateTypeArg(allowByName = false)(ta)), None()))
+      .getOrElse(AST.Exp.Fun.Param(if ("_" == tp.name.value) None() else Some(cid(tp.name)), None(), None()))
   }
 
   def translateBlock(enclosing: Enclosing.Type, stat: Term.Block, isAssignExp: Boolean): AST.Stmt.Block = {
@@ -2037,7 +2036,7 @@ class SlangParser(
   }
 
   def translateExtend(init: Init): AST.Type.Named = {
-    if (init.argss.nonEmpty) errorInSlang(init.pos, "Cannot supply arguments for extends")
+    if (init.argClauses.nonEmpty) errorInSlang(init.pos, "Cannot supply arguments for extends")
     translateType(init.tpe) match {
       case r: AST.Type.Named => r
       case _ =>
@@ -2259,7 +2258,7 @@ class SlangParser(
     stat.body match {
       case body: Term.Block =>
         body.stats match {
-          case q"Invariant(..${exprs: Seq[Term]})" :: rest =>
+          case q"Invariant(..$exprs)" :: rest =>
             val (is, ms, mio) = translateLoopInvariant(exprs, body.stats.head.pos)
             invariants = is
             mods = ms
@@ -2293,7 +2292,7 @@ class SlangParser(
     stat.body match {
       case body: Term.Block =>
         body.stats match {
-          case q"Invariant(..${exprs: Seq[Term]})" :: rest =>
+          case q"Invariant(..$exprs)" :: rest =>
             val (is, ms, mio) = translateLoopInvariant(exprs, body.stats.head.pos)
             modifies = ms
             invariants = is
@@ -2328,7 +2327,7 @@ class SlangParser(
         var stop = false
         while (i < body.stats.size && !stop) {
           body.stats(i) match {
-            case q"Invariant(..${exprs: Seq[Term]})" if !stop =>
+            case q"Invariant(..$exprs)" if !stop =>
               val (is, ms, mio) = translateLoopInvariant(exprs, body.stats.head.pos)
               modifies = ms
               invariants = invariants :+ ((is, mio))
@@ -2412,7 +2411,7 @@ class SlangParser(
   def translateExp(exp: Term): AST.Exp = {
     def quantType(qid: Predef.String, f: Term.Function): AST.Exp.QuantType = {
       val isForall = qid == "All" || qid == "∀"
-      val f = exp.asInstanceOf[Term.Apply].args.head
+      val f = exp.asInstanceOf[Term.Apply].argClause.values.head
       AST.Exp.QuantType(isForall, translateExp(f).asInstanceOf[AST.Exp.Fun], attr(exp.pos))
     }
 
@@ -2438,11 +2437,11 @@ class SlangParser(
 
     def typeCond(pos: Position, margs: List[Term], mf: Term.Function): AST.Exp = {
       var ok = true
-      if (margs.size != mf.params.size) {
-        error(mf.pos, s"Expecting ${margs.size} number of function parameters, but found ${mf.params.size}.")
+      if (margs.size != mf.paramClause.size) {
+        error(mf.pos, s"Expecting ${margs.size} number of function parameters, but found ${mf.paramClause.size}.")
         ok = false
       }
-      for (p <- mf.params) {
+      for (p <- mf.paramClause.values) {
         if (p.name.value == "") {
           error(p.pos, "Parameter of ? function operator should be explicitly named")
           ok = false
@@ -2491,11 +2490,11 @@ class SlangParser(
         }
         AST.Exp.Eta(ref, typedAttr(exp.pos))
       case exp: Term.Tuple => AST.Exp.Tuple(ISZ(exp.args.map(translateExp): _*), typedAttr(exp.pos))
-      case Term.ApplyType(res@Term.Name("Res"), List(t)) =>
+      case q"${res@Term.Name("Res")}[$t]" =>
         val pos = if (exp.pos == Position.None) res.pos else exp.pos
         AST.Exp.Result(Some(translateType(t)), typedAttr(pos))
-      case Term.Apply(Term.Apply(op@Term.Name("?"), margs), List(mf: Term.Function)) if margs.nonEmpty => return typeCond(op.pos, margs, mf)
-      case Term.Apply(Term.Apply(op@Term.Name("?"), margs), List(Term.Block(List(mf: Term.Function)))) if margs.nonEmpty => return typeCond(op.pos, margs, mf)
+      case q"${op@Term.Name("?")}(..$margs)(${mf: Term.Function})" if margs.nonEmpty => return typeCond(op.pos, margs, mf)
+      case q"${op@Term.Name("?")}(..$margs)(${Term.Block(List(mf: Term.Function))})" if margs.nonEmpty => return typeCond(op.pos, margs, mf)
       case q"Idx[$t]($arg)" =>
         translateIdent("Idx", arg) match {
           case Some(idx) => AST.Exp.LoopIndex(Some(translateType(t)), idx, typedAttr(exp.pos))
@@ -2504,18 +2503,18 @@ class SlangParser(
       case q"Idx($arg)" =>
         error(exp.pos, s"Idx requires an explicit type parameter of the sequence index type.")
         rExp
-      case Term.Apply(Term.Apply(Term.Name(qid), List(d)), List(f: Term.Function)) if quantSymbols.contains(qid) => quant(qid, d, f)
-      case Term.Apply(Term.Apply(Term.Name(qid), List(d)), List(Term.Block(List(f: Term.Function)))) if quantSymbols.contains(qid) => quant(qid, d, f)
-      case Term.Apply(Term.Name(qid), List(Term.Block(List(f: Term.Function)))) if quantSymbols.contains(qid) => quantType(qid, f)
-      case Term.Apply(Term.Name(qid), List(f: Term.Function)) if quantSymbols.contains(qid) => quantType(qid, f)
+      case q"${Term.Name(qid)}($d)(${f: Term.Function})" if quantSymbols.contains(qid) => quant(qid, d, f)
+      case q"${Term.Name(qid)}($d)({ ${f: Term.Function} })" if quantSymbols.contains(qid) => quant(qid, d, f)
+      case q"${Term.Name(qid)}(${Term.Block(List(f: Term.Function))})" if quantSymbols.contains(qid) => quantType(qid, f)
+      case q"${Term.Name(qid)}(${f: Term.Function})" if quantSymbols.contains(qid) => quantType(qid, f)
       case exp: Term.ApplyUnary => translateUnaryExp(exp)
       case exp: Term.ApplyInfix => translateBinaryExp(exp)
 
-      case q"InfoFlowInvariant(..${rexprs: Seq[Term]})" =>
+      case q"InfoFlowInvariant(..$rexprs)" =>
         val infoFlows = AST.MethodContract.InfoFlows(translateInfoFlows(rexprs), attr(exp.pos))
         AST.Exp.InfoFlowInvariant(flowInvariants = infoFlows.flows, attr = attr(exp.pos))
 
-      case q"${name: Term.Name}(..${aaexprs: Seq[Term]})" if name.value == "AssumeAgree" =>
+      case q"${name: Term.Name}(..$aaexprs)" if name.value == "AssumeAgree" =>
         var channel: AST.Exp.LitString = AST.Exp.LitString("invalid", AST.Attr(None()))
         var i = 0
         val length = aaexprs.length
@@ -2533,7 +2532,7 @@ class SlangParser(
         var requires = AST.MethodContract.Claims.empty
         if (i < length) {
           aaexprs(i) match {
-            case q"Requires(..${rexprs: Seq[Term]})" =>
+            case q"Requires(..$rexprs)" =>
               requires = AST.MethodContract.Claims(translateExps(rexprs), attr(aaexprs(i).pos))
               i += 1
             case _ =>
@@ -2542,7 +2541,7 @@ class SlangParser(
         var inAgrees = AST.MethodContract.Claims.empty
         if (i < length) {
           aaexprs(i) match {
-            case q"InAgree(..${rexprs: Seq[Term]})" =>
+            case q"InAgree(..$rexprs)" =>
               inAgrees = AST.MethodContract.Claims(translateExps(rexprs), attr(aaexprs(i).pos))
               i += 1
             case _ =>
@@ -2554,7 +2553,7 @@ class SlangParser(
         }
         AST.Exp.AssumeAgree(channel, requires, inAgrees, attr(if (exp.pos == Position.None) name.pos else exp.pos))
 
-      case q"${name: Term.Name}(..${aaexprs: Seq[Term]})" if name.value == "AssertAgree" =>
+      case q"${name: Term.Name}(..$aaexprs)" if name.value == "AssertAgree" =>
         var channel: AST.Exp.LitString = AST.Exp.LitString("invalid", AST.Attr(None()))
         var i = 0
         val length = aaexprs.length
@@ -2572,7 +2571,7 @@ class SlangParser(
         var outAgrees = AST.MethodContract.Claims.empty
         if (i < length) {
           aaexprs(i) match {
-            case q"OutAgree(..${rexprs: Seq[Term]})" =>
+            case q"OutAgree(..$rexprs)" =>
               outAgrees = AST.MethodContract.Claims(translateExps(rexprs), attr(aaexprs(i).pos))
               i += 1
             case _ =>
@@ -2668,10 +2667,10 @@ class SlangParser(
       case q"${name: Term.Name}[..$tpes](...${aexprssnel: List[List[Term]]})" if aexprssnel.nonEmpty =>
         name.value match {
           case "Res" =>
-            val rcv = Term.ApplyType(name, tpes.toList)
+            val rcv = Term.ApplyType(name, Type.ArgClause(tpes.toList))
             translateInvoke(scala.Some(rcv), AST.Id("apply", attr(name.pos)), name.pos, List(), aexprssnel, exp.pos)
           case "At" =>
-            val rcv = Term.ApplyType(name, tpes.toList)
+            val rcv = Term.ApplyType(name, Type.ArgClause(tpes.toList))
             translateInvoke(scala.Some(rcv), AST.Id("apply", attr(name.pos)), name.pos, List(), aexprssnel.tail, exp.pos)
           case _ => translateInvoke(scala.None, cid(name), name.pos, tpes, aexprssnel, exp.pos)
         }
@@ -2881,8 +2880,8 @@ class SlangParser(
         }
         AST.Exp.StateSeq(cid(left), rec(term, right), attr(t.pos))
       case _ =>
-        if (t.targs.nonEmpty)
-          errorInSlang(t.targs.head.pos, "Binary operations cannot have type arguments")
+        if (t.targClause.nonEmpty)
+          errorInSlang(t.targClause.values.head.pos, "Binary operations cannot have type arguments")
 
         val id = infixSymbols.getOrElse(t.op.value, t.op.value)
         if (!checkSymbol(id) && !infixSymbols.contains(id)) {
@@ -2891,13 +2890,13 @@ class SlangParser(
             s"Cannot use infix expression notation to invoke '${t.op.value}' in Slang (use dot invoke notation instead: $t)."
           )
         }
-        t.args match {
+        t.argClause.values match {
           case List(right) => AST.Exp.Binary(translateExp(t.lhs), id, translateExp(right), resolvedAttr(t.op.pos))
           case _ =>
             import org.sireum._
             error(
               t.op.pos,
-              st"Invalid right-hand-side for '$id': '(${(t.args.map(_.syntax), ", ")})'".render.value
+              st"Invalid right-hand-side for '$id': '(${(t.argClause.values.map(_.syntax), ", ")})'".render.value
             )
             rExp
         }
@@ -3003,7 +3002,7 @@ class SlangParser(
   }
 
   def translateFun(exp: Term.Function): AST.Exp = {
-    val ps = ISZ(exp.params.map(translateFunParam): _*)
+    val ps = ISZ(exp.paramClause.values.map(translateFunParam): _*)
 
     val body = translateAssignExp(exp.body)
     AST.Exp.Fun(ISZ(), ps, body, typedAttr(exp.pos))
@@ -3117,7 +3116,7 @@ class SlangParser(
     var requires = AST.MethodContract.Claims.empty
     if (i < length) {
       exprs(i) match {
-        case q"Requires(..${rexprs: Seq[Term]})" =>
+        case q"Requires(..$rexprs)" =>
           requires = AST.MethodContract.Claims(translateExps(rexprs), attr(exprs(i).pos))
           i += 1
         case _ =>
@@ -3126,7 +3125,7 @@ class SlangParser(
     var ensures = AST.MethodContract.Claims.empty
     if (i < length) {
       exprs(i) match {
-        case q"Ensures(..${eexprs: Seq[Term]})" =>
+        case q"Ensures(..$eexprs)" =>
           ensures = AST.MethodContract.Claims(translateExps(eexprs), attr(exprs(i).pos))
           i += 1
         case _ =>
@@ -3144,7 +3143,7 @@ class SlangParser(
     var i = 0
     var reads = AST.MethodContract.Accesses.empty
     exprs(i) match {
-      case q"Reads(..${rexprs: Seq[Term]})" =>
+      case q"Reads(..$rexprs)" =>
         reads = AST.MethodContract.Accesses(translateRefs("Reads", rexprs), attr(exprs(i).pos))
         i += 1
       case _ =>
@@ -3152,7 +3151,7 @@ class SlangParser(
     var modifies = AST.MethodContract.Accesses.empty
     if (i < length) {
       exprs(i) match {
-        case q"Modifies(..${rexprs: Seq[Term]})" =>
+        case q"Modifies(..$rexprs)" =>
           modifies = AST.MethodContract.Accesses(translateRefs("Modifies", rexprs), attr(exprs(i).pos))
           i += 1
         case _ =>
@@ -3161,7 +3160,7 @@ class SlangParser(
     var cases = ISZ[AST.MethodContract.Case]()
     while (i < length) {
       exprs(i) match {
-        case q"Case(..${cexprs: Seq[Term]})" => cases = cases :+ translateContractCase(cexprs)
+        case q"Case(..$cexprs)" => cases = cases :+ translateContractCase(cexprs)
         case expr => error(expr.pos, "Unrecognized Contract argument.")
       }
       i += 1
@@ -3175,7 +3174,7 @@ class SlangParser(
     var reads = AST.MethodContract.Accesses.empty
     if (i < length) {
       exprs(i) match {
-        case q"Reads(..${rexprs: Seq[Term]})" =>
+        case q"Reads(..$rexprs)" =>
           reads = AST.MethodContract.Accesses(translateRefs("Reads", rexprs), attr(exprs(i).pos))
           i += 1
         case _ =>
@@ -3184,7 +3183,7 @@ class SlangParser(
     var requires = AST.MethodContract.Claims.empty
     if (i < length) {
       exprs(i) match {
-        case q"Requires(..${rexprs: Seq[Term]})" =>
+        case q"Requires(..$rexprs)" =>
           requires = AST.MethodContract.Claims(translateExps(rexprs), attr(exprs(i).pos))
           i += 1
         case _ =>
@@ -3193,7 +3192,7 @@ class SlangParser(
     var modifies = AST.MethodContract.Accesses.empty
     if (i < length) {
       exprs(i) match {
-        case q"Modifies(..${mexprs: Seq[Term]})" =>
+        case q"Modifies(..$mexprs)" =>
           modifies = AST.MethodContract.Accesses(translateRefs("Modifies", mexprs), attr(exprs(i).pos))
           i += 1
         case _ =>
@@ -3202,7 +3201,7 @@ class SlangParser(
     var ensures = AST.MethodContract.Claims.empty
     if (i < length) {
       exprs(i) match {
-        case q"Ensures(..${rexprs: Seq[Term]})" =>
+        case q"Ensures(..$rexprs)" =>
           ensures = AST.MethodContract.Claims(translateExps(rexprs), attr(exprs(i).pos))
           i += 1
         case _ =>
@@ -3212,7 +3211,7 @@ class SlangParser(
     var infoFlows = AST.MethodContract.InfoFlows.empty
     if (i < length) {
       exprs(i) match {
-        case q"InfoFlows(..${rexprs: Seq[Term]})" =>
+        case q"InfoFlows(..$rexprs)" =>
           infoFlows = AST.MethodContract.InfoFlows(translateInfoFlows(rexprs), attr(exprs(i).pos))
           i += 1
         case _ =>
@@ -3232,7 +3231,7 @@ class SlangParser(
     var infoFlows: ISZ[AST.MethodContract.InfoFlow] = ISZ()
     while (i < length) {
       exprs(i) match {
-        case q"FlowCase(..${cexprs: Seq[Term]})" => infoFlows = infoFlows :+ translateInfoFlow(cexprs)
+        case q"FlowCase(..$cexprs)" => infoFlows = infoFlows :+ translateInfoFlow(cexprs)
         case expr => error(expr.pos, "Unrecognized InfoFlow flow argument")
       }
       i += 1
@@ -3255,7 +3254,7 @@ class SlangParser(
     var requires = AST.MethodContract.Claims.empty
     if (i < length) {
       exprs(i) match {
-        case q"Requires(..${iexprs: Seq[Term]})" =>
+        case q"Requires(..$iexprs)" =>
           requires = AST.MethodContract.Claims(translateExps(iexprs), attr(exprs(i).pos))
           i += 1
         case _ =>
@@ -3264,7 +3263,7 @@ class SlangParser(
     var inAgrees = AST.MethodContract.Claims.empty
     if (i < length) {
       exprs(i) match {
-        case q"InAgree(..${iexprs: Seq[Term]})" =>
+        case q"InAgree(..$iexprs)" =>
           inAgrees = AST.MethodContract.Claims(translateExps(iexprs), attr(exprs(i).pos))
           i += 1
       }
@@ -3272,7 +3271,7 @@ class SlangParser(
     var outAgrees = AST.MethodContract.Claims.empty
     if (i < length) {
       exprs(i) match {
-        case q"OutAgree(..${iexprs: Seq[Term]})" =>
+        case q"OutAgree(..$iexprs)" =>
           outAgrees = AST.MethodContract.Claims(translateExps(iexprs), attr(exprs(i).pos))
           i += 1
       }
@@ -3307,7 +3306,7 @@ class SlangParser(
     }
     var claims = ISZ[AST.Exp]()
     stat.body match {
-      case q"Invariant(..${iexprs: Seq[Term]})" =>
+      case q"Invariant(..$iexprs)" =>
         for (iexpr <- iexprs) {
           claims = claims :+ translateExp(iexpr)
         }
@@ -3326,17 +3325,17 @@ class SlangParser(
       else error(stat.pos, "Fact can only appear inside objects or @ext objects.")
     }
     val typeArgs = ISZ(stat.tparams.map(translateTypeParam(true, false)): _*)
-    val q"Fact(..${fexprs: Seq[Term]})" = stat.body
-    val (descOpt, exprs) = fexprs.headOption match {
-      case scala.Some(lit: Lit.String) => (Some(translateLit(lit).asInstanceOf[AST.Exp.LitString]), fexprs.tail)
-      case _ => (None[AST.Exp.LitString](), fexprs)
+    val q"Fact(..${fexprs: Term.ArgClause})" = stat.body
+    val (descOpt, exprs: Seq[Term]) = fexprs.headOption match {
+      case scala.Some(lit: Lit.String) => (Some(translateLit(lit).asInstanceOf[AST.Exp.LitString]), fexprs.values.tail)
+      case _ => (None[AST.Exp.LitString](), fexprs.values)
     }
     var claims = ISZ[AST.Exp]()
     var params = ISZ[AST.Exp.Fun.Param]()
-    stat.paramss.size match {
+    stat.paramClauses.size match {
       case 0 =>
       case 1 =>
-        for (p <- stat.paramss.head) {
+        for (p <- stat.paramClauses.head.values) {
           params = params :+ translateFunParam(p)
         }
       case _ => error(stat.pos, "Cannot have more than one list of parameters")
@@ -3361,7 +3360,7 @@ class SlangParser(
       if (isWorksheet) error(stat.pos, "Deduce can only appear at the top-level, inside methods, or code blocks.")
       else error(stat.pos, "Deduce can only appear inside methods or code blocks.")
     }
-    val q"Deduce(..${dexprs: Seq[Term]})" = stat
+    val q"Deduce(..$dexprs)" = stat
     val isProofStep = dexprs.headOption match {
       case scala.Some(head: Term) => !(head.pos.text.contains("|-") || head.pos.text.contains("⊢"))
       case _ => false
@@ -3385,7 +3384,7 @@ class SlangParser(
     if (!isDataRefinementContext) {
       error(stat.pos, "DataRefinement can only appear inside @msig traits, @record traits, or @record classes.")
     }
-    val q"Contract(DataRefinement($rep)(..$refs)(..${claims: Seq[Term]}))" = stat
+    val q"Contract(DataRefinement($rep)(..$refs)(..$claims))" = stat
     AST.Stmt.DataRefinement(
       translateIdent("DataRefinement", rep).getOrElse(rExp),
       ISZ(refs.map(ref => translateIdent("DataRefinement", ref).getOrElse(rExp)): _*),
@@ -3403,7 +3402,7 @@ class SlangParser(
       if (isWorksheet) error(stat.pos, "Contract.Havoc can only appear at the top-level, inside methods, or code blocks.")
       else error(stat.pos, "Contract.Havoc can only appear inside methods or code blocks.")
     }
-    val q"Contract.Havoc(..${hexprs: Seq[Term]})" = stat
+    val q"Contract.Havoc(..$hexprs)" = stat
     AST.Stmt.Havoc(translateRefs("Contract.Havoc", hexprs), attr(stat.pos))
   }
 
@@ -3481,7 +3480,7 @@ class SlangParser(
   }
 
   def translateSpecBlock(enclosing: Enclosing.Type, stat: Stat): AST.Stmt.SpecBlock = {
-    val Term.Apply(Term.Name("Spec"), List(b: Term.Block)) = stat
+    val q"Spec(${b: Term.Block})" = stat
     AST.Stmt.SpecBlock(translateBlock(enclosing, b, isAssignExp = false))
   }
 
@@ -3507,7 +3506,7 @@ class SlangParser(
           }
         for (c <- rest) {
           c match {
-            case p"case $ref(..$pats) => SubProof(..${steps: Seq[Term]})" =>
+            case p"case $ref(..$pats) => SubProof(..$steps)" =>
               var patterns = ISZ[AST.Pattern]()
               for (pat <- pats) {
                 pat match {
@@ -3586,13 +3585,13 @@ class SlangParser(
       witnesses
     }
     val r: AST.ProofAst.Step = proofStep match {
-      case q"$no #> $claim by ${t: Term.Eta} and (..${jargs: Seq[Term]})" if isStepId(no) =>
+      case q"$no #> $claim by ${t: Term.Eta} and (..$jargs)" if isStepId(no) =>
         val stepNo = toStepId(no)
         val stepClaim = translateExp(claim)
         val tExp = translateExp(t).asInstanceOf[AST.Exp.Eta]
         AST.ProofAst.Step.Regular(stepNo, stepClaim,
           AST.ProofAst.Step.Justification.ApplyEta(tExp, translateWitnesses(jargs)))
-      case q"$no #> $claim by ${t: Term.Apply} and (..${jargs: Seq[Term]})" if isStepId(no) =>
+      case q"$no #> $claim by ${t: Term.Apply} and (..$jargs)" if isStepId(no) =>
         val stepNo = toStepId(no)
         val stepClaim = translateExp(claim)
         val tExp = translateExp(t)
@@ -3635,26 +3634,26 @@ class SlangParser(
           reporter.error(stepNo.posOpt, messageKind, "Assume justification cannot be used at this location")
         }
         AST.ProofAst.Step.Assume(stepNo, translateExp(claim))
-      case q"$no #> Assert($claim, SubProof(..${claims: Seq[Term]}))" if isStepId(no) =>
+      case q"$no #> Assert($claim, SubProof(..$claims))" if isStepId(no) =>
         AST.ProofAst.Step.Assert(toStepId(no), translateExp(claim), ISZ(claims.map(translateProofStep(false)): _*))
-      case q"$no #> SubProof(..${claims: Seq[Term]})" if isStepId(no) =>
+      case q"$no #> SubProof(..$claims)" if isStepId(no) =>
         val stepNo = toStepId(no)
         val subClaims = translateAssumeSubClaims(claims)
         if (subClaims.nonEmpty && !subClaims(0).isInstanceOf[AST.ProofAst.Step.Assume]) {
           reporter.error(subClaims(0).id.posOpt, messageKind, "Expecting an Assume(...) claim")
         }
         AST.ProofAst.Step.SubProof(stepNo, subClaims)
-      case q"$no #> Let ((..$params) => SubProof(..${claims: Seq[Term]}))" if isStepId(no) =>
+      case q"$no #> Let ((..$params) => SubProof(..$claims))" if isStepId(no) =>
         AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims))
-      case q"$no #> Let {(..$params) => SubProof(..${claims: Seq[Term]})}" if isStepId(no) =>
+      case q"$no #> Let {(..$params) => SubProof(..$claims)}" if isStepId(no) =>
         AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims))
-      case q"$claim by ${t: Term.Eta} and (..${jargs: Seq[Term]})" =>
+      case q"$claim by ${t: Term.Eta} and (..$jargs)" =>
         val stepNo = toStepId(claim.pos)
         val stepClaim = translateExp(claim)
         val tExp = translateExp(t).asInstanceOf[AST.Exp.Eta]
         AST.ProofAst.Step.Regular(stepNo, stepClaim,
           AST.ProofAst.Step.Justification.ApplyEta(tExp, translateWitnesses(jargs)))
-      case q"$claim by ${t: Term.Apply} and (..${jargs: Seq[Term]})" =>
+      case q"$claim by ${t: Term.Apply} and (..$jargs)" =>
         val stepNo = toStepId(claim.pos)
         val stepClaim = translateExp(claim)
         val tExp = translateExp(t)
@@ -3703,7 +3702,7 @@ class SlangParser(
 
   def translateProof(proof: Term): AST.ProofAst = {
     proof match {
-      case q"Proof(..${pexprs: Seq[Term]})" =>
+      case q"Proof(..$pexprs)" =>
         AST.ProofAst(translateAndCheckProofSteps(pexprs), attr(proof.pos))
       case _ =>
         error(proof.pos, s"Expecting 'Proof(...)' but found '$proof'.")
@@ -3738,10 +3737,10 @@ class SlangParser(
       case q"${_: Term.Name}($e, $p)" => (None[AST.Exp.LitString](), translateExp(e), translateProof(p))
     }
     var params = ISZ[AST.Exp.Fun.Param]()
-    stat.paramss.size match {
+    stat.paramClauses.size match {
       case 0 =>
       case 1 =>
-        for (p <- stat.paramss.head) {
+        for (p <- stat.paramClauses.head.values) {
           params = params :+ translateFunParam(p)
         }
       case _ => error(stat.pos, "Cannot have more than one list of parameters")
@@ -3759,7 +3758,7 @@ class SlangParser(
     var maxItOpt: Option[AST.Exp.LitZ] = None()
     var rest = exprs
     rest = rest match {
-      case (expr@q"MaxIt(..${mexprs: Seq[Term]})") :: tail =>
+      case (expr@q"MaxIt(..$mexprs)") :: tail =>
         if (mexprs.size != 1) {
           error(expr.pos, "MaxIt expects a single positive integer literal argument.")
         } else {
@@ -3773,7 +3772,7 @@ class SlangParser(
       case _ => rest
     }
     rest = rest match {
-      case q"Modifies(..${mexprs: Seq[Term]})" :: tail =>
+      case q"Modifies(..$mexprs)" :: tail =>
         for (mexpr <- mexprs) {
           translateExp(mexpr) match {
             case e: AST.Exp.Ident => mods = mods :+ e
