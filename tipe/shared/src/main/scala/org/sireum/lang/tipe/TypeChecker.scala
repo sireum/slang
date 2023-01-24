@@ -1447,7 +1447,7 @@ import TypeChecker._
             }
           case _: TypeInfo.SubZ =>
             id.native match {
-              case "toZ" if typeArgs.isEmpty => return (AST.Typed.zOpt, randomResOpt, typeArgs)
+              case "toZ" if typeArgs.isEmpty => return (AST.Typed.zOpt, toZResOpt, typeArgs)
               case _ => val res = checkAccess(receiverType); return res
             }
           case _ => val res = checkAccess(receiverType); return res
