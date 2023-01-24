@@ -177,6 +177,10 @@ object TypeChecker {
     AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Random)
   )
 
+  val toZResOpt: Option[AST.ResolvedInfo] = Some(
+    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.ToZ)
+  )
+
   val indicesResOpt: Option[AST.ResolvedInfo] = Some(
     AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Indices)
   )
@@ -1440,6 +1444,11 @@ import TypeChecker._
               case (_, _, _) =>
                 errSpecImpureAccess(receiverType)
                 return noResult
+            }
+          case _: TypeInfo.SubZ =>
+            id.native match {
+              case "toZ" if typeArgs.isEmpty => return (AST.Typed.zOpt, randomResOpt, typeArgs)
+              case _ => val res = checkAccess(receiverType); return res
             }
           case _ => val res = checkAccess(receiverType); return res
         }
@@ -3938,6 +3947,7 @@ import TypeChecker._
                 case AST.ResolvedInfo.BuiltIn.Kind.Print => T
                 case AST.ResolvedInfo.BuiltIn.Kind.Println => T
                 case AST.ResolvedInfo.BuiltIn.Kind.String => F
+                case AST.ResolvedInfo.BuiltIn.Kind.ToZ => F
                 case AST.ResolvedInfo.BuiltIn.Kind.UnapplySeq => F
                 case AST.ResolvedInfo.BuiltIn.Kind.UnapplyTuple => F
                 case AST.ResolvedInfo.BuiltIn.Kind.UnaryPlus => F

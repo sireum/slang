@@ -2036,6 +2036,7 @@ object ResolvedInfo {
       "Print"
       "Println"
       "String"
+      "ToZ"
       "UnapplySeq"
       "UnapplyTuple"
       "UnaryPlus"
