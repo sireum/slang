@@ -487,7 +487,7 @@ class SlangParser(
     }
 
     lazy val transformer: AST.Transformer[Unit] = new AST.Transformer(new AST.Transformer.PrePost[Unit] {
-      def string: String = ""
+      override def string: String = ""
       val stopPreResult: AST.Transformer.PreResult[Unit, AST.Stmt] = AST.Transformer.PreResult((), false, None())
 
       override def preStmtExpr(ctx: Unit, o: AST.Stmt.Expr): AST.Transformer.PreResult[Unit, AST.Stmt] = {
@@ -696,7 +696,7 @@ class SlangParser(
     }
     val patsnel = stat.pats
     val tpeopt = stat.decltpe
-    val expropt = stat.rhs
+    val expropt: scala.Option[Term] = if (stat.body.is[Term.Placeholder]) scala.None else scala.Some(stat.body)
     val isDollarExpr = expropt.exists(isDollar)
     val isLocal: B = enclosing match {
       case Enclosing.Top => true
