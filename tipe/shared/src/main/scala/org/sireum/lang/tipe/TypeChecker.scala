@@ -235,8 +235,8 @@ object TypeChecker {
   def sConstructorTypedResOpt(name: ISZ[String], numOfArgs: Z): (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
     name match {
       case AST.Typed.`isName` =>
-        val indexTypeVar = AST.Typed.TypeVar("I", T)
-        val valueTypeVar = AST.Typed.TypeVar("V", T)
+        val indexTypeVar = AST.Typed.TypeVar("I", AST.Typed.VarKind.Index)
+        val valueTypeVar = AST.Typed.TypeVar("V", AST.Typed.VarKind.Immutable)
         val argTypes: ISZ[AST.Typed] = for (_ <- z"0" until numOfArgs) yield valueTypeVar
         val constructorType = AST.Typed.Fun(T, F, argTypes, AST.Typed.Name(AST.Typed.isName, ISZ(indexTypeVar, valueTypeVar)))
         return (
@@ -246,8 +246,8 @@ object TypeChecker {
             Some(constructorType), ISZ(), ISZ()))
         )
       case AST.Typed.`msName` =>
-        val indexTypeVar = AST.Typed.TypeVar("I", T)
-        val valueTypeVar = AST.Typed.TypeVar("V", F)
+        val indexTypeVar = AST.Typed.TypeVar("I", AST.Typed.VarKind.Index)
+        val valueTypeVar = AST.Typed.TypeVar("V", AST.Typed.VarKind.Mutable)
         val argTypes: ISZ[AST.Typed] = for (_ <- z"0" until numOfArgs) yield valueTypeVar
         val constructorType = AST.Typed.Fun(T, F, argTypes, AST.Typed.Name(AST.Typed.msName, ISZ(indexTypeVar, valueTypeVar)))
         return (
@@ -256,7 +256,7 @@ object TypeChecker {
             Some(constructorType), ISZ(), ISZ()))
         )
       case AST.Typed.`iszName` =>
-        val valueTypeVar = AST.Typed.TypeVar("V", T)
+        val valueTypeVar = AST.Typed.TypeVar("V", AST.Typed.VarKind.Immutable)
         val argTypes: ISZ[AST.Typed] = for (_ <- z"0" until numOfArgs) yield valueTypeVar
         val constructorType = AST.Typed.Fun(T, F, argTypes, AST.Typed.Name(AST.Typed.isName, ISZ(AST.Typed.z, valueTypeVar)))
         val typeParams = ISZ[String]("V")
@@ -266,7 +266,7 @@ object TypeChecker {
             Some(constructorType), ISZ(), ISZ()))
         )
       case AST.Typed.`mszName` =>
-        val valueTypeVar = AST.Typed.TypeVar("V", F)
+        val valueTypeVar = AST.Typed.TypeVar("V", AST.Typed.VarKind.Mutable)
         val argTypes: ISZ[AST.Typed] = for (_ <- z"0" until numOfArgs) yield valueTypeVar
         val constructorType = AST.Typed.Fun(T, F, argTypes, AST.Typed.Name(AST.Typed.msName, ISZ(AST.Typed.z, valueTypeVar)))
         val typeParams = ISZ[String]("V")
@@ -563,6 +563,10 @@ object TypeChecker {
       case (_, tpe: AST.Typed.TypeVar) =>
         if (tpe.isImmutable && th.isMutable(expected)) {
           reporter.error(posOpt, typeCheckerKind, s"Could not unify mutable type '$expected' with immutable type variable '$tpe'")
+          return None()
+        }
+        if (tpe.isIndex && !th.isIndexType(expected)) {
+          reporter.error(posOpt, typeCheckerKind, s"Could not unify type '$expected' with index type variable '$tpe'")
           return None()
         }
         return Some(HashMap.empty[String, AST.Typed] + tpe.id ~> expected)
@@ -1344,6 +1348,7 @@ import TypeChecker._
   }
 
   def checkSelectH(
+    scope: Scope,
     receiverType: AST.Typed,
     ident: AST.Id,
     typeArgs: ISZ[AST.Typed],
@@ -1531,6 +1536,11 @@ import TypeChecker._
           case _ =>
             halt("Unexpected situation while type checking enum access.")
         }
+      case receiverType: AST.Typed.TypeVar if receiverType.isIndex =>
+        id.native match {
+          case "toZ" if typeArgs.isEmpty => return (AST.Typed.zOpt, toZResOpt, typeArgs)
+          case _ => val res = checkAccess(receiverType); return res
+        }
       case receiverType: AST.Typed.Method =>
         errAccess(receiverType)
         return noResult
@@ -1562,7 +1572,7 @@ import TypeChecker._
           case Some(t) =>
             val rep = Reporter.create
             rep.setIgnore(T)
-            val r = checkSelectH(t, id, ISZ(), rep)
+            val r = checkSelectH(scope, t, id, ISZ(), rep)
             if (r._1.nonEmpty) {
               return (r._1, r._2)
             }
@@ -1687,7 +1697,7 @@ import TypeChecker._
               return (r, tOpt)
             case _ =>
               val (typedOpt, resOpt, _) =
-                checkSelectH(expType, AST.Id(AST.Util.unopId(unaryExp.op), AST.Attr(unaryExp.posOpt)), ISZ(), reporter)
+                checkSelectH(scope, expType, AST.Id(AST.Util.unopId(unaryExp.op), AST.Attr(unaryExp.posOpt)), ISZ(), reporter)
               return (unaryExp(exp = newExp, attr = unaryExp.attr(resOpt = resOpt, typedOpt = typedOpt)), typedOpt)
           }
         case _ =>
@@ -2084,7 +2094,7 @@ import TypeChecker._
             val (newReceiver, receiverTypeOpt) = checkExp(None(), scope, receiver, reporter)
             receiverTypeOpt match {
               case Some(receiverType) =>
-                val t = checkSelectH(receiverType, selectExp.id, typeArgs, reporter)
+                val t = checkSelectH(scope, receiverType, selectExp.id, typeArgs, reporter)
                 (selectExp(targs = newTargs, receiverOpt = Some(newReceiver),
                   attr = selectExp.attr(typedOpt = t._1, resOpt = t._2)), t._1, t._3)
               case _ =>
@@ -2647,7 +2657,7 @@ import TypeChecker._
               return (invokeExp(targs = newTargs, receiverOpt = Some(newReceiver)), None())
           }
           val (typedOpt, resOpt, tArgs2) =
-            checkSelectH(receiverType, invokeExp.ident.id, typeArgs, reporter)
+            checkSelectH(scope, receiverType, invokeExp.ident.id, typeArgs, reporter)
           val r = checkInvokeH(typedOpt, resOpt, Some(newReceiver), invokeExp.ident(
             attr = invokeExp.ident.attr(posOpt = invokeExp.ident.id.attr.posOpt, resOpt = resOpt, typedOpt = typedOpt)),
             newTargs, tArgs2)
@@ -2797,7 +2807,7 @@ import TypeChecker._
             case _ => return (invokeExp(targs = newTargs, receiverOpt = Some(newReceiver)), None())
           }
           val (typedOpt, resOpt, tArgs) =
-            checkSelectH(receiverType, invokeExp.ident.id, typeArgs, reporter)
+            checkSelectH(scope, receiverType, invokeExp.ident.id, typeArgs, reporter)
           val r = checkInvokeNamedH(typedOpt, resOpt, Some(newReceiver), invokeExp.ident(
             attr = invokeExp.ident.attr(posOpt = invokeExp.ident.id.attr.posOpt, resOpt = resOpt, typedOpt = typedOpt)),
             newTargs, tArgs)

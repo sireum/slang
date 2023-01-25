@@ -105,7 +105,7 @@ object Resolver {
     nm = nm + seqIndexValidSizeName ~> Info.SpecMethod(AST.Typed.sireumName, T, scope,
       AST.Stmt.SpecMethod(
         AST.MethodSig(T, AST.Id(seqIndexValidSizeId, emptyAttr), ISZ(
-          AST.TypeParam(AST.Id(seqIndexValidSizeTypeParamId, emptyAttr), T)), F, ISZ(
+          AST.TypeParam(AST.Id(seqIndexValidSizeTypeParamId, emptyAttr), AST.Typed.VarKind.Immutable)), F, ISZ(
           AST.Param(F, AST.Id(seqIndexValidSizeParamId, emptyAttr), zType)), bType),
         AST.ResolvedAttr(None[Position](), Some[AST.ResolvedInfo](AST.ResolvedInfo.Method(T, AST.MethodMode.Spec,
           ISZ(seqIndexValidSizeTypeParamId), AST.Typed.sireumName, seqIndexValidSizeId, ISZ(seqIndexValidSizeParamId),
@@ -119,7 +119,7 @@ object Resolver {
         scope,
         AST.Stmt.TypeAlias(
           id("ISZ"),
-          ISZ(AST.TypeParam(id("T"), T)),
+          ISZ(AST.TypeParam(id("T"), AST.Typed.VarKind.Immutable)),
           tname("IS", ISZ(tname("Z", ISZ()), tname("T", ISZ()))),
           emptyAttr
         )
@@ -131,7 +131,7 @@ object Resolver {
         scope,
         AST.Stmt.TypeAlias(
           id("MSZ"),
-          ISZ(AST.TypeParam(id("T"), F)),
+          ISZ(AST.TypeParam(id("T"), AST.Typed.VarKind.Mutable)),
           tname("MS", ISZ(tname("Z", ISZ()), tname("T", ISZ()))),
           emptyAttr
         )

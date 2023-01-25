@@ -1714,7 +1714,7 @@ object JSON {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.TypeParam""""),
         ("id", print_astId(o.id)),
-        ("isImmutable", printB(o.isImmutable))
+        ("kind", print_astTypedVarKindType(o.kind))
       ))
     }
 
@@ -2047,6 +2047,18 @@ object JSON {
       }
     }
 
+    @pure def print_astTypedVarKindType(o: org.sireum.lang.ast.Typed.VarKind.Type): ST = {
+      val value: String = o match {
+        case org.sireum.lang.ast.Typed.VarKind.Mutable => "Mutable"
+        case org.sireum.lang.ast.Typed.VarKind.Immutable => "Immutable"
+        case org.sireum.lang.ast.Typed.VarKind.Index => "Index"
+      }
+      return printObject(ISZ(
+        ("type", printString("org.sireum.lang.ast.Typed.VarKind")),
+        ("value", printString(value))
+      ))
+    }
+
     @pure def print_astTypedName(o: org.sireum.lang.ast.Typed.Name): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Typed.Name""""),
@@ -2076,7 +2088,7 @@ object JSON {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Typed.TypeVar""""),
         ("id", printString(o.id)),
-        ("isImmutable", printB(o.isImmutable))
+        ("kind", print_astTypedVarKindType(o.kind))
       ))
     }
 
@@ -5801,10 +5813,10 @@ object JSON {
       parser.parseObjectKey("id")
       val id = parse_astId()
       parser.parseObjectNext()
-      parser.parseObjectKey("isImmutable")
-      val isImmutable = parser.parseB()
+      parser.parseObjectKey("kind")
+      val kind = parse_astTypedVarKindType()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.TypeParam(id, isImmutable)
+      return org.sireum.lang.ast.TypeParam(id, kind)
     }
 
     def parse_astAttr(): org.sireum.lang.ast.Attr = {
@@ -6343,6 +6355,27 @@ object JSON {
       }
     }
 
+    def parse_astTypedVarKindType(): org.sireum.lang.ast.Typed.VarKind.Type = {
+      val r = parse_astTypedVarKindT(F)
+      return r
+    }
+
+    def parse_astTypedVarKindT(typeParsed: B): org.sireum.lang.ast.Typed.VarKind.Type = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Typed.VarKind")
+      }
+      parser.parseObjectKey("value")
+      var i = parser.offset
+      val s = parser.parseString()
+      parser.parseObjectNext()
+      org.sireum.lang.ast.Typed.VarKind.byName(s) match {
+        case Some(r) => return r
+        case _ =>
+          parser.parseException(i, s"Invalid element name '$s' for org.sireum.lang.ast.Typed.VarKind.")
+          return org.sireum.lang.ast.Typed.VarKind.byOrdinal(0).get
+      }
+    }
+
     def parse_astTypedName(): org.sireum.lang.ast.Typed.Name = {
       val r = parse_astTypedNameT(F)
       return r
@@ -6412,10 +6445,10 @@ object JSON {
       parser.parseObjectKey("id")
       val id = parser.parseString()
       parser.parseObjectNext()
-      parser.parseObjectKey("isImmutable")
-      val isImmutable = parser.parseB()
+      parser.parseObjectKey("kind")
+      val kind = parse_astTypedVarKindType()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Typed.TypeVar(id, isImmutable)
+      return org.sireum.lang.ast.Typed.TypeVar(id, kind)
     }
 
     def parse_astTypedPackage(): org.sireum.lang.ast.Typed.Package = {

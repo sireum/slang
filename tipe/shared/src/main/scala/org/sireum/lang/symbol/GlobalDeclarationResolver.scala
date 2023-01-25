@@ -416,7 +416,7 @@ import GlobalDeclarationResolver._
         val tpe = AST.Typed.Name(
           name,
           for (p <- typeParamMap(stmt.typeParams, reporter).entries)
-            yield AST.Typed.TypeVar(p._1, p._2.asInstanceOf[TypeInfo.TypeVar].ast.isImmutable)
+            yield AST.Typed.TypeVar(p._1, p._2.asInstanceOf[TypeInfo.TypeVar].ast.kind)
         )
         declareType(
           "sig",
@@ -466,7 +466,7 @@ import GlobalDeclarationResolver._
         val members = resolveMembers(name, sc, stmt.stmts, paramVars)
         val typeParams = typeParamMap(stmt.typeParams, reporter)
         val typeVars = typeParams.keys
-        val tpe = AST.Typed.Name(name, for (p <- typeParams.entries) yield AST.Typed.TypeVar(p._1, p._2.asInstanceOf[TypeInfo.TypeVar].ast.isImmutable))
+        val tpe = AST.Typed.Name(name, for (p <- typeParams.entries) yield AST.Typed.TypeVar(p._1, p._2.asInstanceOf[TypeInfo.TypeVar].ast.kind))
         val constructorResOpt: Option[AST.ResolvedInfo] = Some(
           AST.ResolvedInfo
             .Method(F, AST.MethodMode.Constructor, typeVars, currentName, stmt.id.value, constructorParamVars, None(), ISZ(), ISZ())

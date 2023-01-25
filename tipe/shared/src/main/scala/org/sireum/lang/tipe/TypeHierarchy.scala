@@ -592,48 +592,21 @@ object TypeHierarchy {
     if (t == AST.Typed.nothing) {
       reporter.error(posOpt, TypeChecker.typeCheckerKind, s"Cannot use type '$t'.")
     } else {
-      t match {
+      val (tps, targs): (ISZ[AST.TypeParam], ISZ[AST.Typed]) = t match {
         case t: AST.Typed.Name =>
-          val isIS = t.ids == AST.Typed.isName
-          if ((isIS || t.ids == AST.Typed.msName) && t.args.size > 0) {
-            t.args(0) match {
-              case it: AST.Typed.Name =>
-                if (it != AST.Typed.z) {
-                  typeMap.get(it.ids) match {
-                    case Some(_: TypeInfo.SubZ) =>
-                    case Some(_) =>
-                      reporter.error(
-                        posOpt,
-                        TypeChecker.typeCheckerKind,
-                        st"Cannot use type '$t' as index for '${(t.ids, ".")}'.".render
-                      )
-                    case _ =>
-                  }
-                }
-              case _: AST.Typed.TypeVar =>
-              case _ =>
-            }
-            if (isIS && t.args.size > 1 && isMutable(t.args(1))) {
-              reporter.error(
-                posOpt,
-                TypeChecker.typeCheckerKind,
-                st"Cannot use mutable type '${t.args(1)}' as element for '${(t.ids, ".")}'.".render
-              )
-            }
-          } else {
-            if (!isMutable(t)) {
-              for (arg <- t.args) {
-                if (isMutable(arg)) {
-                  reporter.error(
-                    posOpt,
-                    TypeChecker.typeCheckerKind,
-                    st"Cannot use mutable type '$arg' as an argument for immutable type '${(t.ids, ".")}'.".render
-                  )
-                }
-              }
-            }
+          if (t.args.isEmpty) {
+            return
           }
-        case _ =>
+          typeMap.get(t.ids).get match {
+            case info: TypeInfo.Adt => (info.ast.typeParams, t.args)
+            case info: TypeInfo.Sig => (info.ast.typeParams, t.args)
+            case _ => (ISZ(), ISZ())
+          }
+        case _ => (ISZ(), ISZ())
+      }
+      if (tps.nonEmpty) {
+        val tvs: ISZ[AST.Typed] = for (tp <- tps) yield AST.Typed.TypeVar(tp.id.value, tp.kind).asInstanceOf[AST.Typed]
+        TypeChecker.unifies(this, posOpt, TypeChecker.TypeRelation.Equal, targs, tvs, reporter)
       }
     }
   }
@@ -680,7 +653,7 @@ object TypeHierarchy {
               )
               return None()
             }
-            return Some(tipe(attr = tipe.attr(typedOpt = Some(AST.Typed.TypeVar(ti.name(0), ti.ast.isImmutable)))))
+            return Some(tipe(attr = tipe.attr(typedOpt = Some(AST.Typed.TypeVar(ti.name(0), ti.ast.kind)))))
           case Some(ti) =>
             val p: (String, Z, ISZ[String]) = ti match {
               case ti: TypeInfo.SubZ => (if (ti.ast.isBitVector) "@bits" else "@range", 0, ti.name)
@@ -994,6 +967,20 @@ object TypeHierarchy {
       case t: AST.Typed.TypeVar => return !t.isImmutable
       case _ => return F
     }
+  }
+
+  @memoize def isIndexType(tipe: AST.Typed): B = {
+    tipe match {
+      case tipe: AST.Typed.TypeVar => return tipe.isIndex
+      case AST.Typed.z => return T
+      case tipe: AST.Typed.Name =>
+        typeMap.get(tipe.ids) match {
+          case Some(_: TypeInfo.SubZ) => return T
+          case _ =>
+        }
+      case _ =>
+    }
+    return F
   }
 
   @memoize def isGroundType(tipe: AST.Typed): B = {

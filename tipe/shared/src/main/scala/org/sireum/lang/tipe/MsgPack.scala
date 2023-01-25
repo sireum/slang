@@ -1776,7 +1776,7 @@ object MsgPack {
     def write_astTypeParam(o: org.sireum.lang.ast.TypeParam): Unit = {
       writer.writeZ(Constants._astTypeParam)
       write_astId(o.id)
-      writer.writeB(o.isImmutable)
+      write_astTypedVarKindType(o.kind)
     }
 
     def write_astAttr(o: org.sireum.lang.ast.Attr): Unit = {
@@ -1976,6 +1976,10 @@ object MsgPack {
       }
     }
 
+    def write_astTypedVarKindType(o: org.sireum.lang.ast.Typed.VarKind.Type): Unit = {
+      writer.writeZ(o.ordinal)
+    }
+
     def write_astTypedName(o: org.sireum.lang.ast.Typed.Name): Unit = {
       writer.writeZ(Constants._astTypedName)
       writer.writeISZ(o.ids, writer.writeString _)
@@ -1998,7 +2002,7 @@ object MsgPack {
     def write_astTypedTypeVar(o: org.sireum.lang.ast.Typed.TypeVar): Unit = {
       writer.writeZ(Constants._astTypedTypeVar)
       writer.writeString(o.id)
-      writer.writeB(o.isImmutable)
+      write_astTypedVarKindType(o.kind)
     }
 
     def write_astTypedPackage(o: org.sireum.lang.ast.Typed.Package): Unit = {
@@ -4741,8 +4745,8 @@ object MsgPack {
         reader.expectZ(Constants._astTypeParam)
       }
       val id = read_astId()
-      val isImmutable = reader.readB()
-      return org.sireum.lang.ast.TypeParam(id, isImmutable)
+      val kind = read_astTypedVarKindType()
+      return org.sireum.lang.ast.TypeParam(id, kind)
     }
 
     def read_astAttr(): org.sireum.lang.ast.Attr = {
@@ -5139,6 +5143,11 @@ object MsgPack {
       }
     }
 
+    def read_astTypedVarKindType(): org.sireum.lang.ast.Typed.VarKind.Type = {
+      val r = reader.readZ()
+      return org.sireum.lang.ast.Typed.VarKind.byOrdinal(r).get
+    }
+
     def read_astTypedName(): org.sireum.lang.ast.Typed.Name = {
       val r = read_astTypedNameT(F)
       return r
@@ -5192,8 +5201,8 @@ object MsgPack {
         reader.expectZ(Constants._astTypedTypeVar)
       }
       val id = reader.readString()
-      val isImmutable = reader.readB()
-      return org.sireum.lang.ast.Typed.TypeVar(id, isImmutable)
+      val kind = read_astTypedVarKindType()
+      return org.sireum.lang.ast.Typed.TypeVar(id, kind)
     }
 
     def read_astTypedPackage(): org.sireum.lang.ast.Typed.Package = {

@@ -854,7 +854,7 @@ class SlangParser(
     }
     val purity = if (isStrictPure) AST.Purity.StrictPure else if (isPure) AST.Purity.Pure else AST.Purity.Impure
     val sig =
-      AST.MethodSig(isPure || isStrictPure, cid(name), ISZ(tparams.map(translateTypeParam(true, true)): _*), hasParams, params, translateType(tpe))
+      AST.MethodSig(isPure || isStrictPure, cid(name), ISZ(tparams.map(translateTypeParam(AST.Typed.VarKind.Immutable, true)): _*), hasParams, params, translateType(tpe))
     AST.Stmt.Method(false, purity, hasOverride, isHelper, sig, emptyContract, None(), resolvedAttr(stat.pos))
   }
 
@@ -1071,7 +1071,7 @@ class SlangParser(
     val sig = AST.MethodSig(
       isMemoize || isPure || isStrictPure || isSpec,
       cid(name),
-      ISZ(tparams.map(translateTypeParam(true, true)): _*),
+      ISZ(tparams.map(translateTypeParam(AST.Typed.VarKind.Immutable, true)): _*),
       hasParams,
       params,
       tpeopt.map(translateType).getOrElse(unitType)
@@ -1574,7 +1574,7 @@ class SlangParser(
       hasSig,
       hasExt,
       cid(tname),
-      ISZ(tparams.map(translateTypeParam(hasSig, !hasSig)): _*),
+      ISZ(tparams.map(translateTypeParam(if (hasSig) AST.Typed.VarKind.Immutable else AST.Typed.VarKind.Mutable, !hasSig)): _*),
       ISZ(ctorcalls.map(translateExtend): _*),
       checkMemberStmts(ISZ(stats.map(translateStat(if (hasSig) Enclosing.Sig else Enclosing.MSig)): _*)),
       attr(stat.pos)
@@ -1616,7 +1616,7 @@ class SlangParser(
       isRoot = true,
       isDatatype = true,
       cid(tname),
-      ISZ(tparams.map(translateTypeParam(true, false)): _*),
+      ISZ(tparams.map(translateTypeParam(AST.Typed.VarKind.Immutable, false)): _*),
       ISZ(),
       ISZ(ctorcalls.map(translateExtend): _*),
       checkMemberStmts(ISZ(stats.map(translateStat(Enclosing.DatatypeTrait)): _*)),
@@ -1662,7 +1662,7 @@ class SlangParser(
       isRoot = false,
       isDatatype = true,
       cid(tname),
-      ISZ(tparams.map(translateTypeParam(true, false)): _*),
+      ISZ(tparams.map(translateTypeParam(AST.Typed.VarKind.Immutable, false)): _*),
       params,
       ISZ(ctorcalls.map(translateExtend): _*),
       checkMemberStmts(ISZ(stats.map(translateStat(Enclosing.DatatypeClass)): _*)),
@@ -1704,7 +1704,7 @@ class SlangParser(
       isRoot = true,
       isDatatype = false,
       cid(tname),
-      ISZ(tparams.map(translateTypeParam(false, true)): _*),
+      ISZ(tparams.map(translateTypeParam(AST.Typed.VarKind.Mutable, true)): _*),
       ISZ(),
       ISZ(ctorcalls.map(translateExtend): _*),
       checkMemberStmts(ISZ(stats.map(translateStat(Enclosing.RecordTrait)): _*)),
@@ -1750,7 +1750,7 @@ class SlangParser(
       isRoot = false,
       isDatatype = false,
       cid(tname),
-      ISZ(tparams.map(translateTypeParam(false, true)): _*),
+      ISZ(tparams.map(translateTypeParam(AST.Typed.VarKind.Mutable, true)): _*),
       params,
       ISZ(ctorcalls.map(translateExtend): _*),
       checkMemberStmts(ISZ(stats.map(translateStat(Enclosing.RecordClass)): _*)),
@@ -1766,7 +1766,7 @@ class SlangParser(
     if (mods.nonEmpty) {
       error(stat.pos, "Slang type definitions should be of the form: 'type〈ID〉... =〈type〉'.")
     }
-    AST.Stmt.TypeAlias(cid(tname), ISZ(tparams.map(translateTypeParam(true, true)): _*), translateType(tpe), attr(stat.pos))
+    AST.Stmt.TypeAlias(cid(tname), ISZ(tparams.map(translateTypeParam(AST.Typed.VarKind.Immutable, true)): _*), translateType(tpe), attr(stat.pos))
   }
 
   def translateType(t: Type): AST.Type = {
@@ -1935,16 +1935,32 @@ class SlangParser(
     }
   }
 
-  def translateTypeParam(defaultImmut: Boolean, canBeMutable: Boolean)(tp: Type.Param): AST.TypeParam = tp match {
+  def translateTypeParam(defaultKind: AST.Typed.VarKind.Type, canBeMutable: Boolean)(tp: Type.Param): AST.TypeParam = tp match {
     case tparam"..$mods $_[..$tparams] >: ${stpeopt: scala.Option[Type]} <: ${tpeopt: scala.Option[Type]} <% ..$tpes : ..$tpes2" =>
       if (tparams.nonEmpty || stpeopt.nonEmpty || tpeopt.nonEmpty || tpes.nonEmpty || tpes2.nonEmpty)
         errorInSlang(tp.pos, "Only type parameters of the forms ' ⸨ @imm | @mut ⸩?〈ID〉' are")
       checkTypeId(tp.name.pos, tp.name.value)
       var hasImm = false
       var hasMut = false
-      var immut = defaultImmut
+      var hasIndex = false
+      var kind = defaultKind
       for (mod <- mods) mod match {
+        case mod"@index" =>
+          if (hasIndex) {
+            error(mod.pos, "Redundant @index.")
+          }
+          if (hasImm) {
+            error(mod.pos, "Cannot have both @immut and @index")
+          }
+          if (hasMut) {
+            error(mod.pos, "Cannot have both @mut and @index")
+          }
+          hasIndex = true
+          kind = AST.Typed.VarKind.Index
         case mod"@imm" =>
+          if (hasIndex) {
+            error(mod.pos, "Cannot have both @index and @imm")
+          }
           if (hasImm) {
             error(mod.pos, "Redundant @imm.")
           }
@@ -1952,8 +1968,11 @@ class SlangParser(
             error(mod.pos, "Cannot have both @mut and @imm")
           }
           hasImm = true
-          immut = true
+          kind = AST.Typed.VarKind.Immutable
         case mod"@mut" =>
+          if (hasIndex) {
+            error(mod.pos, "Cannot have both @index and @mut")
+          }
           if (hasMut) {
             error(mod.pos, "Redundant @mut.")
           }
@@ -1964,11 +1983,11 @@ class SlangParser(
             error(mod.pos, "Cannot have @mut")
           }
           hasMut = true
-          immut = false
+          kind = AST.Typed.VarKind.Mutable
         case _ =>
-          error(mod.pos, s"Unallowed modifier '${syntax(mod)}' for a Slang method.")
+          error(mod.pos, s"Unallowed modifier '${syntax(mod)}' for a type parameter.")
       }
-      AST.TypeParam(cid(tp.name), immut)
+      AST.TypeParam(cid(tp.name), kind)
   }
 
   def translateParam(isMemoize: Boolean)(tp: Term.Param): AST.Param = {
@@ -3324,7 +3343,7 @@ class SlangParser(
       if (isWorksheet) error(stat.pos, "Fact can only appear at the top-level, inside objects, or @ext objects.")
       else error(stat.pos, "Fact can only appear inside objects or @ext objects.")
     }
-    val typeArgs = ISZ(stat.tparams.map(translateTypeParam(true, false)): _*)
+    val typeArgs = ISZ(stat.tparams.map(translateTypeParam(AST.Typed.VarKind.Immutable, false)): _*)
     val q"Fact(..${fexprs: Term.ArgClause})" = stat.body
     val (descOpt, exprs: Seq[Term]) = fexprs.headOption match {
       case scala.Some(lit: Lit.String) => (Some(translateLit(lit).asInstanceOf[AST.Exp.LitString]), fexprs.values.tail)
@@ -3730,7 +3749,7 @@ class SlangParser(
       if (isWorksheet) error(stat.pos, s"$desc can only appear at the top-level, inside object, or @ext object.")
       else error(stat.pos, s"$desc can only appear inside object or @ext object.")
     }
-    val typeArgs = ISZ(stat.tparams.map(translateTypeParam(true, false)): _*)
+    val typeArgs = ISZ(stat.tparams.map(translateTypeParam(AST.Typed.VarKind.Immutable, false)): _*)
     val (descOpt, claim, proof) = stat.body match {
       case q"${_: Term.Name}(${d: Lit.String}, $e, $p)" =>
         (Some(translateLit(d).asInstanceOf[AST.Exp.LitString]), translateExp(e), translateProof(p))

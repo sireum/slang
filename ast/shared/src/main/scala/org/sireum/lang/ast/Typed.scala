@@ -227,6 +227,12 @@ import org.sireum._
 
 object Typed {
 
+  @enum object VarKind {
+    "Mutable"
+    "Immutable"
+    "Index"
+  }
+
   @datatype class Name(val ids: ISZ[String], val args: ISZ[Typed]) extends Typed {
 
     @pure override def isPureFun: B = {
@@ -317,7 +323,11 @@ object Typed {
     }
   }
 
-  @datatype class TypeVar(val id: String, val isImmutable: B) extends Typed {
+  @datatype class TypeVar(val id: String, val kind: Typed.VarKind.Type) extends Typed {
+
+    @strictpure def isImmutable: B = kind != Typed.VarKind.Mutable
+
+    @strictpure def isIndex: B = kind == Typed.VarKind.Index
 
     @pure override def isPureFun: B = {
       return F

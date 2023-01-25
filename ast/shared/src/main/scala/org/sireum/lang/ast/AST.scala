@@ -1963,7 +1963,10 @@ object Exp {
 
 @datatype class Param(val isHidden: B, val id: Id, val tipe: Type)
 
-@datatype class TypeParam(val id: Id, val isImmutable: B)
+@datatype class TypeParam(val id: Id, val kind: Typed.VarKind.Type) {
+  @strictpure def isImmutable: B = kind != Typed.VarKind.Mutable
+  @strictpure def isIndex: B = kind == Typed.VarKind.Index
+}
 
 @datatype class Attr(val posOpt: Option[Position])
 
