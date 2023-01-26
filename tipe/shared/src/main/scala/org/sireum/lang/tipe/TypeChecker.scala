@@ -173,14 +173,6 @@ object TypeChecker {
     AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Max)
   )
 
-  val randomResOpt: Option[AST.ResolvedInfo] = Some(
-    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Random)
-  )
-
-  val toZResOpt: Option[AST.ResolvedInfo] = Some(
-    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.ToZ)
-  )
-
   val indicesResOpt: Option[AST.ResolvedInfo] = Some(
     AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Indices)
   )
@@ -231,6 +223,9 @@ object TypeChecker {
   )
 
   val emptySubstMap: HashMap[String, AST.Typed] = HashMap.empty
+  @strictpure def extResOpt(isInObject: B, owner: ISZ[String], id: String, paramNames: ISZ[String],
+                            tpe: AST.Typed.Fun): Option[AST.ResolvedInfo] = Some(
+    AST.ResolvedInfo.Method(isInObject, AST.MethodMode.Ext, ISZ(), owner, id, paramNames, Some(tpe), ISZ(), ISZ()))
 
   def sConstructorTypedResOpt(name: ISZ[String], numOfArgs: Z): (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
     name match {
@@ -1452,7 +1447,8 @@ import TypeChecker._
             }
           case _: TypeInfo.SubZ =>
             id.native match {
-              case "toZ" if typeArgs.isEmpty => return (AST.Typed.zOpt, toZResOpt, typeArgs)
+              case "toZ" if typeArgs.isEmpty => return (AST.Typed.zOpt, extResOpt(F, receiverType.ids, id, ISZ(),
+                AST.Typed.Fun(T, T, ISZ(), AST.Typed.z)), typeArgs)
               case _ => val res = checkAccess(receiverType); return res
             }
           case _ => val res = checkAccess(receiverType); return res
@@ -1497,7 +1493,8 @@ import TypeChecker._
             id.native match {
               case "Max" if info.ast.hasMax && typeArgs.isEmpty => return (info.typedOpt, minResOpt, typeArgs)
               case "Min" if info.ast.hasMin && typeArgs.isEmpty => return (info.typedOpt, maxResOpt, typeArgs)
-              case "random" if typeArgs.isEmpty => return (info.typedOpt, randomResOpt, typeArgs)
+              case "random" if typeArgs.isEmpty => return (info.typedOpt, extResOpt(T, info.name, id, ISZ(),
+                AST.Typed.Fun(F, T, ISZ(), AST.Typed.Name(info.name, ISZ()))), typeArgs)
               case _ =>
             }
           case _ =>
@@ -1538,7 +1535,8 @@ import TypeChecker._
         }
       case receiverType: AST.Typed.TypeVar if receiverType.isIndex =>
         id.native match {
-          case "toZ" if typeArgs.isEmpty => return (AST.Typed.zOpt, toZResOpt, typeArgs)
+          case "toZ" if typeArgs.isEmpty => return (AST.Typed.zOpt, extResOpt(F, ISZ(receiverType.id), id, ISZ(),
+            AST.Typed.Fun(T, T, ISZ(), AST.Typed.z)), typeArgs)
           case _ => val res = checkAccess(receiverType); return res
         }
       case receiverType: AST.Typed.Method =>
@@ -3952,12 +3950,10 @@ import TypeChecker._
                 case AST.ResolvedInfo.BuiltIn.Kind.Indices => F
                 case AST.ResolvedInfo.BuiltIn.Kind.Min => F
                 case AST.ResolvedInfo.BuiltIn.Kind.Max => F
-                case AST.ResolvedInfo.BuiltIn.Kind.Random => F
                 case AST.ResolvedInfo.BuiltIn.Kind.Native => F
                 case AST.ResolvedInfo.BuiltIn.Kind.Print => T
                 case AST.ResolvedInfo.BuiltIn.Kind.Println => T
                 case AST.ResolvedInfo.BuiltIn.Kind.String => F
-                case AST.ResolvedInfo.BuiltIn.Kind.ToZ => F
                 case AST.ResolvedInfo.BuiltIn.Kind.UnapplySeq => F
                 case AST.ResolvedInfo.BuiltIn.Kind.UnapplyTuple => F
                 case AST.ResolvedInfo.BuiltIn.Kind.UnaryPlus => F

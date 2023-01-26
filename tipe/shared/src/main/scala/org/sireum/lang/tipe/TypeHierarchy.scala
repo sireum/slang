@@ -1227,6 +1227,14 @@ object TypeHierarchy {
     }
   }
 
+  @memoize def isSubZName(name: ISZ[String]): B = {
+    typeMap.get(name) match {
+      case Some(_: TypeInfo.SubZ) => return T
+      case _ =>
+    }
+    return F
+  }
+
   @memoize def isAdt(t: AST.Typed.Name): B = {
     if (isGroundType(t)) {
       return F
