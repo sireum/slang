@@ -1250,7 +1250,6 @@ class SlangParser(
     val bitWidth = 0
     val isWrapped = false
 
-    if (!hasMin && !hasMax) error(stat.pos, "Slang @range requires either min, max, or both.")
     if (index && !hasMin) error(stat.pos, "Slang @range index requires a min.")
     if (hasMin && hasMax && min > max)
       error(stat.pos, s"Slang @range min ($min) should not be greater than its max ($max).")
