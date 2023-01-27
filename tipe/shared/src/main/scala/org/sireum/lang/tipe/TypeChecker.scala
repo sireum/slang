@@ -1495,6 +1495,14 @@ import TypeChecker._
               case "Min" if info.ast.hasMin && typeArgs.isEmpty => return (info.typedOpt, maxResOpt, typeArgs)
               case "random" if typeArgs.isEmpty => return (info.typedOpt, extResOpt(T, info.name, id, ISZ(),
                 AST.Typed.Fun(F, T, ISZ(), AST.Typed.Name(info.name, ISZ()))), typeArgs)
+              case "fromZ" if typeArgs.isEmpty =>
+                val f = AST.Typed.Fun(T, F, ISZ(AST.Typed.z), AST.Typed.Name(info.name, ISZ()))
+                val paramNames = ISZ[String]("n")
+                return (
+                  Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), info.name, id, paramNames, f)),
+                  extResOpt(T, info.name, id, paramNames, f),
+                  typeArgs
+                )
               case _ =>
             }
           case _ =>
