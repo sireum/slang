@@ -1491,8 +1491,8 @@ import TypeChecker._
         typeHierarchy.typeMap.get(receiverType.name) match {
           case Some(info: TypeInfo.SubZ) =>
             id.native match {
-              case "Max" if info.ast.hasMax && typeArgs.isEmpty => return (info.typedOpt, minResOpt, typeArgs)
-              case "Min" if info.ast.hasMin && typeArgs.isEmpty => return (info.typedOpt, maxResOpt, typeArgs)
+              case "Max" if info.ast.hasMax && typeArgs.isEmpty => return (info.typedOpt, maxResOpt, typeArgs)
+              case "Min" if info.ast.hasMin && typeArgs.isEmpty => return (info.typedOpt, minResOpt, typeArgs)
               case "random" if typeArgs.isEmpty => return (info.typedOpt, extResOpt(T, info.name, id, ISZ(),
                 AST.Typed.Fun(F, T, ISZ(), AST.Typed.Name(info.name, ISZ()))), typeArgs)
               case "fromZ" if typeArgs.isEmpty =>
