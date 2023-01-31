@@ -1495,8 +1495,36 @@ import TypeChecker._
               case "Min" if info.ast.hasMin && typeArgs.isEmpty => return (info.typedOpt, minResOpt, typeArgs)
               case "random" if typeArgs.isEmpty => return (info.typedOpt, extResOpt(T, info.name, id, ISZ(),
                 AST.Typed.Fun(F, T, ISZ(), AST.Typed.Name(info.name, ISZ()))), typeArgs)
+              case "randomSeed" if typeArgs.isEmpty =>
+                val t = AST.Typed.Name(info.name, ISZ())
+                val f = AST.Typed.Fun(T, F, ISZ(AST.Typed.z), t)
+                val paramNames = ISZ[String]("seed")
+                return (
+                  Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), info.name, id, paramNames, f)),
+                  extResOpt(T, info.name, id, paramNames, f),
+                  typeArgs
+                )
+              case "randomBetween" if typeArgs.isEmpty =>
+                val t = AST.Typed.Name(info.name, ISZ())
+                val f = AST.Typed.Fun(T, F, ISZ(t, t), t)
+                val paramNames = ISZ[String]("min", "max")
+                return (
+                  Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), info.name, id, paramNames, f)),
+                  extResOpt(T, info.name, id, paramNames, f),
+                  typeArgs
+                )
+              case "randomSeedBetween" if typeArgs.isEmpty =>
+                val t = AST.Typed.Name(info.name, ISZ())
+                val f = AST.Typed.Fun(T, F, ISZ(AST.Typed.z, t, t), t)
+                val paramNames = ISZ[String]("seed", "min", "max")
+                return (
+                  Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), info.name, id, paramNames, f)),
+                  extResOpt(T, info.name, id, paramNames, f),
+                  typeArgs
+                )
               case "fromZ" if typeArgs.isEmpty =>
-                val f = AST.Typed.Fun(T, F, ISZ(AST.Typed.z), AST.Typed.Name(info.name, ISZ()))
+                val t = AST.Typed.Name(info.name, ISZ())
+                val f = AST.Typed.Fun(T, F, ISZ(AST.Typed.z), t)
                 val paramNames = ISZ[String]("n")
                 return (
                   Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), info.name, id, paramNames, f)),
