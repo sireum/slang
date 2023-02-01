@@ -1506,7 +1506,7 @@ import TypeChecker._
                 )
               case "randomBetween" if typeArgs.isEmpty =>
                 val t = AST.Typed.Name(info.name, ISZ())
-                val f = AST.Typed.Fun(T, F, ISZ(t, t), t)
+                val f = AST.Typed.Fun(F, F, ISZ(t, t), t)
                 val paramNames = ISZ[String]("min", "max")
                 return (
                   Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), info.name, id, paramNames, f)),
