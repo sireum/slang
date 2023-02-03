@@ -1489,13 +1489,13 @@ import TypeChecker._
         return (r._1, r._2, typeArgs)
       case receiverType: AST.Typed.Object =>
         typeHierarchy.typeMap.get(receiverType.name) match {
-          case Some(info: TypeInfo.SubZ) =>
+          case Some(info: TypeInfo.SubZ) if typeArgs.isEmpty =>
             id.native match {
-              case "Max" if info.ast.hasMax && typeArgs.isEmpty => return (info.typedOpt, maxResOpt, typeArgs)
-              case "Min" if info.ast.hasMin && typeArgs.isEmpty => return (info.typedOpt, minResOpt, typeArgs)
-              case "random" if typeArgs.isEmpty => return (info.typedOpt, extResOpt(T, info.name, id, ISZ(),
+              case "Max" if info.ast.hasMax || info.ast.isBitVector => return (info.typedOpt, maxResOpt, typeArgs)
+              case "Min" if info.ast.hasMin || info.ast.isBitVector => return (info.typedOpt, minResOpt, typeArgs)
+              case "random" => return (info.typedOpt, extResOpt(T, info.name, id, ISZ(),
                 AST.Typed.Fun(F, T, ISZ(), AST.Typed.Name(info.name, ISZ()))), typeArgs)
-              case "randomSeed" if typeArgs.isEmpty =>
+              case "randomSeed" =>
                 val t = AST.Typed.Name(info.name, ISZ())
                 val f = AST.Typed.Fun(T, F, ISZ(AST.Typed.z), t)
                 val paramNames = ISZ[String]("seed")
@@ -1504,7 +1504,7 @@ import TypeChecker._
                   extResOpt(T, info.name, id, paramNames, f),
                   typeArgs
                 )
-              case "randomBetween" if typeArgs.isEmpty =>
+              case "randomBetween" =>
                 val t = AST.Typed.Name(info.name, ISZ())
                 val f = AST.Typed.Fun(F, F, ISZ(t, t), t)
                 val paramNames = ISZ[String]("min", "max")
@@ -1513,7 +1513,7 @@ import TypeChecker._
                   extResOpt(T, info.name, id, paramNames, f),
                   typeArgs
                 )
-              case "randomSeedBetween" if typeArgs.isEmpty =>
+              case "randomSeedBetween" =>
                 val t = AST.Typed.Name(info.name, ISZ())
                 val f = AST.Typed.Fun(T, F, ISZ(AST.Typed.z, t, t), t)
                 val paramNames = ISZ[String]("seed", "min", "max")
@@ -1522,7 +1522,7 @@ import TypeChecker._
                   extResOpt(T, info.name, id, paramNames, f),
                   typeArgs
                 )
-              case "fromZ" if typeArgs.isEmpty =>
+              case "fromZ" =>
                 val t = AST.Typed.Name(info.name, ISZ())
                 val f = AST.Typed.Fun(T, F, ISZ(AST.Typed.z), t)
                 val paramNames = ISZ[String]("n")
@@ -1547,7 +1547,7 @@ import TypeChecker._
         return (r._1, r._2, typeArgs)
       case receiverType: AST.Typed.Enum =>
         typeHierarchy.nameMap.get(receiverType.name) match {
-          case Some(info: Info.Enum) =>
+          case Some(info: Info.Enum) if typeArgs.isEmpty =>
             id.native match {
               case "byName" => return (info.byNameTypedOpt, Info.Enum.byNameResOpt, typeArgs)
               case "byOrdinal" => return (info.byOrdinalTypedOpt, Info.Enum.byOrdinalResOpt, typeArgs)
@@ -1569,9 +1569,9 @@ import TypeChecker._
           case _ =>
             halt("Unexpected situation while type checking enum access.")
         }
-      case receiverType: AST.Typed.TypeVar if receiverType.isIndex =>
+      case receiverType: AST.Typed.TypeVar if receiverType.isIndex && typeArgs.isEmpty =>
         id.native match {
-          case "toZ" if typeArgs.isEmpty => return (AST.Typed.zOpt, extResOpt(F, ISZ(receiverType.id), id, ISZ(),
+          case "toZ" => return (AST.Typed.zOpt, extResOpt(F, ISZ(receiverType.id), id, ISZ(),
             AST.Typed.Fun(T, T, ISZ(), AST.Typed.z)), typeArgs)
           case _ => val res = checkAccess(receiverType); return res
         }
