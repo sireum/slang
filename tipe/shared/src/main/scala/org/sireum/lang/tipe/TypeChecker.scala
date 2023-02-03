@@ -2353,7 +2353,8 @@ import TypeChecker._
       def mVarAccess(thisAccessOpt: Option[ISZ[String]], resOpt: Option[AST.ResolvedInfo]): Option[ISZ[String]] = {
         resOpt match {
           case Some(res: AST.ResolvedInfo.Var) =>
-            return if (res.isInObject) Some(res.owner :+ res.id) else Some(thisAccessOpt.get :+ res.id)
+            return if (res.isInObject) Some(res.owner :+ res.id) else
+              Some((if (thisAccessOpt.isEmpty) ISZ[String]("this") else thisAccessOpt.get) :+ res.id)
           case Some(res: AST.ResolvedInfo.LocalVar) =>
             return if (res.scope == AST.ResolvedInfo.LocalVar.Scope.Closure) Some(res.context :+ res.id) else Some(ISZ(res.id))
           case _ => return None()
