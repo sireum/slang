@@ -1390,8 +1390,8 @@ import TypeChecker._
                 typeHierarchy.typeMap.get(t.ids) match {
                   case Some(info: TypeInfo.Enum) =>
                     id.native match {
-                      case "name" => return (info.nameTypedOpt, TypeInfo.Enum.nameResOpt, typeArgs)
-                      case "ordinal" => return (info.ordinalTypedOpt, TypeInfo.Enum.ordinalResOpt, typeArgs)
+                      case "name" => return (info.nameTypedOpt, info.nameResOpt, typeArgs)
+                      case "ordinal" => return (info.ordinalTypedOpt, info.ordinalResOpt, typeArgs)
                       case _ =>
                     }
                   case _ =>
@@ -1493,8 +1493,14 @@ import TypeChecker._
             id.native match {
               case "Max" if info.ast.hasMax || info.ast.isBitVector => return (info.typedOpt, maxResOpt, typeArgs)
               case "Min" if info.ast.hasMin || info.ast.isBitVector => return (info.typedOpt, minResOpt, typeArgs)
-              case "random" => return (info.typedOpt, extResOpt(T, info.name, id, ISZ(),
-                AST.Typed.Fun(F, T, ISZ(), AST.Typed.Name(info.name, ISZ()))), typeArgs)
+              case "random" =>
+                val t = AST.Typed.Name(info.name, ISZ())
+                val f = AST.Typed.Fun(F, T, ISZ(), t)
+                return (
+                  Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), info.name, id, ISZ(), f)),
+                  extResOpt(T, info.name, id, ISZ(), f),
+                  typeArgs
+                )
               case "randomSeed" =>
                 val t = AST.Typed.Name(info.name, ISZ())
                 val f = AST.Typed.Fun(T, F, ISZ(AST.Typed.z), t)
@@ -1549,10 +1555,45 @@ import TypeChecker._
         typeHierarchy.nameMap.get(receiverType.name) match {
           case Some(info: Info.Enum) if typeArgs.isEmpty =>
             id.native match {
-              case "byName" => return (info.byNameTypedOpt, Info.Enum.byNameResOpt, typeArgs)
-              case "byOrdinal" => return (info.byOrdinalTypedOpt, Info.Enum.byOrdinalResOpt, typeArgs)
-              case "elements" => return (info.elementsTypedOpt, Info.Enum.elementsResOpt, typeArgs)
-              case "numOfElements" => return (info.numOfElementsTypedOpt, Info.Enum.numOfElementsResOpt, typeArgs)
+              case "byName" => return (info.byNameTypedOpt, info.byNameResOpt, typeArgs)
+              case "byOrdinal" => return (info.byOrdinalTypedOpt, info.byOrdinalResOpt, typeArgs)
+              case "elements" => return (info.elementsTypedOpt, info.elementsResOpt, typeArgs)
+              case "numOfElements" => return (info.numOfElementsTypedOpt, info.numOfElementsResOpt, typeArgs)
+              case "random" =>
+                val t = AST.Typed.Name(info.name :+ Info.Enum.elementTypeSuffix, ISZ())
+                val f = AST.Typed.Fun(F, T, ISZ(), t)
+                return (
+                  Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), info.name, id, ISZ(), f)),
+                  extResOpt(T, info.name, id, ISZ(), f),
+                  typeArgs
+                )
+              case "randomSeed" =>
+                val t = AST.Typed.Name(info.name :+ Info.Enum.elementTypeSuffix, ISZ())
+                val f = AST.Typed.Fun(T, F, ISZ(AST.Typed.z), t)
+                val paramNames = ISZ[String]("seed")
+                return (
+                  Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), info.name, id, paramNames, f)),
+                  extResOpt(T, info.name, id, paramNames, f),
+                  typeArgs
+                )
+              case "randomBetween" =>
+                val t = AST.Typed.Name(info.name :+ Info.Enum.elementTypeSuffix, ISZ())
+                val f = AST.Typed.Fun(F, F, ISZ(t, t), t)
+                val paramNames = ISZ[String]("min", "max")
+                return (
+                  Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), info.name, id, paramNames, f)),
+                  extResOpt(T, info.name, id, paramNames, f),
+                  typeArgs
+                )
+              case "randomSeedBetween" =>
+                val t = AST.Typed.Name(info.name :+ Info.Enum.elementTypeSuffix, ISZ())
+                val f = AST.Typed.Fun(T, F, ISZ(AST.Typed.z, t, t), t)
+                val paramNames = ISZ[String]("seed", "min", "max")
+                return (
+                  Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), info.name, id, paramNames, f)),
+                  extResOpt(T, info.name, id, paramNames, f),
+                  typeArgs
+                )
               case _ =>
             }
             info.elements.get(id) match {
@@ -3973,12 +4014,6 @@ import TypeChecker._
                 case AST.ResolvedInfo.BuiltIn.Kind.BinaryMapsTo => F
                 case AST.ResolvedInfo.BuiltIn.Kind.Cprint => T
                 case AST.ResolvedInfo.BuiltIn.Kind.Cprintln => T
-                case AST.ResolvedInfo.BuiltIn.Kind.EnumByName => F
-                case AST.ResolvedInfo.BuiltIn.Kind.EnumByOrdinal => F
-                case AST.ResolvedInfo.BuiltIn.Kind.EnumElements => F
-                case AST.ResolvedInfo.BuiltIn.Kind.EnumNumOfElements => F
-                case AST.ResolvedInfo.BuiltIn.Kind.EnumName => F
-                case AST.ResolvedInfo.BuiltIn.Kind.EnumOrdinal => F
                 case AST.ResolvedInfo.BuiltIn.Kind.Eprint => T
                 case AST.ResolvedInfo.BuiltIn.Kind.Eprintln => T
                 case AST.ResolvedInfo.BuiltIn.Kind.Halt => T

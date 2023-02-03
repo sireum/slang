@@ -542,22 +542,6 @@ object Info {
 
     val elementTypeSuffix: String = "Type"
 
-    val byNameResOpt: Option[AST.ResolvedInfo] = Some(
-      AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.EnumByName)
-    )
-
-    val byOrdinalResOpt: Option[AST.ResolvedInfo] = Some(
-      AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.EnumByOrdinal)
-    )
-
-    val elementsResOpt: Option[AST.ResolvedInfo] = Some(
-      AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.EnumElements)
-    )
-
-    val numOfElementsResOpt: Option[AST.ResolvedInfo] = Some(
-      AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.EnumNumOfElements)
-    )
-
   }
 
   @datatype class Enum(val name: ISZ[String],
@@ -570,7 +554,7 @@ object Info {
     val byNameTypedOpt: Option[AST.Typed] = Some(
       AST.Typed.Method(
         T,
-        AST.MethodMode.Method,
+        AST.MethodMode.Ext,
         ISZ(),
         name,
         "byName",
@@ -582,7 +566,7 @@ object Info {
     val byOrdinalTypedOpt: Option[AST.Typed] = Some(
       AST.Typed.Method(
         T,
-        AST.MethodMode.Method,
+        AST.MethodMode.Ext,
         ISZ(),
         name,
         "byOrdinal",
@@ -594,7 +578,7 @@ object Info {
     val elementsTypedOpt: Option[AST.Typed] = Some(
       AST.Typed.Method(
         T,
-        AST.MethodMode.Method,
+        AST.MethodMode.Ext,
         ISZ(),
         name,
         "elements",
@@ -606,12 +590,68 @@ object Info {
     val numOfElementsTypedOpt: Option[AST.Typed] = Some(
       AST.Typed.Method(
         T,
-        AST.MethodMode.Method,
+        AST.MethodMode.Ext,
         ISZ(),
         name,
         "numOfElements",
         ISZ(),
         AST.Typed.Fun(T, T, ISZ(), AST.Typed.z)
+      )
+    )
+
+    val byNameResOpt: Option[AST.ResolvedInfo] = Some(
+      AST.ResolvedInfo.Method(
+        T,
+        AST.MethodMode.Ext,
+        ISZ(),
+        name,
+        "byName",
+        ISZ(),
+        Some(AST.Typed.Fun(T, F, ISZ(AST.Typed.string), AST.Typed.Name(AST.Typed.optionName, ISZ(elementTypedOpt.get)))),
+        ISZ(),
+        ISZ()
+      )
+    )
+
+    val byOrdinalResOpt: Option[AST.ResolvedInfo] = Some(
+      AST.ResolvedInfo.Method(
+        T,
+        AST.MethodMode.Ext,
+        ISZ(),
+        name,
+        "byOrdinal",
+        ISZ(),
+        Some(AST.Typed.Fun(T, F, ISZ(AST.Typed.z), AST.Typed.Name(AST.Typed.optionName, ISZ(elementTypedOpt.get)))),
+        ISZ(),
+        ISZ()
+      )
+    )
+
+    val elementsResOpt: Option[AST.ResolvedInfo] = Some(
+      AST.ResolvedInfo.Method(
+        T,
+        AST.MethodMode.Ext,
+        ISZ(),
+        name,
+        "elements",
+        ISZ(),
+        Some(AST.Typed.Fun(T, T, ISZ(), AST.Typed.Name(AST.Typed.isName, ISZ(AST.Typed.z, elementTypedOpt.get)))),
+        ISZ(),
+        ISZ()
+      )
+    )
+
+    val numOfElementsResOpt: Option[AST.ResolvedInfo] = Some(
+      AST.ResolvedInfo.Method(
+        T,
+        AST.MethodMode.Ext,
+        ISZ(),
+        name,
+        "numOfElements",
+        ISZ(),
+        Some(AST.Typed.Fun(T, T, ISZ(), AST.Typed.z)),
+        ISZ(),
+        ISZ()
       )
     )
   }
@@ -745,25 +785,26 @@ object TypeInfo {
 
   }
 
-  object Enum {
-
-    val nameResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.EnumName))
-
-    val ordinalResOpt: Option[AST.ResolvedInfo] = Some(
-      AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.EnumOrdinal)
-    )
-  }
-
   @datatype class Enum(val owner: ISZ[String], val elements: Map[String, AST.ResolvedInfo], val posOpt: Option[Position])
     extends TypeInfo {
 
     val nameTypedOpt: Option[AST.Typed] = Some(
       AST.Typed
-        .Method(F, AST.MethodMode.Method, ISZ(), name, "name", ISZ(), AST.Typed.Fun(T, T, ISZ(), AST.Typed.string))
+        .Method(F, AST.MethodMode.Ext, ISZ(), owner, "name", ISZ(), AST.Typed.Fun(T, T, ISZ(), AST.Typed.string))
     )
 
     val ordinalTypedOpt: Option[AST.Typed] = Some(
-      AST.Typed.Method(F, AST.MethodMode.Method, ISZ(), name, "ordinal", ISZ(), AST.Typed.Fun(T, T, ISZ(), AST.Typed.z))
+      AST.Typed.Method(F, AST.MethodMode.Ext, ISZ(), owner, "ordinal", ISZ(), AST.Typed.Fun(T, T, ISZ(), AST.Typed.z))
+    )
+
+    val nameResOpt: Option[AST.ResolvedInfo] = Some(
+      AST.ResolvedInfo.Method(F, AST.MethodMode.Ext, ISZ(), owner, "name", ISZ(), Some(AST.Typed.Fun(T, T, ISZ(),
+        AST.Typed.string)), ISZ(), ISZ())
+    )
+
+    val ordinalResOpt: Option[AST.ResolvedInfo] = Some(
+      AST.ResolvedInfo.Method(F, AST.MethodMode.Ext, ISZ(), owner, "ordinal", ISZ(), Some(AST.Typed.Fun(T, T, ISZ(),
+        AST.Typed.z)), ISZ(), ISZ())
     )
 
     @pure override def name: ISZ[String] = {
