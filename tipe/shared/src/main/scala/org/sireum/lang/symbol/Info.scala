@@ -790,20 +790,20 @@ object TypeInfo {
 
     val nameTypedOpt: Option[AST.Typed] = Some(
       AST.Typed
-        .Method(F, AST.MethodMode.Ext, ISZ(), owner, "name", ISZ(), AST.Typed.Fun(T, T, ISZ(), AST.Typed.string))
+        .Method(F, AST.MethodMode.Ext, ISZ(), name, "name", ISZ(), AST.Typed.Fun(T, T, ISZ(), AST.Typed.string))
     )
 
     val ordinalTypedOpt: Option[AST.Typed] = Some(
-      AST.Typed.Method(F, AST.MethodMode.Ext, ISZ(), owner, "ordinal", ISZ(), AST.Typed.Fun(T, T, ISZ(), AST.Typed.z))
+      AST.Typed.Method(F, AST.MethodMode.Ext, ISZ(), name, "ordinal", ISZ(), AST.Typed.Fun(T, T, ISZ(), AST.Typed.z))
     )
 
     val nameResOpt: Option[AST.ResolvedInfo] = Some(
-      AST.ResolvedInfo.Method(F, AST.MethodMode.Ext, ISZ(), owner, "name", ISZ(), Some(AST.Typed.Fun(T, T, ISZ(),
+      AST.ResolvedInfo.Method(F, AST.MethodMode.Ext, ISZ(), name, "name", ISZ(), Some(AST.Typed.Fun(T, T, ISZ(),
         AST.Typed.string)), ISZ(), ISZ())
     )
 
     val ordinalResOpt: Option[AST.ResolvedInfo] = Some(
-      AST.ResolvedInfo.Method(F, AST.MethodMode.Ext, ISZ(), owner, "ordinal", ISZ(), Some(AST.Typed.Fun(T, T, ISZ(),
+      AST.ResolvedInfo.Method(F, AST.MethodMode.Ext, ISZ(), name, "ordinal", ISZ(), Some(AST.Typed.Fun(T, T, ISZ(),
         AST.Typed.z)), ISZ(), ISZ())
     )
 

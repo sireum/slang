@@ -254,17 +254,6 @@ object FrontEnd {
       return (TypeHierarchy.empty, program)
     }
 
-    val th: TypeHierarchy = thOpt match {
-      case Some(thi) => thi
-      case _ =>
-        val (tc, rep) = libraryReporter
-        if (rep.hasIssue) {
-          reporter.reports(rep.messages)
-          return (tc.typeHierarchy, program)
-        }
-        tc.typeHierarchy
-    }
-
     val gdr = GlobalDeclarationResolver(HashSMap.empty, HashSMap.empty, Reporter.create)
     gdr.resolveProgram(
       program(
@@ -283,6 +272,17 @@ object FrontEnd {
         )
       )
     )
+
+    val th: TypeHierarchy = thOpt match {
+      case Some(thi) => thi
+      case _ =>
+        val (tc, rep) = libraryReporter
+        if (rep.hasIssue) {
+          reporter.reports(rep.messages)
+          return (tc.typeHierarchy, program)
+        }
+        tc.typeHierarchy
+    }
 
     if (gdr.reporter.hasError) {
       reporter.reports(gdr.reporter.messages)
