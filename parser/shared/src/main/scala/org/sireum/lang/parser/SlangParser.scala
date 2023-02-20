@@ -800,7 +800,7 @@ class SlangParser(
     }
     val mods = stat.mods
     val name = stat.name
-    val tparams = stat.tparams
+    val tparams = for (pcg <- stat.paramClauseGroups; tp <- pcg.tparamClause.values) yield tp
     val paramss = stat.paramClauses.map(_.values)
     val tpe = stat.decltpe
     var hasError = false
@@ -864,6 +864,7 @@ class SlangParser(
   val specDefnInv: Set[Predef.String] = specDefn + "Invariant"
 
   def translateDef(enclosing: Enclosing.Type, tree: Defn.Def): AST.Stmt = {
+    val tparams = for (pcg <- tree.paramClauseGroups; tp <- pcg.tparamClause.values) yield tp
     if (tree.paramClauses.size <= 1 && tree.mods.exists({
       case mod"@spec" => true
       case _ => false
@@ -887,7 +888,7 @@ class SlangParser(
               checkReturnType()
               return translateTheoremLemma(true, enclosing, tree)
             case "Invariant" =>
-              if (tree.tparams.nonEmpty) {
+              if (tparams.nonEmpty) {
                 errorInSlang(id.pos, "Invariants cannot have type parameters")
               }
               if (tree.paramClauses.nonEmpty) {
@@ -902,7 +903,6 @@ class SlangParser(
     }
     val mods = tree.mods
     val name = tree.name
-    val tparams = tree.tparams
     val paramss = tree.paramClauses.map(_.values)
     val tpeopt = tree.decltpe
     val exp = tree.body
@@ -3342,7 +3342,7 @@ class SlangParser(
       if (isWorksheet) error(stat.pos, "Fact can only appear at the top-level, inside objects, or @ext objects.")
       else error(stat.pos, "Fact can only appear inside objects or @ext objects.")
     }
-    val typeArgs = ISZ(stat.tparams.map(translateTypeParam(AST.Typed.VarKind.Immutable, false)): _*)
+    val typeArgs = ISZ((for (pcg <- stat.paramClauseGroups; tp <- pcg.tparamClause.values) yield tp).map(translateTypeParam(AST.Typed.VarKind.Immutable, false)): _*)
     val q"Fact(..${fexprs: Term.ArgClause})" = stat.body
     val (descOpt, exprs: Seq[Term]) = fexprs.headOption match {
       case scala.Some(lit: Lit.String) => (Some(translateLit(lit).asInstanceOf[AST.Exp.LitString]), fexprs.values.tail)
@@ -3748,7 +3748,7 @@ class SlangParser(
       if (isWorksheet) error(stat.pos, s"$desc can only appear at the top-level, inside object, or @ext object.")
       else error(stat.pos, s"$desc can only appear inside object or @ext object.")
     }
-    val typeArgs = ISZ(stat.tparams.map(translateTypeParam(AST.Typed.VarKind.Immutable, false)): _*)
+    val typeArgs = ISZ((for (pcg <- stat.paramClauseGroups; tp <- pcg.tparamClause.values) yield tp).map(translateTypeParam(AST.Typed.VarKind.Immutable, false)): _*)
     val (descOpt, claim, proof) = stat.body match {
       case q"${_: Term.Name}(${d: Lit.String}, $e, $p)" =>
         (Some(translateLit(d).asInstanceOf[AST.Exp.LitString]), translateExp(e), translateProof(p))
