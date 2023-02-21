@@ -843,7 +843,7 @@ object TypeChecker {
 
   def checkDataRefinement(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope, stmt: AST.Stmt.DataRefinement, reporter: Reporter): AST.Stmt.DataRefinement = {
     val tc = TypeChecker(th, context, F, ModeContext.Spec, strictAliasing)
-    tc.checkDataRefinement(scope, stmt, reporter)
+    return tc.checkDataRefinement(scope, stmt, reporter)
   }
 }
 
@@ -3497,9 +3497,8 @@ import TypeChecker._
   def checkImport(scope: Scope.Local, stmt: AST.Stmt.Import, reporter: Reporter): (Option[Scope.Local], AST.Stmt) = {
     @pure def addImport(s: Scope.Local): Scope.Local = {
       s.outerOpt match {
-        case Some(outer: Scope.Local) => s(outerOpt = Some(addImport(outer)))
-        case Some(outer: Scope.Global) =>
-          s(outerOpt = Some(outer(imports = outer.imports :+ stmt)))
+        case Some(outer: Scope.Local) => return s(outerOpt = Some(addImport(outer)))
+        case Some(outer: Scope.Global) => return s(outerOpt = Some(outer(imports = outer.imports :+ stmt)))
         case _ => halt("Unexpected local scope without an outer scope.")
       }
     }
@@ -4912,6 +4911,7 @@ import TypeChecker._
   }
 
   def checkMethod(sc: Scope, stmt: AST.Stmt.Method, reporter: Reporter): AST.Stmt.Method = {
+
     def checkMethodH(): AST.Stmt.Method = {
       if (stmt.bodyOpt.isEmpty) {
         return stmt
@@ -4925,10 +4925,39 @@ import TypeChecker._
       }
     }
     val r = checkMethodH()
-    if (!reporter.hasError && r.purity == AST.Purity.StrictPure) {
-      val spc = TypeChecker.StrictPureChecker(typeHierarchy, Reporter.create)
-      spc.transformStmt(r)
-      reporter.reports(spc.reporter.messages)
+    if (!reporter.hasError) {
+      if (r.purity != AST.Purity.StrictPure) {
+        if (r.sig.returnType.typedOpt.get != AST.Typed.unit) {
+          r.bodyOpt match {
+            case Some(body) =>
+              for (lOpt <- body.leaves) {
+                lOpt match {
+                  case Some(_: AST.Stmt.Return) =>
+                  case Some(AST.Stmt.Expr(exp: AST.Exp.Invoke)) =>
+                    exp.attr.resOpt match {
+                      case Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Halt)) =>
+                      case _ =>
+                        reporter.error(exp.posOpt, TypeChecker.typeCheckerKind,
+                          s"Non-unit methods should end with a return/halt statement")
+                    }
+                  case Some(stmt2) =>
+                    reporter.error(stmt2.posOpt, TypeChecker.typeCheckerKind,
+                      s"Non-unit methods should end with a return/halt statement")
+                  case _ =>
+                    val posOpt: Option[Position] =
+                      if (body.stmts.isEmpty) r.sig.id.attr.posOpt else body.stmts(body.stmts.size - 1).posOpt
+                    reporter.error(posOpt,
+                      TypeChecker.typeCheckerKind, s"Non-unit methods should end with a return/halt statement")
+                }
+              }
+            case _ =>
+          }
+        }
+      } else {
+        val spc = TypeChecker.StrictPureChecker(typeHierarchy, Reporter.create)
+        spc.transformStmt(r)
+        reporter.reports(spc.reporter.messages)
+      }
     }
     return r
   }

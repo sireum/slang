@@ -661,7 +661,7 @@ import GlobalDeclarationResolver._
         case _ =>
       }
     }
-    TypeInfo.Members(specVars, vars, specMethods, methods, HashSMap.empty, invs)
+    return TypeInfo.Members(specVars, vars, specMethods, methods, HashSMap.empty, invs)
   }
 
   def declareName(entity: String, name: QName, info: Info, posOpt: Option[Position]): Unit = {

@@ -320,8 +320,15 @@ object TypeOutliner {
             sig.funType
           )
         )
-        if (info.ast.purity == AST.Purity.StrictPure && sig.funType.ret == AST.Typed.unit) {
-          reporter.error(m.sig.returnType.posOpt, TypeChecker.typeCheckerKind, "@strictpure methods cannot have Unit as their return type")
+        if (sig.funType.ret == AST.Typed.unit) {
+          if (info.ast.purity == AST.Purity.StrictPure) {
+            reporter.error(m.sig.returnType.posOpt, TypeChecker.typeCheckerKind,
+              "@strictpure methods cannot have Unit as their return type")
+          }
+        }
+        if (info.ast.contract.nonEmpty && info.ast.contract.modifies.nonEmpty && info.ast.purity != AST.Purity.Impure) {
+          reporter.error(info.ast.sig.id.attr.posOpt,
+            TypeChecker.typeCheckerKind, s"${info.ast.purity} methods should have an empty Modifies clause")
         }
         return Some(
           info(ast = m(sig = sig, attr = m.attr(typedOpt = tOpt, resOpt = Some(res(tpeOpt = Some(sig.funType))))))

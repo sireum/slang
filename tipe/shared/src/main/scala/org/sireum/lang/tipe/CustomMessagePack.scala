@@ -309,7 +309,7 @@ object CustomMessagePack {
 
   def readTypeHierarchy(reader: MsgPack.Reader): TypeHierarchy = {
     def readQName(): Resolver.QName = {
-      reader.reader.readISZ(reader.reader.readString _)
+      return reader.reader.readISZ(reader.reader.readString _)
     }
     val infos = reader.reader.readISZ(reader.read_symbolInfo _)
     val typeInfos = reader.reader.readISZ(reader.read_symbolTypeInfo _)

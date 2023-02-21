@@ -304,7 +304,7 @@ object TypeHierarchy {
             }
             as
           }
-          AST.Typed.Name(name, args)
+          return AST.Typed.Name(name, args)
         case t: AST.Type.Tuple =>
           val ts: ISZ[AST.Typed] = {
             var as = ISZ[AST.Typed]()
@@ -314,7 +314,7 @@ object TypeHierarchy {
             }
             as
           }
-          AST.Typed.Tuple(ts)
+          return AST.Typed.Tuple(ts)
         case t: AST.Type.Fun =>
           val ts: ISZ[AST.Typed] = {
             var as = ISZ[AST.Typed]()
@@ -325,7 +325,7 @@ object TypeHierarchy {
             as
           }
           val rt = resolveType(scope, t.ret)
-          AST.Typed.Fun(t.isPure || rt.isPureFun, t.isByName, ts, rt)
+          return AST.Typed.Fun(t.isPure || rt.isPureFun, t.isByName, ts, rt)
       }
     }
 
@@ -854,7 +854,7 @@ object TypeHierarchy {
         return isSubType(t1.ret, t2.ret)
       case (t1: AST.Typed.Method, t2: AST.Typed.Method) =>
         return isRefinement(t1.tpe, t2.tpe)
-      case _ => isSubType(t1, t2)
+      case _ => return isSubType(t1, t2)
     }
   }
 
@@ -1222,7 +1222,7 @@ object TypeHierarchy {
   @pure def normalizeExp(exp: AST.Exp): AST.Exp = {
     val exp2 = TypeHierarchy.ExpNormalizer.create(this).transformExp(1, exp).resultOpt.getOrElseEager(exp)
     AST.Transformer(TypeHierarchy.QuantTypePrePostNormalizer()).transformExp(F, exp2).resultOpt match {
-      case Some(exp3) => TypeHierarchy.ExpNormalizer.create(this).transformExp(1, exp3).resultOpt.getOrElseEager(exp3)
+      case Some(exp3) => return TypeHierarchy.ExpNormalizer.create(this).transformExp(1, exp3).resultOpt.getOrElseEager(exp3)
       case _ => return exp2
     }
   }

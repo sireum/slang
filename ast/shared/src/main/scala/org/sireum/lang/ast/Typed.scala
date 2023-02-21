@@ -154,7 +154,7 @@ import org.sireum._
         }
         newTypeParams = newTypeParams :+ s"$$$i"
       }
-      t(typeParams = newTypeParams, tpe = normalizeFun(t.tpe))
+      return t(typeParams = newTypeParams, tpe = normalizeFun(t.tpe))
     }
 
     def normalize(t: Typed): Typed = {
