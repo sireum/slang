@@ -75,12 +75,13 @@ object TopUnit {
 
   @pure def modifies: ISZ[Exp.Ref]
 
-  @pure def modifiedLocalVars(receiverLocalTypeOpt: Option[(ResolvedInfo.LocalVar, Typed)]): (B, HashSMap[ResolvedInfo.LocalVar, (Typed, Position)]) = {
+  @pure def modifiedLocalVars(receiverLocalTypeOpt: Option[(ResolvedInfo.LocalVar, Typed)],
+                              typeSubstMap: HashMap[String, Typed]): (B, HashSMap[ResolvedInfo.LocalVar, (Typed, Position)]) = {
     var r = HashSMap.empty[ResolvedInfo.LocalVar, (Typed, Position)]
     var modThisPosOpt: Option[Position] = None()
     for (ref <- modifies) {
       ref.resOpt match {
-        case Some(res: ResolvedInfo.LocalVar) => r = r + res ~> ((ref.typedOpt.get, ref.posOpt.get))
+        case Some(res: ResolvedInfo.LocalVar) => r = r + res ~> ((ref.typedOpt.get.subst(typeSubstMap), ref.posOpt.get))
         case Some(res: ResolvedInfo.Var) if !res.isInObject => modThisPosOpt = ref.posOpt
         case _ =>
       }
