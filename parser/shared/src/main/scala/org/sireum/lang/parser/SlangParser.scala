@@ -2910,13 +2910,10 @@ class SlangParser(
         }
         t.argClause.values match {
           case List(right) => AST.Exp.Binary(translateExp(t.lhs), id, translateExp(right), resolvedAttr(t.op.pos))
-          case _ =>
-            import org.sireum._
-            error(
-              t.op.pos,
-              st"Invalid right-hand-side for '$id': '(${(t.argClause.values.map(_.syntax), ", ")})'".render.value
-            )
-            rExp
+          case values =>
+            AST.Exp.Binary(translateExp(t.lhs), id,
+              AST.Exp.Tuple(ISZ((for (value <- values) yield translateExp(value)): _*), typedAttr(t.argClause.pos)),
+              resolvedAttr(t.op.pos))
         }
     }
   }
