@@ -2530,7 +2530,20 @@ class SlangParser(
 
       case q"InfoFlowInvariant(..$rexprs)" =>
         val infoFlows = AST.MethodContract.InfoFlows(translateInfoFlows(rexprs), attr(exp.pos))
-        AST.Exp.InfoFlowInvariant(flowInvariants = infoFlows.flows, attr = attr(exp.pos))
+        val flowCases: ISZ[AST.MethodContract.InfoFlowCase] = {
+          var cases = ISZ[AST.MethodContract.InfoFlowCase]()
+          for(i <- 0 until infoFlows.flows.elements.size) {
+            infoFlows.flows.elements(i) match {
+              case c: AST.MethodContract.InfoFlowCase => cases = cases :+ c
+              case e: AST.MethodContract.InfoFlowFlow =>
+                error(rexprs(i).pos, s"InfoFlow loop invariants cannot currently contain flow cases.")
+              case e: AST.MethodContract.InfoFlowGroup =>
+                error(rexprs(i).pos, s"InfoFlow loop invariants cannot currently contain flow groups.")
+            }
+          }
+          cases
+        }
+        AST.Exp.InfoFlowInvariant(flowInvariants = flowCases, attr = attr(exp.pos))
 
       case q"${name: Term.Name}(..$aaexprs)" if name.value == "AssumeAgree" =>
         var channel: AST.Exp.LitString = AST.Exp.LitString("invalid", AST.Attr(None()))
@@ -3240,13 +3253,15 @@ class SlangParser(
     AST.MethodContract.Simple(reads, requires, modifies, ensures, infoFlows, csAttr)
   }
 
-  def translateInfoFlows(exprs: Seq[Term]): ISZ[AST.MethodContract.InfoFlow] = {
+  def translateInfoFlows(exprs: Seq[Term]): ISZ[AST.MethodContract.InfoFlowElement] = {
     val length = exprs.length
     var i = 0
-    var infoFlows: ISZ[AST.MethodContract.InfoFlow] = ISZ()
+    var infoFlows: ISZ[AST.MethodContract.InfoFlowElement] = ISZ()
     while (i < length) {
       exprs(i) match {
-        case q"FlowCase(..$cexprs)" => infoFlows = infoFlows :+ translateInfoFlow(cexprs)
+        case q"Flow(..$cexprs)" => infoFlows = infoFlows :+ translateInfoFlowFlow(cexprs)
+        case q"FlowCase(..$cexprs)" => infoFlows = infoFlows :+ translateInfoFlowCase(cexprs)
+        case q"Groups(..$cexprs)" => infoFlows = infoFlows :+ translateInfoFlowGroup(cexprs)
         case expr => error(expr.pos, "Unrecognized InfoFlow flow argument")
       }
       i += 1
@@ -3254,7 +3269,70 @@ class SlangParser(
     return infoFlows
   }
 
-  def translateInfoFlow(exprs: Seq[Term]): AST.MethodContract.InfoFlow = {
+  def translateInfoFlowGroup(exprs: Seq[Term]): AST.MethodContract.InfoFlowElement = {
+    var label: AST.Exp.LitString = AST.Exp.LitString("", emptyAttr)
+    val length = exprs.length
+    var i = 0
+    if (i < length) {
+      exprs(i) match {
+        case expr: Lit.String =>
+          label = AST.Exp.LitString(expr.value, attr(expr.pos))
+          i += 1
+        case _ =>
+      }
+    }
+
+    var members = AST.MethodContract.Claims.empty
+    if (i < length) {
+      exprs(i) match {
+        case q"Vars(..$iexprs)" =>
+          members = AST.MethodContract.Claims(translateExps(iexprs), attr(exprs(i).pos))
+          i += 1
+      }
+    }
+    for (j <- i until length) {
+      val expr = exprs(j)
+      error(expr.pos, "Unrecognized InfoFlow Group argument")
+    }
+    return AST.MethodContract.InfoFlowGroup(label, members)
+  }
+
+  def translateInfoFlowFlow(exprs: Seq[Term]): AST.MethodContract.InfoFlowElement = {
+    var label: AST.Exp.LitString = AST.Exp.LitString("", emptyAttr)
+    val length = exprs.length
+    var i = 0
+    if (i < length) {
+      exprs(i) match {
+        case expr: Lit.String =>
+          label = AST.Exp.LitString(expr.value, attr(expr.pos))
+          i += 1
+        case _ =>
+      }
+    }
+    var froms = AST.MethodContract.Claims.empty
+    if (i < length) {
+      exprs(i) match {
+        case q"From(..$iexprs)" =>
+          froms = AST.MethodContract.Claims(translateExps(iexprs), attr(exprs(i).pos))
+          i += 1
+      }
+    }
+    var tos = AST.MethodContract.Claims.empty
+    if (i < length) {
+      exprs(i) match {
+        case q"To(..$iexprs)" =>
+          tos = AST.MethodContract.Claims(translateExps(iexprs), attr(exprs(i).pos))
+          i += 1
+      }
+    }
+    for (j <- i until length) {
+      val expr = exprs(j)
+      error(expr.pos, "Unrecognized InfoFlow Flow argument")
+    }
+    return AST.MethodContract.InfoFlowFlow(label, froms, tos)
+  }
+
+  def translateInfoFlowCase(exprs: Seq[Term]): AST.MethodContract.InfoFlowElement = {
     var label: AST.Exp.LitString = AST.Exp.LitString("", emptyAttr)
     val length = exprs.length
     var i = 0
@@ -3295,7 +3373,7 @@ class SlangParser(
       val expr = exprs(j)
       error(expr.pos, "Unrecognized InfoFlow Case argument")
     }
-    return AST.MethodContract.InfoFlow(label, requires, inAgrees, outAgrees)
+    return AST.MethodContract.InfoFlowCase(label, requires, inAgrees, outAgrees)
   }
 
   def translateMethodContract(exprs: Seq[Term], mcAttr: AST.Attr): AST.MethodContract = {

@@ -587,7 +587,7 @@ object MethodContract {
     @strictpure def requires: ISZ[Exp] = requiresClause.claims
     @strictpure override def modifies: ISZ[Exp.Ref] = modifiesClause.refs
     @strictpure def ensures: ISZ[Exp] = ensuresClause.claims
-    @strictpure def infoFlows: ISZ[InfoFlow] = infoFlowsClause.flows
+    @strictpure def infoFlows: ISZ[InfoFlowElement] = infoFlowsClause.flows
 
     @pure override def isEmpty: B = {
       return reads.isEmpty && requires.isEmpty && modifies.isEmpty && ensures.isEmpty && infoFlows.isEmpty
@@ -616,17 +616,43 @@ object MethodContract {
   object InfoFlows {
     @strictpure def empty: InfoFlows = InfoFlows(ISZ(), Attr(None()))
   }
-  @datatype class InfoFlows(val flows: ISZ[InfoFlow],
+
+  @datatype trait InfoFlowElement
+
+  @datatype class InfoFlows(val flows: ISZ[InfoFlowElement],
                             val attr: Attr) {
     @pure def isEmpty: B = {
       return flows.isEmpty
     }
   }
 
-  @datatype class InfoFlow(val label: Exp.LitString,
-                           val requiresClause: Claims,
-                           val inAgreeClause: Claims,
-                           val outAgreeClause: Claims) {
+  @datatype class InfoFlowGroup(val label: Exp.LitString,
+                                val membersClause: Claims) extends InfoFlowElement {
+    @strictpure def members: ISZ[Exp] = membersClause.claims
+
+    @pure def prettyST: ST = {
+      val _members = members.map((e: Exp) => e.prettyST)
+      return st"Groups(${label.prettyST}, Vars(${(_members, ", ")}))"
+    }
+  }
+
+  @datatype class InfoFlowFlow(val label: Exp.LitString,
+                               val fromClause: Claims,
+                               val toClause: Claims) extends InfoFlowElement {
+    @strictpure def froms: ISZ[Exp] = fromClause.claims
+    @strictpure def tos: ISZ[Exp] = toClause.claims
+
+    @pure def prettyST: ST = {
+      val _froms = froms.map((e: Exp) => e.prettyST)
+      val _tos = tos.map((e: Exp) => e.prettyST)
+      return st"Flows(${label.prettyST}, From(${(_froms, ", ")}), To(${(_tos, ", ")}))"
+    }
+  }
+
+  @datatype class InfoFlowCase(val label: Exp.LitString,
+                               val requiresClause: Claims,
+                               val inAgreeClause: Claims,
+                               val outAgreeClause: Claims) extends InfoFlowElement {
     @strictpure def requires: ISZ[Exp] = requiresClause.claims
     @strictpure def inAgrees: ISZ[Exp] = inAgreeClause.claims
     @strictpure def outAgrees: ISZ[Exp] = outAgreeClause.claims
@@ -1903,7 +1929,7 @@ object Exp {
     }
   }
 
-  @datatype class InfoFlowInvariant(val flowInvariants: ISZ[MethodContract.InfoFlow], @hidden val attr: Attr) extends Exp {
+  @datatype class InfoFlowInvariant(val flowInvariants: ISZ[MethodContract.InfoFlowCase], @hidden val attr: Attr) extends Exp {
     override def posOpt: Option[Position] = {
       return attr.posOpt
     }
@@ -1913,7 +1939,7 @@ object Exp {
     }
 
     override def prettyST: ST = {
-      val cases = flowInvariants.map((m: MethodContract.InfoFlow) => m.prettyST)
+      val cases = flowInvariants.map((m: MethodContract.InfoFlowCase) => m.prettyST)
       return st"InfoFlowInvariant(${(cases, ",\n")})"
     }
   }
