@@ -864,17 +864,42 @@ object JSON {
       ))
     }
 
+    @pure def print_astMethodContractInfoFlowElement(o: org.sireum.lang.ast.MethodContract.InfoFlowElement): ST = {
+      o match {
+        case o: org.sireum.lang.ast.MethodContract.InfoFlowGroup => return print_astMethodContractInfoFlowGroup(o)
+        case o: org.sireum.lang.ast.MethodContract.InfoFlowFlow => return print_astMethodContractInfoFlowFlow(o)
+        case o: org.sireum.lang.ast.MethodContract.InfoFlowCase => return print_astMethodContractInfoFlowCase(o)
+      }
+    }
+
     @pure def print_astMethodContractInfoFlows(o: org.sireum.lang.ast.MethodContract.InfoFlows): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.MethodContract.InfoFlows""""),
-        ("flows", printISZ(F, o.flows, print_astMethodContractInfoFlow _)),
+        ("flows", printISZ(F, o.flows, print_astMethodContractInfoFlowElement _)),
         ("attr", print_astAttr(o.attr))
       ))
     }
 
-    @pure def print_astMethodContractInfoFlow(o: org.sireum.lang.ast.MethodContract.InfoFlow): ST = {
+    @pure def print_astMethodContractInfoFlowGroup(o: org.sireum.lang.ast.MethodContract.InfoFlowGroup): ST = {
       return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.MethodContract.InfoFlow""""),
+        ("type", st""""org.sireum.lang.ast.MethodContract.InfoFlowGroup""""),
+        ("label", print_astExpLitString(o.label)),
+        ("membersClause", print_astMethodContractClaims(o.membersClause))
+      ))
+    }
+
+    @pure def print_astMethodContractInfoFlowFlow(o: org.sireum.lang.ast.MethodContract.InfoFlowFlow): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.MethodContract.InfoFlowFlow""""),
+        ("label", print_astExpLitString(o.label)),
+        ("fromClause", print_astMethodContractClaims(o.fromClause)),
+        ("toClause", print_astMethodContractClaims(o.toClause))
+      ))
+    }
+
+    @pure def print_astMethodContractInfoFlowCase(o: org.sireum.lang.ast.MethodContract.InfoFlowCase): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.MethodContract.InfoFlowCase""""),
         ("label", print_astExpLitString(o.label)),
         ("requiresClause", print_astMethodContractClaims(o.requiresClause)),
         ("inAgreeClause", print_astMethodContractClaims(o.inAgreeClause)),
@@ -1641,7 +1666,7 @@ object JSON {
     @pure def print_astExpInfoFlowInvariant(o: org.sireum.lang.ast.Exp.InfoFlowInvariant): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Exp.InfoFlowInvariant""""),
-        ("flowInvariants", printISZ(F, o.flowInvariants, print_astMethodContractInfoFlow _)),
+        ("flowInvariants", printISZ(F, o.flowInvariants, print_astMethodContractInfoFlowCase _)),
         ("attr", print_astAttr(o.attr))
       ))
     }
@@ -4009,6 +4034,16 @@ object JSON {
       return org.sireum.lang.ast.MethodContract.Case(label, requiresClause, ensuresClause)
     }
 
+    def parse_astMethodContractInfoFlowElement(): org.sireum.lang.ast.MethodContract.InfoFlowElement = {
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.MethodContract.InfoFlowGroup", "org.sireum.lang.ast.MethodContract.InfoFlowFlow", "org.sireum.lang.ast.MethodContract.InfoFlowCase"))
+      t.native match {
+        case "org.sireum.lang.ast.MethodContract.InfoFlowGroup" => val r = parse_astMethodContractInfoFlowGroupT(T); return r
+        case "org.sireum.lang.ast.MethodContract.InfoFlowFlow" => val r = parse_astMethodContractInfoFlowFlowT(T); return r
+        case "org.sireum.lang.ast.MethodContract.InfoFlowCase" => val r = parse_astMethodContractInfoFlowCaseT(T); return r
+        case _ => val r = parse_astMethodContractInfoFlowCaseT(T); return r
+      }
+    }
+
     def parse_astMethodContractInfoFlows(): org.sireum.lang.ast.MethodContract.InfoFlows = {
       val r = parse_astMethodContractInfoFlowsT(F)
       return r
@@ -4019,7 +4054,7 @@ object JSON {
         parser.parseObjectType("org.sireum.lang.ast.MethodContract.InfoFlows")
       }
       parser.parseObjectKey("flows")
-      val flows = parser.parseISZ(parse_astMethodContractInfoFlow _)
+      val flows = parser.parseISZ(parse_astMethodContractInfoFlowElement _)
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
@@ -4027,14 +4062,53 @@ object JSON {
       return org.sireum.lang.ast.MethodContract.InfoFlows(flows, attr)
     }
 
-    def parse_astMethodContractInfoFlow(): org.sireum.lang.ast.MethodContract.InfoFlow = {
-      val r = parse_astMethodContractInfoFlowT(F)
+    def parse_astMethodContractInfoFlowGroup(): org.sireum.lang.ast.MethodContract.InfoFlowGroup = {
+      val r = parse_astMethodContractInfoFlowGroupT(F)
       return r
     }
 
-    def parse_astMethodContractInfoFlowT(typeParsed: B): org.sireum.lang.ast.MethodContract.InfoFlow = {
+    def parse_astMethodContractInfoFlowGroupT(typeParsed: B): org.sireum.lang.ast.MethodContract.InfoFlowGroup = {
       if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.MethodContract.InfoFlow")
+        parser.parseObjectType("org.sireum.lang.ast.MethodContract.InfoFlowGroup")
+      }
+      parser.parseObjectKey("label")
+      val label = parse_astExpLitString()
+      parser.parseObjectNext()
+      parser.parseObjectKey("membersClause")
+      val membersClause = parse_astMethodContractClaims()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.MethodContract.InfoFlowGroup(label, membersClause)
+    }
+
+    def parse_astMethodContractInfoFlowFlow(): org.sireum.lang.ast.MethodContract.InfoFlowFlow = {
+      val r = parse_astMethodContractInfoFlowFlowT(F)
+      return r
+    }
+
+    def parse_astMethodContractInfoFlowFlowT(typeParsed: B): org.sireum.lang.ast.MethodContract.InfoFlowFlow = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.MethodContract.InfoFlowFlow")
+      }
+      parser.parseObjectKey("label")
+      val label = parse_astExpLitString()
+      parser.parseObjectNext()
+      parser.parseObjectKey("fromClause")
+      val fromClause = parse_astMethodContractClaims()
+      parser.parseObjectNext()
+      parser.parseObjectKey("toClause")
+      val toClause = parse_astMethodContractClaims()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.MethodContract.InfoFlowFlow(label, fromClause, toClause)
+    }
+
+    def parse_astMethodContractInfoFlowCase(): org.sireum.lang.ast.MethodContract.InfoFlowCase = {
+      val r = parse_astMethodContractInfoFlowCaseT(F)
+      return r
+    }
+
+    def parse_astMethodContractInfoFlowCaseT(typeParsed: B): org.sireum.lang.ast.MethodContract.InfoFlowCase = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.MethodContract.InfoFlowCase")
       }
       parser.parseObjectKey("label")
       val label = parse_astExpLitString()
@@ -4048,7 +4122,7 @@ object JSON {
       parser.parseObjectKey("outAgreeClause")
       val outAgreeClause = parse_astMethodContractClaims()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.MethodContract.InfoFlow(label, requiresClause, inAgreeClause, outAgreeClause)
+      return org.sireum.lang.ast.MethodContract.InfoFlowCase(label, requiresClause, inAgreeClause, outAgreeClause)
     }
 
     def parse_astSequent(): org.sireum.lang.ast.Sequent = {
@@ -5635,7 +5709,7 @@ object JSON {
         parser.parseObjectType("org.sireum.lang.ast.Exp.InfoFlowInvariant")
       }
       parser.parseObjectKey("flowInvariants")
-      val flowInvariants = parser.parseISZ(parse_astMethodContractInfoFlow _)
+      val flowInvariants = parser.parseISZ(parse_astMethodContractInfoFlowCase _)
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
@@ -8017,6 +8091,24 @@ object JSON {
     return r
   }
 
+  def from_astMethodContractInfoFlowElement(o: org.sireum.lang.ast.MethodContract.InfoFlowElement, isCompact: B): String = {
+    val st = Printer.print_astMethodContractInfoFlowElement(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astMethodContractInfoFlowElement(s: String): Either[org.sireum.lang.ast.MethodContract.InfoFlowElement, Json.ErrorMsg] = {
+    def f_astMethodContractInfoFlowElement(parser: Parser): org.sireum.lang.ast.MethodContract.InfoFlowElement = {
+      val r = parser.parse_astMethodContractInfoFlowElement()
+      return r
+    }
+    val r = to(s, f_astMethodContractInfoFlowElement _)
+    return r
+  }
+
   def from_astMethodContractInfoFlows(o: org.sireum.lang.ast.MethodContract.InfoFlows, isCompact: B): String = {
     val st = Printer.print_astMethodContractInfoFlows(o)
     if (isCompact) {
@@ -8035,8 +8127,8 @@ object JSON {
     return r
   }
 
-  def from_astMethodContractInfoFlow(o: org.sireum.lang.ast.MethodContract.InfoFlow, isCompact: B): String = {
-    val st = Printer.print_astMethodContractInfoFlow(o)
+  def from_astMethodContractInfoFlowGroup(o: org.sireum.lang.ast.MethodContract.InfoFlowGroup, isCompact: B): String = {
+    val st = Printer.print_astMethodContractInfoFlowGroup(o)
     if (isCompact) {
       return st.renderCompact
     } else {
@@ -8044,12 +8136,48 @@ object JSON {
     }
   }
 
-  def to_astMethodContractInfoFlow(s: String): Either[org.sireum.lang.ast.MethodContract.InfoFlow, Json.ErrorMsg] = {
-    def f_astMethodContractInfoFlow(parser: Parser): org.sireum.lang.ast.MethodContract.InfoFlow = {
-      val r = parser.parse_astMethodContractInfoFlow()
+  def to_astMethodContractInfoFlowGroup(s: String): Either[org.sireum.lang.ast.MethodContract.InfoFlowGroup, Json.ErrorMsg] = {
+    def f_astMethodContractInfoFlowGroup(parser: Parser): org.sireum.lang.ast.MethodContract.InfoFlowGroup = {
+      val r = parser.parse_astMethodContractInfoFlowGroup()
       return r
     }
-    val r = to(s, f_astMethodContractInfoFlow _)
+    val r = to(s, f_astMethodContractInfoFlowGroup _)
+    return r
+  }
+
+  def from_astMethodContractInfoFlowFlow(o: org.sireum.lang.ast.MethodContract.InfoFlowFlow, isCompact: B): String = {
+    val st = Printer.print_astMethodContractInfoFlowFlow(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astMethodContractInfoFlowFlow(s: String): Either[org.sireum.lang.ast.MethodContract.InfoFlowFlow, Json.ErrorMsg] = {
+    def f_astMethodContractInfoFlowFlow(parser: Parser): org.sireum.lang.ast.MethodContract.InfoFlowFlow = {
+      val r = parser.parse_astMethodContractInfoFlowFlow()
+      return r
+    }
+    val r = to(s, f_astMethodContractInfoFlowFlow _)
+    return r
+  }
+
+  def from_astMethodContractInfoFlowCase(o: org.sireum.lang.ast.MethodContract.InfoFlowCase, isCompact: B): String = {
+    val st = Printer.print_astMethodContractInfoFlowCase(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astMethodContractInfoFlowCase(s: String): Either[org.sireum.lang.ast.MethodContract.InfoFlowCase, Json.ErrorMsg] = {
+    def f_astMethodContractInfoFlowCase(parser: Parser): org.sireum.lang.ast.MethodContract.InfoFlowCase = {
+      val r = parser.parse_astMethodContractInfoFlowCase()
+      return r
+    }
+    val r = to(s, f_astMethodContractInfoFlowCase _)
     return r
   }
 

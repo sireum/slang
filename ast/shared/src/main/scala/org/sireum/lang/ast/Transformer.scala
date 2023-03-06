@@ -378,11 +378,27 @@ object Transformer {
       return PreResult(ctx, T, None())
     }
 
+    @pure def preMethodContractInfoFlowElement(ctx: Context, o: MethodContract.InfoFlowElement): PreResult[Context, MethodContract.InfoFlowElement] = {
+      o match {
+        case o: MethodContract.InfoFlowGroup => return preMethodContractInfoFlowGroup(ctx, o)
+        case o: MethodContract.InfoFlowFlow => return preMethodContractInfoFlowFlow(ctx, o)
+        case o: MethodContract.InfoFlowCase => return preMethodContractInfoFlowCase(ctx, o)
+      }
+    }
+
     @pure def preMethodContractInfoFlows(ctx: Context, o: MethodContract.InfoFlows): PreResult[Context, MethodContract.InfoFlows] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preMethodContractInfoFlow(ctx: Context, o: MethodContract.InfoFlow): PreResult[Context, MethodContract.InfoFlow] = {
+    @pure def preMethodContractInfoFlowGroup(ctx: Context, o: MethodContract.InfoFlowGroup): PreResult[Context, MethodContract.InfoFlowElement] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preMethodContractInfoFlowFlow(ctx: Context, o: MethodContract.InfoFlowFlow): PreResult[Context, MethodContract.InfoFlowElement] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preMethodContractInfoFlowCase(ctx: Context, o: MethodContract.InfoFlowCase): PreResult[Context, MethodContract.InfoFlowElement] = {
       return PreResult(ctx, T, None())
     }
 
@@ -1469,11 +1485,27 @@ object Transformer {
       return TPostResult(ctx, None())
     }
 
+    @pure def postMethodContractInfoFlowElement(ctx: Context, o: MethodContract.InfoFlowElement): TPostResult[Context, MethodContract.InfoFlowElement] = {
+      o match {
+        case o: MethodContract.InfoFlowGroup => return postMethodContractInfoFlowGroup(ctx, o)
+        case o: MethodContract.InfoFlowFlow => return postMethodContractInfoFlowFlow(ctx, o)
+        case o: MethodContract.InfoFlowCase => return postMethodContractInfoFlowCase(ctx, o)
+      }
+    }
+
     @pure def postMethodContractInfoFlows(ctx: Context, o: MethodContract.InfoFlows): TPostResult[Context, MethodContract.InfoFlows] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postMethodContractInfoFlow(ctx: Context, o: MethodContract.InfoFlow): TPostResult[Context, MethodContract.InfoFlow] = {
+    @pure def postMethodContractInfoFlowGroup(ctx: Context, o: MethodContract.InfoFlowGroup): TPostResult[Context, MethodContract.InfoFlowElement] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postMethodContractInfoFlowFlow(ctx: Context, o: MethodContract.InfoFlowFlow): TPostResult[Context, MethodContract.InfoFlowElement] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postMethodContractInfoFlowCase(ctx: Context, o: MethodContract.InfoFlowCase): TPostResult[Context, MethodContract.InfoFlowElement] = {
       return TPostResult(ctx, None())
     }
 
@@ -3000,12 +3032,61 @@ import Transformer._
     }
   }
 
+  @pure def transformMethodContractInfoFlowElement(ctx: Context, o: MethodContract.InfoFlowElement): TPostResult[Context, MethodContract.InfoFlowElement] = {
+    val preR: PreResult[Context, MethodContract.InfoFlowElement] = pp.preMethodContractInfoFlowElement(ctx, o)
+    val r: TPostResult[Context, MethodContract.InfoFlowElement] = if (preR.continu) {
+      val o2: MethodContract.InfoFlowElement = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: TPostResult[Context, MethodContract.InfoFlowElement] = o2 match {
+        case o2: MethodContract.InfoFlowGroup =>
+          val r0: TPostResult[Context, Exp.LitString] = transformExpLitString(preR.ctx, o2.label)
+          val r1: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r0.ctx, o2.membersClause)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(label = r0.resultOpt.getOrElse(o2.label), membersClause = r1.resultOpt.getOrElse(o2.membersClause))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: MethodContract.InfoFlowFlow =>
+          val r0: TPostResult[Context, Exp.LitString] = transformExpLitString(preR.ctx, o2.label)
+          val r1: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r0.ctx, o2.fromClause)
+          val r2: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r1.ctx, o2.toClause)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(label = r0.resultOpt.getOrElse(o2.label), fromClause = r1.resultOpt.getOrElse(o2.fromClause), toClause = r2.resultOpt.getOrElse(o2.toClause))))
+          else
+            TPostResult(r2.ctx, None())
+        case o2: MethodContract.InfoFlowCase =>
+          val r0: TPostResult[Context, Exp.LitString] = transformExpLitString(preR.ctx, o2.label)
+          val r1: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r0.ctx, o2.requiresClause)
+          val r2: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r1.ctx, o2.inAgreeClause)
+          val r3: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r2.ctx, o2.outAgreeClause)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+            TPostResult(r3.ctx, Some(o2(label = r0.resultOpt.getOrElse(o2.label), requiresClause = r1.resultOpt.getOrElse(o2.requiresClause), inAgreeClause = r2.resultOpt.getOrElse(o2.inAgreeClause), outAgreeClause = r3.resultOpt.getOrElse(o2.outAgreeClause))))
+          else
+            TPostResult(r3.ctx, None())
+      }
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: MethodContract.InfoFlowElement = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, MethodContract.InfoFlowElement] = pp.postMethodContractInfoFlowElement(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
   @pure def transformMethodContractInfoFlows(ctx: Context, o: MethodContract.InfoFlows): TPostResult[Context, MethodContract.InfoFlows] = {
     val preR: PreResult[Context, MethodContract.InfoFlows] = pp.preMethodContractInfoFlows(ctx, o)
     val r: TPostResult[Context, MethodContract.InfoFlows] = if (preR.continu) {
       val o2: MethodContract.InfoFlows = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: TPostResult[Context, IS[Z, MethodContract.InfoFlow]] = transformISZ(preR.ctx, o2.flows, transformMethodContractInfoFlow _)
+      val r0: TPostResult[Context, IS[Z, MethodContract.InfoFlowElement]] = transformISZ(preR.ctx, o2.flows, transformMethodContractInfoFlowElement _)
       val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
       if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
         TPostResult(r1.ctx, Some(o2(flows = r0.resultOpt.getOrElse(o2.flows), attr = r1.resultOpt.getOrElse(o2.attr))))
@@ -3019,36 +3100,6 @@ import Transformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: MethodContract.InfoFlows = r.resultOpt.getOrElse(o)
     val postR: TPostResult[Context, MethodContract.InfoFlows] = pp.postMethodContractInfoFlows(r.ctx, o2)
-    if (postR.resultOpt.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return TPostResult(postR.ctx, Some(o2))
-    } else {
-      return TPostResult(postR.ctx, None())
-    }
-  }
-
-  @pure def transformMethodContractInfoFlow(ctx: Context, o: MethodContract.InfoFlow): TPostResult[Context, MethodContract.InfoFlow] = {
-    val preR: PreResult[Context, MethodContract.InfoFlow] = pp.preMethodContractInfoFlow(ctx, o)
-    val r: TPostResult[Context, MethodContract.InfoFlow] = if (preR.continu) {
-      val o2: MethodContract.InfoFlow = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: TPostResult[Context, Exp.LitString] = transformExpLitString(preR.ctx, o2.label)
-      val r1: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r0.ctx, o2.requiresClause)
-      val r2: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r1.ctx, o2.inAgreeClause)
-      val r3: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r2.ctx, o2.outAgreeClause)
-      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
-        TPostResult(r3.ctx, Some(o2(label = r0.resultOpt.getOrElse(o2.label), requiresClause = r1.resultOpt.getOrElse(o2.requiresClause), inAgreeClause = r2.resultOpt.getOrElse(o2.inAgreeClause), outAgreeClause = r3.resultOpt.getOrElse(o2.outAgreeClause))))
-      else
-        TPostResult(r3.ctx, None())
-    } else if (preR.resultOpt.nonEmpty) {
-      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
-    } else {
-      TPostResult(preR.ctx, None())
-    }
-    val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: MethodContract.InfoFlow = r.resultOpt.getOrElse(o)
-    val postR: TPostResult[Context, MethodContract.InfoFlow] = pp.postMethodContractInfoFlow(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -3955,7 +4006,7 @@ import Transformer._
           else
             TPostResult(r2.ctx, None())
         case o2: Exp.InfoFlowInvariant =>
-          val r0: TPostResult[Context, IS[Z, MethodContract.InfoFlow]] = transformISZ(preR.ctx, o2.flowInvariants, transformMethodContractInfoFlow _)
+          val r0: TPostResult[Context, IS[Z, MethodContract.InfoFlowCase]] = transformISZ(preR.ctx, o2.flowInvariants, transformMethodContractInfoFlowCase _)
           val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
             TPostResult(r1.ctx, Some(o2(flowInvariants = r0.resultOpt.getOrElse(o2.flowInvariants), attr = r1.resultOpt.getOrElse(o2.attr))))
@@ -5192,6 +5243,44 @@ import Transformer._
      case TPostResult(postCtx, Some(result: Exp.Fun)) => TPostResult(postCtx, Some[Exp.Fun](result))
      case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp.Fun")
      case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp.Fun]())
+    }
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformMethodContractInfoFlowCase(ctx: Context, o: MethodContract.InfoFlowCase): TPostResult[Context, MethodContract.InfoFlowCase] = {
+    val preR: PreResult[Context, MethodContract.InfoFlowCase] = pp.preMethodContractInfoFlowCase(ctx, o) match {
+     case PreResult(preCtx, continu, Some(r: MethodContract.InfoFlowCase)) => PreResult(preCtx, continu, Some[MethodContract.InfoFlowCase](r))
+     case PreResult(_, _, Some(_)) => halt("Can only produce object of type MethodContract.InfoFlowCase")
+     case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[MethodContract.InfoFlowCase]())
+    }
+    val r: TPostResult[Context, MethodContract.InfoFlowCase] = if (preR.continu) {
+      val o2: MethodContract.InfoFlowCase = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: TPostResult[Context, Exp.LitString] = transformExpLitString(preR.ctx, o2.label)
+      val r1: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r0.ctx, o2.requiresClause)
+      val r2: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r1.ctx, o2.inAgreeClause)
+      val r3: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r2.ctx, o2.outAgreeClause)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+        TPostResult(r3.ctx, Some(o2(label = r0.resultOpt.getOrElse(o2.label), requiresClause = r1.resultOpt.getOrElse(o2.requiresClause), inAgreeClause = r2.resultOpt.getOrElse(o2.inAgreeClause), outAgreeClause = r3.resultOpt.getOrElse(o2.outAgreeClause))))
+      else
+        TPostResult(r3.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: MethodContract.InfoFlowCase = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, MethodContract.InfoFlowCase] = pp.postMethodContractInfoFlowCase(r.ctx, o2) match {
+     case TPostResult(postCtx, Some(result: MethodContract.InfoFlowCase)) => TPostResult(postCtx, Some[MethodContract.InfoFlowCase](result))
+     case TPostResult(_, Some(_)) => halt("Can only produce object of type MethodContract.InfoFlowCase")
+     case TPostResult(postCtx, _) => TPostResult(postCtx, None[MethodContract.InfoFlowCase]())
     }
     if (postR.resultOpt.nonEmpty) {
       return postR

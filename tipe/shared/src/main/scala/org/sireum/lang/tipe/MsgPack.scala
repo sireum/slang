@@ -176,227 +176,231 @@ object MsgPack {
 
     val _astMethodContractInfoFlows: Z = 37
 
-    val _astMethodContractInfoFlow: Z = 38
+    val _astMethodContractInfoFlowGroup: Z = 38
 
-    val _astSequent: Z = 39
+    val _astMethodContractInfoFlowFlow: Z = 39
 
-    val _astProofAst: Z = 40
+    val _astMethodContractInfoFlowCase: Z = 40
 
-    val _astProofAstStepIdNum: Z = 41
+    val _astSequent: Z = 41
 
-    val _astProofAstStepIdStr: Z = 42
+    val _astProofAst: Z = 42
 
-    val _astProofAstStepRegular: Z = 43
+    val _astProofAstStepIdNum: Z = 43
 
-    val _astProofAstStepAssume: Z = 44
+    val _astProofAstStepIdStr: Z = 44
 
-    val _astProofAstStepAssert: Z = 45
+    val _astProofAstStepRegular: Z = 45
 
-    val _astProofAstStepSubProof: Z = 46
+    val _astProofAstStepAssume: Z = 46
 
-    val _astProofAstStepLet: Z = 47
+    val _astProofAstStepAssert: Z = 47
 
-    val _astProofAstStepLetParam: Z = 48
+    val _astProofAstStepSubProof: Z = 48
 
-    val _astProofAstStepStructInduction: Z = 49
+    val _astProofAstStepLet: Z = 49
 
-    val _astProofAstStepStructInductionMatchCase: Z = 50
+    val _astProofAstStepLetParam: Z = 50
 
-    val _astProofAstStepStructInductionMatchDefault: Z = 51
+    val _astProofAstStepStructInduction: Z = 51
 
-    val _astProofAstStepJustificationRef: Z = 52
+    val _astProofAstStepStructInductionMatchCase: Z = 52
 
-    val _astProofAstStepJustificationApply: Z = 53
+    val _astProofAstStepStructInductionMatchDefault: Z = 53
 
-    val _astProofAstStepJustificationApplyNamed: Z = 54
+    val _astProofAstStepJustificationRef: Z = 54
 
-    val _astProofAstStepJustificationApplyEta: Z = 55
+    val _astProofAstStepJustificationApply: Z = 55
 
-    val _astCase: Z = 56
+    val _astProofAstStepJustificationApplyNamed: Z = 56
 
-    val _astEnumGenRangeExpr: Z = 57
+    val _astProofAstStepJustificationApplyEta: Z = 57
 
-    val _astEnumGenRangeStep: Z = 58
+    val _astCase: Z = 58
 
-    val _astEnumGenFor: Z = 59
+    val _astEnumGenRangeExpr: Z = 59
 
-    val _astTypeNamed: Z = 60
+    val _astEnumGenRangeStep: Z = 60
 
-    val _astTypeFun: Z = 61
+    val _astEnumGenFor: Z = 61
 
-    val _astTypeTuple: Z = 62
+    val _astTypeNamed: Z = 62
 
-    val _astPatternLiteral: Z = 63
+    val _astTypeFun: Z = 63
 
-    val _astPatternLitInterpolate: Z = 64
+    val _astTypeTuple: Z = 64
 
-    val _astPatternRef: Z = 65
+    val _astPatternLiteral: Z = 65
 
-    val _astPatternVarBinding: Z = 66
+    val _astPatternLitInterpolate: Z = 66
 
-    val _astPatternWildcard: Z = 67
+    val _astPatternRef: Z = 67
 
-    val _astPatternSeqWildcard: Z = 68
+    val _astPatternVarBinding: Z = 68
 
-    val _astPatternStructure: Z = 69
+    val _astPatternWildcard: Z = 69
 
-    val _astExpLitB: Z = 70
+    val _astPatternSeqWildcard: Z = 70
 
-    val _astExpLitC: Z = 71
+    val _astPatternStructure: Z = 71
 
-    val _astExpLitZ: Z = 72
+    val _astExpLitB: Z = 72
 
-    val _astExpLitF32: Z = 73
+    val _astExpLitC: Z = 73
 
-    val _astExpLitF64: Z = 74
+    val _astExpLitZ: Z = 74
 
-    val _astExpLitR: Z = 75
+    val _astExpLitF32: Z = 75
 
-    val _astExpLitString: Z = 76
+    val _astExpLitF64: Z = 76
 
-    val _astExpLitStepId: Z = 77
+    val _astExpLitR: Z = 77
 
-    val _astExpStringInterpolate: Z = 78
+    val _astExpLitString: Z = 78
 
-    val _astExpThis: Z = 79
+    val _astExpLitStepId: Z = 79
 
-    val _astExpSuper: Z = 80
+    val _astExpStringInterpolate: Z = 80
 
-    val _astExpUnary: Z = 81
+    val _astExpThis: Z = 81
 
-    val _astExpBinary: Z = 82
+    val _astExpSuper: Z = 82
 
-    val _astExpIdent: Z = 83
+    val _astExpUnary: Z = 83
 
-    val _astExpEta: Z = 84
+    val _astExpBinary: Z = 84
 
-    val _astExpTuple: Z = 85
+    val _astExpIdent: Z = 85
 
-    val _astExpSelect: Z = 86
+    val _astExpEta: Z = 86
 
-    val _astExpInvoke: Z = 87
+    val _astExpTuple: Z = 87
 
-    val _astExpInvokeNamed: Z = 88
+    val _astExpSelect: Z = 88
 
-    val _astExpIf: Z = 89
+    val _astExpInvoke: Z = 89
 
-    val _astExpTypeCond: Z = 90
+    val _astExpInvokeNamed: Z = 90
 
-    val _astExpSym: Z = 91
+    val _astExpIf: Z = 91
 
-    val _astExpFunParam: Z = 92
+    val _astExpTypeCond: Z = 92
 
-    val _astExpFun: Z = 93
+    val _astExpSym: Z = 93
 
-    val _astExpForYield: Z = 94
+    val _astExpFunParam: Z = 94
 
-    val _astExpQuantType: Z = 95
+    val _astExpFun: Z = 95
 
-    val _astExpQuantRange: Z = 96
+    val _astExpForYield: Z = 96
 
-    val _astExpQuantEach: Z = 97
+    val _astExpQuantType: Z = 97
 
-    val _astExpInput: Z = 98
+    val _astExpQuantRange: Z = 98
 
-    val _astExpAt: Z = 99
+    val _astExpQuantEach: Z = 99
 
-    val _astExpLoopIndex: Z = 100
+    val _astExpInput: Z = 100
 
-    val _astExpStateSeq: Z = 101
+    val _astExpAt: Z = 101
 
-    val _astExpStateSeqFragment: Z = 102
+    val _astExpLoopIndex: Z = 102
 
-    val _astExpResult: Z = 103
+    val _astExpStateSeq: Z = 103
 
-    val _astExpAssumeAgree: Z = 104
+    val _astExpStateSeqFragment: Z = 104
 
-    val _astExpAssertAgree: Z = 105
+    val _astExpResult: Z = 105
 
-    val _astExpInfoFlowInvariant: Z = 106
+    val _astExpAssumeAgree: Z = 106
 
-    val _astNamedArg: Z = 107
+    val _astExpAssertAgree: Z = 107
 
-    val _astId: Z = 108
+    val _astExpInfoFlowInvariant: Z = 108
 
-    val _astName: Z = 109
+    val _astNamedArg: Z = 109
 
-    val _astBody: Z = 110
+    val _astId: Z = 110
 
-    val _astAdtParam: Z = 111
+    val _astName: Z = 111
 
-    val _astMethodSig: Z = 112
+    val _astBody: Z = 112
 
-    val _astParam: Z = 113
+    val _astAdtParam: Z = 113
 
-    val _astTypeParam: Z = 114
+    val _astMethodSig: Z = 114
 
-    val _astAttr: Z = 115
+    val _astParam: Z = 115
 
-    val _astTypedAttr: Z = 116
+    val _astTypeParam: Z = 116
 
-    val _astResolvedAttr: Z = 117
+    val _astAttr: Z = 117
 
-    val _astResolvedInfoBuiltIn: Z = 118
+    val _astTypedAttr: Z = 118
 
-    val _astResolvedInfoPackage: Z = 119
+    val _astResolvedAttr: Z = 119
 
-    val _astResolvedInfoEnum: Z = 120
+    val _astResolvedInfoBuiltIn: Z = 120
 
-    val _astResolvedInfoEnumElement: Z = 121
+    val _astResolvedInfoPackage: Z = 121
 
-    val _astResolvedInfoObject: Z = 122
+    val _astResolvedInfoEnum: Z = 122
 
-    val _astResolvedInfoVar: Z = 123
+    val _astResolvedInfoEnumElement: Z = 123
 
-    val _astResolvedInfoMethod: Z = 124
+    val _astResolvedInfoObject: Z = 124
 
-    val _astResolvedInfoMethods: Z = 125
+    val _astResolvedInfoVar: Z = 125
 
-    val _astResolvedInfoTuple: Z = 126
+    val _astResolvedInfoMethod: Z = 126
 
-    val _astResolvedInfoLocalVar: Z = 127
+    val _astResolvedInfoMethods: Z = 127
 
-    val _astResolvedInfoFact: Z = 128
+    val _astResolvedInfoTuple: Z = 128
 
-    val _astResolvedInfoTheorem: Z = 129
+    val _astResolvedInfoLocalVar: Z = 129
 
-    val _astResolvedInfoInv: Z = 130
+    val _astResolvedInfoFact: Z = 130
 
-    val _astTruthTableRow: Z = 131
+    val _astResolvedInfoTheorem: Z = 131
 
-    val _astTruthTableAssignment: Z = 132
+    val _astResolvedInfoInv: Z = 132
 
-    val _astTruthTableConclusionValidity: Z = 133
+    val _astTruthTableRow: Z = 133
 
-    val _astTruthTableConclusionTautology: Z = 134
+    val _astTruthTableAssignment: Z = 134
 
-    val _astTruthTableConclusionContradictory: Z = 135
+    val _astTruthTableConclusionValidity: Z = 135
 
-    val _astTruthTableConclusionContingent: Z = 136
+    val _astTruthTableConclusionTautology: Z = 136
 
-    val _astTypedName: Z = 137
+    val _astTruthTableConclusionContradictory: Z = 137
 
-    val _astTypedTuple: Z = 138
+    val _astTruthTableConclusionContingent: Z = 138
 
-    val _astTypedFun: Z = 139
+    val _astTypedName: Z = 139
 
-    val _astTypedTypeVar: Z = 140
+    val _astTypedTuple: Z = 140
 
-    val _astTypedPackage: Z = 141
+    val _astTypedFun: Z = 141
 
-    val _astTypedObject: Z = 142
+    val _astTypedTypeVar: Z = 142
 
-    val _astTypedEnum: Z = 143
+    val _astTypedPackage: Z = 143
 
-    val _astTypedMethod: Z = 144
+    val _astTypedObject: Z = 144
 
-    val _astTypedMethods: Z = 145
+    val _astTypedEnum: Z = 145
 
-    val _astTypedFact: Z = 146
+    val _astTypedMethod: Z = 146
 
-    val _astTypedTheorem: Z = 147
+    val _astTypedMethods: Z = 147
 
-    val _astTypedInv: Z = 148
+    val _astTypedFact: Z = 148
+
+    val _astTypedTheorem: Z = 149
+
+    val _astTypedInv: Z = 150
 
   }
 
@@ -1099,14 +1103,35 @@ object MsgPack {
       write_astMethodContractClaims(o.ensuresClause)
     }
 
+    def write_astMethodContractInfoFlowElement(o: org.sireum.lang.ast.MethodContract.InfoFlowElement): Unit = {
+      o match {
+        case o: org.sireum.lang.ast.MethodContract.InfoFlowGroup => write_astMethodContractInfoFlowGroup(o)
+        case o: org.sireum.lang.ast.MethodContract.InfoFlowFlow => write_astMethodContractInfoFlowFlow(o)
+        case o: org.sireum.lang.ast.MethodContract.InfoFlowCase => write_astMethodContractInfoFlowCase(o)
+      }
+    }
+
     def write_astMethodContractInfoFlows(o: org.sireum.lang.ast.MethodContract.InfoFlows): Unit = {
       writer.writeZ(Constants._astMethodContractInfoFlows)
-      writer.writeISZ(o.flows, write_astMethodContractInfoFlow _)
+      writer.writeISZ(o.flows, write_astMethodContractInfoFlowElement _)
       write_astAttr(o.attr)
     }
 
-    def write_astMethodContractInfoFlow(o: org.sireum.lang.ast.MethodContract.InfoFlow): Unit = {
-      writer.writeZ(Constants._astMethodContractInfoFlow)
+    def write_astMethodContractInfoFlowGroup(o: org.sireum.lang.ast.MethodContract.InfoFlowGroup): Unit = {
+      writer.writeZ(Constants._astMethodContractInfoFlowGroup)
+      write_astExpLitString(o.label)
+      write_astMethodContractClaims(o.membersClause)
+    }
+
+    def write_astMethodContractInfoFlowFlow(o: org.sireum.lang.ast.MethodContract.InfoFlowFlow): Unit = {
+      writer.writeZ(Constants._astMethodContractInfoFlowFlow)
+      write_astExpLitString(o.label)
+      write_astMethodContractClaims(o.fromClause)
+      write_astMethodContractClaims(o.toClause)
+    }
+
+    def write_astMethodContractInfoFlowCase(o: org.sireum.lang.ast.MethodContract.InfoFlowCase): Unit = {
+      writer.writeZ(Constants._astMethodContractInfoFlowCase)
       write_astExpLitString(o.label)
       write_astMethodContractClaims(o.requiresClause)
       write_astMethodContractClaims(o.inAgreeClause)
@@ -1719,7 +1744,7 @@ object MsgPack {
 
     def write_astExpInfoFlowInvariant(o: org.sireum.lang.ast.Exp.InfoFlowInvariant): Unit = {
       writer.writeZ(Constants._astExpInfoFlowInvariant)
-      writer.writeISZ(o.flowInvariants, write_astMethodContractInfoFlow _)
+      writer.writeISZ(o.flowInvariants, write_astMethodContractInfoFlowCase _)
       write_astAttr(o.attr)
     }
 
@@ -3371,6 +3396,20 @@ object MsgPack {
       return org.sireum.lang.ast.MethodContract.Case(label, requiresClause, ensuresClause)
     }
 
+    def read_astMethodContractInfoFlowElement(): org.sireum.lang.ast.MethodContract.InfoFlowElement = {
+      val i = reader.curr
+      val t = reader.readZ()
+      t match {
+        case Constants._astMethodContractInfoFlowGroup => val r = read_astMethodContractInfoFlowGroupT(T); return r
+        case Constants._astMethodContractInfoFlowFlow => val r = read_astMethodContractInfoFlowFlowT(T); return r
+        case Constants._astMethodContractInfoFlowCase => val r = read_astMethodContractInfoFlowCaseT(T); return r
+        case _ =>
+          reader.error(i, s"$t is not a valid type of org.sireum.lang.ast.MethodContract.InfoFlowElement.")
+          val r = read_astMethodContractInfoFlowCaseT(T)
+          return r
+      }
+    }
+
     def read_astMethodContractInfoFlows(): org.sireum.lang.ast.MethodContract.InfoFlows = {
       val r = read_astMethodContractInfoFlowsT(F)
       return r
@@ -3380,25 +3419,54 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astMethodContractInfoFlows)
       }
-      val flows = reader.readISZ(read_astMethodContractInfoFlow _)
+      val flows = reader.readISZ(read_astMethodContractInfoFlowElement _)
       val attr = read_astAttr()
       return org.sireum.lang.ast.MethodContract.InfoFlows(flows, attr)
     }
 
-    def read_astMethodContractInfoFlow(): org.sireum.lang.ast.MethodContract.InfoFlow = {
-      val r = read_astMethodContractInfoFlowT(F)
+    def read_astMethodContractInfoFlowGroup(): org.sireum.lang.ast.MethodContract.InfoFlowGroup = {
+      val r = read_astMethodContractInfoFlowGroupT(F)
       return r
     }
 
-    def read_astMethodContractInfoFlowT(typeParsed: B): org.sireum.lang.ast.MethodContract.InfoFlow = {
+    def read_astMethodContractInfoFlowGroupT(typeParsed: B): org.sireum.lang.ast.MethodContract.InfoFlowGroup = {
       if (!typeParsed) {
-        reader.expectZ(Constants._astMethodContractInfoFlow)
+        reader.expectZ(Constants._astMethodContractInfoFlowGroup)
+      }
+      val label = read_astExpLitString()
+      val membersClause = read_astMethodContractClaims()
+      return org.sireum.lang.ast.MethodContract.InfoFlowGroup(label, membersClause)
+    }
+
+    def read_astMethodContractInfoFlowFlow(): org.sireum.lang.ast.MethodContract.InfoFlowFlow = {
+      val r = read_astMethodContractInfoFlowFlowT(F)
+      return r
+    }
+
+    def read_astMethodContractInfoFlowFlowT(typeParsed: B): org.sireum.lang.ast.MethodContract.InfoFlowFlow = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astMethodContractInfoFlowFlow)
+      }
+      val label = read_astExpLitString()
+      val fromClause = read_astMethodContractClaims()
+      val toClause = read_astMethodContractClaims()
+      return org.sireum.lang.ast.MethodContract.InfoFlowFlow(label, fromClause, toClause)
+    }
+
+    def read_astMethodContractInfoFlowCase(): org.sireum.lang.ast.MethodContract.InfoFlowCase = {
+      val r = read_astMethodContractInfoFlowCaseT(F)
+      return r
+    }
+
+    def read_astMethodContractInfoFlowCaseT(typeParsed: B): org.sireum.lang.ast.MethodContract.InfoFlowCase = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astMethodContractInfoFlowCase)
       }
       val label = read_astExpLitString()
       val requiresClause = read_astMethodContractClaims()
       val inAgreeClause = read_astMethodContractClaims()
       val outAgreeClause = read_astMethodContractClaims()
-      return org.sireum.lang.ast.MethodContract.InfoFlow(label, requiresClause, inAgreeClause, outAgreeClause)
+      return org.sireum.lang.ast.MethodContract.InfoFlowCase(label, requiresClause, inAgreeClause, outAgreeClause)
     }
 
     def read_astSequent(): org.sireum.lang.ast.Sequent = {
@@ -4624,7 +4692,7 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astExpInfoFlowInvariant)
       }
-      val flowInvariants = reader.readISZ(read_astMethodContractInfoFlow _)
+      val flowInvariants = reader.readISZ(read_astMethodContractInfoFlowCase _)
       val attr = read_astAttr()
       return org.sireum.lang.ast.Exp.InfoFlowInvariant(flowInvariants, attr)
     }
@@ -6502,6 +6570,21 @@ object MsgPack {
     return r
   }
 
+  def from_astMethodContractInfoFlowElement(o: org.sireum.lang.ast.MethodContract.InfoFlowElement, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astMethodContractInfoFlowElement(o)
+    return w.result
+  }
+
+  def to_astMethodContractInfoFlowElement(data: ISZ[U8]): Either[org.sireum.lang.ast.MethodContract.InfoFlowElement, MessagePack.ErrorMsg] = {
+    def f_astMethodContractInfoFlowElement(reader: Reader): org.sireum.lang.ast.MethodContract.InfoFlowElement = {
+      val r = reader.read_astMethodContractInfoFlowElement()
+      return r
+    }
+    val r = to(data, f_astMethodContractInfoFlowElement _)
+    return r
+  }
+
   def from_astMethodContractInfoFlows(o: org.sireum.lang.ast.MethodContract.InfoFlows, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
     w.write_astMethodContractInfoFlows(o)
@@ -6517,18 +6600,48 @@ object MsgPack {
     return r
   }
 
-  def from_astMethodContractInfoFlow(o: org.sireum.lang.ast.MethodContract.InfoFlow, pooling: B): ISZ[U8] = {
+  def from_astMethodContractInfoFlowGroup(o: org.sireum.lang.ast.MethodContract.InfoFlowGroup, pooling: B): ISZ[U8] = {
     val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astMethodContractInfoFlow(o)
+    w.write_astMethodContractInfoFlowGroup(o)
     return w.result
   }
 
-  def to_astMethodContractInfoFlow(data: ISZ[U8]): Either[org.sireum.lang.ast.MethodContract.InfoFlow, MessagePack.ErrorMsg] = {
-    def f_astMethodContractInfoFlow(reader: Reader): org.sireum.lang.ast.MethodContract.InfoFlow = {
-      val r = reader.read_astMethodContractInfoFlow()
+  def to_astMethodContractInfoFlowGroup(data: ISZ[U8]): Either[org.sireum.lang.ast.MethodContract.InfoFlowGroup, MessagePack.ErrorMsg] = {
+    def f_astMethodContractInfoFlowGroup(reader: Reader): org.sireum.lang.ast.MethodContract.InfoFlowGroup = {
+      val r = reader.read_astMethodContractInfoFlowGroup()
       return r
     }
-    val r = to(data, f_astMethodContractInfoFlow _)
+    val r = to(data, f_astMethodContractInfoFlowGroup _)
+    return r
+  }
+
+  def from_astMethodContractInfoFlowFlow(o: org.sireum.lang.ast.MethodContract.InfoFlowFlow, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astMethodContractInfoFlowFlow(o)
+    return w.result
+  }
+
+  def to_astMethodContractInfoFlowFlow(data: ISZ[U8]): Either[org.sireum.lang.ast.MethodContract.InfoFlowFlow, MessagePack.ErrorMsg] = {
+    def f_astMethodContractInfoFlowFlow(reader: Reader): org.sireum.lang.ast.MethodContract.InfoFlowFlow = {
+      val r = reader.read_astMethodContractInfoFlowFlow()
+      return r
+    }
+    val r = to(data, f_astMethodContractInfoFlowFlow _)
+    return r
+  }
+
+  def from_astMethodContractInfoFlowCase(o: org.sireum.lang.ast.MethodContract.InfoFlowCase, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astMethodContractInfoFlowCase(o)
+    return w.result
+  }
+
+  def to_astMethodContractInfoFlowCase(data: ISZ[U8]): Either[org.sireum.lang.ast.MethodContract.InfoFlowCase, MessagePack.ErrorMsg] = {
+    def f_astMethodContractInfoFlowCase(reader: Reader): org.sireum.lang.ast.MethodContract.InfoFlowCase = {
+      val r = reader.read_astMethodContractInfoFlowCase()
+      return r
+    }
+    val r = to(data, f_astMethodContractInfoFlowCase _)
     return r
   }
 
