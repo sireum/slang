@@ -892,8 +892,19 @@ object TypeHierarchy {
         }
         return F
       case (t1: AST.Typed.Fun, t2: AST.Typed.Fun) =>
-        if (t1.isByName == t2.isByName && t1.args == t2.args && t1.ret == t2.ret) {
-          return if (!t1.isPure && t2.isPure) F else T
+        if (t1.args.size != t2.args.size) {
+          return F
+        }
+        for (i <- 0 until t1.args.size) {
+          if (!isSubType(t2.args(i), t1.args(i))) {
+            return F
+          }
+        }
+        if (t1.isByName == t2.isByName && isSubType(t1.ret, t2.ret)) {
+          (t1.isPure, t2.isPure) match {
+            case (F, T) => return F
+            case (_, _) => return T
+          }
         } else {
           return F
         }
