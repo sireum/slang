@@ -95,8 +95,8 @@ def clone(repo: String): Unit = {
   }
   if (branch != getBranch(homeRepo)) {
     proc"git checkout $branch".at(homeRepo).run()
-    proc"git submodule update --recursive --init".at(homeRepo).console.runCheck()
   }
+  proc"git submodule update --recursive --init".at(homeRepo).console.runCheck()
   println()
 }
 
