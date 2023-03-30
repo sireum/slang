@@ -80,11 +80,22 @@ def downloadMill(): Unit = {
 }
 
 
+def getBranch(path: Os.Path): String = {
+  return ops.StringOps(proc"git rev-parse --abbrev-ref HEAD".at(path).runCheck().out).trim
+}
+
+val branch = getBranch(home)
+
 def clone(repo: String): Unit = {
+  val homeRepo = home / repo
   if (!(home / repo).exists) {
-    Os.proc(ISZ("git", "clone", "--depth=1", s"https://github.com/sireum/$repo")).at(home).console.runCheck()
+    Os.proc(ISZ("git", "clone", s"https://github.com/sireum/$repo")).at(home).console.runCheck()
   } else {
-    Os.proc(ISZ("git", "pull")).at(home / repo).console.runCheck()
+    Os.proc(ISZ("git", "pull", "--all")).at(homeRepo).console.runCheck()
+  }
+  if (branch != getBranch(homeRepo)) {
+    proc"git checkout $branch".at(homeRepo).run()
+    proc"git submodule update --recursive --init".at(homeRepo).console.runCheck()
   }
   println()
 }
