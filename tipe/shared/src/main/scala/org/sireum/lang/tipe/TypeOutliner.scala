@@ -1238,8 +1238,8 @@ object TypeOutliner {
     return (th: TypeHierarchy) => (th(nameMap = th.nameMap ++ entries + info.name ~> newInfo), messages)
   }
 
-  def checkContract(strictAliasing: B, isMutableContext: B, name: QName, scope: Scope, members: TypeOutliner.TypeMembers,
-                    reporter: Reporter): Unit = {
+  def checkContract(strictAliasing: B, isMutableContext: B, name: QName, scope: Scope.Local,
+                    members: TypeOutliner.TypeMembers, reporter: Reporter): Unit = {
     def checkMethod(id: String, stmt: AST.Stmt.Method): AST.Stmt.Method = {
       if (stmt.purity == AST.Purity.StrictPure) {
         val context = name :+ stmt.sig.id.value

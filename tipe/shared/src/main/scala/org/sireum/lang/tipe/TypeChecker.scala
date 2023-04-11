@@ -834,14 +834,14 @@ object TypeChecker {
     }
   }
 
-  def checkInvStmt(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope, stmt: AST.Stmt.Inv, reporter: Reporter): AST.Stmt.Inv = {
+  def checkInvStmt(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope.Local, stmt: AST.Stmt.Inv, reporter: Reporter): AST.Stmt.Inv = {
     val tc = TypeChecker(th, context, F, ModeContext.Spec, strictAliasing)
     val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
     return stmt(claims = for (claim <- stmt.claims) yield tc.checkExp(bExpectedOpt, scope, claim, reporter)._1,
       attr = stmt.attr(typedOpt = AST.Typed.unitOpt))
   }
 
-  def checkDataRefinement(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope, stmt: AST.Stmt.DataRefinement, reporter: Reporter): AST.Stmt.DataRefinement = {
+  def checkDataRefinement(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope.Local, stmt: AST.Stmt.DataRefinement, reporter: Reporter): AST.Stmt.DataRefinement = {
     val tc = TypeChecker(th, context, F, ModeContext.Spec, strictAliasing)
     return tc.checkDataRefinement(scope, stmt, reporter)
   }
@@ -1664,7 +1664,7 @@ import TypeChecker._
 
   def checkExp(
     expectedOpt: Option[AST.Typed],
-    scope: Scope,
+    scope: Scope.Local,
     exp: AST.Exp,
     reporter: Reporter
   ): (AST.Exp, Option[AST.Typed]) = {
@@ -3112,6 +3112,29 @@ import TypeChecker._
       return (res, None())
     }
 
+    def checkStrictPureBlock(spBlock: AST.Exp.StrictPureBlock): (AST.Exp, Option[AST.Typed]) = {
+      if (!inSpec) {
+        reporter.error(spBlock.posOpt, typeCheckerKind, "Strict-pure blocks can only be used inside specification context.")
+      }
+      val (newBlock, typedOpt) = checkAssignExp(expectedOpt, scope, spBlock.block, reporter)
+      val tOpt: Option[AST.Typed] = if (typedOpt.nonEmpty) {
+        typedOpt
+      } else {
+        val exprs = newBlock.exprs
+        var ts = ISZ[AST.Typed]()
+        var ok = T
+        for (i <- 0 until exprs.size if ok) {
+          exprs(i).typedOpt match {
+            case Some(t) => ts = ts :+ t
+            case _ => ok = F
+          }
+        }
+        if (ok) typeHierarchy.lub(ts) else None[AST.Typed]()
+      }
+
+      return (AST.Exp.StrictPureBlock(newBlock.asInstanceOf[AST.Stmt.Block], spBlock.attr(typedOpt = tOpt)), tOpt)
+    }
+
     def checkLoopIndex(idx: AST.Exp.LoopIndex): (AST.Exp, Option[AST.Typed]) = {
       if (inSpec) {
         val id = idx.exp.id.value
@@ -3319,6 +3342,8 @@ import TypeChecker._
 
         case exp: AST.Exp.Result => return checkResult(exp)
 
+        case exp: AST.Exp.StrictPureBlock => return checkStrictPureBlock(exp)
+
         case exp: AST.Exp.AssumeAgree =>
           return (
             exp(channel = exp.channel,
@@ -3424,9 +3449,9 @@ import TypeChecker._
       case aexp: AST.Stmt.Expr =>
         val r = checkExpr(F, expectedOpt, scope, aexp, reporter)
         return (r, r.typedOpt)
-      case aexp: AST.Stmt.If => checkIf(expectedOpt, scope, aexp, reporter)
-      case aexp: AST.Stmt.Block => checkBlock(expectedOpt, scope, aexp, reporter)
-      case aexp: AST.Stmt.Match => checkMatch(expectedOpt, scope, aexp, reporter)
+      case aexp: AST.Stmt.If => checkIf(T, expectedOpt, scope, aexp, reporter)
+      case aexp: AST.Stmt.Block => checkBlock(T, expectedOpt, scope, aexp, reporter)
+      case aexp: AST.Stmt.Match => checkMatch(T, expectedOpt, scope, aexp, reporter)
       case aexp: AST.Stmt.Return => checkStmt(scope, aexp, reporter)
     }
 
@@ -3441,6 +3466,7 @@ import TypeChecker._
   }
 
   def checkStmts(
+    isAssignExp: B,
     scopes: ISZ[Scope.Local],
     expectedOpt: Option[AST.Typed],
     stmts: ISZ[AST.Stmt],
@@ -3464,13 +3490,12 @@ import TypeChecker._
     val stmt = stmts(size)
     val newScope: Scope.Local = if (scopes.size == 1) scopes(0) else scopes(size)
 
-    expectedOpt match {
-      case Some(_) =>
-        val (r, _) = checkAssignExp(expectedOpt, newScope, stmt.asAssignExp, reporter)
-        return newStmts :+ r.asStmt
-      case _ =>
-        val newStmt = checkStmt(newScope, stmt, reporter)
-        return newStmts :+ newStmt
+    if (isAssignExp) {
+      val (r, _) = checkAssignExp(expectedOpt, newScope, stmt.asAssignExp, reporter)
+      return newStmts :+ r.asStmt
+    } else {
+      val newStmt = checkStmt(newScope, stmt, reporter)
+      return newStmts :+ newStmt
     }
 
     return newStmts
@@ -3508,7 +3533,7 @@ import TypeChecker._
     return (Some(addImport(scope)), stmt)
   }
 
-  def checkBody(isWorksheet: B, expectedOpt: Option[AST.Typed], sc: Scope.Local, body: AST.Body,
+  def checkBody(isWorksheet: B, isAssignExp: B, expectedOpt: Option[AST.Typed], sc: Scope.Local, body: AST.Body,
                 reporter: Reporter): (Scope.Local, AST.Body) = {
     val to = TypeOutliner(typeHierarchy)
     var ok = T
@@ -3654,7 +3679,8 @@ import TypeChecker._
     }
     val scopes = mscopes.toIS[Scope.Local]
     val thisL = this
-    val newStmts = thisL(typeHierarchy = typeHierarchy(nameMap = tcNameMap)).checkStmts(scopes, expectedOpt, stmts2, reporter)
+    val newStmts = thisL(typeHierarchy = typeHierarchy(nameMap = tcNameMap)).checkStmts(isAssignExp, scopes,
+      expectedOpt, stmts2, reporter)
     val newScope: Scope.Local = if (scopes.isEmpty) scope else scopes(scopes.size - 1)
     val undecls: ISZ[AST.ResolvedInfo.LocalVar] = {
       var r = ISZ[AST.ResolvedInfo.LocalVar]()
@@ -4044,23 +4070,25 @@ import TypeChecker._
   }
 
   def checkBlock(
+    isAssignExp: B,
     expectedOpt: Option[AST.Typed],
     scope: Scope.Local,
     stmt: AST.Stmt.Block,
     reporter: Reporter
   ): AST.Stmt = {
-    val (_, newBody) = checkBody(F, expectedOpt, createNewScope(scope), stmt.body, reporter)
+    val (_, newBody) = checkBody(F, isAssignExp, expectedOpt, createNewScope(scope), stmt.body, reporter)
     return stmt(body = newBody)
   }
 
-  def checkIf(expectedOpt: Option[AST.Typed], scope: Scope.Local, stmt: AST.Stmt.If, reporter: Reporter): AST.Stmt = {
+  def checkIf(isAssignExp: B, expectedOpt: Option[AST.Typed], scope: Scope.Local, stmt: AST.Stmt.If, reporter: Reporter): AST.Stmt = {
     val (newCond, _) = checkExp(AST.Typed.bOpt, scope, stmt.cond, reporter)
-    val (_, tBody) = checkBody(F, expectedOpt, createNewScope(scope), stmt.thenBody, reporter)
-    val (_, eBody) = checkBody(F, expectedOpt, createNewScope(scope), stmt.elseBody, reporter)
+    val (_, tBody) = checkBody(F, isAssignExp, expectedOpt, createNewScope(scope), stmt.thenBody, reporter)
+    val (_, eBody) = checkBody(F, isAssignExp, expectedOpt, createNewScope(scope), stmt.elseBody, reporter)
     return stmt(cond = newCond, thenBody = tBody, elseBody = eBody)
   }
 
   def checkMatch(
+    isAssignExp: B,
     expectedOpt: Option[AST.Typed],
     scope: Scope.Local,
     stmt: AST.Stmt.Match,
@@ -4138,7 +4166,7 @@ import TypeChecker._
               Some(newCond)
             case o => o
           }
-          val (_, newBody) = checkBody(F, expectedOpt, newScope, c.body, reporter)
+          val (_, newBody) = checkBody(F, isAssignExp, expectedOpt, newScope, c.body, reporter)
           newCases = newCases :+ c(pattern = newPattern, condOpt = newCondOpt, body = newBody)
         case _ => newCases = newCases :+ c(pattern = newPattern)
       }
@@ -4446,7 +4474,7 @@ import TypeChecker._
       val (newScopeOpt, newEnumGens, _, _) = checkEnumGens(F, scope, forStmt.enumGens, reporter)
       newScopeOpt match {
         case Some(newScope) =>
-          val (_, newBody) = checkBody(F, None(), newScope, forStmt.body, reporter)
+          val (_, newBody) = checkBody(F, F, None(), newScope, forStmt.body, reporter)
           return forStmt(context = context, enumGens = newEnumGens, body = newBody)
         case _ => return forStmt(context = context, enumGens = newEnumGens)
       }
@@ -4456,7 +4484,7 @@ import TypeChecker._
       val thisL = this
       val (newInvs, newMods) = thisL(mode = ModeContext.Spec).
         checkLoopInv(scope, doWhileStmt.contract.invariants, doWhileStmt.contract.modifies, reporter)
-      val (_, newBody) = checkBody(F, None(), createNewScope(scope), doWhileStmt.body, reporter)
+      val (_, newBody) = checkBody(F, F, None(), createNewScope(scope), doWhileStmt.body, reporter)
       val (newCond, _) = checkExp(AST.Typed.bOpt, scope, doWhileStmt.cond, reporter)
       return doWhileStmt(context = context, cond = newCond,
         contract = doWhileStmt.contract(invariants = newInvs, modifies = newMods), body = newBody)
@@ -4467,7 +4495,7 @@ import TypeChecker._
       val thisL = this
       val (newInvs, newMods) = thisL(mode = ModeContext.Spec).
         checkLoopInv(scope, whileStmt.contract.invariants, whileStmt.contract.modifies, reporter)
-      val (_, newBody) = checkBody(F, None(), createNewScope(scope), whileStmt.body, reporter)
+      val (_, newBody) = checkBody(F, F, None(), createNewScope(scope), whileStmt.body, reporter)
       return whileStmt(context = context, cond = newCond,
         contract = whileStmt.contract(invariants = newInvs, modifies = newMods), body = newBody)
     }
@@ -4511,7 +4539,7 @@ import TypeChecker._
 
       case stmt: AST.Stmt.Assign => return checkAssign(stmt)
 
-      case stmt: AST.Stmt.Block => return checkBlock(None(), scope, stmt, reporter)
+      case stmt: AST.Stmt.Block => return checkBlock(F, None(), scope, stmt, reporter)
 
       case stmt: AST.Stmt.DoWhile => return checkDoWhile(stmt)
 
@@ -4562,11 +4590,11 @@ import TypeChecker._
 
       case stmt: AST.Stmt.For => return checkFor(stmt)
 
-      case stmt: AST.Stmt.If => return checkIf(None(), scope, stmt, reporter)
+      case stmt: AST.Stmt.If => return checkIf(F, None(), scope, stmt, reporter)
 
       case stmt: AST.Stmt.Import => return checkImport(scope, stmt, reporter)._2
 
-      case stmt: AST.Stmt.Match => return checkMatch(None(), scope, stmt, reporter)
+      case stmt: AST.Stmt.Match => return checkMatch(F, None(), scope, stmt, reporter)
 
       case stmt: AST.Stmt.Method =>
         if (stmt.typeChecked) {
@@ -4768,7 +4796,7 @@ import TypeChecker._
     }
   }
 
-  def checkMethodContract(scope: Scope, contract: AST.MethodContract, reporter: Reporter): AST.MethodContract = {
+  def checkMethodContract(scope: Scope.Local, contract: AST.MethodContract, reporter: Reporter): AST.MethodContract = {
     assert(inSpec)
     def checkReads(reads: AST.MethodContract.Accesses): AST.MethodContract.Accesses = {
       def err(posOpt: Option[Position]): Unit = {
@@ -4865,21 +4893,21 @@ import TypeChecker._
     }
   }
 
-  def checkLoopInv(scope: Scope, invs: ISZ[AST.Exp], modifies: ISZ[AST.Exp.Ref],
+  def checkLoopInv(scope: Scope.Local, invs: ISZ[AST.Exp], modifies: ISZ[AST.Exp.Ref],
                    reporter: Reporter): (ISZ[AST.Exp], ISZ[AST.Exp.Ref]) = {
     val newInvs: ISZ[AST.Exp] = for (inv <- invs) yield checkExp(AST.Typed.bOpt, scope, inv, reporter)._1
     return (newInvs, checkModifiesH("modify", scope, modifies, reporter))
   }
 
-  def checkModifies(title: String, scope: Scope, modifies: AST.MethodContract.Accesses, reporter: Reporter): AST.MethodContract.Accesses = {
+  def checkModifies(title: String, scope: Scope.Local, modifies: AST.MethodContract.Accesses, reporter: Reporter): AST.MethodContract.Accesses = {
     return modifies(refs = checkModifiesH(title, scope, modifies.refs, reporter))
   }
 
-  def checkModifiesH(title: String, scope: Scope, modifies: ISZ[AST.Exp.Ref], reporter: Reporter): ISZ[AST.Exp.Ref] = {
+  def checkModifiesH(title: String, scope: Scope.Local, modifies: ISZ[AST.Exp.Ref], reporter: Reporter): ISZ[AST.Exp.Ref] = {
     return for (modify <- modifies) yield checkModifyExp(title, scope, modify, reporter)
   }
 
-  def checkModifyExp(title: String, sc: Scope, ref: AST.Exp.Ref, reporter: Reporter): AST.Exp.Ref = {
+  def checkModifyExp(title: String, sc: Scope.Local, ref: AST.Exp.Ref, reporter: Reporter): AST.Exp.Ref = {
     def checkLocalVar(res: AST.ResolvedInfo.LocalVar, t: AST.Typed): Unit = {
       if (!typeHierarchy.isModifiable(t) && res.isVal) {
         reporter.error(ref.posOpt, typeCheckerKind, s"Cannot $title variable '${res.id}'")
@@ -4929,7 +4957,7 @@ import TypeChecker._
       }
       val (ok, scope) = methodScope(typeHierarchy, context, sc, stmt.sig, reporter)
       if (ok) {
-        val (_, newBody) = checkBody(F, None(), scope, stmt.bodyOpt.get, reporter)
+        val (_, newBody) = checkBody(F, F, None(), scope, stmt.bodyOpt.get, reporter)
         return stmt(typeChecked = T, bodyOpt = Some(newBody))
       } else {
         return stmt
@@ -4973,7 +5001,7 @@ import TypeChecker._
     return r
   }
 
-  def checkDataRefinement(scope: Scope, stmt: AST.Stmt.DataRefinement, reporter: Reporter): AST.Stmt.DataRefinement = {
+  def checkDataRefinement(scope: Scope.Local, stmt: AST.Stmt.DataRefinement, reporter: Reporter): AST.Stmt.DataRefinement = {
     val rep = checkModifyExp("represent data using", scope, stmt.rep, reporter).asInstanceOf[AST.Exp.Ident]
     val refs: ISZ[AST.Exp.Ident] = for (m <- stmt.refs) yield checkModifyExp("refine data using", scope, m, reporter).asInstanceOf[AST.Exp.Ident]
     var claims = ISZ[AST.Exp]()
@@ -4998,7 +5026,7 @@ import TypeChecker._
       nameMap = nameMap + p._1 ~> p._2
     }
     scope = scope(localThisOpt = Some(info.tpe), nameMap = nameMap)
-    val newStmts = checkStmts(ISZ(scope), None(), info.ast.stmts, reporter)
+    val newStmts = checkStmts(F, ISZ(scope), None(), info.ast.stmts, reporter)
     var specVars: HashSMap[String, Info.SpecVar] = info.specVars
     var vars: HashSMap[String, Info.Var] = info.vars
     var specMethods: HashSMap[String, Info.SpecMethod] = info.specMethods
@@ -5046,7 +5074,7 @@ import TypeChecker._
       nameMap = nameMap + p._1 ~> p._2
     }
     scope = scope(localThisOpt = Some(info.tpe), nameMap = nameMap)
-    val newStmts = checkStmts(ISZ(scope), None(), info.ast.stmts, reporter)
+    val newStmts = checkStmts(F, ISZ(scope), None(), info.ast.stmts, reporter)
     var specVars: HashSMap[String, Info.SpecVar] = info.specVars
     var specMethods: HashSMap[String, Info.SpecMethod] = info.specMethods
     var methods: HashSMap[String, Info.Method] = info.methods

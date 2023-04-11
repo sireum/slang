@@ -954,6 +954,7 @@ object JSON {
     @pure def print_astProofAstStepIdStr(o: org.sireum.lang.ast.ProofAst.StepId.Str): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.ProofAst.StepId.Str""""),
+        ("isSynthetic", printB(o.isSynthetic)),
         ("value", printString(o.value)),
         ("attr", print_astAttr(o.attr))
       ))
@@ -1221,6 +1222,7 @@ object JSON {
     @pure def print_astPatternRef(o: org.sireum.lang.ast.Pattern.Ref): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Pattern.Ref""""),
+        ("isAccess", printB(o.isAccess)),
         ("name", print_astName(o.name)),
         ("attr", print_astResolvedAttr(o.attr))
       ))
@@ -1294,6 +1296,7 @@ object JSON {
         case o: org.sireum.lang.ast.Exp.LoopIndex => return print_astExpLoopIndex(o)
         case o: org.sireum.lang.ast.Exp.StateSeq => return print_astExpStateSeq(o)
         case o: org.sireum.lang.ast.Exp.Result => return print_astExpResult(o)
+        case o: org.sireum.lang.ast.Exp.StrictPureBlock => return print_astExpStrictPureBlock(o)
         case o: org.sireum.lang.ast.Exp.AssumeAgree => return print_astExpAssumeAgree(o)
         case o: org.sireum.lang.ast.Exp.AssertAgree => return print_astExpAssertAgree(o)
         case o: org.sireum.lang.ast.Exp.InfoFlowInvariant => return print_astExpInfoFlowInvariant(o)
@@ -1640,6 +1643,14 @@ object JSON {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Exp.Result""""),
         ("tipeOpt", printOption(F, o.tipeOpt, print_astType _)),
+        ("attr", print_astTypedAttr(o.attr))
+      ))
+    }
+
+    @pure def print_astExpStrictPureBlock(o: org.sireum.lang.ast.Exp.StrictPureBlock): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.Exp.StrictPureBlock""""),
+        ("block", print_astStmtBlock(o.block)),
         ("attr", print_astTypedAttr(o.attr))
       ))
     }
@@ -4216,13 +4227,16 @@ object JSON {
       if (!typeParsed) {
         parser.parseObjectType("org.sireum.lang.ast.ProofAst.StepId.Str")
       }
+      parser.parseObjectKey("isSynthetic")
+      val isSynthetic = parser.parseB()
+      parser.parseObjectNext()
       parser.parseObjectKey("value")
       val value = parser.parseString()
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ProofAst.StepId.Str(value, attr)
+      return org.sireum.lang.ast.ProofAst.StepId.Str(isSynthetic, value, attr)
     }
 
     def parse_astProofAstStepRegular(): org.sireum.lang.ast.ProofAst.Step.Regular = {
@@ -4765,13 +4779,16 @@ object JSON {
       if (!typeParsed) {
         parser.parseObjectType("org.sireum.lang.ast.Pattern.Ref")
       }
+      parser.parseObjectKey("isAccess")
+      val isAccess = parser.parseB()
+      parser.parseObjectNext()
       parser.parseObjectKey("name")
       val name = parse_astName()
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
       val attr = parse_astResolvedAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Pattern.Ref(name, attr)
+      return org.sireum.lang.ast.Pattern.Ref(isAccess, name, attr)
     }
 
     def parse_astPatternVarBinding(): org.sireum.lang.ast.Pattern.VarBinding = {
@@ -4853,7 +4870,7 @@ object JSON {
     }
 
     def parse_astExp(): org.sireum.lang.ast.Exp = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Exp.LitB", "org.sireum.lang.ast.Exp.LitC", "org.sireum.lang.ast.Exp.LitZ", "org.sireum.lang.ast.Exp.LitF32", "org.sireum.lang.ast.Exp.LitF64", "org.sireum.lang.ast.Exp.LitR", "org.sireum.lang.ast.Exp.LitString", "org.sireum.lang.ast.Exp.LitStepId", "org.sireum.lang.ast.Exp.StringInterpolate", "org.sireum.lang.ast.Exp.This", "org.sireum.lang.ast.Exp.Super", "org.sireum.lang.ast.Exp.Unary", "org.sireum.lang.ast.Exp.Binary", "org.sireum.lang.ast.Exp.Ident", "org.sireum.lang.ast.Exp.Eta", "org.sireum.lang.ast.Exp.Tuple", "org.sireum.lang.ast.Exp.Select", "org.sireum.lang.ast.Exp.Invoke", "org.sireum.lang.ast.Exp.InvokeNamed", "org.sireum.lang.ast.Exp.If", "org.sireum.lang.ast.Exp.TypeCond", "org.sireum.lang.ast.Exp.Sym", "org.sireum.lang.ast.Exp.Fun", "org.sireum.lang.ast.Exp.ForYield", "org.sireum.lang.ast.Exp.QuantType", "org.sireum.lang.ast.Exp.QuantRange", "org.sireum.lang.ast.Exp.QuantEach", "org.sireum.lang.ast.Exp.Input", "org.sireum.lang.ast.Exp.At", "org.sireum.lang.ast.Exp.LoopIndex", "org.sireum.lang.ast.Exp.StateSeq", "org.sireum.lang.ast.Exp.Result", "org.sireum.lang.ast.Exp.AssumeAgree", "org.sireum.lang.ast.Exp.AssertAgree", "org.sireum.lang.ast.Exp.InfoFlowInvariant"))
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Exp.LitB", "org.sireum.lang.ast.Exp.LitC", "org.sireum.lang.ast.Exp.LitZ", "org.sireum.lang.ast.Exp.LitF32", "org.sireum.lang.ast.Exp.LitF64", "org.sireum.lang.ast.Exp.LitR", "org.sireum.lang.ast.Exp.LitString", "org.sireum.lang.ast.Exp.LitStepId", "org.sireum.lang.ast.Exp.StringInterpolate", "org.sireum.lang.ast.Exp.This", "org.sireum.lang.ast.Exp.Super", "org.sireum.lang.ast.Exp.Unary", "org.sireum.lang.ast.Exp.Binary", "org.sireum.lang.ast.Exp.Ident", "org.sireum.lang.ast.Exp.Eta", "org.sireum.lang.ast.Exp.Tuple", "org.sireum.lang.ast.Exp.Select", "org.sireum.lang.ast.Exp.Invoke", "org.sireum.lang.ast.Exp.InvokeNamed", "org.sireum.lang.ast.Exp.If", "org.sireum.lang.ast.Exp.TypeCond", "org.sireum.lang.ast.Exp.Sym", "org.sireum.lang.ast.Exp.Fun", "org.sireum.lang.ast.Exp.ForYield", "org.sireum.lang.ast.Exp.QuantType", "org.sireum.lang.ast.Exp.QuantRange", "org.sireum.lang.ast.Exp.QuantEach", "org.sireum.lang.ast.Exp.Input", "org.sireum.lang.ast.Exp.At", "org.sireum.lang.ast.Exp.LoopIndex", "org.sireum.lang.ast.Exp.StateSeq", "org.sireum.lang.ast.Exp.Result", "org.sireum.lang.ast.Exp.StrictPureBlock", "org.sireum.lang.ast.Exp.AssumeAgree", "org.sireum.lang.ast.Exp.AssertAgree", "org.sireum.lang.ast.Exp.InfoFlowInvariant"))
       t.native match {
         case "org.sireum.lang.ast.Exp.LitB" => val r = parse_astExpLitBT(T); return r
         case "org.sireum.lang.ast.Exp.LitC" => val r = parse_astExpLitCT(T); return r
@@ -4887,6 +4904,7 @@ object JSON {
         case "org.sireum.lang.ast.Exp.LoopIndex" => val r = parse_astExpLoopIndexT(T); return r
         case "org.sireum.lang.ast.Exp.StateSeq" => val r = parse_astExpStateSeqT(T); return r
         case "org.sireum.lang.ast.Exp.Result" => val r = parse_astExpResultT(T); return r
+        case "org.sireum.lang.ast.Exp.StrictPureBlock" => val r = parse_astExpStrictPureBlockT(T); return r
         case "org.sireum.lang.ast.Exp.AssumeAgree" => val r = parse_astExpAssumeAgreeT(T); return r
         case "org.sireum.lang.ast.Exp.AssertAgree" => val r = parse_astExpAssertAgreeT(T); return r
         case "org.sireum.lang.ast.Exp.InfoFlowInvariant" => val r = parse_astExpInfoFlowInvariantT(T); return r
@@ -5652,6 +5670,24 @@ object JSON {
       val attr = parse_astTypedAttr()
       parser.parseObjectNext()
       return org.sireum.lang.ast.Exp.Result(tipeOpt, attr)
+    }
+
+    def parse_astExpStrictPureBlock(): org.sireum.lang.ast.Exp.StrictPureBlock = {
+      val r = parse_astExpStrictPureBlockT(F)
+      return r
+    }
+
+    def parse_astExpStrictPureBlockT(typeParsed: B): org.sireum.lang.ast.Exp.StrictPureBlock = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Exp.StrictPureBlock")
+      }
+      parser.parseObjectKey("block")
+      val block = parse_astStmtBlock()
+      parser.parseObjectNext()
+      parser.parseObjectKey("attr")
+      val attr = parse_astTypedAttr()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Exp.StrictPureBlock(block, attr)
     }
 
     def parse_astExpAssumeAgree(): org.sireum.lang.ast.Exp.AssumeAgree = {
@@ -9564,6 +9600,24 @@ object JSON {
       return r
     }
     val r = to(s, f_astExpResult _)
+    return r
+  }
+
+  def from_astExpStrictPureBlock(o: org.sireum.lang.ast.Exp.StrictPureBlock, isCompact: B): String = {
+    val st = Printer.print_astExpStrictPureBlock(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astExpStrictPureBlock(s: String): Either[org.sireum.lang.ast.Exp.StrictPureBlock, Json.ErrorMsg] = {
+    def f_astExpStrictPureBlock(parser: Parser): org.sireum.lang.ast.Exp.StrictPureBlock = {
+      val r = parser.parse_astExpStrictPureBlock()
+      return r
+    }
+    val r = to(s, f_astExpStrictPureBlock _)
     return r
   }
 

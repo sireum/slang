@@ -385,37 +385,37 @@ object MTransformer {
 
   val PostResultPatternStructure: MOption[Pattern] = MNone()
 
-  val PreResultExpLitB: PreResult[Exp] = PreResult(T, MNone())
+  val PreResultExpLitB: PreResult[Lit] = PreResult(T, MNone())
 
-  val PostResultExpLitB: MOption[Exp] = MNone()
+  val PostResultExpLitB: MOption[Lit] = MNone()
 
-  val PreResultExpLitC: PreResult[Exp] = PreResult(T, MNone())
+  val PreResultExpLitC: PreResult[Lit] = PreResult(T, MNone())
 
-  val PostResultExpLitC: MOption[Exp] = MNone()
+  val PostResultExpLitC: MOption[Lit] = MNone()
 
-  val PreResultExpLitZ: PreResult[Exp] = PreResult(T, MNone())
+  val PreResultExpLitZ: PreResult[Lit] = PreResult(T, MNone())
 
-  val PostResultExpLitZ: MOption[Exp] = MNone()
+  val PostResultExpLitZ: MOption[Lit] = MNone()
 
-  val PreResultExpLitF32: PreResult[Exp] = PreResult(T, MNone())
+  val PreResultExpLitF32: PreResult[Lit] = PreResult(T, MNone())
 
-  val PostResultExpLitF32: MOption[Exp] = MNone()
+  val PostResultExpLitF32: MOption[Lit] = MNone()
 
-  val PreResultExpLitF64: PreResult[Exp] = PreResult(T, MNone())
+  val PreResultExpLitF64: PreResult[Lit] = PreResult(T, MNone())
 
-  val PostResultExpLitF64: MOption[Exp] = MNone()
+  val PostResultExpLitF64: MOption[Lit] = MNone()
 
-  val PreResultExpLitR: PreResult[Exp] = PreResult(T, MNone())
+  val PreResultExpLitR: PreResult[Lit] = PreResult(T, MNone())
 
-  val PostResultExpLitR: MOption[Exp] = MNone()
+  val PostResultExpLitR: MOption[Lit] = MNone()
 
-  val PreResultExpLitString: PreResult[Exp] = PreResult(T, MNone())
+  val PreResultExpLitString: PreResult[Lit] = PreResult(T, MNone())
 
-  val PostResultExpLitString: MOption[Exp] = MNone()
+  val PostResultExpLitString: MOption[Lit] = MNone()
 
-  val PreResultExpLitStepId: PreResult[Exp] = PreResult(T, MNone())
+  val PreResultExpLitStepId: PreResult[Lit] = PreResult(T, MNone())
 
-  val PostResultExpLitStepId: MOption[Exp] = MNone()
+  val PostResultExpLitStepId: MOption[Lit] = MNone()
 
   val PreResultExpStringInterpolate: PreResult[Exp] = PreResult(T, MNone())
 
@@ -520,6 +520,10 @@ object MTransformer {
   val PreResultExpResult: PreResult[Exp] = PreResult(T, MNone())
 
   val PostResultExpResult: MOption[Exp] = MNone()
+
+  val PreResultExpStrictPureBlock: PreResult[Exp] = PreResult(T, MNone())
+
+  val PostResultExpStrictPureBlock: MOption[Exp] = MNone()
 
   val PreResultExpAssumeAgree: PreResult[Exp] = PreResult(T, MNone())
 
@@ -1310,14 +1314,62 @@ import MTransformer._
 
   def preExp(o: Exp): PreResult[Exp] = {
     o match {
-      case o: Exp.LitB => return preExpLitB(o)
-      case o: Exp.LitC => return preExpLitC(o)
-      case o: Exp.LitZ => return preExpLitZ(o)
-      case o: Exp.LitF32 => return preExpLitF32(o)
-      case o: Exp.LitF64 => return preExpLitF64(o)
-      case o: Exp.LitR => return preExpLitR(o)
-      case o: Exp.LitString => return preExpLitString(o)
-      case o: Exp.LitStepId => return preExpLitStepId(o)
+      case o: Exp.LitB =>
+        val r: PreResult[Exp] = preExpLitB(o) match {
+         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
+        }
+        return r
+      case o: Exp.LitC =>
+        val r: PreResult[Exp] = preExpLitC(o) match {
+         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
+        }
+        return r
+      case o: Exp.LitZ =>
+        val r: PreResult[Exp] = preExpLitZ(o) match {
+         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
+        }
+        return r
+      case o: Exp.LitF32 =>
+        val r: PreResult[Exp] = preExpLitF32(o) match {
+         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
+        }
+        return r
+      case o: Exp.LitF64 =>
+        val r: PreResult[Exp] = preExpLitF64(o) match {
+         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
+        }
+        return r
+      case o: Exp.LitR =>
+        val r: PreResult[Exp] = preExpLitR(o) match {
+         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
+        }
+        return r
+      case o: Exp.LitString =>
+        val r: PreResult[Exp] = preExpLitString(o) match {
+         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
+        }
+        return r
+      case o: Exp.LitStepId =>
+        val r: PreResult[Exp] = preExpLitStepId(o) match {
+         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
+        }
+        return r
       case o: Exp.StringInterpolate => return preExpStringInterpolate(o)
       case o: Exp.This => return preExpThis(o)
       case o: Exp.Super => return preExpSuper(o)
@@ -1360,6 +1412,7 @@ import MTransformer._
       case o: Exp.LoopIndex => return preExpLoopIndex(o)
       case o: Exp.StateSeq => return preExpStateSeq(o)
       case o: Exp.Result => return preExpResult(o)
+      case o: Exp.StrictPureBlock => return preExpStrictPureBlock(o)
       case o: Exp.AssumeAgree => return preExpAssumeAgree(o)
       case o: Exp.AssertAgree => return preExpAssertAgree(o)
       case o: Exp.InfoFlowInvariant => return preExpInfoFlowInvariant(o)
@@ -1368,94 +1421,46 @@ import MTransformer._
 
   def preLit(o: Lit): PreResult[Lit] = {
     o match {
-      case o: Exp.LitB =>
-        val r: PreResult[Lit] = preExpLitB(o) match {
-         case PreResult(continu, MSome(r: Lit)) => PreResult(continu, MSome[Lit](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Lit")
-         case PreResult(continu, _) => PreResult(continu, MNone[Lit]())
-        }
-        return r
-      case o: Exp.LitC =>
-        val r: PreResult[Lit] = preExpLitC(o) match {
-         case PreResult(continu, MSome(r: Lit)) => PreResult(continu, MSome[Lit](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Lit")
-         case PreResult(continu, _) => PreResult(continu, MNone[Lit]())
-        }
-        return r
-      case o: Exp.LitZ =>
-        val r: PreResult[Lit] = preExpLitZ(o) match {
-         case PreResult(continu, MSome(r: Lit)) => PreResult(continu, MSome[Lit](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Lit")
-         case PreResult(continu, _) => PreResult(continu, MNone[Lit]())
-        }
-        return r
-      case o: Exp.LitF32 =>
-        val r: PreResult[Lit] = preExpLitF32(o) match {
-         case PreResult(continu, MSome(r: Lit)) => PreResult(continu, MSome[Lit](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Lit")
-         case PreResult(continu, _) => PreResult(continu, MNone[Lit]())
-        }
-        return r
-      case o: Exp.LitF64 =>
-        val r: PreResult[Lit] = preExpLitF64(o) match {
-         case PreResult(continu, MSome(r: Lit)) => PreResult(continu, MSome[Lit](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Lit")
-         case PreResult(continu, _) => PreResult(continu, MNone[Lit]())
-        }
-        return r
-      case o: Exp.LitR =>
-        val r: PreResult[Lit] = preExpLitR(o) match {
-         case PreResult(continu, MSome(r: Lit)) => PreResult(continu, MSome[Lit](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Lit")
-         case PreResult(continu, _) => PreResult(continu, MNone[Lit]())
-        }
-        return r
-      case o: Exp.LitString =>
-        val r: PreResult[Lit] = preExpLitString(o) match {
-         case PreResult(continu, MSome(r: Lit)) => PreResult(continu, MSome[Lit](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Lit")
-         case PreResult(continu, _) => PreResult(continu, MNone[Lit]())
-        }
-        return r
-      case o: Exp.LitStepId =>
-        val r: PreResult[Lit] = preExpLitStepId(o) match {
-         case PreResult(continu, MSome(r: Lit)) => PreResult(continu, MSome[Lit](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Lit")
-         case PreResult(continu, _) => PreResult(continu, MNone[Lit]())
-        }
-        return r
+      case o: Exp.LitB => return preExpLitB(o)
+      case o: Exp.LitC => return preExpLitC(o)
+      case o: Exp.LitZ => return preExpLitZ(o)
+      case o: Exp.LitF32 => return preExpLitF32(o)
+      case o: Exp.LitF64 => return preExpLitF64(o)
+      case o: Exp.LitR => return preExpLitR(o)
+      case o: Exp.LitString => return preExpLitString(o)
+      case o: Exp.LitStepId => return preExpLitStepId(o)
     }
   }
 
-  def preExpLitB(o: Exp.LitB): PreResult[Exp] = {
+  def preExpLitB(o: Exp.LitB): PreResult[Lit] = {
     return PreResultExpLitB
   }
 
-  def preExpLitC(o: Exp.LitC): PreResult[Exp] = {
+  def preExpLitC(o: Exp.LitC): PreResult[Lit] = {
     return PreResultExpLitC
   }
 
-  def preExpLitZ(o: Exp.LitZ): PreResult[Exp] = {
+  def preExpLitZ(o: Exp.LitZ): PreResult[Lit] = {
     return PreResultExpLitZ
   }
 
-  def preExpLitF32(o: Exp.LitF32): PreResult[Exp] = {
+  def preExpLitF32(o: Exp.LitF32): PreResult[Lit] = {
     return PreResultExpLitF32
   }
 
-  def preExpLitF64(o: Exp.LitF64): PreResult[Exp] = {
+  def preExpLitF64(o: Exp.LitF64): PreResult[Lit] = {
     return PreResultExpLitF64
   }
 
-  def preExpLitR(o: Exp.LitR): PreResult[Exp] = {
+  def preExpLitR(o: Exp.LitR): PreResult[Lit] = {
     return PreResultExpLitR
   }
 
-  def preExpLitString(o: Exp.LitString): PreResult[Exp] = {
+  def preExpLitString(o: Exp.LitString): PreResult[Lit] = {
     return PreResultExpLitString
   }
 
-  def preExpLitStepId(o: Exp.LitStepId): PreResult[Exp] = {
+  def preExpLitStepId(o: Exp.LitStepId): PreResult[Lit] = {
     return PreResultExpLitStepId
   }
 
@@ -1588,6 +1593,10 @@ import MTransformer._
 
   def preExpResult(o: Exp.Result): PreResult[Exp] = {
     return PreResultExpResult
+  }
+
+  def preExpStrictPureBlock(o: Exp.StrictPureBlock): PreResult[Exp] = {
+    return PreResultExpStrictPureBlock
   }
 
   def preExpAssumeAgree(o: Exp.AssumeAgree): PreResult[Exp] = {
@@ -2417,14 +2426,62 @@ import MTransformer._
 
   def postExp(o: Exp): MOption[Exp] = {
     o match {
-      case o: Exp.LitB => return postExpLitB(o)
-      case o: Exp.LitC => return postExpLitC(o)
-      case o: Exp.LitZ => return postExpLitZ(o)
-      case o: Exp.LitF32 => return postExpLitF32(o)
-      case o: Exp.LitF64 => return postExpLitF64(o)
-      case o: Exp.LitR => return postExpLitR(o)
-      case o: Exp.LitString => return postExpLitString(o)
-      case o: Exp.LitStepId => return postExpLitStepId(o)
+      case o: Exp.LitB =>
+        val r: MOption[Exp] = postExpLitB(o) match {
+         case MSome(result: Exp) => MSome[Exp](result)
+         case MSome(_) => halt("Can only produce object of type Exp")
+         case _ => MNone[Exp]()
+        }
+        return r
+      case o: Exp.LitC =>
+        val r: MOption[Exp] = postExpLitC(o) match {
+         case MSome(result: Exp) => MSome[Exp](result)
+         case MSome(_) => halt("Can only produce object of type Exp")
+         case _ => MNone[Exp]()
+        }
+        return r
+      case o: Exp.LitZ =>
+        val r: MOption[Exp] = postExpLitZ(o) match {
+         case MSome(result: Exp) => MSome[Exp](result)
+         case MSome(_) => halt("Can only produce object of type Exp")
+         case _ => MNone[Exp]()
+        }
+        return r
+      case o: Exp.LitF32 =>
+        val r: MOption[Exp] = postExpLitF32(o) match {
+         case MSome(result: Exp) => MSome[Exp](result)
+         case MSome(_) => halt("Can only produce object of type Exp")
+         case _ => MNone[Exp]()
+        }
+        return r
+      case o: Exp.LitF64 =>
+        val r: MOption[Exp] = postExpLitF64(o) match {
+         case MSome(result: Exp) => MSome[Exp](result)
+         case MSome(_) => halt("Can only produce object of type Exp")
+         case _ => MNone[Exp]()
+        }
+        return r
+      case o: Exp.LitR =>
+        val r: MOption[Exp] = postExpLitR(o) match {
+         case MSome(result: Exp) => MSome[Exp](result)
+         case MSome(_) => halt("Can only produce object of type Exp")
+         case _ => MNone[Exp]()
+        }
+        return r
+      case o: Exp.LitString =>
+        val r: MOption[Exp] = postExpLitString(o) match {
+         case MSome(result: Exp) => MSome[Exp](result)
+         case MSome(_) => halt("Can only produce object of type Exp")
+         case _ => MNone[Exp]()
+        }
+        return r
+      case o: Exp.LitStepId =>
+        val r: MOption[Exp] = postExpLitStepId(o) match {
+         case MSome(result: Exp) => MSome[Exp](result)
+         case MSome(_) => halt("Can only produce object of type Exp")
+         case _ => MNone[Exp]()
+        }
+        return r
       case o: Exp.StringInterpolate => return postExpStringInterpolate(o)
       case o: Exp.This => return postExpThis(o)
       case o: Exp.Super => return postExpSuper(o)
@@ -2467,6 +2524,7 @@ import MTransformer._
       case o: Exp.LoopIndex => return postExpLoopIndex(o)
       case o: Exp.StateSeq => return postExpStateSeq(o)
       case o: Exp.Result => return postExpResult(o)
+      case o: Exp.StrictPureBlock => return postExpStrictPureBlock(o)
       case o: Exp.AssumeAgree => return postExpAssumeAgree(o)
       case o: Exp.AssertAgree => return postExpAssertAgree(o)
       case o: Exp.InfoFlowInvariant => return postExpInfoFlowInvariant(o)
@@ -2475,94 +2533,46 @@ import MTransformer._
 
   def postLit(o: Lit): MOption[Lit] = {
     o match {
-      case o: Exp.LitB =>
-        val r: MOption[Lit] = postExpLitB(o) match {
-         case MSome(result: Lit) => MSome[Lit](result)
-         case MSome(_) => halt("Can only produce object of type Lit")
-         case _ => MNone[Lit]()
-        }
-        return r
-      case o: Exp.LitC =>
-        val r: MOption[Lit] = postExpLitC(o) match {
-         case MSome(result: Lit) => MSome[Lit](result)
-         case MSome(_) => halt("Can only produce object of type Lit")
-         case _ => MNone[Lit]()
-        }
-        return r
-      case o: Exp.LitZ =>
-        val r: MOption[Lit] = postExpLitZ(o) match {
-         case MSome(result: Lit) => MSome[Lit](result)
-         case MSome(_) => halt("Can only produce object of type Lit")
-         case _ => MNone[Lit]()
-        }
-        return r
-      case o: Exp.LitF32 =>
-        val r: MOption[Lit] = postExpLitF32(o) match {
-         case MSome(result: Lit) => MSome[Lit](result)
-         case MSome(_) => halt("Can only produce object of type Lit")
-         case _ => MNone[Lit]()
-        }
-        return r
-      case o: Exp.LitF64 =>
-        val r: MOption[Lit] = postExpLitF64(o) match {
-         case MSome(result: Lit) => MSome[Lit](result)
-         case MSome(_) => halt("Can only produce object of type Lit")
-         case _ => MNone[Lit]()
-        }
-        return r
-      case o: Exp.LitR =>
-        val r: MOption[Lit] = postExpLitR(o) match {
-         case MSome(result: Lit) => MSome[Lit](result)
-         case MSome(_) => halt("Can only produce object of type Lit")
-         case _ => MNone[Lit]()
-        }
-        return r
-      case o: Exp.LitString =>
-        val r: MOption[Lit] = postExpLitString(o) match {
-         case MSome(result: Lit) => MSome[Lit](result)
-         case MSome(_) => halt("Can only produce object of type Lit")
-         case _ => MNone[Lit]()
-        }
-        return r
-      case o: Exp.LitStepId =>
-        val r: MOption[Lit] = postExpLitStepId(o) match {
-         case MSome(result: Lit) => MSome[Lit](result)
-         case MSome(_) => halt("Can only produce object of type Lit")
-         case _ => MNone[Lit]()
-        }
-        return r
+      case o: Exp.LitB => return postExpLitB(o)
+      case o: Exp.LitC => return postExpLitC(o)
+      case o: Exp.LitZ => return postExpLitZ(o)
+      case o: Exp.LitF32 => return postExpLitF32(o)
+      case o: Exp.LitF64 => return postExpLitF64(o)
+      case o: Exp.LitR => return postExpLitR(o)
+      case o: Exp.LitString => return postExpLitString(o)
+      case o: Exp.LitStepId => return postExpLitStepId(o)
     }
   }
 
-  def postExpLitB(o: Exp.LitB): MOption[Exp] = {
+  def postExpLitB(o: Exp.LitB): MOption[Lit] = {
     return PostResultExpLitB
   }
 
-  def postExpLitC(o: Exp.LitC): MOption[Exp] = {
+  def postExpLitC(o: Exp.LitC): MOption[Lit] = {
     return PostResultExpLitC
   }
 
-  def postExpLitZ(o: Exp.LitZ): MOption[Exp] = {
+  def postExpLitZ(o: Exp.LitZ): MOption[Lit] = {
     return PostResultExpLitZ
   }
 
-  def postExpLitF32(o: Exp.LitF32): MOption[Exp] = {
+  def postExpLitF32(o: Exp.LitF32): MOption[Lit] = {
     return PostResultExpLitF32
   }
 
-  def postExpLitF64(o: Exp.LitF64): MOption[Exp] = {
+  def postExpLitF64(o: Exp.LitF64): MOption[Lit] = {
     return PostResultExpLitF64
   }
 
-  def postExpLitR(o: Exp.LitR): MOption[Exp] = {
+  def postExpLitR(o: Exp.LitR): MOption[Lit] = {
     return PostResultExpLitR
   }
 
-  def postExpLitString(o: Exp.LitString): MOption[Exp] = {
+  def postExpLitString(o: Exp.LitString): MOption[Lit] = {
     return PostResultExpLitString
   }
 
-  def postExpLitStepId(o: Exp.LitStepId): MOption[Exp] = {
+  def postExpLitStepId(o: Exp.LitStepId): MOption[Lit] = {
     return PostResultExpLitStepId
   }
 
@@ -2695,6 +2705,10 @@ import MTransformer._
 
   def postExpResult(o: Exp.Result): MOption[Exp] = {
     return PostResultExpResult
+  }
+
+  def postExpStrictPureBlock(o: Exp.StrictPureBlock): MOption[Exp] = {
+    return PostResultExpStrictPureBlock
   }
 
   def postExpAssumeAgree(o: Exp.AssumeAgree): MOption[Exp] = {
@@ -4610,6 +4624,13 @@ import MTransformer._
           val r1: MOption[TypedAttr] = transformTypedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
             MSome(o2(tipeOpt = r0.getOrElse(o2.tipeOpt), attr = r1.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Exp.StrictPureBlock =>
+          val r0: MOption[Stmt.Block] = transformStmtBlock(o2.block)
+          val r1: MOption[TypedAttr] = transformTypedAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(block = r0.getOrElse(o2.block), attr = r1.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Exp.AssumeAgree =>

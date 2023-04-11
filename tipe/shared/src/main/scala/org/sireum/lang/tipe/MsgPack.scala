@@ -312,95 +312,97 @@ object MsgPack {
 
     val _astExpResult: Z = 105
 
-    val _astExpAssumeAgree: Z = 106
+    val _astExpStrictPureBlock: Z = 106
 
-    val _astExpAssertAgree: Z = 107
+    val _astExpAssumeAgree: Z = 107
 
-    val _astExpInfoFlowInvariant: Z = 108
+    val _astExpAssertAgree: Z = 108
 
-    val _astNamedArg: Z = 109
+    val _astExpInfoFlowInvariant: Z = 109
 
-    val _astId: Z = 110
+    val _astNamedArg: Z = 110
 
-    val _astName: Z = 111
+    val _astId: Z = 111
 
-    val _astBody: Z = 112
+    val _astName: Z = 112
 
-    val _astAdtParam: Z = 113
+    val _astBody: Z = 113
 
-    val _astMethodSig: Z = 114
+    val _astAdtParam: Z = 114
 
-    val _astParam: Z = 115
+    val _astMethodSig: Z = 115
 
-    val _astTypeParam: Z = 116
+    val _astParam: Z = 116
 
-    val _astAttr: Z = 117
+    val _astTypeParam: Z = 117
 
-    val _astTypedAttr: Z = 118
+    val _astAttr: Z = 118
 
-    val _astResolvedAttr: Z = 119
+    val _astTypedAttr: Z = 119
 
-    val _astResolvedInfoBuiltIn: Z = 120
+    val _astResolvedAttr: Z = 120
 
-    val _astResolvedInfoPackage: Z = 121
+    val _astResolvedInfoBuiltIn: Z = 121
 
-    val _astResolvedInfoEnum: Z = 122
+    val _astResolvedInfoPackage: Z = 122
 
-    val _astResolvedInfoEnumElement: Z = 123
+    val _astResolvedInfoEnum: Z = 123
 
-    val _astResolvedInfoObject: Z = 124
+    val _astResolvedInfoEnumElement: Z = 124
 
-    val _astResolvedInfoVar: Z = 125
+    val _astResolvedInfoObject: Z = 125
 
-    val _astResolvedInfoMethod: Z = 126
+    val _astResolvedInfoVar: Z = 126
 
-    val _astResolvedInfoMethods: Z = 127
+    val _astResolvedInfoMethod: Z = 127
 
-    val _astResolvedInfoTuple: Z = 128
+    val _astResolvedInfoMethods: Z = 128
 
-    val _astResolvedInfoLocalVar: Z = 129
+    val _astResolvedInfoTuple: Z = 129
 
-    val _astResolvedInfoFact: Z = 130
+    val _astResolvedInfoLocalVar: Z = 130
 
-    val _astResolvedInfoTheorem: Z = 131
+    val _astResolvedInfoFact: Z = 131
 
-    val _astResolvedInfoInv: Z = 132
+    val _astResolvedInfoTheorem: Z = 132
 
-    val _astTruthTableRow: Z = 133
+    val _astResolvedInfoInv: Z = 133
 
-    val _astTruthTableAssignment: Z = 134
+    val _astTruthTableRow: Z = 134
 
-    val _astTruthTableConclusionValidity: Z = 135
+    val _astTruthTableAssignment: Z = 135
 
-    val _astTruthTableConclusionTautology: Z = 136
+    val _astTruthTableConclusionValidity: Z = 136
 
-    val _astTruthTableConclusionContradictory: Z = 137
+    val _astTruthTableConclusionTautology: Z = 137
 
-    val _astTruthTableConclusionContingent: Z = 138
+    val _astTruthTableConclusionContradictory: Z = 138
 
-    val _astTypedName: Z = 139
+    val _astTruthTableConclusionContingent: Z = 139
 
-    val _astTypedTuple: Z = 140
+    val _astTypedName: Z = 140
 
-    val _astTypedFun: Z = 141
+    val _astTypedTuple: Z = 141
 
-    val _astTypedTypeVar: Z = 142
+    val _astTypedFun: Z = 142
 
-    val _astTypedPackage: Z = 143
+    val _astTypedTypeVar: Z = 143
 
-    val _astTypedObject: Z = 144
+    val _astTypedPackage: Z = 144
 
-    val _astTypedEnum: Z = 145
+    val _astTypedObject: Z = 145
 
-    val _astTypedMethod: Z = 146
+    val _astTypedEnum: Z = 146
 
-    val _astTypedMethods: Z = 147
+    val _astTypedMethod: Z = 147
 
-    val _astTypedFact: Z = 148
+    val _astTypedMethods: Z = 148
 
-    val _astTypedTheorem: Z = 149
+    val _astTypedFact: Z = 149
 
-    val _astTypedInv: Z = 150
+    val _astTypedTheorem: Z = 150
+
+    val _astTypedInv: Z = 151
 
   }
 
@@ -1178,6 +1180,7 @@ object MsgPack {
 
     def write_astProofAstStepIdStr(o: org.sireum.lang.ast.ProofAst.StepId.Str): Unit = {
       writer.writeZ(Constants._astProofAstStepIdStr)
+      writer.writeB(o.isSynthetic)
       writer.writeString(o.value)
       write_astAttr(o.attr)
     }
@@ -1390,6 +1393,7 @@ object MsgPack {
 
     def write_astPatternRef(o: org.sireum.lang.ast.Pattern.Ref): Unit = {
       writer.writeZ(Constants._astPatternRef)
+      writer.writeB(o.isAccess)
       write_astName(o.name)
       write_astResolvedAttr(o.attr)
     }
@@ -1454,6 +1458,7 @@ object MsgPack {
         case o: org.sireum.lang.ast.Exp.LoopIndex => write_astExpLoopIndex(o)
         case o: org.sireum.lang.ast.Exp.StateSeq => write_astExpStateSeq(o)
         case o: org.sireum.lang.ast.Exp.Result => write_astExpResult(o)
+        case o: org.sireum.lang.ast.Exp.StrictPureBlock => write_astExpStrictPureBlock(o)
         case o: org.sireum.lang.ast.Exp.AssumeAgree => write_astExpAssumeAgree(o)
         case o: org.sireum.lang.ast.Exp.AssertAgree => write_astExpAssertAgree(o)
         case o: org.sireum.lang.ast.Exp.InfoFlowInvariant => write_astExpInfoFlowInvariant(o)
@@ -1724,6 +1729,12 @@ object MsgPack {
     def write_astExpResult(o: org.sireum.lang.ast.Exp.Result): Unit = {
       writer.writeZ(Constants._astExpResult)
       writer.writeOption(o.tipeOpt, write_astType _)
+      write_astTypedAttr(o.attr)
+    }
+
+    def write_astExpStrictPureBlock(o: org.sireum.lang.ast.Exp.StrictPureBlock): Unit = {
+      writer.writeZ(Constants._astExpStrictPureBlock)
+      write_astStmtBlock(o.block)
       write_astTypedAttr(o.attr)
     }
 
@@ -3552,9 +3563,10 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astProofAstStepIdStr)
       }
+      val isSynthetic = reader.readB()
       val value = reader.readString()
       val attr = read_astAttr()
-      return org.sireum.lang.ast.ProofAst.StepId.Str(value, attr)
+      return org.sireum.lang.ast.ProofAst.StepId.Str(isSynthetic, value, attr)
     }
 
     def read_astProofAstStepRegular(): org.sireum.lang.ast.ProofAst.Step.Regular = {
@@ -3985,9 +3997,10 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astPatternRef)
       }
+      val isAccess = reader.readB()
       val name = read_astName()
       val attr = read_astResolvedAttr()
-      return org.sireum.lang.ast.Pattern.Ref(name, attr)
+      return org.sireum.lang.ast.Pattern.Ref(isAccess, name, attr)
     }
 
     def read_astPatternVarBinding(): org.sireum.lang.ast.Pattern.VarBinding = {
@@ -4084,6 +4097,7 @@ object MsgPack {
         case Constants._astExpLoopIndex => val r = read_astExpLoopIndexT(T); return r
         case Constants._astExpStateSeq => val r = read_astExpStateSeqT(T); return r
         case Constants._astExpResult => val r = read_astExpResultT(T); return r
+        case Constants._astExpStrictPureBlock => val r = read_astExpStrictPureBlockT(T); return r
         case Constants._astExpAssumeAgree => val r = read_astExpAssumeAgreeT(T); return r
         case Constants._astExpAssertAgree => val r = read_astExpAssertAgreeT(T); return r
         case Constants._astExpInfoFlowInvariant => val r = read_astExpInfoFlowInvariantT(T); return r
@@ -4650,6 +4664,20 @@ object MsgPack {
       val tipeOpt = reader.readOption(read_astType _)
       val attr = read_astTypedAttr()
       return org.sireum.lang.ast.Exp.Result(tipeOpt, attr)
+    }
+
+    def read_astExpStrictPureBlock(): org.sireum.lang.ast.Exp.StrictPureBlock = {
+      val r = read_astExpStrictPureBlockT(F)
+      return r
+    }
+
+    def read_astExpStrictPureBlockT(typeParsed: B): org.sireum.lang.ast.Exp.StrictPureBlock = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astExpStrictPureBlock)
+      }
+      val block = read_astStmtBlock()
+      val attr = read_astTypedAttr()
+      return org.sireum.lang.ast.Exp.StrictPureBlock(block, attr)
     }
 
     def read_astExpAssumeAgree(): org.sireum.lang.ast.Exp.AssumeAgree = {
@@ -7797,6 +7825,21 @@ object MsgPack {
       return r
     }
     val r = to(data, f_astExpResult _)
+    return r
+  }
+
+  def from_astExpStrictPureBlock(o: org.sireum.lang.ast.Exp.StrictPureBlock, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astExpStrictPureBlock(o)
+    return w.result
+  }
+
+  def to_astExpStrictPureBlock(data: ISZ[U8]): Either[org.sireum.lang.ast.Exp.StrictPureBlock, MessagePack.ErrorMsg] = {
+    def f_astExpStrictPureBlock(reader: Reader): org.sireum.lang.ast.Exp.StrictPureBlock = {
+      val r = reader.read_astExpStrictPureBlock()
+      return r
+    }
+    val r = to(data, f_astExpStrictPureBlock _)
     return r
   }
 

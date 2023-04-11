@@ -60,7 +60,9 @@ object TopUnit {
 
 @datatype trait Stmt {
 
-  def posOpt: Option[Position]
+  @pure def posOpt: Option[Position]
+
+  @pure def prettyST: ST
 
   def asAssignExp: AssignExp = {
     halt(s"Invalid operation 'asAssignExp' on $this.")
@@ -69,6 +71,8 @@ object TopUnit {
   @pure def leaves: ISZ[Option[Stmt]] = {
     return ISZ(Some(this))
   }
+
+  @strictpure override def string: String = prettyST.render
 }
 
 @sig trait HasModifies {
@@ -130,7 +134,22 @@ object LoopContract {
 
 @datatype class LoopContract(val invariants: ISZ[Exp],
                              val modifies: ISZ[Exp.Ref],
-                             val maxItOpt: Option[Exp.LitZ]) extends HasModifies
+                             val maxItOpt: Option[Exp.LitZ]) extends HasModifies {
+  @strictpure def isEmpty: B = invariants.isEmpty && modifies.isEmpty && maxItOpt.isEmpty
+  @pure def prettySTOpt: Option[ST] = {
+    var invs: ISZ[ST] = if (modifies.isEmpty) ISZ[ST]() else ISZ(
+      st"Modifies(${(for (m <- modifies) yield m.asExp.prettyST, ", ")})")
+    invs = invs ++ (for (e <- invariants) yield e.prettyST)
+    maxItOpt match {
+      case Some(maxIt) => invs = invs :+ st"MaxIt(${maxIt.prettyST})"
+      case _ =>
+    }
+    return if (invs.isEmpty) None() else Some(
+      st"""Invariant(
+          |  ${(invs, ",\n")})"""
+    )
+  }
+}
 
 object Stmt {
 
@@ -140,44 +159,94 @@ object Stmt {
       return attr.posOpt
     }
 
+    @pure override def prettyST: ST = {
+      return st"import ${(for (i <- importers) yield i.prettyST, ", ")}"
+    }
+
   }
 
   object Import {
 
-    @datatype class Importer(val name: Name, val selectorOpt: Option[Selector])
+    @datatype class Importer(val name: Name, val selectorOpt: Option[Selector]) {
+      @pure def prettyST: ST = {
+        selectorOpt match {
+          case Some(selector) => return st"${name.prettyST}.${selector.prettyST}"
+          case _ => return name.prettyST
+        }
+      }
+    }
 
-    @datatype trait Selector
+    @datatype trait Selector {
+      @pure def prettyST: ST
+    }
 
-    @datatype class MultiSelector(val selectors: ISZ[NamedSelector]) extends Selector
+    @datatype class MultiSelector(val selectors: ISZ[NamedSelector]) extends Selector {
+      @strictpure override def prettyST: ST = st"{${(for (s <- selectors) yield st"${s.from.prettyST} => ${s.to.prettyST}", ", ")}}"
+    }
 
-    @datatype class WildcardSelector extends Selector
+    @datatype class WildcardSelector extends Selector {
+      @strictpure override def prettyST: ST = st"_"
+    }
 
     @datatype class NamedSelector(val from: Id, val to: Id)
 
   }
 
-  @datatype class Var(val isSpec: B, val isVal: B, val id: Id, val tipeOpt: Option[Type], val initOpt: Option[AssignExp], @hidden val attr: ResolvedAttr)
+  @datatype class Var(val isSpec: B,
+                      val isVal: B,
+                      val id: Id,
+                      val tipeOpt: Option[Type],
+                      val initOpt: Option[AssignExp],
+                      @hidden val attr: ResolvedAttr)
     extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
 
+    @strictpure override def prettyST: ST = {
+      val specOpt: Option[String] = if (isSpec) Some("@spec ") else None()
+      val valVar: String = if (isVal) "val" else "var"
+      val tOpt: Option[ST] = if (tipeOpt.isEmpty) None() else Some(st": ${tipeOpt.get.prettyST}")
+      val iOpt: Option[ST] = if (initOpt.isEmpty) None() else Some(st" = ${initOpt.get.prettyST}")
+      return st"$specOpt$valVar ${id.prettyST}$tOpt$iOpt"
+    }
+
   }
 
-  @datatype class VarPattern(val isSpec: B, val isVal: B, val pattern: Pattern, val tipeOpt: Option[Type], val init: AssignExp, @hidden val attr: Attr)
+  @datatype class VarPattern(val isSpec: B,
+                             val isVal: B,
+                             val pattern: Pattern,
+                             val tipeOpt: Option[Type],
+                             val init: AssignExp,
+                             @hidden val attr: Attr)
     extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
 
+    @strictpure override def prettyST: ST = {
+      val spec: String = if (isSpec) "@spec " else ""
+      val valVar: String = if (isVal) "val" else "var"
+      val tOpt: Option[ST] = if (tipeOpt.isEmpty) None() else Some(st": ${tipeOpt.get.prettyST}")
+      return st"$spec$valVar ${pattern.prettyST}$tOpt = ${init.prettyST}}"
+    }
+
   }
 
-  @datatype class SpecVar(val isVal: B, val id: Id, val tipe: Type, @hidden val attr: ResolvedAttr) extends Stmt {
+  @datatype class SpecVar(val isVal: B,
+                          val id: Id,
+                          val tipe: Type,
+                          @hidden val attr: ResolvedAttr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
+    }
+
+    @strictpure override def prettyST: ST = {
+      val valVar: String = if (isVal) "val" else "var"
+      return st"@spec $valVar ${id.prettyST}: ${tipe.prettyST}}"
     }
 
   }
@@ -228,20 +297,54 @@ object Stmt {
       }
       return mcontract
     }
+
+    @strictpure override def prettyST: ST = {
+      val helper: String = if (isHelper) "@helper " else ""
+      val pure: String = purity match {
+        case Purity.Impure => ""
+        case Purity.Pure => "@pure "
+        case Purity.StrictPure => "@strictpure "
+        case Purity.Memoize => "@memoize "
+      }
+      val overr: String = if (hasOverride) "override " else ""
+      val bOpt: Option[ST] = if (bodyOpt.isEmpty) None() else Some(
+        st""" = {
+            |  ${mcontract.prettySTOpt(bodyOpt.isEmpty)}
+            |  ${(bodyOpt.get.prettySTs, "\n")}
+            |}"""
+      )
+      return st"$helper$pure${overr}def ${sig.prettyST}$bOpt"
+    }
   }
 
-  @datatype class ExtMethod(val isPure: B, val sig: MethodSig, val contract: MethodContract, @hidden val attr: ResolvedAttr) extends Stmt {
+  @datatype class ExtMethod(val isPure: B,
+                            val sig: MethodSig,
+                            val contract: MethodContract,
+                            @hidden val attr: ResolvedAttr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
 
+    @strictpure override def prettyST: ST = {
+      val helper: String = if (isPure) "@pure " else ""
+      val bOpt: Option[ST] = if (contract.isEmpty) None() else Some(st" = ${contract.prettySTOpt(T)}")
+      return st"${helper}def ${sig.prettyST}$bOpt"
+    }
+
   }
 
-  @datatype class JustMethod(val etaOpt: Option[Exp.LitString], val sig: MethodSig, @hidden val attr: ResolvedAttr) extends Stmt {
+  @datatype class JustMethod(val etaOpt: Option[Exp.LitString],
+                             val sig: MethodSig,
+                             @hidden val attr: ResolvedAttr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
+    }
+
+    @strictpure override def prettyST: ST = {
+      val just: ST = if (etaOpt.isEmpty) st"@just " else st"@just(${etaOpt.get.prettyST}}) "
+      return st"${just}def ${sig.prettyST}"
     }
 
   }
@@ -252,6 +355,7 @@ object Stmt {
       return attr.posOpt
     }
 
+    @strictpure override def prettyST: ST = st"@spec def ${sig.prettyST}"
   }
 
   @datatype class Enum(val id: Id, val elements: ISZ[Id], @hidden val attr: Attr) extends Stmt {
@@ -259,6 +363,11 @@ object Stmt {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
+
+    @strictpure override def prettyST: ST =
+      st"""@enum object ${id.prettyST} {
+          |  ${(for (e <- elements) yield st""""${id.prettyST}"""", "\n")}
+          |}"""
 
   }
 
@@ -282,12 +391,47 @@ object Stmt {
     def isZeroIndex: B = {
       return index == 0
     }
+
+    @pure override def prettyST: ST = {
+      var args = ISZ[ST]()
+      if (isBitVector) {
+        args = args :+ st"signed = ${if (isSigned) "T" else "F"}"
+        args = args :+ st"width = $bitWidth"
+      }
+      if (hasMin) {
+        args = args :+ st"""min = z"$min""""
+      }
+      if (hasMax) {
+        args = args :+ st"""max = z"$max""""
+      }
+      if (isIndex) {
+        args = args :+ st"index = $index"
+      }
+      val rb: ST = if (isBitVector) {
+        st"@bits(${(args, ", ")})"
+      } else {
+        st"@range(${(args, ", ")})"
+      }
+      return st"$rb class ${id.prettyST}"
+    }
   }
 
-  @datatype class Object(val isApp: B, val extNameOpt: Option[String], val id: Id, val stmts: ISZ[Stmt], @hidden val attr: Attr) extends Stmt {
+  @datatype class Object(val isApp: B,
+                         val extNameOpt: Option[String],
+                         val id: Id,
+                         val stmts: ISZ[Stmt],
+                         @hidden val attr: Attr) extends Stmt {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
+    }
+
+    @strictpure override def prettyST: ST = {
+      val app: String = if (isApp) " extends App" else ""
+      val ext: ST = if (extNameOpt.isEmpty) st"" else if (extNameOpt.get == "") st"@ext " else st"""@ext("${extNameOpt.get}")"""
+      st"""${ext}object ${id.prettyST}$app {
+          |  ${(for (stmt <- stmts) yield stmt.prettyST, "\n")}
+          |}"""
     }
 
   }
@@ -304,6 +448,15 @@ object Stmt {
       return attr.posOpt
     }
 
+    @strictpure override def prettyST: ST = {
+      val ext: String = if (isExt) "@ext " else ""
+      val sig: String = if (isImmutable) "@sig " else "@msig "
+      val extend: Option[ST] =
+        if (parents.isEmpty) None() else Some(st" extends ${(for (n <- parents) yield n.prettyST, ", ")}")
+      st"""$ext$sig trait ${id.prettyST}${TypeParam.stOpt(typeParams)}$extend {
+          |  ${(for (stmt <- stmts) yield stmt.prettyST, "\n")}
+          |}"""
+    }
   }
 
   @datatype class Adt(val isRoot: B,
@@ -319,6 +472,16 @@ object Stmt {
       return attr.posOpt
     }
 
+    @strictpure override def prettyST: ST = {
+      val rd: String = if (isDatatype) "@datatype " else "@record "
+      val root: String = if (isRoot) "trait" else "class"
+      val param: Option[ST] = if (params.isEmpty) None() else Some(st"(${(for (p <- params) yield p.prettyST, ", ")})")
+      val extend: Option[ST] =
+        if (parents.isEmpty) None() else Some(st" extends ${(for (n <- parents) yield n.prettyST, ", ")}")
+      st"""$rd $root ${id.prettyST}${TypeParam.stOpt(typeParams)}$extend {
+          |  ${(for (stmt <- stmts) yield stmt.prettyST, "\n")}
+          |}"""
+    }
   }
 
   @datatype class TypeAlias(val id: Id, val typeParams: ISZ[TypeParam], val tipe: Type, @hidden val attr: Attr) extends Stmt {
@@ -327,6 +490,8 @@ object Stmt {
       return attr.posOpt
     }
 
+    @strictpure override def prettyST: ST = st"type ${id.prettyST}${TypeParam.stOpt(typeParams)} = ${tipe.prettyST}"
+
   }
 
   @datatype class Assign(val lhs: Exp, val rhs: AssignExp, @hidden val attr: Attr) extends Stmt {
@@ -334,6 +499,8 @@ object Stmt {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
+
+    @strictpure override def prettyST: ST = st"${lhs.prettyST} = ${rhs.prettyST}"
 
   }
 
@@ -354,6 +521,11 @@ object Stmt {
     @pure override def leaves: ISZ[Option[Stmt]] = {
       return body.leaves
     }
+
+    @strictpure override def prettyST: ST =
+      st"""{
+          |  ${(body.prettySTs, "\n")}
+          |}"""
   }
 
   @datatype class If(val cond: Exp, val thenBody: Body, val elseBody: Body, @hidden val attr: Attr) extends Stmt with AssignExp {
@@ -372,6 +544,22 @@ object Stmt {
 
     @pure override def leaves: ISZ[Option[Stmt]] = {
       return thenBody.leaves ++ elseBody.leaves
+    }
+
+    @strictpure override def prettyST: ST = if (elseBody.stmts.isEmpty) {
+      st"""if (${cond.prettyST}) {
+          |  ${(thenBody.prettySTs, "\n")}
+          |}"""
+    } else if (elseBody.stmts.size == 1 && elseBody.stmts(0).isInstanceOf[Stmt.If]) {
+      st"""if (${cond.prettyST}) {
+          |  ${(thenBody.prettySTs, "\n")}
+          |} else ${elseBody.stmts(0).prettyST}"""
+    } else {
+      st"""if (${cond.prettyST}) {
+          |  ${(thenBody.prettySTs, "\n")}
+          |} else {
+          |  ${(elseBody.prettySTs, "\n")}
+          |}"""
     }
   }
 
@@ -393,6 +581,11 @@ object Stmt {
       return for (c <- cases; leaf <- c.body.leaves) yield leaf
     }
 
+    @strictpure override def prettyST: ST =
+      st"""${exp.prettyST} match {
+          |  ${(for (cas <- cases) yield cas.prettyST, "\n")}
+          |}"""
+
   }
 
   @datatype class While(val context: ISZ[String],
@@ -409,6 +602,11 @@ object Stmt {
 
     @strictpure def modifies: ISZ[Exp.Ref] = contract.modifies
 
+    @strictpure override def prettyST: ST =
+      st"""while (${cond.prettyST}) {
+          |  ${contract.prettySTOpt}
+          |  ${(body.prettySTs, "\n")}
+          |}"""
   }
 
   @datatype class DoWhile(val context: ISZ[String],
@@ -425,6 +623,11 @@ object Stmt {
 
     @strictpure def modifies: ISZ[Exp.Ref] = contract.modifies
 
+    @strictpure override def prettyST: ST =
+      st"""do {
+          |  ${contract.prettySTOpt}
+          |  ${(body.prettySTs, "\n")}
+          |} while(${cond.prettyST})"""
   }
 
   @datatype class For(val context: ISZ[String],
@@ -438,6 +641,26 @@ object Stmt {
 
     @strictpure def modifies: ISZ[Exp.Ref] = enumGens(0).contract.modifies
 
+    @pure def prettyST: ST = {
+      var invs = ISZ[ST]()
+      for (eg <- enumGens) {
+        eg.contract.prettySTOpt match {
+          case Some(pst) => invs = invs :+ pst
+          case _ =>
+        }
+      }
+      val r: ST = if (enumGens.size == 1)
+        st"""for (${enumGens(0).prettyST}) {
+            |  ${(invs ++ body.prettySTs, "\n")}
+            |}"""
+      else
+        st"""for (
+            |  ${(for (eg <- enumGens) yield eg.prettyST, "\n")}
+            |) {
+            |  ${(invs ++ body.prettySTs, "\n")}
+            |}"""
+      return r
+    }
   }
 
   @datatype class Return(val expOpt: Option[Exp], @hidden val attr: TypedAttr) extends Stmt with AssignExp {
@@ -453,6 +676,8 @@ object Stmt {
     @pure override def asAssignExp: AssignExp = {
       return this
     }
+
+    @strictpure override def prettyST: ST = if (expOpt.isEmpty) st"return" else st"return ${expOpt.get.prettyST}"
 
   }
 
@@ -474,6 +699,7 @@ object Stmt {
       return this
     }
 
+    @strictpure override def prettyST: ST = exp.prettyST
   }
 
   @datatype trait Spec extends Stmt
@@ -487,6 +713,11 @@ object Stmt {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
+
+    @strictpure override def prettyST: ST =
+      st"""@spec def ${id.prettyST}${TypeParam.stOpt(typeParams)} = Fact(
+          |  ${(for (claim <- (if (descOpt.isEmpty) ISZ[Exp]() else ISZ[Exp](descOpt.get)) ++ claims) yield claim.prettyST, ",\n")}
+          |)"""
   }
 
   @datatype class Inv(val id: Id,
@@ -495,6 +726,11 @@ object Stmt {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
+
+    @strictpure override def prettyST: ST =
+      st"""@spec def ${id.prettyST} = Invariant(
+          |  ${(for (claim <- claims) yield claim.prettyST, ",\n")}
+          |)"""
   }
 
   @datatype class Theorem(val isLemma: B,
@@ -508,6 +744,11 @@ object Stmt {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
+
+    @strictpure override def prettyST: ST =
+      st"""@spec def ${id.prettyST}${TypeParam.stOpt(typeParams)} = ${if (isLemma) "Lemma" else "Theorem"}(
+          |  ${(if (descOpt.isEmpty) ISZ[ST](claim.prettyST) else ISZ[ST](descOpt.get.prettyST, claim.prettyST, proof.prettyST), ",\n")}
+          |)"""
   }
 
   @datatype class DataRefinement(val rep: Exp.Ident,
@@ -517,36 +758,49 @@ object Stmt {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
+
+    @strictpure override def prettyST: ST = st"Contract(DataRefinement(${rep.prettyST})(${(for (ref <- refs) yield ref.prettyST, ", ")})(${(for (claim <- claims) yield claim.prettyST, ", ")}))"
   }
 
   @datatype class SpecLabel(val id: Id) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return id.attr.posOpt
     }
+    @strictpure override def prettyST: ST = st"""Spec("${id.prettyST}")"""
   }
 
   @datatype class SpecBlock(val block: Block) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return block.posOpt
     }
+    @strictpure override def prettyST: ST = st"Spec ${block.prettyST}"
   }
 
   @datatype class DeduceSequent(val justOpt: Option[Exp.LitString], val sequents: ISZ[Sequent], @hidden val attr: Attr) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
+    @strictpure override def prettyST: ST =
+      st"""Deduce(
+          |  ${(if (justOpt.isEmpty) ISZ[ST]() else ISZ(justOpt.get.prettyST) ++ (for (s <- sequents) yield s.prettyST), ",\n")}
+          |)"""
   }
 
   @datatype class DeduceSteps(val steps: ISZ[ProofAst.Step], @hidden val attr: Attr) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
+    @strictpure override def prettyST: ST =
+      st"""Deduce(
+          |  ${(for (step <- steps) yield step.prettyST, ",\n")}
+          |)"""
   }
 
   @datatype class Havoc(val args: ISZ[Exp.Ref], @hidden val attr: Attr) extends Spec {
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
     }
+    @strictpure override def prettyST: ST = st"Havoc(${(for (arg <- args) yield arg.asExp.prettyST, ", ")})"
   }
 
 }
@@ -558,6 +812,7 @@ object Stmt {
   }
   @pure def reads: ISZ[Exp.Ref]
   @pure def modifies: ISZ[Exp.Ref]
+  @pure def prettySTOpt(isOnly: B): Option[ST]
 }
 
 object MethodContract {
@@ -566,13 +821,24 @@ object MethodContract {
     @strictpure def empty: Accesses = Accesses(ISZ(), Attr(None()))
   }
 
-  @datatype class Accesses(val refs: ISZ[Exp.Ref], val attr: Attr)
+  @datatype class Accesses(val refs: ISZ[Exp.Ref], val attr: Attr) {
+    @strictpure def isEmpty: B = refs.isEmpty
+    @strictpure def nonEmpty: B = !refs.isEmpty
+    @strictpure def prettyST(kind: String): ST = st"$kind(${(for (ref <- refs) yield ref.asExp.prettyST, ", ")})"
+  }
 
   object Claims {
     @strictpure def empty: Claims = Claims(ISZ(), Attr(None()))
   }
 
-  @datatype class Claims(val claims: ISZ[Exp], val attr: Attr)
+  @datatype class Claims(val claims: ISZ[Exp], val attr: Attr) {
+    @strictpure def isEmpty: B = claims.isEmpty
+    @strictpure def nonEmpty: B = !claims.isEmpty
+    @strictpure def prettyST(kind: String): ST =
+      st"""$kind(
+          |  ${(for (claim <- claims) yield claim.prettyST, ", ")}
+          |)"""
+  }
 
   object Simple {
     @strictpure def empty: Simple = Simple(Accesses.empty, Claims.empty, Accesses.empty, Claims.empty, InfoFlows.empty, Attr(None()))
@@ -592,6 +858,31 @@ object MethodContract {
     @pure override def isEmpty: B = {
       return reads.isEmpty && requires.isEmpty && modifies.isEmpty && ensures.isEmpty && infoFlows.isEmpty
     }
+    @pure override def prettySTOpt(isOnly: B): Option[ST] = {
+      if (isEmpty) {
+        return None()
+      } else {
+        var sts = ISZ[ST]()
+        if (readsClause.nonEmpty) {
+          sts = sts :+ readsClause.prettyST("Reads")
+        }
+        if (requiresClause.nonEmpty) {
+          sts = sts :+ requiresClause.prettyST("Requires")
+        }
+        if (modifiesClause.nonEmpty) {
+          sts = sts :+ modifiesClause.prettyST("Modifies")
+        }
+        if (ensuresClause.nonEmpty) {
+          sts = sts :+ ensuresClause.prettyST("Ensures")
+        }
+        // TODO: InfoFlows
+        return Some(
+          st"""Contract${if (isOnly) ".Only" else ""}(
+              |  ${(sts, ",\n")}
+              |)"""
+        )
+      }
+    }
   }
 
   @datatype class Cases(val readsClause: Accesses,
@@ -604,6 +895,26 @@ object MethodContract {
     @pure override def isEmpty: B = {
       return reads.isEmpty && modifies.isEmpty && cases.isEmpty
     }
+
+    @pure override def prettySTOpt(isOnly: B): Option[ST] = {
+      if (isEmpty) {
+        return None()
+      } else {
+        var sts = ISZ[ST]()
+        if (readsClause.nonEmpty) {
+          sts = sts :+ readsClause.prettyST("Reads")
+        }
+        if (modifiesClause.nonEmpty) {
+          sts = sts :+ modifiesClause.prettyST("Modifies")
+        }
+        sts = sts ++ (for (c <- cases) yield c.prettyST)
+        return Some(
+          st"""Contract${if (isOnly) ".Only" else ""}(
+              |  ${(sts, ",\n")}
+              |)"""
+        )
+      }
+    }
   }
 
   @datatype class Case(val label: Exp.LitString,
@@ -611,6 +922,23 @@ object MethodContract {
                        val ensuresClause: Claims) {
     @strictpure def requires: ISZ[Exp] = requiresClause.claims
     @strictpure def ensures: ISZ[Exp] = ensuresClause.claims
+    @pure def prettyST: ST = {
+      var sts = ISZ[ST]()
+      if (label.value =!= "") {
+        sts = sts :+ label.prettyST
+      }
+      if (requiresClause.nonEmpty) {
+        sts = sts :+ requiresClause.prettyST("Requires")
+      }
+      if (ensuresClause.nonEmpty) {
+        sts = sts :+ ensuresClause.prettyST("Ensures")
+      }
+      val r =
+        st"""Case(
+            |  ${(sts, ",\n")}
+            |)"""
+      return r
+    }
   }
 
   object InfoFlows {
@@ -669,19 +997,35 @@ object MethodContract {
 @datatype class Sequent(val premises: ISZ[Exp],
                         val conclusion: Exp,
                         val steps: ISZ[ProofAst.Step],
-                        @hidden val attr: Attr)
+                        @hidden val attr: Attr) {
+  @strictpure def prettyST: ST = {
+    val ps: ISZ[ST] = for (p <- premises) yield p.prettyST
 
-@datatype class ProofAst(val steps: ISZ[ProofAst.Step], @hidden val attr: Attr)
+    st"""${if (ps.size == 1) ps(0) else st"(${(ps, ", ")})"} ⊢ ${conclusion.prettyST} Proof(
+        |  ${(for (step <- steps) yield step.prettyST, ", \n")}
+        |)"""
+  }
+}
+
+@datatype class ProofAst(val steps: ISZ[ProofAst.Step], @hidden val attr: Attr) extends {
+  @strictpure def prettyST: ST =
+    st"""Proof(
+        |  ${(for (step <- steps) yield step.prettyST, ",\n")}
+        |)"""
+}
 
 object ProofAst {
 
   @datatype trait Step {
     def id: StepId
+    @pure def prettyST: ST
   }
 
   @datatype trait StepId {
     @pure def attr: Attr
     @strictpure def posOpt: Option[Position] = attr.posOpt
+    @pure def isSynthetic: B
+    @pure def prettyST: ST
   }
 
   object StepId {
@@ -689,29 +1033,60 @@ object ProofAst {
       override def string: String = {
         return s"#$no"
       }
+      @strictpure def isSynthetic: B = F
+      @strictpure override def prettyST: ST = st"$no"
     }
-    @datatype class Str(val value: String, @hidden val attr: Attr) extends StepId {
+    @datatype class Str(val isSynthetic: B, val value: String, @hidden val attr: Attr) extends StepId {
       override def string: String = {
         return s""""${ops.StringOps(value).escapeST.render}""""
       }
+      @strictpure override def prettyST: ST = st"""sn"$value""""
     }
   }
 
   object Step {
 
-    @datatype class Regular(val id: StepId, val claim: Exp, val just: Justification) extends Step
+    @datatype class Regular(val id: StepId, val claim: Exp, val just: Justification) extends Step {
+      @strictpure override def prettyST: ST = if (id.isSynthetic) {
+        st"(${claim.prettyST}) by ${just.prettyST}"
+      } else {
+        st"${id.prettyST} #> (${claim.prettyST}) by ${just.prettyST}"
+      }
+    }
 
-    @datatype class Assume(val id: StepId, val claim: Exp) extends Step
+    @datatype class Assume(val id: StepId, val claim: Exp) extends Step {
+      @strictpure override def prettyST: ST = st"${id.prettyST} #> Assume(${claim.prettyST})"
+    }
 
-    @datatype class Assert(val id: StepId, val claim: Exp, val steps: ISZ[Step]) extends Step
+    @datatype class Assert(val id: StepId, val claim: Exp, val steps: ISZ[Step]) extends Step {
+      @strictpure override def prettyST: ST =
+        st"""${id.prettyST} #> Assert(${claim.prettyST}, SubProof(
+            |  ${(for (step <- steps) yield step.prettyST, ", ")}
+            |))"""
+    }
 
-    @datatype class SubProof(val id: StepId, val steps: ISZ[Step]) extends Step
+    @datatype class SubProof(val id: StepId, val steps: ISZ[Step]) extends Step {
+      @strictpure override def prettyST: ST =
+        st"""${id.prettyST} #> SubProof(
+            |  ${(for (step <- steps) yield step.prettyST, ", ")}
+            |)"""
+    }
 
-    @datatype class Let(val id: StepId, val params: ISZ[Let.Param], val steps: ISZ[Step]) extends Step
+    @datatype class Let(val id: StepId, val params: ISZ[Let.Param], val steps: ISZ[Step]) extends Step {
+      @strictpure override def prettyST: ST =
+        st"""${id.prettyST} #> Let { (${(for (p <- params) yield p.prettyST, ", ")}) => SubProof(
+            |  ${(for (step <- steps) yield step.prettyST, ", ")}
+            |)}"""
+    }
 
     object Let {
 
-      @datatype class Param(val id: Id, val tipeOpt: Option[Type])
+      @datatype class Param(val id: Id, val tipeOpt: Option[Type]) {
+        @strictpure def prettyST: ST = tipeOpt match {
+          case Some(tipe) => st"${id.prettyST}: ${tipe.prettyST}"
+          case _ => id.prettyST
+        }
+      }
 
     }
 
@@ -719,20 +1094,45 @@ object ProofAst {
                                     val claim: Exp,
                                     val exp: Exp,
                                     val cases: ISZ[StructInduction.MatchCase],
-                                    val defaultOpt: Option[StructInduction.MatchDefault]) extends Step
+                                    val defaultOpt: Option[StructInduction.MatchDefault]) extends Step {
+      @pure override def prettyST: ST = {
+        var cs: ISZ[ST] = for (c <- cases) yield c.prettyST
+        if (defaultOpt.nonEmpty) {
+          cs = cs :+ defaultOpt.get.prettyST
+        }
+        val r =
+          st"""${id.prettyST} #> (${claim.prettyST}) by StructuralInduction(
+              |  ${exp.prettyST} match {
+              |    ${(cs, "\n")}
+              |  }
+              |)"""
+        return r
+      }
+    }
 
     object StructInduction {
 
       @datatype class MatchCase(val pattern: Pattern.Structure,
                                 val hypoOpt: Option[Assume],
-                                val steps: ISZ[Step])
+                                val steps: ISZ[Step]) {
+        @strictpure def prettyST: ST =
+          st"""case ${pattern.prettyST} => SubProof(
+              |  ${((if (hypoOpt.isEmpty) ISZ[ST]() else ISZ(hypoOpt.get.prettyST)) ++ (for (step <- steps) yield step.prettyST) , ",\n")}
+              |)"""
+      }
 
       @datatype class MatchDefault(val hypoOpt: Option[Assume],
-                                   val steps: ISZ[Step])
+                                   val steps: ISZ[Step]) {
+        @strictpure def prettyST: ST =
+          st"""case _ => SubProof(
+              |  ${((if (hypoOpt.isEmpty) ISZ[ST]() else ISZ(hypoOpt.get.prettyST)) ++ (for (step <- steps) yield step.prettyST) , ",\n")}
+              |)"""
+      }
     }
 
     @datatype trait Justification {
       @pure def posOpt: Option[Position]
+      @pure def prettyST: ST
     }
 
     @datatype trait Inception extends Justification {
@@ -764,12 +1164,14 @@ object ProofAst {
             case _ => halt("Infeasible")
           }
         }
+        @strictpure override def prettyST: ST = id.asExp.prettyST
       }
 
       @datatype class Apply(val invoke: Exp.Invoke, val witnesses: ISZ[ProofAst.StepId]) extends Inception {
         @strictpure def invokeIdent: Exp.Ident = invoke.ident
         @strictpure def args: ISZ[Exp] = invoke.args
         @strictpure override def posOpt: Option[Position] = invoke.ident.posOpt
+        @strictpure override def prettyST: ST = st"${invoke.prettyST} and (${(for (w <- witnesses) yield w.prettyST, ", ")})"
       }
 
       @datatype class ApplyNamed(val invoke: Exp.InvokeNamed, val witnesses: ISZ[ProofAst.StepId]) extends Inception {
@@ -782,10 +1184,12 @@ object ProofAst {
           return for (arg <- r.toIS[Option[Exp]]) yield arg.get
         }
         @strictpure override def posOpt: Option[Position] = invoke.ident.posOpt
+        @strictpure override def prettyST: ST = st"${invoke.prettyST} and (${(for (w <- witnesses) yield w.prettyST, ", ")})"
       }
 
       @datatype class ApplyEta(val eta: Exp.Eta, val witnesses: ISZ[ProofAst.StepId]) extends Inception {
         @strictpure override def posOpt: Option[Position] = eta.posOpt
+        @strictpure override def prettyST: ST = st"${eta.prettyST} and (${(for (w <- witnesses) yield w.prettyST, ", ")})"
       }
 
     }
@@ -795,6 +1199,8 @@ object ProofAst {
 }
 
 @sig sealed trait AssignExp {
+
+  @strictpure def prettyST: ST = asStmt.prettyST
 
   @pure def asStmt: Stmt
 
@@ -823,7 +1229,11 @@ object ProofAst {
   "StrictPure"
 }
 
-@datatype class Case(val pattern: Pattern, val condOpt: Option[Exp], val body: Body)
+@datatype class Case(val pattern: Pattern, val condOpt: Option[Exp], val body: Body) {
+  @strictpure def prettyST: ST =
+    st"""case ${pattern.prettyST}${if (condOpt.nonEmpty) st" if ${condOpt.get.prettyST}" else st""} =>
+        |  ${(body.prettySTs, "\n")}"""
+}
 
 object EnumGen {
 
@@ -1002,6 +1412,7 @@ object Type {
 @datatype trait Pattern {
   @pure def posOpt: Option[Position]
   @pure def typedOpt: Option[Typed]
+  @pure def prettyST: ST
 }
 
 object Pattern {
@@ -1014,6 +1425,8 @@ object Pattern {
 
     @strictpure override def typedOpt: Option[Typed] = lit.typedOpt
 
+    @strictpure override def prettyST: ST = lit.prettyST
+
   }
 
   @datatype class LitInterpolate(val prefix: String, val value: String, @hidden val attr: TypedAttr) extends Pattern {
@@ -1024,9 +1437,10 @@ object Pattern {
 
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
 
+    @strictpure override def prettyST: ST = st"""$prefix"$value""""
   }
 
-  @datatype class Ref(val name: Name, @hidden val attr: ResolvedAttr) extends Pattern {
+  @datatype class Ref(val isAccess: B, val name: Name, @hidden val attr: ResolvedAttr) extends Pattern {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1034,6 +1448,7 @@ object Pattern {
 
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
 
+    @strictpure override def prettyST: ST = if (isAccess) name.prettyST else st"`${name.prettyST}`"
   }
 
   @datatype class VarBinding(val id: Id, val tipeOpt: Option[Type], @hidden val attr: TypedAttr) extends Pattern {
@@ -1043,6 +1458,11 @@ object Pattern {
     }
 
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
+
+    @strictpure override def prettyST: ST = tipeOpt match {
+      case Some(tipe) => st"${id.prettyST}: ${tipe.prettyST}"
+      case _ => id.prettyST
+    }
   }
 
   @datatype class Wildcard(val typeOpt: Option[Type], @hidden val attr: TypedAttr) extends Pattern {
@@ -1052,6 +1472,12 @@ object Pattern {
     }
 
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
+
+    @strictpure override def prettyST: ST = typeOpt match {
+      case Some(tipe) => st"_: ${tipe.prettyST}"
+      case _ => st"_"
+    }
+
   }
 
   @datatype class SeqWildcard(@hidden val attr: TypedAttr) extends Pattern {
@@ -1061,6 +1487,8 @@ object Pattern {
     }
 
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
+
+    @strictpure override def prettyST: ST = st"_*"
   }
 
   @datatype class Structure(val idOpt: Option[Id],
@@ -1073,6 +1501,12 @@ object Pattern {
     }
 
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
+
+    @strictpure override def prettyST: ST = {
+      val binding: Option[ST] = if (idOpt.isEmpty) None() else Some(st"${idOpt.get.prettyST}@")
+      val name: Option[ST] = if (nameOpt.isEmpty) None() else Some(nameOpt.get.prettyST)
+      return st"$binding$name(${(for (p <- patterns) yield p.prettyST, ", ")})"
+    }
 
   }
 
@@ -1091,17 +1525,11 @@ object Pattern {
   }
 }
 
-@sig sealed trait Lit {
-
-  @pure def posOpt: Option[Position]
-
-  @pure def typedOpt: Option[Typed]
-
-}
+@datatype trait Lit extends Exp
 
 object Exp {
 
-  @datatype class LitB(val value: B, @hidden val attr: Attr) extends Exp with Lit {
+  @datatype class LitB(val value: B, @hidden val attr: Attr) extends Lit {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1116,7 +1544,7 @@ object Exp {
     }
   }
 
-  @datatype class LitC(val value: C, @hidden val attr: Attr) extends Exp with Lit {
+  @datatype class LitC(val value: C, @hidden val attr: Attr) extends Lit {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1131,7 +1559,7 @@ object Exp {
     }
   }
 
-  @datatype class LitZ(val value: Z, @hidden val attr: Attr) extends Exp with Lit {
+  @datatype class LitZ(val value: Z, @hidden val attr: Attr) extends Lit {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1146,7 +1574,7 @@ object Exp {
     }
   }
 
-  @datatype class LitF32(val value: F32, @hidden val attr: Attr) extends Exp with Lit {
+  @datatype class LitF32(val value: F32, @hidden val attr: Attr) extends Lit {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1161,7 +1589,7 @@ object Exp {
     }
   }
 
-  @datatype class LitF64(val value: F64, @hidden val attr: Attr) extends Exp with Lit {
+  @datatype class LitF64(val value: F64, @hidden val attr: Attr) extends Lit {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1176,7 +1604,7 @@ object Exp {
     }
   }
 
-  @datatype class LitR(val value: R, @hidden val attr: Attr) extends Exp with Lit {
+  @datatype class LitR(val value: R, @hidden val attr: Attr) extends Lit {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1191,7 +1619,7 @@ object Exp {
     }
   }
 
-  @datatype class LitString(val value: String, @hidden val attr: Attr) extends Exp with Lit {
+  @datatype class LitString(val value: String, @hidden val attr: Attr) extends Lit {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1206,7 +1634,7 @@ object Exp {
     }
   }
 
-  @datatype class LitStepId(val value: String, @hidden val attr: Attr) extends Exp with Lit {
+  @datatype class LitStepId(val value: String, @hidden val attr: Attr) extends Lit {
 
     @pure override def posOpt: Option[Position] = {
       return attr.posOpt
@@ -1487,7 +1915,7 @@ object Exp {
     }
 
     @pure override def prettyST: ST = {
-      return st"${id.value}"
+      return id.prettyST
     }
   }
 
@@ -1885,6 +2313,21 @@ object Exp {
     }
   }
 
+  @datatype class StrictPureBlock(val block: Stmt.Block,
+                                  @hidden val attr: TypedAttr) extends Exp {
+    @pure override def posOpt: Option[Position] = {
+      return attr.posOpt
+    }
+
+    @pure override def typedOpt: Option[Typed] = {
+      return attr.typedOpt
+    }
+
+    @pure override def prettyST: ST = {
+      halt("TODO") // TODO
+    }
+  }
+
   @datatype class AssumeAgree(val channel: LitString,
                               val requiresClause: MethodContract.Claims,
                               val inAgreeClause: MethodContract.Claims, @hidden val attr: Attr) extends Exp {
@@ -1947,9 +2390,13 @@ object Exp {
 
 @datatype class NamedArg(val id: Id, val arg: Exp, val index: Z)
 
-@datatype class Id(val value: String, @hidden val attr: Attr)
+@datatype class Id(val value: String, @hidden val attr: Attr) {
+  @strictpure def prettyST: ST = st"$value"
+}
 
-@datatype class Name(val ids: ISZ[Id], @hidden val attr: Attr)
+@datatype class Name(val ids: ISZ[Id], @hidden val attr: Attr) {
+  @strictpure def prettyST: ST = st"${(for (id <- ids) yield id.prettyST, ".")}"
+}
 
 @datatype class Body(val stmts: ISZ[Stmt], @hidden val undecls: ISZ[ResolvedInfo.LocalVar]) {
 
@@ -1966,9 +2413,18 @@ object Exp {
     }
     return T
   }
+
+  @strictpure def prettySTs: ISZ[ST] = for (stmt <- stmts) yield
+    if (stmt.isInstanceOf[Stmt.Block]) st";${stmt.prettyST}" else stmt.prettyST
 }
 
-@datatype class AdtParam(val isHidden: B, val isVal: B, val id: Id, val tipe: Type)
+@datatype class AdtParam(val isHidden: B, val isVal: B, val id: Id, val tipe: Type) {
+  @strictpure def prettyST: ST = {
+    val hidden: String = if (isHidden) "@hidden " else ""
+    val valVar: String = if (isVal) "val" else "var"
+    return st"$hidden$valVar ${id.prettyST}: ${tipe.prettyST}"
+  }
+}
 
 @datatype class MethodSig(val isPure: B,
                           val id: Id,
@@ -1986,13 +2442,42 @@ object Exp {
     }
     return Typed.Fun(isPure, !hasParams, pts, returnType.typedOpt.get)
   }
+
+  @strictpure def prettyST: ST = {
+    val tpOpt: Option[ST] = if (typeParams.isEmpty) None() else Some(
+      st"[${(for (tp <- typeParams) yield tp.prettyST, ", ")}]"
+    )
+    val psOpt: Option[ST] = if (hasParams) Some(
+      st"(${(for (p <- params) yield p.prettyST, ", ")})"
+    ) else None()
+    return st"${id.prettyST}$tpOpt$psOpt: ${returnType.prettyST}"
+  }
 }
 
-@datatype class Param(val isHidden: B, val id: Id, val tipe: Type)
+@datatype class Param(val isHidden: B, val id: Id, val tipe: Type) {
+  @strictpure def prettyST: ST = {
+    val hidden: String = if (isHidden) "@hidden " else ""
+    return st"$hidden${id.prettyST}: ${tipe.prettyST}"
+  }
+}
 
 @datatype class TypeParam(val id: Id, val kind: Typed.VarKind.Type) {
   @strictpure def isImmutable: B = kind != Typed.VarKind.Mutable
   @strictpure def isIndex: B = kind == Typed.VarKind.Index
+  @strictpure def prettyST: ST = {
+    val k: String = kind match {
+      case Typed.VarKind.Index => "@index"
+      case Typed.VarKind.Mutable => "@mut"
+      case Typed.VarKind.Immutable => "@imm"
+    }
+    return st"$k ${id.prettyST}"
+  }
+}
+
+object TypeParam {
+  @strictpure def stOpt(typeParams: ISZ[TypeParam]): Option[ST] = if (typeParams.isEmpty) None() else Some(
+    st"[${(for (tp <- typeParams) yield tp.prettyST, ", ")}]"
+  )
 }
 
 @datatype class Attr(val posOpt: Option[Position])

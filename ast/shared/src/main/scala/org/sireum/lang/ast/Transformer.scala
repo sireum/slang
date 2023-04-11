@@ -648,14 +648,62 @@ object Transformer {
 
     @pure def preExp(ctx: Context, o: Exp): PreResult[Context, Exp] = {
       o match {
-        case o: Exp.LitB => return preExpLitB(ctx, o)
-        case o: Exp.LitC => return preExpLitC(ctx, o)
-        case o: Exp.LitZ => return preExpLitZ(ctx, o)
-        case o: Exp.LitF32 => return preExpLitF32(ctx, o)
-        case o: Exp.LitF64 => return preExpLitF64(ctx, o)
-        case o: Exp.LitR => return preExpLitR(ctx, o)
-        case o: Exp.LitString => return preExpLitString(ctx, o)
-        case o: Exp.LitStepId => return preExpLitStepId(ctx, o)
+        case o: Exp.LitB =>
+          val r: PreResult[Context, Exp] = preExpLitB(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Exp)) => PreResult(preCtx, continu, Some[Exp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Exp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp]())
+          }
+          return r
+        case o: Exp.LitC =>
+          val r: PreResult[Context, Exp] = preExpLitC(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Exp)) => PreResult(preCtx, continu, Some[Exp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Exp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp]())
+          }
+          return r
+        case o: Exp.LitZ =>
+          val r: PreResult[Context, Exp] = preExpLitZ(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Exp)) => PreResult(preCtx, continu, Some[Exp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Exp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp]())
+          }
+          return r
+        case o: Exp.LitF32 =>
+          val r: PreResult[Context, Exp] = preExpLitF32(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Exp)) => PreResult(preCtx, continu, Some[Exp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Exp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp]())
+          }
+          return r
+        case o: Exp.LitF64 =>
+          val r: PreResult[Context, Exp] = preExpLitF64(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Exp)) => PreResult(preCtx, continu, Some[Exp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Exp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp]())
+          }
+          return r
+        case o: Exp.LitR =>
+          val r: PreResult[Context, Exp] = preExpLitR(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Exp)) => PreResult(preCtx, continu, Some[Exp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Exp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp]())
+          }
+          return r
+        case o: Exp.LitString =>
+          val r: PreResult[Context, Exp] = preExpLitString(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Exp)) => PreResult(preCtx, continu, Some[Exp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Exp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp]())
+          }
+          return r
+        case o: Exp.LitStepId =>
+          val r: PreResult[Context, Exp] = preExpLitStepId(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Exp)) => PreResult(preCtx, continu, Some[Exp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Exp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp]())
+          }
+          return r
         case o: Exp.StringInterpolate => return preExpStringInterpolate(ctx, o)
         case o: Exp.This => return preExpThis(ctx, o)
         case o: Exp.Super => return preExpSuper(ctx, o)
@@ -698,6 +746,7 @@ object Transformer {
         case o: Exp.LoopIndex => return preExpLoopIndex(ctx, o)
         case o: Exp.StateSeq => return preExpStateSeq(ctx, o)
         case o: Exp.Result => return preExpResult(ctx, o)
+        case o: Exp.StrictPureBlock => return preExpStrictPureBlock(ctx, o)
         case o: Exp.AssumeAgree => return preExpAssumeAgree(ctx, o)
         case o: Exp.AssertAgree => return preExpAssertAgree(ctx, o)
         case o: Exp.InfoFlowInvariant => return preExpInfoFlowInvariant(ctx, o)
@@ -706,94 +755,46 @@ object Transformer {
 
     @pure def preLit(ctx: Context, o: Lit): PreResult[Context, Lit] = {
       o match {
-        case o: Exp.LitB =>
-          val r: PreResult[Context, Lit] = preExpLitB(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: Lit)) => PreResult(preCtx, continu, Some[Lit](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Lit")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Lit]())
-          }
-          return r
-        case o: Exp.LitC =>
-          val r: PreResult[Context, Lit] = preExpLitC(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: Lit)) => PreResult(preCtx, continu, Some[Lit](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Lit")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Lit]())
-          }
-          return r
-        case o: Exp.LitZ =>
-          val r: PreResult[Context, Lit] = preExpLitZ(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: Lit)) => PreResult(preCtx, continu, Some[Lit](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Lit")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Lit]())
-          }
-          return r
-        case o: Exp.LitF32 =>
-          val r: PreResult[Context, Lit] = preExpLitF32(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: Lit)) => PreResult(preCtx, continu, Some[Lit](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Lit")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Lit]())
-          }
-          return r
-        case o: Exp.LitF64 =>
-          val r: PreResult[Context, Lit] = preExpLitF64(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: Lit)) => PreResult(preCtx, continu, Some[Lit](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Lit")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Lit]())
-          }
-          return r
-        case o: Exp.LitR =>
-          val r: PreResult[Context, Lit] = preExpLitR(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: Lit)) => PreResult(preCtx, continu, Some[Lit](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Lit")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Lit]())
-          }
-          return r
-        case o: Exp.LitString =>
-          val r: PreResult[Context, Lit] = preExpLitString(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: Lit)) => PreResult(preCtx, continu, Some[Lit](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Lit")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Lit]())
-          }
-          return r
-        case o: Exp.LitStepId =>
-          val r: PreResult[Context, Lit] = preExpLitStepId(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: Lit)) => PreResult(preCtx, continu, Some[Lit](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Lit")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Lit]())
-          }
-          return r
+        case o: Exp.LitB => return preExpLitB(ctx, o)
+        case o: Exp.LitC => return preExpLitC(ctx, o)
+        case o: Exp.LitZ => return preExpLitZ(ctx, o)
+        case o: Exp.LitF32 => return preExpLitF32(ctx, o)
+        case o: Exp.LitF64 => return preExpLitF64(ctx, o)
+        case o: Exp.LitR => return preExpLitR(ctx, o)
+        case o: Exp.LitString => return preExpLitString(ctx, o)
+        case o: Exp.LitStepId => return preExpLitStepId(ctx, o)
       }
     }
 
-    @pure def preExpLitB(ctx: Context, o: Exp.LitB): PreResult[Context, Exp] = {
+    @pure def preExpLitB(ctx: Context, o: Exp.LitB): PreResult[Context, Lit] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preExpLitC(ctx: Context, o: Exp.LitC): PreResult[Context, Exp] = {
+    @pure def preExpLitC(ctx: Context, o: Exp.LitC): PreResult[Context, Lit] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preExpLitZ(ctx: Context, o: Exp.LitZ): PreResult[Context, Exp] = {
+    @pure def preExpLitZ(ctx: Context, o: Exp.LitZ): PreResult[Context, Lit] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preExpLitF32(ctx: Context, o: Exp.LitF32): PreResult[Context, Exp] = {
+    @pure def preExpLitF32(ctx: Context, o: Exp.LitF32): PreResult[Context, Lit] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preExpLitF64(ctx: Context, o: Exp.LitF64): PreResult[Context, Exp] = {
+    @pure def preExpLitF64(ctx: Context, o: Exp.LitF64): PreResult[Context, Lit] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preExpLitR(ctx: Context, o: Exp.LitR): PreResult[Context, Exp] = {
+    @pure def preExpLitR(ctx: Context, o: Exp.LitR): PreResult[Context, Lit] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preExpLitString(ctx: Context, o: Exp.LitString): PreResult[Context, Exp] = {
+    @pure def preExpLitString(ctx: Context, o: Exp.LitString): PreResult[Context, Lit] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preExpLitStepId(ctx: Context, o: Exp.LitStepId): PreResult[Context, Exp] = {
+    @pure def preExpLitStepId(ctx: Context, o: Exp.LitStepId): PreResult[Context, Lit] = {
       return PreResult(ctx, T, None())
     }
 
@@ -925,6 +926,10 @@ object Transformer {
     }
 
     @pure def preExpResult(ctx: Context, o: Exp.Result): PreResult[Context, Exp] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preExpStrictPureBlock(ctx: Context, o: Exp.StrictPureBlock): PreResult[Context, Exp] = {
       return PreResult(ctx, T, None())
     }
 
@@ -1755,14 +1760,62 @@ object Transformer {
 
     @pure def postExp(ctx: Context, o: Exp): TPostResult[Context, Exp] = {
       o match {
-        case o: Exp.LitB => return postExpLitB(ctx, o)
-        case o: Exp.LitC => return postExpLitC(ctx, o)
-        case o: Exp.LitZ => return postExpLitZ(ctx, o)
-        case o: Exp.LitF32 => return postExpLitF32(ctx, o)
-        case o: Exp.LitF64 => return postExpLitF64(ctx, o)
-        case o: Exp.LitR => return postExpLitR(ctx, o)
-        case o: Exp.LitString => return postExpLitString(ctx, o)
-        case o: Exp.LitStepId => return postExpLitStepId(ctx, o)
+        case o: Exp.LitB =>
+          val r: TPostResult[Context, Exp] = postExpLitB(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Exp)) => TPostResult(postCtx, Some[Exp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp]())
+          }
+          return r
+        case o: Exp.LitC =>
+          val r: TPostResult[Context, Exp] = postExpLitC(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Exp)) => TPostResult(postCtx, Some[Exp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp]())
+          }
+          return r
+        case o: Exp.LitZ =>
+          val r: TPostResult[Context, Exp] = postExpLitZ(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Exp)) => TPostResult(postCtx, Some[Exp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp]())
+          }
+          return r
+        case o: Exp.LitF32 =>
+          val r: TPostResult[Context, Exp] = postExpLitF32(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Exp)) => TPostResult(postCtx, Some[Exp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp]())
+          }
+          return r
+        case o: Exp.LitF64 =>
+          val r: TPostResult[Context, Exp] = postExpLitF64(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Exp)) => TPostResult(postCtx, Some[Exp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp]())
+          }
+          return r
+        case o: Exp.LitR =>
+          val r: TPostResult[Context, Exp] = postExpLitR(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Exp)) => TPostResult(postCtx, Some[Exp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp]())
+          }
+          return r
+        case o: Exp.LitString =>
+          val r: TPostResult[Context, Exp] = postExpLitString(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Exp)) => TPostResult(postCtx, Some[Exp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp]())
+          }
+          return r
+        case o: Exp.LitStepId =>
+          val r: TPostResult[Context, Exp] = postExpLitStepId(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Exp)) => TPostResult(postCtx, Some[Exp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp]())
+          }
+          return r
         case o: Exp.StringInterpolate => return postExpStringInterpolate(ctx, o)
         case o: Exp.This => return postExpThis(ctx, o)
         case o: Exp.Super => return postExpSuper(ctx, o)
@@ -1805,6 +1858,7 @@ object Transformer {
         case o: Exp.LoopIndex => return postExpLoopIndex(ctx, o)
         case o: Exp.StateSeq => return postExpStateSeq(ctx, o)
         case o: Exp.Result => return postExpResult(ctx, o)
+        case o: Exp.StrictPureBlock => return postExpStrictPureBlock(ctx, o)
         case o: Exp.AssumeAgree => return postExpAssumeAgree(ctx, o)
         case o: Exp.AssertAgree => return postExpAssertAgree(ctx, o)
         case o: Exp.InfoFlowInvariant => return postExpInfoFlowInvariant(ctx, o)
@@ -1813,94 +1867,46 @@ object Transformer {
 
     @pure def postLit(ctx: Context, o: Lit): TPostResult[Context, Lit] = {
       o match {
-        case o: Exp.LitB =>
-          val r: TPostResult[Context, Lit] = postExpLitB(ctx, o) match {
-           case TPostResult(postCtx, Some(result: Lit)) => TPostResult(postCtx, Some[Lit](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type Lit")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Lit]())
-          }
-          return r
-        case o: Exp.LitC =>
-          val r: TPostResult[Context, Lit] = postExpLitC(ctx, o) match {
-           case TPostResult(postCtx, Some(result: Lit)) => TPostResult(postCtx, Some[Lit](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type Lit")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Lit]())
-          }
-          return r
-        case o: Exp.LitZ =>
-          val r: TPostResult[Context, Lit] = postExpLitZ(ctx, o) match {
-           case TPostResult(postCtx, Some(result: Lit)) => TPostResult(postCtx, Some[Lit](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type Lit")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Lit]())
-          }
-          return r
-        case o: Exp.LitF32 =>
-          val r: TPostResult[Context, Lit] = postExpLitF32(ctx, o) match {
-           case TPostResult(postCtx, Some(result: Lit)) => TPostResult(postCtx, Some[Lit](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type Lit")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Lit]())
-          }
-          return r
-        case o: Exp.LitF64 =>
-          val r: TPostResult[Context, Lit] = postExpLitF64(ctx, o) match {
-           case TPostResult(postCtx, Some(result: Lit)) => TPostResult(postCtx, Some[Lit](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type Lit")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Lit]())
-          }
-          return r
-        case o: Exp.LitR =>
-          val r: TPostResult[Context, Lit] = postExpLitR(ctx, o) match {
-           case TPostResult(postCtx, Some(result: Lit)) => TPostResult(postCtx, Some[Lit](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type Lit")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Lit]())
-          }
-          return r
-        case o: Exp.LitString =>
-          val r: TPostResult[Context, Lit] = postExpLitString(ctx, o) match {
-           case TPostResult(postCtx, Some(result: Lit)) => TPostResult(postCtx, Some[Lit](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type Lit")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Lit]())
-          }
-          return r
-        case o: Exp.LitStepId =>
-          val r: TPostResult[Context, Lit] = postExpLitStepId(ctx, o) match {
-           case TPostResult(postCtx, Some(result: Lit)) => TPostResult(postCtx, Some[Lit](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type Lit")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Lit]())
-          }
-          return r
+        case o: Exp.LitB => return postExpLitB(ctx, o)
+        case o: Exp.LitC => return postExpLitC(ctx, o)
+        case o: Exp.LitZ => return postExpLitZ(ctx, o)
+        case o: Exp.LitF32 => return postExpLitF32(ctx, o)
+        case o: Exp.LitF64 => return postExpLitF64(ctx, o)
+        case o: Exp.LitR => return postExpLitR(ctx, o)
+        case o: Exp.LitString => return postExpLitString(ctx, o)
+        case o: Exp.LitStepId => return postExpLitStepId(ctx, o)
       }
     }
 
-    @pure def postExpLitB(ctx: Context, o: Exp.LitB): TPostResult[Context, Exp] = {
+    @pure def postExpLitB(ctx: Context, o: Exp.LitB): TPostResult[Context, Lit] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postExpLitC(ctx: Context, o: Exp.LitC): TPostResult[Context, Exp] = {
+    @pure def postExpLitC(ctx: Context, o: Exp.LitC): TPostResult[Context, Lit] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postExpLitZ(ctx: Context, o: Exp.LitZ): TPostResult[Context, Exp] = {
+    @pure def postExpLitZ(ctx: Context, o: Exp.LitZ): TPostResult[Context, Lit] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postExpLitF32(ctx: Context, o: Exp.LitF32): TPostResult[Context, Exp] = {
+    @pure def postExpLitF32(ctx: Context, o: Exp.LitF32): TPostResult[Context, Lit] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postExpLitF64(ctx: Context, o: Exp.LitF64): TPostResult[Context, Exp] = {
+    @pure def postExpLitF64(ctx: Context, o: Exp.LitF64): TPostResult[Context, Lit] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postExpLitR(ctx: Context, o: Exp.LitR): TPostResult[Context, Exp] = {
+    @pure def postExpLitR(ctx: Context, o: Exp.LitR): TPostResult[Context, Lit] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postExpLitString(ctx: Context, o: Exp.LitString): TPostResult[Context, Exp] = {
+    @pure def postExpLitString(ctx: Context, o: Exp.LitString): TPostResult[Context, Lit] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postExpLitStepId(ctx: Context, o: Exp.LitStepId): TPostResult[Context, Exp] = {
+    @pure def postExpLitStepId(ctx: Context, o: Exp.LitStepId): TPostResult[Context, Lit] = {
       return TPostResult(ctx, None())
     }
 
@@ -2032,6 +2038,10 @@ object Transformer {
     }
 
     @pure def postExpResult(ctx: Context, o: Exp.Result): TPostResult[Context, Exp] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postExpStrictPureBlock(ctx: Context, o: Exp.StrictPureBlock): TPostResult[Context, Exp] = {
       return TPostResult(ctx, None())
     }
 
@@ -3986,6 +3996,13 @@ import Transformer._
           val r1: TPostResult[Context, TypedAttr] = transformTypedAttr(r0.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
             TPostResult(r1.ctx, Some(o2(tipeOpt = r0.resultOpt.getOrElse(o2.tipeOpt), attr = r1.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: Exp.StrictPureBlock =>
+          val r0: TPostResult[Context, Stmt.Block] = transformStmtBlock(preR.ctx, o2.block)
+          val r1: TPostResult[Context, TypedAttr] = transformTypedAttr(r0.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(block = r0.resultOpt.getOrElse(o2.block), attr = r1.resultOpt.getOrElse(o2.attr))))
           else
             TPostResult(r1.ctx, None())
         case o2: Exp.AssumeAgree =>

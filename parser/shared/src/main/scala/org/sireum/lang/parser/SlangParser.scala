@@ -25,7 +25,6 @@
 
 package org.sireum.lang.parser
 
-import org.sireum.$internal.MutableMarker
 import org.sireum.message
 import org.sireum.message.Reporter
 import org.sireum.lang.{ast => AST}
@@ -1121,7 +1120,7 @@ class SlangParser(
             val expAttr = attr(exp.pos)
             var stmt1 = translateStat(Enclosing.Block)(q"val r: ${tpeopt.get} = $exp").asInstanceOf[AST.Stmt.Var]
             stmt1 = stmt1(id = stmt1.id(attr = expAttr), attr = stmt1.attr(posOpt = expAttr.posOpt))
-            val spc = AST.Util.StrictPureChecker(messageKind, Reporter.create)
+            val spc = AST.Util.StrictPureChecker(true, messageKind, Reporter.create)
             spc.transformAssignExp(stmt1.initOpt.get)
             reporter.reports(spc.reporter.messages)
 
@@ -1885,10 +1884,10 @@ class SlangParser(
       case p"(..$patsnel)" if patsnel.size > 1 =>
         AST.Pattern.Structure(None(), None(), ISZ(patsnel.map(translatePattern): _*), resolvedAttr(pat.pos))
       case p"${ref: Term.Ref}.$ename" =>
-        AST.Pattern.Ref(AST.Name(ref2IS(ref) :+ cid(ename), attr(pat.pos)), resolvedAttr(pat.pos))
+        AST.Pattern.Ref(true, AST.Name(ref2IS(ref) :+ cid(ename), attr(pat.pos)), resolvedAttr(pat.pos))
       case pat: Term.Name =>
         checkReservedId(false, pat.pos, pat.value)
-        AST.Pattern.Ref(AST.Name(ISZ(cid(pat)), attr(pat.pos)), resolvedAttr(pat.pos))
+        AST.Pattern.Ref(false, AST.Name(ISZ(cid(pat)), attr(pat.pos)), resolvedAttr(pat.pos))
       case p"${name: Pat.Var} : $tpe" =>
         checkReservedId(true, name.name.pos, name.name.value)
         AST.Pattern.VarBinding(cid(name), Some(translateType(tpe)), typedAttr(pat.pos))
@@ -2724,6 +2723,13 @@ class SlangParser(
       case exp: Term.Function => translateFun(exp)
       case Term.Block(List(fn: Term.Function)) => translateFun(fn)
       case exp: Term.ForYield => translateForYield(exp)
+      case exp: Term.Block =>
+        val b = translateBlock(Enclosing.Block, exp, isAssignExp = true)
+        val r = AST.Exp.StrictPureBlock(b, AST.TypedAttr(b.posOpt, None()))
+        val spc = AST.Util.StrictPureChecker(false, messageKind, Reporter.create)
+        spc.transformStmtBlock(b)
+        reporter.reports(spc.reporter.messages)
+        r
       case _ =>
         errorNotSlang(exp.pos, s"Expression '${syntax(exp)}' is")
         rExp
@@ -3642,13 +3648,13 @@ class SlangParser(
       case term: Lit.Int => return AST.ProofAst.StepId.Num(term.value, attr(term.pos))
       case term: Term.Interpolate =>
         val List(Lit.String(value)) = term.parts
-        return AST.ProofAst.StepId.Str(value, attr(term.pos))
+        return AST.ProofAst.StepId.Str(false, value, attr(term.pos))
     }
   }
   def toStepId(pos: Position): AST.ProofAst.StepId = {
     val at = attr(pos)
     val atpos = at.posOpt.get
-    return AST.ProofAst.StepId.Str(s"[${atpos.beginLine}, ${atpos.beginColumn}]", at)
+    return AST.ProofAst.StepId.Str(true, s"[${atpos.beginLine}, ${atpos.beginColumn}]", at)
   }
 
   def translateProofStep(allowAssume: B)(proofStep: Term): AST.ProofAst.Step = {
@@ -3670,7 +3676,7 @@ class SlangParser(
         val w = ws(i)
         w match {
           case w: AST.Exp.LitZ => witnesses = witnesses :+ AST.ProofAst.StepId.Num(w.value, w.attr)
-          case w: AST.Exp.LitStepId => witnesses = witnesses :+ AST.ProofAst.StepId.Str(w.value, w.attr)
+          case w: AST.Exp.LitStepId => witnesses = witnesses :+ AST.ProofAst.StepId.Str(false, w.value, w.attr)
           case _ =>
             reporter.error(w.posOpt, messageKind, s"Expecting a proof step id but found '${terms(i.toInt).syntax}'")
         }

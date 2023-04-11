@@ -196,55 +196,65 @@ object Util {
   }
 
 
-  @record class StrictPureChecker(val messageKind: String,
+  @record class StrictPureChecker(val isMethod: B,
+                                  val messageKind: String,
                                   val reporter: Reporter) extends MTransformer {
+    val messagePrefix: String = if (isMethod) "@strictpure methods" else "Strict-pure blocks"
+
     override def postStmtMethod(o: Stmt.Method): MOption[Stmt] = {
-      reporter.error(o.posOpt, messageKind, "@strictpure methods cannot define nested methods")
+      reporter.error(o.posOpt, messageKind, s"$messagePrefix methods cannot define nested methods")
       return MTransformer.PostResultStmtMethod
     }
 
     override def postStmtVar(o: Stmt.Var): MOption[Stmt] = {
       if (!o.isVal) {
-        reporter.error(o.posOpt, messageKind, "@strictpure methods cannot define vars")
+        reporter.error(o.posOpt, messageKind, s"$messagePrefix methods cannot define vars")
       }
       return MTransformer.PostResultStmtVar
     }
 
     override def postStmtWhile(o: Stmt.While): MOption[Stmt] = {
-      reporter.error(o.posOpt, messageKind, "@strictpure methods cannot use while-loops")
+      reporter.error(o.posOpt, messageKind, s"$messagePrefix cannot use while-loops")
       return MTransformer.PostResultStmtWhile
     }
 
     override def postStmtFor(o: Stmt.For): MOption[Stmt] = {
-      reporter.error(o.posOpt, messageKind, "@strictpure methods cannot use for-loops")
+      reporter.error(o.posOpt, messageKind, s"$messagePrefix cannot use for-loops")
       return MTransformer.PostResultStmtFor
     }
 
     override def postStmtVarPattern(o: Stmt.VarPattern): MOption[Stmt] = {
       if (!o.isVal) {
-        reporter.error(o.posOpt, messageKind, "@strictpure methods cannot define vars")
+        reporter.error(o.posOpt, messageKind, s"$messagePrefix cannot define vars")
       }
       return MTransformer.PostResultStmtVarPattern
     }
 
     override def postStmtSpecVar(o: Stmt.SpecVar): MOption[Stmt] = {
-      reporter.error(o.posOpt, messageKind, "@strictpure methods cannot define @spec val/var")
+      reporter.error(o.posOpt, messageKind, s"$messagePrefix cannot define @spec val/var")
       return MTransformer.PostResultStmtSpecVar
     }
 
     override def postStmtSpecBlock(o: Stmt.SpecBlock): MOption[Stmt.Spec] = {
-      reporter.error(o.posOpt, messageKind, "@strictpure methods cannot use Spec { ... } blocks")
+      reporter.error(o.posOpt, messageKind, s"$messagePrefix cannot use Spec { ... } blocks")
       return MTransformer.PostResultStmtSpecBlock
     }
 
     override def postStmtSpecLabel(o: Stmt.SpecLabel): MOption[Stmt.Spec] = {
-      reporter.error(o.posOpt, messageKind, "@strictpure methods cannot use spec labels")
+      reporter.error(o.posOpt, messageKind, s"$messagePrefix cannot use spec labels")
       return MTransformer.PostResultStmtSpecLabel
     }
 
     override def postStmtAssign(o: Stmt.Assign): MOption[Stmt] = {
-      reporter.error(o.posOpt, messageKind, "@strictpure methods cannot use assignments")
+      reporter.error(o.posOpt, messageKind, s"$messagePrefix cannot use assignments")
       return MTransformer.PostResultStmtAssign
+    }
+
+    override def postStmtReturn(o: Stmt.Return): MOption[Stmt] = {
+      if (!isMethod) {
+        reporter.error(o.posOpt, messageKind, s"$messagePrefix cannot have returns")
+      }
+      return MTransformer.PostResultStmtReturn
     }
   }
 
@@ -627,7 +637,7 @@ object Util {
     for (e <- es) {
       e match {
         case e: Exp.LitZ if e.value >= 0 => r = r :+ ProofAst.StepId.Num(e.value, e.attr)
-        case e: Exp.LitStepId => r = r :+ ProofAst.StepId.Str(e.value, e.attr)
+        case e: Exp.LitStepId => r = r :+ ProofAst.StepId.Str(F, e.value, e.attr)
         case _ =>
           reporter.error(e.posOpt, kind, "Expecting only a non-negative integer literal or a step name literal")
       }
