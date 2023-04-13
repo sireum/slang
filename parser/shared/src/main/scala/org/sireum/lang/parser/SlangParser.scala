@@ -1112,20 +1112,30 @@ class SlangParser(
                   "@memoize can only be used for @datatype/@record classes."
                 )
               }
-              AST.Stmt.Method(false, purity, hasOverride, isHelper, sig, translateMethodContract(exprs, attr(exp.pos)), None(), resolvedAttr(tree.pos))
+              AST.Stmt.Method(false, purity, hasOverride, isHelper, sig, translateMethodContract(exprs, attr(exp.pos)),
+                None(), resolvedAttr(tree.pos))
             case _ => err()
           }
         case _ =>
           if (isStrictPure && !hasError) {
+            val (mc, newExp) = exp match {
+              case exp: Term.Block =>
+                exp.stats.headOption match {
+                  case scala.Some(c@q"Contract(..$exprs)") =>
+                    (translateMethodContract(exprs, attr(c.pos)), exp.copy(stats = exp.stats.tail))
+                  case _ => (emptyContract, exp)
+                }
+              case _ => (emptyContract, exp)
+            }
             val expAttr = attr(exp.pos)
-            var stmt1 = translateStat(Enclosing.Block)(q"val _r_ : ${tpeopt.get} = $exp").asInstanceOf[AST.Stmt.Var]
+            var stmt1 = translateStat(Enclosing.Block)(q"val _r_ : ${tpeopt.get} = $newExp").asInstanceOf[AST.Stmt.Var]
             stmt1 = stmt1(id = stmt1.id(attr = expAttr), attr = stmt1.attr(posOpt = expAttr.posOpt))
             var stmt2 = translateStat(Enclosing.Block)(q"return _r_").asInstanceOf[AST.Stmt.Return]
             val ident = stmt2.expOpt.get.asInstanceOf[AST.Exp.Ident]
             stmt2 = stmt2(expOpt = Some(ident(id = stmt1.id, attr = ident.attr(posOpt = expAttr.posOpt))),
               attr = stmt2.attr(posOpt = expAttr.posOpt))
 
-            AST.Stmt.Method(false, purity, hasOverride, isHelper, sig, emptyContract,
+            AST.Stmt.Method(false, purity, hasOverride, isHelper, sig, mc,
               Some(AST.Body(ISZ(stmt1, stmt2), ISZ())), resolvedAttr(tree.pos))
           } else err()
       }
