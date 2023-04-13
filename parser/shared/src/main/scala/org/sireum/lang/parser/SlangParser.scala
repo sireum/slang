@@ -1118,13 +1118,9 @@ class SlangParser(
         case _ =>
           if (isStrictPure && !hasError) {
             val expAttr = attr(exp.pos)
-            var stmt1 = translateStat(Enclosing.Block)(q"val r: ${tpeopt.get} = $exp").asInstanceOf[AST.Stmt.Var]
+            var stmt1 = translateStat(Enclosing.Block)(q"val _r_ : ${tpeopt.get} = $exp").asInstanceOf[AST.Stmt.Var]
             stmt1 = stmt1(id = stmt1.id(attr = expAttr), attr = stmt1.attr(posOpt = expAttr.posOpt))
-            val spc = AST.Util.StrictPureChecker(true, messageKind, Reporter.create)
-            spc.transformAssignExp(stmt1.initOpt.get)
-            reporter.reports(spc.reporter.messages)
-
-            var stmt2 = translateStat(Enclosing.Block)(q"return r").asInstanceOf[AST.Stmt.Return]
+            var stmt2 = translateStat(Enclosing.Block)(q"return _r_").asInstanceOf[AST.Stmt.Return]
             val ident = stmt2.expOpt.get.asInstanceOf[AST.Exp.Ident]
             stmt2 = stmt2(expOpt = Some(ident(id = stmt1.id, attr = ident.attr(posOpt = expAttr.posOpt))),
               attr = stmt2.attr(posOpt = expAttr.posOpt))
@@ -2726,9 +2722,6 @@ class SlangParser(
       case exp: Term.Block =>
         val b = translateBlock(Enclosing.Block, exp, isAssignExp = true)
         val r = AST.Exp.StrictPureBlock(b, AST.TypedAttr(b.posOpt, None()))
-        val spc = AST.Util.StrictPureChecker(false, messageKind, Reporter.create)
-        spc.transformStmtBlock(b)
-        reporter.reports(spc.reporter.messages)
         r
       case _ =>
         errorNotSlang(exp.pos, s"Expression '${syntax(exp)}' is")

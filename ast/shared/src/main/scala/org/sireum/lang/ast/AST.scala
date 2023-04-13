@@ -149,18 +149,18 @@ object LoopContract {
                              val modifies: ISZ[Exp.Ref],
                              val maxItOpt: Option[Exp.LitZ]) extends HasModifies {
   @strictpure def isEmpty: B = invariants.isEmpty && modifies.isEmpty && maxItOpt.isEmpty
-  @strictpure def prettySTOpt: Option[ST] = {
-    if (isEmpty) {
-      return None()
-    }
+  @strictpure def prettySTOpt: Option[ST] = if (isEmpty) {
+    None()
+  } else {
     val invs: ISZ[ST] =
       (if (modifies.isEmpty) ISZ[ST]() else ISZ(st"Modifies(${(for (m <- modifies) yield m.asExp.prettyST, ", ")})")) ++
         (for (e <- invariants) yield e.prettyST) ++
         (if (maxItOpt.nonEmpty) ISZ(st"MaxIt(${maxItOpt.get.prettyST})") else ISZ[ST]())
-    return Some(
+    Some(
       st"""Invariant(
           |  ${(invs, ",\n")})"""
     )
+
   }
 }
 
@@ -179,11 +179,9 @@ object Stmt {
   object Import {
 
     @datatype class Importer(val name: Name, val selectorOpt: Option[Selector]) {
-      @strictpure def prettyST: ST = {
-        selectorOpt match {
-          case Some(selector) => return st"${name.prettyST}.${selector.prettyST}"
-          case _ => return name.prettyST
-        }
+      @strictpure def prettyST: ST = selectorOpt match {
+        case Some(selector) => st"${name.prettyST}.${selector.prettyST}"
+        case _ => name.prettyST
       }
     }
 
@@ -220,7 +218,7 @@ object Stmt {
       val valVar: String = if (isVal) "val" else "var"
       val tOpt: Option[ST] = if (tipeOpt.isEmpty) None() else Some(st": ${tipeOpt.get.prettyST}")
       val iOpt: Option[ST] = if (initOpt.isEmpty) None() else Some(st" = ${initOpt.get.prettyST}")
-      return st"$specOpt$valVar ${id.prettyST}$tOpt$iOpt"
+      st"$specOpt$valVar ${id.prettyST}$tOpt$iOpt"
     }
 
   }
@@ -241,7 +239,7 @@ object Stmt {
       val spec: String = if (isSpec) "@spec " else ""
       val valVar: String = if (isVal) "val" else "var"
       val tOpt: Option[ST] = if (tipeOpt.isEmpty) None() else Some(st": ${tipeOpt.get.prettyST}")
-      return st"$spec$valVar ${pattern.prettyST}$tOpt = ${init.prettyST}}"
+      st"$spec$valVar ${pattern.prettyST}$tOpt = ${init.prettyST}}"
     }
 
   }
@@ -257,7 +255,7 @@ object Stmt {
 
     @strictpure override def prettyST: ST = {
       val valVar: String = if (isVal) "val" else "var"
-      return st"@spec $valVar ${id.prettyST}: ${tipe.prettyST}}"
+      st"@spec $valVar ${id.prettyST}: ${tipe.prettyST}}"
     }
 
   }
@@ -324,7 +322,7 @@ object Stmt {
             |  ${(bodyOpt.get.prettySTs, "\n")}
             |}"""
       )
-      return st"$helper$pure${overr}def ${sig.prettyST}$bOpt"
+      st"$helper$pure${overr}def ${sig.prettyST}$bOpt"
     }
   }
 
@@ -340,7 +338,7 @@ object Stmt {
     @strictpure override def prettyST: ST = {
       val helper: String = if (isPure) "@pure " else ""
       val bOpt: Option[ST] = if (contract.isEmpty) None() else Some(st" = ${contract.prettySTOpt(T)}")
-      return st"${helper}def ${sig.prettyST}$bOpt"
+      st"${helper}def ${sig.prettyST}$bOpt"
     }
 
   }
@@ -355,7 +353,7 @@ object Stmt {
 
     @strictpure override def prettyST: ST = {
       val just: ST = if (etaOpt.isEmpty) st"@just " else st"@just(${etaOpt.get.prettyST}}) "
-      return st"${just}def ${sig.prettyST}"
+      st"${just}def ${sig.prettyST}"
     }
 
   }
@@ -410,7 +408,7 @@ object Stmt {
         (if (hasMax) ISZ(st"""max = z"$max"""") else ISZ[ST]()) ++
         (if (isIndex) ISZ(st"index = $index") else ISZ[ST]())
       val rb: ST = if (isBitVector) st"@bits(${(args, ", ")})" else st"@range(${(args, ", ")})"
-      return st"$rb class ${id.prettyST}"
+      st"$rb class ${id.prettyST}"
     }
   }
 
@@ -476,7 +474,7 @@ object Stmt {
       val param: Option[ST] = if (params.isEmpty) None() else Some(st"(${(for (p <- params) yield p.prettyST, ", ")})")
       val extend: Option[ST] =
         if (parents.isEmpty) None() else Some(st" extends ${(for (n <- parents) yield n.prettyST, ", ")}")
-      st"""$rd $root ${id.prettyST}${TypeParam.stOpt(typeParams)}$extend {
+      st"""$rd $root ${id.prettyST}${TypeParam.stOpt(typeParams)}$param$extend {
           |  ${(for (stmt <- stmts) yield stmt.prettyST, "\n")}
           |}"""
     }
@@ -642,7 +640,7 @@ object Stmt {
     @strictpure def prettyST: ST = {
       val invs: ISZ[ST] = for (eg <- enumGens;
                                pst <- if (eg.contract.isEmpty) ISZ[ST]() else ISZ(eg.contract.prettySTOpt.get)) yield pst
-      return if (enumGens.size == 1)
+      if (enumGens.size == 1)
         st"""for (${enumGens(0).prettyST}) {
             |  ${(invs ++ body.prettySTs, "\n")}
             |}"""
@@ -751,7 +749,8 @@ object Stmt {
       return attr.posOpt
     }
 
-    @strictpure override def prettyST: ST = st"Contract(DataRefinement(${rep.prettyST})(${(for (ref <- refs) yield ref.prettyST, ", ")})(${(for (claim <- claims) yield claim.prettyST, ", ")}))"
+    @strictpure override def prettyST: ST =
+      st"Contract(DataRefinement(${rep.prettyST})(${(for (ref <- refs) yield ref.prettyST, ", ")})(${(for (claim <- claims) yield claim.prettyST, ", ")}))"
   }
 
   @datatype class SpecLabel(val id: Id) extends Spec {
@@ -853,22 +852,20 @@ object MethodContract {
     @pure override def isEmpty: B = {
       return reads.isEmpty && requires.isEmpty && modifies.isEmpty && ensures.isEmpty && infoFlows.isEmpty
     }
-    @strictpure override def prettySTOpt(isOnly: B): Option[ST] = {
-      if (isEmpty) {
-        return None()
-      } else {
-        val sts = ISZ[ST]() ++
-          readsClause.prettySTs("Reads") ++
-          requiresClause.prettySTs("Requires") ++
-          modifiesClause.prettySTs("Modifies") ++
-          ensuresClause.prettySTs("Ensures")
-        // TODO: InfoFlows
-        return Some(
-          st"""Contract${if (isOnly) ".Only" else ""}(
-              |  ${(sts, ",\n")}
-              |)"""
-        )
-      }
+    @strictpure override def prettySTOpt(isOnly: B): Option[ST] = if (isEmpty) {
+      None()
+    } else {
+      val sts = ISZ[ST]() ++
+        readsClause.prettySTs("Reads") ++
+        requiresClause.prettySTs("Requires") ++
+        modifiesClause.prettySTs("Modifies") ++
+        ensuresClause.prettySTs("Ensures")
+      // TODO: InfoFlows
+      Some(
+        st"""Contract${if (isOnly) ".Only" else ""}(
+            |  ${(sts, ",\n")}
+            |)"""
+      )
     }
   }
 
@@ -883,20 +880,19 @@ object MethodContract {
       return reads.isEmpty && modifies.isEmpty && cases.isEmpty
     }
 
-    @strictpure override def prettySTOpt(isOnly: B): Option[ST] = {
-      if (isEmpty) {
-        return None()
-      } else {
-        val sts = ISZ[ST]() ++
-          readsClause.prettySTs("Reads") ++
-          modifiesClause.prettySTs("Modifies") ++
-          ((for (c <- cases) yield c.prettyST))
-        return Some(
-          st"""Contract${if (isOnly) ".Only" else ""}(
-              |  ${(sts, ",\n")}
-              |)"""
-        )
-      }
+    @strictpure override def prettySTOpt(isOnly: B): Option[ST] = if (isEmpty) {
+      None()
+    } else {
+      val sts = ISZ[ST]() ++
+        readsClause.prettySTs("Reads") ++
+        modifiesClause.prettySTs("Modifies") ++
+        ((for (c <- cases) yield c.prettyST))
+      Some(
+        st"""Contract${if (isOnly) ".Only" else ""}(
+            |  ${(sts, ",\n")}
+            |)"""
+      )
+
     }
   }
 
@@ -935,7 +931,7 @@ object MethodContract {
 
     @strictpure def prettyST: ST = {
       val _members = members.map((e: Exp) => e.prettyST)
-      return st"Groups(${label.prettyST}, Vars(${(_members, ", ")}))"
+      st"Groups(${label.prettyST}, Vars(${(_members, ", ")}))"
     }
   }
 
@@ -948,7 +944,7 @@ object MethodContract {
     @strictpure def prettyST: ST = {
       val _froms = froms.map((e: Exp) => e.prettyST)
       val _tos = tos.map((e: Exp) => e.prettyST)
-      return st"Flows(${label.prettyST}, From(${(_froms, ", ")}), To(${(_tos, ", ")}))"
+      st"Flows(${label.prettyST}, From(${(_froms, ", ")}), To(${(_tos, ", ")}))"
     }
   }
 
@@ -964,7 +960,7 @@ object MethodContract {
       val _requires = requires.map((e: Exp) => e.prettyST)
       val _inAgrees = inAgrees.map((e: Exp) => e.prettyST)
       val _outAgrees = outAgrees.map((e: Exp) => e.prettyST)
-      return st"FlowCase(${label.prettyST}, Requires(${(_requires, ", ")}), InAgree(${(_inAgrees, ", ")}), OutAgree(${(_outAgrees, ", ")}))"
+      st"FlowCase(${label.prettyST}, Requires(${(_requires, ", ")}), InAgree(${(_inAgrees, ", ")}), OutAgree(${(_outAgrees, ", ")}))"
     }
   }
 }
@@ -1073,13 +1069,11 @@ object ProofAst {
       @strictpure override def prettyST: ST = {
         val cs: ISZ[ST] = (for (c <- cases) yield c.prettyST) ++
           (if (defaultOpt.nonEmpty) ISZ(defaultOpt.get.prettyST) else ISZ[ST]())
-        val r =
-          st"""${id.prettyST} #> (${claim.prettyST}) by StructuralInduction(
-              |  ${exp.prettyST} match {
-              |    ${(cs, "\n")}
-              |  }
-              |)"""
-        return r
+        st"""${id.prettyST} #> (${claim.prettyST}) by StructuralInduction(
+            |  ${exp.prettyST} match {
+            |    ${(cs, "\n")}
+            |  }
+            |)"""
       }
     }
 
@@ -1217,9 +1211,7 @@ object EnumGen {
   object Range {
 
     @datatype class Expr(val exp: Exp, @hidden val attr: Attr) extends Range {
-      @strictpure override def prettyST: ST = {
-        return exp.prettyST
-      }
+      @strictpure override def prettyST: ST = exp.prettyST
     }
 
     @datatype class Step(val isInclusive: B, val start: Exp, val end: Exp, val byOpt: Option[Exp], @hidden val attr: Attr) extends Range {
@@ -1228,7 +1220,7 @@ object EnumGen {
           case Some(by) => Some(st" by ${by.prettyST}")
           case _ => None()
         }
-        return st"${start.prettyST} ${if (isInclusive) "to" else "until"} ${end.prettyST}$bOpt"
+        st"${start.prettyST} ${if (isInclusive) "to" else "until"} ${end.prettyST}$bOpt"
       }
     }
 
@@ -1247,7 +1239,7 @@ object EnumGen {
         case Some(cond) => Some(st" if ${cond.prettyST}")
         case _ => None()
       }
-      return st"$id <- ${range.prettyST}$cOpt"
+      st"$id <- ${range.prettyST}$cOpt"
     }
   }
 
@@ -1305,7 +1297,7 @@ object Type {
     @strictpure override def prettyST: ST = {
       val typeArgsOpts: Option[ST] =
         if (typeArgs.isEmpty) None() else Some(st"[${(for (ta <- typeArgs) yield ta.prettyST, ", ")}]")
-      return st"${(for (id <- name.ids) yield id.value, ".")}$typeArgsOpts"
+      st"${(for (id <- name.ids) yield id.value, ".")}$typeArgsOpts"
     }
 
   }
@@ -1338,12 +1330,11 @@ object Type {
       }
     }
 
-    @strictpure override def prettyST: ST = {
-      if (isByName) {
-        return st"=> ${ret.prettyST}"
-      }
+    @strictpure override def prettyST: ST = if (isByName) {
+      st"=> ${ret.prettyST}"
+    } else {
       val pureOpt: Option[ST] = if (isPure) Some(st" @pure") else None()
-      return st"(${(for (arg <- args) yield arg.prettyST, ", ")}) => ${ret.prettyST} $pureOpt"
+      st"(${(for (arg <- args) yield arg.prettyST, ", ")}) => ${ret.prettyST} $pureOpt"
     }
   }
 
@@ -1476,7 +1467,7 @@ object Pattern {
     @strictpure override def prettyST: ST = {
       val binding: Option[ST] = if (idOpt.isEmpty) None() else Some(st"${idOpt.get.prettyST}@")
       val name: Option[ST] = if (nameOpt.isEmpty) None() else Some(nameOpt.get.prettyST)
-      return st"$binding$name(${(for (p <- patterns) yield p.prettyST, ", ")})"
+      st"$binding$name(${(for (p <- patterns) yield p.prettyST, ", ")})"
     }
 
   }
@@ -1620,7 +1611,7 @@ object Exp {
       val sts: ISZ[ST] = for (i <- 0 until size;
                               e <- (if (i < lits.size) ISZ(ops.StringOps(lits(i).value).escapeST) else ISZ[ST]()) ++
                                 (if (i < args.size) ISZ(st"$${${args(i).prettyST}}") else ISZ[ST]())) yield e
-      return st"""$prefix"${(sts, "")}""""
+      st"""$prefix"${(sts, "")}""""
     }
   }
 
@@ -1649,8 +1640,8 @@ object Exp {
 
     @strictpure override def prettyST: ST = {
       idOpt match {
-        case Some(id) => return st"super[${id.value}]"
-        case _ => return st"super"
+        case Some(id) => st"super[${id.value}]"
+        case _ => st"super"
       }
     }
   }
@@ -1685,7 +1676,7 @@ object Exp {
         case _: Lit => F
         case _ => T
       }
-      return if (paren) st"$opString(${exp.prettyST})" else st"$opString${exp.prettyST}"
+      if (paren) st"$opString(${exp.prettyST})" else st"$opString${exp.prettyST}"
     }
   }
 
@@ -1805,7 +1796,7 @@ object Exp {
         case right: If => st"(${right.prettyST})"
         case _ => right.prettyST
       }
-      return st"$leftST $op $rightST"
+      st"$leftST $op $rightST"
     }
   }
 
@@ -1920,7 +1911,7 @@ object Exp {
 
     @strictpure override def prettyST: ST = {
       val targsOpt: Option[ST] = if (targs.isEmpty) None() else Some(st"[${(targs, "")}]")
-      return st"${receiverOpt.map((rcv: Exp) => st"${rcv.prettyST}.")}${id.value}$targsOpt"
+      st"${receiverOpt.map((rcv: Exp) => st"${rcv.prettyST}.")}${id.value}$targsOpt"
     }
 
   }
@@ -1944,9 +1935,9 @@ object Exp {
       val as = st"(${(for (arg <- args) yield arg.prettyST, ", ")})"
       ident.attr.resOpt match {
         case Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.Apply)) =>
-          return st"${receiverOpt.get.prettyST}$targsOpt$as"
+          st"${receiverOpt.get.prettyST}$targsOpt$as"
         case _ =>
-          return st"${receiverOpt.map((rcv: Exp) => st"${rcv.prettyST}.")}${ident.id.value}$targsOpt$as"
+          st"${receiverOpt.map((rcv: Exp) => st"${rcv.prettyST}.")}${ident.id.value}$targsOpt$as"
       }
     }
   }
@@ -1970,8 +1961,8 @@ object Exp {
       val as = st"(${(for (arg <- args) yield st"${arg.id.value} = ${arg.arg.prettyST}", ", ")})"
       ident.attr.resOpt match {
         case Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.Apply)) =>
-          return st"${receiverOpt.map((rcv: Exp) => st"${rcv.prettyST}")}$targsOpt$as"
-        case _ => return st"${receiverOpt.map((rcv: Exp) => st"${rcv.prettyST}.")}${ident.id.value}$targsOpt$as"
+          st"${receiverOpt.map((rcv: Exp) => st"${rcv.prettyST}")}$targsOpt$as"
+        case _ => st"${receiverOpt.map((rcv: Exp) => st"${rcv.prettyST}.")}${ident.id.value}$targsOpt$as"
       }
     }
   }
@@ -2050,8 +2041,8 @@ object Exp {
         case _ => "_"
       }
       p.tipeOpt match {
-        case Some(tipe) => return st"$id: ${tipe.prettyST}"
-        case _ => return st"$id"
+        case Some(tipe) => st"$id: ${tipe.prettyST}"
+        case _ => st"$id"
       }
     }
 
@@ -2061,12 +2052,12 @@ object Exp {
         else st"(${(for (p <- params) yield paramST(p), ", ")})"
       exp match {
         case exp: Stmt.Expr =>
-          return if (isParen)
+          if (isParen)
             st"($ps => ${exp.exp.prettyST})" else
             st"""{ $ps =>
                 |  ${exp.exp.prettyST}
                 |}"""
-        case _ => return st"$ps => { ... }"
+        case _ => st"$ps => { ... }"
       }
     }
 
@@ -2166,8 +2157,8 @@ object Exp {
 
     @strictpure override def prettyST: ST = {
       tipeOpt match {
-        case Some(tipe) => return st"At[${tipe.prettyST}](${exp.prettyST}, ${(for (n <- num +: linesFresh) yield n.prettyST, ", ")})"
-        case _ => return st"At(${exp.prettyST}, ${(for (n <- num +: linesFresh) yield n.prettyST, ", ")})"
+        case Some(tipe) => st"At[${tipe.prettyST}](${exp.prettyST}, ${(for (n <- num +: linesFresh) yield n.prettyST, ", ")})"
+        case _ => st"At(${exp.prettyST}, ${(for (n <- num +: linesFresh) yield n.prettyST, ", ")})"
       }
     }
   }
@@ -2190,7 +2181,7 @@ object Exp {
         case Some(t) => Some(st"[${t.prettyST}]")
         case _ => None()
       }
-      return st"Idx$tOpt(${exp.prettyST})"
+      st"Idx$tOpt(${exp.prettyST})"
     }
   }
 
@@ -2230,7 +2221,7 @@ object Exp {
         case Some(t) => Some(st"[${t.prettyST}]")
         case _ => None()
       }
-      return st"Res$tOpt"
+      st"Res$tOpt"
     }
   }
 
@@ -2268,7 +2259,7 @@ object Exp {
       val optInAgree: Option[ST] =
         if (inAgrees.nonEmpty) Some(st", InAgree(${(inAgrees.map((e: Exp) => e.prettyST), ", ")})")
         else None()
-      return st"AssumeAgree($channel$optInAgree)"
+      st"AssumeAgree($channel$optInAgree)"
     }
   }
 
@@ -2287,7 +2278,7 @@ object Exp {
       val optArgs: Option[ST] =
         if (outAgrees.nonEmpty) Some(st", OutAgree(${(outAgrees.map((e: Exp) => e.prettyST), ", ")})")
         else None()
-      return st"AssertAgree($channel$optArgs)"
+      st"AssertAgree($channel$optArgs)"
     }
   }
 
@@ -2341,7 +2332,7 @@ object Exp {
   @strictpure def prettyST: ST = {
     val hidden: String = if (isHidden) "@hidden " else ""
     val valVar: String = if (isVal) "val" else "var"
-    return st"$hidden$valVar ${id.prettyST}: ${tipe.prettyST}"
+    st"$hidden$valVar ${id.prettyST}: ${tipe.prettyST}"
   }
 }
 
@@ -2369,14 +2360,14 @@ object Exp {
     val psOpt: Option[ST] = if (hasParams) Some(
       st"(${(for (p <- params) yield p.prettyST, ", ")})"
     ) else None()
-    return st"${id.prettyST}$tpOpt$psOpt: ${returnType.prettyST}"
+    st"${id.prettyST}$tpOpt$psOpt: ${returnType.prettyST}"
   }
 }
 
 @datatype class Param(val isHidden: B, val id: Id, val tipe: Type) {
   @strictpure def prettyST: ST = {
     val hidden: String = if (isHidden) "@hidden " else ""
-    return st"$hidden${id.prettyST}: ${tipe.prettyST}"
+    st"$hidden${id.prettyST}: ${tipe.prettyST}"
   }
 }
 
@@ -2389,7 +2380,7 @@ object Exp {
       case Typed.VarKind.Mutable => "@mut"
       case Typed.VarKind.Immutable => "@imm"
     }
-    return st"$k ${id.prettyST}"
+    st"$k ${id.prettyST}"
   }
 }
 

@@ -64,7 +64,12 @@ object TypeChecker {
     "SpecPost"
   }
 
-  @record class StrictPureChecker(val th: TypeHierarchy, val reporter: Reporter) extends AST.MTransformer {
+  @record class StrictPureChecker(val isMethod: B,
+                                  val messageKind: String,
+                                  val th: TypeHierarchy,
+                                  val reporter: Reporter) extends AST.MTransformer {
+    val messagePrefix: String = if (isMethod) "@strictpure methods" else "Strict-pure blocks"
+
     def errVars(posOpt: Option[Position]): Unit = {
       reporter.error(posOpt, TypeChecker.typeCheckerKind, "@strictpure methods cannot refer to vars")
     }
@@ -73,6 +78,61 @@ object TypeChecker {
         reporter.error(posOpt, TypeChecker.typeCheckerKind, "@strictpure methods cannot refer to outer vals of mutable type")
       }
     }
+
+    override def postStmtMethod(o: AST.Stmt.Method): MOption[AST.Stmt] = {
+      reporter.error(o.posOpt, messageKind, s"$messagePrefix methods cannot define nested methods")
+      return AST.MTransformer.PostResultStmtMethod
+    }
+
+    override def postStmtVar(o: AST.Stmt.Var): MOption[AST.Stmt] = {
+      if (!o.isVal) {
+        reporter.error(o.posOpt, messageKind, s"$messagePrefix methods cannot define vars")
+      }
+      return AST.MTransformer.PostResultStmtVar
+    }
+
+    override def postStmtWhile(o: AST.Stmt.While): MOption[AST.Stmt] = {
+      reporter.error(o.posOpt, messageKind, s"$messagePrefix cannot use while-loops")
+      return AST.MTransformer.PostResultStmtWhile
+    }
+
+    override def postStmtFor(o: AST.Stmt.For): MOption[AST.Stmt] = {
+      reporter.error(o.posOpt, messageKind, s"$messagePrefix cannot use for-loops")
+      return AST.MTransformer.PostResultStmtFor
+    }
+
+    override def postStmtVarPattern(o: AST.Stmt.VarPattern): MOption[AST.Stmt] = {
+      if (!o.isVal) {
+        reporter.error(o.posOpt, messageKind, s"$messagePrefix cannot define vars")
+      }
+      return AST.MTransformer.PostResultStmtVarPattern
+    }
+
+    override def postStmtSpecVar(o: AST.Stmt.SpecVar): MOption[AST.Stmt] = {
+      reporter.error(o.posOpt, messageKind, s"$messagePrefix cannot define @spec val/var")
+      return AST.MTransformer.PostResultStmtSpecVar
+    }
+
+    override def postStmtSpecBlock(o: AST.Stmt.SpecBlock): MOption[AST.Stmt.Spec] = {
+      reporter.error(o.posOpt, messageKind, s"$messagePrefix cannot use Spec { ... } blocks")
+      return AST.MTransformer.PostResultStmtSpecBlock
+    }
+
+    override def postStmtSpecLabel(o: AST.Stmt.SpecLabel): MOption[AST.Stmt.Spec] = {
+      reporter.error(o.posOpt, messageKind, s"$messagePrefix cannot use spec labels")
+      return AST.MTransformer.PostResultStmtSpecLabel
+    }
+
+    override def postStmtAssign(o: AST.Stmt.Assign): MOption[AST.Stmt] = {
+      reporter.error(o.posOpt, messageKind, s"$messagePrefix cannot use assignments")
+      return AST.MTransformer.PostResultStmtAssign
+    }
+
+    override def postStmtReturn(o: AST.Stmt.Return): MOption[AST.Stmt] = {
+      reporter.error(o.posOpt, messageKind, s"$messagePrefix cannot have returns")
+      return AST.MTransformer.PostResultStmtReturn
+    }
+
     override def postResolvedAttr(o: AST.ResolvedAttr): MOption[AST.ResolvedAttr] = {
       o.resOpt match {
         case Some(res) =>
@@ -3117,6 +3177,8 @@ import TypeChecker._
         reporter.error(spBlock.posOpt, typeCheckerKind, "Strict-pure blocks can only be used inside specification context.")
       }
       val (newBlock, typedOpt) = checkAssignExp(expectedOpt, scope, spBlock.block, reporter)
+      val spc = StrictPureChecker(F, typeCheckerKind, typeHierarchy, reporter)
+      spc.transformAssignExp(newBlock)
       val tOpt: Option[AST.Typed] = if (typedOpt.nonEmpty) {
         typedOpt
       } else {
@@ -4993,9 +5055,13 @@ import TypeChecker._
           }
         }
       } else {
-        val spc = TypeChecker.StrictPureChecker(typeHierarchy, Reporter.create)
-        spc.transformStmt(r)
-        reporter.reports(spc.reporter.messages)
+        r.bodyOpt match {
+          case Some(body) =>
+            val spc = TypeChecker.StrictPureChecker(T, TypeChecker.typeCheckerKind, typeHierarchy, Reporter.create)
+            spc.transformAssignExp(body.stmts(0).asInstanceOf[AST.Stmt.Var].initOpt.get)
+            reporter.reports(spc.reporter.messages)
+          case _ =>
+        }
       }
     }
     return r
