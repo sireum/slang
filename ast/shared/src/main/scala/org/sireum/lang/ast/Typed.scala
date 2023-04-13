@@ -43,7 +43,7 @@ import org.sireum._
 
 @datatype trait Typed {
 
-  @pure def isPureFun: B
+  @strictpure def isPureFun: B
 
   @pure def subst(map: HashMap[String, Typed]): Typed
 
@@ -208,12 +208,11 @@ import org.sireum._
     return r
   }
 
-  @pure def isUnitType: B = {
-    this match {
-      case t: Typed.Tuple if t.args.isEmpty => return T
-      case t: Typed.Name => return t.args.isEmpty && t.ids == Typed.unit.ids
-      case _ => return F
-    }
+  @strictpure def isUnitType: B = this match {
+    case t: Typed.Tuple if t.args.isEmpty => T
+    case t: Typed.Name => t.args.isEmpty && t.ids == Typed.unit.ids
+    case _ => F
+
   }
 
   @pure def typeVarSet: HashSSet[String] = {
@@ -234,10 +233,7 @@ object Typed {
   }
 
   @datatype class Name(val ids: ISZ[String], val args: ISZ[Typed]) extends Typed {
-
-    @pure override def isPureFun: B = {
-      return F
-    }
+    @strictpure override def isPureFun: B = F
 
     @pure override def string: String = {
       return if (args.isEmpty) st"${(short(ids), ".")}".render
@@ -265,9 +261,7 @@ object Typed {
 
   @datatype class Tuple(val args: ISZ[Typed]) extends Typed {
 
-    @pure override def isPureFun: B = {
-      return F
-    }
+    @strictpure override def isPureFun: B = F
 
     @pure override def string: String = {
       return st"(${(args, ", ")})".render
@@ -294,9 +288,7 @@ object Typed {
 
   @datatype class Fun(val isPure: B, val isByName: B, val args: ISZ[Typed], val ret: Typed) extends Typed {
 
-    @pure override def isPureFun: B = {
-      return isPure
-    }
+    @strictpure override def isPureFun: B = isPure
 
     @pure override def string: String = {
       return if (isByName) st"=> $ret".render
@@ -324,14 +316,9 @@ object Typed {
   }
 
   @datatype class TypeVar(val id: String, val kind: Typed.VarKind.Type) extends Typed {
-
     @strictpure def isImmutable: B = kind != Typed.VarKind.Mutable
-
     @strictpure def isIndex: B = kind == Typed.VarKind.Index
-
-    @pure override def isPureFun: B = {
-      return F
-    }
+    @strictpure override def isPureFun: B = F
 
     @pure override def subst(m: HashMap[String, Typed]): Typed = {
       if (m.isEmpty) {
@@ -358,9 +345,7 @@ object Typed {
 
   @datatype class Package(val name: ISZ[String]) extends Typed {
 
-    @pure override def isPureFun: B = {
-      return F
-    }
+    @strictpure override def isPureFun: B = F
 
     @pure override def string: String = {
       return st"Package ${(name, ".")}".render
@@ -380,14 +365,8 @@ object Typed {
   }
 
   @datatype class Object(val owner: ISZ[String], val id: String) extends Typed {
-
-    @pure def name: ISZ[String] = {
-      return owner :+ id
-    }
-
-    @pure override def isPureFun: B = {
-      return F
-    }
+    @strictpure def name: ISZ[String] = owner :+ id
+    @strictpure override def isPureFun: B = F
 
     @pure override def string: String = {
       return st"Object ${(name, ".")}".render
@@ -408,9 +387,7 @@ object Typed {
 
   @datatype class Enum(val name: ISZ[String]) extends Typed {
 
-    @pure override def isPureFun: B = {
-      return F
-    }
+    @strictpure override def isPureFun: B = F
 
     @pure override def string: String = {
       return st"@enum ${(name, ".")}".render
@@ -437,9 +414,7 @@ object Typed {
                          val paramNames: ISZ[String],
                          val tpe: Typed.Fun) extends Typed {
 
-    @pure override def isPureFun: B = {
-      return F
-    }
+    @strictpure override def isPureFun: B = F
 
     @pure override def string: String = {
       val mST = st"${(owner, ".")}${if (isInObject) "." else "#"}$name"
@@ -475,9 +450,7 @@ object Typed {
 
   @datatype class Methods(val methods: ISZ[Method]) extends Typed {
 
-    @pure override def isPureFun: B = {
-      return F
-    }
+    @strictpure override def isPureFun: B = F
 
     @pure override def string: String = {
       return st"{ ${(methods, ", ")} }".render
@@ -500,14 +473,8 @@ object Typed {
   }
 
   @datatype class Fact(val owner: ISZ[String], val id: String) extends Typed {
-
-    @pure def name: ISZ[String] = {
-      return owner :+ id
-    }
-
-    @pure override def isPureFun: B = {
-      return F
-    }
+    @strictpure def name: ISZ[String] = owner :+ id
+    @strictpure override def isPureFun: B = F
 
     @pure override def string: String = {
       return st"Fact ${(name, ".")}".render
@@ -528,14 +495,8 @@ object Typed {
 
 
   @datatype class Theorem(val owner: ISZ[String], val id: String) extends Typed {
-
-    @pure def name: ISZ[String] = {
-      return owner :+ id
-    }
-
-    @pure override def isPureFun: B = {
-      return F
-    }
+    @strictpure def name: ISZ[String] = owner :+ id
+    @strictpure override def isPureFun: B = F
 
     @pure override def string: String = {
       return st"Theorem ${(name, ".")}".render
@@ -555,14 +516,8 @@ object Typed {
   }
 
   @datatype class Inv(val isInObject: B, val owner: ISZ[String], val id: String) extends Typed {
-
-    @pure def name: ISZ[String] = {
-      return owner :+ id
-    }
-
-    @pure override def isPureFun: B = {
-      return F
-    }
+    @strictpure def name: ISZ[String] = owner :+ id
+    @strictpure override def isPureFun: B = F
 
     @pure override def string: String = {
       return st"Inv ${(owner, ".")}#$id".render

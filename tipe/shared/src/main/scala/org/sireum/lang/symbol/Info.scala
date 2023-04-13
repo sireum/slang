@@ -843,8 +843,9 @@ object TypeInfo {
       return ast.attr.posOpt
     }
 
-    @strictpure def hasId(id: String): B = specVars.contains(id) || specMethods.contains(id) || methods.contains(id) ||
-      invariants.contains(id)
+    @pure def hasId(id: String): B = {
+      return specVars.contains(id) || specMethods.contains(id) || methods.contains(id) || invariants.contains(id)
+    }
 
     @pure def typeRes(id: String, inSpec: B): (B, Option[AST.Typed], Option[AST.ResolvedInfo]) = {
 
@@ -926,8 +927,9 @@ object TypeInfo {
       return ast.attr.posOpt
     }
 
-    @strictpure def hasId(id: String): B = specVars.contains(id) || specMethods.contains(id) || methods.contains(id) ||
-      invariants.contains(id)
+    @pure def hasId(id: String): B = {
+      return specVars.contains(id) || specMethods.contains(id) || methods.contains(id) || invariants.contains(id)
+    }
 
     @pure def typeRes(id: String, inSpec: B): (B, Option[AST.Typed], Option[AST.ResolvedInfo]) = {
 

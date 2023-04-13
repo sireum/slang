@@ -143,6 +143,43 @@ object TypeChecker {
               } else {
                 checkType(o.typedOpt.get, o.posOpt)
               }
+            case res: AST.ResolvedInfo.Method =>
+              def err(): Unit = {
+                reporter.error(o.posOpt, TypeChecker.typeCheckerKind, s"$messagePrefix cannot invoke non-strictpure methods")
+              }
+              if (res.isInObject) {
+                res.owner match {
+                  case AST.Typed.msName =>
+                  case AST.Typed.isName =>
+                  case AST.Typed.iszName =>
+                  case AST.Typed.mszName =>
+                  case _ =>
+                    th.nameMap.get(res.owner :+ res.id) match {
+                      case Some(info: Info.Method) if info.ast.purity != AST.Purity.StrictPure => err()
+                      case Some(_: Info.ExtMethod) => err()
+                      case _ =>
+                    }
+                }
+              } else {
+                th.typeMap.get(res.owner) match {
+                  case Some(info: TypeInfo.Sig) =>
+                    info.methods.get(res.id) match {
+                      case Some(minfo) =>
+                        if ((info.ast.isExt && minfo.ast.purity != AST.Purity.Pure &&
+                          minfo.ast.purity != AST.Purity.StrictPure)
+                          || (!info.ast.isExt && minfo.ast.purity != AST.Purity.StrictPure)) {
+                          err()
+                        }
+                      case _ =>
+                    }
+                  case Some(info: TypeInfo.Adt) =>
+                    info.methods.get(res.id) match {
+                      case Some(minfo) if minfo.ast.purity != AST.Purity.StrictPure => err()
+                      case _ =>
+                    }
+                  case _ =>
+                }
+              }
             case res: AST.ResolvedInfo.LocalVar if res.scope == AST.ResolvedInfo.LocalVar.Scope.Closure && res.context.isEmpty =>
               reporter.error(o.posOpt, TypeChecker.typeCheckerKind, "Worksheet @strictpure methods cannot refer to top-level vars/vals")
             case _ =>
@@ -859,10 +896,17 @@ object TypeChecker {
     }
   }
 
-  def checkStrictPureMethod(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope, isMutableContext: B, stmt: AST.Stmt.Method, reporter: Reporter): AST.Stmt.Method = {
+  def checkStrictPureMethod(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope.Local, isMutableContext: B, stmt: AST.Stmt.Method, reporter: Reporter): AST.Stmt.Method = {
     assert(stmt.purity == AST.Purity.StrictPure)
+    var r = stmt
     val tc = TypeChecker(th, context, isMutableContext, TypeChecker.ModeContext.Code, strictAliasing)
-    return tc.checkMethod(scope, stmt, reporter)
+    if (r.mcontract.nonEmpty) {
+      val (ok, sc) = TypeChecker.methodScope(th, context, scope, stmt.sig, reporter)
+      if (ok) {
+        r = stmt(mcontract = tc(mode = TypeChecker.ModeContext.Spec).checkMethodContract(sc, stmt.mcontract, reporter))
+      }
+    }
+    return tc.checkMethod(scope, r, reporter)
   }
 
   def checkFactStmt(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope, stmt: AST.Stmt.Fact, reporter: Reporter): AST.Stmt.Fact = {
