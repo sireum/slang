@@ -43,9 +43,22 @@ object TopUnit {
 
   }
 
-  @datatype class Program(val fileUriOpt: Option[String], val packageName: Name, val body: Body) extends TopUnit
+  @datatype class Program(val fileUriOpt: Option[String], val packageName: Name, val body: Body) extends TopUnit {
+    @strictpure override def string: String = if (packageName.ids.isEmpty)
+      st"""// #Sireum
+          |
+          |${(body.prettySTs, "\n")}""".render
+    else
+      st"""// #Sireum
+          |package ${packageName.prettyST}
+          |
+          |${(body.prettySTs, "\n")}""".render
 
-  @datatype class SequentUnit(val fileUriOpt: Option[String], val sequent: Sequent) extends TopUnit
+  }
+
+  @datatype class SequentUnit(val fileUriOpt: Option[String], val sequent: Sequent) extends TopUnit {
+    @strictpure override def string: String = sequent.prettyST.render
+  }
 
   @datatype class TruthTableUnit(val fileUriOpt: Option[String],
                                  val stars: ISZ[Position],
