@@ -1696,7 +1696,7 @@ object Exp {
       exp match {
         case exp: Stmt.Expr =>
           if (isParen) {
-            return st"($ps => return ${exp.exp.prettyST})"
+            return st"($ps => ${exp.exp.prettyST})"
           } else {
             return st"""{ $ps =>
                        |  ${exp.exp.prettyST}
