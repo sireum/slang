@@ -5102,7 +5102,14 @@ import TypeChecker._
         r.bodyOpt match {
           case Some(body) =>
             val spc = TypeChecker.StrictPureChecker(T, TypeChecker.typeCheckerKind, typeHierarchy, Reporter.create)
-            spc.transformAssignExp(body.stmts(0).asInstanceOf[AST.Stmt.Var].initOpt.get)
+            body.stmts match {
+              case ISZ(stmt: AST.Stmt.Var, _: AST.Stmt.Return) => spc.transformAssignExp(stmt.initOpt.get)
+              case ISZ(stmt: AST.Stmt.Return) => stmt.expOpt match {
+                case Some(exp) => spc.transformExp(exp)
+                case _ =>
+              }
+              case _ => spc.transformBody(body)
+            }
             reporter.reports(spc.reporter.messages)
           case _ =>
         }
