@@ -3220,9 +3220,13 @@ import TypeChecker._
       if (!inSpec) {
         reporter.error(spBlock.posOpt, typeCheckerKind, "Strict-pure blocks can only be used inside specification context.")
       }
+      if (reporter.hasError) {
+        return (spBlock, None())
+      }
       val (newBlock, typedOpt) = checkAssignExp(expectedOpt, scope, spBlock.block, reporter)
-      val spc = StrictPureChecker(F, typeCheckerKind, typeHierarchy, reporter)
+      val spc = StrictPureChecker(F, typeCheckerKind, typeHierarchy, Reporter.create)
       spc.transformAssignExp(newBlock)
+      reporter.reports(spc.reporter.messages)
       val tOpt: Option[AST.Typed] = if (typedOpt.nonEmpty) {
         typedOpt
       } else {
@@ -5100,7 +5104,7 @@ import TypeChecker._
         }
       } else {
         r.bodyOpt match {
-          case Some(body) =>
+          case Some(body) if !reporter.hasError =>
             val spc = TypeChecker.StrictPureChecker(T, TypeChecker.typeCheckerKind, typeHierarchy, Reporter.create)
             body.stmts match {
               case ISZ(stmt: AST.Stmt.Var, _: AST.Stmt.Return) => spc.transformAssignExp(stmt.initOpt.get)
