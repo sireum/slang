@@ -221,6 +221,10 @@ object TypeHierarchy {
         case _ => return AST.Transformer.TPostResult(ctx, None())
       }
     }
+
+    override def postExpLabeled(ctx: Z, o: AST.Exp.Labeled): AST.Transformer.TPostResult[Z, AST.Exp] = {
+      return AST.Transformer.TPostResult(ctx, Some(o.exp))
+    }
   }
 
   @datatype class LocalVarContextPrePostSubstitutor(val oldContext: ISZ[String], val newContext: ISZ[String]) extends AST.Transformer.PrePost[B] {

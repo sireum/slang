@@ -1829,6 +1829,14 @@ object Exp {
     }
   }
 
+  @datatype class Labeled(val name: LitString, val exp: Exp, @hidden val attr: Attr) extends Exp {
+    @strictpure override def posOpt: Option[Position] = attr.posOpt
+    @strictpure override def typedOpt: Option[Typed] = exp.typedOpt
+    @pure override def prettyST: ST = {
+      return st"""${exp.prettyST}: @l(${name.prettyST})"""
+    }
+  }
+
   @datatype class AssumeAgree(val channel: LitString,
                               val requiresClause: MethodContract.Claims,
                               val inAgreeClause: MethodContract.Claims, @hidden val attr: Attr) extends Exp {

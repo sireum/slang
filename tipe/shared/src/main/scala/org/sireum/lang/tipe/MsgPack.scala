@@ -314,95 +314,97 @@ object MsgPack {
 
     val _astExpStrictPureBlock: Z = 106
 
-    val _astExpAssumeAgree: Z = 107
+    val _astExpLabeled: Z = 107
 
-    val _astExpAssertAgree: Z = 108
+    val _astExpAssumeAgree: Z = 108
 
-    val _astExpInfoFlowInvariant: Z = 109
+    val _astExpAssertAgree: Z = 109
 
-    val _astNamedArg: Z = 110
+    val _astExpInfoFlowInvariant: Z = 110
 
-    val _astId: Z = 111
+    val _astNamedArg: Z = 111
 
-    val _astName: Z = 112
+    val _astId: Z = 112
 
-    val _astBody: Z = 113
+    val _astName: Z = 113
 
-    val _astAdtParam: Z = 114
+    val _astBody: Z = 114
 
-    val _astMethodSig: Z = 115
+    val _astAdtParam: Z = 115
 
-    val _astParam: Z = 116
+    val _astMethodSig: Z = 116
 
-    val _astTypeParam: Z = 117
+    val _astParam: Z = 117
 
-    val _astAttr: Z = 118
+    val _astTypeParam: Z = 118
 
-    val _astTypedAttr: Z = 119
+    val _astAttr: Z = 119
 
-    val _astResolvedAttr: Z = 120
+    val _astTypedAttr: Z = 120
 
-    val _astResolvedInfoBuiltIn: Z = 121
+    val _astResolvedAttr: Z = 121
 
-    val _astResolvedInfoPackage: Z = 122
+    val _astResolvedInfoBuiltIn: Z = 122
 
-    val _astResolvedInfoEnum: Z = 123
+    val _astResolvedInfoPackage: Z = 123
 
-    val _astResolvedInfoEnumElement: Z = 124
+    val _astResolvedInfoEnum: Z = 124
 
-    val _astResolvedInfoObject: Z = 125
+    val _astResolvedInfoEnumElement: Z = 125
 
-    val _astResolvedInfoVar: Z = 126
+    val _astResolvedInfoObject: Z = 126
 
-    val _astResolvedInfoMethod: Z = 127
+    val _astResolvedInfoVar: Z = 127
 
-    val _astResolvedInfoMethods: Z = 128
+    val _astResolvedInfoMethod: Z = 128
 
-    val _astResolvedInfoTuple: Z = 129
+    val _astResolvedInfoMethods: Z = 129
 
-    val _astResolvedInfoLocalVar: Z = 130
+    val _astResolvedInfoTuple: Z = 130
 
-    val _astResolvedInfoFact: Z = 131
+    val _astResolvedInfoLocalVar: Z = 131
 
-    val _astResolvedInfoTheorem: Z = 132
+    val _astResolvedInfoFact: Z = 132
 
-    val _astResolvedInfoInv: Z = 133
+    val _astResolvedInfoTheorem: Z = 133
 
-    val _astTruthTableRow: Z = 134
+    val _astResolvedInfoInv: Z = 134
 
-    val _astTruthTableAssignment: Z = 135
+    val _astTruthTableRow: Z = 135
 
-    val _astTruthTableConclusionValidity: Z = 136
+    val _astTruthTableAssignment: Z = 136
 
-    val _astTruthTableConclusionTautology: Z = 137
+    val _astTruthTableConclusionValidity: Z = 137
 
-    val _astTruthTableConclusionContradictory: Z = 138
+    val _astTruthTableConclusionTautology: Z = 138
 
-    val _astTruthTableConclusionContingent: Z = 139
+    val _astTruthTableConclusionContradictory: Z = 139
 
-    val _astTypedName: Z = 140
+    val _astTruthTableConclusionContingent: Z = 140
 
-    val _astTypedTuple: Z = 141
+    val _astTypedName: Z = 141
 
-    val _astTypedFun: Z = 142
+    val _astTypedTuple: Z = 142
 
-    val _astTypedTypeVar: Z = 143
+    val _astTypedFun: Z = 143
 
-    val _astTypedPackage: Z = 144
+    val _astTypedTypeVar: Z = 144
 
-    val _astTypedObject: Z = 145
+    val _astTypedPackage: Z = 145
 
-    val _astTypedEnum: Z = 146
+    val _astTypedObject: Z = 146
 
-    val _astTypedMethod: Z = 147
+    val _astTypedEnum: Z = 147
 
-    val _astTypedMethods: Z = 148
+    val _astTypedMethod: Z = 148
 
-    val _astTypedFact: Z = 149
+    val _astTypedMethods: Z = 149
 
-    val _astTypedTheorem: Z = 150
+    val _astTypedFact: Z = 150
 
-    val _astTypedInv: Z = 151
+    val _astTypedTheorem: Z = 151
+
+    val _astTypedInv: Z = 152
 
   }
 
@@ -1459,6 +1461,7 @@ object MsgPack {
         case o: org.sireum.lang.ast.Exp.StateSeq => write_astExpStateSeq(o)
         case o: org.sireum.lang.ast.Exp.Result => write_astExpResult(o)
         case o: org.sireum.lang.ast.Exp.StrictPureBlock => write_astExpStrictPureBlock(o)
+        case o: org.sireum.lang.ast.Exp.Labeled => write_astExpLabeled(o)
         case o: org.sireum.lang.ast.Exp.AssumeAgree => write_astExpAssumeAgree(o)
         case o: org.sireum.lang.ast.Exp.AssertAgree => write_astExpAssertAgree(o)
         case o: org.sireum.lang.ast.Exp.InfoFlowInvariant => write_astExpInfoFlowInvariant(o)
@@ -1736,6 +1739,13 @@ object MsgPack {
       writer.writeZ(Constants._astExpStrictPureBlock)
       write_astStmtBlock(o.block)
       write_astTypedAttr(o.attr)
+    }
+
+    def write_astExpLabeled(o: org.sireum.lang.ast.Exp.Labeled): Unit = {
+      writer.writeZ(Constants._astExpLabeled)
+      write_astExpLitString(o.name)
+      write_astExp(o.exp)
+      write_astAttr(o.attr)
     }
 
     def write_astExpAssumeAgree(o: org.sireum.lang.ast.Exp.AssumeAgree): Unit = {
@@ -4098,6 +4108,7 @@ object MsgPack {
         case Constants._astExpStateSeq => val r = read_astExpStateSeqT(T); return r
         case Constants._astExpResult => val r = read_astExpResultT(T); return r
         case Constants._astExpStrictPureBlock => val r = read_astExpStrictPureBlockT(T); return r
+        case Constants._astExpLabeled => val r = read_astExpLabeledT(T); return r
         case Constants._astExpAssumeAgree => val r = read_astExpAssumeAgreeT(T); return r
         case Constants._astExpAssertAgree => val r = read_astExpAssertAgreeT(T); return r
         case Constants._astExpInfoFlowInvariant => val r = read_astExpInfoFlowInvariantT(T); return r
@@ -4678,6 +4689,21 @@ object MsgPack {
       val block = read_astStmtBlock()
       val attr = read_astTypedAttr()
       return org.sireum.lang.ast.Exp.StrictPureBlock(block, attr)
+    }
+
+    def read_astExpLabeled(): org.sireum.lang.ast.Exp.Labeled = {
+      val r = read_astExpLabeledT(F)
+      return r
+    }
+
+    def read_astExpLabeledT(typeParsed: B): org.sireum.lang.ast.Exp.Labeled = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astExpLabeled)
+      }
+      val name = read_astExpLitString()
+      val exp = read_astExp()
+      val attr = read_astAttr()
+      return org.sireum.lang.ast.Exp.Labeled(name, exp, attr)
     }
 
     def read_astExpAssumeAgree(): org.sireum.lang.ast.Exp.AssumeAgree = {
@@ -7840,6 +7866,21 @@ object MsgPack {
       return r
     }
     val r = to(data, f_astExpStrictPureBlock _)
+    return r
+  }
+
+  def from_astExpLabeled(o: org.sireum.lang.ast.Exp.Labeled, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astExpLabeled(o)
+    return w.result
+  }
+
+  def to_astExpLabeled(data: ISZ[U8]): Either[org.sireum.lang.ast.Exp.Labeled, MessagePack.ErrorMsg] = {
+    def f_astExpLabeled(reader: Reader): org.sireum.lang.ast.Exp.Labeled = {
+      val r = reader.read_astExpLabeled()
+      return r
+    }
+    val r = to(data, f_astExpLabeled _)
     return r
   }
 

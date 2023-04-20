@@ -525,6 +525,10 @@ object MTransformer {
 
   val PostResultExpStrictPureBlock: MOption[Exp] = MNone()
 
+  val PreResultExpLabeled: PreResult[Exp] = PreResult(T, MNone())
+
+  val PostResultExpLabeled: MOption[Exp] = MNone()
+
   val PreResultExpAssumeAgree: PreResult[Exp] = PreResult(T, MNone())
 
   val PostResultExpAssumeAgree: MOption[Exp] = MNone()
@@ -1413,6 +1417,7 @@ import MTransformer._
       case o: Exp.StateSeq => return preExpStateSeq(o)
       case o: Exp.Result => return preExpResult(o)
       case o: Exp.StrictPureBlock => return preExpStrictPureBlock(o)
+      case o: Exp.Labeled => return preExpLabeled(o)
       case o: Exp.AssumeAgree => return preExpAssumeAgree(o)
       case o: Exp.AssertAgree => return preExpAssertAgree(o)
       case o: Exp.InfoFlowInvariant => return preExpInfoFlowInvariant(o)
@@ -1597,6 +1602,10 @@ import MTransformer._
 
   def preExpStrictPureBlock(o: Exp.StrictPureBlock): PreResult[Exp] = {
     return PreResultExpStrictPureBlock
+  }
+
+  def preExpLabeled(o: Exp.Labeled): PreResult[Exp] = {
+    return PreResultExpLabeled
   }
 
   def preExpAssumeAgree(o: Exp.AssumeAgree): PreResult[Exp] = {
@@ -2525,6 +2534,7 @@ import MTransformer._
       case o: Exp.StateSeq => return postExpStateSeq(o)
       case o: Exp.Result => return postExpResult(o)
       case o: Exp.StrictPureBlock => return postExpStrictPureBlock(o)
+      case o: Exp.Labeled => return postExpLabeled(o)
       case o: Exp.AssumeAgree => return postExpAssumeAgree(o)
       case o: Exp.AssertAgree => return postExpAssertAgree(o)
       case o: Exp.InfoFlowInvariant => return postExpInfoFlowInvariant(o)
@@ -2709,6 +2719,10 @@ import MTransformer._
 
   def postExpStrictPureBlock(o: Exp.StrictPureBlock): MOption[Exp] = {
     return PostResultExpStrictPureBlock
+  }
+
+  def postExpLabeled(o: Exp.Labeled): MOption[Exp] = {
+    return PostResultExpLabeled
   }
 
   def postExpAssumeAgree(o: Exp.AssumeAgree): MOption[Exp] = {
@@ -4631,6 +4645,14 @@ import MTransformer._
           val r1: MOption[TypedAttr] = transformTypedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
             MSome(o2(block = r0.getOrElse(o2.block), attr = r1.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Exp.Labeled =>
+          val r0: MOption[Exp.LitString] = transformExpLitString(o2.name)
+          val r1: MOption[Exp] = transformExp(o2.exp)
+          val r2: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(name = r0.getOrElse(o2.name), exp = r1.getOrElse(o2.exp), attr = r2.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Exp.AssumeAgree =>

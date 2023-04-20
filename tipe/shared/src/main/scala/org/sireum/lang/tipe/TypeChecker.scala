@@ -3480,6 +3480,13 @@ import TypeChecker._
 
         case exp: AST.Exp.LoopIndex => return checkLoopIndex(exp)
 
+        case exp: AST.Exp.Labeled =>
+          if (!inSpec) {
+            reporter.error(exp.posOpt, typeCheckerKind, s"Labeled expression can only be used inside specification context.")
+          }
+          val (newExp, tOpt) = checkExp(expectedOpt, scope, exp.exp, reporter)
+          return (exp(exp = newExp), tOpt)
+
         case _: AST.Exp.Sym => halt("Infeasible")
 
         case exp: AST.Exp.TypeCond =>

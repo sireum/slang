@@ -747,6 +747,7 @@ object Transformer {
         case o: Exp.StateSeq => return preExpStateSeq(ctx, o)
         case o: Exp.Result => return preExpResult(ctx, o)
         case o: Exp.StrictPureBlock => return preExpStrictPureBlock(ctx, o)
+        case o: Exp.Labeled => return preExpLabeled(ctx, o)
         case o: Exp.AssumeAgree => return preExpAssumeAgree(ctx, o)
         case o: Exp.AssertAgree => return preExpAssertAgree(ctx, o)
         case o: Exp.InfoFlowInvariant => return preExpInfoFlowInvariant(ctx, o)
@@ -930,6 +931,10 @@ object Transformer {
     }
 
     @pure def preExpStrictPureBlock(ctx: Context, o: Exp.StrictPureBlock): PreResult[Context, Exp] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preExpLabeled(ctx: Context, o: Exp.Labeled): PreResult[Context, Exp] = {
       return PreResult(ctx, T, None())
     }
 
@@ -1859,6 +1864,7 @@ object Transformer {
         case o: Exp.StateSeq => return postExpStateSeq(ctx, o)
         case o: Exp.Result => return postExpResult(ctx, o)
         case o: Exp.StrictPureBlock => return postExpStrictPureBlock(ctx, o)
+        case o: Exp.Labeled => return postExpLabeled(ctx, o)
         case o: Exp.AssumeAgree => return postExpAssumeAgree(ctx, o)
         case o: Exp.AssertAgree => return postExpAssertAgree(ctx, o)
         case o: Exp.InfoFlowInvariant => return postExpInfoFlowInvariant(ctx, o)
@@ -2042,6 +2048,10 @@ object Transformer {
     }
 
     @pure def postExpStrictPureBlock(ctx: Context, o: Exp.StrictPureBlock): TPostResult[Context, Exp] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postExpLabeled(ctx: Context, o: Exp.Labeled): TPostResult[Context, Exp] = {
       return TPostResult(ctx, None())
     }
 
@@ -4005,6 +4015,14 @@ import Transformer._
             TPostResult(r1.ctx, Some(o2(block = r0.resultOpt.getOrElse(o2.block), attr = r1.resultOpt.getOrElse(o2.attr))))
           else
             TPostResult(r1.ctx, None())
+        case o2: Exp.Labeled =>
+          val r0: TPostResult[Context, Exp.LitString] = transformExpLitString(preR.ctx, o2.name)
+          val r1: TPostResult[Context, Exp] = transformExp(r0.ctx, o2.exp)
+          val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(name = r0.resultOpt.getOrElse(o2.name), exp = r1.resultOpt.getOrElse(o2.exp), attr = r2.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r2.ctx, None())
         case o2: Exp.AssumeAgree =>
           val r0: TPostResult[Context, Exp.LitString] = transformExpLitString(preR.ctx, o2.channel)
           val r1: TPostResult[Context, MethodContract.Claims] = transformMethodContractClaims(r0.ctx, o2.requiresClause)

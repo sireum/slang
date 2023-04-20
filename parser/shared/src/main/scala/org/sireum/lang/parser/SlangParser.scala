@@ -2733,13 +2733,15 @@ class SlangParser(
         val b = translateBlock(Enclosing.Block, exp, isAssignExp = true)
         val r = AST.Exp.StrictPureBlock(b, AST.TypedAttr(b.posOpt, None()))
         r
+      case q"$expr: @l(${name: Lit.String})" =>
+        AST.Exp.Labeled(translateLit(name).asInstanceOf[AST.Exp.LitString], translateExp(expr), attr(exp.pos))
       case _ =>
         errorNotSlang(exp.pos, s"Expression '${syntax(exp)}' is")
         rExp
     }
   }
 
-  def translateLit(lit: Lit): AST.Exp with AST.Lit = lit match {
+  def translateLit(lit: Lit): AST.Lit = lit match {
     case Lit.Boolean(value) => AST.Exp.LitB(value, attr(lit.pos))
     case Lit.Char(value) => AST.Exp.LitC(value, attr(lit.pos))
     case Lit.Int(value) => AST.Exp.LitZ(value, attr(lit.pos))
