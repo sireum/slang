@@ -427,6 +427,9 @@ object TypeHierarchy {
 
   @strictpure def empty: TypeHierarchy = TypeHierarchy(HashSMap.empty, HashSMap.empty, Poset.empty, HashSMap.empty)
 
+  @ext("TypeHierarchy_Ext") object Ext {
+    @pure def fingerprint(th: TypeHierarchy): U64 = $
+  }
 }
 
 @datatype class TypeHierarchy(
@@ -435,6 +438,10 @@ object TypeHierarchy {
   val poset: Poset[QName],
   val aliases: HashSMap[QName, AST.Typed]
 ) {
+
+  @memoize def fingerprint: U64 = {
+    return TypeHierarchy.Ext.fingerprint(this)
+  }
 
   @pure def rootTypeNames(): ISZ[QName] = {
     return poset.rootNodes
