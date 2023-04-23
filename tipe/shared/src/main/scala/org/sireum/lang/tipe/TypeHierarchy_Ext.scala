@@ -57,28 +57,54 @@ object TypeHierarchy_Ext {
           val param: Option[ST] = if (info.ast.params.isEmpty) None() else Some(st"(${(for (p <- info.ast.params) yield p.prettyST, ", ")})")
           val extend: Option[ST] =
             if (info.ast.parents.isEmpty) None() else Some(st" extends ${(for (n <- info.ast.parents) yield n.prettyST, ", ")}")
-          val varsST: ST = st"Vars(${(for (iv <- info.vars.entries) yield st"(${iv._1}, ${iv._2.ast(initOpt = None()).prettyST})", ", ")})"
-          val methodsST: ST = st"Methods(${(for (iv <- info.methods.entries) yield st"(${iv._1}, ${iv._2.ast(bodyOpt = None()).prettyST})", ", ")})"
-          val specVarsST: ST = st"SpecVars(${(for (iv <- info.specVars.entries) yield st"(${iv._1}, ${iv._2.ast.prettyST})", ", ")})"
-          val specMethodsST: ST = st"SpecMethods(${(for (iv <- info.specMethods.entries) yield st"(${iv._1}, ${iv._2.ast.prettyST})", ", ")})"
-          val invsST: ST = st"Invs(${(for (inv <- info.invariants.values) yield inv.ast.prettyST, ", ")})"
-          val refinementST: ST = st"Refinements(${(for (r <- info.refinements.values) yield st"${(r.ids, ".")}", ", ")})"
-          val dataRefinementsST: ST = st"DataRefinements(${(for (r <- info.dataRefinements) yield r.prettyST, ", ")})"
+          val varsST: ST = if (info.vars.isEmpty) st"Vars()" else
+            st"""Vars(
+                |  ${(for (iv <- info.vars.entries) yield st"(${iv._1}, ${iv._2.ast(initOpt = None()).prettyST})", ", ")})"""
+          val methodsST: ST = if (info.methods.isEmpty) st"Methods()" else
+            st"""Methods(
+                |  ${(for (iv <- info.methods.entries) yield st"(${iv._1}, ${iv._2.ast(bodyOpt = if (iv._2.ast.purity == lang.ast.Purity.StrictPure && iv._2.ast.mcontract.isEmpty) iv._2.ast.bodyOpt else None()).prettyST})", ", ")})"""
+          val specVarsST: ST = if (info.specVars.isEmpty) st"SpecVars()" else
+            st"""SpecVars(
+                |  ${(for (iv <- info.specVars.entries) yield st"(${iv._1}, ${iv._2.ast.prettyST})", ", ")})"""
+          val specMethodsST: ST = if (info.specMethods.isEmpty) st"SpecMethods()" else
+            st"""SpecMethods(
+                |  ${(for (iv <- info.specMethods.entries) yield st"(${iv._1}, ${iv._2.ast.prettyST})", ", ")})"""
+          val invsST: ST = if (info.invariants.isEmpty) st"Invs()" else
+            st"""Invs(
+                |  ${(for (inv <- info.invariants.values) yield inv.ast.prettyST, ", ")})"""
+          val refinementST: ST = if (info.refinements.isEmpty ) st"Refinements()" else
+            st"""Refinements(
+                |  ${(for (r <- info.refinements.values) yield st"${(r.ids, ".")}", ", ")})"""
+          val dataRefinementsST: ST =  if (info.dataRefinements.isEmpty) st"DataRefinements()" else
+            st"""DataRefinements(
+                |  ${(for (r <- info.dataRefinements) yield r.prettyST, ", ")})"""
           sts = sts :+ st"Adt(${(info.owner, ".")}, $rd $root ${info.ast.id.prettyST}${lang.ast.TypeParam.stOpt(info.ast.typeParams)}$param$extend, $varsST, $methodsST, $specVarsST, $specMethodsST, $invsST, $refinementST, $dataRefinementsST)"
         case info: TypeInfo.Sig =>
           val ext: String = if (info.ast.isExt) "@ext " else ""
           val sig: String = if (info.ast.isImmutable) "@sig " else "@msig "
           val extend: Option[ST] =
             if (info.ast.parents.isEmpty) None() else Some(st" extends ${(for (n <- info.ast.parents) yield n.prettyST, ", ")}")
-          val methodsST: ST = st"Methods(${(for (iv <- info.methods.entries) yield st"(${iv._1}, ${iv._2.ast(bodyOpt = None()).prettyST})", ", ")})"
-          val specVarsST: ST = st"SpecVars(${(for (iv <- info.specVars.entries) yield st"(${iv._1}, ${iv._2.ast.prettyST})", ", ")})"
-          val specMethodsST: ST = st"SpecMethods(${(for (iv <- info.specMethods.entries) yield st"(${iv._1}, ${iv._2.ast.prettyST})", ", ")})"
-          val invsST: ST = st"Invs(${(for (inv <- info.invariants.values) yield inv.ast.prettyST, ", ")})"
-          val refinementST: ST = st"Refinements(${(for (r <- info.refinements.values) yield st"${(r.ids, ".")}", ", ")})"
-          val dataRefinementsST: ST = st"DataRefinements(${(for (r <- info.dataRefinements) yield r.prettyST, ", ")})"
+          val methodsST: ST = if (info.methods.isEmpty) st"Methods()" else
+            st"""Methods(
+                |  ${(for (iv <- info.methods.entries) yield st"(${iv._1}, ${iv._2.ast(bodyOpt = if (iv._2.ast.purity == lang.ast.Purity.StrictPure && iv._2.ast.mcontract.isEmpty) iv._2.ast.bodyOpt else None()).prettyST})", ", ")})"""
+          val specVarsST: ST = if (info.specVars.isEmpty) st"SpecVars()" else
+            st"""SpecVars(
+                |  ${(for (iv <- info.specVars.entries) yield st"(${iv._1}, ${iv._2.ast.prettyST})", ", ")})"""
+          val specMethodsST: ST = if (info.specMethods.isEmpty) st"SpecMethods()" else
+            st"""SpecMethods(
+                |  ${(for (iv <- info.specMethods.entries) yield st"(${iv._1}, ${iv._2.ast.prettyST})", ", ")})"""
+          val invsST: ST = if (info.invariants.isEmpty) st"Invs()" else
+            st"""Invs(
+                |  ${(for (inv <- info.invariants.values) yield inv.ast.prettyST, ", ")})"""
+          val refinementST: ST = if (info.refinements.isEmpty) st"Refinements()" else
+            st"""Refinements(
+                |  ${(for (r <- info.refinements.values) yield st"${(r.ids, ".")}", ", ")})"""
+          val dataRefinementsST: ST = if (info.dataRefinements.isEmpty) st"DataRefinements()" else
+            st"""DataRefinements(
+                |  ${(for (r <- info.dataRefinements) yield r.prettyST, ", ")})"""
           sts = sts :+ st"Sig(${(info.owner, ".")}, $ext$sig trait ${info.ast.id.prettyST}${lang.ast.TypeParam.stOpt(info.ast.typeParams)}$extend, $methodsST, $specVarsST, $specMethodsST, $invsST, $refinementST, $dataRefinementsST)"
-        case info: TypeInfo.SubZ => sts = sts :+ st"SubZ(${info.owner}, ${info.ast.prettyST})"
-        case info: TypeInfo.Enum => sts = sts :+ st"TEnum(${info.name}, ${info.elements.keys})"
+        case info: TypeInfo.SubZ => sts = sts :+ st"SubZ(${(info.owner, ".")}, ${info.ast.prettyST})"
+        case info: TypeInfo.Enum => sts = sts :+ st"TEnum(${(info.name, ".")}, ${info.elements.keys})"
         case info: TypeInfo.TypeVar => sts = sts :+ st"TypeVar(${info.ast.prettyST})"
         case _: TypeInfo.TypeAlias => // skip
       }
