@@ -2733,8 +2733,10 @@ class SlangParser(
         val b = translateBlock(Enclosing.Block, exp, isAssignExp = true)
         val r = AST.Exp.StrictPureBlock(b, AST.TypedAttr(b.posOpt, None()))
         r
-      case q"$expr: @l(${name: Lit.String})" =>
-        AST.Exp.Labeled(translateLit(name).asInstanceOf[AST.Exp.LitString], translateExp(expr), attr(exp.pos))
+      case q"$expr: @l(${name: Lit.Int})" =>
+        AST.Exp.Labeled(Some(translateLit(name).asInstanceOf[AST.Exp.LitZ]), translateExp(expr), attr(exp.pos))
+      case q"$expr: @l" =>
+        AST.Exp.Labeled(None(), translateExp(expr), attr(exp.pos))
       case _ =>
         errorNotSlang(exp.pos, s"Expression '${syntax(exp)}' is")
         rExp

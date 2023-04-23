@@ -4648,11 +4648,11 @@ import MTransformer._
           else
             MNone()
         case o2: Exp.Labeled =>
-          val r0: MOption[Exp.LitString] = transformExpLitString(o2.name)
+          val r0: MOption[Option[Exp.LitZ]] = transformOption(o2.numOpt, transformExpLitZ _)
           val r1: MOption[Exp] = transformExp(o2.exp)
           val r2: MOption[Attr] = transformAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(name = r0.getOrElse(o2.name), exp = r1.getOrElse(o2.exp), attr = r2.getOrElse(o2.attr)))
+            MSome(o2(numOpt = r0.getOrElse(o2.numOpt), exp = r1.getOrElse(o2.exp), attr = r2.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Exp.AssumeAgree =>

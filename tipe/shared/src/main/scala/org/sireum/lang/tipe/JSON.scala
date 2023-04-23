@@ -1659,7 +1659,7 @@ object JSON {
     @pure def print_astExpLabeled(o: org.sireum.lang.ast.Exp.Labeled): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Exp.Labeled""""),
-        ("name", print_astExpLitString(o.name)),
+        ("numOpt", printOption(F, o.numOpt, print_astExpLitZ _)),
         ("exp", print_astExp(o.exp)),
         ("attr", print_astAttr(o.attr))
       ))
@@ -5710,8 +5710,8 @@ object JSON {
       if (!typeParsed) {
         parser.parseObjectType("org.sireum.lang.ast.Exp.Labeled")
       }
-      parser.parseObjectKey("name")
-      val name = parse_astExpLitString()
+      parser.parseObjectKey("numOpt")
+      val numOpt = parser.parseOption(parse_astExpLitZ _)
       parser.parseObjectNext()
       parser.parseObjectKey("exp")
       val exp = parse_astExp()
@@ -5719,7 +5719,7 @@ object JSON {
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Exp.Labeled(name, exp, attr)
+      return org.sireum.lang.ast.Exp.Labeled(numOpt, exp, attr)
     }
 
     def parse_astExpAssumeAgree(): org.sireum.lang.ast.Exp.AssumeAgree = {
