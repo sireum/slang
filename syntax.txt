@@ -209,7 +209,7 @@
                      |  <ID> ~ <exp> ⸨ ~ <exp> ⸩*                           // only in spec context
                      |  ? ( <exp> ⸨ , <exp> ⸩* ) { ( <params> ) => <exp> }  // only in spec context
                      |  <block-assign-exp>                                  // only in spec context
-                     |  <exp> : @l( <STRING> )                              // only in spec context
+                     |  <exp> : @l( <INT> )                                 // only in spec context
                      |  Res ⸨ [ <type> ] ⸩?                                 // only in contract ensures context
 
 <quant-op>         ::=  ∀
