@@ -1682,7 +1682,7 @@ object Exp {
   @datatype class Sym(val num: Z, @hidden val attr: TypedAttr) extends Exp {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
-    @strictpure override def prettyST: ST = st"cx!$num"
+    @strictpure override def prettyST: ST = st"cx$$$num"
   }
 
   object Fun {
@@ -1866,8 +1866,8 @@ object Exp {
     @strictpure override def typedOpt: Option[Typed] = exp.typedOpt
     @pure override def prettyST: ST = {
       numOpt match {
-        case Some(num) => return st"""${exp.prettyST}: @l(${num.prettyST})"""
-        case _ => return st"""${exp.prettyST}: @l"""
+        case Some(num) => return st"""(${exp.prettyST}: @l(${num.prettyST}))"""
+        case _ => return st"""(${exp.prettyST}: @l)"""
       }
     }
   }
