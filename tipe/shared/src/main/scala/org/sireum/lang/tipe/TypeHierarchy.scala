@@ -31,6 +31,7 @@ import org.sireum.message._
 import org.sireum.lang.symbol._
 import org.sireum.lang.symbol.Resolver._
 import org.sireum.lang.{ast => AST}
+import org.sireum.U64._
 
 object TypeHierarchy {
 
@@ -427,9 +428,6 @@ object TypeHierarchy {
 
   @strictpure def empty: TypeHierarchy = TypeHierarchy(HashSMap.empty, HashSMap.empty, Poset.empty, HashSMap.empty)
 
-  @ext("TypeHierarchy_Ext") object Ext {
-    @pure def fingerprint(th: TypeHierarchy): U64 = $
-  }
 }
 
 @datatype class TypeHierarchy(
@@ -440,7 +438,117 @@ object TypeHierarchy {
 ) {
 
   @memoize def fingerprint: U64 = {
-    return TypeHierarchy.Ext.fingerprint(this)
+    var globalScopes = HashSMap.empty[Scope.Global, Z]
+    def getScopeNum(scope: Scope): Z = {
+      scope match {
+        case scope: Scope.Global =>
+          globalScopes.get(scope) match {
+            case Some(num) => return num
+            case _ =>
+              globalScopes = globalScopes + scope ~> globalScopes.size
+              return globalScopes.size - 1
+          }
+        case scope: Scope.Local => return getScopeNum(scope.outerOpt.get)
+      }
+    }
+    var sts = ISZ[ST]()
+    for (p <- nameMap.entries) {
+      p._2 match {
+        case info: Info.Enum => sts = sts :+ st"Enum(${(info.name, ".")}, ${info.elements.keys})"
+        case info: Info.Inv => sts = sts :+ st"Inv(${(info.owner, ".")}, ${getScopeNum(info.scope)}, ${info.ast.prettyST})"
+        case info: Info.Var => sts = sts :+ st"Var(${(info.owner, ".")}, ${getScopeNum(info.scope)}, ${info.ast(initOpt = None()).prettyST})"
+        case info: Info.SpecVar => sts = sts :+ st"SpecVar(${(info.owner, ".")}, ${getScopeNum(info.scope)}, ${info.ast.prettyST})"
+        case info: Info.Method => sts = sts :+ st"Method(${(info.owner, ".")}, ${getScopeNum(info.scope)}, ${info.ast(bodyOpt = None()).prettyST})"
+        case info: Info.ExtMethod => sts = sts :+ st"ExtMethod(${(info.owner, ".")}, ${getScopeNum(info.scope)}, ${info.ast.prettyST})"
+        case info: Info.Fact => sts = sts :+ st"Fact(${(info.owner, ".")}, ${getScopeNum(info.scope)}, ${info.ast.prettyST})"
+        case info: Info.EnumElement => sts = sts :+ st"EnumElement(${(info.owner, ".")}, ${info.id})"
+        case info: Info.JustMethod => sts = sts :+ st"JustMethod(${(info.owner, ".")}, ${getScopeNum(info.scope)}, ${info.ast.prettyST})"
+        case info: Info.LocalVar => sts = sts :+ st"LocalVar(${(info.name, ".")}, ${info.ast.prettyST})"
+        case info: Info.SpecMethod => sts = sts :+ st"SpecMethod(${(info.owner, ".")}, ${getScopeNum(info.scope)}, ${info.ast.prettyST})"
+        case info: Info.Theorem => sts = sts :+ st"Theorem(${(info.owner, ".")}, ${getScopeNum(info.scope)}, ${info.ast.prettyST})"
+        case _: Info.Package => // skip
+        case _: Info.Object => // skip
+      }
+    }
+    for (p <- typeMap.entries) {
+      p._2 match {
+        case info: TypeInfo.Adt =>
+          val rd: String = if (info.ast.isDatatype) "@datatype " else "@record "
+          val root: String = if (info.ast.isRoot) "trait" else "class"
+          val param: Option[ST] = if (info.ast.params.isEmpty) None() else Some(st"(${(for (p <- info.ast.params) yield p.prettyST, ", ")})")
+          val extend: Option[ST] =
+            if (info.ast.parents.isEmpty) None() else Some(st" extends ${(for (n <- info.ast.parents) yield n.prettyST, ", ")}")
+          val varsST: ST = if (info.vars.isEmpty) st"Vars()" else
+            st"""Vars(
+                |  ${(for (iv <- info.vars.entries) yield st"(${iv._1}, ${iv._2.ast(initOpt = None()).prettyST})", ", ")})"""
+          val methodsST: ST = if (info.methods.isEmpty) st"Methods()" else
+            st"""Methods(
+                |  ${(for (iv <- info.methods.entries) yield st"(${iv._1}, ${iv._2.ast(bodyOpt = if (iv._2.ast.purity == lang.ast.Purity.StrictPure && iv._2.ast.mcontract.isEmpty) iv._2.ast.bodyOpt else None()).prettyST})", ", ")})"""
+          val specVarsST: ST = if (info.specVars.isEmpty) st"SpecVars()" else
+            st"""SpecVars(
+                |  ${(for (iv <- info.specVars.entries) yield st"(${iv._1}, ${iv._2.ast.prettyST})", ", ")})"""
+          val specMethodsST: ST = if (info.specMethods.isEmpty) st"SpecMethods()" else
+            st"""SpecMethods(
+                |  ${(for (iv <- info.specMethods.entries) yield st"(${iv._1}, ${iv._2.ast.prettyST})", ", ")})"""
+          val invsST: ST = if (info.invariants.isEmpty) st"Invs()" else
+            st"""Invs(
+                |  ${(for (inv <- info.invariants.values) yield inv.ast.prettyST, ", ")})"""
+          val refinementST: ST = if (info.refinements.isEmpty) st"Refinements()" else
+            st"""Refinements(
+                |  ${(for (r <- info.refinements.values) yield st"${(r.ids, ".")}", ", ")})"""
+          val dataRefinementsST: ST = if (info.dataRefinements.isEmpty) st"DataRefinements()" else
+            st"""DataRefinements(
+                |  ${(for (r <- info.dataRefinements) yield r.prettyST, ", ")})"""
+          sts = sts :+ st"Adt(${(info.owner, ".")}, ${getScopeNum(info.scope)}, $rd $root ${info.ast.id.prettyST}${lang.ast.TypeParam.stOpt(info.ast.typeParams)}$param$extend, $varsST, $methodsST, $specVarsST, $specMethodsST, $invsST, $refinementST, $dataRefinementsST)"
+        case info: TypeInfo.Sig =>
+          val ext: String = if (info.ast.isExt) "@ext " else ""
+          val sig: String = if (info.ast.isImmutable) "@sig " else "@msig "
+          val extend: Option[ST] =
+            if (info.ast.parents.isEmpty) None() else Some(st" extends ${(for (n <- info.ast.parents) yield n.prettyST, ", ")}")
+          val methodsST: ST = if (info.methods.isEmpty) st"Methods()" else
+            st"""Methods(
+                |  ${(for (iv <- info.methods.entries) yield st"(${iv._1}, ${iv._2.ast(bodyOpt = if (iv._2.ast.purity == lang.ast.Purity.StrictPure && iv._2.ast.mcontract.isEmpty) iv._2.ast.bodyOpt else None()).prettyST})", ", ")})"""
+          val specVarsST: ST = if (info.specVars.isEmpty) st"SpecVars()" else
+            st"""SpecVars(
+                |  ${(for (iv <- info.specVars.entries) yield st"(${iv._1}, ${iv._2.ast.prettyST})", ", ")})"""
+          val specMethodsST: ST = if (info.specMethods.isEmpty) st"SpecMethods()" else
+            st"""SpecMethods(
+                |  ${(for (iv <- info.specMethods.entries) yield st"(${iv._1}, ${iv._2.ast.prettyST})", ", ")})"""
+          val invsST: ST = if (info.invariants.isEmpty) st"Invs()" else
+            st"""Invs(
+                |  ${(for (inv <- info.invariants.values) yield inv.ast.prettyST, ", ")})"""
+          val refinementST: ST = if (info.refinements.isEmpty) st"Refinements()" else
+            st"""Refinements(
+                |  ${(for (r <- info.refinements.values) yield st"${(r.ids, ".")}", ", ")})"""
+          val dataRefinementsST: ST = if (info.dataRefinements.isEmpty) st"DataRefinements()" else
+            st"""DataRefinements(
+                |  ${(for (r <- info.dataRefinements) yield r.prettyST, ", ")})"""
+          sts = sts :+ st"Sig(${(info.owner, ".")}, ${getScopeNum(info.scope)}, $ext$sig trait ${info.ast.id.prettyST}${lang.ast.TypeParam.stOpt(info.ast.typeParams)}$extend, $methodsST, $specVarsST, $specMethodsST, $invsST, $refinementST, $dataRefinementsST)"
+        case info: TypeInfo.SubZ => sts = sts :+ st"SubZ(${(info.owner, ".")}, ${info.ast.prettyST})"
+        case info: TypeInfo.Enum => sts = sts :+ st"TEnum(${(info.name, ".")}, ${info.elements.keys})"
+        case info: TypeInfo.TypeVar => sts = sts :+ st"TypeVar(${info.ast.prettyST})"
+        case info: TypeInfo.TypeAlias => sts = sts :+ st"TypeAlias(${(info.name, ".")}, ${getScopeNum(info.scope)}, ${info.ast.prettyST})"
+      }
+    }
+
+    for (scope <- globalScopes.keys) {
+      sts = sts :+ st"Scope(${(scope.packageName, ".")}, Imports(${(for (impor <- scope.imports) yield impor.prettyST, ", ")}), ${(scope.enclosingName, ".")})"
+    }
+
+    val rep =
+      st"""TypeHierarchy(
+          |  ${(sts, ",\n")}
+          |)""".render
+
+    val digest = ops.StringOps(rep).sha3(T, T)
+    return (conversions.U8.toU64(digest(0)) & u64"0xFF") << u64"56" |
+      (conversions.U8.toU64(digest(1)) & u64"0xFF") << u64"48" |
+      (conversions.U8.toU64(digest(2)) & u64"0xFF") << u64"40" |
+      (conversions.U8.toU64(digest(3)) & u64"0xFF") << u64"32" |
+      (conversions.U8.toU64(digest(4)) & u64"0xFF") << u64"24" |
+      (conversions.U8.toU64(digest(5)) & u64"0xFF") << u64"16" |
+      (conversions.U8.toU64(digest(6)) & u64"0xFF") << u64"8" |
+      (conversions.U8.toU64(digest(7)) & u64"0xFF")
   }
 
   @pure def rootTypeNames(): ISZ[QName] = {
