@@ -145,7 +145,7 @@ object TypeChecker {
               }
             case res: AST.ResolvedInfo.Method =>
               def err(): Unit = {
-                reporter.error(o.posOpt, TypeChecker.typeCheckerKind, s"$messagePrefix cannot invoke non-strictpure methods")
+                reporter.error(o.posOpt, TypeChecker.typeCheckerKind, s"$messagePrefix cannot invoke impure methods")
               }
               if (res.isInObject) {
                 res.owner match {
@@ -155,8 +155,8 @@ object TypeChecker {
                   case AST.Typed.mszName =>
                   case _ =>
                     th.nameMap.get(res.owner :+ res.id) match {
-                      case Some(info: Info.Method) if info.ast.purity != AST.Purity.StrictPure => err()
-                      case Some(_: Info.ExtMethod) => err()
+                      case Some(info: Info.Method) if info.ast.purity == AST.Purity.Impure => err()
+                      case Some(info: Info.ExtMethod) if !info.ast.isPure => err()
                       case _ =>
                     }
                 }
@@ -3220,10 +3220,10 @@ import TypeChecker._
       if (!inSpec) {
         reporter.error(spBlock.posOpt, typeCheckerKind, "Strict-pure blocks can only be used inside specification context.")
       }
-      if (reporter.hasError) {
-        return (spBlock, None())
-      }
       val (newBlock, typedOpt) = checkAssignExp(expectedOpt, scope, spBlock.block, reporter)
+      if (reporter.hasError) {
+        return (AST.Exp.StrictPureBlock(newBlock.asInstanceOf[AST.Stmt.Block], spBlock.attr), None())
+      }
       val spc = StrictPureChecker(F, typeCheckerKind, typeHierarchy, Reporter.create)
       spc.transformAssignExp(newBlock)
       reporter.reports(spc.reporter.messages)
