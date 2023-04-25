@@ -138,10 +138,12 @@ object TypeChecker {
         case Some(res) =>
           res match {
             case res: AST.ResolvedInfo.Var if res.isInObject =>
-              if (!res.isVal) {
-                errVars(o.posOpt)
-              } else {
-                checkType(o.typedOpt.get, o.posOpt)
+              if (isMethod) {
+                if (!res.isVal) {
+                  errVars(o.posOpt)
+                } else {
+                  checkType(o.typedOpt.get, o.posOpt)
+                }
               }
             case res: AST.ResolvedInfo.Method =>
               def err(): Unit = {
@@ -192,10 +194,12 @@ object TypeChecker {
     def checkResOpt(attr: AST.ResolvedAttr): Unit = {
       attr.resOpt.get match {
         case res: AST.ResolvedInfo.Var if !res.isInObject =>
-          if (!res.isVal) {
-            errVars(attr.posOpt)
-          } else {
-            checkType(attr.typedOpt.get, attr.posOpt)
+          if (isMethod) {
+            if (!res.isVal) {
+              errVars(attr.posOpt)
+            } else {
+              checkType(attr.typedOpt.get, attr.posOpt)
+            }
           }
         case _ =>
       }
