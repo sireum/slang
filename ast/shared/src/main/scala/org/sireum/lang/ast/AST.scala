@@ -84,6 +84,10 @@ object TopUnit {
   }
   @strictpure def asAssignExp: AssignExp = halt(s"Invalid operation 'asAssignExp' on $this.")
   @strictpure def isInstruction: B
+  @memoize def hasReturnMemoized: B = {
+    return hasReturn
+  }
+  @strictpure def hasReturn: B
 }
 
 @sig trait HasModifies {
@@ -169,6 +173,7 @@ object Stmt {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure override def prettyST: ST = st"import ${(for (i <- importers) yield i.prettyST, ", ")}"
     @strictpure override def isInstruction: B = F
+    @strictpure override def hasReturn: B = F
   }
 
   object Import {
@@ -211,6 +216,7 @@ object Stmt {
       return st"$specOpt$valVar ${id.prettyST}$tOpt$iOpt"
     }
     @strictpure override def isInstruction: B = initOpt.nonEmpty
+    @strictpure override def hasReturn: B = if (initOpt.nonEmpty) initOpt.get.hasReturn else F
   }
 
   @datatype class VarPattern(val isSpec: B,
@@ -227,6 +233,7 @@ object Stmt {
       return st"$spec$valVar ${pattern.prettyST}$tOpt = ${init.prettyST}}"
     }
     @strictpure override def isInstruction: B = T
+    @strictpure override def hasReturn: B = init.hasReturn
   }
 
   @datatype class SpecVar(val isVal: B,
@@ -239,6 +246,7 @@ object Stmt {
       st"@spec $valVar ${id.prettyST}: ${tipe.prettyST}}"
     }
     @strictpure override def isInstruction: B = F
+    @strictpure override def hasReturn: B = F
   }
 
   @datatype class Method(val typeChecked: B,
@@ -303,6 +311,7 @@ object Stmt {
       return st"$helper$pure${overr}def ${sig.prettyST}$bOpt"
     }
     @strictpure override def isInstruction: B = F
+    @strictpure override def hasReturn: B = T
   }
 
   @datatype class ExtMethod(val isPure: B,
@@ -317,6 +326,7 @@ object Stmt {
       st"${helper}def ${sig.prettyST}$bOpt"
     }
     @strictpure override def isInstruction: B = F
+    @strictpure override def hasReturn: B = F
   }
 
   @datatype class JustMethod(val etaOpt: Option[Exp.LitString],
@@ -328,12 +338,14 @@ object Stmt {
       return st"${just}def ${sig.prettyST}"
     }
     @strictpure override def isInstruction: B = F
+    @strictpure override def hasReturn: B = F
   }
 
   @datatype class SpecMethod(val sig: MethodSig, @hidden val attr: ResolvedAttr) extends Stmt {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure override def prettyST: ST = st"@spec def ${sig.prettyST}"
     @strictpure override def isInstruction: B = F
+    @strictpure override def hasReturn: B = F
   }
 
   @datatype class Enum(val id: Id, val elements: ISZ[Id], @hidden val attr: Attr) extends Stmt {
@@ -343,6 +355,7 @@ object Stmt {
           |  ${(for (e <- elements) yield st""""${id.prettyST}"""", "\n")}
           |}"""
     @strictpure override def isInstruction: B = F
+    @strictpure override def hasReturn: B = F
   }
 
   @datatype class SubZ(val id: Id,
@@ -369,6 +382,7 @@ object Stmt {
       st"$rb class ${id.prettyST}"
     }
     @strictpure override def isInstruction: B = F
+    @strictpure override def hasReturn: B = F
   }
 
   @datatype class Object(val isApp: B,
@@ -385,6 +399,7 @@ object Stmt {
                  |}"""
     }
     @strictpure override def isInstruction: B = F
+    @strictpure override def hasReturn: B = F
   }
 
   @datatype class Sig(val isImmutable: B,
@@ -405,6 +420,7 @@ object Stmt {
                  |}"""
     }
     @strictpure override def isInstruction: B = F
+    @strictpure override def hasReturn: B = F
   }
 
   @datatype class Adt(val isRoot: B,
@@ -427,12 +443,14 @@ object Stmt {
                  |}"""
     }
     @strictpure override def isInstruction: B = F
+    @strictpure override def hasReturn: B = F
   }
 
   @datatype class TypeAlias(val id: Id, val typeParams: ISZ[TypeParam], val tipe: Type, @hidden val attr: Attr) extends Stmt {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure override def prettyST: ST = st"type ${id.prettyST}${TypeParam.stOpt(typeParams)} = ${tipe.prettyST}"
     @strictpure override def isInstruction: B = F
+    @strictpure override def hasReturn: B = F
   }
 
   @datatype class Assign(val lhs: Exp, val rhs: AssignExp, @hidden val attr: Attr) extends Stmt {
@@ -441,6 +459,7 @@ object Stmt {
       return st"${lhs.prettyST} = ${rhs.prettyST}"
     }
     @strictpure override def isInstruction: B = T
+    @strictpure override def hasReturn: B = rhs.hasReturn
   }
 
   @datatype class Block(val body: Body, @hidden val attr: Attr) extends Stmt with AssignExp {
@@ -454,6 +473,7 @@ object Stmt {
                  |}"""
     }
     @strictpure override def isInstruction: B = T
+    @strictpure override def hasReturn: B = body.hasReturn
   }
 
   @datatype class If(val cond: Exp, val thenBody: Body, val elseBody: Body, @hidden val attr: Attr) extends Stmt with AssignExp {
@@ -478,6 +498,7 @@ object Stmt {
             |}"""
     }
     @strictpure override def isInstruction: B = T
+    @strictpure override def hasReturn: B = thenBody.hasReturn || elseBody.hasReturn
   }
 
   @datatype class Match(val exp: Exp, val cases: ISZ[Case], @hidden val attr: Attr) extends Stmt with AssignExp {
@@ -491,6 +512,7 @@ object Stmt {
                  |}"""
     }
     @strictpure override def isInstruction: B = T
+    @strictpure override def hasReturn: B = ops.ISZOps(cases).exists((c: Case) => c.body.hasReturn)
   }
 
   @datatype class While(val context: ISZ[String],
@@ -508,6 +530,7 @@ object Stmt {
                  |}"""
     }
     @strictpure override def isInstruction: B = T
+    @strictpure override def hasReturn: B = body.hasReturn
   }
 
   @datatype class DoWhile(val context: ISZ[String],
@@ -525,6 +548,7 @@ object Stmt {
                  |} while(${cond.prettyST})"""
     }
     @strictpure override def isInstruction: B = T
+    @strictpure override def hasReturn: B = body.hasReturn
   }
 
   @datatype class For(val context: ISZ[String],
@@ -548,6 +572,7 @@ object Stmt {
             |}"""
     }
     @strictpure override def isInstruction: B = T
+    @strictpure override def hasReturn: B = body.hasReturn
   }
 
   @datatype class Return(val expOpt: Option[Exp], @hidden val attr: TypedAttr) extends Stmt with AssignExp {
@@ -558,6 +583,7 @@ object Stmt {
       return if (expOpt.isEmpty) st"return" else st"return ${expOpt.get.prettyST}"
     }
     @strictpure override def isInstruction: B = T
+    @strictpure override def hasReturn: B = T
   }
 
   @datatype class Expr(val exp: Exp, @hidden val attr: TypedAttr) extends Stmt with AssignExp {
@@ -569,6 +595,7 @@ object Stmt {
       return exp.prettyST
     }
     @strictpure override def isInstruction: B = T
+    @strictpure override def hasReturn: B = F
   }
 
   @datatype trait Spec extends Stmt
@@ -586,6 +613,7 @@ object Stmt {
                  |)"""
     }
     @strictpure override def isInstruction: B = F
+    @strictpure override def hasReturn: B = F
   }
 
   @datatype class Inv(val id: Id,
@@ -598,6 +626,7 @@ object Stmt {
                  |)"""
     }
     @strictpure override def isInstruction: B = F
+    @strictpure override def hasReturn: B = F
   }
 
   @datatype class Theorem(val isLemma: B,
@@ -615,6 +644,7 @@ object Stmt {
                  |)"""
     }
     @strictpure override def isInstruction: B = F
+    @strictpure override def hasReturn: B = F
   }
 
   @datatype class DataRefinement(val rep: Exp.Ident,
@@ -626,12 +656,14 @@ object Stmt {
       return st"Contract(DataRefinement(${rep.prettyST})(${(for (ref <- refs) yield ref.prettyST, ", ")})(${(for (claim <- claims) yield claim.prettyST, ", ")}))"
     }
     @strictpure override def isInstruction: B = F
+    @strictpure override def hasReturn: B = F
   }
 
   @datatype class SpecLabel(val id: Id) extends Spec {
     @strictpure override def posOpt: Option[Position] = id.attr.posOpt
     @strictpure override def prettyST: ST = st"""Spec("${id.prettyST}")"""
     @strictpure override def isInstruction: B = T
+    @strictpure override def hasReturn: B = F
   }
 
   @datatype class SpecBlock(val block: Block) extends Spec {
@@ -640,6 +672,7 @@ object Stmt {
       return st"Spec ${block.prettyST}"
     }
     @strictpure override def isInstruction: B = T
+    @strictpure override def hasReturn: B = F
   }
 
   @datatype class DeduceSequent(val justOpt: Option[Exp.LitString], val sequents: ISZ[Sequent], @hidden val attr: Attr) extends Spec {
@@ -650,6 +683,7 @@ object Stmt {
                  |)"""
     }
     @strictpure override def isInstruction: B = T
+    @strictpure override def hasReturn: B = F
   }
 
   @datatype class DeduceSteps(val steps: ISZ[ProofAst.Step], @hidden val attr: Attr) extends Spec {
@@ -660,6 +694,7 @@ object Stmt {
                  |)"""
     }
     @strictpure override def isInstruction: B = T
+    @strictpure override def hasReturn: B = F
   }
 
   @datatype class Havoc(val args: ISZ[Exp.Ref], @hidden val attr: Attr) extends Spec {
@@ -668,6 +703,7 @@ object Stmt {
       return st"Havoc(${(for (arg <- args) yield arg.asExp.prettyST, ", ")})"
     }
     @strictpure override def isInstruction: B = T
+    @strictpure override def hasReturn: B = F
   }
 
 }
@@ -1060,6 +1096,8 @@ object ProofAst {
   }
 
   @strictpure def asStmt: Stmt
+
+  @strictpure def hasReturn: B
 
   @pure def exprs: ISZ[Stmt.Expr] = {
     this match {
@@ -1939,6 +1977,7 @@ object Exp {
   @pure def prettySTs: ISZ[ST] = {
     return for (stmt <- stmts) yield if (stmt.isInstanceOf[Stmt.Block]) st";${stmt.prettyST}" else stmt.prettyST
   }
+  @strictpure def hasReturn: B = ops.ISZOps(stmts).exists((stmt: Stmt) => stmt.hasReturnMemoized)
 }
 
 @datatype class AdtParam(val isHidden: B, val isVal: B, val id: Id, val tipe: Type) {
