@@ -167,16 +167,14 @@ object TypeChecker {
                   case Some(info: TypeInfo.Sig) =>
                     info.methods.get(res.id) match {
                       case Some(minfo) =>
-                        if ((info.ast.isExt && minfo.ast.purity != AST.Purity.Pure &&
-                          minfo.ast.purity != AST.Purity.StrictPure)
-                          || (!info.ast.isExt && minfo.ast.purity != AST.Purity.StrictPure)) {
+                        if (minfo.ast.purity == AST.Purity.Impure) {
                           err()
                         }
                       case _ =>
                     }
                   case Some(info: TypeInfo.Adt) =>
                     info.methods.get(res.id) match {
-                      case Some(minfo) if minfo.ast.purity != AST.Purity.StrictPure => err()
+                      case Some(minfo) if minfo.ast.purity == AST.Purity.Impure => err()
                       case _ =>
                     }
                   case _ =>
