@@ -1566,17 +1566,29 @@ object Exp {
 
     @pure override def prettyST: ST = {
       val l = BinaryOp.precendenceLevel(op)
+      var singleLine = T
       val leftST: ST = left match {
-        case left: Binary if shouldParenthesize(l, left.op, F) => st"(${left.prettyST})"
-        case left: If => st"(${left.prettyST})"
+        case left: Binary =>
+          singleLine = F
+          if (shouldParenthesize(l, left.op, F)) st"(${left.prettyST})" else left.prettyST
+        case left: If =>
+          singleLine = F
+          st"(${left.prettyST})"
         case _ => left.prettyST
       }
       val rightST: ST = right match {
-        case right: Binary if shouldParenthesize(l, right.op, T) => st"(${right.prettyST})"
-        case right: If => st"(${right.prettyST})"
+        case right: Binary =>
+          singleLine = F
+          if (shouldParenthesize(l, right.op, T)) st"(${right.prettyST})" else right.prettyST
+        case right: If =>
+          singleLine = F
+          st"(${right.prettyST})"
         case _ => right.prettyST
       }
-      return st"$leftST $op $rightST"
+      val r: ST = if (singleLine || op == BinaryOp.MapsTo) st"$leftST $op $rightST" else
+        st"""$leftST $op
+            |  $rightST"""
+      return r
     }
   }
 
