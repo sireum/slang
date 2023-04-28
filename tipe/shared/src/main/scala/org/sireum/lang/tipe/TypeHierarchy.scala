@@ -437,7 +437,14 @@ object TypeHierarchy {
   val aliases: HashSMap[QName, AST.Typed]
 ) {
 
-  @memoize def fingerprint: U64 = {
+  @memoize def fingerprintKeepMethodBody: U64 = {
+    return fingerprint(T)
+  }
+  @memoize def fingerprintNoMethodBody: U64 = {
+    return fingerprint(F)
+  }
+
+  @pure def fingerprint(keepMethodBody: B): U64 = {
     var globalScopes = HashSMap.empty[Scope.Global, Z]
     def getScopeNum(scope: Scope): Z = {
       scope match {
@@ -458,7 +465,7 @@ object TypeHierarchy {
         case info: Info.Inv => sts = sts :+ st"Inv(${(info.owner, ".")}, ${getScopeNum(info.scope)}, ${info.ast.prettyST})"
         case info: Info.Var => sts = sts :+ st"Var(${(info.owner, ".")}, ${getScopeNum(info.scope)}, ${info.ast(initOpt = None()).prettyST})"
         case info: Info.SpecVar => sts = sts :+ st"SpecVar(${(info.owner, ".")}, ${getScopeNum(info.scope)}, ${info.ast.prettyST})"
-        case info: Info.Method => sts = sts :+ st"Method(${(info.owner, ".")}, ${getScopeNum(info.scope)}, ${info.ast(mcontract = info.ast.contract, bodyOpt = None()).prettyST})"
+        case info: Info.Method => sts = sts :+ st"Method(${(info.owner, ".")}, ${getScopeNum(info.scope)}, ${info.ast(mcontract = info.ast.contract, bodyOpt = if (keepMethodBody || (info.ast.purity == lang.ast.Purity.StrictPure && info.ast.mcontract.isEmpty)) info.ast.bodyOpt else None()).prettyST})"
         case info: Info.ExtMethod => sts = sts :+ st"ExtMethod(${(info.owner, ".")}, ${getScopeNum(info.scope)}, ${info.ast.prettyST})"
         case info: Info.Fact => sts = sts :+ st"Fact(${(info.owner, ".")}, ${getScopeNum(info.scope)}, ${info.ast.prettyST})"
         case info: Info.EnumElement => sts = sts :+ st"EnumElement(${(info.owner, ".")}, ${info.id})"
@@ -483,7 +490,7 @@ object TypeHierarchy {
                 |  ${(for (iv <- info.vars.entries) yield st"(${iv._1}, ${iv._2.ast(initOpt = None()).prettyST})", ", ")})"""
           val methodsST: ST = if (info.methods.isEmpty) st"Methods()" else
             st"""Methods(
-                |  ${(for (iv <- info.methods.entries) yield st"(${iv._1}, ${iv._2.ast(mcontract = iv._2.ast.contract, bodyOpt = if (iv._2.ast.purity == lang.ast.Purity.StrictPure && iv._2.ast.mcontract.isEmpty) iv._2.ast.bodyOpt else None()).prettyST})", ", ")})"""
+                |  ${(for (iv <- info.methods.entries) yield st"(${iv._1}, ${iv._2.ast(mcontract = iv._2.ast.contract, bodyOpt = if (keepMethodBody || (iv._2.ast.purity == lang.ast.Purity.StrictPure && iv._2.ast.mcontract.isEmpty)) iv._2.ast.bodyOpt else None()).prettyST})", ", ")})"""
           val specVarsST: ST = if (info.specVars.isEmpty) st"SpecVars()" else
             st"""SpecVars(
                 |  ${(for (iv <- info.specVars.entries) yield st"(${iv._1}, ${iv._2.ast.prettyST})", ", ")})"""
