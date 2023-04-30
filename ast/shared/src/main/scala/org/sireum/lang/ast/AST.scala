@@ -403,6 +403,7 @@ object Stmt {
   }
 
   @datatype class Sig(val isImmutable: B,
+                      val isSealed: B,
                       val isExt: B,
                       val id: Id,
                       val typeParams: ISZ[TypeParam],
@@ -413,9 +414,10 @@ object Stmt {
     @pure override def prettyST: ST = {
       val ext: String = if (isExt) "@ext " else ""
       val sig: String = if (isImmutable) "@sig " else "@msig "
+      val seal: String = if (isSealed) " sealed" else ""
       val extend: Option[ST] =
         if (parents.isEmpty) None() else Some(st" extends ${(for (n <- parents) yield n.prettyST, ", ")}")
-      return st"""$ext$sig trait ${id.prettyST}${TypeParam.stOpt(typeParams)}$extend {
+      return st"""$ext$sig$seal trait ${id.prettyST}${TypeParam.stOpt(typeParams)}$extend {
                  |  ${(for (stmt <- stmts) yield stmt.prettyST, "\n")}
                  |}"""
     }

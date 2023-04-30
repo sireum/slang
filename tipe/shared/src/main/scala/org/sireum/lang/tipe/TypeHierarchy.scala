@@ -510,6 +510,7 @@ object TypeHierarchy {
         case info: TypeInfo.Sig =>
           val ext: String = if (info.ast.isExt) "@ext " else ""
           val sig: String = if (info.ast.isImmutable) "@sig " else "@msig "
+          val seal: String = if (info.ast.isSealed) " sealed" else ""
           val extend: Option[ST] =
             if (info.ast.parents.isEmpty) None() else Some(st" extends ${(for (n <- info.ast.parents) yield n.prettyST, ", ")}")
           val methodsST: ST = if (info.methods.isEmpty) st"Methods()" else
@@ -530,7 +531,7 @@ object TypeHierarchy {
           val dataRefinementsST: ST = if (info.dataRefinements.isEmpty) st"DataRefinements()" else
             st"""DataRefinements(
                 |  ${(for (r <- info.dataRefinements) yield r.prettyST, ", ")})"""
-          sts = sts :+ st"Sig(${(info.owner, ".")}, ${getScopeNum(info.scope)}, $ext$sig trait ${info.ast.id.prettyST}${lang.ast.TypeParam.stOpt(info.ast.typeParams)}$extend, $methodsST, $specVarsST, $specMethodsST, $invsST, $refinementST, $dataRefinementsST)"
+          sts = sts :+ st"Sig(${(info.owner, ".")}, ${getScopeNum(info.scope)}, $ext$sig$seal trait ${info.ast.id.prettyST}${lang.ast.TypeParam.stOpt(info.ast.typeParams)}$extend, $methodsST, $specVarsST, $specMethodsST, $invsST, $refinementST, $dataRefinementsST)"
         case info: TypeInfo.SubZ => sts = sts :+ st"SubZ(${(info.owner, ".")}, ${info.ast.prettyST})"
         case info: TypeInfo.Enum => sts = sts :+ st"TEnum(${(info.name, ".")}, ${info.elements.keys})"
         case info: TypeInfo.TypeVar => sts = sts :+ st"TypeVar(${info.ast.prettyST})"

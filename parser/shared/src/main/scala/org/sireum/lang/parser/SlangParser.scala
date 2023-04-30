@@ -1576,6 +1576,7 @@ class SlangParser(
 
     AST.Stmt.Sig(
       hasSig,
+      hasSealed,
       hasExt,
       cid(tname),
       ISZ(tparams.map(translateTypeParam(if (hasSig) AST.Typed.VarKind.Immutable else AST.Typed.VarKind.Mutable, !hasSig)): _*),

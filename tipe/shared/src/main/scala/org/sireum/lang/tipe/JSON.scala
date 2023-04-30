@@ -595,6 +595,7 @@ object JSON {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Stmt.Sig""""),
         ("isImmutable", printB(o.isImmutable)),
+        ("isSealed", printB(o.isSealed)),
         ("isExt", printB(o.isExt)),
         ("id", print_astId(o.id)),
         ("typeParams", printISZ(F, o.typeParams, print_astTypeParam _)),
@@ -3442,6 +3443,9 @@ object JSON {
       parser.parseObjectKey("isImmutable")
       val isImmutable = parser.parseB()
       parser.parseObjectNext()
+      parser.parseObjectKey("isSealed")
+      val isSealed = parser.parseB()
+      parser.parseObjectNext()
       parser.parseObjectKey("isExt")
       val isExt = parser.parseB()
       parser.parseObjectNext()
@@ -3460,7 +3464,7 @@ object JSON {
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.Sig(isImmutable, isExt, id, typeParams, parents, stmts, attr)
+      return org.sireum.lang.ast.Stmt.Sig(isImmutable, isSealed, isExt, id, typeParams, parents, stmts, attr)
     }
 
     def parse_astStmtAdt(): org.sireum.lang.ast.Stmt.Adt = {
