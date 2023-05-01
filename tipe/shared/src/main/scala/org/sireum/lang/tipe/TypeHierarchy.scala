@@ -1295,7 +1295,33 @@ object TypeHierarchy {
                 return T
               }
             case _: TypeInfo.SubZ => return T
-            case _: TypeInfo.Sig => return F
+            case info: TypeInfo.Sig =>
+              if (!info.ast.isSealed) {
+                return F
+              }
+              val sm = TypeChecker.buildTypeSubstMap(info.name, None(), info.ast.typeParams, t.args, Reporter.create).get
+              for (childName <- poset.childrenOf(info.name).elements) {
+                val childInfo = typeMap.get(childName).get.asInstanceOf[TypeInfo.Adt]
+                for (parent <- childInfo.parents if parent.ids == info.name) {
+                  val csm = TypeChecker.buildTypeSubstMap(info.name, None(), info.ast.typeParams, parent.args, Reporter.create).get
+                  var ctargs = ISZ[AST.Typed]()
+                  for (ctp <- childInfo.ast.typeParams) {
+                    val ctpid = ctp.id.value
+                    csm.get(ctpid) match {
+                      case Some(subst1) =>
+                        sm.get(subst1.asInstanceOf[AST.Typed.TypeVar].id) match {
+                          case Some(ct) => ctargs = ctargs :+ ct
+                          case _ => return F
+                        }
+                      case _ => return F
+                    }
+                  }
+                  if (!isSubstitutableWithoutSpecVarsH(AST.Typed.Name(childInfo.name, ctargs))) {
+                    return F
+                  }
+                }
+              }
+              return T
             case _: TypeInfo.Enum => return T
             case info: TypeInfo.TypeAlias => halt(s"Unexpected usage of isSubstitutableWithoutSpecVars on $info")
             case info: TypeInfo.TypeVar => halt(s"Unexpected usage of isSubstitutableWithoutSpecVars on $info")
