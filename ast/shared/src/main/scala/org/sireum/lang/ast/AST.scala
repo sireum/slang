@@ -302,12 +302,18 @@ object Stmt {
         case Purity.Memoize => "@memoize "
       }
       val overr: String = if (hasOverride) "override " else ""
-      val bOpt: Option[ST] = if (bodyOpt.isEmpty) None() else Some(
-        st""" = {
-            |  ${mcontract.prettySTOpt(bodyOpt.isEmpty)}
-            |  ${(bodyOpt.get.prettySTs, "\n")}
-            |}"""
-      )
+      val bOpt: Option[ST] =
+        if (bodyOpt.isEmpty)
+          if (mcontract.isEmpty) None()
+          else Some(
+            st""" = {
+                |  ${mcontract.prettySTOpt(bodyOpt.isEmpty)}
+                |}""")
+        else Some(
+          st""" = {
+              |  ${mcontract.prettySTOpt(bodyOpt.isEmpty)}
+              |  ${(bodyOpt.get.prettySTs, "\n")}
+              |}""")
       return st"$helper$pure${overr}def ${sig.prettyST}$bOpt"
     }
     @strictpure override def isInstruction: B = F
