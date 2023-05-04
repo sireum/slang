@@ -1129,7 +1129,11 @@ class SlangParser(
             }
             val expAttr = attr(exp.pos)
             var stmt1 = translateStat(Enclosing.Block)(q"val _r_ : ${tpeopt.get} = $newExp").asInstanceOf[AST.Stmt.Var]
-            stmt1 = stmt1(id = stmt1.id(attr = expAttr), attr = stmt1.attr(posOpt = expAttr.posOpt))
+            val init = stmt1.initOpt.get match {
+              case in: AST.Stmt.Block => in(attr = expAttr)
+              case in => in
+            }
+            stmt1 = stmt1(id = stmt1.id(attr = expAttr), initOpt = Some(init), attr = stmt1.attr(posOpt = expAttr.posOpt))
             var stmt2 = translateStat(Enclosing.Block)(q"return _r_").asInstanceOf[AST.Stmt.Return]
             val ident = stmt2.expOpt.get.asInstanceOf[AST.Exp.Ident]
             stmt2 = stmt2(expOpt = Some(ident(id = stmt1.id, attr = ident.attr(posOpt = expAttr.posOpt))),
