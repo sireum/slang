@@ -1234,6 +1234,7 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.Pattern.VarBinding""""),
         ("id", print_astId(o.id)),
         ("tipeOpt", printOption(F, o.tipeOpt, print_astType _)),
+        ("idContext", printISZ(T, o.idContext, printString _)),
         ("attr", print_astTypedAttr(o.attr))
       ))
     }
@@ -1259,6 +1260,7 @@ object JSON {
         ("idOpt", printOption(F, o.idOpt, print_astId _)),
         ("nameOpt", printOption(F, o.nameOpt, print_astName _)),
         ("patterns", printISZ(F, o.patterns, print_astPattern _)),
+        ("idContext", printISZ(T, o.idContext, printString _)),
         ("attr", print_astResolvedAttr(o.attr))
       ))
     }
@@ -4820,10 +4822,13 @@ object JSON {
       parser.parseObjectKey("tipeOpt")
       val tipeOpt = parser.parseOption(parse_astType _)
       parser.parseObjectNext()
+      parser.parseObjectKey("idContext")
+      val idContext = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
       parser.parseObjectKey("attr")
       val attr = parse_astTypedAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Pattern.VarBinding(id, tipeOpt, attr)
+      return org.sireum.lang.ast.Pattern.VarBinding(id, tipeOpt, idContext, attr)
     }
 
     def parse_astPatternWildcard(): org.sireum.lang.ast.Pattern.Wildcard = {
@@ -4877,10 +4882,13 @@ object JSON {
       parser.parseObjectKey("patterns")
       val patterns = parser.parseISZ(parse_astPattern _)
       parser.parseObjectNext()
+      parser.parseObjectKey("idContext")
+      val idContext = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
       parser.parseObjectKey("attr")
       val attr = parse_astResolvedAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Pattern.Structure(idOpt, nameOpt, patterns, attr)
+      return org.sireum.lang.ast.Pattern.Structure(idOpt, nameOpt, patterns, idContext, attr)
     }
 
     def parse_astExp(): org.sireum.lang.ast.Exp = {

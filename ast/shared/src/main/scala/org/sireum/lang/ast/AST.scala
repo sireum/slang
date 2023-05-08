@@ -1311,7 +1311,8 @@ object Pattern {
     @strictpure override def prettyST: ST = if (isAccess) name.prettyST else st"`${name.prettyST}`"
   }
 
-  @datatype class VarBinding(val id: Id, val tipeOpt: Option[Type], @hidden val attr: TypedAttr) extends Pattern {
+  @datatype class VarBinding(val id: Id, val tipeOpt: Option[Type], @hidden val idContext: ISZ[String],
+                             @hidden val attr: TypedAttr) extends Pattern {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
     @strictpure override def prettyST: ST = tipeOpt match {
@@ -1339,6 +1340,7 @@ object Pattern {
   @datatype class Structure(val idOpt: Option[Id],
                             val nameOpt: Option[Name],
                             val patterns: ISZ[Pattern],
+                            @hidden val idContext: ISZ[String],
                             @hidden val attr: ResolvedAttr) extends Pattern {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt

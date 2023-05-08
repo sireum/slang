@@ -52,180 +52,276 @@ object TypeHierarchy {
         return AST.Transformer.TPostResult(ctx, None())
       }
     }
-  }
 
-  @datatype class ExpPrePostNormalizer(val th: TypeHierarchy) extends AST.Transformer.PrePost[Z] {
-    override def preExpFun(ctx: Z, o: AST.Exp.Fun): AST.Transformer.PreResult[Z, AST.Exp] = {
-      val num = ctx
-      val newContextId: String = s".$num"
-      var m = HashMap.empty[String, String]
-      var i: Z = 1
-      var newParams = ISZ[AST.Exp.Fun.Param]()
-      for (p <- o.params) {
-        p.idOpt match {
-          case Some(id) =>
-            val newId = id(value = s"$newContextId.$i")
-            newParams = newParams :+ p(idOpt = Some(newId))
-            m = m + id.value ~> newId.value
-          case _ => newParams = newParams :+ p
+    @datatype class ExpPrePostNormalizer(val th: TypeHierarchy) extends AST.Transformer.PrePost[Z] {
+      override def preExpFun(ctx: Z, o: AST.Exp.Fun): AST.Transformer.PreResult[Z, AST.Exp] = {
+        val num = ctx
+        val newContextId: String = s".$num"
+        var m = HashMap.empty[String, String]
+        var i: Z = 1
+        var newParams = ISZ[AST.Exp.Fun.Param]()
+        for (p <- o.params) {
+          p.idOpt match {
+            case Some(id) =>
+              val newId = id(value = s"$newContextId.$i")
+              newParams = newParams :+ p(idOpt = Some(newId))
+              m = m + id.value ~> newId.value
+            case _ => newParams = newParams :+ p
+          }
+          i = i + 1
         }
-        i = i + 1
+        val newContext = ISZ(newContextId)
+        val newExp = AST.Transformer(ExpNormalizer.PrePostSubstitutor(o.context, newContext, m)).
+          transformAssignExp(F, o.exp).
+          resultOpt.getOrElse(o.exp)
+        val newO = o(context = newContext, params = newParams, exp = newExp)
+        return AST.Transformer.PreResult(ctx + 1, T, Some(newO))
       }
-      val newContext = ISZ(newContextId)
-      val newExp = AST.Transformer(ExpNormalizer.PrePostSubstitutor(o.context, newContext, m)).
-        transformAssignExp(F, o.exp).
-        resultOpt.getOrElse(o.exp)
-      val newO = o(context = newContext, params = newParams, exp = newExp)
-      return AST.Transformer.PreResult(ctx + 1, T, Some(newO))
-    }
 
-    override def preExpIdent(ctx: Z, o: AST.Exp.Ident): AST.Transformer.PreResult[Z, AST.Exp] = {
-      val (cond, owner) = shouldTransformIdent(o)
-      if (cond) {
-        return AST.Transformer.PreResult(ctx, T, Some(
-          AST.Exp.Select(Some(th.nameToExp(owner, o.posOpt.get).asExp), o.id, o.targs, o.attr)
-        ))
-      }
-      return AST.Transformer.PreResult(ctx, T, None())
-    }
-
-    override def preExpSelect(ctx: Z, o: AST.Exp.Select): AST.Transformer.PreResult[Z, AST.Exp] = {
-      if (o.targs.nonEmpty) {
-        return AST.Transformer.PreResult(ctx, T, Some(o(targs = ISZ())))
-      } else {
+      override def preExpIdent(ctx: Z, o: AST.Exp.Ident): AST.Transformer.PreResult[Z, AST.Exp] = {
+        val (cond, owner) = shouldTransformIdent(o)
+        if (cond) {
+          return AST.Transformer.PreResult(ctx, T, Some(
+            AST.Exp.Select(Some(th.nameToExp(owner, o.posOpt.get).asExp), o.id, o.targs, o.attr)
+          ))
+        }
         return AST.Transformer.PreResult(ctx, T, None())
       }
-    }
 
-    override def preExpInvoke(ctx: Z, o: AST.Exp.Invoke): AST.Transformer.PreResult[Z, AST.Exp] = {
-      val en = ExpNormalizer.create(th)
-      var newArgs = ISZ[AST.Exp]()
-      var cctx = ctx
-      var changed = o.targs.nonEmpty
-      for (arg <- o.args) {
-        val p = en.transformExp(cctx, arg)
-        cctx = p.ctx
-        p.resultOpt match {
-          case Some(newArg) =>
-            newArgs = newArgs :+ newArg
-            changed = T
-          case _ => newArgs = newArgs :+ arg
+      override def preExpSelect(ctx: Z, o: AST.Exp.Select): AST.Transformer.PreResult[Z, AST.Exp] = {
+        if (o.targs.nonEmpty) {
+          return AST.Transformer.PreResult(ctx, T, Some(o(targs = ISZ())))
+        } else {
+          return AST.Transformer.PreResult(ctx, T, None())
         }
       }
-      var newReceiverOpt = Option.none[AST.Exp]()
-      o.receiverOpt match {
-        case Some(receiver) =>
-          val p = en.transformExp(cctx, receiver)
-          cctx = p.ctx
-          if (p.resultOpt.nonEmpty) {
-            newReceiverOpt = p.resultOpt
-            changed = T
-          } else {
-            newReceiverOpt = o.receiverOpt
-          }
-        case _ =>
-          val (cond, owner) = shouldTransformIdent(o.ident)
-          if (cond) {
-            newReceiverOpt = Some(th.nameToExp(owner, o.posOpt.get).asExp)
-            changed = T
-          }
-      }
-      return AST.Transformer.PreResult(cctx, F,
-        if (changed) Some(o(receiverOpt = newReceiverOpt, targs = ISZ(), args = newArgs))
-        else None())
-    }
 
-    override def preExpInvokeNamed(ctx: Z, o: AST.Exp.InvokeNamed): AST.Transformer.PreResult[Z, AST.Exp] = {
-      val en = ExpNormalizer.create(th)
-      var newArgs = ISZ[AST.NamedArg]()
-      var cctx = ctx
-      var changed = o.targs.nonEmpty
-      for (arg <- o.args) {
-        val p = en.transformNamedArg(cctx, arg)
-        cctx = p.ctx
-        p.resultOpt match {
-          case Some(newArg) =>
-            newArgs = newArgs :+ newArg
-            changed = T
-          case _ => newArgs = newArgs :+ arg
+      override def preExpInvoke(ctx: Z, o: AST.Exp.Invoke): AST.Transformer.PreResult[Z, AST.Exp] = {
+        val en = ExpNormalizer.create(th)
+        var newArgs = ISZ[AST.Exp]()
+        var cctx = ctx
+        var changed = o.targs.nonEmpty
+        for (arg <- o.args) {
+          val p = en.transformExp(cctx, arg)
+          cctx = p.ctx
+          p.resultOpt match {
+            case Some(newArg) =>
+              newArgs = newArgs :+ newArg
+              changed = T
+            case _ => newArgs = newArgs :+ arg
+          }
+        }
+        var newReceiverOpt = Option.none[AST.Exp]()
+        o.receiverOpt match {
+          case Some(receiver) =>
+            val p = en.transformExp(cctx, receiver)
+            cctx = p.ctx
+            if (p.resultOpt.nonEmpty) {
+              newReceiverOpt = p.resultOpt
+              changed = T
+            } else {
+              newReceiverOpt = o.receiverOpt
+            }
+          case _ =>
+            val (cond, owner) = shouldTransformIdent(o.ident)
+            if (cond) {
+              newReceiverOpt = Some(th.nameToExp(owner, o.posOpt.get).asExp)
+              changed = T
+            }
+        }
+        return AST.Transformer.PreResult(cctx, F,
+          if (changed) Some(o(receiverOpt = newReceiverOpt, targs = ISZ(), args = newArgs))
+          else None())
+      }
+
+      override def preExpInvokeNamed(ctx: Z, o: AST.Exp.InvokeNamed): AST.Transformer.PreResult[Z, AST.Exp] = {
+        val en = ExpNormalizer.create(th)
+        var newArgs = ISZ[AST.NamedArg]()
+        var cctx = ctx
+        var changed = o.targs.nonEmpty
+        for (arg <- o.args) {
+          val p = en.transformNamedArg(cctx, arg)
+          cctx = p.ctx
+          p.resultOpt match {
+            case Some(newArg) =>
+              newArgs = newArgs :+ newArg
+              changed = T
+            case _ => newArgs = newArgs :+ arg
+          }
+        }
+        var newReceiverOpt = Option.none[AST.Exp]()
+        o.receiverOpt match {
+          case Some(receiver) =>
+            val p = en.transformExp(cctx, receiver)
+            cctx = p.ctx
+            if (p.resultOpt.nonEmpty) {
+              newReceiverOpt = p.resultOpt
+              changed = T
+            } else {
+              newReceiverOpt = o.receiverOpt
+            }
+          case _ =>
+            val (cond, owner) = shouldTransformIdent(o.ident)
+            if (cond) {
+              newReceiverOpt = Some(th.nameToExp(owner, o.posOpt.get).asExp)
+              changed = T
+            }
+        }
+        return AST.Transformer.PreResult(cctx, F,
+          if (changed) Some(o(receiverOpt = newReceiverOpt, targs = ISZ(), args = newArgs))
+          else None())
+      }
+
+      @pure def shouldTransformIdent(o: AST.Exp.Ident): (B, ISZ[String]) = {
+        o.attr.resOpt.get match {
+          case res: AST.ResolvedInfo.Var =>
+            return (res.isInObject && res.owner.nonEmpty && res.owner != AST.Typed.sireumName, res.owner)
+          case res: AST.ResolvedInfo.Method =>
+            return (res.isInObject && res.owner.nonEmpty && res.owner != AST.Typed.sireumName, res.owner)
+          case res: AST.ResolvedInfo.EnumElement =>
+            return (T, res.owner)
+          case _ => return (F, ISZ())
         }
       }
-      var newReceiverOpt = Option.none[AST.Exp]()
-      o.receiverOpt match {
-        case Some(receiver) =>
-          val p = en.transformExp(cctx, receiver)
-          cctx = p.ctx
-          if (p.resultOpt.nonEmpty) {
-            newReceiverOpt = p.resultOpt
-            changed = T
-          } else {
-            newReceiverOpt = o.receiverOpt
+
+      override def postResolvedInfoMethod(ctx: Z, o: AST.ResolvedInfo.Method): AST.Transformer.TPostResult[Z, AST.ResolvedInfo] = {
+        return AST.Transformer.TPostResult(ctx, Some(o(tpeOpt = None(), reads = ISZ(), writes = ISZ())))
+      }
+
+      override def postResolvedInfoLocalVar(ctx: Z, o: AST.ResolvedInfo.LocalVar): AST.Transformer.TPostResult[Z, AST.ResolvedInfo] = {
+        if (o.scope == AST.ResolvedInfo.LocalVar.Scope.Current && !o.isVal && !o.isSpec) {
+          return AST.Transformer.TPostResult(ctx, Some(o(scope = AST.ResolvedInfo.LocalVar.Scope.Current, isVal = F, isSpec = F)))
+        } else {
+          return AST.Transformer.TPostResult(ctx, None())
+        }
+      }
+
+      override def preExpAt(ctx: Z, o: AST.Exp.At): AST.Transformer.PreResult[Z, AST.Exp] = {
+        if (o.linesFresh.nonEmpty) {
+          return AST.Transformer.PreResult(ctx, T, Some(o(linesFresh = ISZ())))
+        } else {
+          return AST.Transformer.PreResult(ctx, T, None())
+        }
+      }
+
+      override def postExpBinary(ctx: Z, o: AST.Exp.Binary): AST.Transformer.TPostResult[Z, AST.Exp] = {
+        o.op match {
+          case string"imply_:" => return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.Imply)))
+          case string"simply_:" => return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.CondImply)))
+          case AST.Exp.BinaryOp.Equiv =>
+            return if (th.isGroundType(o.left.typedOpt.get))
+              AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.Eq, attr = o.attr(resOpt =
+                Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEq))))))
+            else AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.EquivUni)))
+          case AST.Exp.BinaryOp.Inequiv =>
+            return if (th.isGroundType(o.left.typedOpt.get))
+              AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.Ne, attr = o.attr(resOpt =
+                Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryNe))))))
+            else AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.InequivUni)))
+          case _ => return AST.Transformer.TPostResult(ctx, None())
+        }
+      }
+
+      override def postExpLabeled(ctx: Z, o: AST.Exp.Labeled): AST.Transformer.TPostResult[Z, AST.Exp] = {
+        return AST.Transformer.TPostResult(ctx, Some(o.exp))
+      }
+    }
+
+    @record class LocalNormalizer(var stack: Stack[HashMap[ISZ[String], String]],
+                                  var fresh: Z) extends AST.MTransformer {
+
+      val lcontext: ISZ[String] = ISZ(".l")
+
+      def updateLocalVar(res: AST.ResolvedInfo.LocalVar): Option[AST.ResolvedInfo.LocalVar] = {
+        for (i <- stack.size - 1 to 0 by -1) {
+          val map = stack.elements(i)
+          map.get(res.context :+ res.id) match {
+            case Some(id) => return Some(res(context = lcontext, id = id))
+            case _ =>
           }
-        case _ =>
-          val (cond, owner) = shouldTransformIdent(o.ident)
-          if (cond) {
-            newReceiverOpt = Some(th.nameToExp(owner, o.posOpt.get).asExp)
-            changed = T
+        }
+        return None()
+      }
+
+      override def preExpIdent(o: AST.Exp.Ident): AST.MTransformer.PreResult[AST.Exp] = {
+        o.resOpt match {
+          case Some(res: AST.ResolvedInfo.LocalVar) =>
+            updateLocalVar(res) match {
+              case Some(newRes) =>
+                return AST.MTransformer.PreResult(T, MSome(
+                  o(id = o.id(value = newRes.id), attr = o.attr(resOpt = Some(newRes)))))
+              case _ =>
+            }
+          case _ =>
+        }
+        return AST.MTransformer.PreResultExpIdent
+      }
+
+      override def preBody(o: AST.Body): AST.MTransformer.PreResult[AST.Body] = {
+        stack = stack.push(HashMap.empty)
+        return AST.MTransformer.PreResultBody
+      }
+
+      override def postStmtVar(o: AST.Stmt.Var): MOption[AST.Stmt] = {
+        val res = o.attr.resOpt.get.asInstanceOf[AST.ResolvedInfo.LocalVar]
+        val context = res.context
+        val id = s".l.$fresh"
+        fresh = fresh + 1
+        val (map, stack2) = stack.pop.get
+        stack = stack2.push(map + (context :+ o.id.value) ~> id)
+        return MSome(o(id = o.id(value = id), attr = o.attr(resOpt = Some(res(context = lcontext, id = id)))))
+      }
+
+      override def prePatternVarBinding(o: AST.Pattern.VarBinding): AST.MTransformer.PreResult[AST.Pattern] = {
+        val context = o.idContext
+        val id = s".l.$fresh"
+        fresh = fresh + 1
+        val (map, stack2) = stack.pop.get
+        stack = stack2.push(map + (context :+ o.id.value) ~> id)
+        return AST.MTransformer.PreResult(T, MSome(o(id = o.id(value = id))))
+      }
+
+      override def prePatternStructure(o: AST.Pattern.Structure): AST.MTransformer.PreResult[AST.Pattern] = {
+        o.idOpt match {
+          case Some(oid) =>
+            val context: ISZ[String] = o.idContext
+            val id = s".l.$fresh"
+            fresh = fresh + 1
+            val (map, stack2) = stack.pop.get
+            stack = stack2.push(map + (context :+ oid.value) ~> id)
+            return AST.MTransformer.PreResult(T, MSome(o(idOpt = Some(o.idOpt.get(value = id)))))
+          case _ =>
+            return AST.MTransformer.PreResultPatternStructure
+        }
+      }
+
+      override def preCase(o: AST.Case): AST.MTransformer.PreResult[AST.Case] = {
+        stack = stack.push(HashMap.empty)
+        return AST.MTransformer.PreResultCase
+      }
+
+      override def postCase(o: AST.Case): MOption[AST.Case] = {
+        stack = stack.pop.get._2
+        return MNone()
+      }
+
+      override def postBody(o: AST.Body): MOption[AST.Body] = {
+        var newUndecls = ISZ[AST.ResolvedInfo.LocalVar]()
+        var changed = F
+        for (undecl <- o.undecls) {
+          updateLocalVar(undecl) match {
+            case Some(newUndecl) =>
+              changed = T
+              newUndecls = newUndecls :+ newUndecl
+            case _ =>
+              newUndecls = newUndecls :+ undecl
           }
-      }
-      return AST.Transformer.PreResult(cctx, F,
-        if (changed) Some(o(receiverOpt = newReceiverOpt, targs = ISZ(), args = newArgs))
-        else None())
-    }
-
-    @pure def shouldTransformIdent(o: AST.Exp.Ident): (B, ISZ[String]) = {
-      o.attr.resOpt.get match {
-        case res: AST.ResolvedInfo.Var =>
-          return (res.isInObject && res.owner.nonEmpty && res.owner != AST.Typed.sireumName, res.owner)
-        case res: AST.ResolvedInfo.Method =>
-          return (res.isInObject && res.owner.nonEmpty && res.owner != AST.Typed.sireumName, res.owner)
-        case res: AST.ResolvedInfo.EnumElement =>
-          return (T, res.owner)
-        case _ => return (F, ISZ())
+        }
+        stack = stack.pop.get._2
+        return if (changed) MSome(o(undecls = newUndecls)) else MNone()
       }
     }
 
-    override def postResolvedInfoMethod(ctx: Z, o: AST.ResolvedInfo.Method): AST.Transformer.TPostResult[Z, AST.ResolvedInfo] = {
-      return AST.Transformer.TPostResult(ctx, Some(o(tpeOpt = None(), reads = ISZ(), writes = ISZ())))
-    }
-
-    override def postResolvedInfoLocalVar(ctx: Z, o: AST.ResolvedInfo.LocalVar): AST.Transformer.TPostResult[Z, AST.ResolvedInfo] = {
-      if (o.scope == AST.ResolvedInfo.LocalVar.Scope.Current && !o.isVal && !o.isSpec) {
-        return AST.Transformer.TPostResult(ctx, Some(o(scope = AST.ResolvedInfo.LocalVar.Scope.Current, isVal = F, isSpec = F)))
-      } else {
-        return AST.Transformer.TPostResult(ctx, None())
-      }
-    }
-
-    override def preExpAt(ctx: Z, o: AST.Exp.At): AST.Transformer.PreResult[Z, AST.Exp] = {
-      if (o.linesFresh.nonEmpty) {
-        return AST.Transformer.PreResult(ctx, T, Some(o(linesFresh = ISZ())))
-      } else {
-        return AST.Transformer.PreResult(ctx, T, None())
-      }
-    }
-
-    override def postExpBinary(ctx: Z, o: AST.Exp.Binary): AST.Transformer.TPostResult[Z, AST.Exp] = {
-      o.op match {
-        case string"imply_:" => return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.Imply)))
-        case string"simply_:" => return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.CondImply)))
-        case AST.Exp.BinaryOp.Equiv =>
-          return if (th.isGroundType(o.left.typedOpt.get))
-            AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.Eq, attr = o.attr(resOpt =
-              Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEq))))))
-          else AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.EquivUni)))
-        case AST.Exp.BinaryOp.Inequiv =>
-          return if (th.isGroundType(o.left.typedOpt.get))
-            AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.Ne, attr = o.attr(resOpt =
-              Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryNe))))))
-          else AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.InequivUni)))
-        case _ => return AST.Transformer.TPostResult(ctx, None())
-      }
-    }
-
-    override def postExpLabeled(ctx: Z, o: AST.Exp.Labeled): AST.Transformer.TPostResult[Z, AST.Exp] = {
-      return AST.Transformer.TPostResult(ctx, Some(o.exp))
-    }
   }
 
   @datatype class LocalVarContextPrePostSubstitutor(val oldContext: ISZ[String], val newContext: ISZ[String]) extends AST.Transformer.PrePost[B] {
@@ -1377,10 +1473,12 @@ object TypeHierarchy {
 
   @pure def normalizeExp(exp: AST.Exp): AST.Exp = {
     val exp2 = TypeHierarchy.ExpNormalizer.create(this).transformExp(1, exp).resultOpt.getOrElseEager(exp)
-    AST.Transformer(TypeHierarchy.QuantTypePrePostNormalizer()).transformExp(F, exp2).resultOpt match {
-      case Some(exp3) => return TypeHierarchy.ExpNormalizer.create(this).transformExp(1, exp3).resultOpt.getOrElseEager(exp3)
-      case _ => return exp2
+    val exp4: AST.Exp = AST.Transformer(TypeHierarchy.QuantTypePrePostNormalizer()).transformExp(F, exp2).resultOpt match {
+      case Some(exp3) => TypeHierarchy.ExpNormalizer.create(this).transformExp(1, exp3).resultOpt.getOrElseEager(exp3)
+      case _ => exp2
     }
+    val ln = TypeHierarchy.ExpNormalizer.LocalNormalizer(Stack.empty[HashMap[ISZ[String], String]].push(HashMap.empty), 0)
+    return ln.transformExp(exp4).getOrElseEager(exp4)
   }
 
   @memoize def isSubZName(name: ISZ[String]): B = {

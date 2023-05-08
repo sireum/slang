@@ -1405,6 +1405,7 @@ object MsgPack {
       writer.writeZ(Constants._astPatternVarBinding)
       write_astId(o.id)
       writer.writeOption(o.tipeOpt, write_astType _)
+      writer.writeISZ(o.idContext, writer.writeString _)
       write_astTypedAttr(o.attr)
     }
 
@@ -1424,6 +1425,7 @@ object MsgPack {
       writer.writeOption(o.idOpt, write_astId _)
       writer.writeOption(o.nameOpt, write_astName _)
       writer.writeISZ(o.patterns, write_astPattern _)
+      writer.writeISZ(o.idContext, writer.writeString _)
       write_astResolvedAttr(o.attr)
     }
 
@@ -4026,8 +4028,9 @@ object MsgPack {
       }
       val id = read_astId()
       val tipeOpt = reader.readOption(read_astType _)
+      val idContext = reader.readISZ(reader.readString _)
       val attr = read_astTypedAttr()
-      return org.sireum.lang.ast.Pattern.VarBinding(id, tipeOpt, attr)
+      return org.sireum.lang.ast.Pattern.VarBinding(id, tipeOpt, idContext, attr)
     }
 
     def read_astPatternWildcard(): org.sireum.lang.ast.Pattern.Wildcard = {
@@ -4069,8 +4072,9 @@ object MsgPack {
       val idOpt = reader.readOption(read_astId _)
       val nameOpt = reader.readOption(read_astName _)
       val patterns = reader.readISZ(read_astPattern _)
+      val idContext = reader.readISZ(reader.readString _)
       val attr = read_astResolvedAttr()
-      return org.sireum.lang.ast.Pattern.Structure(idOpt, nameOpt, patterns, attr)
+      return org.sireum.lang.ast.Pattern.Structure(idOpt, nameOpt, patterns, idContext, attr)
     }
 
     def read_astExp(): org.sireum.lang.ast.Exp = {

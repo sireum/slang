@@ -3947,13 +3947,13 @@ import TypeChecker._
                 val t = newTipe.typedOpt.get
                 val tOpt: Option[AST.Typed] = Some(t)
                 declId(T, Some(pattern.id), tOpt)
-                return pattern(tipeOpt = Some(newTipe), attr = pattern.attr(typedOpt = tOpt))
+                return pattern(tipeOpt = Some(newTipe), idContext = context, attr = pattern.attr(typedOpt = tOpt))
               }
-              return pattern(tipeOpt = Some(newTipe))
+              return pattern(tipeOpt = Some(newTipe), idContext = context)
             case _ =>
               val tOpt: Option[AST.Typed] = Some(expectedType)
               declId(F, Some(pattern.id), tOpt)
-              return pattern(attr = pattern.attr(typedOpt = tOpt))
+              return pattern(idContext = context, attr = pattern.attr(typedOpt = tOpt))
           }
         case pattern: AST.Pattern.Structure =>
           pattern.nameOpt match {
@@ -3977,6 +3977,7 @@ import TypeChecker._
                 declId(T, pattern.idOpt, tOpt)
                 return pattern(
                   patterns = newPatterns,
+                  idContext = context,
                   attr = pattern.attr(typedOpt = tOpt, resOpt = AST.Typed.unapplySeqResOpt)
                 )
               }
@@ -4021,7 +4022,7 @@ import TypeChecker._
                   scope.resolveType(typeHierarchy.typeMap, name) match {
                     case Some(info: TypeInfo.Adt) if !info.ast.isRoot =>
                       def partialResult: AST.Pattern = {
-                        return pattern(attr = pattern.attr(resOpt = info.extractorResOpt))
+                        return pattern(idContext = context, attr = pattern.attr(resOpt = info.extractorResOpt))
                       }
 
                       val size = info.extractorTypeMap.size
@@ -4052,6 +4053,7 @@ import TypeChecker._
                           }
                           return pattern(
                             patterns = newPatterns,
+                            idContext = context,
                             attr = pattern.attr(typedOpt = typedOpt, resOpt = info.extractorResOpt)
                           )
                         case _ => return partialResult
@@ -4096,6 +4098,7 @@ import TypeChecker._
                   declId(T, pattern.idOpt, Some(expected))
                   return pattern(
                     patterns = newPatterns,
+                    idContext = context,
                     attr = pattern.attr(typedOpt = Some(expected), resOpt = AST.Typed.unapplyTupleResOpt)
                   )
                 case _ =>

@@ -1880,20 +1880,22 @@ class SlangParser(
           Some(cid(pname.name)),
           Some(AST.Name(ref2IS(ref), attr(ref.pos))),
           ISZ(apats.map(translatePattern): _*),
+          ISZ(),
           resolvedAttr(pat.pos)
         )
       case p"${pname: Pat.Var} @ (..$patsnel)" =>
         AST.Pattern
-          .Structure(Some(cid(pname.name)), None(), ISZ(patsnel.map(translatePattern): _*), resolvedAttr(pat.pos))
+          .Structure(Some(cid(pname.name)), None(), ISZ(patsnel.map(translatePattern): _*), ISZ(), resolvedAttr(pat.pos))
       case p"$ref(..${apats: List[Pat]})" =>
         AST.Pattern.Structure(
           None(),
           Some(AST.Name(ref2IS(ref), attr(ref.pos))),
           ISZ(apats.map(translatePattern): _*),
+          ISZ(),
           resolvedAttr(pat.pos)
         )
       case p"(..$patsnel)" if patsnel.size > 1 =>
-        AST.Pattern.Structure(None(), None(), ISZ(patsnel.map(translatePattern): _*), resolvedAttr(pat.pos))
+        AST.Pattern.Structure(None(), None(), ISZ(patsnel.map(translatePattern): _*), ISZ(), resolvedAttr(pat.pos))
       case p"${ref: Term.Ref}.$ename" =>
         AST.Pattern.Ref(true, AST.Name(ref2IS(ref) :+ cid(ename), attr(pat.pos)), resolvedAttr(pat.pos))
       case pat: Term.Name =>
@@ -1901,10 +1903,10 @@ class SlangParser(
         AST.Pattern.Ref(false, AST.Name(ISZ(cid(pat)), attr(pat.pos)), resolvedAttr(pat.pos))
       case p"${name: Pat.Var} : $tpe" =>
         checkReservedId(true, name.name.pos, name.name.value)
-        AST.Pattern.VarBinding(cid(name), Some(translateType(tpe)), typedAttr(pat.pos))
+        AST.Pattern.VarBinding(cid(name), Some(translateType(tpe)), ISZ(), typedAttr(pat.pos))
       case q"${name: Pat.Var}" =>
         checkReservedId(true, name.name.pos, name.name.value)
-        AST.Pattern.VarBinding(cid(name), None(), typedAttr(pat.pos))
+        AST.Pattern.VarBinding(cid(name), None(), ISZ(), typedAttr(pat.pos))
       case p"_ : $tpe" => AST.Pattern.Wildcard(Some(translateType(tpe)), typedAttr(pat.pos))
       case p"_" => AST.Pattern.Wildcard(None(), typedAttr(pat.pos))
       case p"${lit: Pat.Interpolate}" => translateLit(lit)
@@ -1927,6 +1929,7 @@ class SlangParser(
                 None(),
                 Some(AST.Name(ref2IS(expr), attr(expr.pos))),
                 ISZ(args.map(translatePattern): _*),
+                ISZ(),
                 resolvedAttr(pat.pos)
               )
             case _ =>
@@ -1935,8 +1938,8 @@ class SlangParser(
         errorInSlang(pat.pos, s"Invalid pattern: '${syntax(pat)}'")
         AST.Pattern.Wildcard(None(), typedAttr(pat.pos))
       case q"(..$exprsnel)" if exprsnel.size > 1 =>
-        AST.Pattern.Structure(None(), None(), ISZ(exprsnel.map(translatePattern): _*), resolvedAttr(pat.pos))
-      case q"${name: Term.Name}" => AST.Pattern.VarBinding(cid(name), None(), typedAttr(pat.pos))
+        AST.Pattern.Structure(None(), None(), ISZ(exprsnel.map(translatePattern): _*), ISZ(), resolvedAttr(pat.pos))
+      case q"${name: Term.Name}" => AST.Pattern.VarBinding(cid(name), None(), ISZ(), typedAttr(pat.pos))
       case p"${lit: Lit}" => AST.Pattern.Literal(translateLit(lit))
       case _ =>
         errorInSlang(pat.pos, s"Invalid pattern: '${syntax(pat)}'")
@@ -3628,7 +3631,7 @@ class SlangParser(
               val (hypoOpt, proofSteps) = hypoSteps(steps)
               cases = cases :+ AST.ProofAst.Step.StructInduction.MatchCase(
                 AST.Pattern.Structure(None(), Some(AST.Name(ref2IS(ref), attr(ref.pos))),
-                  patterns, resolvedAttr(c.pat.pos)), hypoOpt, proofSteps
+                  patterns, ISZ(), resolvedAttr(c.pat.pos)), hypoOpt, proofSteps
               )
             case _ => error(c.pos, "Expecting 'case ...(...) => SubProof(...)'.")
           }
