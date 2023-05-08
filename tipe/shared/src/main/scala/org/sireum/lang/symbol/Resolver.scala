@@ -144,13 +144,6 @@ object Resolver {
         AST.Stmt.TypeAlias(id("ZS"), ISZ(), tname("MS", ISZ(tname("Z", ISZ()), tname("Z", ISZ()))), emptyAttr)
       )
 
-    tm = tm + AST.Typed.stepIdName ~>
-      TypeInfo.TypeAlias(
-        AST.Typed.stepIdName,
-        scope,
-        AST.Stmt.TypeAlias(id("StepId"), ISZ(), tname("Z", ISZ()), emptyAttr)
-      )
-
     tm = tm + AST.Typed.unit.ids ~> TypeInfo.Adt(
       AST.Typed.sireumName,
       T,

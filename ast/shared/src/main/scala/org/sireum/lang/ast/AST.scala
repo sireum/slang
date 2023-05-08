@@ -1417,7 +1417,7 @@ object Exp {
 
   @datatype class LitStepId(val value: String, @hidden val attr: Attr) extends Lit {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
-    @strictpure override def typedOpt: Option[Typed] = Typed.zOpt
+    @strictpure override def typedOpt: Option[Typed] = Typed.stepIdOpt
     @pure override def prettyST: ST = {
       return st"""sn"${ops.StringOps(value).escapeST}""""
     }

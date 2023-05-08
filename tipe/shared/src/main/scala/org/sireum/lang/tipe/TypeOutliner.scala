@@ -278,7 +278,7 @@ object TypeOutliner {
 
   def outlineSpecMethod(info: Info.SpecMethod, reporter: Reporter): Option[Info] = {
     val sm = info.ast
-    val sigOpt = outlineMethodSig(info.scope, sm.sig, reporter)
+    val sigOpt = outlineMethodSig(F, info.scope, sm.sig, reporter)
     sigOpt match {
       case Some((sig, tVars)) =>
         val res = info.methodRes
@@ -305,7 +305,7 @@ object TypeOutliner {
 
   def outlineMethod(info: Info.Method, reporter: Reporter): Option[Info] = {
     val m = info.ast
-    val sigOpt = outlineMethodSig(info.scope, m.sig, reporter)
+    val sigOpt = outlineMethodSig(F, info.scope, m.sig, reporter)
     sigOpt match {
       case Some((sig, tVars)) =>
         val res = info.methodRes
@@ -339,7 +339,7 @@ object TypeOutliner {
 
   def outlineExtMethod(info: Info.ExtMethod, reporter: Reporter): Option[Info] = {
     val m = info.ast
-    val sigOpt = outlineMethodSig(info.scope, m.sig, reporter)
+    val sigOpt = outlineMethodSig(F, info.scope, m.sig, reporter)
     sigOpt match {
       case Some((sig, tVars)) =>
         val res = info.methodRes
@@ -363,7 +363,7 @@ object TypeOutliner {
 
   def outlineJustMethod(info: Info.JustMethod, reporter: Reporter): Option[Info] = {
     val m = info.ast
-    val sigOpt = outlineMethodSig(info.scope, m.sig, reporter)
+    val sigOpt = outlineMethodSig(T, info.scope, m.sig, reporter)
     sigOpt match {
       case Some((sig, tVars)) =>
         if (sig.funType.ret != AST.Typed.unit) {
@@ -373,9 +373,9 @@ object TypeOutliner {
         if (m.etaOpt.nonEmpty) {
           for (p <- sig.params) {
             p.tipe.typedOpt match {
-              case Some(t) if t != AST.Typed.z =>
+              case Some(t) if t != AST.Typed.stepId =>
                 reporter.error(m.sig.returnType.posOpt, TypeChecker.typeCheckerKind,
-                  "Expecting parameter type Z for a @just forwarding method")
+                  s"Expecting parameter type StepId for a @just forwarding method, but found $t")
               case _ =>
             }
           }
@@ -619,7 +619,7 @@ object TypeOutliner {
     return (th: TypeHierarchy) => (th(typeMap = th.typeMap + info.name ~> newInfo), messages)
   }
 
-  def outlineMethodSig(scope: Scope, sig: AST.MethodSig, reporter: Reporter): Option[(AST.MethodSig, ISZ[String])] = {
+  def outlineMethodSig(allowStepId: B, scope: Scope, sig: AST.MethodSig, reporter: Reporter): Option[(AST.MethodSig, ISZ[String])] = {
     val typeParams = sig.typeParams
     for (tp <- typeParams) {
       scope.resolveType(typeHierarchy.typeMap, ISZ(tp.id.value)) match {
@@ -634,7 +634,7 @@ object TypeOutliner {
     val mScope = Scope.Local.create(tm.map, scope)
     var params = ISZ[AST.Param]()
     for (p <- sig.params) {
-      val tipeOpt = typeHierarchy.typed(mScope, p.tipe, reporter)
+      val tipeOpt = typeHierarchy.typedWithStepId(allowStepId, mScope, p.tipe, reporter)
       tipeOpt match {
         case Some(tipe) if tipe.typedOpt.nonEmpty => params = params :+ p(tipe = tipe)
         case _ => return None()
@@ -701,7 +701,7 @@ object TypeOutliner {
         reporter.error(sm.sig.id.attr.posOpt, TypeChecker.typeCheckerKind, s"Cannot redeclare $id.")
         return
       }
-      val sigOpt = outlineMethodSig(scope, sm.sig, reporter)
+      val sigOpt = outlineMethodSig(F, scope, sm.sig, reporter)
       sigOpt match {
         case Some((sig, tVars)) =>
           val res = smInfo.methodRes
@@ -723,7 +723,7 @@ object TypeOutliner {
         reporter.error(m.sig.id.attr.posOpt, TypeChecker.typeCheckerKind, s"Cannot redeclare $id.")
         return
       }
-      val sigOpt = outlineMethodSig(scope, m.sig, reporter)
+      val sigOpt = outlineMethodSig(F, scope, m.sig, reporter)
       sigOpt match {
         case Some((sig, tVars)) =>
           val res = mInfo.methodRes
