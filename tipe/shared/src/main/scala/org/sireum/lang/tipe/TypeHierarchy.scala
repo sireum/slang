@@ -548,15 +548,7 @@ object TypeHierarchy {
           |  ${(sts, ",\n")}
           |)""".render
 
-    val digest = ops.StringOps(rep).sha3(T, T)
-    return (conversions.U8.toU64(digest(0)) & u64"0xFF") << u64"56" |
-      (conversions.U8.toU64(digest(1)) & u64"0xFF") << u64"48" |
-      (conversions.U8.toU64(digest(2)) & u64"0xFF") << u64"40" |
-      (conversions.U8.toU64(digest(3)) & u64"0xFF") << u64"32" |
-      (conversions.U8.toU64(digest(4)) & u64"0xFF") << u64"24" |
-      (conversions.U8.toU64(digest(5)) & u64"0xFF") << u64"16" |
-      (conversions.U8.toU64(digest(6)) & u64"0xFF") << u64"8" |
-      (conversions.U8.toU64(digest(7)) & u64"0xFF")
+    return ops.StringOps(rep).sha3U64(T, T)
   }
 
   @pure def rootTypeNames(): ISZ[QName] = {
