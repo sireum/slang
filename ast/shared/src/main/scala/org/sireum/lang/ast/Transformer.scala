@@ -697,13 +697,6 @@ object Transformer {
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp]())
           }
           return r
-        case o: Exp.LitStepId =>
-          val r: PreResult[Context, Exp] = preExpLitStepId(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: Exp)) => PreResult(preCtx, continu, Some[Exp](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Exp")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp]())
-          }
-          return r
         case o: Exp.StringInterpolate => return preExpStringInterpolate(ctx, o)
         case o: Exp.This => return preExpThis(ctx, o)
         case o: Exp.Super => return preExpSuper(ctx, o)
@@ -763,7 +756,6 @@ object Transformer {
         case o: Exp.LitF64 => return preExpLitF64(ctx, o)
         case o: Exp.LitR => return preExpLitR(ctx, o)
         case o: Exp.LitString => return preExpLitString(ctx, o)
-        case o: Exp.LitStepId => return preExpLitStepId(ctx, o)
       }
     }
 
@@ -792,10 +784,6 @@ object Transformer {
     }
 
     @pure def preExpLitString(ctx: Context, o: Exp.LitString): PreResult[Context, Lit] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preExpLitStepId(ctx: Context, o: Exp.LitStepId): PreResult[Context, Lit] = {
       return PreResult(ctx, T, None())
     }
 
@@ -1814,13 +1802,6 @@ object Transformer {
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp]())
           }
           return r
-        case o: Exp.LitStepId =>
-          val r: TPostResult[Context, Exp] = postExpLitStepId(ctx, o) match {
-           case TPostResult(postCtx, Some(result: Exp)) => TPostResult(postCtx, Some[Exp](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp]())
-          }
-          return r
         case o: Exp.StringInterpolate => return postExpStringInterpolate(ctx, o)
         case o: Exp.This => return postExpThis(ctx, o)
         case o: Exp.Super => return postExpSuper(ctx, o)
@@ -1880,7 +1861,6 @@ object Transformer {
         case o: Exp.LitF64 => return postExpLitF64(ctx, o)
         case o: Exp.LitR => return postExpLitR(ctx, o)
         case o: Exp.LitString => return postExpLitString(ctx, o)
-        case o: Exp.LitStepId => return postExpLitStepId(ctx, o)
       }
     }
 
@@ -1909,10 +1889,6 @@ object Transformer {
     }
 
     @pure def postExpLitString(ctx: Context, o: Exp.LitString): TPostResult[Context, Lit] = {
-      return TPostResult(ctx, None())
-    }
-
-    @pure def postExpLitStepId(ctx: Context, o: Exp.LitStepId): TPostResult[Context, Lit] = {
       return TPostResult(ctx, None())
     }
 
@@ -3813,12 +3789,6 @@ import Transformer._
             TPostResult(r0.ctx, Some(o2(attr = r0.resultOpt.getOrElse(o2.attr))))
           else
             TPostResult(r0.ctx, None())
-        case o2: Exp.LitStepId =>
-          val r0: TPostResult[Context, Attr] = transformAttr(preR.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(attr = r0.resultOpt.getOrElse(o2.attr))))
-          else
-            TPostResult(r0.ctx, None())
         case o2: Exp.StringInterpolate =>
           val r0: TPostResult[Context, IS[Z, Exp.LitString]] = transformISZ(preR.ctx, o2.lits, transformExpLitString _)
           val r1: TPostResult[Context, IS[Z, Exp]] = transformISZ(r0.ctx, o2.args, transformExp _)
@@ -4109,12 +4079,6 @@ import Transformer._
           else
             TPostResult(r0.ctx, None())
         case o2: Exp.LitString =>
-          val r0: TPostResult[Context, Attr] = transformAttr(preR.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(attr = r0.resultOpt.getOrElse(o2.attr))))
-          else
-            TPostResult(r0.ctx, None())
-        case o2: Exp.LitStepId =>
           val r0: TPostResult[Context, Attr] = transformAttr(preR.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty)
             TPostResult(r0.ctx, Some(o2(attr = r0.resultOpt.getOrElse(o2.attr))))

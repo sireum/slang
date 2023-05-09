@@ -258,153 +258,151 @@ object MsgPack {
 
     val _astExpLitString: Z = 78
 
-    val _astExpLitStepId: Z = 79
+    val _astExpStringInterpolate: Z = 79
 
-    val _astExpStringInterpolate: Z = 80
+    val _astExpThis: Z = 80
 
-    val _astExpThis: Z = 81
+    val _astExpSuper: Z = 81
 
-    val _astExpSuper: Z = 82
+    val _astExpUnary: Z = 82
 
-    val _astExpUnary: Z = 83
+    val _astExpBinary: Z = 83
 
-    val _astExpBinary: Z = 84
+    val _astExpIdent: Z = 84
 
-    val _astExpIdent: Z = 85
+    val _astExpEta: Z = 85
 
-    val _astExpEta: Z = 86
+    val _astExpTuple: Z = 86
 
-    val _astExpTuple: Z = 87
+    val _astExpSelect: Z = 87
 
-    val _astExpSelect: Z = 88
+    val _astExpInvoke: Z = 88
 
-    val _astExpInvoke: Z = 89
+    val _astExpInvokeNamed: Z = 89
 
-    val _astExpInvokeNamed: Z = 90
+    val _astExpIf: Z = 90
 
-    val _astExpIf: Z = 91
+    val _astExpTypeCond: Z = 91
 
-    val _astExpTypeCond: Z = 92
+    val _astExpSym: Z = 92
 
-    val _astExpSym: Z = 93
+    val _astExpFunParam: Z = 93
 
-    val _astExpFunParam: Z = 94
+    val _astExpFun: Z = 94
 
-    val _astExpFun: Z = 95
+    val _astExpForYield: Z = 95
 
-    val _astExpForYield: Z = 96
+    val _astExpQuantType: Z = 96
 
-    val _astExpQuantType: Z = 97
+    val _astExpQuantRange: Z = 97
 
-    val _astExpQuantRange: Z = 98
+    val _astExpQuantEach: Z = 98
 
-    val _astExpQuantEach: Z = 99
+    val _astExpInput: Z = 99
 
-    val _astExpInput: Z = 100
+    val _astExpAt: Z = 100
 
-    val _astExpAt: Z = 101
+    val _astExpLoopIndex: Z = 101
 
-    val _astExpLoopIndex: Z = 102
+    val _astExpStateSeq: Z = 102
 
-    val _astExpStateSeq: Z = 103
+    val _astExpStateSeqFragment: Z = 103
 
-    val _astExpStateSeqFragment: Z = 104
+    val _astExpResult: Z = 104
 
-    val _astExpResult: Z = 105
+    val _astExpStrictPureBlock: Z = 105
 
-    val _astExpStrictPureBlock: Z = 106
+    val _astExpLabeled: Z = 106
 
-    val _astExpLabeled: Z = 107
+    val _astExpAssumeAgree: Z = 107
 
-    val _astExpAssumeAgree: Z = 108
+    val _astExpAssertAgree: Z = 108
 
-    val _astExpAssertAgree: Z = 109
+    val _astExpInfoFlowInvariant: Z = 109
 
-    val _astExpInfoFlowInvariant: Z = 110
+    val _astNamedArg: Z = 110
 
-    val _astNamedArg: Z = 111
+    val _astId: Z = 111
 
-    val _astId: Z = 112
+    val _astName: Z = 112
 
-    val _astName: Z = 113
+    val _astBody: Z = 113
 
-    val _astBody: Z = 114
+    val _astAdtParam: Z = 114
 
-    val _astAdtParam: Z = 115
+    val _astMethodSig: Z = 115
 
-    val _astMethodSig: Z = 116
+    val _astParam: Z = 116
 
-    val _astParam: Z = 117
+    val _astTypeParam: Z = 117
 
-    val _astTypeParam: Z = 118
+    val _astAttr: Z = 118
 
-    val _astAttr: Z = 119
+    val _astTypedAttr: Z = 119
 
-    val _astTypedAttr: Z = 120
+    val _astResolvedAttr: Z = 120
 
-    val _astResolvedAttr: Z = 121
+    val _astResolvedInfoBuiltIn: Z = 121
 
-    val _astResolvedInfoBuiltIn: Z = 122
+    val _astResolvedInfoPackage: Z = 122
 
-    val _astResolvedInfoPackage: Z = 123
+    val _astResolvedInfoEnum: Z = 123
 
-    val _astResolvedInfoEnum: Z = 124
+    val _astResolvedInfoEnumElement: Z = 124
 
-    val _astResolvedInfoEnumElement: Z = 125
+    val _astResolvedInfoObject: Z = 125
 
-    val _astResolvedInfoObject: Z = 126
+    val _astResolvedInfoVar: Z = 126
 
-    val _astResolvedInfoVar: Z = 127
+    val _astResolvedInfoMethod: Z = 127
 
-    val _astResolvedInfoMethod: Z = 128
+    val _astResolvedInfoMethods: Z = 128
 
-    val _astResolvedInfoMethods: Z = 129
+    val _astResolvedInfoTuple: Z = 129
 
-    val _astResolvedInfoTuple: Z = 130
+    val _astResolvedInfoLocalVar: Z = 130
 
-    val _astResolvedInfoLocalVar: Z = 131
+    val _astResolvedInfoFact: Z = 131
 
-    val _astResolvedInfoFact: Z = 132
+    val _astResolvedInfoTheorem: Z = 132
 
-    val _astResolvedInfoTheorem: Z = 133
+    val _astResolvedInfoInv: Z = 133
 
-    val _astResolvedInfoInv: Z = 134
+    val _astTruthTableRow: Z = 134
 
-    val _astTruthTableRow: Z = 135
+    val _astTruthTableAssignment: Z = 135
 
-    val _astTruthTableAssignment: Z = 136
+    val _astTruthTableConclusionValidity: Z = 136
 
-    val _astTruthTableConclusionValidity: Z = 137
+    val _astTruthTableConclusionTautology: Z = 137
 
-    val _astTruthTableConclusionTautology: Z = 138
+    val _astTruthTableConclusionContradictory: Z = 138
 
-    val _astTruthTableConclusionContradictory: Z = 139
+    val _astTruthTableConclusionContingent: Z = 139
 
-    val _astTruthTableConclusionContingent: Z = 140
+    val _astTypedName: Z = 140
 
-    val _astTypedName: Z = 141
+    val _astTypedTuple: Z = 141
 
-    val _astTypedTuple: Z = 142
+    val _astTypedFun: Z = 142
 
-    val _astTypedFun: Z = 143
+    val _astTypedTypeVar: Z = 143
 
-    val _astTypedTypeVar: Z = 144
+    val _astTypedPackage: Z = 144
 
-    val _astTypedPackage: Z = 145
+    val _astTypedObject: Z = 145
 
-    val _astTypedObject: Z = 146
+    val _astTypedEnum: Z = 146
 
-    val _astTypedEnum: Z = 147
+    val _astTypedMethod: Z = 147
 
-    val _astTypedMethod: Z = 148
+    val _astTypedMethods: Z = 148
 
-    val _astTypedMethods: Z = 149
+    val _astTypedFact: Z = 149
 
-    val _astTypedFact: Z = 150
+    val _astTypedTheorem: Z = 150
 
-    val _astTypedTheorem: Z = 151
-
-    val _astTypedInv: Z = 152
+    val _astTypedInv: Z = 151
 
   }
 
@@ -1438,7 +1436,6 @@ object MsgPack {
         case o: org.sireum.lang.ast.Exp.LitF64 => write_astExpLitF64(o)
         case o: org.sireum.lang.ast.Exp.LitR => write_astExpLitR(o)
         case o: org.sireum.lang.ast.Exp.LitString => write_astExpLitString(o)
-        case o: org.sireum.lang.ast.Exp.LitStepId => write_astExpLitStepId(o)
         case o: org.sireum.lang.ast.Exp.StringInterpolate => write_astExpStringInterpolate(o)
         case o: org.sireum.lang.ast.Exp.This => write_astExpThis(o)
         case o: org.sireum.lang.ast.Exp.Super => write_astExpSuper(o)
@@ -1480,7 +1477,6 @@ object MsgPack {
         case o: org.sireum.lang.ast.Exp.LitF64 => write_astExpLitF64(o)
         case o: org.sireum.lang.ast.Exp.LitR => write_astExpLitR(o)
         case o: org.sireum.lang.ast.Exp.LitString => write_astExpLitString(o)
-        case o: org.sireum.lang.ast.Exp.LitStepId => write_astExpLitStepId(o)
       }
     }
 
@@ -1522,12 +1518,6 @@ object MsgPack {
 
     def write_astExpLitString(o: org.sireum.lang.ast.Exp.LitString): Unit = {
       writer.writeZ(Constants._astExpLitString)
-      writer.writeString(o.value)
-      write_astAttr(o.attr)
-    }
-
-    def write_astExpLitStepId(o: org.sireum.lang.ast.Exp.LitStepId): Unit = {
-      writer.writeZ(Constants._astExpLitStepId)
       writer.writeString(o.value)
       write_astAttr(o.attr)
     }
@@ -4088,7 +4078,6 @@ object MsgPack {
         case Constants._astExpLitF64 => val r = read_astExpLitF64T(T); return r
         case Constants._astExpLitR => val r = read_astExpLitRT(T); return r
         case Constants._astExpLitString => val r = read_astExpLitStringT(T); return r
-        case Constants._astExpLitStepId => val r = read_astExpLitStepIdT(T); return r
         case Constants._astExpStringInterpolate => val r = read_astExpStringInterpolateT(T); return r
         case Constants._astExpThis => val r = read_astExpThisT(T); return r
         case Constants._astExpSuper => val r = read_astExpSuperT(T); return r
@@ -4136,10 +4125,9 @@ object MsgPack {
         case Constants._astExpLitF64 => val r = read_astExpLitF64T(T); return r
         case Constants._astExpLitR => val r = read_astExpLitRT(T); return r
         case Constants._astExpLitString => val r = read_astExpLitStringT(T); return r
-        case Constants._astExpLitStepId => val r = read_astExpLitStepIdT(T); return r
         case _ =>
           reader.error(i, s"$t is not a valid type of org.sireum.lang.ast.Lit.")
-          val r = read_astExpLitStepIdT(T)
+          val r = read_astExpLitStringT(T)
           return r
       }
     }
@@ -4240,20 +4228,6 @@ object MsgPack {
       val value = reader.readString()
       val attr = read_astAttr()
       return org.sireum.lang.ast.Exp.LitString(value, attr)
-    }
-
-    def read_astExpLitStepId(): org.sireum.lang.ast.Exp.LitStepId = {
-      val r = read_astExpLitStepIdT(F)
-      return r
-    }
-
-    def read_astExpLitStepIdT(typeParsed: B): org.sireum.lang.ast.Exp.LitStepId = {
-      if (!typeParsed) {
-        reader.expectZ(Constants._astExpLitStepId)
-      }
-      val value = reader.readString()
-      val attr = read_astAttr()
-      return org.sireum.lang.ast.Exp.LitStepId(value, attr)
     }
 
     def read_astExpStringInterpolate(): org.sireum.lang.ast.Exp.StringInterpolate = {
@@ -7422,21 +7396,6 @@ object MsgPack {
       return r
     }
     val r = to(data, f_astExpLitString _)
-    return r
-  }
-
-  def from_astExpLitStepId(o: org.sireum.lang.ast.Exp.LitStepId, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astExpLitStepId(o)
-    return w.result
-  }
-
-  def to_astExpLitStepId(data: ISZ[U8]): Either[org.sireum.lang.ast.Exp.LitStepId, MessagePack.ErrorMsg] = {
-    def f_astExpLitStepId(reader: Reader): org.sireum.lang.ast.Exp.LitStepId = {
-      val r = reader.read_astExpLitStepId()
-      return r
-    }
-    val r = to(data, f_astExpLitStepId _)
     return r
   }
 

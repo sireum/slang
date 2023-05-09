@@ -413,10 +413,6 @@ object MTransformer {
 
   val PostResultExpLitString: MOption[Lit] = MNone()
 
-  val PreResultExpLitStepId: PreResult[Lit] = PreResult(T, MNone())
-
-  val PostResultExpLitStepId: MOption[Lit] = MNone()
-
   val PreResultExpStringInterpolate: PreResult[Exp] = PreResult(T, MNone())
 
   val PostResultExpStringInterpolate: MOption[Exp] = MNone()
@@ -1367,13 +1363,6 @@ import MTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
         }
         return r
-      case o: Exp.LitStepId =>
-        val r: PreResult[Exp] = preExpLitStepId(o) match {
-         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
-         case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
-        }
-        return r
       case o: Exp.StringInterpolate => return preExpStringInterpolate(o)
       case o: Exp.This => return preExpThis(o)
       case o: Exp.Super => return preExpSuper(o)
@@ -1433,7 +1422,6 @@ import MTransformer._
       case o: Exp.LitF64 => return preExpLitF64(o)
       case o: Exp.LitR => return preExpLitR(o)
       case o: Exp.LitString => return preExpLitString(o)
-      case o: Exp.LitStepId => return preExpLitStepId(o)
     }
   }
 
@@ -1463,10 +1451,6 @@ import MTransformer._
 
   def preExpLitString(o: Exp.LitString): PreResult[Lit] = {
     return PreResultExpLitString
-  }
-
-  def preExpLitStepId(o: Exp.LitStepId): PreResult[Lit] = {
-    return PreResultExpLitStepId
   }
 
   def preExpStringInterpolate(o: Exp.StringInterpolate): PreResult[Exp] = {
@@ -2484,13 +2468,6 @@ import MTransformer._
          case _ => MNone[Exp]()
         }
         return r
-      case o: Exp.LitStepId =>
-        val r: MOption[Exp] = postExpLitStepId(o) match {
-         case MSome(result: Exp) => MSome[Exp](result)
-         case MSome(_) => halt("Can only produce object of type Exp")
-         case _ => MNone[Exp]()
-        }
-        return r
       case o: Exp.StringInterpolate => return postExpStringInterpolate(o)
       case o: Exp.This => return postExpThis(o)
       case o: Exp.Super => return postExpSuper(o)
@@ -2550,7 +2527,6 @@ import MTransformer._
       case o: Exp.LitF64 => return postExpLitF64(o)
       case o: Exp.LitR => return postExpLitR(o)
       case o: Exp.LitString => return postExpLitString(o)
-      case o: Exp.LitStepId => return postExpLitStepId(o)
     }
   }
 
@@ -2580,10 +2556,6 @@ import MTransformer._
 
   def postExpLitString(o: Exp.LitString): MOption[Lit] = {
     return PostResultExpLitString
-  }
-
-  def postExpLitStepId(o: Exp.LitStepId): MOption[Lit] = {
-    return PostResultExpLitStepId
   }
 
   def postExpStringInterpolate(o: Exp.StringInterpolate): MOption[Exp] = {
@@ -4445,12 +4417,6 @@ import MTransformer._
             MSome(o2(attr = r0.getOrElse(o2.attr)))
           else
             MNone()
-        case o2: Exp.LitStepId =>
-          val r0: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty)
-            MSome(o2(attr = r0.getOrElse(o2.attr)))
-          else
-            MNone()
         case o2: Exp.StringInterpolate =>
           val r0: MOption[IS[Z, Exp.LitString]] = transformISZ(o2.lits, transformExpLitString _)
           val r1: MOption[IS[Z, Exp]] = transformISZ(o2.args, transformExp _)
@@ -4741,12 +4707,6 @@ import MTransformer._
           else
             MNone()
         case o2: Exp.LitString =>
-          val r0: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty)
-            MSome(o2(attr = r0.getOrElse(o2.attr)))
-          else
-            MNone()
-        case o2: Exp.LitStepId =>
           val r0: MOption[Attr] = transformAttr(o2.attr)
           if (hasChanged || r0.nonEmpty)
             MSome(o2(attr = r0.getOrElse(o2.attr)))

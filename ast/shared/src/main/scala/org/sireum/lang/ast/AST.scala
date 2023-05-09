@@ -1415,14 +1415,6 @@ object Exp {
     }
   }
 
-  @datatype class LitStepId(val value: String, @hidden val attr: Attr) extends Lit {
-    @strictpure override def posOpt: Option[Position] = attr.posOpt
-    @strictpure override def typedOpt: Option[Typed] = Typed.stepIdOpt
-    @pure override def prettyST: ST = {
-      return st"""sn"${ops.StringOps(value).escapeST}""""
-    }
-  }
-
   @datatype class StringInterpolate(val prefix: String, val lits: ISZ[LitString], val args: ISZ[Exp], @hidden val attr: TypedAttr)
     extends Exp {
     @strictpure override def posOpt: Option[Position] = attr.posOpt

@@ -1274,7 +1274,6 @@ object JSON {
         case o: org.sireum.lang.ast.Exp.LitF64 => return print_astExpLitF64(o)
         case o: org.sireum.lang.ast.Exp.LitR => return print_astExpLitR(o)
         case o: org.sireum.lang.ast.Exp.LitString => return print_astExpLitString(o)
-        case o: org.sireum.lang.ast.Exp.LitStepId => return print_astExpLitStepId(o)
         case o: org.sireum.lang.ast.Exp.StringInterpolate => return print_astExpStringInterpolate(o)
         case o: org.sireum.lang.ast.Exp.This => return print_astExpThis(o)
         case o: org.sireum.lang.ast.Exp.Super => return print_astExpSuper(o)
@@ -1316,7 +1315,6 @@ object JSON {
         case o: org.sireum.lang.ast.Exp.LitF64 => return print_astExpLitF64(o)
         case o: org.sireum.lang.ast.Exp.LitR => return print_astExpLitR(o)
         case o: org.sireum.lang.ast.Exp.LitString => return print_astExpLitString(o)
-        case o: org.sireum.lang.ast.Exp.LitStepId => return print_astExpLitStepId(o)
       }
     }
 
@@ -1371,14 +1369,6 @@ object JSON {
     @pure def print_astExpLitString(o: org.sireum.lang.ast.Exp.LitString): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Exp.LitString""""),
-        ("value", printString(o.value)),
-        ("attr", print_astAttr(o.attr))
-      ))
-    }
-
-    @pure def print_astExpLitStepId(o: org.sireum.lang.ast.Exp.LitStepId): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Exp.LitStepId""""),
         ("value", printString(o.value)),
         ("attr", print_astAttr(o.attr))
       ))
@@ -4892,7 +4882,7 @@ object JSON {
     }
 
     def parse_astExp(): org.sireum.lang.ast.Exp = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Exp.LitB", "org.sireum.lang.ast.Exp.LitC", "org.sireum.lang.ast.Exp.LitZ", "org.sireum.lang.ast.Exp.LitF32", "org.sireum.lang.ast.Exp.LitF64", "org.sireum.lang.ast.Exp.LitR", "org.sireum.lang.ast.Exp.LitString", "org.sireum.lang.ast.Exp.LitStepId", "org.sireum.lang.ast.Exp.StringInterpolate", "org.sireum.lang.ast.Exp.This", "org.sireum.lang.ast.Exp.Super", "org.sireum.lang.ast.Exp.Unary", "org.sireum.lang.ast.Exp.Binary", "org.sireum.lang.ast.Exp.Ident", "org.sireum.lang.ast.Exp.Eta", "org.sireum.lang.ast.Exp.Tuple", "org.sireum.lang.ast.Exp.Select", "org.sireum.lang.ast.Exp.Invoke", "org.sireum.lang.ast.Exp.InvokeNamed", "org.sireum.lang.ast.Exp.If", "org.sireum.lang.ast.Exp.TypeCond", "org.sireum.lang.ast.Exp.Sym", "org.sireum.lang.ast.Exp.Fun", "org.sireum.lang.ast.Exp.ForYield", "org.sireum.lang.ast.Exp.QuantType", "org.sireum.lang.ast.Exp.QuantRange", "org.sireum.lang.ast.Exp.QuantEach", "org.sireum.lang.ast.Exp.Input", "org.sireum.lang.ast.Exp.At", "org.sireum.lang.ast.Exp.LoopIndex", "org.sireum.lang.ast.Exp.StateSeq", "org.sireum.lang.ast.Exp.Result", "org.sireum.lang.ast.Exp.StrictPureBlock", "org.sireum.lang.ast.Exp.Labeled", "org.sireum.lang.ast.Exp.AssumeAgree", "org.sireum.lang.ast.Exp.AssertAgree", "org.sireum.lang.ast.Exp.InfoFlowInvariant"))
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Exp.LitB", "org.sireum.lang.ast.Exp.LitC", "org.sireum.lang.ast.Exp.LitZ", "org.sireum.lang.ast.Exp.LitF32", "org.sireum.lang.ast.Exp.LitF64", "org.sireum.lang.ast.Exp.LitR", "org.sireum.lang.ast.Exp.LitString", "org.sireum.lang.ast.Exp.StringInterpolate", "org.sireum.lang.ast.Exp.This", "org.sireum.lang.ast.Exp.Super", "org.sireum.lang.ast.Exp.Unary", "org.sireum.lang.ast.Exp.Binary", "org.sireum.lang.ast.Exp.Ident", "org.sireum.lang.ast.Exp.Eta", "org.sireum.lang.ast.Exp.Tuple", "org.sireum.lang.ast.Exp.Select", "org.sireum.lang.ast.Exp.Invoke", "org.sireum.lang.ast.Exp.InvokeNamed", "org.sireum.lang.ast.Exp.If", "org.sireum.lang.ast.Exp.TypeCond", "org.sireum.lang.ast.Exp.Sym", "org.sireum.lang.ast.Exp.Fun", "org.sireum.lang.ast.Exp.ForYield", "org.sireum.lang.ast.Exp.QuantType", "org.sireum.lang.ast.Exp.QuantRange", "org.sireum.lang.ast.Exp.QuantEach", "org.sireum.lang.ast.Exp.Input", "org.sireum.lang.ast.Exp.At", "org.sireum.lang.ast.Exp.LoopIndex", "org.sireum.lang.ast.Exp.StateSeq", "org.sireum.lang.ast.Exp.Result", "org.sireum.lang.ast.Exp.StrictPureBlock", "org.sireum.lang.ast.Exp.Labeled", "org.sireum.lang.ast.Exp.AssumeAgree", "org.sireum.lang.ast.Exp.AssertAgree", "org.sireum.lang.ast.Exp.InfoFlowInvariant"))
       t.native match {
         case "org.sireum.lang.ast.Exp.LitB" => val r = parse_astExpLitBT(T); return r
         case "org.sireum.lang.ast.Exp.LitC" => val r = parse_astExpLitCT(T); return r
@@ -4901,7 +4891,6 @@ object JSON {
         case "org.sireum.lang.ast.Exp.LitF64" => val r = parse_astExpLitF64T(T); return r
         case "org.sireum.lang.ast.Exp.LitR" => val r = parse_astExpLitRT(T); return r
         case "org.sireum.lang.ast.Exp.LitString" => val r = parse_astExpLitStringT(T); return r
-        case "org.sireum.lang.ast.Exp.LitStepId" => val r = parse_astExpLitStepIdT(T); return r
         case "org.sireum.lang.ast.Exp.StringInterpolate" => val r = parse_astExpStringInterpolateT(T); return r
         case "org.sireum.lang.ast.Exp.This" => val r = parse_astExpThisT(T); return r
         case "org.sireum.lang.ast.Exp.Super" => val r = parse_astExpSuperT(T); return r
@@ -4936,7 +4925,7 @@ object JSON {
     }
 
     def parse_astLit(): org.sireum.lang.ast.Lit = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Exp.LitB", "org.sireum.lang.ast.Exp.LitC", "org.sireum.lang.ast.Exp.LitZ", "org.sireum.lang.ast.Exp.LitF32", "org.sireum.lang.ast.Exp.LitF64", "org.sireum.lang.ast.Exp.LitR", "org.sireum.lang.ast.Exp.LitString", "org.sireum.lang.ast.Exp.LitStepId"))
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Exp.LitB", "org.sireum.lang.ast.Exp.LitC", "org.sireum.lang.ast.Exp.LitZ", "org.sireum.lang.ast.Exp.LitF32", "org.sireum.lang.ast.Exp.LitF64", "org.sireum.lang.ast.Exp.LitR", "org.sireum.lang.ast.Exp.LitString"))
       t.native match {
         case "org.sireum.lang.ast.Exp.LitB" => val r = parse_astExpLitBT(T); return r
         case "org.sireum.lang.ast.Exp.LitC" => val r = parse_astExpLitCT(T); return r
@@ -4945,8 +4934,7 @@ object JSON {
         case "org.sireum.lang.ast.Exp.LitF64" => val r = parse_astExpLitF64T(T); return r
         case "org.sireum.lang.ast.Exp.LitR" => val r = parse_astExpLitRT(T); return r
         case "org.sireum.lang.ast.Exp.LitString" => val r = parse_astExpLitStringT(T); return r
-        case "org.sireum.lang.ast.Exp.LitStepId" => val r = parse_astExpLitStepIdT(T); return r
-        case _ => val r = parse_astExpLitStepIdT(T); return r
+        case _ => val r = parse_astExpLitStringT(T); return r
       }
     }
 
@@ -5074,24 +5062,6 @@ object JSON {
       val attr = parse_astAttr()
       parser.parseObjectNext()
       return org.sireum.lang.ast.Exp.LitString(value, attr)
-    }
-
-    def parse_astExpLitStepId(): org.sireum.lang.ast.Exp.LitStepId = {
-      val r = parse_astExpLitStepIdT(F)
-      return r
-    }
-
-    def parse_astExpLitStepIdT(typeParsed: B): org.sireum.lang.ast.Exp.LitStepId = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Exp.LitStepId")
-      }
-      parser.parseObjectKey("value")
-      val value = parser.parseString()
-      parser.parseObjectNext()
-      parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Exp.LitStepId(value, attr)
     }
 
     def parse_astExpStringInterpolate(): org.sireum.lang.ast.Exp.StringInterpolate = {
@@ -9122,24 +9092,6 @@ object JSON {
       return r
     }
     val r = to(s, f_astExpLitString _)
-    return r
-  }
-
-  def from_astExpLitStepId(o: org.sireum.lang.ast.Exp.LitStepId, isCompact: B): String = {
-    val st = Printer.print_astExpLitStepId(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astExpLitStepId(s: String): Either[org.sireum.lang.ast.Exp.LitStepId, Json.ErrorMsg] = {
-    def f_astExpLitStepId(parser: Parser): org.sireum.lang.ast.Exp.LitStepId = {
-      val r = parser.parse_astExpLitStepId()
-      return r
-    }
-    val r = to(s, f_astExpLitStepId _)
     return r
   }
 

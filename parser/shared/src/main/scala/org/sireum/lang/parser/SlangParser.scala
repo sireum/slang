@@ -47,7 +47,7 @@ object SlangParser {
     String("¬") -> AST.Exp.UnaryOp.Not
   )
 
-  val builtinPrefix: Seq[String] = Seq("z", "r", "c", "string", "f32", "f64", "sn")
+  val builtinPrefix: Seq[String] = Seq("z", "r", "c", "string", "f32", "f64")
 
   val disallowedTypeIds: Seq[String] = Seq(
     "Contract",
@@ -2827,7 +2827,6 @@ class SlangParser(
             AST.Exp.LitF64(0.0, attr(pos))
         }
       case "string" => AST.Exp.LitString(value, attr(pos))
-      case "sn" => AST.Exp.LitStepId(value, attr(pos))
     }
     return r
   }
@@ -3654,16 +3653,14 @@ class SlangParser(
   def isStepId(term: Term): Boolean = {
     term match {
       case _: Lit.Int => return true
-      case term: Term.Interpolate if term.prefix.value == "sn" && term.args.isEmpty => return true
+      case _: Lit.String => return true
       case _ => return false
     }
   }
   def toStepId(term: Term): AST.ProofAst.StepId = {
     term match {
       case term: Lit.Int => return AST.ProofAst.StepId.Num(term.value, attr(term.pos))
-      case term: Term.Interpolate =>
-        val List(Lit.String(value)) = term.parts
-        return AST.ProofAst.StepId.Str(false, value, attr(term.pos))
+      case term: Lit.String => return AST.ProofAst.StepId.Str(false, term.value, attr(term.pos))
     }
   }
   def toStepId(pos: Position): AST.ProofAst.StepId = {
@@ -3691,7 +3688,7 @@ class SlangParser(
         val w = ws(i)
         w match {
           case w: AST.Exp.LitZ => witnesses = witnesses :+ AST.ProofAst.StepId.Num(w.value, w.attr)
-          case w: AST.Exp.LitStepId => witnesses = witnesses :+ AST.ProofAst.StepId.Str(false, w.value, w.attr)
+          case w: AST.Exp.LitString => witnesses = witnesses :+ AST.ProofAst.StepId.Str(false, w.value, w.attr)
           case _ =>
             reporter.error(w.posOpt, messageKind, s"Expecting a proof step id but found '${terms(i.toInt).syntax}'")
         }

@@ -272,7 +272,7 @@ object Util {
     '.' ~> "__dot",
     '?' ~> "__q",
     '\\' ~> "__bslash",
-    ',' ~> "__comma",
+    ',' ~> "__comma"
   )
 
   @pure def ids2strings(ids: ISZ[Id]): ISZ[String] = {
@@ -562,7 +562,7 @@ object Util {
     for (e <- es) {
       e match {
         case _: Exp.LitZ =>
-        case _: Exp.LitStepId =>
+        case _: Exp.LitString =>
         case _ => return F
       }
     }
@@ -574,7 +574,7 @@ object Util {
     for (e <- es) {
       e match {
         case e: Exp.LitZ if e.value >= 0 => r = r :+ ProofAst.StepId.Num(e.value, e.attr)
-        case e: Exp.LitStepId => r = r :+ ProofAst.StepId.Str(F, e.value, e.attr)
+        case e: Exp.LitString => r = r :+ ProofAst.StepId.Str(F, e.value, e.attr)
         case _ =>
           reporter.error(e.posOpt, kind, "Expecting only a non-negative integer literal or a step name literal")
       }

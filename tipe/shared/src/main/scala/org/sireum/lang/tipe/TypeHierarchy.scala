@@ -1092,7 +1092,7 @@ object TypeHierarchy {
     }
     (t1, t2) match {
       case (t1: AST.Typed.Name, t2: AST.Typed.Name) =>
-        if (t1.ids == AST.Typed.zName && t2.ids == AST.Typed.stepIdName) {
+        if (t2.ids == AST.Typed.stepIdName && (t1.ids == AST.Typed.zName || t1.ids == AST.Typed.stringName)) {
           return T
         }
 
