@@ -1570,8 +1570,10 @@ object Exp {
       val l = BinaryOp.precendenceLevel(op)
       var singleLine = T
       val leftST: ST = left match {
-        case left: Binary if l > 6 || op == "-->:" =>
-          singleLine = F
+        case left: Binary =>
+          if (l > 6 || op == "-->:") {
+            singleLine = F
+          }
           if (shouldParenthesize(l, left.op, F)) st"(${left.prettyST})" else left.prettyST
         case left: If =>
           singleLine = F
@@ -1579,8 +1581,10 @@ object Exp {
         case _ => left.prettyST
       }
       val rightST: ST = right match {
-        case right: Binary if l > 6 || op == "-->:" =>
-          singleLine = F
+        case right: Binary =>
+          if (l > 6 || op == "-->:") {
+            singleLine = F
+          }
           if (shouldParenthesize(l, right.op, T)) st"(${right.prettyST})" else right.prettyST
         case right: If =>
           singleLine = F
