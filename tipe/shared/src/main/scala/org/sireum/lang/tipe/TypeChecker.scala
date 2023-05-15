@@ -1865,12 +1865,16 @@ import TypeChecker._
       if (!args(0).isInstanceOf[AST.Exp.LitString]) {
          reporter.error(args(0).posOpt, typeCheckerKind, s"Expecting a string literal for setOptions' tool argument")
       }
-      if (!args(1).isInstanceOf[AST.Exp.LitString]) {
-        reporter.error(args(1).posOpt, typeCheckerKind, s"Expecting a string literal for setOptions' options argument")
+      val (arg1, _) = checkExp(AST.Typed.stringOpt, scope, args(1), reporter)
+      arg1 match {
+        case _: AST.Exp.LitString =>
+        case AST.Exp.Select(Some(_: AST.Exp.LitString), AST.Id(string"stripMargin"), ISZ()) =>
+        case _ =>
+          reporter.error(args(1).posOpt, typeCheckerKind, s"Expecting a string literal (with optional .stripMargin) for setOptions' options argument")
       }
       return (
-        setOptionsExp(ident = ident, attr = setOptionsExp.attr(resOpt = setOptionsResOpt, typedOpt = setOptionsTypedOpt)),
-        AST.Typed.unitOpt
+        setOptionsExp(ident = ident, args = ISZ(args(0), arg1), attr = setOptionsExp.attr(resOpt = setOptionsResOpt,
+          typedOpt = setOptionsTypedOpt)), AST.Typed.unitOpt
       )
     }
 
