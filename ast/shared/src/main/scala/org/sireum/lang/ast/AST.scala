@@ -2120,6 +2120,7 @@ object ResolvedInfo {
       "Native"
       "Print"
       "Println"
+      "SetOptions"
       "String"
       "UnapplySeq"
       "UnapplyTuple"

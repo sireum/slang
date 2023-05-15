@@ -1846,6 +1846,7 @@ object JSON {
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.Native => "Native"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.Print => "Print"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.Println => "Println"
+        case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.SetOptions => "SetOptions"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.String => "String"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.UnapplySeq => "UnapplySeq"
         case org.sireum.lang.ast.ResolvedInfo.BuiltIn.Kind.UnapplyTuple => "UnapplyTuple"

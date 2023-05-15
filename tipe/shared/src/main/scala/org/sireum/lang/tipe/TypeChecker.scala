@@ -50,6 +50,7 @@ object TypeChecker {
     "Print"
     "Assertume"
     "Halt"
+    "SetOptions"
   }
 
   @enum object TypeRelation {
@@ -222,7 +223,7 @@ object TypeChecker {
   val sTypeParams: ISZ[String] = ISZ("I", "V")
 
   val builtInMethods: HashSet[String] =
-    HashSet ++ ISZ("assert", "assume", "println", "print", "cprintln", "cprint", "eprintln", "eprint", "halt")
+    HashSet ++ ISZ("assert", "assume", "println", "print", "cprintln", "cprint", "eprintln", "eprint", "halt", "setOptions")
   val assertResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Assert))
 
   val assertMsgResOpt: Option[AST.ResolvedInfo] = Some(
@@ -322,6 +323,10 @@ object TypeChecker {
   )
 
   val emptySubstMap: HashMap[String, AST.Typed] = HashMap.empty
+
+  val setOptionsResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.SetOptions))
+  val setOptionsTypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(F, F, ISZ(AST.Typed.string, AST.Typed.string), AST.Typed.unit))
+
   @strictpure def extResOpt(isInObject: B, owner: ISZ[String], id: String, paramNames: ISZ[String],
                             tpe: AST.Typed.Fun): Option[AST.ResolvedInfo] = Some(
     AST.ResolvedInfo.Method(isInObject, AST.MethodMode.Ext, ISZ(), owner, id, paramNames, Some(tpe), ISZ(), ISZ()))
@@ -1840,18 +1845,32 @@ import TypeChecker._
       val ident: AST.Exp.Ident = argTypeOpt match {
         case Some(argType) =>
           checkTypeUsage(newArg.posOpt, argType, reporter)
-          haltExp.ident(
-            attr = haltExp.attr(
-              posOpt = haltExp.ident.id.attr.posOpt,
-              resOpt = haltResOpt,
-              typedOpt = Some(AST.Typed.Fun(F, F, ISZ(argType), AST.Typed.nothing))
-            )
-          )
+          haltExp.ident(attr = haltExp.attr(posOpt = haltExp.ident.id.attr.posOpt, resOpt = haltResOpt,
+            typedOpt = haltTypedOpt))
         case _ => haltExp.ident
       }
       return (
         haltExp(ident = ident, args = ISZ(newArg), attr = haltExp.attr(resOpt = haltResOpt, typedOpt = haltTypedOpt)),
         AST.Typed.nothingOpt
+      )
+    }
+
+    def checkSetOptions(setOptionsExp: AST.Exp.Invoke, args: ISZ[AST.Exp]): (AST.Exp, Option[AST.Typed]) = {
+      if (args.size != z"2") {
+        reporter.error(setOptionsExp.posOpt, typeCheckerKind, s"Expecting two arguments, but ${args.size} found.")
+        return (setOptionsExp(attr = setOptionsExp.attr(resOpt = setOptionsResOpt, typedOpt = setOptionsTypedOpt)), AST.Typed.unitOpt)
+      }
+      val ident = setOptionsExp.ident(attr = setOptionsExp.attr(posOpt = setOptionsExp.ident.id.attr.posOpt,
+        resOpt = setOptionsResOpt, typedOpt = setOptionsTypedOpt))
+      if (!args(0).isInstanceOf[AST.Exp.LitString]) {
+         reporter.error(args(0).posOpt, typeCheckerKind, s"Expecting a string literal for setOptions' tool argument")
+      }
+      if (!args(1).isInstanceOf[AST.Exp.LitString]) {
+        reporter.error(args(1).posOpt, typeCheckerKind, s"Expecting a string literal for setOptions' options argument")
+      }
+      return (
+        setOptionsExp(ident = ident, attr = setOptionsExp.attr(resOpt = setOptionsResOpt, typedOpt = setOptionsTypedOpt)),
+        AST.Typed.unitOpt
       )
     }
 
@@ -3375,16 +3394,17 @@ import TypeChecker._
             case exp @ AST.Exp.Invoke(None(), AST.Exp.Ident(AST.Id(name)), _, args)
                 if exp.targs.isEmpty && builtInMethods.contains(name) =>
               val (kind, resOpt): (BuiltInKind.Type, Option[AST.ResolvedInfo]) =
-                name.native match {
-                  case "assert" => (BuiltInKind.Assertume, if (args.size == z"1") assertResOpt else assertMsgResOpt)
-                  case "assume" => (BuiltInKind.Assertume, if (args.size == z"1") assumeResOpt else assumeMsgResOpt)
-                  case "println" => (BuiltInKind.Print, printlnResOpt)
-                  case "print" => (BuiltInKind.Print, printResOpt)
-                  case "cprintln" => (BuiltInKind.Print, cprintlnResOpt)
-                  case "cprint" => (BuiltInKind.Print, cprintResOpt)
-                  case "eprintln" => (BuiltInKind.Print, eprintlnResOpt)
-                  case "eprint" => (BuiltInKind.Print, eprintResOpt)
-                  case "halt" => (BuiltInKind.Halt, haltResOpt)
+                name match {
+                  case string"assert" => (BuiltInKind.Assertume, if (args.size == z"1") assertResOpt else assertMsgResOpt)
+                  case string"assume" => (BuiltInKind.Assertume, if (args.size == z"1") assumeResOpt else assumeMsgResOpt)
+                  case string"println" => (BuiltInKind.Print, printlnResOpt)
+                  case string"print" => (BuiltInKind.Print, printResOpt)
+                  case string"cprintln" => (BuiltInKind.Print, cprintlnResOpt)
+                  case string"cprint" => (BuiltInKind.Print, cprintResOpt)
+                  case string"eprintln" => (BuiltInKind.Print, eprintlnResOpt)
+                  case string"eprint" => (BuiltInKind.Print, eprintResOpt)
+                  case string"halt" => (BuiltInKind.Halt, haltResOpt)
+                  case LibUtil.setOptions => (BuiltInKind.SetOptions, setOptionsResOpt)
                   case _ => halt(s"Unimplemented built-in method $name.")
                 }
               kind match {
@@ -3399,6 +3419,7 @@ import TypeChecker._
                   }
                 case BuiltInKind.Print => return checkPrint(resOpt, exp, args)
                 case BuiltInKind.Halt => return checkHalt(exp, args)
+                case BuiltInKind.SetOptions => return checkSetOptions(exp, args)
               }
             case _ => return checkInvoke(exp)
           }
@@ -4166,6 +4187,7 @@ import TypeChecker._
                 case AST.ResolvedInfo.BuiltIn.Kind.Native => F
                 case AST.ResolvedInfo.BuiltIn.Kind.Print => T
                 case AST.ResolvedInfo.BuiltIn.Kind.Println => T
+                case AST.ResolvedInfo.BuiltIn.Kind.SetOptions => T
                 case AST.ResolvedInfo.BuiltIn.Kind.String => F
                 case AST.ResolvedInfo.BuiltIn.Kind.UnapplySeq => F
                 case AST.ResolvedInfo.BuiltIn.Kind.UnapplyTuple => F
