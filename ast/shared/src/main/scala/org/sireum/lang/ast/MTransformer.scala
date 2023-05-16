@@ -3194,8 +3194,8 @@ import MTransformer._
           else
             MNone()
         case o2: Stmt.DataRefinement =>
-          val r0: MOption[Exp.Ident] = transformExpIdent(o2.rep)
-          val r1: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.refs, transformExpIdent _)
+          val r0: MOption[Exp.Ref] = transformExpRef(o2.rep)
+          val r1: MOption[IS[Z, Exp.Ref]] = transformISZ(o2.refs, transformExpRef _)
           val r2: MOption[IS[Z, Exp]] = transformISZ(o2.claims, transformExp _)
           val r3: MOption[Attr] = transformAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
@@ -3465,8 +3465,8 @@ import MTransformer._
           else
             MNone()
         case o2: Stmt.DataRefinement =>
-          val r0: MOption[Exp.Ident] = transformExpIdent(o2.rep)
-          val r1: MOption[IS[Z, Exp.Ident]] = transformISZ(o2.refs, transformExpIdent _)
+          val r0: MOption[Exp.Ref] = transformExpRef(o2.rep)
+          val r1: MOption[IS[Z, Exp.Ref]] = transformISZ(o2.refs, transformExpRef _)
           val r2: MOption[IS[Z, Exp]] = transformISZ(o2.claims, transformExp _)
           val r3: MOption[Attr] = transformAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
@@ -5548,42 +5548,6 @@ import MTransformer._
     }
   }
 
-  def transformExpIdent(o: Exp.Ident): MOption[Exp.Ident] = {
-    val preR: PreResult[Exp.Ident] = preExpIdent(o) match {
-     case PreResult(continu, MSome(r: Exp.Ident)) => PreResult(continu, MSome[Exp.Ident](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp.Ident")
-     case PreResult(continu, _) => PreResult(continu, MNone[Exp.Ident]())
-    }
-    val r: MOption[Exp.Ident] = if (preR.continu) {
-      val o2: Exp.Ident = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[Id] = transformId(o2.id)
-      val r1: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
-      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-        MSome(o2(id = r0.getOrElse(o2.id), attr = r1.getOrElse(o2.attr)))
-      else
-        MNone()
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: Exp.Ident = r.getOrElse(o)
-    val postR: MOption[Exp.Ident] = postExpIdent(o2) match {
-     case MSome(result: Exp.Ident) => MSome[Exp.Ident](result)
-     case MSome(_) => halt("Can only produce object of type Exp.Ident")
-     case _ => MNone[Exp.Ident]()
-    }
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
   def transformStmtBlock(o: Stmt.Block): MOption[Stmt.Block] = {
     val preR: PreResult[Stmt.Block] = preStmtBlock(o) match {
      case PreResult(continu, MSome(r: Stmt.Block)) => PreResult(continu, MSome[Stmt.Block](r))
@@ -5719,6 +5683,42 @@ import MTransformer._
      case MSome(result: ProofAst.Step.Assume) => MSome[ProofAst.Step.Assume](result)
      case MSome(_) => halt("Can only produce object of type ProofAst.Step.Assume")
      case _ => MNone[ProofAst.Step.Assume]()
+    }
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformExpIdent(o: Exp.Ident): MOption[Exp.Ident] = {
+    val preR: PreResult[Exp.Ident] = preExpIdent(o) match {
+     case PreResult(continu, MSome(r: Exp.Ident)) => PreResult(continu, MSome[Exp.Ident](r))
+     case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp.Ident")
+     case PreResult(continu, _) => PreResult(continu, MNone[Exp.Ident]())
+    }
+    val r: MOption[Exp.Ident] = if (preR.continu) {
+      val o2: Exp.Ident = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[Id] = transformId(o2.id)
+      val r1: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+        MSome(o2(id = r0.getOrElse(o2.id), attr = r1.getOrElse(o2.attr)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Exp.Ident = r.getOrElse(o)
+    val postR: MOption[Exp.Ident] = postExpIdent(o2) match {
+     case MSome(result: Exp.Ident) => MSome[Exp.Ident](result)
+     case MSome(_) => halt("Can only produce object of type Exp.Ident")
+     case _ => MNone[Exp.Ident]()
     }
     if (postR.nonEmpty) {
       return postR

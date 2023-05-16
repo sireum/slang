@@ -2566,8 +2566,8 @@ import Transformer._
           else
             TPostResult(r5.ctx, None())
         case o2: Stmt.DataRefinement =>
-          val r0: TPostResult[Context, Exp.Ident] = transformExpIdent(preR.ctx, o2.rep)
-          val r1: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(r0.ctx, o2.refs, transformExpIdent _)
+          val r0: TPostResult[Context, Exp.Ref] = transformExpRef(preR.ctx, o2.rep)
+          val r1: TPostResult[Context, IS[Z, Exp.Ref]] = transformISZ(r0.ctx, o2.refs, transformExpRef _)
           val r2: TPostResult[Context, IS[Z, Exp]] = transformISZ(r1.ctx, o2.claims, transformExp _)
           val r3: TPostResult[Context, Attr] = transformAttr(r2.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
@@ -2837,8 +2837,8 @@ import Transformer._
           else
             TPostResult(r5.ctx, None())
         case o2: Stmt.DataRefinement =>
-          val r0: TPostResult[Context, Exp.Ident] = transformExpIdent(preR.ctx, o2.rep)
-          val r1: TPostResult[Context, IS[Z, Exp.Ident]] = transformISZ(r0.ctx, o2.refs, transformExpIdent _)
+          val r0: TPostResult[Context, Exp.Ref] = transformExpRef(preR.ctx, o2.rep)
+          val r1: TPostResult[Context, IS[Z, Exp.Ref]] = transformISZ(r0.ctx, o2.refs, transformExpRef _)
           val r2: TPostResult[Context, IS[Z, Exp]] = transformISZ(r1.ctx, o2.claims, transformExp _)
           val r3: TPostResult[Context, Attr] = transformAttr(r2.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
@@ -4920,42 +4920,6 @@ import Transformer._
     }
   }
 
-  @pure def transformExpIdent(ctx: Context, o: Exp.Ident): TPostResult[Context, Exp.Ident] = {
-    val preR: PreResult[Context, Exp.Ident] = pp.preExpIdent(ctx, o) match {
-     case PreResult(preCtx, continu, Some(r: Exp.Ident)) => PreResult(preCtx, continu, Some[Exp.Ident](r))
-     case PreResult(_, _, Some(_)) => halt("Can only produce object of type Exp.Ident")
-     case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp.Ident]())
-    }
-    val r: TPostResult[Context, Exp.Ident] = if (preR.continu) {
-      val o2: Exp.Ident = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: TPostResult[Context, Id] = transformId(preR.ctx, o2.id)
-      val r1: TPostResult[Context, ResolvedAttr] = transformResolvedAttr(r0.ctx, o2.attr)
-      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-        TPostResult(r1.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), attr = r1.resultOpt.getOrElse(o2.attr))))
-      else
-        TPostResult(r1.ctx, None())
-    } else if (preR.resultOpt.nonEmpty) {
-      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
-    } else {
-      TPostResult(preR.ctx, None())
-    }
-    val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: Exp.Ident = r.resultOpt.getOrElse(o)
-    val postR: TPostResult[Context, Exp.Ident] = pp.postExpIdent(r.ctx, o2) match {
-     case TPostResult(postCtx, Some(result: Exp.Ident)) => TPostResult(postCtx, Some[Exp.Ident](result))
-     case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp.Ident")
-     case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp.Ident]())
-    }
-    if (postR.resultOpt.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return TPostResult(postR.ctx, Some(o2))
-    } else {
-      return TPostResult(postR.ctx, None())
-    }
-  }
-
   @pure def transformStmtBlock(ctx: Context, o: Stmt.Block): TPostResult[Context, Stmt.Block] = {
     val preR: PreResult[Context, Stmt.Block] = pp.preStmtBlock(ctx, o) match {
      case PreResult(preCtx, continu, Some(r: Stmt.Block)) => PreResult(preCtx, continu, Some[Stmt.Block](r))
@@ -5091,6 +5055,42 @@ import Transformer._
      case TPostResult(postCtx, Some(result: ProofAst.Step.Assume)) => TPostResult(postCtx, Some[ProofAst.Step.Assume](result))
      case TPostResult(_, Some(_)) => halt("Can only produce object of type ProofAst.Step.Assume")
      case TPostResult(postCtx, _) => TPostResult(postCtx, None[ProofAst.Step.Assume]())
+    }
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformExpIdent(ctx: Context, o: Exp.Ident): TPostResult[Context, Exp.Ident] = {
+    val preR: PreResult[Context, Exp.Ident] = pp.preExpIdent(ctx, o) match {
+     case PreResult(preCtx, continu, Some(r: Exp.Ident)) => PreResult(preCtx, continu, Some[Exp.Ident](r))
+     case PreResult(_, _, Some(_)) => halt("Can only produce object of type Exp.Ident")
+     case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp.Ident]())
+    }
+    val r: TPostResult[Context, Exp.Ident] = if (preR.continu) {
+      val o2: Exp.Ident = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: TPostResult[Context, Id] = transformId(preR.ctx, o2.id)
+      val r1: TPostResult[Context, ResolvedAttr] = transformResolvedAttr(r0.ctx, o2.attr)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+        TPostResult(r1.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), attr = r1.resultOpt.getOrElse(o2.attr))))
+      else
+        TPostResult(r1.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: Exp.Ident = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, Exp.Ident] = pp.postExpIdent(r.ctx, o2) match {
+     case TPostResult(postCtx, Some(result: Exp.Ident)) => TPostResult(postCtx, Some[Exp.Ident](result))
+     case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp.Ident")
+     case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp.Ident]())
     }
     if (postR.resultOpt.nonEmpty) {
       return postR

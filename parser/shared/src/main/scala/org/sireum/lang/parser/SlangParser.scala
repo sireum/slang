@@ -3500,7 +3500,7 @@ class SlangParser(
     val q"Contract(DataRefinement($rep)(..$refs)(..$claims))" = stat
     AST.Stmt.DataRefinement(
       translateIdent("DataRefinement", rep).getOrElse(rExp),
-      ISZ(refs.map(ref => translateIdent("DataRefinement", ref).getOrElse(rExp)): _*),
+      ISZ[AST.Exp.Ref](refs.map(ref => translateIdent("DataRefinement", ref).getOrElse(rExp)): _*),
       ISZ(claims.map(translateExp): _*),
       attr(stat.pos)
     )

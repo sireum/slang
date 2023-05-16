@@ -2258,9 +2258,16 @@ import TypeChecker._
 
     def checkIdent(identExp: AST.Exp.Ident, etaParentOpt: Option[AST.Exp.Eta]): (AST.Exp, Option[AST.Typed]) = {
       val (typedOpt, resOpt) = checkId(scope, identExp.id, reporter)
-      val newExp = identExp(attr = identExp.attr(typedOpt = typedOpt, resOpt = resOpt))
+      val newIdentExp = identExp(attr = identExp.attr(typedOpt = typedOpt, resOpt = resOpt))
+      var newExp: AST.Exp.Ref = newIdentExp
       if (typedOpt.isEmpty) {
-        return (newExp, typedOpt)
+        return (newExp.asExp, typedOpt)
+      }
+      newIdentExp.resOpt match {
+        case Some(res: AST.ResolvedInfo.Var) if !res.isInObject =>
+          newExp = AST.Exp.Select(Some(AST.Exp.This(AST.TypedAttr(newExp.posOpt, scope.thisOpt))), newIdentExp.id,
+            newIdentExp.targs, AST.ResolvedAttr(newExp.posOpt, newIdentExp.resOpt, newExp.typedOpt))
+        case _ =>
       }
       val r = checkEtaH(typedOpt.get, newExp, ISZ(), etaParentOpt)
       return r
@@ -3425,7 +3432,17 @@ import TypeChecker._
                 case BuiltInKind.Halt => return checkHalt(exp, args)
                 case BuiltInKind.SetOptions => return checkSetOptions(exp, args)
               }
-            case _ => return checkInvoke(exp)
+            case _ =>
+              val (newExp, tOpt) = checkInvoke(exp)
+              var r = newExp.asInstanceOf[AST.Exp.Invoke]
+              if (r.receiverOpt.isEmpty) {
+                r.ident.resOpt match {
+                  case Some(res: AST.ResolvedInfo.Var) if !res.isInObject =>
+                    r = r(receiverOpt = Some(AST.Exp.This(AST.TypedAttr(r.ident.posOpt, scope.thisOpt))))
+                  case _ =>
+                }
+              }
+              return (r, tOpt)
           }
 
         case exp: AST.Exp.InvokeNamed =>
@@ -3434,7 +3451,17 @@ import TypeChecker._
                 if exp.targs.isEmpty && builtInMethods.contains(name) =>
               reporter.error(exp.posOpt, typeCheckerKind, s"Cannot invoke '$name' with named argument(s).")
               return (exp, None())
-            case _ => return checkInvokeNamed(exp)
+            case _ =>
+              val (newExp, tOpt) = checkInvokeNamed(exp)
+              var r = newExp.asInstanceOf[AST.Exp.InvokeNamed]
+              if (r.receiverOpt.isEmpty) {
+                r.ident.resOpt match {
+                  case Some(res: AST.ResolvedInfo.Var) if !res.isInObject =>
+                    r = r(receiverOpt = Some(AST.Exp.This(AST.TypedAttr(r.ident.posOpt, scope.thisOpt))))
+                  case _ =>
+                }
+              }
+              return (r, tOpt)
           }
 
         case exp: AST.Exp.LitB => return (exp, exp.typedOpt)
@@ -5155,8 +5182,8 @@ import TypeChecker._
   }
 
   def checkDataRefinement(scope: Scope.Local, stmt: AST.Stmt.DataRefinement, reporter: Reporter): AST.Stmt.DataRefinement = {
-    val rep = checkModifyExp("represent data using", scope, stmt.rep, reporter).asInstanceOf[AST.Exp.Ident]
-    val refs: ISZ[AST.Exp.Ident] = for (m <- stmt.refs) yield checkModifyExp("refine data using", scope, m, reporter).asInstanceOf[AST.Exp.Ident]
+    val rep = checkModifyExp("represent data using", scope, stmt.rep, reporter)
+    val refs: ISZ[AST.Exp.Ref] = for (m <- stmt.refs) yield checkModifyExp("refine data using", scope, m, reporter)
     var claims = ISZ[AST.Exp]()
     val expectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
     for (claim <- stmt.claims) {

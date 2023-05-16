@@ -1027,8 +1027,8 @@ object MsgPack {
 
     def write_astStmtDataRefinement(o: org.sireum.lang.ast.Stmt.DataRefinement): Unit = {
       writer.writeZ(Constants._astStmtDataRefinement)
-      write_astExpIdent(o.rep)
-      writer.writeISZ(o.refs, write_astExpIdent _)
+      write_astExpRef(o.rep)
+      writer.writeISZ(o.refs, write_astExpRef _)
       writer.writeISZ(o.claims, write_astExp _)
       write_astAttr(o.attr)
     }
@@ -3245,8 +3245,8 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astStmtDataRefinement)
       }
-      val rep = read_astExpIdent()
-      val refs = reader.readISZ(read_astExpIdent _)
+      val rep = read_astExpRef()
+      val refs = reader.readISZ(read_astExpRef _)
       val claims = reader.readISZ(read_astExp _)
       val attr = read_astAttr()
       return org.sireum.lang.ast.Stmt.DataRefinement(rep, refs, claims, attr)

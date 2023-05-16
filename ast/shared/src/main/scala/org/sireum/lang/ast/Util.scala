@@ -244,6 +244,31 @@ object Util {
     }
   }
 
+  @record class LabeledExpMiner(val kind: String, var map: HashSMap[Z, Exp.Labeled], val reporter: Reporter) extends MTransformer {
+    override def postExpLabeled(o: Exp.Labeled): MOption[Exp] = {
+      val num = labeledNumOf(o)
+      map.get(num) match {
+        case Some(e) =>
+          val pos = e.posOpt.get
+          reporter.error(o.posOpt, kind, s"The same label has been declared at [${pos.beginLine}, ${pos.beginColumn}]")
+        case _ =>
+          map = map + num ~> o
+      }
+      return MNone()
+    }
+  }
+
+  @datatype class LabeledExpAbstractor(nums: HashSet[Z]) extends Transformer.PrePost[B] {
+    override def preExpLabeled(ctx: B, o: Exp.Labeled): Transformer.PreResult[B, Exp] = {
+      val num = labeledNumOf(o)
+      if (nums.contains(num)) {
+        return Transformer.PreResult(ctx, T, Some(Exp.Sym(num, TypedAttr(o.posOpt, o.typedOpt))))
+      } else {
+        return Transformer.PreResult(ctx, T, None())
+      }
+    }
+  }
+
   val nonConstantPrefixes: HashSet[String] = HashSet ++ ISZ[String]("proc", "sn")
 
   val symbolCharMap: HashMap[C, String] = HashMap ++ ISZ(
@@ -654,5 +679,22 @@ object Util {
       case _ =>
     }
     return None()
+  }
+
+  @strictpure def labeledNumOf(exp: Exp.Labeled): Z = exp.numOpt match {
+    case Some(num) => num.value
+    case _ => 0
+  }
+
+  def mineLabeledExps(kind: String, exp: Exp, reporter: Reporter): HashSMap[Z, Exp.Labeled] = {
+    val lem = Util.LabeledExpMiner(kind, HashSMap.empty, Reporter.create)
+    lem.transformExp(exp)
+    reporter.reports(lem.reporter.messages)
+    return lem.map
+  }
+
+  def abstractLabeledExps(exp: Exp, nums: HashSet[Z]): Exp = {
+    val lea = Transformer(Util.LabeledExpAbstractor(nums))
+    return lea.transformExp(F, exp).resultOpt.getOrElse(exp)
   }
 }

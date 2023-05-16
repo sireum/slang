@@ -655,13 +655,13 @@ object Stmt {
     @strictpure override def hasReturn: B = F
   }
 
-  @datatype class DataRefinement(val rep: Exp.Ident,
-                                 val refs: ISZ[Exp.Ident],
+  @datatype class DataRefinement(val rep: Exp.Ref,
+                                 val refs: ISZ[Exp.Ref],
                                  val claims: ISZ[Exp],
                                  @hidden val attr: Attr) extends Spec {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @pure override def prettyST: ST = {
-      return st"Contract(DataRefinement(${rep.prettyST})(${(for (ref <- refs) yield ref.prettyST, ", ")})(${(for (claim <- claims) yield claim.prettyST, ", ")}))"
+      return st"Contract(DataRefinement(${rep.asExp.prettyST})(${(for (ref <- refs) yield ref.asExp.prettyST, ", ")})(${(for (claim <- claims) yield claim.prettyST, ", ")}))"
     }
     @strictpure override def isInstruction: B = F
     @strictpure override def hasReturn: B = F
