@@ -31,7 +31,6 @@ import org.sireum.message._
 import org.sireum.lang.symbol._
 import org.sireum.lang.symbol.Resolver._
 import org.sireum.lang.{ast => AST}
-import org.sireum.U64._
 
 object TypeHierarchy {
 
@@ -184,18 +183,6 @@ object TypeHierarchy {
         }
       }
 
-      override def postResolvedInfoMethod(ctx: Z, o: AST.ResolvedInfo.Method): AST.Transformer.TPostResult[Z, AST.ResolvedInfo] = {
-        return AST.Transformer.TPostResult(ctx, Some(o(tpeOpt = None(), reads = ISZ(), writes = ISZ())))
-      }
-
-      override def postResolvedInfoLocalVar(ctx: Z, o: AST.ResolvedInfo.LocalVar): AST.Transformer.TPostResult[Z, AST.ResolvedInfo] = {
-        if (o.scope == AST.ResolvedInfo.LocalVar.Scope.Current && !o.isVal && !o.isSpec) {
-          return AST.Transformer.TPostResult(ctx, Some(o(scope = AST.ResolvedInfo.LocalVar.Scope.Current, isVal = F, isSpec = F)))
-        } else {
-          return AST.Transformer.TPostResult(ctx, None())
-        }
-      }
-
       override def preExpAt(ctx: Z, o: AST.Exp.At): AST.Transformer.PreResult[Z, AST.Exp] = {
         if (o.linesFresh.nonEmpty) {
           return AST.Transformer.PreResult(ctx, T, Some(o(linesFresh = ISZ())))
@@ -320,8 +307,19 @@ object TypeHierarchy {
         stack = stack.pop.get._2
         return if (changed) MSome(o(undecls = newUndecls)) else MNone()
       }
-    }
 
+      override def postResolvedInfoMethod(o: AST.ResolvedInfo.Method): MOption[AST.ResolvedInfo] = {
+        return MSome(o(tpeOpt = None(), reads = ISZ(), writes = ISZ()))
+      }
+
+      override def postResolvedInfoLocalVar(o: AST.ResolvedInfo.LocalVar): MOption[AST.ResolvedInfo] = {
+        if (o.scope == AST.ResolvedInfo.LocalVar.Scope.Current && !o.isVal && !o.isSpec) {
+          return MSome(o(scope = AST.ResolvedInfo.LocalVar.Scope.Current, isVal = F, isSpec = F))
+        } else {
+          return MNone()
+        }
+      }
+    }
   }
 
   @datatype class LocalVarContextPrePostSubstitutor(val oldContext: ISZ[String], val newContext: ISZ[String]) extends AST.Transformer.PrePost[B] {
