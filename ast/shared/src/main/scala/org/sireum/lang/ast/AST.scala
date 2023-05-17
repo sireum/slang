@@ -1675,7 +1675,11 @@ object Exp {
 
     @pure override def prettyST: ST = {
       val targsOpt: Option[ST] = if (targs.isEmpty) None() else Some(st"[${(targs, "")}]")
-      return st"${receiverOpt.map((rcv: Exp) => st"${rcv.prettyST}.")}${id.value}$targsOpt"
+      val rcvOpt: Option[Exp] = receiverOpt match {
+        case Some(exp: Exp.This) if posOpt.nonEmpty && exp.posOpt == posOpt => None()
+        case _ => receiverOpt
+      }
+      return st"${rcvOpt.map((rcv: Exp) => st"${rcv.prettyST}.")}${id.value}$targsOpt"
     }
 
   }
@@ -1695,7 +1699,11 @@ object Exp {
         case Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.Apply)) =>
           return st"${receiverOpt.get.prettyST}$targsOpt$as"
         case _ =>
-          return st"${receiverOpt.map((rcv: Exp) => st"${rcv.prettyST}.")}${ident.id.value}$targsOpt$as"
+          val rcvOpt: Option[Exp] = receiverOpt match {
+            case Some(exp: Exp.This) if ident.posOpt.nonEmpty && exp.posOpt == ident.posOpt => None()
+            case _ => receiverOpt
+          }
+          return st"${rcvOpt.map((rcv: Exp) => st"${rcv.prettyST}.")}${ident.id.value}$targsOpt$as"
       }
     }
   }
@@ -1714,7 +1722,12 @@ object Exp {
       ident.attr.resOpt match {
         case Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.Apply)) =>
           return st"${receiverOpt.map((rcv: Exp) => st"${rcv.prettyST}")}$targsOpt$as"
-        case _ => return st"${receiverOpt.map((rcv: Exp) => st"${rcv.prettyST}.")}${ident.id.value}$targsOpt$as"
+        case _ =>
+          val rcvOpt: Option[Exp] = receiverOpt match {
+            case Some(exp: Exp.This) if ident.posOpt.nonEmpty && exp.posOpt == ident.posOpt => None()
+            case _ => receiverOpt
+          }
+          return st"${rcvOpt.map((rcv: Exp) => st"${rcv.prettyST}.")}${ident.id.value}$targsOpt$as"
       }
     }
   }
