@@ -3436,9 +3436,13 @@ import TypeChecker._
               val (newExp, tOpt) = checkInvoke(exp)
               var r = newExp.asInstanceOf[AST.Exp.Invoke]
               if (r.receiverOpt.isEmpty) {
+                def updateR(): Unit = {
+                  r = r(receiverOpt = Some(AST.Exp.This(AST.TypedAttr(r.ident.posOpt, scope.thisOpt))))
+                }
                 r.ident.resOpt match {
-                  case Some(res: AST.ResolvedInfo.Var) if !res.isInObject =>
-                    r = r(receiverOpt = Some(AST.Exp.This(AST.TypedAttr(r.ident.posOpt, scope.thisOpt))))
+                  case Some(res: AST.ResolvedInfo.Var) if !res.isInObject => updateR()
+                  case Some(res: AST.ResolvedInfo.Method) if !res.isInObject &&
+                    typeHierarchy.typeMap.get(res.owner).nonEmpty => updateR()
                   case _ =>
                 }
               }
@@ -3455,9 +3459,13 @@ import TypeChecker._
               val (newExp, tOpt) = checkInvokeNamed(exp)
               var r = newExp.asInstanceOf[AST.Exp.InvokeNamed]
               if (r.receiverOpt.isEmpty) {
+                def updateNamedR(): Unit = {
+                  r = r(receiverOpt = Some(AST.Exp.This(AST.TypedAttr(r.ident.posOpt, scope.thisOpt))))
+                }
                 r.ident.resOpt match {
-                  case Some(res: AST.ResolvedInfo.Var) if !res.isInObject =>
-                    r = r(receiverOpt = Some(AST.Exp.This(AST.TypedAttr(r.ident.posOpt, scope.thisOpt))))
+                  case Some(res: AST.ResolvedInfo.Var) if !res.isInObject => updateNamedR()
+                  case Some(res: AST.ResolvedInfo.Method) if !res.isInObject &&
+                    typeHierarchy.typeMap.get(res.owner).nonEmpty => updateNamedR()
                   case _ =>
                 }
               }
