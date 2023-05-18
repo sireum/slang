@@ -4870,13 +4870,20 @@ import TypeChecker._
           }
           return just(invoke = newInvoke)
         case just: AST.ProofAst.Step.Justification.ApplyNamed =>
-          val newInvoke = checkExp(None(), scope, just.invoke, reporter)._1.asInstanceOf[AST.Exp.InvokeNamed]
-          newInvoke.ident.typedOpt match {
-            case Some(t: AST.Typed.Method) if t.isInObject && (t.tpe.isPure || t.mode == AST.MethodMode.Just) && t.tpe.ret == AST.Typed.unit =>
-            case Some(_) => reporter.error(newInvoke.posOpt, typeCheckerKind, errMessage)
+          val (newExp, tOpt) = checkExp(None(), scope, just.invoke, reporter)
+          val r = just(invoke = newExp.asInstanceOf[AST.Exp.InvokeNamed])
+          if (tOpt.isEmpty) {
+            return r
+          }
+          r.invoke.ident.typedOpt match {
+            case Some(t: AST.Typed.Method) if t.isInObject && (t.tpe.isPure || t.mode == AST.MethodMode.Just) &&
+              t.tpe.ret == AST.Typed.unit =>
+            case Some(_) => reporter.error(r.invoke.posOpt, typeCheckerKind, errMessage)
             case _ =>
           }
-          return just(invoke = newInvoke)
+          return AST.ProofAst.Step.Justification.Apply(
+            invoke = AST.Exp.Invoke(r.invoke.receiverOpt, r.invoke.ident, r.invoke.targs, r.args, r.invoke.attr),
+            witnesses = r.witnesses)
         case just: AST.ProofAst.Step.Justification.ApplyEta =>
           val newEta = checkExp(None(), scope, just.eta, reporter)._1.asInstanceOf[AST.Exp.Eta]
           newEta.ref.asExp.typedOpt match {
