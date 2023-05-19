@@ -293,19 +293,8 @@ object TypeHierarchy {
       }
 
       override def postBody(o: AST.Body): MOption[AST.Body] = {
-        var newUndecls = ISZ[AST.ResolvedInfo.LocalVar]()
-        var changed = F
-        for (undecl <- o.undecls) {
-          updateLocalVar(undecl) match {
-            case Some(newUndecl) =>
-              changed = T
-              newUndecls = newUndecls :+ newUndecl
-            case _ =>
-              newUndecls = newUndecls :+ undecl
-          }
-        }
         stack = stack.pop.get._2
-        return if (changed) MSome(o(undecls = newUndecls)) else MNone()
+        return if (o.undecls.nonEmpty) MSome(o(undecls = ISZ())) else MNone()
       }
 
       override def postResolvedInfoMethod(o: AST.ResolvedInfo.Method): MOption[AST.ResolvedInfo] = {
