@@ -693,8 +693,18 @@ object Util {
     return lem.map
   }
 
-  def abstractLabeledExps(exp: Exp, nums: HashSet[Z]): Exp = {
+  @pure def abstractLabeledExps(exp: Exp, nums: HashSet[Z]): Exp = {
     val lea = Transformer(Util.LabeledExpAbstractor(nums))
     return lea.transformExp(F, exp).resultOpt.getOrElse(exp)
+  }
+
+  @pure def invokeReceiverIdent(receiverOpt: Option[Exp], ident: Exp): (B, Option[Exp], Exp.Ident) = {
+    (receiverOpt, ident) match {
+      case (_, ident: Exp.Ident) => return (F, receiverOpt, ident)
+      case (None(), ident: Exp.Select) => return (F, ident.receiverOpt, Exp.Ident(ident.id, ident.attr))
+      case (None(), _) => return (T, Some(ident), Exp.Ident(Id("apply", Attr(ident.posOpt)), ResolvedAttr(
+        ident.posOpt, Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.Apply)), ident.typedOpt)))
+      case (_, _) => halt(s"Infeasible: $receiverOpt.$ident")
+    }
   }
 }
