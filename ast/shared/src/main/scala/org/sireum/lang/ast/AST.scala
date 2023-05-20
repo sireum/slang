@@ -1024,15 +1024,20 @@ object ProofAst {
     @datatype trait Justification {
       @strictpure def posOpt: Option[Position]
       @strictpure def prettyST: ST
-    }
-
-    @datatype trait Inception extends Justification {
+      @strictpure def hasWitness: B
       @strictpure def witnesses: ISZ[ProofAst.StepId]
+      @strictpure def witnessesStOpt: Option[ST] =
+        if (hasWitness) None()
+        else if (witnesses.size == 0) Some(st" T")
+        else if (witnesses.size == 1) Some(st" and ${witnesses(0).prettyST}")
+        else Some(st" and (${(for (w <- witnesses) yield w.prettyST, ", ")})")
     }
 
     object Justification {
 
-      @datatype class Ref(val id: Exp.Ref) extends Justification {
+      @datatype class Ref(val id: Exp.Ref,
+                          val hasWitness: B,
+                          val witnesses: ISZ[ProofAst.StepId]) extends Justification {
         @strictpure override def posOpt: Option[Position] = id.asExp.posOpt
         @strictpure def idString: String = {
           id match {
@@ -1056,20 +1061,24 @@ object ProofAst {
           }
         }
         @pure override def prettyST: ST = {
-          return id.asExp.prettyST
+          return st"${id.asExp.prettyST}$witnessesStOpt"
         }
       }
 
-      @datatype class Apply(val invoke: Exp.Invoke, val witnesses: ISZ[ProofAst.StepId]) extends Inception {
+      @datatype class Apply(val invoke: Exp.Invoke,
+                            val hasWitness: B,
+                            val witnesses: ISZ[ProofAst.StepId]) extends Justification {
         @strictpure def invokeIdent: Exp.Ident = invoke.ident
         @strictpure def args: ISZ[Exp] = invoke.args
         @strictpure override def posOpt: Option[Position] = invoke.ident.posOpt
         @pure override def prettyST: ST = {
-          return st"${invoke.prettyST} and (${(for (w <- witnesses) yield w.prettyST, ", ")})"
+          return st"${invoke.prettyST}$witnessesStOpt"
         }
       }
 
-      @datatype class ApplyNamed(val invoke: Exp.InvokeNamed, val witnesses: ISZ[ProofAst.StepId]) extends Inception {
+      @datatype class ApplyNamed(val invoke: Exp.InvokeNamed,
+                                 val hasWitness: B,
+                                 val witnesses: ISZ[ProofAst.StepId]) extends Justification {
         @strictpure def invokeIdent: Exp.Ident = invoke.ident
         @pure def args: ISZ[Exp] = {
           val r = MSZ.create[Option[Exp]](invoke.args.size, None())
@@ -1080,14 +1089,16 @@ object ProofAst {
         }
         @strictpure override def posOpt: Option[Position] = invoke.ident.posOpt
         @pure override def prettyST: ST = {
-          return st"${invoke.prettyST} and (${(for (w <- witnesses) yield w.prettyST, ", ")})"
+          return st"${invoke.prettyST}$witnessesStOpt"
         }
       }
 
-      @datatype class ApplyEta(val eta: Exp.Eta, val witnesses: ISZ[ProofAst.StepId]) extends Inception {
+      @datatype class ApplyEta(val eta: Exp.Eta,
+                               val hasWitness: B,
+                               val witnesses: ISZ[ProofAst.StepId]) extends Justification {
         @strictpure override def posOpt: Option[Position] = eta.posOpt
         @pure override def prettyST: ST = {
-          return st"${eta.prettyST} and (${(for (w <- witnesses) yield w.prettyST, ", ")})"
+          return st"${eta.prettyST}$witnessesStOpt"
         }
       }
 

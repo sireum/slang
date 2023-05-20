@@ -317,17 +317,17 @@ object MTransformer {
 
   val PostResultProofAstStepJustificationRef: MOption[ProofAst.Step.Justification] = MNone()
 
-  val PreResultProofAstStepJustificationApply: PreResult[ProofAst.Step.Inception] = PreResult(T, MNone())
+  val PreResultProofAstStepJustificationApply: PreResult[ProofAst.Step.Justification] = PreResult(T, MNone())
 
-  val PostResultProofAstStepJustificationApply: MOption[ProofAst.Step.Inception] = MNone()
+  val PostResultProofAstStepJustificationApply: MOption[ProofAst.Step.Justification] = MNone()
 
-  val PreResultProofAstStepJustificationApplyNamed: PreResult[ProofAst.Step.Inception] = PreResult(T, MNone())
+  val PreResultProofAstStepJustificationApplyNamed: PreResult[ProofAst.Step.Justification] = PreResult(T, MNone())
 
-  val PostResultProofAstStepJustificationApplyNamed: MOption[ProofAst.Step.Inception] = MNone()
+  val PostResultProofAstStepJustificationApplyNamed: MOption[ProofAst.Step.Justification] = MNone()
 
-  val PreResultProofAstStepJustificationApplyEta: PreResult[ProofAst.Step.Inception] = PreResult(T, MNone())
+  val PreResultProofAstStepJustificationApplyEta: PreResult[ProofAst.Step.Justification] = PreResult(T, MNone())
 
-  val PostResultProofAstStepJustificationApplyEta: MOption[ProofAst.Step.Inception] = MNone()
+  val PostResultProofAstStepJustificationApplyEta: MOption[ProofAst.Step.Justification] = MNone()
 
   val PreResultCase: PreResult[Case] = PreResult(T, MNone())
 
@@ -1141,32 +1141,6 @@ import MTransformer._
   def preProofAstStepJustification(o: ProofAst.Step.Justification): PreResult[ProofAst.Step.Justification] = {
     o match {
       case o: ProofAst.Step.Justification.Ref => return preProofAstStepJustificationRef(o)
-      case o: ProofAst.Step.Justification.Apply =>
-        val r: PreResult[ProofAst.Step.Justification] = preProofAstStepJustificationApply(o) match {
-         case PreResult(continu, MSome(r: ProofAst.Step.Justification)) => PreResult(continu, MSome[ProofAst.Step.Justification](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type ProofAst.Step.Justification")
-         case PreResult(continu, _) => PreResult(continu, MNone[ProofAst.Step.Justification]())
-        }
-        return r
-      case o: ProofAst.Step.Justification.ApplyNamed =>
-        val r: PreResult[ProofAst.Step.Justification] = preProofAstStepJustificationApplyNamed(o) match {
-         case PreResult(continu, MSome(r: ProofAst.Step.Justification)) => PreResult(continu, MSome[ProofAst.Step.Justification](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type ProofAst.Step.Justification")
-         case PreResult(continu, _) => PreResult(continu, MNone[ProofAst.Step.Justification]())
-        }
-        return r
-      case o: ProofAst.Step.Justification.ApplyEta =>
-        val r: PreResult[ProofAst.Step.Justification] = preProofAstStepJustificationApplyEta(o) match {
-         case PreResult(continu, MSome(r: ProofAst.Step.Justification)) => PreResult(continu, MSome[ProofAst.Step.Justification](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type ProofAst.Step.Justification")
-         case PreResult(continu, _) => PreResult(continu, MNone[ProofAst.Step.Justification]())
-        }
-        return r
-    }
-  }
-
-  def preProofAstStepInception(o: ProofAst.Step.Inception): PreResult[ProofAst.Step.Inception] = {
-    o match {
       case o: ProofAst.Step.Justification.Apply => return preProofAstStepJustificationApply(o)
       case o: ProofAst.Step.Justification.ApplyNamed => return preProofAstStepJustificationApplyNamed(o)
       case o: ProofAst.Step.Justification.ApplyEta => return preProofAstStepJustificationApplyEta(o)
@@ -1177,15 +1151,15 @@ import MTransformer._
     return PreResultProofAstStepJustificationRef
   }
 
-  def preProofAstStepJustificationApply(o: ProofAst.Step.Justification.Apply): PreResult[ProofAst.Step.Inception] = {
+  def preProofAstStepJustificationApply(o: ProofAst.Step.Justification.Apply): PreResult[ProofAst.Step.Justification] = {
     return PreResultProofAstStepJustificationApply
   }
 
-  def preProofAstStepJustificationApplyNamed(o: ProofAst.Step.Justification.ApplyNamed): PreResult[ProofAst.Step.Inception] = {
+  def preProofAstStepJustificationApplyNamed(o: ProofAst.Step.Justification.ApplyNamed): PreResult[ProofAst.Step.Justification] = {
     return PreResultProofAstStepJustificationApplyNamed
   }
 
-  def preProofAstStepJustificationApplyEta(o: ProofAst.Step.Justification.ApplyEta): PreResult[ProofAst.Step.Inception] = {
+  def preProofAstStepJustificationApplyEta(o: ProofAst.Step.Justification.ApplyEta): PreResult[ProofAst.Step.Justification] = {
     return PreResultProofAstStepJustificationApplyEta
   }
 
@@ -2246,32 +2220,6 @@ import MTransformer._
   def postProofAstStepJustification(o: ProofAst.Step.Justification): MOption[ProofAst.Step.Justification] = {
     o match {
       case o: ProofAst.Step.Justification.Ref => return postProofAstStepJustificationRef(o)
-      case o: ProofAst.Step.Justification.Apply =>
-        val r: MOption[ProofAst.Step.Justification] = postProofAstStepJustificationApply(o) match {
-         case MSome(result: ProofAst.Step.Justification) => MSome[ProofAst.Step.Justification](result)
-         case MSome(_) => halt("Can only produce object of type ProofAst.Step.Justification")
-         case _ => MNone[ProofAst.Step.Justification]()
-        }
-        return r
-      case o: ProofAst.Step.Justification.ApplyNamed =>
-        val r: MOption[ProofAst.Step.Justification] = postProofAstStepJustificationApplyNamed(o) match {
-         case MSome(result: ProofAst.Step.Justification) => MSome[ProofAst.Step.Justification](result)
-         case MSome(_) => halt("Can only produce object of type ProofAst.Step.Justification")
-         case _ => MNone[ProofAst.Step.Justification]()
-        }
-        return r
-      case o: ProofAst.Step.Justification.ApplyEta =>
-        val r: MOption[ProofAst.Step.Justification] = postProofAstStepJustificationApplyEta(o) match {
-         case MSome(result: ProofAst.Step.Justification) => MSome[ProofAst.Step.Justification](result)
-         case MSome(_) => halt("Can only produce object of type ProofAst.Step.Justification")
-         case _ => MNone[ProofAst.Step.Justification]()
-        }
-        return r
-    }
-  }
-
-  def postProofAstStepInception(o: ProofAst.Step.Inception): MOption[ProofAst.Step.Inception] = {
-    o match {
       case o: ProofAst.Step.Justification.Apply => return postProofAstStepJustificationApply(o)
       case o: ProofAst.Step.Justification.ApplyNamed => return postProofAstStepJustificationApplyNamed(o)
       case o: ProofAst.Step.Justification.ApplyEta => return postProofAstStepJustificationApplyEta(o)
@@ -2282,15 +2230,15 @@ import MTransformer._
     return PostResultProofAstStepJustificationRef
   }
 
-  def postProofAstStepJustificationApply(o: ProofAst.Step.Justification.Apply): MOption[ProofAst.Step.Inception] = {
+  def postProofAstStepJustificationApply(o: ProofAst.Step.Justification.Apply): MOption[ProofAst.Step.Justification] = {
     return PostResultProofAstStepJustificationApply
   }
 
-  def postProofAstStepJustificationApplyNamed(o: ProofAst.Step.Justification.ApplyNamed): MOption[ProofAst.Step.Inception] = {
+  def postProofAstStepJustificationApplyNamed(o: ProofAst.Step.Justification.ApplyNamed): MOption[ProofAst.Step.Justification] = {
     return PostResultProofAstStepJustificationApplyNamed
   }
 
-  def postProofAstStepJustificationApplyEta(o: ProofAst.Step.Justification.ApplyEta): MOption[ProofAst.Step.Inception] = {
+  def postProofAstStepJustificationApplyEta(o: ProofAst.Step.Justification.ApplyEta): MOption[ProofAst.Step.Justification] = {
     return PostResultProofAstStepJustificationApplyEta
   }
 
@@ -3994,8 +3942,9 @@ import MTransformer._
       val rOpt: MOption[ProofAst.Step.Justification] = o2 match {
         case o2: ProofAst.Step.Justification.Ref =>
           val r0: MOption[Exp.Ref] = transformExpRef(o2.id)
-          if (hasChanged || r0.nonEmpty)
-            MSome(o2(id = r0.getOrElse(o2.id)))
+          val r1: MOption[IS[Z, ProofAst.StepId]] = transformISZ(o2.witnesses, transformProofAstStepId _)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id), witnesses = r1.getOrElse(o2.witnesses)))
           else
             MNone()
         case o2: ProofAst.Step.Justification.Apply =>
@@ -4029,52 +3978,6 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: ProofAst.Step.Justification = r.getOrElse(o)
     val postR: MOption[ProofAst.Step.Justification] = postProofAstStepJustification(o2)
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
-  def transformProofAstStepInception(o: ProofAst.Step.Inception): MOption[ProofAst.Step.Inception] = {
-    val preR: PreResult[ProofAst.Step.Inception] = preProofAstStepInception(o)
-    val r: MOption[ProofAst.Step.Inception] = if (preR.continu) {
-      val o2: ProofAst.Step.Inception = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val rOpt: MOption[ProofAst.Step.Inception] = o2 match {
-        case o2: ProofAst.Step.Justification.Apply =>
-          val r0: MOption[Exp.Invoke] = transformExpInvoke(o2.invoke)
-          val r1: MOption[IS[Z, ProofAst.StepId]] = transformISZ(o2.witnesses, transformProofAstStepId _)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(invoke = r0.getOrElse(o2.invoke), witnesses = r1.getOrElse(o2.witnesses)))
-          else
-            MNone()
-        case o2: ProofAst.Step.Justification.ApplyNamed =>
-          val r0: MOption[Exp.InvokeNamed] = transformExpInvokeNamed(o2.invoke)
-          val r1: MOption[IS[Z, ProofAst.StepId]] = transformISZ(o2.witnesses, transformProofAstStepId _)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(invoke = r0.getOrElse(o2.invoke), witnesses = r1.getOrElse(o2.witnesses)))
-          else
-            MNone()
-        case o2: ProofAst.Step.Justification.ApplyEta =>
-          val r0: MOption[Exp.Eta] = transformExpEta(o2.eta)
-          val r1: MOption[IS[Z, ProofAst.StepId]] = transformISZ(o2.witnesses, transformProofAstStepId _)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(eta = r0.getOrElse(o2.eta), witnesses = r1.getOrElse(o2.witnesses)))
-          else
-            MNone()
-      }
-      rOpt
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: ProofAst.Step.Inception = r.getOrElse(o)
-    val postR: MOption[ProofAst.Step.Inception] = postProofAstStepInception(o2)
     if (postR.nonEmpty) {
       return postR
     } else if (hasChanged) {

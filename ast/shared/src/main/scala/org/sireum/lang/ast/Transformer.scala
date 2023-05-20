@@ -475,32 +475,6 @@ object Transformer {
     @pure def preProofAstStepJustification(ctx: Context, o: ProofAst.Step.Justification): PreResult[Context, ProofAst.Step.Justification] = {
       o match {
         case o: ProofAst.Step.Justification.Ref => return preProofAstStepJustificationRef(ctx, o)
-        case o: ProofAst.Step.Justification.Apply =>
-          val r: PreResult[Context, ProofAst.Step.Justification] = preProofAstStepJustificationApply(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: ProofAst.Step.Justification)) => PreResult(preCtx, continu, Some[ProofAst.Step.Justification](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type ProofAst.Step.Justification")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[ProofAst.Step.Justification]())
-          }
-          return r
-        case o: ProofAst.Step.Justification.ApplyNamed =>
-          val r: PreResult[Context, ProofAst.Step.Justification] = preProofAstStepJustificationApplyNamed(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: ProofAst.Step.Justification)) => PreResult(preCtx, continu, Some[ProofAst.Step.Justification](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type ProofAst.Step.Justification")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[ProofAst.Step.Justification]())
-          }
-          return r
-        case o: ProofAst.Step.Justification.ApplyEta =>
-          val r: PreResult[Context, ProofAst.Step.Justification] = preProofAstStepJustificationApplyEta(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: ProofAst.Step.Justification)) => PreResult(preCtx, continu, Some[ProofAst.Step.Justification](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type ProofAst.Step.Justification")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[ProofAst.Step.Justification]())
-          }
-          return r
-      }
-    }
-
-    @pure def preProofAstStepInception(ctx: Context, o: ProofAst.Step.Inception): PreResult[Context, ProofAst.Step.Inception] = {
-      o match {
         case o: ProofAst.Step.Justification.Apply => return preProofAstStepJustificationApply(ctx, o)
         case o: ProofAst.Step.Justification.ApplyNamed => return preProofAstStepJustificationApplyNamed(ctx, o)
         case o: ProofAst.Step.Justification.ApplyEta => return preProofAstStepJustificationApplyEta(ctx, o)
@@ -511,15 +485,15 @@ object Transformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preProofAstStepJustificationApply(ctx: Context, o: ProofAst.Step.Justification.Apply): PreResult[Context, ProofAst.Step.Inception] = {
+    @pure def preProofAstStepJustificationApply(ctx: Context, o: ProofAst.Step.Justification.Apply): PreResult[Context, ProofAst.Step.Justification] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preProofAstStepJustificationApplyNamed(ctx: Context, o: ProofAst.Step.Justification.ApplyNamed): PreResult[Context, ProofAst.Step.Inception] = {
+    @pure def preProofAstStepJustificationApplyNamed(ctx: Context, o: ProofAst.Step.Justification.ApplyNamed): PreResult[Context, ProofAst.Step.Justification] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preProofAstStepJustificationApplyEta(ctx: Context, o: ProofAst.Step.Justification.ApplyEta): PreResult[Context, ProofAst.Step.Inception] = {
+    @pure def preProofAstStepJustificationApplyEta(ctx: Context, o: ProofAst.Step.Justification.ApplyEta): PreResult[Context, ProofAst.Step.Justification] = {
       return PreResult(ctx, T, None())
     }
 
@@ -1580,32 +1554,6 @@ object Transformer {
     @pure def postProofAstStepJustification(ctx: Context, o: ProofAst.Step.Justification): TPostResult[Context, ProofAst.Step.Justification] = {
       o match {
         case o: ProofAst.Step.Justification.Ref => return postProofAstStepJustificationRef(ctx, o)
-        case o: ProofAst.Step.Justification.Apply =>
-          val r: TPostResult[Context, ProofAst.Step.Justification] = postProofAstStepJustificationApply(ctx, o) match {
-           case TPostResult(postCtx, Some(result: ProofAst.Step.Justification)) => TPostResult(postCtx, Some[ProofAst.Step.Justification](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type ProofAst.Step.Justification")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[ProofAst.Step.Justification]())
-          }
-          return r
-        case o: ProofAst.Step.Justification.ApplyNamed =>
-          val r: TPostResult[Context, ProofAst.Step.Justification] = postProofAstStepJustificationApplyNamed(ctx, o) match {
-           case TPostResult(postCtx, Some(result: ProofAst.Step.Justification)) => TPostResult(postCtx, Some[ProofAst.Step.Justification](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type ProofAst.Step.Justification")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[ProofAst.Step.Justification]())
-          }
-          return r
-        case o: ProofAst.Step.Justification.ApplyEta =>
-          val r: TPostResult[Context, ProofAst.Step.Justification] = postProofAstStepJustificationApplyEta(ctx, o) match {
-           case TPostResult(postCtx, Some(result: ProofAst.Step.Justification)) => TPostResult(postCtx, Some[ProofAst.Step.Justification](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type ProofAst.Step.Justification")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[ProofAst.Step.Justification]())
-          }
-          return r
-      }
-    }
-
-    @pure def postProofAstStepInception(ctx: Context, o: ProofAst.Step.Inception): TPostResult[Context, ProofAst.Step.Inception] = {
-      o match {
         case o: ProofAst.Step.Justification.Apply => return postProofAstStepJustificationApply(ctx, o)
         case o: ProofAst.Step.Justification.ApplyNamed => return postProofAstStepJustificationApplyNamed(ctx, o)
         case o: ProofAst.Step.Justification.ApplyEta => return postProofAstStepJustificationApplyEta(ctx, o)
@@ -1616,15 +1564,15 @@ object Transformer {
       return TPostResult(ctx, None())
     }
 
-    @pure def postProofAstStepJustificationApply(ctx: Context, o: ProofAst.Step.Justification.Apply): TPostResult[Context, ProofAst.Step.Inception] = {
+    @pure def postProofAstStepJustificationApply(ctx: Context, o: ProofAst.Step.Justification.Apply): TPostResult[Context, ProofAst.Step.Justification] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postProofAstStepJustificationApplyNamed(ctx: Context, o: ProofAst.Step.Justification.ApplyNamed): TPostResult[Context, ProofAst.Step.Inception] = {
+    @pure def postProofAstStepJustificationApplyNamed(ctx: Context, o: ProofAst.Step.Justification.ApplyNamed): TPostResult[Context, ProofAst.Step.Justification] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postProofAstStepJustificationApplyEta(ctx: Context, o: ProofAst.Step.Justification.ApplyEta): TPostResult[Context, ProofAst.Step.Inception] = {
+    @pure def postProofAstStepJustificationApplyEta(ctx: Context, o: ProofAst.Step.Justification.ApplyEta): TPostResult[Context, ProofAst.Step.Justification] = {
       return TPostResult(ctx, None())
     }
 
@@ -3366,10 +3314,11 @@ import Transformer._
       val rOpt: TPostResult[Context, ProofAst.Step.Justification] = o2 match {
         case o2: ProofAst.Step.Justification.Ref =>
           val r0: TPostResult[Context, Exp.Ref] = transformExpRef(preR.ctx, o2.id)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id))))
+          val r1: TPostResult[Context, IS[Z, ProofAst.StepId]] = transformISZ(r0.ctx, o2.witnesses, transformProofAstStepId _)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), witnesses = r1.resultOpt.getOrElse(o2.witnesses))))
           else
-            TPostResult(r0.ctx, None())
+            TPostResult(r1.ctx, None())
         case o2: ProofAst.Step.Justification.Apply =>
           val r0: TPostResult[Context, Exp.Invoke] = transformExpInvoke(preR.ctx, o2.invoke)
           val r1: TPostResult[Context, IS[Z, ProofAst.StepId]] = transformISZ(r0.ctx, o2.witnesses, transformProofAstStepId _)
@@ -3401,52 +3350,6 @@ import Transformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: ProofAst.Step.Justification = r.resultOpt.getOrElse(o)
     val postR: TPostResult[Context, ProofAst.Step.Justification] = pp.postProofAstStepJustification(r.ctx, o2)
-    if (postR.resultOpt.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return TPostResult(postR.ctx, Some(o2))
-    } else {
-      return TPostResult(postR.ctx, None())
-    }
-  }
-
-  @pure def transformProofAstStepInception(ctx: Context, o: ProofAst.Step.Inception): TPostResult[Context, ProofAst.Step.Inception] = {
-    val preR: PreResult[Context, ProofAst.Step.Inception] = pp.preProofAstStepInception(ctx, o)
-    val r: TPostResult[Context, ProofAst.Step.Inception] = if (preR.continu) {
-      val o2: ProofAst.Step.Inception = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val rOpt: TPostResult[Context, ProofAst.Step.Inception] = o2 match {
-        case o2: ProofAst.Step.Justification.Apply =>
-          val r0: TPostResult[Context, Exp.Invoke] = transformExpInvoke(preR.ctx, o2.invoke)
-          val r1: TPostResult[Context, IS[Z, ProofAst.StepId]] = transformISZ(r0.ctx, o2.witnesses, transformProofAstStepId _)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(invoke = r0.resultOpt.getOrElse(o2.invoke), witnesses = r1.resultOpt.getOrElse(o2.witnesses))))
-          else
-            TPostResult(r1.ctx, None())
-        case o2: ProofAst.Step.Justification.ApplyNamed =>
-          val r0: TPostResult[Context, Exp.InvokeNamed] = transformExpInvokeNamed(preR.ctx, o2.invoke)
-          val r1: TPostResult[Context, IS[Z, ProofAst.StepId]] = transformISZ(r0.ctx, o2.witnesses, transformProofAstStepId _)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(invoke = r0.resultOpt.getOrElse(o2.invoke), witnesses = r1.resultOpt.getOrElse(o2.witnesses))))
-          else
-            TPostResult(r1.ctx, None())
-        case o2: ProofAst.Step.Justification.ApplyEta =>
-          val r0: TPostResult[Context, Exp.Eta] = transformExpEta(preR.ctx, o2.eta)
-          val r1: TPostResult[Context, IS[Z, ProofAst.StepId]] = transformISZ(r0.ctx, o2.witnesses, transformProofAstStepId _)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(eta = r0.resultOpt.getOrElse(o2.eta), witnesses = r1.resultOpt.getOrElse(o2.witnesses))))
-          else
-            TPostResult(r1.ctx, None())
-      }
-      rOpt
-    } else if (preR.resultOpt.nonEmpty) {
-      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
-    } else {
-      TPostResult(preR.ctx, None())
-    }
-    val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: ProofAst.Step.Inception = r.resultOpt.getOrElse(o)
-    val postR: TPostResult[Context, ProofAst.Step.Inception] = pp.postProofAstStepInception(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {

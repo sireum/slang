@@ -4883,7 +4883,7 @@ import TypeChecker._
           }
           return AST.ProofAst.Step.Justification.Apply(
             invoke = AST.Exp.Invoke(r.invoke.receiverOpt, r.invoke.ident, r.invoke.targs, r.args, r.invoke.attr),
-            witnesses = r.witnesses)
+            hasWitness = r.hasWitness, witnesses = r.witnesses)
         case just: AST.ProofAst.Step.Justification.ApplyEta =>
           val newEta = checkExp(None(), scope, just.eta, reporter)._1.asInstanceOf[AST.Exp.Eta]
           newEta.ref.asExp.typedOpt match {

@@ -1049,18 +1049,12 @@ object JSON {
       }
     }
 
-    @pure def print_astProofAstStepInception(o: org.sireum.lang.ast.ProofAst.Step.Inception): ST = {
-      o match {
-        case o: org.sireum.lang.ast.ProofAst.Step.Justification.Apply => return print_astProofAstStepJustificationApply(o)
-        case o: org.sireum.lang.ast.ProofAst.Step.Justification.ApplyNamed => return print_astProofAstStepJustificationApplyNamed(o)
-        case o: org.sireum.lang.ast.ProofAst.Step.Justification.ApplyEta => return print_astProofAstStepJustificationApplyEta(o)
-      }
-    }
-
     @pure def print_astProofAstStepJustificationRef(o: org.sireum.lang.ast.ProofAst.Step.Justification.Ref): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.ProofAst.Step.Justification.Ref""""),
-        ("id", print_astExpRef(o.id))
+        ("id", print_astExpRef(o.id)),
+        ("hasWitness", printB(o.hasWitness)),
+        ("witnesses", printISZ(F, o.witnesses, print_astProofAstStepId _))
       ))
     }
 
@@ -1068,6 +1062,7 @@ object JSON {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.ProofAst.Step.Justification.Apply""""),
         ("invoke", print_astExpInvoke(o.invoke)),
+        ("hasWitness", printB(o.hasWitness)),
         ("witnesses", printISZ(F, o.witnesses, print_astProofAstStepId _))
       ))
     }
@@ -1076,6 +1071,7 @@ object JSON {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.ProofAst.Step.Justification.ApplyNamed""""),
         ("invoke", print_astExpInvokeNamed(o.invoke)),
+        ("hasWitness", printB(o.hasWitness)),
         ("witnesses", printISZ(F, o.witnesses, print_astProofAstStepId _))
       ))
     }
@@ -1084,6 +1080,7 @@ object JSON {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.ProofAst.Step.Justification.ApplyEta""""),
         ("eta", print_astExpEta(o.eta)),
+        ("hasWitness", printB(o.hasWitness)),
         ("witnesses", printISZ(F, o.witnesses, print_astProofAstStepId _))
       ))
     }
@@ -4440,16 +4437,6 @@ object JSON {
       }
     }
 
-    def parse_astProofAstStepInception(): org.sireum.lang.ast.ProofAst.Step.Inception = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.ProofAst.Step.Justification.Apply", "org.sireum.lang.ast.ProofAst.Step.Justification.ApplyNamed", "org.sireum.lang.ast.ProofAst.Step.Justification.ApplyEta"))
-      t.native match {
-        case "org.sireum.lang.ast.ProofAst.Step.Justification.Apply" => val r = parse_astProofAstStepJustificationApplyT(T); return r
-        case "org.sireum.lang.ast.ProofAst.Step.Justification.ApplyNamed" => val r = parse_astProofAstStepJustificationApplyNamedT(T); return r
-        case "org.sireum.lang.ast.ProofAst.Step.Justification.ApplyEta" => val r = parse_astProofAstStepJustificationApplyEtaT(T); return r
-        case _ => val r = parse_astProofAstStepJustificationApplyEtaT(T); return r
-      }
-    }
-
     def parse_astProofAstStepJustificationRef(): org.sireum.lang.ast.ProofAst.Step.Justification.Ref = {
       val r = parse_astProofAstStepJustificationRefT(F)
       return r
@@ -4462,7 +4449,13 @@ object JSON {
       parser.parseObjectKey("id")
       val id = parse_astExpRef()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ProofAst.Step.Justification.Ref(id)
+      parser.parseObjectKey("hasWitness")
+      val hasWitness = parser.parseB()
+      parser.parseObjectNext()
+      parser.parseObjectKey("witnesses")
+      val witnesses = parser.parseISZ(parse_astProofAstStepId _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.ProofAst.Step.Justification.Ref(id, hasWitness, witnesses)
     }
 
     def parse_astProofAstStepJustificationApply(): org.sireum.lang.ast.ProofAst.Step.Justification.Apply = {
@@ -4477,10 +4470,13 @@ object JSON {
       parser.parseObjectKey("invoke")
       val invoke = parse_astExpInvoke()
       parser.parseObjectNext()
+      parser.parseObjectKey("hasWitness")
+      val hasWitness = parser.parseB()
+      parser.parseObjectNext()
       parser.parseObjectKey("witnesses")
       val witnesses = parser.parseISZ(parse_astProofAstStepId _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ProofAst.Step.Justification.Apply(invoke, witnesses)
+      return org.sireum.lang.ast.ProofAst.Step.Justification.Apply(invoke, hasWitness, witnesses)
     }
 
     def parse_astProofAstStepJustificationApplyNamed(): org.sireum.lang.ast.ProofAst.Step.Justification.ApplyNamed = {
@@ -4495,10 +4491,13 @@ object JSON {
       parser.parseObjectKey("invoke")
       val invoke = parse_astExpInvokeNamed()
       parser.parseObjectNext()
+      parser.parseObjectKey("hasWitness")
+      val hasWitness = parser.parseB()
+      parser.parseObjectNext()
       parser.parseObjectKey("witnesses")
       val witnesses = parser.parseISZ(parse_astProofAstStepId _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ProofAst.Step.Justification.ApplyNamed(invoke, witnesses)
+      return org.sireum.lang.ast.ProofAst.Step.Justification.ApplyNamed(invoke, hasWitness, witnesses)
     }
 
     def parse_astProofAstStepJustificationApplyEta(): org.sireum.lang.ast.ProofAst.Step.Justification.ApplyEta = {
@@ -4513,10 +4512,13 @@ object JSON {
       parser.parseObjectKey("eta")
       val eta = parse_astExpEta()
       parser.parseObjectNext()
+      parser.parseObjectKey("hasWitness")
+      val hasWitness = parser.parseB()
+      parser.parseObjectNext()
       parser.parseObjectKey("witnesses")
       val witnesses = parser.parseISZ(parse_astProofAstStepId _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ProofAst.Step.Justification.ApplyEta(eta, witnesses)
+      return org.sireum.lang.ast.ProofAst.Step.Justification.ApplyEta(eta, hasWitness, witnesses)
     }
 
     def parse_astAssignExp(): org.sireum.lang.ast.AssignExp = {
@@ -8517,24 +8519,6 @@ object JSON {
       return r
     }
     val r = to(s, f_astProofAstStepJustification _)
-    return r
-  }
-
-  def from_astProofAstStepInception(o: org.sireum.lang.ast.ProofAst.Step.Inception, isCompact: B): String = {
-    val st = Printer.print_astProofAstStepInception(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astProofAstStepInception(s: String): Either[org.sireum.lang.ast.ProofAst.Step.Inception, Json.ErrorMsg] = {
-    def f_astProofAstStepInception(parser: Parser): org.sireum.lang.ast.ProofAst.Step.Inception = {
-      val r = parser.parse_astProofAstStepInception()
-      return r
-    }
-    val r = to(s, f_astProofAstStepInception _)
     return r
   }
 

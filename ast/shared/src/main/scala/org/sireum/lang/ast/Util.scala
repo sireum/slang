@@ -118,7 +118,7 @@ object Util {
       }
     }
 
-    override def preProofAstStepJustificationApply(o: ProofAst.Step.Justification.Apply): MTransformer.PreResult[ProofAst.Step.Inception] = {
+    override def preProofAstStepJustificationApply(o: ProofAst.Step.Justification.Apply): MTransformer.PreResult[ProofAst.Step.Justification] = {
       if (o.witnesses.isEmpty) {
         for (arg <- o.args) {
           processArg(F, arg)
@@ -131,14 +131,14 @@ object Util {
       return MTransformer.PreResultProofAstStepJustificationApply
     }
 
-    override def preProofAstStepJustificationApplyNamed(o: ProofAst.Step.Justification.ApplyNamed): MTransformer.PreResult[ProofAst.Step.Inception] = {
+    override def preProofAstStepJustificationApplyNamed(o: ProofAst.Step.Justification.ApplyNamed): MTransformer.PreResult[ProofAst.Step.Justification] = {
       for (w <- o.witnesses) {
         processStepId(w)
       }
       return MTransformer.PreResultProofAstStepJustificationApplyNamed
     }
 
-    override def preProofAstStepJustificationApplyEta(o: ProofAst.Step.Justification.ApplyEta): MTransformer.PreResult[ProofAst.Step.Inception] = {
+    override def preProofAstStepJustificationApplyEta(o: ProofAst.Step.Justification.ApplyEta): MTransformer.PreResult[ProofAst.Step.Justification] = {
       for (w <- o.witnesses) {
         processStepId(w)
       }

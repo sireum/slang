@@ -1256,34 +1256,31 @@ object MsgPack {
       }
     }
 
-    def write_astProofAstStepInception(o: org.sireum.lang.ast.ProofAst.Step.Inception): Unit = {
-      o match {
-        case o: org.sireum.lang.ast.ProofAst.Step.Justification.Apply => write_astProofAstStepJustificationApply(o)
-        case o: org.sireum.lang.ast.ProofAst.Step.Justification.ApplyNamed => write_astProofAstStepJustificationApplyNamed(o)
-        case o: org.sireum.lang.ast.ProofAst.Step.Justification.ApplyEta => write_astProofAstStepJustificationApplyEta(o)
-      }
-    }
-
     def write_astProofAstStepJustificationRef(o: org.sireum.lang.ast.ProofAst.Step.Justification.Ref): Unit = {
       writer.writeZ(Constants._astProofAstStepJustificationRef)
       write_astExpRef(o.id)
+      writer.writeB(o.hasWitness)
+      writer.writeISZ(o.witnesses, write_astProofAstStepId _)
     }
 
     def write_astProofAstStepJustificationApply(o: org.sireum.lang.ast.ProofAst.Step.Justification.Apply): Unit = {
       writer.writeZ(Constants._astProofAstStepJustificationApply)
       write_astExpInvoke(o.invoke)
+      writer.writeB(o.hasWitness)
       writer.writeISZ(o.witnesses, write_astProofAstStepId _)
     }
 
     def write_astProofAstStepJustificationApplyNamed(o: org.sireum.lang.ast.ProofAst.Step.Justification.ApplyNamed): Unit = {
       writer.writeZ(Constants._astProofAstStepJustificationApplyNamed)
       write_astExpInvokeNamed(o.invoke)
+      writer.writeB(o.hasWitness)
       writer.writeISZ(o.witnesses, write_astProofAstStepId _)
     }
 
     def write_astProofAstStepJustificationApplyEta(o: org.sireum.lang.ast.ProofAst.Step.Justification.ApplyEta): Unit = {
       writer.writeZ(Constants._astProofAstStepJustificationApplyEta)
       write_astExpEta(o.eta)
+      writer.writeB(o.hasWitness)
       writer.writeISZ(o.witnesses, write_astProofAstStepId _)
     }
 
@@ -3721,20 +3718,6 @@ object MsgPack {
       }
     }
 
-    def read_astProofAstStepInception(): org.sireum.lang.ast.ProofAst.Step.Inception = {
-      val i = reader.curr
-      val t = reader.readZ()
-      t match {
-        case Constants._astProofAstStepJustificationApply => val r = read_astProofAstStepJustificationApplyT(T); return r
-        case Constants._astProofAstStepJustificationApplyNamed => val r = read_astProofAstStepJustificationApplyNamedT(T); return r
-        case Constants._astProofAstStepJustificationApplyEta => val r = read_astProofAstStepJustificationApplyEtaT(T); return r
-        case _ =>
-          reader.error(i, s"$t is not a valid type of org.sireum.lang.ast.ProofAst.Step.Inception.")
-          val r = read_astProofAstStepJustificationApplyEtaT(T)
-          return r
-      }
-    }
-
     def read_astProofAstStepJustificationRef(): org.sireum.lang.ast.ProofAst.Step.Justification.Ref = {
       val r = read_astProofAstStepJustificationRefT(F)
       return r
@@ -3745,7 +3728,9 @@ object MsgPack {
         reader.expectZ(Constants._astProofAstStepJustificationRef)
       }
       val id = read_astExpRef()
-      return org.sireum.lang.ast.ProofAst.Step.Justification.Ref(id)
+      val hasWitness = reader.readB()
+      val witnesses = reader.readISZ(read_astProofAstStepId _)
+      return org.sireum.lang.ast.ProofAst.Step.Justification.Ref(id, hasWitness, witnesses)
     }
 
     def read_astProofAstStepJustificationApply(): org.sireum.lang.ast.ProofAst.Step.Justification.Apply = {
@@ -3758,8 +3743,9 @@ object MsgPack {
         reader.expectZ(Constants._astProofAstStepJustificationApply)
       }
       val invoke = read_astExpInvoke()
+      val hasWitness = reader.readB()
       val witnesses = reader.readISZ(read_astProofAstStepId _)
-      return org.sireum.lang.ast.ProofAst.Step.Justification.Apply(invoke, witnesses)
+      return org.sireum.lang.ast.ProofAst.Step.Justification.Apply(invoke, hasWitness, witnesses)
     }
 
     def read_astProofAstStepJustificationApplyNamed(): org.sireum.lang.ast.ProofAst.Step.Justification.ApplyNamed = {
@@ -3772,8 +3758,9 @@ object MsgPack {
         reader.expectZ(Constants._astProofAstStepJustificationApplyNamed)
       }
       val invoke = read_astExpInvokeNamed()
+      val hasWitness = reader.readB()
       val witnesses = reader.readISZ(read_astProofAstStepId _)
-      return org.sireum.lang.ast.ProofAst.Step.Justification.ApplyNamed(invoke, witnesses)
+      return org.sireum.lang.ast.ProofAst.Step.Justification.ApplyNamed(invoke, hasWitness, witnesses)
     }
 
     def read_astProofAstStepJustificationApplyEta(): org.sireum.lang.ast.ProofAst.Step.Justification.ApplyEta = {
@@ -3786,8 +3773,9 @@ object MsgPack {
         reader.expectZ(Constants._astProofAstStepJustificationApplyEta)
       }
       val eta = read_astExpEta()
+      val hasWitness = reader.readB()
       val witnesses = reader.readISZ(read_astProofAstStepId _)
-      return org.sireum.lang.ast.ProofAst.Step.Justification.ApplyEta(eta, witnesses)
+      return org.sireum.lang.ast.ProofAst.Step.Justification.ApplyEta(eta, hasWitness, witnesses)
     }
 
     def read_astAssignExp(): org.sireum.lang.ast.AssignExp = {
@@ -6916,21 +6904,6 @@ object MsgPack {
       return r
     }
     val r = to(data, f_astProofAstStepJustification _)
-    return r
-  }
-
-  def from_astProofAstStepInception(o: org.sireum.lang.ast.ProofAst.Step.Inception, pooling: B): ISZ[U8] = {
-    val w = Writer.Default(MessagePack.writer(pooling))
-    w.write_astProofAstStepInception(o)
-    return w.result
-  }
-
-  def to_astProofAstStepInception(data: ISZ[U8]): Either[org.sireum.lang.ast.ProofAst.Step.Inception, MessagePack.ErrorMsg] = {
-    def f_astProofAstStepInception(reader: Reader): org.sireum.lang.ast.ProofAst.Step.Inception = {
-      val r = reader.read_astProofAstStepInception()
-      return r
-    }
-    val r = to(data, f_astProofAstStepInception _)
     return r
   }
 
