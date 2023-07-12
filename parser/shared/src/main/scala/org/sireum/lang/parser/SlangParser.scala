@@ -31,7 +31,6 @@ import org.sireum.lang.{ast => AST}
 import org.sireum.{B, ISZ, None, Option, Some, String, Z}
 
 import scala.meta._
-import scala.meta.internal.fastparse
 import scala.meta.internal.parsers.ScalametaParser
 import scala.util.{Success, Try}
 
@@ -3967,7 +3966,7 @@ class SlangParser(
   def isSymbolFirstChar(c: Char): Boolean = {
     c match {
       case '*' | '/' | '%' | '+' | '-' | ':' | '=' | '!' | '<' | '>' | '&' | '^' | '|' => true
-      case _ => fastparse.CharPredicates.isMathSymbol(c) || fastparse.CharPredicates.isOtherSymbol(c)
+      case _ => Character.getType(c) == Character.MATH_SYMBOL || Character.getType(c) == Character.OTHER_SYMBOL
     }
   }
 
