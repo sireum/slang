@@ -1,4 +1,4 @@
-// $ANTLR 3.5.2 /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g 2023-08-16 13:37:46
+// $ANTLR 3.5.2 /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g 2023-08-16 15:08:23
  package org.sireum.lang.parser; 
 
 import org.antlr.runtime.*;
@@ -148,14 +148,14 @@ public class SlangTruthTableLexer extends Lexer {
 		try {
 			int _type = HLINE;
 			int _channel = DEFAULT_TOKEN_CHANNEL;
-			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:68:6: ( '-' '-' '-' '-' ( '-' )+ )
-			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:68:8: '-' '-' '-' '-' ( '-' )+
+			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:76:6: ( '-' '-' '-' '-' ( '-' )+ )
+			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:76:8: '-' '-' '-' '-' ( '-' )+
 			{
 			match('-'); 
 			match('-'); 
 			match('-'); 
 			match('-'); 
-			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:68:24: ( '-' )+
+			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:76:24: ( '-' )+
 			int cnt1=0;
 			loop1:
 			while (true) {
@@ -167,7 +167,7 @@ public class SlangTruthTableLexer extends Lexer {
 
 				switch (alt1) {
 				case 1 :
-					// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:68:24: '-'
+					// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:76:24: '-'
 					{
 					match('-'); 
 					}
@@ -197,8 +197,8 @@ public class SlangTruthTableLexer extends Lexer {
 		try {
 			int _type = HASH;
 			int _channel = DEFAULT_TOKEN_CHANNEL;
-			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:70:5: ( '#' )
-			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:70:7: '#'
+			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:78:5: ( '#' )
+			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:78:7: '#'
 			{
 			match('#'); 
 			}
@@ -217,8 +217,8 @@ public class SlangTruthTableLexer extends Lexer {
 		try {
 			int _type = NL;
 			int _channel = DEFAULT_TOKEN_CHANNEL;
-			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:72:3: ( '\\n' )
-			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:72:5: '\\n'
+			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:80:3: ( '\\n' )
+			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:80:5: '\\n'
 			{
 			match('\n'); 
 			}
@@ -237,8 +237,8 @@ public class SlangTruthTableLexer extends Lexer {
 		try {
 			int _type = LSQUARE;
 			int _channel = DEFAULT_TOKEN_CHANNEL;
-			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:74:8: ( '[' )
-			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:74:10: '['
+			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:82:8: ( '[' )
+			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:82:10: '['
 			{
 			match('['); 
 			}
@@ -257,8 +257,8 @@ public class SlangTruthTableLexer extends Lexer {
 		try {
 			int _type = RSQUARE;
 			int _channel = DEFAULT_TOKEN_CHANNEL;
-			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:76:8: ( ']' )
-			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:76:10: ']'
+			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:84:8: ( ']' )
+			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:84:10: ']'
 			{
 			match(']'); 
 			}
@@ -277,12 +277,12 @@ public class SlangTruthTableLexer extends Lexer {
 		try {
 			int _type = COMMENT;
 			int _channel = DEFAULT_TOKEN_CHANNEL;
-			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:78:8: ( '//' (~ ( '\\n' | '\\r' ) )* ( '\\r' )? '\\n' )
-			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:78:10: '//' (~ ( '\\n' | '\\r' ) )* ( '\\r' )? '\\n'
+			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:86:8: ( '//' (~ ( '\\n' | '\\r' ) )* ( '\\r' )? '\\n' )
+			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:86:10: '//' (~ ( '\\n' | '\\r' ) )* ( '\\r' )? '\\n'
 			{
 			match("//"); 
 
-			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:78:15: (~ ( '\\n' | '\\r' ) )*
+			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:86:15: (~ ( '\\n' | '\\r' ) )*
 			loop2:
 			while (true) {
 				int alt2=2;
@@ -311,7 +311,7 @@ public class SlangTruthTableLexer extends Lexer {
 				}
 			}
 
-			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:78:33: ( '\\r' )?
+			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:86:33: ( '\\r' )?
 			int alt3=2;
 			int LA3_0 = input.LA(1);
 			if ( (LA3_0=='\r') ) {
@@ -319,7 +319,7 @@ public class SlangTruthTableLexer extends Lexer {
 			}
 			switch (alt3) {
 				case 1 :
-					// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:78:33: '\\r'
+					// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:86:33: '\\r'
 					{
 					match('\r'); 
 					}
@@ -345,10 +345,10 @@ public class SlangTruthTableLexer extends Lexer {
 		try {
 			int _type = WS;
 			int _channel = DEFAULT_TOKEN_CHANNEL;
-			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:80:3: ( ( ' ' | '\\t' | '\\r' )+ )
-			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:80:5: ( ' ' | '\\t' | '\\r' )+
+			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:88:3: ( ( ' ' | '\\t' | '\\r' )+ )
+			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:88:5: ( ' ' | '\\t' | '\\r' )+
 			{
-			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:80:5: ( ' ' | '\\t' | '\\r' )+
+			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:88:5: ( ' ' | '\\t' | '\\r' )+
 			int cnt4=0;
 			loop4:
 			while (true) {
@@ -398,8 +398,8 @@ public class SlangTruthTableLexer extends Lexer {
 		try {
 			int _type = OTHER;
 			int _channel = DEFAULT_TOKEN_CHANNEL;
-			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:82:6: ( . )
-			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:82:8: .
+			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:90:6: ( . )
+			// /Users/robby/Repositories/Sireum/kekinian/slang/parser/shared/src/main/resources/SlangTruthTable.g:90:8: .
 			{
 			matchAny(); 
 			}

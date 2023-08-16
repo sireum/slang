@@ -38,18 +38,26 @@ options {
 
 file: table EOF ;
 
-table: others NL // others should be stars
-       HLINE NL
-       others HASH others NL
-       HLINE NL
-       row+
-       HLINE NL+
-       conclusion ;
+table: stars
+       hlinep
+       header
+       hlinep
+       rows
+       hlines
+       conclusion? ;
+
+stars: others NL+ ; // others should be *
+
+header: others HASH others NL+ ;
+
+hlinep: HLINE NL+ ;
+
+rows: row+ ;
 
 row: others HASH others NL ;
 
-vals: others ;
-
+hlines: HLINE NL* ;
+        
 conclusion:
     'Tautology' NL*
   | 'Contradictory' NL*
