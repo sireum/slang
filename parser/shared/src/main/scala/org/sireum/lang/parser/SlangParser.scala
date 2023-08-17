@@ -262,18 +262,25 @@ class SlangParser(
           translateSource(parser.parseSource())
         } else Result(text, hashSireum, None())
       } else if (fileUriOpt.isEmpty || fileUri.endsWith(".logika")) {
-        val parser = new ScalametaParser(input)(dialect)
-        val oldIn = parser.in
-        parser.in = oldIn.fork
-        parser.next()
-        parser.newLinesOpt()
-        parser.in = oldIn
-        val source = parser.parseSource()
-        if (source.stats.size == 1 && (input.text.contains("|-") || input.text.contains("⊢")) && (source.stats.head match {
-          case q"Deduce(..$_)" => false
-          case _ => true
-        })) sequentSource(source)
-        else translateSource(source)
+        if (input.text.contains("-----")) {
+          SlangTruthTableParser.parse(fileUriOpt, input.text, reporter) match {
+            case Some(tt) => Result(text, hashSireum, Some(tt))
+            case _ => Result(text, hashSireum, None())
+          }
+        } else {
+          val parser = new ScalametaParser(input)(dialect)
+          val oldIn = parser.in
+          parser.in = oldIn.fork
+          parser.next()
+          parser.newLinesOpt()
+          parser.in = oldIn
+          val source = parser.parseSource()
+          if (source.stats.size == 1 && (input.text.contains("|-") || input.text.contains("⊢")) && (source.stats.head match {
+            case q"Deduce(..$_)" => false
+            case _ => true
+          })) sequentSource(source)
+          else translateSource(source)
+        }
       } else Result(text, hashSireum, None())
     } catch {
       case e: ParseException =>

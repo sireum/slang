@@ -43,13 +43,11 @@ val astShared = moduleSharedPub(
   )
 )
 
-val (parserShared, parserJvm) = moduleSharedJvmPub(
-  baseId = s"$slang-$parser",
+val parserShared = moduleSharedPub(
+  id = s"$slang-$parser",
   baseDir = homeDir / parser,
   sharedDeps = ISZ(astShared.id),
   sharedIvyDeps = ISZ("org.scalameta::scalameta::"),
-  jvmDeps = ISZ(library),
-  jvmIvyDeps = ISZ(),
   pubOpt = pub(
     desc = "Slang Parser",
     url = "github.com/sireum/slang",
@@ -84,6 +82,6 @@ val frontendShared = moduleSharedPub(
   )
 )
 
-val project = Project.empty + astShared + parserShared + tipeShared + frontendShared + parserJvm
+val project = Project.empty + astShared + parserShared + tipeShared + frontendShared
 
 projectCli(Os.cliArgs, project)
