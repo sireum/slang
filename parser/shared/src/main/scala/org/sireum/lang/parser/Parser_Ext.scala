@@ -80,6 +80,46 @@ object Parser_Ext {
     exp.asInstanceOf[T]
   }
 
+  def parseExpOpt(fileUriOpt: Option[String], text: String, reporter: Reporter): Option[lang.ast.Exp] = {
+    val (dialect, input) = SlangParser.scalaDialect(isWorksheet = false)(text.value)
+    val metap = new ScalametaParser(input)(dialect)
+    val term = Try(metap.parseTerm()) match {
+      case Success(t) => t
+      case Failure(e) => err(e.getMessage)
+    }
+    val exp = new SlangParser(
+      text.value,
+      input,
+      dialect,
+      hashSireum = true,
+      isWorksheet = false,
+      isDiet = false,
+      fileUriOpt,
+      reporter
+    ).translateExp(term)
+    if (reporter.hasError) None() else Some(exp)
+  }
+
+  def parseSequentOpt(fileUriOpt: Option[String], text: String, reporter: Reporter): Option[lang.ast.Sequent] = {
+    val (dialect, input) = SlangParser.scalaDialect(isWorksheet = false)(text.value)
+    val metap = new ScalametaParser(input)(dialect)
+    val term = Try(metap.parseTerm()) match {
+      case Success(t) => t
+      case Failure(e) => err(e.getMessage)
+    }
+    val sequent = new SlangParser(
+      text.value,
+      input,
+      dialect,
+      hashSireum = true,
+      isWorksheet = false,
+      isDiet = false,
+      fileUriOpt,
+      reporter
+    ).translateSequent(term)
+    if (reporter.hasError) None() else Some(sequent)
+  }
+
   def parseTopUnit[T](
     text: String,
     isWorksheet: B,

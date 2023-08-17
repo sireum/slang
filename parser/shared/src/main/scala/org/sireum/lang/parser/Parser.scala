@@ -28,12 +28,17 @@ package org.sireum.lang.parser
 
 import org.sireum._
 import org.sireum.message._
+import org.sireum.lang.{ast => AST}
 
 @ext object Parser {
 
   @pure def parseStmt[T](text: String): T = $
 
   @pure def parseExp[T](text: String): T = $
+
+  def parseExpOpt(fileUriOpt: Option[String], text: String, reporter: Reporter): Option[AST.Exp] = $
+
+  def parseSequentOpt(fileUriOpt: Option[String], text: String, reporter: Reporter): Option[AST.Sequent] = $
 
   def parseTopUnit[T](text: String,
                       isWorksheet: B,
