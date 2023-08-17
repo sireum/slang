@@ -1,8 +1,0 @@
-(q) |- (p ->: q) Proof(
-  1 #> (q)             by Premise,
-  2 #> SubProof(
-    3 #> Assume(p),
-    4 #> (q)           by Premise,
-  ),
-  5 #> (p ->: q)       by ImplyI(2),
-)

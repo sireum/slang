@@ -58,12 +58,6 @@ object TopUnit {
 
   }
 
-  @datatype class SequentUnit(val fileUriOpt: Option[String], val sequent: Sequent) extends TopUnit {
-    @pure override def string: String = {
-      return sequent.prettyST.render
-    }
-  }
-
   @datatype class TruthTableUnit(val fileUriOpt: Option[String],
                                  val stars: ISZ[Position],
                                  val vars: ISZ[Id],

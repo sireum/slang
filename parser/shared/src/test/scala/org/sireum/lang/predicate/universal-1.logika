@@ -1,6 +1,0 @@
-(∀{x => human(x) ->: mortal(x)}, human(Socrates))  |- (mortal(Socrates)) Proof(
-  1 #> (∀{x => human(x) ->: mortal(x)})             by Premise,
-  2 #> (human(Socrates))                            by Premise,
-  3 #> (human(Socrates) ->: mortal(Socrates))       by AllE(1, Socrates),
-  4 #> (mortal(Socrates))                           by ImplyE(3, 2),
-)

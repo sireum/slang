@@ -275,11 +275,7 @@ class SlangParser(
           parser.newLinesOpt()
           parser.in = oldIn
           val source = parser.parseSource()
-          if (source.stats.size == 1 && (input.text.contains("|-") || input.text.contains("⊢")) && (source.stats.head match {
-            case q"Deduce(..$_)" => false
-            case _ => true
-          })) sequentSource(source)
-          else translateSource(source)
+          translateSource(source)
         }
       } else Result(text, hashSireum, None())
     } catch {
@@ -338,17 +334,6 @@ class SlangParser(
 
   def errorInSlang(pos: Position, message: Predef.String): Unit =
     error(pos, message + " in Slang.")
-
-  def sequentSource(source: Source): Result = {
-    source.stats match {
-      case List(term: Term) =>
-        val sequent = translateSequent(term)
-        Result(text, hashSireum, Some(AST.TopUnit.SequentUnit(fileUriOpt, sequent)))
-      case _ =>
-        error(source.pos, "Expecting a sequent.")
-        Result(text, hashSireum, None())
-    }
-  }
 
   def translateSource(source: Source): Result = {
     def topF(rest: List[Stat]): Result = {

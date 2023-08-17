@@ -1,8 +1,0 @@
-(p) |- (!(!p)) Proof(
-  1 #> (p)             by Premise,
-  2 #> SubProof(
-    3 #> Assume(!p),
-    4 #> (F)           by NegE(1, 3),
-  ),
-  5 #> (!(!p))         by NegI(2),
-)

@@ -48,16 +48,11 @@ object Transformer {
     @pure def preTopUnit(ctx: Context, o: TopUnit): PreResult[Context, TopUnit] = {
       o match {
         case o: TopUnit.Program => return preTopUnitProgram(ctx, o)
-        case o: TopUnit.SequentUnit => return preTopUnitSequentUnit(ctx, o)
         case o: TopUnit.TruthTableUnit => return preTopUnitTruthTableUnit(ctx, o)
       }
     }
 
     @pure def preTopUnitProgram(ctx: Context, o: TopUnit.Program): PreResult[Context, TopUnit] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preTopUnitSequentUnit(ctx: Context, o: TopUnit.SequentUnit): PreResult[Context, TopUnit] = {
       return PreResult(ctx, T, None())
     }
 
@@ -1127,16 +1122,11 @@ object Transformer {
     @pure def postTopUnit(ctx: Context, o: TopUnit): TPostResult[Context, TopUnit] = {
       o match {
         case o: TopUnit.Program => return postTopUnitProgram(ctx, o)
-        case o: TopUnit.SequentUnit => return postTopUnitSequentUnit(ctx, o)
         case o: TopUnit.TruthTableUnit => return postTopUnitTruthTableUnit(ctx, o)
       }
     }
 
     @pure def postTopUnitProgram(ctx: Context, o: TopUnit.Program): TPostResult[Context, TopUnit] = {
-      return TPostResult(ctx, None())
-    }
-
-    @pure def postTopUnitSequentUnit(ctx: Context, o: TopUnit.SequentUnit): TPostResult[Context, TopUnit] = {
       return TPostResult(ctx, None())
     }
 
@@ -2254,12 +2244,6 @@ import Transformer._
             TPostResult(r1.ctx, Some(o2(packageName = r0.resultOpt.getOrElse(o2.packageName), body = r1.resultOpt.getOrElse(o2.body))))
           else
             TPostResult(r1.ctx, None())
-        case o2: TopUnit.SequentUnit =>
-          val r0: TPostResult[Context, Sequent] = transformSequent(preR.ctx, o2.sequent)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(sequent = r0.resultOpt.getOrElse(o2.sequent))))
-          else
-            TPostResult(r0.ctx, None())
         case o2: TopUnit.TruthTableUnit =>
           val r0: TPostResult[Context, IS[Z, Id]] = transformISZ(preR.ctx, o2.vars, transformId _)
           val r1: TPostResult[Context, Sequent] = transformSequent(r0.ctx, o2.sequent)

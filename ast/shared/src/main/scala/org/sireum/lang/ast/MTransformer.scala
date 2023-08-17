@@ -69,10 +69,6 @@ object MTransformer {
 
   val PostResultTopUnitProgram: MOption[TopUnit] = MNone()
 
-  val PreResultTopUnitSequentUnit: PreResult[TopUnit] = PreResult(T, MNone())
-
-  val PostResultTopUnitSequentUnit: MOption[TopUnit] = MNone()
-
   val PreResultTopUnitTruthTableUnit: PreResult[TopUnit] = PreResult(T, MNone())
 
   val PostResultTopUnitTruthTableUnit: MOption[TopUnit] = MNone()
@@ -714,17 +710,12 @@ import MTransformer._
   def preTopUnit(o: TopUnit): PreResult[TopUnit] = {
     o match {
       case o: TopUnit.Program => return preTopUnitProgram(o)
-      case o: TopUnit.SequentUnit => return preTopUnitSequentUnit(o)
       case o: TopUnit.TruthTableUnit => return preTopUnitTruthTableUnit(o)
     }
   }
 
   def preTopUnitProgram(o: TopUnit.Program): PreResult[TopUnit] = {
     return PreResultTopUnitProgram
-  }
-
-  def preTopUnitSequentUnit(o: TopUnit.SequentUnit): PreResult[TopUnit] = {
-    return PreResultTopUnitSequentUnit
   }
 
   def preTopUnitTruthTableUnit(o: TopUnit.TruthTableUnit): PreResult[TopUnit] = {
@@ -1793,17 +1784,12 @@ import MTransformer._
   def postTopUnit(o: TopUnit): MOption[TopUnit] = {
     o match {
       case o: TopUnit.Program => return postTopUnitProgram(o)
-      case o: TopUnit.SequentUnit => return postTopUnitSequentUnit(o)
       case o: TopUnit.TruthTableUnit => return postTopUnitTruthTableUnit(o)
     }
   }
 
   def postTopUnitProgram(o: TopUnit.Program): MOption[TopUnit] = {
     return PostResultTopUnitProgram
-  }
-
-  def postTopUnitSequentUnit(o: TopUnit.SequentUnit): MOption[TopUnit] = {
-    return PostResultTopUnitSequentUnit
   }
 
   def postTopUnitTruthTableUnit(o: TopUnit.TruthTableUnit): MOption[TopUnit] = {
@@ -2880,12 +2866,6 @@ import MTransformer._
           val r1: MOption[Body] = transformBody(o2.body)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
             MSome(o2(packageName = r0.getOrElse(o2.packageName), body = r1.getOrElse(o2.body)))
-          else
-            MNone()
-        case o2: TopUnit.SequentUnit =>
-          val r0: MOption[Sequent] = transformSequent(o2.sequent)
-          if (hasChanged || r0.nonEmpty)
-            MSome(o2(sequent = r0.getOrElse(o2.sequent)))
           else
             MNone()
         case o2: TopUnit.TruthTableUnit =>

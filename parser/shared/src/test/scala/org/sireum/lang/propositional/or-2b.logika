@@ -1,5 +1,0 @@
-(p & q) |- (p | q) Proof(
-  1 #> (p & q)   by Premise,
-  2 #> (q)       by AndE2(1),
-  3 #> (p | q)   by OrI2(2),
-)

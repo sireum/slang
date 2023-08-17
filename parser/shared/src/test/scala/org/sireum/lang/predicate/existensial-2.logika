@@ -1,7 +1,0 @@
-(vowel(e), holds(square14, e)) |- (∃{y => vowel(y) & ∃{x => holds(x, y)}}) Proof(
-  1 #> (vowel(e))                                 by Premise,
-  2 #> (holds(square14, e))                       by Premise,
-  3 #> (∃{x => holds(x, e)})                      by ExistsI(2, square14),
-  4 #> (vowel(e) & ∃{x => holds(x, e)})           by AndI(1, 3),
-  5 #> (∃{y => vowel(y) & ∃{x => holds(x, y)}})   by ExistsE(4, e),
-)
