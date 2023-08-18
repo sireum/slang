@@ -86,8 +86,12 @@ object SlangTruthTableParser {
 
       def assignment(t: ParseTree): AST.TruthTable.Assignment = {
         var values = ISZ[AST.Exp.LitB]()
-        for (other <- t.asInstanceOf[ParseTree.Node].children(1).asInstanceOf[ParseTree.Node].children) {
-          values = values :+ boolValue(other)
+        t.asInstanceOf[ParseTree.Node].children(1) match {
+          case others: ParseTree.Node =>
+            for (other <- others.children) {
+              values = values :+ boolValue(other)
+            }
+          case _ =>
         }
         return AST.TruthTable.Assignment(values, AST.Attr(Some(values(0).posOpt.get.to(values(values.size - 1).posOpt.get))))
       }
@@ -97,23 +101,31 @@ object SlangTruthTableParser {
       val ptableNode = ptable.asInstanceOf[ParseTree.Node]
       val ISZ(pstars, _, pheader, _, prows, _, _*) = ptableNode.children
       val stars: ISZ[Position] = {
-        val pothers = pstars.asInstanceOf[ParseTree.Node].children(0).asInstanceOf[ParseTree.Node].children
-        var r = ISZ[Position]()
-        for (pother <- pothers) {
-          val leaf = pother.asInstanceOf[ParseTree.Leaf]
-          if (leaf.text != "*") {
-            reporter.error(leaf.posOpt, kind, s"Expecting '*', but found '${leaf.text}'")
-          } else {
-            r = r :+ leaf.posOpt.get
-          }
+        pstars.asInstanceOf[ParseTree.Node].children(0) match {
+          case pothers: ParseTree.Node =>
+            var r = ISZ[Position]()
+            for (pother <- pothers.children) {
+              val leaf = pother.asInstanceOf[ParseTree.Leaf]
+              if (leaf.text != "*") {
+                reporter.error(leaf.posOpt, kind, s"Expecting '*', but found '${leaf.text}'")
+              } else {
+                r = r :+ leaf.posOpt.get
+              }
+            }
+            r
+          case _ => ISZ()
         }
-        r
       }
       var idMap = HashMap.empty[String, Position]
       val (vars, separator, isSequent, sequent): (ISZ[AST.Id], Position, B, AST.Sequent) = {
-        val ISZ(others1, hash, others2, _*) = pheader.asInstanceOf[ParseTree.Node].children
+        val (others1, hash, tokens): (ISZ[ParseTree], ParseTree.Leaf, ISZ[ParseTree]) = pheader.asInstanceOf[ParseTree.Node].children match {
+          case ISZ(o1, hash: ParseTree.Leaf, o2, _: ParseTree.Leaf, _*) => (o1.asInstanceOf[ParseTree.Node].children, hash, o2.asInstanceOf[ParseTree.Node].children)
+          case ISZ(hash: ParseTree.Leaf, o2, _: ParseTree.Leaf, _*) => (ISZ(), hash, o2.asInstanceOf[ParseTree.Node].children)
+          case ISZ(o1, hash: ParseTree.Leaf, _: ParseTree.Leaf, _*) => (o1.asInstanceOf[ParseTree.Node].children, hash, ISZ())
+          case ISZ(hash: ParseTree.Leaf, _: ParseTree.Leaf, _*) => (ISZ(), hash, ISZ())
+        }
         var ids = ISZ[AST.Id]()
-        for (x <- others1.asInstanceOf[ParseTree.Node].children) {
+        for (x <- others1) {
           val leaf = x.asInstanceOf[ParseTree.Leaf]
           val id = leaf.text
           idMap.get(id) match {
@@ -129,9 +141,9 @@ object SlangTruthTableParser {
               ids = ids :+ AST.Id(id, AST.Attr(leaf.posOpt))
           }
         }
+        @strictpure def emptySeq: AST.Sequent = AST.Sequent(ISZ(), AST.Exp.LitB(F, AST.Attr(None())), ISZ(), AST.Attr(None()))
         var iseq = F
-        val sqnt: AST.Sequent = {
-          val tokens = others2.asInstanceOf[ParseTree.Node].children
+        val sqnt: AST.Sequent = if (tokens.nonEmpty) {
           val startPos = tokens(0).asInstanceOf[ParseTree.Leaf].posOpt.get
           val start = startPos.offset
           val endPos = tokens(tokens.size - 1).asInstanceOf[ParseTree.Leaf].posOpt.get
@@ -146,8 +158,6 @@ object SlangTruthTableParser {
           }
           val input = conversions.String.fromCms(cms)
 
-          @strictpure def emptySeq: AST.Sequent = AST.Sequent(ISZ(), AST.Exp.LitB(F, AST.Attr(None())), ISZ(), AST.Attr(None()))
-
           if (iseq) {
             Parser.parseSequentOpt(uriOpt, input, reporter) match {
               case Some(s) => s
@@ -159,21 +169,29 @@ object SlangTruthTableParser {
               case _ => emptySeq
             }
           }
+        } else {
+          reporter.error(None(), kind, "Missing truth table formula or sequent")
+          emptySeq
         }
-        (ids, hash.asInstanceOf[ParseTree.Leaf].posOpt.get, iseq, sqnt)
+        (ids, hash.posOpt.get, iseq, sqnt)
       }
       var rows = ISZ[AST.TruthTable.Row]()
       for (prow <- prows.asInstanceOf[ParseTree.Node].children) {
-        val ISZ(passignment, hash, pvalues, _) = prow.asInstanceOf[ParseTree.Node].children
+        val (passignment, hash, pvalues): (ISZ[ParseTree], ParseTree.Leaf, ISZ[ParseTree]) = prow.asInstanceOf[ParseTree.Node].children match {
+          case ISZ(passignment, hash: ParseTree.Leaf, pvalues, _) => (passignment.asInstanceOf[ParseTree.Node].children, hash, pvalues.asInstanceOf[ParseTree.Node].children)
+          case ISZ(hash: ParseTree.Leaf, pvalues, _) => (ISZ(), hash, pvalues.asInstanceOf[ParseTree.Node].children)
+          case ISZ(passignment, hash: ParseTree.Leaf, _) => (passignment.asInstanceOf[ParseTree.Node].children, hash, ISZ())
+          case ISZ(hash: ParseTree.Leaf, _) => (ISZ(), hash, ISZ())
+        }
         var assignment = ISZ[AST.Exp.LitB]()
-        for (pvalue <- passignment.asInstanceOf[ParseTree.Node].children) {
+        for (pvalue <- passignment) {
           assignment = assignment :+ boolValue(pvalue)
         }
         val aAttr: AST.Attr = if (assignment.nonEmpty)
           AST.Attr(Some(assignment(0).posOpt.get.to(assignment(assignment.size - 1).posOpt.get)))
         else AST.Attr(None())
         var values = ISZ[AST.Exp.LitB]()
-        for (pvalue <- pvalues.asInstanceOf[ParseTree.Node].children) {
+        for (pvalue <- pvalues) {
           values = values :+ boolValue(pvalue)
         }
         val vAttr: AST.Attr = if (values.nonEmpty)
@@ -181,7 +199,7 @@ object SlangTruthTableParser {
         else AST.Attr(None())
         rows = rows :+ AST.TruthTable.Row(
           AST.TruthTable.Assignment(assignment, aAttr),
-          hash.asInstanceOf[ParseTree.Leaf].posOpt.get,
+          hash.posOpt.get,
           AST.TruthTable.Assignment(values, vAttr)
         )
       }

@@ -52,7 +52,7 @@ header: others HASH others NL+ ;
 
 hlinep: HLINE NL+ ;
 
-rows: row+ ;
+rows: row* ;
 
 row: others HASH others NL ;
 
@@ -61,15 +61,15 @@ hlines: HLINE NL* ;
 conclusion:
     'Tautology' NL*
   | 'Contradictory' NL*
-  | 'Contingent' NL cas ( NL cas? )*
-  | 'Valid' assign+  NL*
-  | 'Invalid' assign+  NL* ;
+  | 'Contingent' NL ( cas ( NL cas? )* )?
+  | 'Valid' assign*  NL*
+  | 'Invalid' assign*  NL* ;
 
 cas: OTHER OTHER assign+ ; // second OTHER has to be colon
 
 assign: LSQUARE others RSQUARE ;
 
-others: OTHER+ ;
+others: OTHER* ;
 
 // Lexical definitions
 
