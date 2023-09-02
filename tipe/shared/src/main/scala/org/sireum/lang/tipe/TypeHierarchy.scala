@@ -42,10 +42,13 @@ object TypeHierarchy {
                                        val m: HashMap[String, String]) extends AST.Transformer.PrePost[B] {
       override def postExpIdent(ctx: B, o: AST.Exp.Ident): AST.Transformer.TPostResult[B, AST.Exp] = {
         o.attr.resOpt.get match {
-          case res: AST.ResolvedInfo.LocalVar if res.context == oldContext =>
-            val newId = m.get(res.id).get
-            val newO = o(id = o.id(value = newId), attr = o.attr(resOpt = Some(res(context = newContext, id = newId))))
-            return AST.Transformer.TPostResult(ctx, Some(newO))
+          case res: AST.ResolvedInfo.LocalVar if res.context == oldContext && m.get(res.id).nonEmpty =>
+            m.get(res.id) match {
+              case Some(newId) =>
+                val newO = o(id = o.id(value = newId), attr = o.attr(resOpt = Some(res(context = newContext, id = newId))))
+                return AST.Transformer.TPostResult(ctx, Some(newO))
+              case _ =>
+            }
           case _ =>
         }
         return AST.Transformer.TPostResult(ctx, None())
