@@ -2145,7 +2145,10 @@ import TypeChecker._
       val refExp = ref.asExp
 
       def noResult: (AST.Exp, Option[AST.Typed]) = {
-        return (refExp, None())
+        etaParentOpt match {
+          case Some(eta) => return (eta, None())
+          case _ => return (refExp, None())
+        }
       }
 
       t match {
