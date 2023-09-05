@@ -630,6 +630,9 @@ object TypeChecker {
   ): Option[HashMap[String, AST.Typed]] = {
 
     def findAncestor(ancestor: AST.Typed.Name, t: AST.Typed.Name): Option[AST.Typed.Name] = {
+      if (ancestor == AST.Typed.stepId && t == AST.Typed.z) {
+        return Some(ancestor)
+      }
       val (ancestors, substMap): (ISZ[AST.Typed.Name], HashMap[String, AST.Typed]) = th.typeMap.get(t.ids) match {
         case Some(info: TypeInfo.Adt) =>
           val smOpt = buildTypeSubstMap(t.ids, posOpt, info.ast.typeParams, t.args, reporter)
