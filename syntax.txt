@@ -206,6 +206,7 @@
                      |  At [ <type> ] ( <STRING> ⸨ , <int-lit> ⸩+ )         // only in spec context
                      |  At ( <exp> ⸨ , <int-lit> ⸩+ )                       // only in spec context
                      |  In ( <exp> )                                        // only in spec context
+                     |  Old ( <exp> )                                       // only in spec context right after an assignment
                      |  <ID> ~ <exp> ⸨ ~ <exp> ⸩*                           // only in spec context
                      |  ? ( <exp> ⸨ , <exp> ⸩* ) { ( <params> ) => <exp> }  // only in spec context
                      |  <block-assign-exp>                                  // only in spec context
