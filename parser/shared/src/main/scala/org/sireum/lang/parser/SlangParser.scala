@@ -54,6 +54,7 @@ object SlangParser {
     "Invariant",
     "In",
     "At",
+    "Old",
     "Idx",
     "Res",
     "All",
@@ -84,6 +85,7 @@ object SlangParser {
     "Invariant",
     "In",
     "At",
+    "Old",
     "Idx",
     "Res",
     "All",
@@ -2148,7 +2150,7 @@ class SlangParser(
   def translateAssign(enclosing: Enclosing.Type, stat: Term.Assign): AST.Stmt = {
     stmtCheck(enclosing, stat, "Assignments")
     val lhs = translateExp(stat.lhs)
-    AST.Stmt.Assign(checkLhs(lhs), translateAssignExp(stat.rhs), attr(stat.pos))
+    AST.Stmt.Assign(checkLhs(lhs), translateAssignExp(stat.rhs), None(), attr(stat.pos))
   }
 
   def translateAssign(
@@ -2173,7 +2175,7 @@ class SlangParser(
     } else {
       errorInSlang(pos, s"Invalid update form: '${syntax(stat)}'")
     }
-    AST.Stmt.Assign(checkLhs(lhs), translateAssignExp(rhs), attr(pos))
+    AST.Stmt.Assign(checkLhs(lhs), translateAssignExp(rhs), None(), attr(pos))
   }
 
   def translateIfStmt(enclosing: Enclosing.Type, stat: Term.If, isAssignExp: Boolean): AST.Stmt.If = {
@@ -2618,14 +2620,17 @@ class SlangParser(
         }
         AST.Exp.AssertAgree(channel, outAgrees, attr(if (exp.pos == Position.None) name.pos else exp.pos))
 
-      case q"${name: Term.Name}($arg)" if name.value == "In" =>
-        translateExp(arg) match {
-          case e: AST.Exp.Ref => AST.Exp.Input(e, attr(if (exp.pos == Position.None) name.pos else exp.pos))
-          case e: AST.Exp.This => AST.Exp.Input(e, attr(if (exp.pos == Position.None) name.pos else exp.pos))
+      case q"${name: Term.Name}($arg)" if name.value == "In" || name.value == "Old" =>
+        val e = translateExp(arg)
+        e match {
+          case _: AST.Exp.Ref =>
+          case _: AST.Exp.This =>
           case _ =>
             errorInSlang(arg.pos, "In(...) argument has to be a variable reference or this")
-            rExp
+            return rExp
         }
+        if (name.value == "In") AST.Exp.Input(e, attr(if (exp.pos == Position.None) name.pos else exp.pos))
+        else AST.Exp.Old(e, attr(if (exp.pos == Position.None) name.pos else exp.pos))
       case q"${name: Term.Name}[$tpe]($arg, ..$args)" if name.value == "At" =>
         var freshLines = ISZ[AST.Exp.LitZ]()
         var num = AST.Exp.LitZ(0, attr(exp.pos))
@@ -2712,7 +2717,7 @@ class SlangParser(
       case q"${name: Term.Name}(...${aexprssnel: List[List[Term]]})" if aexprssnel.nonEmpty =>
         name.value match {
           case "Res" => translateInvoke(scala.Some(name), AST.Id("apply", attr(name.pos)), name.pos, List(), aexprssnel, exp.pos)
-          case "In" | "At" =>
+          case "In" | "At" | "Old" =>
             val receiver = q"$name(..${aexprssnel.head})"
             translateInvoke(scala.Some(receiver), AST.Id("apply", attr(name.pos)), name.pos, List(), aexprssnel.tail, exp.pos)
           case _ => translateInvoke(scala.None, cid(name), name.pos, List(), aexprssnel, exp.pos)

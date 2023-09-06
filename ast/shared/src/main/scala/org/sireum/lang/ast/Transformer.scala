@@ -704,6 +704,7 @@ object Transformer {
           }
           return r
         case o: Exp.Input => return preExpInput(ctx, o)
+        case o: Exp.Old => return preExpOld(ctx, o)
         case o: Exp.At => return preExpAt(ctx, o)
         case o: Exp.LoopIndex => return preExpLoopIndex(ctx, o)
         case o: Exp.StateSeq => return preExpStateSeq(ctx, o)
@@ -864,6 +865,10 @@ object Transformer {
     }
 
     @pure def preExpInput(ctx: Context, o: Exp.Input): PreResult[Context, Exp] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preExpOld(ctx: Context, o: Exp.Old): PreResult[Context, Exp] = {
       return PreResult(ctx, T, None())
     }
 
@@ -1778,6 +1783,7 @@ object Transformer {
           }
           return r
         case o: Exp.Input => return postExpInput(ctx, o)
+        case o: Exp.Old => return postExpOld(ctx, o)
         case o: Exp.At => return postExpAt(ctx, o)
         case o: Exp.LoopIndex => return postExpLoopIndex(ctx, o)
         case o: Exp.StateSeq => return postExpStateSeq(ctx, o)
@@ -1938,6 +1944,10 @@ object Transformer {
     }
 
     @pure def postExpInput(ctx: Context, o: Exp.Input): TPostResult[Context, Exp] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postExpOld(ctx: Context, o: Exp.Old): TPostResult[Context, Exp] = {
       return TPostResult(ctx, None())
     }
 
@@ -2399,11 +2409,12 @@ import Transformer._
         case o2: Stmt.Assign =>
           val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.lhs)
           val r1: TPostResult[Context, AssignExp] = transformAssignExp(r0.ctx, o2.rhs)
-          val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            TPostResult(r2.ctx, Some(o2(lhs = r0.resultOpt.getOrElse(o2.lhs), rhs = r1.resultOpt.getOrElse(o2.rhs), attr = r2.resultOpt.getOrElse(o2.attr))))
+          val r2: TPostResult[Context, Option[Exp]] = transformOption(r1.ctx, o2.prevAssignLhsOpt, transformExp _)
+          val r3: TPostResult[Context, Attr] = transformAttr(r2.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+            TPostResult(r3.ctx, Some(o2(lhs = r0.resultOpt.getOrElse(o2.lhs), rhs = r1.resultOpt.getOrElse(o2.rhs), prevAssignLhsOpt = r2.resultOpt.getOrElse(o2.prevAssignLhsOpt), attr = r3.resultOpt.getOrElse(o2.attr))))
           else
-            TPostResult(r2.ctx, None())
+            TPostResult(r3.ctx, None())
         case o2: Stmt.Block =>
           val r0: TPostResult[Context, Body] = transformBody(preR.ctx, o2.body)
           val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
@@ -3826,6 +3837,13 @@ import Transformer._
           else
             TPostResult(r2.ctx, None())
         case o2: Exp.Input =>
+          val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.exp)
+          val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), attr = r1.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: Exp.Old =>
           val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.exp)
           val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)

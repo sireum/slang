@@ -32,6 +32,15 @@ import org.sireum.U64._
 
 object Util {
 
+  @record class ExpSubstitutor(val map: HashMap[Exp, Exp]) extends MTransformer {
+    override def preExp(o: Exp): MTransformer.PreResult[Exp] = {
+      map.get(o) match {
+        case Some(o2) => return MTransformer.PreResult(F, MSome(o2))
+        case _ => return MTransformer.PreResult(T, MNone())
+      }
+    }
+  }
+  
   @record class EnumSymbolMapper(val content: ISZ[C], var map: HashMap[Z, (String, String)]) extends MTransformer {
     override def postStmtEnum(o: Stmt.Enum): MOption[Stmt] = {
       for (id <- o.elements) {
@@ -705,6 +714,31 @@ object Util {
       case (None(), _) => return (T, Some(ident), Exp.Ident(Id("apply", Attr(ident.posOpt)), ResolvedAttr(
         ident.posOpt, Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.Apply)), ident.typedOpt)))
       case (_, _) => halt(s"Infeasible: $receiverOpt.$ident")
+    }
+  }
+
+  @pure def getLhsGroundExp(thisOpt: Option[Typed], lhs: Exp): Option[Exp] = {
+    lhs match {
+      case lhs: Exp.Ident =>
+        lhs.resOpt match {
+          case Some(_: ResolvedInfo.LocalVar) => return Some(lhs)
+          case Some(res: ResolvedInfo.Var) =>
+            return Some(if (res.isInObject) lhs else Exp.This(TypedAttr(lhs.posOpt, thisOpt)))
+          case _ => return None()
+        }
+      case lhs: Exp.Select =>
+        lhs.resOpt match {
+          case Some(_: ResolvedInfo.LocalVar) => return Some(lhs)
+          case Some(res: ResolvedInfo.Var) if res.isInObject => return Some(lhs)
+          case _ => return getLhsGroundExp(thisOpt, lhs.receiverOpt.get)
+        }
+      case lhs: Exp.This => return Some(lhs)
+      case lhs: Exp.Invoke =>
+        lhs.receiverOpt match {
+          case Some(rcv) => return getLhsGroundExp(thisOpt, rcv)
+          case _ => return getLhsGroundExp(thisOpt, lhs.ident)
+        }
+      case _ => return None()
     }
   }
 }

@@ -493,6 +493,10 @@ object MTransformer {
 
   val PostResultExpInput: MOption[Exp] = MNone()
 
+  val PreResultExpOld: PreResult[Exp] = PreResult(T, MNone())
+
+  val PostResultExpOld: MOption[Exp] = MNone()
+
   val PreResultExpAt: PreResult[Exp] = PreResult(T, MNone())
 
   val PostResultExpAt: MOption[Exp] = MNone()
@@ -1366,6 +1370,7 @@ import MTransformer._
         }
         return r
       case o: Exp.Input => return preExpInput(o)
+      case o: Exp.Old => return preExpOld(o)
       case o: Exp.At => return preExpAt(o)
       case o: Exp.LoopIndex => return preExpLoopIndex(o)
       case o: Exp.StateSeq => return preExpStateSeq(o)
@@ -1527,6 +1532,10 @@ import MTransformer._
 
   def preExpInput(o: Exp.Input): PreResult[Exp] = {
     return PreResultExpInput
+  }
+
+  def preExpOld(o: Exp.Old): PreResult[Exp] = {
+    return PreResultExpOld
   }
 
   def preExpAt(o: Exp.At): PreResult[Exp] = {
@@ -2440,6 +2449,7 @@ import MTransformer._
         }
         return r
       case o: Exp.Input => return postExpInput(o)
+      case o: Exp.Old => return postExpOld(o)
       case o: Exp.At => return postExpAt(o)
       case o: Exp.LoopIndex => return postExpLoopIndex(o)
       case o: Exp.StateSeq => return postExpStateSeq(o)
@@ -2601,6 +2611,10 @@ import MTransformer._
 
   def postExpInput(o: Exp.Input): MOption[Exp] = {
     return PostResultExpInput
+  }
+
+  def postExpOld(o: Exp.Old): MOption[Exp] = {
+    return PostResultExpOld
   }
 
   def postExpAt(o: Exp.At): MOption[Exp] = {
@@ -3023,9 +3037,10 @@ import MTransformer._
         case o2: Stmt.Assign =>
           val r0: MOption[Exp] = transformExp(o2.lhs)
           val r1: MOption[AssignExp] = transformAssignExp(o2.rhs)
-          val r2: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(lhs = r0.getOrElse(o2.lhs), rhs = r1.getOrElse(o2.rhs), attr = r2.getOrElse(o2.attr)))
+          val r2: MOption[Option[Exp]] = transformOption(o2.prevAssignLhsOpt, transformExp _)
+          val r3: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+            MSome(o2(lhs = r0.getOrElse(o2.lhs), rhs = r1.getOrElse(o2.rhs), prevAssignLhsOpt = r2.getOrElse(o2.prevAssignLhsOpt), attr = r3.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.Block =>
@@ -4450,6 +4465,13 @@ import MTransformer._
           else
             MNone()
         case o2: Exp.Input =>
+          val r0: MOption[Exp] = transformExp(o2.exp)
+          val r1: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp), attr = r1.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Exp.Old =>
           val r0: MOption[Exp] = transformExp(o2.exp)
           val r1: MOption[Attr] = transformAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)

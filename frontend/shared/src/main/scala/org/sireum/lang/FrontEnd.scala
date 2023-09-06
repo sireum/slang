@@ -202,7 +202,7 @@ object FrontEnd {
     val th =
       TypeHierarchy.build(F, TypeHierarchy(nameMap, typeMap, Poset.empty, HashSMap.empty), reporter)
     val thOutlined = TypeOutliner.checkOutline(0, T, th, reporter)
-    val tc = TypeChecker(thOutlined, ISZ(), F, TypeChecker.ModeContext.Code, T)
+    val tc = TypeChecker(thOutlined, ISZ(), F, TypeChecker.ModeContext.Code, T, None())
     val r = (tc, reporter)
     return r
   }
@@ -211,7 +211,7 @@ object FrontEnd {
     val (tc, reporter) = libraryReporter
     val th = tc.typeHierarchy
     val th2 = TypeChecker.checkComponents(0, T, th, th.nameMap, th.typeMap, reporter)
-    return (TypeChecker(th2, ISZ(), F, TypeChecker.ModeContext.Code, T), reporter)
+    return (TypeChecker(th2, ISZ(), F, TypeChecker.ModeContext.Code, T, None()), reporter)
   }
 
   @memoize def checkedSharedMaps: (NameMap, TypeMap) = {
@@ -328,7 +328,7 @@ object FrontEnd {
       return (th4, program)
     }
 
-    val typeChecker = TypeChecker(th4, ISZ(), F, TypeChecker.ModeContext.Code, T)
+    val typeChecker = TypeChecker(th4, ISZ(), F, TypeChecker.ModeContext.Code, T, None())
     val scope = Scope.Local.create(HashMap.empty, Scope.Global(ISZ(), ISZ(), ISZ()))
     val (newScope, newBody) = typeChecker.checkBody(T, F, None(), scope, program.body, reporter)
 

@@ -455,7 +455,7 @@ object Stmt {
     @strictpure override def hasReturn: B = F
   }
 
-  @datatype class Assign(val lhs: Exp, val rhs: AssignExp, @hidden val attr: Attr) extends Stmt {
+  @datatype class Assign(val lhs: Exp, val rhs: AssignExp, @hidden val prevAssignLhsOpt: Option[Exp], @hidden val attr: Attr) extends Stmt {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @pure override def prettyST: ST = {
       return st"${lhs.prettyST} = ${rhs.prettyST}"
@@ -1859,6 +1859,16 @@ object Exp {
     @strictpure override def typedOpt: Option[Typed] = exp.typedOpt
     @pure override def prettyST: ST = {
       return st"In(${exp.prettyST})"
+    }
+  }
+
+  @datatype class Old(val exp: Exp, @hidden val attr: Attr) extends Exp {
+    @strictpure override def posOpt: Option[Position] = attr.posOpt
+
+    @strictpure override def typedOpt: Option[Typed] = exp.typedOpt
+
+    @pure override def prettyST: ST = {
+      return st"Old(${exp.prettyST})"
     }
   }
 
