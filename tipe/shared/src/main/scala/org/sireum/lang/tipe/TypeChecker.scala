@@ -3721,7 +3721,8 @@ import TypeChecker._
 
     val size = stmts.size - 1
     for (i <- z"0" until size if !reporter.hasError) {
-      newStmts = newStmts :+ checkStmtH(i)
+      val newStmt = checkStmtH(i)
+      newStmts = newStmts :+ newStmt
     }
 
     if (reporter.hasError) {
