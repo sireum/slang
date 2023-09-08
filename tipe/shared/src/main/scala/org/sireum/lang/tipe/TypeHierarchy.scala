@@ -1339,7 +1339,11 @@ object TypeHierarchy {
           if (!ops.ISZOps(t.args).forall((targ: AST.Typed) => isSubstitutableWithoutSpecVarsH(targ))) {
             return F
           }
-          typeMap.get(t.ids).get match {
+          val infoOpt = typeMap.get(t.ids)
+          if (infoOpt.isEmpty) {
+            return F
+          }
+          infoOpt.get match {
             case info: TypeInfo.Adt =>
               val sm = TypeChecker.buildTypeSubstMap(info.name, None(), info.ast.typeParams, t.args, Reporter.create).get
               if (info.ast.isRoot) {
