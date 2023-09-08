@@ -32,7 +32,88 @@ import org.sireum.U64._
 
 object Util {
 
-  @record class ExpSubstitutor(val map: HashMap[Exp, Exp]) extends MTransformer {
+  @msig trait InvocationSubstitutor extends MTransformer {
+
+    override def transformExp(o: Exp): MOption[Exp] = {
+      o match {
+        case o: Exp.Invoke => return transformExpInvoke(o).map((e: Exp) => e)
+        case o: Exp.InvokeNamed => return transformExpInvokeNamed(o).map((e: Exp) => e)
+        case _ => return super.transformExp(o)
+      }
+    }
+
+    override def transformExpInvoke(o: Exp.Invoke): MOption[Exp.Invoke] = {
+      var changed = F
+      val newReceiverOpt: Option[Exp] = o.receiverOpt match {
+        case Some(receiver) => transformExp(receiver) match {
+          case MSome(r) =>
+            changed = T
+            Some(r)
+          case _ => Some(receiver)
+        }
+        case _ => None()
+      }
+      val newIdent: Exp = transformExp(o.ident) match {
+        case MSome(e) =>
+          changed = T
+          e
+        case _ => o.ident
+      }
+      var newArgs = ISZ[Exp]()
+      for (arg <- o.args) {
+        transformExp(arg) match {
+          case MSome(e) =>
+            changed = T
+            newArgs = newArgs :+ e
+          case _ =>
+            newArgs = newArgs :+ arg
+        }
+      }
+      if (!changed) {
+        return MNone()
+      }
+      val (isApply, nro, ni) = Util.invokeReceiverIdent(newReceiverOpt, newIdent)
+      return if (isApply) MSome(o(receiverOpt = nro, ident = ni, args = newArgs, attr = ni.attr))
+      else MSome(o(receiverOpt = nro, ident = ni, args = newArgs))
+    }
+
+    override def transformExpInvokeNamed(o: Exp.InvokeNamed): MOption[Exp.InvokeNamed] = {
+      var changed = F
+      val newReceiverOpt: Option[Exp] = o.receiverOpt match {
+        case Some(receiver) => transformExp(receiver) match {
+          case MSome(r) =>
+            changed = T
+            Some(r)
+          case _ => Some(receiver)
+        }
+        case _ => None()
+      }
+      val newIdent: Exp = transformExp(o.ident) match {
+        case MSome(e) =>
+          changed = T
+          e
+        case _ => o.ident
+      }
+      var newArgs = ISZ[NamedArg]()
+      for (arg <- o.args) {
+        transformNamedArg(arg) match {
+          case MSome(e) =>
+            changed = T
+            newArgs = newArgs :+ e
+          case _ =>
+            newArgs = newArgs :+ arg
+        }
+      }
+      if (!changed) {
+        return MNone()
+      }
+      val (isApply, nro, ni) = Util.invokeReceiverIdent(newReceiverOpt, newIdent)
+      return if (isApply) MSome(o(receiverOpt = nro, ident = ni, args = newArgs, attr = ni.attr))
+      else MSome(o(receiverOpt = nro, ident = ni, args = newArgs))
+    }
+  }
+
+  @record class ExpSubstitutor(val map: HashMap[Exp, Exp]) extends InvocationSubstitutor {
     override def preExp(o: Exp): MTransformer.PreResult[Exp] = {
       map.get(o) match {
         case Some(o2) => return MTransformer.PreResult(F, MSome(o2))
