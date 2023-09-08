@@ -3751,6 +3751,13 @@ class SlangParser(
           case just: Term.Ref => justRef(Left(no), claim, just, hasWitness = true, witnesses)
           case _ => err()
         }
+      case q"$no #> $claim by ${just: Term} * (..$witnesses)" if isStepId(no) =>
+        just match {
+          case just: Term.Eta => justApplyEta(Left(no), claim, just, hasWitness = true, witnesses)
+          case just: Term.Apply => justApply(Left(no), claim, just, hasWitness = true, witnesses)
+          case just: Term.Ref => justRef(Left(no), claim, just, hasWitness = true, witnesses)
+          case _ => err()
+        }
       case q"$no #> $claim by ${just: Term} T" if isStepId(no) =>
         just match {
           case just: Term.Eta => justApplyEta(Left(no), claim, just, hasWitness = true, Seq())
@@ -3765,6 +3772,13 @@ class SlangParser(
           case _ => err()
         }
       case q"$claim by ${just: Term} and (..$witnesses)" =>
+        just match {
+          case just: Term.Eta => justApplyEta(Right(claim.pos), claim, just, hasWitness = true, witnesses)
+          case just: Term.Apply => justApply(Right(claim.pos), claim, just, hasWitness = true, witnesses)
+          case just: Term.Ref => justRef(Right(claim.pos), claim, just, hasWitness = true, witnesses)
+          case _ => err()
+        }
+      case q"$claim by ${just: Term} * (..$witnesses)" =>
         just match {
           case just: Term.Eta => justApplyEta(Right(claim.pos), claim, just, hasWitness = true, witnesses)
           case just: Term.Apply => justApply(Right(claim.pos), claim, just, hasWitness = true, witnesses)
