@@ -2409,10 +2409,10 @@ import Transformer._
         case o2: Stmt.Assign =>
           val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.lhs)
           val r1: TPostResult[Context, AssignExp] = transformAssignExp(r0.ctx, o2.rhs)
-          val r2: TPostResult[Context, Option[Exp]] = transformOption(r1.ctx, o2.prevAssignLhsOpt, transformExp _)
+          val r2: TPostResult[Context, Option[Exp]] = transformOption(r1.ctx, o2.deduceOldLhsOpt, transformExp _)
           val r3: TPostResult[Context, Attr] = transformAttr(r2.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
-            TPostResult(r3.ctx, Some(o2(lhs = r0.resultOpt.getOrElse(o2.lhs), rhs = r1.resultOpt.getOrElse(o2.rhs), prevAssignLhsOpt = r2.resultOpt.getOrElse(o2.prevAssignLhsOpt), attr = r3.resultOpt.getOrElse(o2.attr))))
+            TPostResult(r3.ctx, Some(o2(lhs = r0.resultOpt.getOrElse(o2.lhs), rhs = r1.resultOpt.getOrElse(o2.rhs), deduceOldLhsOpt = r2.resultOpt.getOrElse(o2.deduceOldLhsOpt), attr = r3.resultOpt.getOrElse(o2.attr))))
           else
             TPostResult(r3.ctx, None())
         case o2: Stmt.Block =>

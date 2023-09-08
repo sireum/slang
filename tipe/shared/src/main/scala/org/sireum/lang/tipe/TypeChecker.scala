@@ -971,7 +971,7 @@ import TypeChecker._
                             val isInMutableContext: B,
                             val mode: ModeContext.Type,
                             val strictAliasing: B,
-                            val prevAssignLhsOpt: Option[AST.Exp]) {
+                            val deduceOldLhsOpt: Option[AST.Exp]) {
 
   @pure def inSpec: B = {
     mode match {
@@ -3345,26 +3345,26 @@ import TypeChecker._
     def checkOld(old: AST.Exp.Old): (AST.Exp, Option[AST.Typed]) = {
       if (inSpec) {
         val (e, tOpt) = checkExp(expectedOpt, scope, old.exp, reporter)
-        prevAssignLhsOpt match {
-          case Some(prevAssignLhs) =>
+        deduceOldLhsOpt match {
+          case Some(deduceOldLhs) =>
             val ok: B = e match {
               case e: AST.Exp.Ref =>
                 e.resOpt match {
                   case Some(_: AST.ResolvedInfo.LocalVar) =>
-                    prevAssignLhs.isInstanceOf[AST.Exp.Ref] && prevAssignLhs.asInstanceOf[AST.Exp.Ref].resOpt == e.resOpt
+                    deduceOldLhs.isInstanceOf[AST.Exp.Ref] && deduceOldLhs.asInstanceOf[AST.Exp.Ref].resOpt == e.resOpt
                   case Some(res: AST.ResolvedInfo.Var) =>
                     if (res.isInObject) {
-                      prevAssignLhs.isInstanceOf[AST.Exp.Ref] && prevAssignLhs.asInstanceOf[AST.Exp.Ref].resOpt == e.resOpt
+                      deduceOldLhs.isInstanceOf[AST.Exp.Ref] && deduceOldLhs.asInstanceOf[AST.Exp.Ref].resOpt == e.resOpt
                     } else {
-                      prevAssignLhs.isInstanceOf[AST.Exp.This]
+                      deduceOldLhs.isInstanceOf[AST.Exp.This]
                     }
                   case _ => F
                 }
-              case _: AST.Exp.This => prevAssignLhs.isInstanceOf[AST.Exp.This]
+              case _: AST.Exp.This => deduceOldLhs.isInstanceOf[AST.Exp.This]
               case _ => F
             }
             if (!ok) {
-              reporter.error(e.posOpt, typeCheckerKind, st"Old can only refer to '${prevAssignLhs.prettyST}' at this program point.".render)
+              reporter.error(e.posOpt, typeCheckerKind, st"Old can only refer to '${deduceOldLhs.prettyST}' at this program point.".render)
             }
           case _ =>
             reporter.error(e.posOpt, typeCheckerKind, "Old can only be used right after an assignment.")
@@ -3711,9 +3711,9 @@ import TypeChecker._
       if (allowOld) {
         val assign = newStmts(i - 1).asInstanceOf[AST.Stmt.Assign]
         val thisL = this
-        val prevAssignLhsOpt = AST.Util.getLhsGroundExp(scope.thisOpt, assign.lhs)
-        newStmts = newStmts((i - 1) ~> assign(prevAssignLhsOpt = prevAssignLhsOpt))
-        return thisL(prevAssignLhsOpt = prevAssignLhsOpt).checkStmt(scope, stmts(i), reporter)
+        val dolOpt = AST.Util.getLhsGroundExp(scope.thisOpt, assign.lhs)
+        newStmts = newStmts((i - 1) ~> assign(deduceOldLhsOpt = dolOpt))
+        return thisL(deduceOldLhsOpt = dolOpt).checkStmt(scope, stmts(i), reporter)
       } else {
         return checkStmt(scope, stmts(i), reporter)
       }
@@ -4887,11 +4887,11 @@ import TypeChecker._
         return stmt(block = tc.checkStmt(scope, stmt.block, reporter).asInstanceOf[AST.Stmt.Block])
 
       case stmt: AST.Stmt.DeduceSequent =>
-        val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.Spec, strictAliasing, prevAssignLhsOpt)
+        val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.Spec, strictAliasing, deduceOldLhsOpt)
         return stmt(sequents = for (sequent <- stmt.sequents) yield tc.checkSequent(scope, sequent, reporter))
 
       case stmt: AST.Stmt.DeduceSteps =>
-        val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.Spec, strictAliasing, prevAssignLhsOpt)
+        val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.Spec, strictAliasing, deduceOldLhsOpt)
         return stmt(steps = for (step <- stmt.steps) yield tc.checkStep(scope, step, reporter))
 
       case stmt: AST.Stmt.Havoc =>
