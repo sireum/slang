@@ -338,8 +338,37 @@ object TypeHierarchy {
           return AST.Transformer.TPostResult(ctx, None())
       }
     }
-  }
 
+    override def postExpQuantRange(ctx: B, o: AST.Exp.QuantRange): AST.Transformer.TPostResult[B, AST.Exp.Quant] = {
+      val exp: AST.Exp = o.fun.exp match {
+        case stmt: AST.Stmt.Expr => stmt.exp
+        case _ => return AST.Transformer.TPostResult(ctx, None())
+      }
+      val param = o.fun.params(0)
+      val id = param.idOpt.get
+      val ident = AST.Exp.Ident(id, AST.ResolvedAttr(id.attr.posOpt, Some(
+        AST.ResolvedInfo.LocalVar(o.fun.context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T, id.value)),
+        param.typedOpt))
+      val loCond = AST.Exp.Binary(o.lo, AST.Exp.BinaryOp.Le, ident, AST.ResolvedAttr(o.lo.posOpt, Some(
+        AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryLe)), o.lo.typedOpt))
+      val hiCond = AST.Exp.Binary(ident, if (o.hiExact) AST.Exp.BinaryOp.Le else AST.Exp.BinaryOp.Lt, o.hi,
+        AST.ResolvedAttr(o.lo.posOpt, Some(AST.ResolvedInfo.BuiltIn(
+          if (o.hiExact) AST.ResolvedInfo.BuiltIn.Kind.BinaryLe else AST.ResolvedInfo.BuiltIn.Kind.BinaryLt)),
+          o.hi.typedOpt))
+      val cond = AST.Exp.Binary(loCond, AST.Exp.BinaryOp.And, hiCond, AST.ResolvedAttr(
+        Some(o.lo.posOpt.get.to(o.hi.posOpt.get)), Some(
+          AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryAnd)), AST.Typed.bOpt
+      ))
+      val fun = AST.Exp.Fun(o.fun.context, o.fun.params, AST.Stmt.Expr(
+        AST.Exp.Binary(cond, AST.Exp.BinaryOp.CondImply, exp, AST.ResolvedAttr(o.posOpt,
+          Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryCondImply)), AST.Typed.bOpt)),
+        AST.TypedAttr(o.posOpt, AST.Typed.bOpt)
+      ), AST.TypedAttr(o.attr.posOpt, o.attr.typedOpt))
+      val newQuant = AST.Exp.QuantType(o.isForall, fun, AST.Attr(o.posOpt))
+      val r = postExpQuantType(ctx, newQuant)
+      return if (r.resultOpt.isEmpty) AST.Transformer.TPostResult(ctx, Some(newQuant)) else r
+    }
+  }
   val basicTypes: HashSet[AST.Typed] = HashSet ++ ISZ[AST.Typed](
     AST.Typed.b,
     AST.Typed.z,
@@ -347,7 +376,7 @@ object TypeHierarchy {
     AST.Typed.f32,
     AST.Typed.f64,
     AST.Typed.r,
-    AST.Typed.string,
+    AST.Typed.string
   )
 
   @pure def typedInfo(info: TypeInfo): AST.Typed.Name = {
