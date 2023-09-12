@@ -3441,7 +3441,7 @@ import TypeChecker._
               return (exp, None())
           }
           val (newExp, expTypedOpt, _) = TypeChecker(typeHierarchy, context :+ s"$$${pos.beginLine}_${pos.beginColumn}",
-            isInMutableContext, mode, strictAliasing, None()).checkFun(expectedOpt, scope, exp, reporter)
+            isInMutableContext, mode, strictAliasing, deduceOldLhsOpt).checkFun(expectedOpt, scope, exp, reporter)
           return (newExp, expTypedOpt)
 
         case exp: AST.Exp.Ident => return checkIdent(exp, None())
