@@ -36,10 +36,17 @@ object Util {
 
     override def transformExp(o: Exp): MOption[Exp] = {
       o match {
-        case o: Exp.Invoke => return transformExpInvoke(o).map((e: Exp) => e)
-        case o: Exp.InvokeNamed => return transformExpInvokeNamed(o).map((e: Exp) => e)
-        case _ => return super.transformExp(o)
+        case o: Exp.Invoke => transformExpInvoke(o) match {
+          case MSome(o2) => return MSome(o2)
+          case _ =>
+        }
+        case o: Exp.InvokeNamed => transformExpInvokeNamed(o) match {
+          case MSome(o2) => return MSome(o2)
+          case _ =>
+        }
+        case _ =>
       }
+      return super.transformExp(o)
     }
 
     override def transformExpInvoke(o: Exp.Invoke): MOption[Exp.Invoke] = {
