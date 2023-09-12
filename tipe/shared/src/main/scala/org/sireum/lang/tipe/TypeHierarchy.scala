@@ -356,8 +356,7 @@ object TypeHierarchy {
           if (o.hiExact) AST.ResolvedInfo.BuiltIn.Kind.BinaryLe else AST.ResolvedInfo.BuiltIn.Kind.BinaryLt)),
           o.hi.typedOpt))
       val cond = AST.Exp.Binary(loCond, AST.Exp.BinaryOp.And, hiCond, AST.ResolvedAttr(
-        Some(o.lo.posOpt.get.to(o.hi.posOpt.get)), Some(
-          AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryAnd)), AST.Typed.bOpt
+        o.posOpt, Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryAnd)), AST.Typed.bOpt
       ))
       val fun = AST.Exp.Fun(o.fun.context, o.fun.params, AST.Stmt.Expr(
         AST.Exp.Binary(cond, AST.Exp.BinaryOp.CondImply, exp, AST.ResolvedAttr(o.posOpt,
