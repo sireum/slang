@@ -1925,6 +1925,15 @@ object Exp {
   }
 
   @datatype class Result(val tipeOpt: Option[Type], @hidden val attr: TypedAttr) extends Exp {
+    @strictpure def isEqual(other: Result): B = typedOpt == other.typedOpt
+
+    @strictpure override def hash: Z = {
+      typedOpt match {
+        case Some(t) => ("Result", t).hash
+        case _ => "Result".hash
+      }
+    }
+
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
     @strictpure override def prettyST: ST = {
