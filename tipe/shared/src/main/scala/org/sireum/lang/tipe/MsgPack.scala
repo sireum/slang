@@ -552,6 +552,7 @@ object MsgPack {
       writer.writeB(o.isVal)
       write_astId(o.ast)
       writer.writeOption(o.typedOpt, write_astTyped _)
+      writer.writeOption(o.initOpt, write_astAssignExp _)
       writer.writeOption(o.resOpt, write_astResolvedInfo _)
     }
 
@@ -2364,8 +2365,9 @@ object MsgPack {
       val isVal = reader.readB()
       val ast = read_astId()
       val typedOpt = reader.readOption(read_astTyped _)
+      val initOpt = reader.readOption(read_astAssignExp _)
       val resOpt = reader.readOption(read_astResolvedInfo _)
-      return org.sireum.lang.symbol.Info.LocalVar(name, isVal, ast, typedOpt, resOpt)
+      return org.sireum.lang.symbol.Info.LocalVar(name, isVal, ast, typedOpt, initOpt, resOpt)
     }
 
     def read_symbolInfoFact(): org.sireum.lang.symbol.Info.Fact = {

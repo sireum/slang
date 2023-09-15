@@ -672,6 +672,7 @@ object Info {
                            val isVal: B,
                            val ast: AST.Id,
                            val typedOpt: Option[AST.Typed],
+                           val initOpt: Option[AST.AssignExp],
                            val resOpt: Option[AST.ResolvedInfo]) extends Info {
 
     @pure override def posOpt: Option[Position] = {

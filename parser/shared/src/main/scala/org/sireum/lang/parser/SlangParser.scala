@@ -348,9 +348,6 @@ class SlangParser(
       )
       if (shouldParse) {
         var stmts = checkMemberStmts(ISZ(rest.map(translateStat(Enclosing.Top)): _*))
-        if (isWorksheet) {
-          stmts = addConstantInv(stmts)
-        }
         Result(
           text,
           hashSireum,
@@ -1479,30 +1476,6 @@ class SlangParser(
       val oattr = attr(stat.pos)
       AST.Stmt.Object(hasApp, extNameOpt, cid(name), checkMemberStmts(ISZ(stats.map(tstat): _*)), oattr)
     } else AST.Stmt.Object(hasApp, extNameOpt, cid(name), ISZ(), attr(stat.pos))
-  }
-
-  def addConstantInv(stmts: ISZ[AST.Stmt]): ISZ[AST.Stmt] = {
-    var claims = ISZ[AST.Exp]()
-    for (stmt <- stmts) {
-      stmt match {
-        case stmt: AST.Stmt.Var if stmt.isVal =>
-          AST.Util.constantInitOpt(stmt) match {
-            case Some(exp) =>
-              claims = claims :+ AST.Exp.Binary(
-                AST.Exp.Ident(stmt.id, AST.ResolvedAttr(stmt.id.attr.posOpt, None(), None())),
-                AST.Exp.BinaryOp.Eq,
-                exp, AST.ResolvedAttr(exp.posOpt, None(), None()))
-            case _ =>
-          }
-        case _ =>
-      }
-    }
-    if (claims.isEmpty) {
-      stmts
-    } else {
-      val attr = AST.Attr(claims(claims.size - 1).posOpt)
-      stmts :+ AST.Stmt.Inv(AST.Id("constants.", attr), claims, AST.ResolvedAttr(attr.posOpt, None(), None()))
-    }
   }
 
   def translateSig(enclosing: Enclosing.Type, stat: Defn.Trait): AST.Stmt = {

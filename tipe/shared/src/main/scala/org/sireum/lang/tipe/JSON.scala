@@ -198,6 +198,7 @@ object JSON {
         ("isVal", printB(o.isVal)),
         ("ast", print_astId(o.ast)),
         ("typedOpt", printOption(F, o.typedOpt, print_astTyped _)),
+        ("initOpt", printOption(F, o.initOpt, print_astAssignExp _)),
         ("resOpt", printOption(F, o.resOpt, print_astResolvedInfo _))
       ))
     }
@@ -2561,10 +2562,13 @@ object JSON {
       parser.parseObjectKey("typedOpt")
       val typedOpt = parser.parseOption(parse_astTyped _)
       parser.parseObjectNext()
+      parser.parseObjectKey("initOpt")
+      val initOpt = parser.parseOption(parse_astAssignExp _)
+      parser.parseObjectNext()
       parser.parseObjectKey("resOpt")
       val resOpt = parser.parseOption(parse_astResolvedInfo _)
       parser.parseObjectNext()
-      return org.sireum.lang.symbol.Info.LocalVar(name, isVal, ast, typedOpt, resOpt)
+      return org.sireum.lang.symbol.Info.LocalVar(name, isVal, ast, typedOpt, initOpt, resOpt)
     }
 
     def parse_symbolInfoFact(): org.sireum.lang.symbol.Info.Fact = {

@@ -747,8 +747,8 @@ object Util {
     }
   }
 
-  @pure def constantInitOpt(stmt: Stmt.Var): Option[Exp] = {
-    stmt.initOpt match {
+  @pure def constantInitOpt(initOpt: Option[AssignExp], tOpt: Option[Typed]): Option[Exp] = {
+    initOpt match {
       case Some(Stmt.Expr(exp)) =>
         exp match {
           case _: Exp.LitZ =>
@@ -763,7 +763,7 @@ object Util {
               case Some(res: ResolvedInfo.Var) if res.isInObject && (res.id == "T" || res.id == "F") &&
                 res.owner == Typed.sireumName =>
               case _ =>
-                stmt.attr.typedOpt match {
+                tOpt match {
                   case Some(Typed.b) if exp.id.value == "T" || exp.id.value == "F" =>
                     return Some(Exp.LitB(exp.id.value == "T", Attr(exp.attr.posOpt)))
                   case _ => return None()

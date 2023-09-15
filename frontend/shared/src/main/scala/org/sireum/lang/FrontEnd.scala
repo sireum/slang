@@ -334,6 +334,20 @@ object FrontEnd {
 
     nameMap = typeChecker.nameMap
 
+    var currScopeOpt = Option.some[Scope](newScope)
+    while (currScopeOpt.nonEmpty) {
+      currScopeOpt.get match {
+        case scope: Scope.Local =>
+          for (info <- scope.nameMap.values) {
+            info match {
+              case info: Info.LocalVar => nameMap = nameMap + info.name ~> info
+              case _ =>
+            }
+          }
+          currScopeOpt = scope.outerOpt
+        case _: Scope.Global => currScopeOpt = None()
+      }
+    }
     var newStmts = ISZ[AST.Stmt]()
     for (stmt <- newBody.stmts) {
       stmt match {

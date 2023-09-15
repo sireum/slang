@@ -871,7 +871,7 @@ object TypeChecker {
           ok = F
         case _ =>
           scope = scope(nameMap = scope.nameMap + id ~> Info.LocalVar(context :+ id, T, p.id, p.tipe.typedOpt,
-            Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T, id))))
+            None(), Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T, id))))
       }
     }
     return (ok, scope)
@@ -1215,7 +1215,7 @@ import TypeChecker._
               s"Cannot declare '$key' because the identifier has already been previously declared.")
             ok = F
           } else {
-            scope = scope(nameMap = scope.nameMap + key ~> Info.LocalVar(context :+ key, F, id, tOpt,
+            scope = scope(nameMap = scope.nameMap + key ~> Info.LocalVar(context :+ key, F, id, tOpt, None(),
               Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T, key))))
           }
         case _ =>
@@ -1371,7 +1371,7 @@ import TypeChecker._
               s"Cannot declare '$key' because the identifier has already been previously declared.")
             ok = F
           } else {
-            scope = scope(nameMap = scope.nameMap + key ~> Info.LocalVar(context :+ key, F, id, tOpt,
+            scope = scope(nameMap = scope.nameMap + key ~> Info.LocalVar(context :+ key, F, id, tOpt, None(),
               Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T, key))))
           }
         case _ =>
@@ -3934,7 +3934,7 @@ import TypeChecker._
           case _: Info.SpecMethod =>
           case _: Info.SpecVar =>
           case _: Info.Var =>
-          case Info.LocalVar(_, _, _, _, Some(res: AST.ResolvedInfo.LocalVar)) => r = r :+ res
+          case Info.LocalVar(_, _, _, _, _, Some(res: AST.ResolvedInfo.LocalVar)) => r = r :+ res
           case _: Info.LocalVar =>
           case _ => halt(s"Infeasible: ${e._2}")
         }
@@ -3994,7 +3994,7 @@ import TypeChecker._
                   s"Cannot introduce a new name '$key' for$possibly mutable type '$t'.")
               }
             }
-            scope = scope(nameMap = scope.nameMap + key ~> Info.LocalVar(context :+ key, F, id, tOpt,
+            scope = scope(nameMap = scope.nameMap + key ~> Info.LocalVar(context :+ key, F, id, tOpt, None(),
               Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, isSpec, T, key))))
           }
         case _ =>
@@ -4480,7 +4480,7 @@ import TypeChecker._
           case _ => tOpt
         }
         val newScope = scope(
-          nameMap = scope.nameMap + key ~> Info.LocalVar(name, stmt.isVal, r.id, typedOpt, resOpt)
+          nameMap = scope.nameMap + key ~> Info.LocalVar(name, stmt.isVal, r.id, typedOpt, rhsOpt, resOpt)
         )
         val newStmt = r(initOpt = rhsOpt, attr = r.attr(typedOpt = typedOpt, resOpt = resOpt))
         return (Some(newScope), newStmt)
@@ -4982,7 +4982,7 @@ import TypeChecker._
               s"Cannot declare '$key' because the identifier has already been previously declared.")
             ok = F
           } else {
-            sc = sc(nameMap = sc.nameMap + key ~> Info.LocalVar(context :+ key, F, id, tOpt,
+            sc = sc(nameMap = sc.nameMap + key ~> Info.LocalVar(context :+ key, F, id, tOpt, None(),
               Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, T, T, key))))
           }
         }
