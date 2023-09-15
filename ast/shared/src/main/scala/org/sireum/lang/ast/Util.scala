@@ -366,7 +366,7 @@ object Util {
     }
   }
 
-  val nonConstantPrefixes: HashSet[String] = HashSet ++ ISZ[String]("proc", "sn")
+  val nonConstantPrefixes: HashSet[String] = HashSet ++ ISZ[String]("proc")
 
   val symbolCharMap: HashMap[C, String] = HashMap ++ ISZ(
     '+' ~> "__plus",

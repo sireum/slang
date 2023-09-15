@@ -921,7 +921,7 @@ object ProofAst {
       override def string: String = {
         return s""""${ops.StringOps(value).escapeST.render}""""
       }
-      @strictpure override def prettyST: ST = st"""sn"$value""""
+      @strictpure override def prettyST: ST = st""""$value""""
     }
   }
 
