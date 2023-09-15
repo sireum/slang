@@ -3936,10 +3936,10 @@ import MTransformer._
       val hasChanged: B = preR.resultOpt.nonEmpty
       val rOpt: MOption[ProofAst.Step.Justification] = o2 match {
         case o2: ProofAst.Step.Justification.Ref =>
-          val r0: MOption[Exp.Ref] = transformExpRef(o2.id)
+          val r0: MOption[Exp.Ref] = transformExpRef(o2.ref)
           val r1: MOption[IS[Z, ProofAst.StepId]] = transformISZ(o2.witnesses, transformProofAstStepId _)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(id = r0.getOrElse(o2.id), witnesses = r1.getOrElse(o2.witnesses)))
+            MSome(o2(ref = r0.getOrElse(o2.ref), witnesses = r1.getOrElse(o2.witnesses)))
           else
             MNone()
         case o2: ProofAst.Step.Justification.Apply =>

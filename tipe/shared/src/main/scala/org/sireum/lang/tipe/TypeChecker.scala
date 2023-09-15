@@ -4922,11 +4922,11 @@ import TypeChecker._
       val errMessage = "Expecting an object @just/@pure method with Unit return type, fact or theorem"
       just match {
         case just: AST.ProofAst.Step.Justification.Ref =>
-          val (newId, _) = checkExp(None(), scope, just.id.asExp, reporter)
-          val newJust = just(id = newId.asInstanceOf[AST.Exp.Ref])
+          val (newRef, _) = checkExp(None(), scope, just.ref.asExp, reporter)
+          val newJust = just(ref = newRef.asInstanceOf[AST.Exp.Ref])
           newJust.resOpt match {
             case Some(res: AST.ResolvedInfo.Method) if res.mode == AST.MethodMode.Just =>
-            case Some(_) => reporter.error(newId.posOpt, typeCheckerKind, "Expecting an object @just method")
+            case Some(_) => reporter.error(newRef.posOpt, typeCheckerKind, "Expecting an object @just method")
             case _ =>
           }
           return newJust

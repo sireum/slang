@@ -1016,6 +1016,7 @@ object ProofAst {
     }
 
     @datatype trait Justification {
+      @strictpure def id: Id
       @strictpure def posOpt: Option[Position]
       @strictpure def prettyST: ST
       @strictpure def hasWitness: B
@@ -1029,39 +1030,38 @@ object ProofAst {
 
     object Justification {
 
-      @datatype class Ref(val id: Exp.Ref,
+      @datatype class Ref(val ref: Exp.Ref,
                           val hasWitness: B,
                           val witnesses: ISZ[ProofAst.StepId]) extends Justification {
-        @strictpure override def posOpt: Option[Position] = id.asExp.posOpt
-        @strictpure def idString: String = {
-          id match {
-            case id: Exp.Ident => id.id.value
-            case id: Exp.Select => id.id.value
-            case _ => halt("Infeasible")
-          }
+        @strictpure override def posOpt: Option[Position] = ref.asExp.posOpt
+        @strictpure def id: Id = ref match {
+          case ref: Exp.Ident => ref.id
+          case ref: Exp.Select => ref.id
+          case _ => halt("Infeasible")
         }
         @strictpure def isOwnedBy(name: ISZ[String]): B = {
-          id match {
-            case id: Exp.Ident => id.attr.resOpt.get.asInstanceOf[ResolvedInfo.Method].owner == name
-            case id: Exp.Select => id.attr.resOpt.get.asInstanceOf[ResolvedInfo.Method].owner == name
+          ref match {
+            case ref: Exp.Ident => ref.attr.resOpt.get.asInstanceOf[ResolvedInfo.Method].owner == name
+            case ref: Exp.Select => ref.attr.resOpt.get.asInstanceOf[ResolvedInfo.Method].owner == name
             case _ => halt("Infeasible")
           }
         }
         @strictpure def resOpt: Option[ResolvedInfo] = {
-          id match {
-            case id: Exp.Ident => id.attr.resOpt
-            case id: Exp.Select => id.attr.resOpt
+          ref match {
+            case ref: Exp.Ident => ref.attr.resOpt
+            case ref: Exp.Select => ref.attr.resOpt
             case _ => halt("Infeasible")
           }
         }
         @pure override def prettyST: ST = {
-          return st"${id.asExp.prettyST}$witnessesStOpt"
+          return st"${ref.asExp.prettyST}$witnessesStOpt"
         }
       }
 
       @datatype class Apply(val invoke: Exp.Invoke,
                             val hasWitness: B,
                             val witnesses: ISZ[ProofAst.StepId]) extends Justification {
+        @strictpure def id: Id = invokeIdent.id
         @strictpure def invokeIdent: Exp.Ident = invoke.ident
         @strictpure def args: ISZ[Exp] = invoke.args
         @strictpure override def posOpt: Option[Position] = invoke.ident.posOpt
@@ -1073,6 +1073,7 @@ object ProofAst {
       @datatype class ApplyNamed(val invoke: Exp.InvokeNamed,
                                  val hasWitness: B,
                                  val witnesses: ISZ[ProofAst.StepId]) extends Justification {
+        @strictpure def id: Id = invokeIdent.id
         @strictpure def invokeIdent: Exp.Ident = invoke.ident
         @pure def args: ISZ[Exp] = {
           val r = MSZ.create[Option[Exp]](invoke.args.size, None())
@@ -1090,6 +1091,10 @@ object ProofAst {
       @datatype class ApplyEta(val eta: Exp.Eta,
                                val hasWitness: B,
                                val witnesses: ISZ[ProofAst.StepId]) extends Justification {
+        @strictpure def id: Id = eta.ref match {
+          case ref: Exp.Ident => ref.id
+          case ref: Exp.Select => ref.id
+        }
         @strictpure override def posOpt: Option[Position] = eta.posOpt
         @pure override def prettyST: ST = {
           return st"${eta.prettyST}$witnessesStOpt"
