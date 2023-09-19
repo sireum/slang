@@ -36,7 +36,7 @@ options {
 @lexer::header { package org.sireum.lang.parser; }
 
 
-file: table EOF ;
+file: nls? table EOF ;
 
 table: stars
        hlinep
@@ -46,7 +46,7 @@ table: stars
        hlines
        conclusion? ;
 
-stars: others NL+ ; // others should be *
+stars: OTHER+ NL+ ; // others should be *
 
 header: others HASH others NL+ ;
 
@@ -70,6 +70,8 @@ cas: OTHER OTHER assign+ ; // second OTHER has to be colon
 assign: LSQUARE others RSQUARE ;
 
 others: OTHER* ;
+
+nls: NL+;
 
 // Lexical definitions
 

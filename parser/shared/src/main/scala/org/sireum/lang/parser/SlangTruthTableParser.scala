@@ -97,24 +97,32 @@ object SlangTruthTableParser {
       }
 
       assert(tree.ruleName == "file")
-      val ISZ(ptable, _) = tree.asInstanceOf[ParseTree.Node].children
-      val ptableNode = ptable.asInstanceOf[ParseTree.Node]
+      val ptableNode: ParseTree.Node = tree.asInstanceOf[ParseTree.Node].children match {
+        case ISZ(pt: ParseTree.Node, _) => pt
+        case ISZ(_, pt: ParseTree.Node, _) => pt
+      }
       val ISZ(pstars, _, pheader, _, prows, _, _*) = ptableNode.children
       val stars: ISZ[Position] = {
-        pstars.asInstanceOf[ParseTree.Node].children(0) match {
-          case pothers: ParseTree.Node =>
-            var r = ISZ[Position]()
-            for (pother <- pothers.children) {
-              val leaf = pother.asInstanceOf[ParseTree.Leaf]
-              if (leaf.text != "*") {
-                reporter.error(leaf.posOpt, kind, s"Expecting '*', but found '${leaf.text}'")
+        var r = ISZ[Position]()
+        var i = 0
+        val pstarsChildren = pstars.asInstanceOf[ParseTree.Node].children
+        var end = F
+        while (i < pstarsChildren.size) {
+          val leaf = pstarsChildren(i).asInstanceOf[ParseTree.Leaf]
+          leaf.text.native match {
+            case "*" =>
+              if (end) {
+                reporter.error(leaf.posOpt, kind, s"All '*' have to be in the same line")
               } else {
                 r = r :+ leaf.posOpt.get
               }
-            }
-            r
-          case _ => ISZ()
+            case "\n" =>
+              end = T
+            case _ => reporter.error(leaf.posOpt, kind, s"Expecting '*', but found '${leaf.text}'")
+          }
+          i = i + 1
         }
+        r
       }
       var idMap = HashMap.empty[String, Position]
       val (vars, separator, isSequent, sequent): (ISZ[AST.Id], Position, B, AST.Sequent) = {

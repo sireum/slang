@@ -226,6 +226,7 @@ object SlangTruthTableLl1Parser {
   val T_cas: U32 = u32"0xCD3E833F"
   val T_assign: U32 = u32"0xE5F71CFA"
   val T_others: U32 = u32"0xB759F101"
+  val T_nls: U32 = u32"0x81F64CF7"
 
   val errorLeaf: ParseTree.Leaf = ParseTree.Leaf("<ERROR>", "<ERROR>", u32"0xE3CDEDDA", F, None())
   val eofLeaf: ParseTree.Leaf = ParseTree.Leaf("<EOF>", "EOF", u32"0xFC5CB374", F, None())
@@ -292,7 +293,7 @@ import SlangTruthTableLl1Parser._
 @datatype class SlangTruthTableLl1Parser(tokens: Indexable[Result]) {
 
   @pure def parseFile(i: Z): Result = {
-    val ctx = Context.create("file", u32"0x31351F54", ISZ(state"2"), i)
+    val ctx = Context.create("file", u32"0x31351F54", ISZ(state"3"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -305,23 +306,37 @@ import SlangTruthTableLl1Parser._
       ctx.state match {
         case state"0" =>
           ctx.found = F
+          val n_nls = predictNls(ctx.j)
           val n_table = predictTable(ctx.j)
-          if (n_table >= 0 && parseTableH(ctx, state"1")) {
-            return Result.error(ctx.isLexical, ctx.failIndex)
+          for (n <- 1 to 1 by -1 if !ctx.found) {
+            if (n_nls == n && parseNlsH(ctx, state"1")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_table == n && parseTableH(ctx, state"2")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            }
           }
           if (!ctx.found) {
             return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
           }
         case state"1" =>
           ctx.found = F
+          val n_table = predictTable(ctx.j)
+          if (n_table >= 0 && parseTableH(ctx, state"2")) {
+            return Result.error(ctx.isLexical, ctx.failIndex)
+          }
+          if (!ctx.found) {
+            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+          }
+        case state"2" =>
+          ctx.found = F
           token.tipe match {
-            case u32"0xFC5CB374" /* EOF */ => ctx.updateTerminal(token, state"2")
+            case u32"0xFC5CB374" /* EOF */ => ctx.updateTerminal(token, state"3")
             case _ =>
           }
           if (!ctx.found) {
             return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
           }
-        case state"2" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+        case state"3" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
         case _ => halt("Infeasible")
       }
       if (ctx.max < ctx.j) {
@@ -432,9 +447,9 @@ import SlangTruthTableLl1Parser._
       ctx.state match {
         case state"0" =>
           ctx.found = F
-          val n_others = predictOthers(ctx.j)
-          if (n_others >= 0 && parseOthersH(ctx, state"1")) {
-            return Result.error(ctx.isLexical, ctx.failIndex)
+          token.tipe match {
+            case u32"0xFE2BCE26" /* OTHER */ => ctx.updateTerminal(token, state"1")
+            case _ =>
           }
           if (!ctx.found) {
             return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
@@ -442,6 +457,7 @@ import SlangTruthTableLl1Parser._
         case state"1" =>
           ctx.found = F
           token.tipe match {
+            case u32"0xFE2BCE26" /* OTHER */ => ctx.updateTerminal(token, state"1")
             case u32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"2")
             case _ =>
           }
@@ -997,6 +1013,66 @@ import SlangTruthTableLl1Parser._
     return retVal(ctx.j, ctx.resOpt, ctx.initial, T)
   }
 
+  @pure def parseNls(i: Z): Result = {
+    val ctx = Context.create("nls", u32"0x81F64CF7", ISZ(state"1"), i)
+
+    while (tokens.has(ctx.j)) {
+      val token: ParseTree.Leaf = {
+        val result = tokens.at(ctx.j)
+        if (result.kind != Result.Kind.Normal) {
+          return result
+        }
+        result.leaf
+      }
+      ctx.state match {
+        case state"0" =>
+          ctx.found = F
+          token.tipe match {
+            case u32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"1")
+            case _ =>
+          }
+          if (!ctx.found) {
+            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+          }
+        case state"1" =>
+          ctx.found = F
+          token.tipe match {
+            case u32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"1")
+            case _ =>
+          }
+          if (!ctx.found) {
+            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+          }
+        case _ => halt("Infeasible")
+      }
+      if (ctx.max < ctx.j) {
+        ctx.max = ctx.j
+      }
+    }
+
+    return retVal(ctx.j, ctx.resOpt, ctx.initial, T)
+  }
+
+  def parseNlsH(ctx: Context, nextState: State): B = {
+    val r = parseNls(ctx.j)
+    r.kind match {
+      case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
+      case Result.Kind.LexicalError =>
+        ctx.failIndex = r.newIndex
+        ctx.isLexical = T
+        return T
+      case Result.Kind.GrammaticalError =>
+        val index = r.newIndex
+        if (index < 0) {
+          ctx.failIndex = index
+          return T
+        } else if (ctx.max < index) {
+          ctx.max = index
+        }
+    }
+    return F
+  }
+
   def parseTableH(ctx: Context, nextState: State): B = {
     val r = parseTable(ctx.j)
     r.kind match {
@@ -1217,6 +1293,55 @@ import SlangTruthTableLl1Parser._
     return F
   }
 
+  @pure def predictFile(j: Z): Z = {
+    val tokenJ = tokens.at(j)
+    if (tokenJ.kind == Result.Kind.Normal) {
+      tokenJ.leaf.tipe match {
+        case u32"0x6CB684C0" /* NL */ => return 1
+        case u32"0xFE2BCE26" /* OTHER */ => return 1
+        case _ =>
+      }
+    }
+    return -1
+  }
+
+  @pure def predictConclusion(j: Z): Z = {
+    val tokenJ = tokens.at(j)
+    if (tokenJ.kind == Result.Kind.Normal) {
+      tokenJ.leaf.tipe match {
+        case u32"0xE8F861E8" /* "Tautology" */ => return 1
+        case u32"0x2E50643A" /* "Contradictory" */ => return 1
+        case u32"0x584EF8BA" /* "Contingent" */ => return 1
+        case u32"0x56000B93" /* "Valid" */ => return 1
+        case u32"0x1E4BCCF1" /* "Invalid" */ => return 1
+        case _ =>
+      }
+    }
+    return -1
+  }
+
+  @pure def predictNls(j: Z): Z = {
+    val tokenJ = tokens.at(j)
+    if (tokenJ.kind == Result.Kind.Normal) {
+      tokenJ.leaf.tipe match {
+        case u32"0x6CB684C0" /* NL */ => return 1
+        case _ =>
+      }
+    }
+    return -1
+  }
+
+  @pure def predictTable(j: Z): Z = {
+    val tokenJ = tokens.at(j)
+    if (tokenJ.kind == Result.Kind.Normal) {
+      tokenJ.leaf.tipe match {
+        case u32"0xFE2BCE26" /* OTHER */ => return 1
+        case _ =>
+      }
+    }
+    return -1
+  }
+
   @pure def predictCas(j: Z): Z = {
     val tokenJ = tokens.at(j)
     if (tokenJ.kind == Result.Kind.Normal) {
@@ -1228,11 +1353,11 @@ import SlangTruthTableLl1Parser._
     return -1
   }
 
-  @pure def predictHlinep(j: Z): Z = {
+  @pure def predictStars(j: Z): Z = {
     val tokenJ = tokens.at(j)
     if (tokenJ.kind == Result.Kind.Normal) {
       tokenJ.leaf.tipe match {
-        case u32"0x7566CFCC" /* HLINE */ => return 1
+        case u32"0xFE2BCE26" /* OTHER */ => return 1
         case _ =>
       }
     }
@@ -1251,7 +1376,7 @@ import SlangTruthTableLl1Parser._
     return -1
   }
 
-  @pure def predictHlines(j: Z): Z = {
+  @pure def predictHlinep(j: Z): Z = {
     val tokenJ = tokens.at(j)
     if (tokenJ.kind == Result.Kind.Normal) {
       tokenJ.leaf.tipe match {
@@ -1262,11 +1387,11 @@ import SlangTruthTableLl1Parser._
     return -1
   }
 
-  @pure def predictTable(j: Z): Z = {
+  @pure def predictRow(j: Z): Z = {
     val tokenJ = tokens.at(j)
     if (tokenJ.kind == Result.Kind.Normal) {
       tokenJ.leaf.tipe match {
-        case u32"0x6CB684C0" /* NL */ => return 1
+        case u32"0x63CEDE8B" /* HASH */ => return 1
         case u32"0xFE2BCE26" /* OTHER */ => return 1
         case _ =>
       }
@@ -1274,12 +1399,22 @@ import SlangTruthTableLl1Parser._
     return -1
   }
 
-  @pure def predictFile(j: Z): Z = {
+  @pure def predictOthers(j: Z): Z = {
     val tokenJ = tokens.at(j)
     if (tokenJ.kind == Result.Kind.Normal) {
       tokenJ.leaf.tipe match {
-        case u32"0x6CB684C0" /* NL */ => return 1
         case u32"0xFE2BCE26" /* OTHER */ => return 1
+        case _ =>
+      }
+    }
+    return 0
+  }
+
+  @pure def predictHlines(j: Z): Z = {
+    val tokenJ = tokens.at(j)
+    if (tokenJ.kind == Result.Kind.Normal) {
+      tokenJ.leaf.tipe match {
+        case u32"0x7566CFCC" /* HLINE */ => return 1
         case _ =>
       }
     }
@@ -1307,56 +1442,6 @@ import SlangTruthTableLl1Parser._
       }
     }
     return -1
-  }
-
-  @pure def predictStars(j: Z): Z = {
-    val tokenJ = tokens.at(j)
-    if (tokenJ.kind == Result.Kind.Normal) {
-      tokenJ.leaf.tipe match {
-        case u32"0x6CB684C0" /* NL */ => return 1
-        case u32"0xFE2BCE26" /* OTHER */ => return 1
-        case _ =>
-      }
-    }
-    return -1
-  }
-
-  @pure def predictRow(j: Z): Z = {
-    val tokenJ = tokens.at(j)
-    if (tokenJ.kind == Result.Kind.Normal) {
-      tokenJ.leaf.tipe match {
-        case u32"0x63CEDE8B" /* HASH */ => return 1
-        case u32"0xFE2BCE26" /* OTHER */ => return 1
-        case _ =>
-      }
-    }
-    return -1
-  }
-
-  @pure def predictConclusion(j: Z): Z = {
-    val tokenJ = tokens.at(j)
-    if (tokenJ.kind == Result.Kind.Normal) {
-      tokenJ.leaf.tipe match {
-        case u32"0xE8F861E8" /* "Tautology" */ => return 1
-        case u32"0x2E50643A" /* "Contradictory" */ => return 1
-        case u32"0x584EF8BA" /* "Contingent" */ => return 1
-        case u32"0x56000B93" /* "Valid" */ => return 1
-        case u32"0x1E4BCCF1" /* "Invalid" */ => return 1
-        case _ =>
-      }
-    }
-    return -1
-  }
-
-  @pure def predictOthers(j: Z): Z = {
-    val tokenJ = tokens.at(j)
-    if (tokenJ.kind == Result.Kind.Normal) {
-      tokenJ.leaf.tipe match {
-        case u32"0xFE2BCE26" /* OTHER */ => return 1
-        case _ =>
-      }
-    }
-    return 0
   }
 
   def retVal(n: Z, resOpt: Option[Result], initial: B, noBacktrack: B): Result = {
