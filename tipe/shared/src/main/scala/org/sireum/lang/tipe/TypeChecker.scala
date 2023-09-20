@@ -541,17 +541,17 @@ object TypeChecker {
       info match {
         case info: TypeInfo.Sig if !info.typeChecked =>
           jobs = jobs :+ (() => TypeChecker(th, info.name, !info.ast.isImmutable, TypeChecker.ModeContext.Code,
-            strictAliasing, None()).checkSig(info))
+            strictAliasing).checkSig(info))
         case info: TypeInfo.Adt if !info.typeChecked =>
           jobs = jobs :+ (() => TypeChecker(th, info.name, !info.ast.isDatatype, TypeChecker.ModeContext.Code,
-            strictAliasing, None()).checkAdt(info))
+            strictAliasing).checkAdt(info))
         case _ =>
       }
     }
     for (info <- nameMap.values) {
       info match {
         case info: Info.Object =>
-          jobs = jobs :+ (() => TypeChecker(th, info.name, F, TypeChecker.ModeContext.Code, strictAliasing, None()).
+          jobs = jobs :+ (() => TypeChecker(th, info.name, F, TypeChecker.ModeContext.Code, strictAliasing).
             checkObject(info))
         case _ =>
       }
@@ -884,7 +884,7 @@ object TypeChecker {
   def checkMethodContractSequent(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope, isMutableContext: B, stmt: AST.Stmt.Method, reporter: Reporter): AST.Stmt.Method = {
     val (ok, sc) = TypeChecker.methodScope(th, context, scope, stmt.sig, reporter)
     if (ok) {
-      val tc = TypeChecker(th, context, isMutableContext, TypeChecker.ModeContext.Spec, strictAliasing, None())
+      val tc = TypeChecker(th, context, isMutableContext, TypeChecker.ModeContext.Spec, strictAliasing)
       val newStmt: AST.Stmt.Method = if (stmt.mcontract.isEmpty) {
         val bstmts = stmt.bodyOpt.get.stmts
         val ds = bstmts(0).asInstanceOf[AST.Stmt.DeduceSequent]
@@ -912,7 +912,7 @@ object TypeChecker {
   def checkStrictPureMethod(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope.Local, isMutableContext: B, stmt: AST.Stmt.Method, reporter: Reporter): AST.Stmt.Method = {
     assert(stmt.purity == AST.Purity.StrictPure)
     var r = stmt
-    val tc = TypeChecker(th, context, isMutableContext, TypeChecker.ModeContext.Code, strictAliasing, None())
+    val tc = TypeChecker(th, context, isMutableContext, TypeChecker.ModeContext.Code, strictAliasing)
     if (r.mcontract.nonEmpty) {
       val (ok, sc) = TypeChecker.methodScope(th, context, scope, stmt.sig, reporter)
       if (ok) {
@@ -923,7 +923,7 @@ object TypeChecker {
   }
 
   def checkFactStmt(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope, stmt: AST.Stmt.Fact, reporter: Reporter): AST.Stmt.Fact = {
-    val tc = TypeChecker(th, context, F, ModeContext.Spec, strictAliasing, None())
+    val tc = TypeChecker(th, context, F, ModeContext.Spec, strictAliasing)
     val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
     val typeParams = typeParamMap(stmt.typeParams, reporter)
     val sc = Scope.Local.create(typeParams.map, scope)
@@ -931,7 +931,7 @@ object TypeChecker {
   }
 
   def checkTheoremStmt(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope, stmt: AST.Stmt.Theorem, reporter: Reporter): AST.Stmt.Theorem = {
-    val tc = TypeChecker(th, context, F, ModeContext.Spec, strictAliasing, None())
+    val tc = TypeChecker(th, context, F, ModeContext.Spec, strictAliasing)
     val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
     val typeParams = typeParamMap(stmt.typeParams, reporter)
     val sc = Scope.Local.create(typeParams.map, scope)
@@ -952,14 +952,14 @@ object TypeChecker {
   }
 
   def checkInvStmt(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope.Local, stmt: AST.Stmt.Inv, reporter: Reporter): AST.Stmt.Inv = {
-    val tc = TypeChecker(th, context, F, ModeContext.Spec, strictAliasing, None())
+    val tc = TypeChecker(th, context, F, ModeContext.Spec, strictAliasing)
     val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
     return stmt(claims = for (claim <- stmt.claims) yield tc.checkExp(bExpectedOpt, scope, claim, reporter)._1,
       attr = stmt.attr(typedOpt = AST.Typed.unitOpt))
   }
 
   def checkDataRefinement(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope.Local, stmt: AST.Stmt.DataRefinement, reporter: Reporter): AST.Stmt.DataRefinement = {
-    val tc = TypeChecker(th, context, F, ModeContext.Spec, strictAliasing, None())
+    val tc = TypeChecker(th, context, F, ModeContext.Spec, strictAliasing)
     return tc.checkDataRefinement(scope, stmt, reporter)
   }
 }
@@ -970,8 +970,7 @@ import TypeChecker._
                             val context: QName,
                             val isInMutableContext: B,
                             val mode: ModeContext.Type,
-                            val strictAliasing: B,
-                            val deduceOldLhsOpt: Option[AST.Exp]) {
+                            val strictAliasing: B) {
 
   @pure def inSpec: B = {
     mode match {
@@ -3345,29 +3344,18 @@ import TypeChecker._
     def checkOld(old: AST.Exp.Old): (AST.Exp, Option[AST.Typed]) = {
       if (inSpec) {
         val (e, tOpt) = checkExp(expectedOpt, scope, old.exp, reporter)
-        deduceOldLhsOpt match {
-          case Some(deduceOldLhs) =>
-            val ok: B = e match {
-              case e: AST.Exp.Ref =>
-                e.resOpt match {
-                  case Some(_: AST.ResolvedInfo.LocalVar) =>
-                    deduceOldLhs.isInstanceOf[AST.Exp.Ref] && deduceOldLhs.asInstanceOf[AST.Exp.Ref].resOpt == e.resOpt
-                  case Some(res: AST.ResolvedInfo.Var) =>
-                    if (res.isInObject) {
-                      deduceOldLhs.isInstanceOf[AST.Exp.Ref] && deduceOldLhs.asInstanceOf[AST.Exp.Ref].resOpt == e.resOpt
-                    } else {
-                      deduceOldLhs.isInstanceOf[AST.Exp.This]
-                    }
-                  case _ => F
-                }
-              case _: AST.Exp.This => deduceOldLhs.isInstanceOf[AST.Exp.This]
+        val ok: B = e match {
+          case e: AST.Exp.Ref =>
+            e.resOpt match {
+              case Some(_: AST.ResolvedInfo.LocalVar) => T
+              case Some(res: AST.ResolvedInfo.Var) => T
               case _ => F
             }
-            if (!ok) {
-              reporter.error(e.posOpt, typeCheckerKind, st"Old can only refer to '${deduceOldLhs.prettyST}' at this program point.".render)
-            }
-          case _ =>
-            reporter.error(e.posOpt, typeCheckerKind, "Old can only be used right after an assignment.")
+          case _: AST.Exp.This => T
+          case _ => F
+        }
+        if (!ok) {
+          reporter.error(e.posOpt, typeCheckerKind, st"Old can only refer to a variable.".render)
         }
         return (old(exp = e), tOpt)
       } else {
@@ -3441,7 +3429,7 @@ import TypeChecker._
               return (exp, None())
           }
           val (newExp, expTypedOpt, _) = TypeChecker(typeHierarchy, context :+ s"$$${pos.beginLine}_${pos.beginColumn}",
-            isInMutableContext, mode, strictAliasing, deduceOldLhsOpt).checkFun(expectedOpt, scope, exp, reporter)
+            isInMutableContext, mode, strictAliasing).checkFun(expectedOpt, scope, exp, reporter)
           return (newExp, expTypedOpt)
 
         case exp: AST.Exp.Ident => return checkIdent(exp, None())
@@ -3698,25 +3686,8 @@ import TypeChecker._
     var newStmts = ISZ[AST.Stmt]()
 
     def checkStmtH(i: Z): AST.Stmt = {
-      val allowOld: B = if (i > 0 && stmts(i - 1).isInstanceOf[AST.Stmt.Assign]) {
-        stmts(i) match {
-          case _: AST.Stmt.DeduceSequent => T
-          case _: AST.Stmt.DeduceSteps => T
-          case _ => F
-        }
-      } else {
-        F
-      }
       val scope: Scope.Local = if (scopes.size == 1) scopes(0) else scopes(i)
-      if (allowOld) {
-        val assign = newStmts(i - 1).asInstanceOf[AST.Stmt.Assign]
-        val thisL = this
-        val dolOpt = AST.Util.getLhsGroundExp(scope.thisOpt, assign.lhs)
-        newStmts = newStmts((i - 1) ~> assign(deduceOldLhsOpt = dolOpt))
-        return thisL(deduceOldLhsOpt = dolOpt).checkStmt(scope, stmts(i), reporter)
-      } else {
-        return checkStmt(scope, stmts(i), reporter)
-      }
+      return checkStmt(scope, stmts(i), reporter)
     }
 
     val size = stmts.size - 1
@@ -4848,7 +4819,7 @@ import TypeChecker._
         if (stmt.typeChecked) {
           return stmt
         }
-        val tc = TypeChecker(typeHierarchy, context :+ stmt.sig.id.value, isInMutableContext, mode, strictAliasing, None())
+        val tc = TypeChecker(typeHierarchy, context :+ stmt.sig.id.value, isInMutableContext, mode, strictAliasing)
         val r = tc.checkMethod(scope, stmt, reporter)
         return r
 
@@ -4883,19 +4854,19 @@ import TypeChecker._
       case stmt: AST.Stmt.SpecLabel => return stmt
 
       case stmt: AST.Stmt.SpecBlock =>
-        val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.Spec, strictAliasing, None())
+        val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.Spec, strictAliasing)
         return stmt(block = tc.checkStmt(scope, stmt.block, reporter).asInstanceOf[AST.Stmt.Block])
 
       case stmt: AST.Stmt.DeduceSequent =>
-        val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.Spec, strictAliasing, deduceOldLhsOpt)
+        val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.Spec, strictAliasing)
         return stmt(sequents = for (sequent <- stmt.sequents) yield tc.checkSequent(scope, sequent, reporter))
 
       case stmt: AST.Stmt.DeduceSteps =>
-        val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.Spec, strictAliasing, deduceOldLhsOpt)
+        val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.Spec, strictAliasing)
         return stmt(steps = for (step <- stmt.steps) yield tc.checkStep(scope, step, reporter))
 
       case stmt: AST.Stmt.Havoc =>
-        val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.Spec, strictAliasing, None())
+        val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.Spec, strictAliasing)
         return stmt(args = tc.checkModifiesH("havoc", scope, stmt.args, reporter))
 
       case stmt: AST.Stmt.Fact => return stmt
@@ -5088,14 +5059,14 @@ import TypeChecker._
       return requires(claims = for (require <- requires.claims) yield checkExp(Some(AST.Typed.b), scope, require, reporter)._1)
     }
     def checkEnsures(ensures: AST.MethodContract.Claims): AST.MethodContract.Claims = {
-      val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.SpecPost, strictAliasing, None())
+      val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.SpecPost, strictAliasing)
       return ensures(claims = for (ensure <- ensures.claims) yield tc.checkExp(Some(AST.Typed.b), scope, ensure, reporter)._1)
     }
     def checkCase(cas: AST.MethodContract.Case): AST.MethodContract.Case = {
       return AST.MethodContract.Case(cas.label, checkRequires(cas.requiresClause), checkEnsures(cas.ensuresClause))
     }
     def checkInfoFlows(infoFlows: AST.MethodContract.InfoFlows): AST.MethodContract.InfoFlows = {
-      val tcSpecPost = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.SpecPost, strictAliasing, None())
+      val tcSpecPost = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.SpecPost, strictAliasing)
 
       def checkInfoFlow(e: AST.MethodContract.InfoFlowElement): AST.MethodContract.InfoFlowElement = {
         e match {

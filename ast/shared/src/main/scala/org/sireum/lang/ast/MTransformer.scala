@@ -3037,10 +3037,9 @@ import MTransformer._
         case o2: Stmt.Assign =>
           val r0: MOption[Exp] = transformExp(o2.lhs)
           val r1: MOption[AssignExp] = transformAssignExp(o2.rhs)
-          val r2: MOption[Option[Exp]] = transformOption(o2.deduceOldLhsOpt, transformExp _)
-          val r3: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-            MSome(o2(lhs = r0.getOrElse(o2.lhs), rhs = r1.getOrElse(o2.rhs), deduceOldLhsOpt = r2.getOrElse(o2.deduceOldLhsOpt), attr = r3.getOrElse(o2.attr)))
+          val r2: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(lhs = r0.getOrElse(o2.lhs), rhs = r1.getOrElse(o2.rhs), attr = r2.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.Block =>

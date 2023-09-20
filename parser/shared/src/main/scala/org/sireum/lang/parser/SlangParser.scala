@@ -2123,7 +2123,7 @@ class SlangParser(
   def translateAssign(enclosing: Enclosing.Type, stat: Term.Assign): AST.Stmt = {
     stmtCheck(enclosing, stat, "Assignments")
     val lhs = translateExp(stat.lhs)
-    AST.Stmt.Assign(checkLhs(lhs), translateAssignExp(stat.rhs), None(), attr(stat.pos))
+    AST.Stmt.Assign(checkLhs(lhs), translateAssignExp(stat.rhs), attr(stat.pos))
   }
 
   def translateAssign(
@@ -2148,7 +2148,7 @@ class SlangParser(
     } else {
       errorInSlang(pos, s"Invalid update form: '${syntax(stat)}'")
     }
-    AST.Stmt.Assign(checkLhs(lhs), translateAssignExp(rhs), None(), attr(pos))
+    AST.Stmt.Assign(checkLhs(lhs), translateAssignExp(rhs), attr(pos))
   }
 
   def translateIfStmt(enclosing: Enclosing.Type, stat: Term.If, isAssignExp: Boolean): AST.Stmt.If = {
