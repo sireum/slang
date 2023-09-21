@@ -932,19 +932,19 @@ object ProofAst {
         return if (id.isSynthetic)
           st"(${claim.prettyST}) by ${just.prettyST}"
         else
-          st"${id.prettyST} #> (${claim.prettyST}) by ${just.prettyST}"
+          st"${id.prettyST}  (${claim.prettyST}) by ${just.prettyST}"
       }
     }
 
     @datatype class Assume(val id: StepId, val claim: Exp) extends Step {
       @pure override def prettyST: ST = {
-        return st"${id.prettyST} #> Assume(${claim.prettyST})"
+        return st"${id.prettyST}  Assume(${claim.prettyST})"
       }
     }
 
     @datatype class Assert(val id: StepId, val claim: Exp, val steps: ISZ[Step]) extends Step {
       @pure override def prettyST: ST = {
-        return st"""${id.prettyST} #> Assert(${claim.prettyST}, SubProof(
+        return st"""${id.prettyST}  Assert(${claim.prettyST}, SubProof(
                    |  ${(for (step <- steps) yield step.prettyST, ", ")}
                    |))"""
       }
@@ -952,7 +952,7 @@ object ProofAst {
 
     @datatype class SubProof(val id: StepId, val steps: ISZ[Step]) extends Step {
       @pure override def prettyST: ST = {
-        return st"""${id.prettyST} #> SubProof(
+        return st"""${id.prettyST}  SubProof(
                    |  ${(for (step <- steps) yield step.prettyST, ", ")}
                    |)"""
       }
@@ -960,7 +960,7 @@ object ProofAst {
 
     @datatype class Let(val id: StepId, val params: ISZ[Let.Param], val steps: ISZ[Step]) extends Step {
       @pure override def prettyST: ST = {
-        return st"""${id.prettyST} #> Let { (${(for (p <- params) yield p.prettyST, ", ")}) => SubProof(
+        return st"""${id.prettyST}  Let {(${(for (p <- params) yield p.prettyST, ", ")}) => SubProof(
                    |  ${(for (step <- steps) yield step.prettyST, ", ")}
                    |)}"""
       }
@@ -985,7 +985,7 @@ object ProofAst {
       @pure override def prettyST: ST = {
         val cs: ISZ[ST] = (for (c <- cases) yield c.prettyST) ++
           (if (defaultOpt.nonEmpty) ISZ(defaultOpt.get.prettyST) else ISZ[ST]())
-        return st"""${id.prettyST} #> (${claim.prettyST}) by StructuralInduction(
+        return st"""${id.prettyST}  (${claim.prettyST}) by StructuralInduction(
                    |  ${exp.prettyST} match {
                    |    ${(cs, "\n")}
                    |  }
