@@ -99,9 +99,9 @@ object SlangParser {
     "^"
   )
 
-  val impInternalSym: Predef.String = "imply_:"
+  val impInternalSym: Predef.String = "__>:"
 
-  val simpInternalSym: Predef.String = "simply_:"
+  val simpInternalSym: Predef.String = "___>:"
 
   val disallowedMethodIdEndings: Seq[String] = Seq()
 

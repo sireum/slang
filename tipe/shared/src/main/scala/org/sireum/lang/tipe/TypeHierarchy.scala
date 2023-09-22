@@ -196,8 +196,8 @@ object TypeHierarchy {
 
       override def postExpBinary(ctx: Z, o: AST.Exp.Binary): AST.Transformer.TPostResult[Z, AST.Exp] = {
         o.op match {
-          case string"imply_:" => return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.Imply)))
-          case string"simply_:" => return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.CondImply)))
+          case string"__>:" => return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.Imply)))
+          case string"___>:" => return AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.CondImply)))
           case AST.Exp.BinaryOp.Equiv =>
             return if (th.isGroundType(o.left.typedOpt.get))
               AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.Eq, attr = o.attr(resOpt =
