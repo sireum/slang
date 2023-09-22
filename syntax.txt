@@ -284,12 +284,12 @@
                      |  &&
                      |  ||
                      |  -->:        // right-associative
-                     |  simply_:    // right-associative
+                     |  ___>:       // right-associative
                      |  &
                      |  |
                      |  |^
                      |  ->:         // right-associative
-                     |  imply_:     // right-associative
+                     |  __>:        // right-associative
                      |  :+          // append
                      |  +:          // prepend, right-associative
                      |  ++          // append all
