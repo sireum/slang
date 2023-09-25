@@ -36,9 +36,9 @@ import org.sireum.lang.{ast => AST}
 
   @pure def parseExp[T](text: String): T = $
 
-  def parseExpOpt(fileUriOpt: Option[String], text: String, reporter: Reporter): Option[AST.Exp] = $
+  def parseExpOpt(fileUriOpt: Option[String], text: String, isTruthTable: B, reporter: Reporter): Option[AST.Exp] = $
 
-  def parseSequentOpt(fileUriOpt: Option[String], text: String, reporter: Reporter): Option[AST.Sequent] = $
+  def parseSequentOpt(fileUriOpt: Option[String], text: String, isTruthTable: B, reporter: Reporter): Option[AST.Sequent] = $
 
   def parseTopUnit[T](text: String,
                       isWorksheet: B,

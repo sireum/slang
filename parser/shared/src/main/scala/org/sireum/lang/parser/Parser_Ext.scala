@@ -49,6 +49,7 @@ object Parser_Ext {
       hashSireum = true,
       isWorksheet = false,
       isDiet = false,
+      isTruthTable = false,
       None(),
       reporter
     ).translateStat(Enclosing.Method)(stat)
@@ -72,6 +73,7 @@ object Parser_Ext {
       hashSireum = true,
       isWorksheet = false,
       isDiet = false,
+      isTruthTable = false,
       None(),
       reporter
     ).translateExp(term)
@@ -80,7 +82,7 @@ object Parser_Ext {
     exp.asInstanceOf[T]
   }
 
-  def parseExpOpt(fileUriOpt: Option[String], text: String, reporter: Reporter): Option[lang.ast.Exp] = {
+  def parseExpOpt(fileUriOpt: Option[String], text: String, isTruthTable: B, reporter: Reporter): Option[lang.ast.Exp] = {
     val (dialect, input) = SlangParser.scalaDialect(isWorksheet = false)(text.value)
     val metap = new ScalametaParser(input)(dialect)
     val term = Try(metap.parseTerm()) match {
@@ -94,13 +96,14 @@ object Parser_Ext {
       hashSireum = true,
       isWorksheet = false,
       isDiet = false,
+      isTruthTable = isTruthTable,
       fileUriOpt,
       reporter
     ).translateExp(term)
     if (reporter.hasError) None() else Some(exp)
   }
 
-  def parseSequentOpt(fileUriOpt: Option[String], text: String, reporter: Reporter): Option[lang.ast.Sequent] = {
+  def parseSequentOpt(fileUriOpt: Option[String], text: String, isTruthTable: B, reporter: Reporter): Option[lang.ast.Sequent] = {
     val (dialect, input) = SlangParser.scalaDialect(isWorksheet = false)(text.value)
     val metap = new ScalametaParser(input)(dialect)
     val term = Try(metap.parseTerm()) match {
@@ -114,6 +117,7 @@ object Parser_Ext {
       hashSireum = true,
       isWorksheet = false,
       isDiet = false,
+      isTruthTable = isTruthTable,
       fileUriOpt,
       reporter
     ).translateSequent(term)

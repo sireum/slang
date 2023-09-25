@@ -204,7 +204,7 @@ object SlangParser {
   ): Result = {
     val (hashSireum, _, text) = detectSlang(fileUriOpt, txt)
     val (dialect, input) = scalaDialect(isWorksheet)(text)
-    val r = new SlangParser(text, input, dialect, hashSireum, isWorksheet, isDiet, fileUriOpt, reporter)
+    val r = new SlangParser(text, input, dialect, hashSireum, isWorksheet, isDiet, false, fileUriOpt, reporter)
       .parseTopUnit()
     r
   }
@@ -238,6 +238,7 @@ class SlangParser(
   hashSireum: Boolean,
   isWorksheet: Boolean,
   isDiet: Boolean,
+  isTruthTable: Boolean,
   fileUriOpt: Option[String],
   reporter: Reporter
 ) {
@@ -2903,7 +2904,14 @@ class SlangParser(
         if (t.targClause.nonEmpty)
           errorInSlang(t.targClause.values.head.pos, "Binary operations cannot have type arguments")
 
-        val id = infixSymbols.getOrElse(t.op.value, t.op.value)
+        val id: Predef.String = infixSymbols.get(t.op.value) match {
+          case scala.Some(v) =>
+            if (isTruthTable) {
+              error(t.op.pos, s"Can only use '->:' in truth table for implication")
+            }
+            v
+          case _ => t.op.value
+        }
         if (!checkSymbol(id) && !infixSymbols.contains(id)) {
           error(
             t.op.pos,

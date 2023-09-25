@@ -167,12 +167,12 @@ object SlangTruthTableParser {
           val input = conversions.String.fromCms(cms)
 
           if (iseq) {
-            Parser.parseSequentOpt(uriOpt, input, reporter) match {
+            Parser.parseSequentOpt(uriOpt, input, T, reporter) match {
               case Some(s) => s
               case _ => emptySeq
             }
           } else {
-            Parser.parseExpOpt(uriOpt, input, reporter) match {
+            Parser.parseExpOpt(uriOpt, input, T, reporter) match {
               case Some(e) => AST.Sequent(ISZ(), e, ISZ(), AST.Attr(e.posOpt))
               case _ => emptySeq
             }
