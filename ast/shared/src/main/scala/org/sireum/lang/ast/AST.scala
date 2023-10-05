@@ -383,6 +383,15 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = F
     @strictpure override def hasReturn: B = F
+    @strictpure def capacityOpt: Option[Z] = if (hasMax) {
+      if (hasMin && isIndex) {
+        Some(max - min + 1)
+      } else {
+        Some(max + 1)
+      }
+    } else {
+      None()
+    }
   }
 
   @datatype class Object(val isApp: B,
