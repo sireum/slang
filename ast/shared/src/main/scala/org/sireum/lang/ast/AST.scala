@@ -245,12 +245,24 @@ object Stmt {
 
   @datatype class Method(val typeChecked: B,
                          val purity: Purity.Type,
-                         val hasOverride: B,
-                         val isHelper: B,
+                         val modifiers: ISZ[String],
                          val sig: MethodSig,
                          val mcontract: MethodContract,
                          val bodyOpt: Option[Body],
                          @hidden val attr: ResolvedAttr) extends Stmt {
+
+    @memoize def hasOverride: B = { return ops.ISZOps(modifiers).contains("override") }
+    @memoize def isHelper: B = {
+      for (m <- modifiers) {
+        m.native match {
+          case "@helper" => return T
+          case "@inline" => return T
+          case _ =>
+        }
+      }
+      return F
+    }
+    @memoize def hasInline: B = { return ops.ISZOps(modifiers).contains("@inline") }
 
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @pure def hasContract: B = {
@@ -308,7 +320,7 @@ object Stmt {
               |  ${mcontract.prettySTOpt(bodyOpt.isEmpty)}
               |  ${(bodyOpt.get.prettySTs, "\n")}
               |}""")
-      return st"$helper$pure${overr}def ${sig.prettyST}$bOpt"
+      return st"${(modifiers, " ")}${if (modifiers.nonEmpty) " "  else ""}def ${sig.prettyST}$bOpt"
     }
     @strictpure override def isInstruction: B = F
     @strictpure override def hasReturn: B = T
@@ -1712,7 +1724,7 @@ object Exp {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
     @pure override def prettyST: ST = {
-      val targsOpt: Option[ST] = if (targs.isEmpty) None() else Some(st"[${(targs, "")}]")
+      val targsOpt: Option[ST] = if (targs.isEmpty) None() else Some(st"[${(targs, ", ")}]")
       val as = st"(${(for (arg <- args) yield arg.prettyST, ", ")})"
       ident.attr.resOpt match {
         case Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.Apply)) =>
@@ -1736,7 +1748,7 @@ object Exp {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
     @pure override def prettyST: ST = {
-      val targsOpt: Option[ST] = if (targs.isEmpty) None() else Some(st"[${(for (targ <- targs) yield targ.prettyST, "")}]")
+      val targsOpt: Option[ST] = if (targs.isEmpty) None() else Some(st"[${(for (targ <- targs) yield targ.prettyST, ", ")}]")
       val as = st"(${(for (arg <- args) yield st"${arg.id.value} = ${arg.arg.prettyST}", ", ")})"
       ident.attr.resOpt match {
         case Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.Apply)) =>

@@ -509,8 +509,7 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.Stmt.Method""""),
         ("typeChecked", printB(o.typeChecked)),
         ("purity", print_astPurityType(o.purity)),
-        ("hasOverride", printB(o.hasOverride)),
-        ("isHelper", printB(o.isHelper)),
+        ("modifiers", printISZ(T, o.modifiers, printString _)),
         ("sig", print_astMethodSig(o.sig)),
         ("mcontract", print_astMethodContract(o.mcontract)),
         ("bodyOpt", printOption(F, o.bodyOpt, print_astBody _)),
@@ -3226,11 +3225,8 @@ object JSON {
       parser.parseObjectKey("purity")
       val purity = parse_astPurityType()
       parser.parseObjectNext()
-      parser.parseObjectKey("hasOverride")
-      val hasOverride = parser.parseB()
-      parser.parseObjectNext()
-      parser.parseObjectKey("isHelper")
-      val isHelper = parser.parseB()
+      parser.parseObjectKey("modifiers")
+      val modifiers = parser.parseISZ(parser.parseString _)
       parser.parseObjectNext()
       parser.parseObjectKey("sig")
       val sig = parse_astMethodSig()
@@ -3244,7 +3240,7 @@ object JSON {
       parser.parseObjectKey("attr")
       val attr = parse_astResolvedAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.Method(typeChecked, purity, hasOverride, isHelper, sig, mcontract, bodyOpt, attr)
+      return org.sireum.lang.ast.Stmt.Method(typeChecked, purity, modifiers, sig, mcontract, bodyOpt, attr)
     }
 
     def parse_astStmtExtMethod(): org.sireum.lang.ast.Stmt.ExtMethod = {

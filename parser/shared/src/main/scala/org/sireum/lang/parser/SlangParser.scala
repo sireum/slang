@@ -788,208 +788,132 @@ class SlangParser(
       case Enclosing.DatatypeTrait | Enclosing.RecordTrait | Enclosing.Sig | Enclosing.MSig =>
       case _ => errorInSlang(stat.pos, "Method declarations without a body can only appear inside traits")
     }
-    val mods = stat.mods
     val name = stat.name
     val tparams = for (pcg <- stat.paramClauseGroups; tp <- pcg.tparamClause.values) yield tp
     val paramss = stat.paramClauses.map(_.values)
     val tpe = stat.decltpe
-    var hasError = false
     if (paramss.size > 1) {
-      hasError = true
       errorNotSlang(name.pos, "Methods with multiple parameter tuples are")
-    }
-    var isPure = false
-    var isStrictPure = false
-    var hasOverride = false
-    var isHelper = false
-    for (mod <- mods) mod match {
-      case mod"@pure" =>
-        if (isPure) {
-          hasError = true
-          error(mod.pos, "Redundant @pure.")
-        }
-        isPure = true
-      case mod"@strictpure" =>
-        if (isStrictPure) {
-          hasError = true
-          error(mod.pos, "Redundant @strictpure.")
-        }
-        isStrictPure = true
-      case mod"@helper" =>
-        if (isHelper) {
-          hasError = true
-          error(mod.pos, "Redundant @helper.")
-        }
-        isHelper = true
-      case mod"override" =>
-        if (hasOverride) {
-          hasError = true
-          error(mod.pos, "Redundant override.")
-        }
-        hasOverride = true
-      case _ =>
-        hasError = true
-        errorInSlang(mod.pos, s"Only the @pure, @strictpure, @helper and/or override method modifiers are allowed for method declarations")
-    }
-    if (isPure && isStrictPure) {
-      hasError = true
-      errorInSlang(
-        mods.head.pos,
-        s"Methods cannot be annotated with both @strictpure and @pure (@strictpure methods are always @pure)"
-      )
     }
     val (hasParams, params) = paramss.headOption match {
       case scala.Some(ps) => (true, ISZ[AST.Param](ps.map(translateParam(isMemoize = false)): _*))
       case _ => (false, ISZ[AST.Param]())
     }
-    val purity = if (isStrictPure) AST.Purity.StrictPure else if (isPure) AST.Purity.Pure else AST.Purity.Impure
-    val sig =
-      AST.MethodSig(isPure || isStrictPure, cid(name), ISZ(tparams.map(translateTypeParam(AST.Typed.VarKind.Immutable, true)): _*), hasParams, params, translateType(tpe))
-    AST.Stmt.Method(false, purity, hasOverride, isHelper, sig, emptyContract, None(), resolvedAttr(stat.pos))
+    val (purity, mods, _, _, _) = methodMods(true, enclosing, stat.mods)
+    val sig = AST.MethodSig(purity != AST.Purity.Impure, cid(name), ISZ(
+      tparams.map(translateTypeParam(AST.Typed.VarKind.Immutable, true)): _*), hasParams, params, translateType(tpe))
+    AST.Stmt.Method(false, purity, mods, sig, emptyContract, None(), resolvedAttr(stat.pos))
   }
 
-  val specDefn: Set[Predef.String] = Set(
-    "Theorem", "Lemma", "Fact"
-  )
-  val specDefnInv: Set[Predef.String] = specDefn + "Invariant"
-
-  def translateDef(enclosing: Enclosing.Type, tree: Defn.Def): AST.Stmt = {
-    val tparams = for (pcg <- tree.paramClauseGroups; tp <- pcg.tparamClause.values) yield tp
-    if (tree.paramClauses.size <= 1 && tree.mods.exists({
-      case mod"@spec" => true
-      case _ => false
-    })) {
-      tree.body match {
-        case q"${id: Term.Name}(..$_)" if specDefnInv.contains(id.value) =>
-          def checkReturnType(): Unit = {
-            tree.decltpe match {
-              case scala.Some(decltpe) => errorInSlang(decltpe.pos, s"${id.value}s cannot have an explicit return type")
-              case _ =>
-            }
-          }
-          id.value match {
-            case "Fact" =>
-              checkReturnType()
-              return translateFact(enclosing, tree)
-            case "Theorem" =>
-              checkReturnType()
-              return translateTheoremLemma(false, enclosing, tree)
-            case "Lemma" =>
-              checkReturnType()
-              return translateTheoremLemma(true, enclosing, tree)
-            case "Invariant" =>
-              if (tparams.nonEmpty) {
-                errorInSlang(id.pos, "Invariants cannot have type parameters")
-              }
-              if (tree.paramClauses.nonEmpty) {
-                errorInSlang(id.pos, "Invariants cannot have parameters")
-              }
-              checkReturnType()
-              return translateInvariant(enclosing, tree)
-            case _ =>
-          }
-        case _ =>
-      }
-    }
-    val mods = tree.mods
-    val name = tree.name
-    val paramss = tree.paramClauses.map(_.values)
-    val tpeopt = tree.decltpe
-    val exp = tree.body
-    var hasError = false
-    if (paramss.size > 1) {
-      hasError = true
-      errorNotSlang(name.pos, "Methods with multiple parameter tuples are")
-    }
-    if (tpeopt.isEmpty) {
-      hasError = true
-      errorInSlang(name.pos, "Methods have to be given an explicit return type")
-    }
+  def methodMods(isDecl: Boolean, enclosing: Enclosing.Type, mods: List[Mod]): (AST.Purity.Type, ISZ[String], Option[AST.Exp.LitString], B, B) = {
     var isPure = false
-    var isSpec = false
     var isStrictPure = false
     var hasOverride = false
-    var isMemoize = false
     var isHelper = false
+    var hasInline = false
+    var hasTailRec = false
+    var isMemoize = false
     var isJust = false
+    var isSpec = false
     var etaOpt: Option[AST.Exp.LitString] = None()
-    for (mod <- mods) mod match {
-      case mod"@pure" =>
-        if (isPure) {
-          hasError = true
-          error(mod.pos, "Redundant @pure.")
-        }
-        isPure = true
-      case mod"@strictpure" =>
-        if (isStrictPure) {
-          hasError = true
-          error(mod.pos, "Redundant @strictpure.")
-        }
-        isStrictPure = true
-      case mod"@helper" =>
-        if (isHelper) {
-          hasError = true
-          error(mod.pos, "Redundant @helper.")
-        }
-        isHelper = true
-      case mod"@spec" =>
-        if (isSpec) {
-          hasError = true
-          error(mod.pos, "Redundant @spec.")
-        }
-        isSpec = true
-      case mod"@memoize" =>
-        if (isMemoize) {
-          hasError = true
-          error(mod.pos, "Redundant @memoize.")
-        }
-        isMemoize = true
-      case mod"override" =>
-        if (hasOverride) {
-          hasError = true
-          error(mod.pos, "Redundant override.")
-        }
-        hasOverride = true
-      case mod"@just(name = ${term: Term})" =>
-        if (isJust) {
-          hasError = true
-          error(mod.pos, "Redundant @just.")
-        }
-        term match {
-          case term: Lit.String => etaOpt = Some(translateLit(term).asInstanceOf[AST.Exp.LitString])
-          case _ => errorInSlang(term.pos, s"Only string literal is allowed as @just argument")
-        }
-        isJust = true
-      case mod"@just(..$terms)" =>
-        if (isJust) {
-          hasError = true
-          error(mod.pos, "Redundant @just.")
-        }
-        if (terms.size > 1) {
-          hasError = true
-          error(mod.pos, "@just only accepts a single string literal argument")
-        } else if (terms.size == 1) {
-          val term = terms.head
+    var hasError = false
+    var r = ISZ[String]()
+    for (mod <- mods) {
+      r = r :+ mod.syntax
+      mod match {
+        case mod"@pure" =>
+          if (isPure) {
+            hasError = true
+            error(mod.pos, "Redundant @pure.")
+          }
+          isPure = true
+        case mod"@strictpure" =>
+          if (isStrictPure) {
+            hasError = true
+            error(mod.pos, "Redundant @strictpure.")
+          }
+          isStrictPure = true
+        case mod"@helper" =>
+          if (isHelper) {
+            hasError = true
+            error(mod.pos, "Redundant @helper.")
+          }
+          isHelper = true
+        case mod"override" =>
+          if (hasOverride) {
+            hasError = true
+            error(mod.pos, "Redundant override.")
+          }
+          hasOverride = true
+        case mod"@inline" if !isDecl =>
+          if (hasInline) {
+            hasError = true
+            error(mod.pos, "Redundant @inline.")
+          }
+          hasInline = true
+        case mod"@tailrec" if !isDecl =>
+          if (hasTailRec) {
+            hasError = true
+            error(mod.pos, "Redundant tailrec.")
+          }
+          hasTailRec = true
+        case mod"@spec" if !isDecl =>
+          if (isSpec) {
+            hasError = true
+            error(mod.pos, "Redundant @spec.")
+          }
+          isSpec = true
+        case mod"@memoize" if !isDecl =>
+          if (isMemoize) {
+            hasError = true
+            error(mod.pos, "Redundant @memoize.")
+          }
+          isMemoize = true
+        case mod"@just(name = ${term: Term})" if !isDecl =>
+          if (isJust) {
+            hasError = true
+            error(mod.pos, "Redundant @just.")
+          }
           term match {
-            case q"name = ${lit: Lit.String}" => etaOpt = Some(translateLit(lit).asInstanceOf[AST.Exp.LitString])
             case term: Lit.String => etaOpt = Some(translateLit(term).asInstanceOf[AST.Exp.LitString])
             case _ => errorInSlang(term.pos, s"Only string literal is allowed as @just argument")
           }
-        }
-        isJust = true
-      case mod"@just" =>
-        if (isJust) {
+          isJust = true
+        case mod"@just(..$terms)" if !isDecl =>
+          if (isJust) {
+            hasError = true
+            error(mod.pos, "Redundant @just.")
+          }
+          if (terms.size > 1) {
+            hasError = true
+            error(mod.pos, "@just only accepts a single string literal argument")
+          } else if (terms.size == 1) {
+            val term = terms.head
+            term match {
+              case q"name = ${lit: Lit.String}" => etaOpt = Some(translateLit(lit).asInstanceOf[AST.Exp.LitString])
+              case term: Lit.String => etaOpt = Some(translateLit(term).asInstanceOf[AST.Exp.LitString])
+              case _ => errorInSlang(term.pos, s"Only string literal is allowed as @just argument")
+            }
+          }
+          isJust = true
+        case mod"@just" if !isDecl =>
+          if (isJust) {
+            hasError = true
+            error(mod.pos, "Redundant @just.")
+          }
+          etaOpt = None()
+          isJust = true
+        case _ =>
           hasError = true
-          error(mod.pos, "Redundant @just.")
-        }
-        etaOpt = None()
-        isJust = true
-      case _ =>
-        hasError = true
-        errorInSlang(
-          mod.pos,
-          s"Only either method modifier @pure, @strictpure, @memoize, @helper, @spec, @just, and/or override is allowed for method definitions"
-        )
+          if (isDecl) {
+            errorInSlang(mod.pos, s"Only the @pure, @strictpure, @helper, and/or override method modifiers are allowed for method declarations")
+          } else {
+            errorInSlang(mod.pos, s"Only either method modifier @pure, @strictpure, @memoize, @helper, @spec, @just, @inline, @tailrec, and/or override is allowed for method definitions")
+          }
+      }
+    }
+    if (isJust && (isPure || isSpec || isStrictPure || hasOverride || isMemoize || isHelper)) {
+      error(mods.head.pos, s"@just methods cannot have other annotations")
     }
     if (isJust && enclosing != Enclosing.Object) {
       hasError = true
@@ -1049,17 +973,92 @@ class SlangParser(
       hasError = true
       errorInSlang(mods.head.pos, s"@spec methods cannot have a @helper modifier")
     }
+    if (hasInline && isHelper) {
+      errorInSlang(
+        mods.head.pos,
+        s"Methods cannot be annotated with both @helper and @inline (@inline methods are always @helper)"
+      )
+    }
+    if (enclosing == Enclosing.ExtObject) {
+      if (isHelper)
+        errorInSlang(mods.head.pos, s"Extension methods cannot have a @helper modifier")
+      if (hasOverride)
+        errorInSlang(mods.head.pos, s"Extension methods cannot have an override modifier")
+      if (isMemoize)
+        errorInSlang(mods.head.pos, s"Extension methods cannot have a @memoize modifier")
+    }
     val purity =
       if (isMemoize) AST.Purity.Memoize
       else if (isPure) AST.Purity.Pure
       else if (isStrictPure) AST.Purity.StrictPure
       else AST.Purity.Impure
+    return (purity, r, etaOpt, isJust, isSpec)
+  }
+
+  val specDefn: Set[Predef.String] = Set(
+    "Theorem", "Lemma", "Fact"
+  )
+  val specDefnInv: Set[Predef.String] = specDefn + "Invariant"
+
+  def translateDef(enclosing: Enclosing.Type, tree: Defn.Def): AST.Stmt = {
+    val tparams = for (pcg <- tree.paramClauseGroups; tp <- pcg.tparamClause.values) yield tp
+    if (tree.paramClauses.size <= 1 && tree.mods.exists({
+      case mod"@spec" => true
+      case _ => false
+    })) {
+      tree.body match {
+        case q"${id: Term.Name}(..$_)" if specDefnInv.contains(id.value) =>
+          def checkReturnType(): Unit = {
+            tree.decltpe match {
+              case scala.Some(decltpe) => errorInSlang(decltpe.pos, s"${id.value}s cannot have an explicit return type")
+              case _ =>
+            }
+          }
+          id.value match {
+            case "Fact" =>
+              checkReturnType()
+              return translateFact(enclosing, tree)
+            case "Theorem" =>
+              checkReturnType()
+              return translateTheoremLemma(false, enclosing, tree)
+            case "Lemma" =>
+              checkReturnType()
+              return translateTheoremLemma(true, enclosing, tree)
+            case "Invariant" =>
+              if (tparams.nonEmpty) {
+                errorInSlang(id.pos, "Invariants cannot have type parameters")
+              }
+              if (tree.paramClauses.nonEmpty) {
+                errorInSlang(id.pos, "Invariants cannot have parameters")
+              }
+              checkReturnType()
+              return translateInvariant(enclosing, tree)
+            case _ =>
+          }
+        case _ =>
+      }
+    }
+    val name = tree.name
+    val paramss = tree.paramClauses.map(_.values)
+    val tpeopt = tree.decltpe
+    val exp = tree.body
+    var hasError = false
+    if (paramss.size > 1) {
+      hasError = true
+      errorNotSlang(name.pos, "Methods with multiple parameter tuples are")
+    }
+    if (tpeopt.isEmpty) {
+      hasError = true
+      errorInSlang(name.pos, "Methods have to be given an explicit return type")
+    }
+    val (purity, mods, etaOpt, isJust, isSpec) = methodMods(false, enclosing, tree.mods)
+    val isMemoize = purity == AST.Purity.Memoize
     val (hasParams, params) = paramss.headOption match {
       case scala.Some(ps) => (true, ISZ[AST.Param](ps.map(translateParam(isMemoize)): _*))
       case _ => (false, ISZ[AST.Param]())
     }
     val sig = AST.MethodSig(
-      isMemoize || isPure || isStrictPure || isSpec,
+      purity != AST.Purity.Impure || org.sireum.ops.ISZOps(mods).contains("@spec"),
       cid(name),
       ISZ(tparams.map(translateTypeParam(AST.Typed.VarKind.Immutable, true)): _*),
       hasParams,
@@ -1069,16 +1068,16 @@ class SlangParser(
 
     def body(): AST.Stmt.Method = {
       def err(): AST.Stmt.Method = {
-        if (isStrictPure) {
+        if (purity == AST.Purity.StrictPure) {
           errorInSlang(exp.pos, "Ill-formed @strictpure method body")
         } else {
           errorInSlang(exp.pos, "Only block '{ ... }' is allowed for a method body")
         }
-        AST.Stmt.Method(false, purity, hasOverride, isHelper, sig, emptyContract, None(), resolvedAttr(tree.pos))
+        AST.Stmt.Method(false, purity, mods, sig, emptyContract, None(), resolvedAttr(tree.pos))
       }
 
       exp match {
-        case exp: Term.Block if !isStrictPure =>
+        case exp: Term.Block if purity != AST.Purity.StrictPure =>
           val (mc, bodyOpt) = exp.stats.headOption match {
             case scala.Some(c@q"Contract(..$exprs)") =>
               (
@@ -1093,7 +1092,7 @@ class SlangParser(
                 else Some(bodyCheck(ISZ(exp.stats.map(translateStat(Enclosing.Method)): _*), ISZ()))
               )
           }
-          AST.Stmt.Method(false, purity, hasOverride, isHelper, sig, mc, bodyOpt, resolvedAttr(tree.pos))
+          AST.Stmt.Method(false, purity, mods, sig, mc, bodyOpt, resolvedAttr(tree.pos))
         case q"Contract.Only(..$exprs)" =>
           enclosing match {
             case Enclosing.Sig | Enclosing.MSig | Enclosing.DatatypeTrait | Enclosing.RecordTrait =>
@@ -1103,12 +1102,12 @@ class SlangParser(
                   "@memoize can only be used for @datatype/@record classes."
                 )
               }
-              AST.Stmt.Method(false, purity, hasOverride, isHelper, sig, translateMethodContract(exprs, attr(exp.pos)),
+              AST.Stmt.Method(false, purity, mods, sig, translateMethodContract(exprs, attr(exp.pos)),
                 None(), resolvedAttr(tree.pos))
             case _ => err()
           }
         case _ =>
-          if (isStrictPure && !hasError) {
+          if (purity == AST.Purity.StrictPure && !hasError) {
             val (mc, newExp) = exp match {
               case exp: Term.Block =>
                 exp.stats.headOption match {
@@ -1130,7 +1129,7 @@ class SlangParser(
             stmt2 = stmt2(expOpt = Some(ident(id = stmt1.id, attr = ident.attr(posOpt = expAttr.posOpt))),
               attr = stmt2.attr(posOpt = expAttr.posOpt))
 
-            AST.Stmt.Method(false, purity, hasOverride, isHelper, sig, mc,
+            AST.Stmt.Method(false, purity, mods, sig, mc,
               Some(AST.Body(ISZ(stmt1, stmt2), ISZ())), resolvedAttr(tree.pos))
           } else err()
       }
@@ -1139,9 +1138,6 @@ class SlangParser(
     if (isJust) {
       if (checkSymbol(sig.id.value.value)) {
         error(name.pos, s"@just methods cannot be named with an identifier starting with a symbol")
-      }
-      if (isPure || isSpec || isStrictPure || hasOverride || isMemoize || isHelper) {
-        error(name.pos, s"@just methods cannot have other annotations")
       }
       exp match {
         case exp: Term.Name if exp.value == "$" =>
@@ -1166,21 +1162,15 @@ class SlangParser(
       if (checkSymbol(sig.id.value.value)) {
         error(name.pos, s"Extension methods cannot be named with an identifier starting with a symbol")
       }
-      if (isHelper)
-        errorInSlang(exp.pos, s"Extension methods cannot have a @helper modifier")
-      if (hasOverride)
-        errorInSlang(exp.pos, s"Extension methods cannot have an override modifier")
-      if (isMemoize)
-        errorInSlang(exp.pos, s"Extension methods cannot have a @memoize modifier")
       exp match {
         case exp: Term.Name if exp.value == "$" =>
-          AST.Stmt.ExtMethod(isPure, sig, emptyContract, resolvedAttr(tree.pos))
+          AST.Stmt.ExtMethod(purity != AST.Purity.Impure, sig, emptyContract, resolvedAttr(tree.pos))
         case q"Contract.Only(..$exprs)" =>
-          AST.Stmt.ExtMethod(isPure, sig, translateMethodContract(exprs, attr(exp.pos)), resolvedAttr(tree.pos))
+          AST.Stmt.ExtMethod(purity != AST.Purity.Impure, sig, translateMethodContract(exprs, attr(exp.pos)), resolvedAttr(tree.pos))
         case _ =>
           hasError = true
           error(exp.pos, "Only '$' or 'Contract.Only(...)' are allowed as Slang extension method expression.")
-          AST.Stmt.ExtMethod(isPure, sig, emptyContract, resolvedAttr(tree.pos))
+          AST.Stmt.ExtMethod(purity != AST.Purity.Impure, sig, emptyContract, resolvedAttr(tree.pos))
       }
     } else body()
   }
