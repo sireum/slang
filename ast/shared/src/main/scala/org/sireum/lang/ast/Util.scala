@@ -697,6 +697,7 @@ object Util {
       e match {
         case e: Exp.LitZ if e.value >= 0 => r = r :+ ProofAst.StepId.Num(e.value, e.attr)
         case e: Exp.LitString => r = r :+ ProofAst.StepId.Str(F, e.value, e.attr)
+        case e: ProofAst.StepId => r = r :+ e
         case _ =>
           reporter.error(e.posOpt, kind, "Expecting only a non-negative integer literal or a step name literal")
       }

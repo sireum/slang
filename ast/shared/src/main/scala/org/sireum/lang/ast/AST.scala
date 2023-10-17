@@ -923,7 +923,7 @@ object ProofAst {
     @pure def prettyST: ST
   }
 
-  @datatype trait StepId {
+  @datatype trait StepId extends Lit {
     @strictpure def attr: Attr
     @strictpure def posOpt: Option[Position] = attr.posOpt
     @strictpure def isSynthetic: B
@@ -937,12 +937,14 @@ object ProofAst {
       }
       @strictpure def isSynthetic: B = F
       @strictpure override def prettyST: ST = st"$no"
+      @strictpure def typedOpt: Option[Typed] = Typed.stepIdOpt
     }
     @datatype class Str(val isSynthetic: B, val value: String, @hidden val attr: Attr) extends StepId {
       override def string: String = {
         return s""""${ops.StringOps(value).escapeST.render}""""
       }
       @strictpure override def prettyST: ST = st""""$value""""
+      @strictpure def typedOpt: Option[Typed] = Typed.stepIdOpt
     }
   }
 

@@ -633,9 +633,6 @@ object TypeChecker {
   ): Option[HashMap[String, AST.Typed]] = {
 
     def findAncestor(ancestor: AST.Typed.Name, t: AST.Typed.Name): Option[AST.Typed.Name] = {
-      if (ancestor == AST.Typed.stepId && t == AST.Typed.z) {
-        return Some(ancestor)
-      }
       val (ancestors, substMap): (ISZ[AST.Typed.Name], HashMap[String, AST.Typed]) = th.typeMap.get(t.ids) match {
         case Some(info: TypeInfo.Adt) =>
           val smOpt = buildTypeSubstMap(t.ids, posOpt, info.ast.typeParams, t.args, reporter)
@@ -2435,18 +2432,34 @@ import TypeChecker._
         if (m.paramNames.isEmpty) {
           var args = ISZ[AST.Exp]()
           while (i < size) {
-            val (newArg, _) =
-              checkExp(Some(funType.args(i)), scope, expArgs(i), rep)
-            args = args :+ newArg
+            val pt = funType.args(i)
+            val at = expArgs(i)
+            (pt, at) match {
+              case (AST.Typed.stepId, lit: AST.Exp.LitZ) =>
+                args = args :+ AST.ProofAst.StepId.Num(lit.value, lit.attr)
+              case (AST.Typed.stepId, lit: AST.Exp.LitString) =>
+                args = args :+ AST.ProofAst.StepId.Str(F, lit.value, lit.attr)
+              case _ =>
+                val (newArg, _) = checkExp(Some(pt), scope, at, rep)
+                args = args :+ newArg
+            }
             i = i + 1
           }
           return (make(args, Some(funType.ret), funType), Some(funType.ret))
         } else {
           var args = Map.empty[String, AST.Exp]
           while (i < size) {
-            val (newArg, _) =
-              checkExp(Some(funType.args(i)), scope, expArgs(i), rep)
-            args = args + m.paramNames(i) ~> newArg
+            val pt = funType.args(i)
+            val at = expArgs(i)
+            (pt, at) match {
+              case (AST.Typed.stepId, lit: AST.Exp.LitZ) =>
+                args = args + m.paramNames(i) ~> AST.ProofAst.StepId.Num(lit.value, lit.attr)
+              case (AST.Typed.stepId, lit: AST.Exp.LitString) =>
+                args = args + m.paramNames(i) ~> AST.ProofAst.StepId.Str(F, lit.value, lit.attr)
+              case _ =>
+                val (newArg, _) = checkExp(Some(pt), scope, at, rep)
+                args = args + m.paramNames(i) ~> newArg
+            }
             i = i + 1
           }
           val tOpt = Some(funType.ret)
@@ -3624,6 +3637,7 @@ import TypeChecker._
             reporter.error(exp.posOpt, typeCheckerKind, "?(...) { (...) => ... } can only be used inside specification context.")
             return (exp, None())
           }
+        case _: AST.ProofAst.StepId => return (exp, exp.typedOpt)
       }
     }
 

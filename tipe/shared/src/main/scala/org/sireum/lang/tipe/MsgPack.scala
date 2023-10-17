@@ -1419,6 +1419,8 @@ object MsgPack {
 
     def write_astExp(o: org.sireum.lang.ast.Exp): Unit = {
       o match {
+        case o: org.sireum.lang.ast.ProofAst.StepId.Num => write_astProofAstStepIdNum(o)
+        case o: org.sireum.lang.ast.ProofAst.StepId.Str => write_astProofAstStepIdStr(o)
         case o: org.sireum.lang.ast.Exp.LitB => write_astExpLitB(o)
         case o: org.sireum.lang.ast.Exp.LitC => write_astExpLitC(o)
         case o: org.sireum.lang.ast.Exp.LitZ => write_astExpLitZ(o)
@@ -1461,6 +1463,8 @@ object MsgPack {
 
     def write_astLit(o: org.sireum.lang.ast.Lit): Unit = {
       o match {
+        case o: org.sireum.lang.ast.ProofAst.StepId.Num => write_astProofAstStepIdNum(o)
+        case o: org.sireum.lang.ast.ProofAst.StepId.Str => write_astProofAstStepIdStr(o)
         case o: org.sireum.lang.ast.Exp.LitB => write_astExpLitB(o)
         case o: org.sireum.lang.ast.Exp.LitC => write_astExpLitC(o)
         case o: org.sireum.lang.ast.Exp.LitZ => write_astExpLitZ(o)
@@ -4044,6 +4048,8 @@ object MsgPack {
       val i = reader.curr
       val t = reader.readZ()
       t match {
+        case Constants._astProofAstStepIdNum => val r = read_astProofAstStepIdNumT(T); return r
+        case Constants._astProofAstStepIdStr => val r = read_astProofAstStepIdStrT(T); return r
         case Constants._astExpLitB => val r = read_astExpLitBT(T); return r
         case Constants._astExpLitC => val r = read_astExpLitCT(T); return r
         case Constants._astExpLitZ => val r = read_astExpLitZT(T); return r
@@ -4092,6 +4098,8 @@ object MsgPack {
       val i = reader.curr
       val t = reader.readZ()
       t match {
+        case Constants._astProofAstStepIdNum => val r = read_astProofAstStepIdNumT(T); return r
+        case Constants._astProofAstStepIdStr => val r = read_astProofAstStepIdStrT(T); return r
         case Constants._astExpLitB => val r = read_astExpLitBT(T); return r
         case Constants._astExpLitC => val r = read_astExpLitCT(T); return r
         case Constants._astExpLitZ => val r = read_astExpLitZT(T); return r

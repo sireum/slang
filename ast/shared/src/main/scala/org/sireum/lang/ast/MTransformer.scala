@@ -1283,6 +1283,20 @@ import MTransformer._
 
   def preExp(o: Exp): PreResult[Exp] = {
     o match {
+      case o: ProofAst.StepId.Num =>
+        val r: PreResult[Exp] = preProofAstStepIdNum(o) match {
+         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
+        }
+        return r
+      case o: ProofAst.StepId.Str =>
+        val r: PreResult[Exp] = preProofAstStepIdStr(o) match {
+         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
+        }
+        return r
       case o: Exp.LitB =>
         val r: PreResult[Exp] = preExpLitB(o) match {
          case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
@@ -1385,6 +1399,20 @@ import MTransformer._
 
   def preLit(o: Lit): PreResult[Lit] = {
     o match {
+      case o: ProofAst.StepId.Num =>
+        val r: PreResult[Lit] = preProofAstStepIdNum(o) match {
+         case PreResult(continu, MSome(r: Lit)) => PreResult(continu, MSome[Lit](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Lit")
+         case PreResult(continu, _) => PreResult(continu, MNone[Lit]())
+        }
+        return r
+      case o: ProofAst.StepId.Str =>
+        val r: PreResult[Lit] = preProofAstStepIdStr(o) match {
+         case PreResult(continu, MSome(r: Lit)) => PreResult(continu, MSome[Lit](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Lit")
+         case PreResult(continu, _) => PreResult(continu, MNone[Lit]())
+        }
+        return r
       case o: Exp.LitB => return preExpLitB(o)
       case o: Exp.LitC => return preExpLitC(o)
       case o: Exp.LitZ => return preExpLitZ(o)
@@ -2362,6 +2390,20 @@ import MTransformer._
 
   def postExp(o: Exp): MOption[Exp] = {
     o match {
+      case o: ProofAst.StepId.Num =>
+        val r: MOption[Exp] = postProofAstStepIdNum(o) match {
+         case MSome(result: Exp) => MSome[Exp](result)
+         case MSome(_) => halt("Can only produce object of type Exp")
+         case _ => MNone[Exp]()
+        }
+        return r
+      case o: ProofAst.StepId.Str =>
+        val r: MOption[Exp] = postProofAstStepIdStr(o) match {
+         case MSome(result: Exp) => MSome[Exp](result)
+         case MSome(_) => halt("Can only produce object of type Exp")
+         case _ => MNone[Exp]()
+        }
+        return r
       case o: Exp.LitB =>
         val r: MOption[Exp] = postExpLitB(o) match {
          case MSome(result: Exp) => MSome[Exp](result)
@@ -2464,6 +2506,20 @@ import MTransformer._
 
   def postLit(o: Lit): MOption[Lit] = {
     o match {
+      case o: ProofAst.StepId.Num =>
+        val r: MOption[Lit] = postProofAstStepIdNum(o) match {
+         case MSome(result: Lit) => MSome[Lit](result)
+         case MSome(_) => halt("Can only produce object of type Lit")
+         case _ => MNone[Lit]()
+        }
+        return r
+      case o: ProofAst.StepId.Str =>
+        val r: MOption[Lit] = postProofAstStepIdStr(o) match {
+         case MSome(result: Lit) => MSome[Lit](result)
+         case MSome(_) => halt("Can only produce object of type Lit")
+         case _ => MNone[Lit]()
+        }
+        return r
       case o: Exp.LitB => return postExpLitB(o)
       case o: Exp.LitC => return postExpLitC(o)
       case o: Exp.LitZ => return postExpLitZ(o)
@@ -4272,6 +4328,18 @@ import MTransformer._
       val o2: Exp = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val rOpt: MOption[Exp] = o2 match {
+        case o2: ProofAst.StepId.Num =>
+          val r0: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(attr = r0.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: ProofAst.StepId.Str =>
+          val r0: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(attr = r0.getOrElse(o2.attr)))
+          else
+            MNone()
         case o2: Exp.LitB =>
           val r0: MOption[Attr] = transformAttr(o2.attr)
           if (hasChanged || r0.nonEmpty)
@@ -4574,6 +4642,18 @@ import MTransformer._
       val o2: Lit = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val rOpt: MOption[Lit] = o2 match {
+        case o2: ProofAst.StepId.Num =>
+          val r0: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(attr = r0.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: ProofAst.StepId.Str =>
+          val r0: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(attr = r0.getOrElse(o2.attr)))
+          else
+            MNone()
         case o2: Exp.LitB =>
           val r0: MOption[Attr] = transformAttr(o2.attr)
           if (hasChanged || r0.nonEmpty)

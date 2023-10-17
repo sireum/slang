@@ -617,6 +617,20 @@ object Transformer {
 
     @pure def preExp(ctx: Context, o: Exp): PreResult[Context, Exp] = {
       o match {
+        case o: ProofAst.StepId.Num =>
+          val r: PreResult[Context, Exp] = preProofAstStepIdNum(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Exp)) => PreResult(preCtx, continu, Some[Exp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Exp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp]())
+          }
+          return r
+        case o: ProofAst.StepId.Str =>
+          val r: PreResult[Context, Exp] = preProofAstStepIdStr(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Exp)) => PreResult(preCtx, continu, Some[Exp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Exp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Exp]())
+          }
+          return r
         case o: Exp.LitB =>
           val r: PreResult[Context, Exp] = preExpLitB(ctx, o) match {
            case PreResult(preCtx, continu, Some(r: Exp)) => PreResult(preCtx, continu, Some[Exp](r))
@@ -719,6 +733,20 @@ object Transformer {
 
     @pure def preLit(ctx: Context, o: Lit): PreResult[Context, Lit] = {
       o match {
+        case o: ProofAst.StepId.Num =>
+          val r: PreResult[Context, Lit] = preProofAstStepIdNum(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Lit)) => PreResult(preCtx, continu, Some[Lit](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Lit")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Lit]())
+          }
+          return r
+        case o: ProofAst.StepId.Str =>
+          val r: PreResult[Context, Lit] = preProofAstStepIdStr(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Lit)) => PreResult(preCtx, continu, Some[Lit](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Lit")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Lit]())
+          }
+          return r
         case o: Exp.LitB => return preExpLitB(ctx, o)
         case o: Exp.LitC => return preExpLitC(ctx, o)
         case o: Exp.LitZ => return preExpLitZ(ctx, o)
@@ -1696,6 +1724,20 @@ object Transformer {
 
     @pure def postExp(ctx: Context, o: Exp): TPostResult[Context, Exp] = {
       o match {
+        case o: ProofAst.StepId.Num =>
+          val r: TPostResult[Context, Exp] = postProofAstStepIdNum(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Exp)) => TPostResult(postCtx, Some[Exp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp]())
+          }
+          return r
+        case o: ProofAst.StepId.Str =>
+          val r: TPostResult[Context, Exp] = postProofAstStepIdStr(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Exp)) => TPostResult(postCtx, Some[Exp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Exp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Exp]())
+          }
+          return r
         case o: Exp.LitB =>
           val r: TPostResult[Context, Exp] = postExpLitB(ctx, o) match {
            case TPostResult(postCtx, Some(result: Exp)) => TPostResult(postCtx, Some[Exp](result))
@@ -1798,6 +1840,20 @@ object Transformer {
 
     @pure def postLit(ctx: Context, o: Lit): TPostResult[Context, Lit] = {
       o match {
+        case o: ProofAst.StepId.Num =>
+          val r: TPostResult[Context, Lit] = postProofAstStepIdNum(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Lit)) => TPostResult(postCtx, Some[Lit](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Lit")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Lit]())
+          }
+          return r
+        case o: ProofAst.StepId.Str =>
+          val r: TPostResult[Context, Lit] = postProofAstStepIdStr(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Lit)) => TPostResult(postCtx, Some[Lit](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Lit")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Lit]())
+          }
+          return r
         case o: Exp.LitB => return postExpLitB(ctx, o)
         case o: Exp.LitC => return postExpLitC(ctx, o)
         case o: Exp.LitZ => return postExpLitZ(ctx, o)
@@ -3644,6 +3700,18 @@ import Transformer._
       val o2: Exp = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val rOpt: TPostResult[Context, Exp] = o2 match {
+        case o2: ProofAst.StepId.Num =>
+          val r0: TPostResult[Context, Attr] = transformAttr(preR.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(attr = r0.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r0.ctx, None())
+        case o2: ProofAst.StepId.Str =>
+          val r0: TPostResult[Context, Attr] = transformAttr(preR.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(attr = r0.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r0.ctx, None())
         case o2: Exp.LitB =>
           val r0: TPostResult[Context, Attr] = transformAttr(preR.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty)
@@ -3946,6 +4014,18 @@ import Transformer._
       val o2: Lit = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val rOpt: TPostResult[Context, Lit] = o2 match {
+        case o2: ProofAst.StepId.Num =>
+          val r0: TPostResult[Context, Attr] = transformAttr(preR.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(attr = r0.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r0.ctx, None())
+        case o2: ProofAst.StepId.Str =>
+          val r0: TPostResult[Context, Attr] = transformAttr(preR.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(attr = r0.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r0.ctx, None())
         case o2: Exp.LitB =>
           val r0: TPostResult[Context, Attr] = transformAttr(preR.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty)
