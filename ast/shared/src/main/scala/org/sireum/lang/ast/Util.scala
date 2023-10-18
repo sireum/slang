@@ -141,8 +141,7 @@ object Util {
     }
   }
 
-  @record class ProofStepsNumberMapper(val content: ISZ[C],
-                                       var num: Z,
+  @record class ProofStepsNumberMapper(var num: Z,
                                        var numMap: HashMap[Z, Z],
                                        var map: HashMap[Z, (String, String)],
                                        val reporter: Reporter) extends MTransformer {
@@ -181,25 +180,6 @@ object Util {
       return MTransformer.PreResultProofAstStepRegular
     }
 
-    def processArg(isWarning: B, arg: Exp): Unit = {
-      arg match {
-        case arg: Exp.LitZ =>
-          numMap.get(arg.value) match {
-            case Some(newNo) =>
-              if (arg.value != newNo) {
-                map = map + arg.posOpt.get.offset ~> ((arg.value.string, newNo.string))
-              }
-            case _ =>
-              if (isWarning) {
-                reporter.warn(arg.posOpt, "Slang Rewrite", s"Could not find proof step #${arg.value}")
-              } else {
-                reporter.error(arg.posOpt, "Slang Rewrite", s"Could not find proof step #${arg.value}")
-              }
-          }
-        case _ =>
-      }
-    }
-
     def processStepId(sid: ProofAst.StepId): Unit = {
       sid match {
         case sid: ProofAst.StepId.Num =>
@@ -218,7 +198,10 @@ object Util {
     override def preProofAstStepJustificationApply(o: ProofAst.Step.Justification.Apply): MTransformer.PreResult[ProofAst.Step.Justification] = {
       if (o.witnesses.isEmpty) {
         for (arg <- o.args) {
-          processArg(F, arg)
+          arg match {
+            case arg: ProofAst.StepId => processStepId(arg)
+            case _ =>
+          }
         }
       } else {
         for (w <- o.witnesses) {
@@ -721,7 +704,7 @@ object Util {
 
   @pure def renumberProofSteps(text: String, topUnit: TopUnit, reporter: Reporter): (String, Z) = {
     val content = conversions.String.toCis(text)
-    val trans = ProofStepsNumberMapper(content, 1, HashMap.empty, HashMap.empty, Reporter.create)
+    val trans = ProofStepsNumberMapper(1, HashMap.empty, HashMap.empty, Reporter.create)
     trans.transformTopUnit(topUnit)
     reporter.reports(trans.reporter.messages)
     val n = trans.map.size

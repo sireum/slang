@@ -38,7 +38,6 @@ object FrontEnd {
 
   @enum object Rewrite {
     "InsertConstructorVals"
-    "RenumberProofSteps"
     "ReplaceEnumSymbols"
   }
 
@@ -87,7 +86,6 @@ object FrontEnd {
       case Some(program) if !reporter.hasError =>
         kind match {
           case Rewrite.InsertConstructorVals => return Some(AST.Util.insertConstructorVal(text, program))
-          case Rewrite.RenumberProofSteps => return Some(AST.Util.renumberProofSteps(text, program, reporter))
           case Rewrite.ReplaceEnumSymbols => return Some(AST.Util.replaceEnumSymbols(text, program))
         }
       case _ => return None()

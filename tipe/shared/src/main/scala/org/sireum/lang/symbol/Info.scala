@@ -331,6 +331,8 @@ object Scope {
   @pure def name: ISZ[String]
 
   @pure def posOpt: Option[Position]
+
+  def mtransform(t: AST.MTransformer): Unit
 }
 
 object Info {
@@ -340,6 +342,9 @@ object Info {
 
     @pure override def posOpt: Option[Position] = {
       return None[Position]()
+    }
+
+    def mtransform(t: AST.MTransformer): Unit = {
     }
   }
 
@@ -370,6 +375,10 @@ object Info {
     @pure def resOpt: Option[AST.ResolvedInfo] = {
       return ast.attr.resOpt
     }
+
+    def mtransform(t: AST.MTransformer): Unit = {
+      t.transformStmt(ast)
+    }
   }
 
   @datatype class SpecVar(val owner: ISZ[String],
@@ -395,6 +404,10 @@ object Info {
 
     @pure def resOpt: Option[AST.ResolvedInfo] = {
       return ast.attr.resOpt
+    }
+
+    def mtransform(t: AST.MTransformer): Unit = {
+      t.transformStmt(ast)
     }
   }
 
@@ -433,6 +446,9 @@ object Info {
       return resOpt.get.asInstanceOf[AST.ResolvedInfo.BuiltIn]
     }
 
+    def mtransform(t: AST.MTransformer): Unit = {
+      t.transformStmt(ast)
+    }
   }
 
   @datatype class SpecMethod(val owner: ISZ[String], val isInObject: B, val scope: Scope, val ast: AST.Stmt.SpecMethod)
@@ -461,6 +477,10 @@ object Info {
     @pure def methodRes: AST.ResolvedInfo.Method = {
       return resOpt.get.asInstanceOf[AST.ResolvedInfo.Method]
     }
+
+    def mtransform(t: AST.MTransformer): Unit = {
+      t.transformStmt(ast)
+    }
   }
 
   @datatype class Object(val owner: ISZ[String],
@@ -482,6 +502,9 @@ object Info {
       return ast.attr.posOpt
     }
 
+    def mtransform(t: AST.MTransformer): Unit = {
+      t.transformStmt(ast)
+    }
   }
 
   @datatype class ExtMethod(val owner: ISZ[String], val scope: Scope.Global, val ast: AST.Stmt.ExtMethod) extends Info {
@@ -509,6 +532,10 @@ object Info {
     @pure def methodRes: AST.ResolvedInfo.Method = {
       return resOpt.get.asInstanceOf[AST.ResolvedInfo.Method]
     }
+
+    def mtransform(t: AST.MTransformer): Unit = {
+      t.transformStmt(ast)
+    }
   }
 
   @datatype class JustMethod(val owner: ISZ[String], val scope: Scope.Global, val ast: AST.Stmt.JustMethod) extends Info {
@@ -535,6 +562,10 @@ object Info {
 
     @pure def methodRes: AST.ResolvedInfo.Method = {
       return resOpt.get.asInstanceOf[AST.ResolvedInfo.Method]
+    }
+
+    def mtransform(t: AST.MTransformer): Unit = {
+      t.transformStmt(ast)
     }
   }
 
@@ -654,6 +685,9 @@ object Info {
         ISZ()
       )
     )
+
+    def mtransform(t: AST.MTransformer): Unit = {
+    }
   }
 
   @datatype class EnumElement(val owner: ISZ[String],
@@ -666,6 +700,8 @@ object Info {
       return owner :+ id
     }
 
+    def mtransform(t: AST.MTransformer): Unit = {
+    }
   }
 
   @datatype class LocalVar(val name: ISZ[String],
@@ -679,6 +715,13 @@ object Info {
       return ast.attr.posOpt
     }
 
+    def mtransform(t: AST.MTransformer): Unit = {
+      t.transformId(ast)
+      initOpt match {
+        case Some(init) => t.transformAssignExp(init)
+        case _ =>
+      }
+    }
   }
 
   @datatype class Fact(val owner: ISZ[String],
@@ -699,6 +742,10 @@ object Info {
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
     }
+
+    def mtransform(t: AST.MTransformer): Unit = {
+      t.transformStmt(ast)
+    }
   }
 
   @datatype class Theorem(val owner: ISZ[String],
@@ -718,6 +765,10 @@ object Info {
 
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
+    }
+
+    def mtransform(t: AST.MTransformer): Unit = {
+      t.transformStmt(ast)
     }
   }
 
@@ -740,6 +791,10 @@ object Info {
 
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
+    }
+
+    def mtransform(t: AST.MTransformer): Unit = {
+      t.transformStmt(ast)
     }
   }
 
