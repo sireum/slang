@@ -1613,7 +1613,7 @@ object Exp {
           if (l > 6 || op == "___>:" || op == "-->:") {
             singleLine = F
           }
-          if (Binary.shouldParenthesize(l, rightOp, F, isOpRightAssoc)) st"($right)" else right
+          if (Binary.shouldParenthesize(l, rightOp, T, isOpRightAssoc)) st"($right)" else right
         case _ if isRightIf =>
           singleLine = F
           st"($right)"
