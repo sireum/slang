@@ -1579,16 +1579,8 @@ object Exp {
     @pure def subst(substMap: HashMap[String, Typed]): Ref
   }
 
-  @datatype class Binary(val left: Exp, val op: String, val right: Exp, @hidden val attr: ResolvedAttr) extends Exp {
-
-    @memoize def isRightAssoc: B = {
-      return ops.StringOps(op).endsWith(":")
-    }
-
-    @strictpure override def posOpt: Option[Position] = attr.posOpt
-    @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
-
-    @pure def shouldParenthesize(level: Z, cop: String, isRight: B): B = {
+  object Binary {
+    @pure def shouldParenthesize(level: Z, cop: String, isRight: B, isRightAssoc: B): B = {
       val c = BinaryOp.precendenceLevel(cop)
       if (c > level) {
         return T
@@ -1599,35 +1591,63 @@ object Exp {
       return F
     }
 
-    @pure override def prettyST: ST = {
+    @pure def prettyST(op: String, isOpRightAssoc: B,
+                       left: ST, leftOpOpt: Option[String], isLeftIf: B,
+                       right: ST, rightOpOpt: Option[String], isRightIf: B): ST = {
       val l = BinaryOp.precendenceLevel(op)
       var singleLine = T
-      val leftST: ST = left match {
-        case left: Binary =>
-          if (l > 6 || op == "-->:") {
+      val leftST: ST = leftOpOpt match {
+        case Some(leftOp) =>
+          if (l > 6 || op == "___>:" || op == "-->:") {
             singleLine = F
           }
-          if (shouldParenthesize(l, left.op, F)) st"(${left.prettyST})" else left.prettyST
-        case left: If =>
+          if (Binary.shouldParenthesize(l, leftOp, F, isOpRightAssoc)) st"($left)" else left
+        case _ if isLeftIf =>
           singleLine = F
-          st"(${left.prettyST})"
-        case _ => left.prettyST
+          st"($left)"
+        case _ =>
+          left
       }
-      val rightST: ST = right match {
-        case right: Binary =>
-          if (l > 6 || op == "-->:") {
+      val rightST: ST = rightOpOpt match {
+        case Some(rightOp) =>
+          if (l > 6 || op == "___>:" || op == "-->:") {
             singleLine = F
           }
-          if (shouldParenthesize(l, right.op, T)) st"(${right.prettyST})" else right.prettyST
-        case right: If =>
+          if (Binary.shouldParenthesize(l, rightOp, F, isOpRightAssoc)) st"($right)" else right
+        case _ if isRightIf =>
           singleLine = F
-          st"(${right.prettyST})"
-        case _ => right.prettyST
+          st"($right)"
+        case _ =>
+          right
       }
       val r: ST = if (singleLine || op == BinaryOp.MapsTo) st"$leftST $op $rightST" else
         st"""$leftST $op
             |  $rightST"""
       return r
+    }
+  }
+
+  @datatype class Binary(val left: Exp, val op: String, val right: Exp, @hidden val attr: ResolvedAttr) extends Exp {
+
+    @memoize def isRightAssoc: B = {
+      return ops.StringOps(op).endsWith(":")
+    }
+
+    @strictpure override def posOpt: Option[Position] = attr.posOpt
+    @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
+
+
+    @pure override def prettyST: ST = {
+      val leftOpOpt: Option[String] = left match {
+        case left: Binary => Some(left.op)
+        case _ => None()
+      }
+      val rightOpOpt: Option[String] = right match {
+        case right: Binary => Some(right.op)
+        case _ => None()
+      }
+      return Binary.prettyST(op, isRightAssoc, left.prettyST, leftOpOpt, left.isInstanceOf[If], right.prettyST,
+        rightOpOpt, right.isInstanceOf[If])
     }
   }
 
