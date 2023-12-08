@@ -1728,11 +1728,7 @@ object Exp {
 
     @pure override def prettyST: ST = {
       val targsOpt: Option[ST] = if (targs.isEmpty) None() else Some(st"[${(targs, "")}]")
-      val rcvOpt: Option[Exp] = receiverOpt match {
-        case Some(exp: Exp.This) if posOpt.nonEmpty && exp.posOpt == posOpt => None()
-        case _ => receiverOpt
-      }
-      return st"${rcvOpt.map((rcv: Exp) => st"${rcv.prettyST}.")}${id.value}$targsOpt"
+      return st"${receiverOptST(posOpt, receiverOpt)}${id.value}$targsOpt"
     }
 
   }
@@ -1752,11 +1748,7 @@ object Exp {
         case Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.Apply)) =>
           return st"${receiverOpt.get.prettyST}$targsOpt$as"
         case _ =>
-          val rcvOpt: Option[Exp] = receiverOpt match {
-            case Some(exp: Exp.This) if ident.posOpt.nonEmpty && exp.posOpt == ident.posOpt => None()
-            case _ => receiverOpt
-          }
-          return st"${rcvOpt.map((rcv: Exp) => st"${rcv.prettyST}.")}${ident.id.value}$targsOpt$as"
+          return st"${receiverOptST(posOpt, receiverOpt)}${ident.id.value}$targsOpt$as"
       }
     }
   }
@@ -1776,11 +1768,7 @@ object Exp {
         case Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.Apply)) =>
           return st"${receiverOpt.map((rcv: Exp) => st"${rcv.prettyST}")}$targsOpt$as"
         case _ =>
-          val rcvOpt: Option[Exp] = receiverOpt match {
-            case Some(exp: Exp.This) if ident.posOpt.nonEmpty && exp.posOpt == ident.posOpt => None()
-            case _ => receiverOpt
-          }
-          return st"${rcvOpt.map((rcv: Exp) => st"${rcv.prettyST}.")}${ident.id.value}$targsOpt$as"
+          return st"${receiverOptST(posOpt, receiverOpt)}${ident.id.value}$targsOpt$as"
       }
     }
   }
@@ -2049,6 +2037,15 @@ object Exp {
     @pure override def prettyST: ST = {
       val cases = flowInvariants.map((m: MethodContract.InfoFlowCase) => m.prettyST)
       return st"InfoFlowInvariant(${(cases, ",\n")})"
+    }
+  }
+
+  @pure def receiverOptST(posOpt: Option[Position], receiverOpt: Option[Exp]): Option[ST] = {
+    receiverOpt match {
+      case Some(exp: Exp.This) if posOpt.nonEmpty && exp.posOpt == posOpt => return None()
+      case Some(exp: Exp.Ref) => return Some(st"${exp.asExp.prettyST}.")
+      case Some(exp) => return Some(st"(${exp.prettyST}).")
+      case _ => return None()
     }
   }
 }
