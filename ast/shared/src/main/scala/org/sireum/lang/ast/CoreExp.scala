@@ -30,9 +30,6 @@ import org.sireum._
 
 @datatype trait CoreExp {
   @strictpure def tipe: Typed
-
-  @strictpure def opOpt: Option[String] = None()
-
   @pure def prettyST: ST
 }
 
@@ -99,7 +96,7 @@ object CoreExp {
     }
   }
 
-  @datatype class ParamVarRef(val deBruijn: Z, val id: String, val tipe: Typed) extends CoreExp {
+  @datatype class ParamVarRef(val deBruijn: Z, @hidden val id: String, val tipe: Typed) extends CoreExp {
     @strictpure override def prettyST: ST = st"$id"
   }
 
@@ -125,48 +122,60 @@ object CoreExp {
 
   @datatype class Apply(val exp: CoreExp, val args: ISZ[CoreExp], val tipe: Typed) extends CoreExp {
     @pure override def prettyST: ST = {
-      exp.opOpt match {
-        case Some(op) => if (args.isEmpty) {
-          if (exp.opOpt.isEmpty) {
-            return st"$op${exp.prettyST}"
+      exp match {
+        case exp: CoreExp.ObjectVarRef =>
+          if (exp.owner == binaryOwner) {
+            val op = exp.id
+            val left = args(0)
+            val right = args(1)
+            val leftOpOpt: Option[String] = left match {
+              case left: CoreExp.ObjectVarRef if left.owner == binaryOwner => Some(left.id)
+              case _ => None()
+            }
+            val rightOpOpt: Option[String] = left match {
+              case right: CoreExp.ObjectVarRef if right.owner == binaryOwner => Some(right.id)
+              case _ => None()
+            }
+            return Exp.Binary.prettyST(op, ops.StringOps(op).endsWith(":"), left.prettyST, leftOpOpt,
+              left.isInstanceOf[If], right.prettyST, rightOpOpt, right.isInstanceOf[If])
+          } else if (exp.owner == unaryOwner) {
+            val paren: B = args(0) match {
+              case _: CoreExp.LocalVarRef => F
+              case _: CoreExp.ParamVarRef => F
+              case _: CoreExp.ObjectVarRef => F
+              case _: CoreExp.Lit => F
+              case _ => T
+            }
+            return if (paren) st"${exp.id}(${args(0).prettyST})" else st"${exp.id}${args(0).prettyST}"
           } else {
-            return st"$op(${exp.prettyST})"
+            return st"${exp.prettyST}(${(for (arg <- args) yield arg.prettyST, ", ")})"
           }
-        } else {
-          val select = exp.asInstanceOf[Select]
-          val left = select.exp
-          val right = args(0)
-          return Exp.Binary.prettyST(op, ops.StringOps(op).endsWith(":"), left.prettyST, left.opOpt,
-            left.isInstanceOf[If], right.prettyST, right.opOpt, right.isInstanceOf[If])
-        }
         case _ => return st"${exp.prettyST}(${(for (arg <- args) yield arg.prettyST, ", ")})"
       }
     }
   }
 
   @datatype class Select(val exp: CoreExp, val id: String, val tipe: Typed) extends CoreExp {
-    @strictpure override def opOpt: Option[String] = tipe match {
-      case tipe: Typed.Method if !tipe.isInObject =>
-        tipe.paramNames.size match {
-          case z"0" if ops.StringOps(tipe.name).startsWith("unary_") =>
-            Some(ops.StringOps(tipe.name).substring(6, tipe.name.size))
-          case z"1" =>
-            val c = ops.StringOps(tipe.name).first
-            ops.COps(c).category match {
-              case ops.COps.Category.Sm => Some(tipe.name)
-              case ops.COps.Category.So => Some(tipe.name)
-              case _ => if ('\u0020' <= c && c <= '\u007E') Some(tipe.name) else None()
-            }
-          case _ => None()
-        }
-      case _ => None()
-    }
-
     @strictpure override def prettyST: ST = st"${exp.prettyST}.$id"
   }
 
-  @datatype class Fun(val params: ISZ[Param], val exp: CoreExp, val tipe: Typed) extends CoreExp {
-    @strictpure override def prettyST: ST = st"((${(for (param <- params) yield param.prettyST, ", ")}) => ${exp.prettyST})"
+  @datatype class Fun(val param: Param, val exp: CoreExp) extends CoreExp {
+    @pure override def prettyST: ST = {
+      var params = ISZ[ST](param.prettyST)
+      var e = exp
+      var stop = F
+      while (!stop) {
+        e match {
+          case fun: Fun =>
+            params = params :+ fun.param.prettyST
+            e = fun.exp
+          case _ => stop = T
+        }
+      }
+      return if (params.size == 1) st"(${params(0)}) => ${e.prettyST}"
+      else st"{(${(params, ", ")}) => ${e.prettyST}}"
+    }
+    @strictpure override def tipe: Typed = Typed.Fun(T, F, ISZ(param.tipe), exp.tipe)
   }
 
   @datatype class Quant(val kind: Quant.Kind.Type, val param: Param, val exp: CoreExp) extends CoreExp {
@@ -202,7 +211,10 @@ object CoreExp {
     }
   }
 
-  @datatype class Param(val id: String, val tipe: Typed) {
+  @datatype class Param(@hidden val id: String, val tipe: Typed) {
     @strictpure def prettyST: ST = st"$id: $tipe"
   }
+
+  val unaryOwner: ISZ[String] = ISZ("$unary")
+  val binaryOwner: ISZ[String] = ISZ("$binary")
 }
