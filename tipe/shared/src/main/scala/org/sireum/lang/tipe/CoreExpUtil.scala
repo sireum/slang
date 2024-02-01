@@ -31,6 +31,8 @@ import org.sireum.lang.{ast => AST}
 object CoreExpUtil {
   type FunStack = Stack[(String, AST.Typed)]
   type LocalMap = HashSMap[(ISZ[String], String), AST.CoreExp]
+  type LocalPatternSet = HashSSet[(ISZ[String], String)]
+  type UnificationResult = Either[HashSMap[(ISZ[String], String), AST.CoreExp], String]
 
   @pure def translate(th: TypeHierarchy, exp: AST.Exp): AST.CoreExp = {
     @pure def recBody(body: AST.Body, funStack: FunStack, localMap: LocalMap): AST.CoreExp = {
@@ -167,5 +169,78 @@ object CoreExpUtil {
       }
     }
     return rec(exp, Stack.empty, HashSMap.empty)
+  }
+
+  @pure def unify(th: TypeHierarchy, localPatterns: LocalPatternSet, pattern: AST.CoreExp, exp: AST.CoreExp): UnificationResult = {
+    var map = HashSMap.empty[(ISZ[String], String), HashSSet[AST.CoreExp]]
+    var errorMessageOpt = Option.none[String]()
+    def err(p: AST.CoreExp, e: AST.CoreExp): Unit = {
+      errorMessageOpt = Some(
+        s"""Could not unify '${p.prettyST}' with '${e.prettyST}' in
+           |${pattern.prettyST}, and
+           |${exp.prettyST}""".stripMargin)
+    }
+    def matchPatternLocals(p: AST.CoreExp, e: AST.CoreExp): Unit = {
+      if (errorMessageOpt.nonEmpty) {
+        return
+      }
+      (p, e) match {
+        case (p: AST.CoreExp.Lit, e) =>
+          if (p != e) {
+            err(p, e)
+          }
+        case (p: AST.CoreExp.LocalVarRef, e) =>
+          val key = (p.context, p.id)
+          if (localPatterns.contains(key)) {
+            val s = map.get(key).getOrElse(HashSSet.empty)
+            map = map + key ~> (s + e)
+          } else if (p != e) {
+            err(p, e)
+          }
+        case (p: AST.CoreExp.ParamVarRef, e: AST.CoreExp.ParamVarRef) =>
+          if (p.deBruijn != e.deBruijn) {
+            err(p, e)
+          }
+        case (p: AST.CoreExp.ObjectVarRef, e: AST.CoreExp.ObjectVarRef) =>
+          if (!(p.id == e.id && p.owner == e.owner)) {
+            err(p, e)
+          }
+        case (p: AST.CoreExp.Select, e: AST.CoreExp.Select) =>
+          if (p.id != e.id) {
+            err(p, e)
+          } else {
+            matchPatternLocals(p.exp, e.exp)
+          }
+        case (p: AST.CoreExp.If, e: AST.CoreExp.If) =>
+          matchPatternLocals(p.cond, e.cond)
+          matchPatternLocals(p.tExp, e.tExp)
+          matchPatternLocals(p.fExp, e.fExp)
+        case (p: AST.CoreExp.Apply, e: AST.CoreExp.Apply) =>
+          if (p.args.size != e.args.size) {
+            err(p, e)
+          } else {
+            matchPatternLocals(p.exp, e.exp)
+            for (argPair <- ops.ISZOps(p.args).zip(e.args)) {
+              matchPatternLocals(argPair._1, argPair._2)
+            }
+          }
+        case (p: AST.CoreExp.Fun, e: AST.CoreExp.Fun) =>
+          matchPatternLocals(p.exp, e.exp)
+        case (p: AST.CoreExp.Quant, e: AST.CoreExp.Quant) =>
+          if (p.kind != e.kind) {
+            err(p, e)
+          } else {
+            matchPatternLocals(p.exp, e.exp)
+          }
+        case (_, _) =>
+          err(p, e)
+      }
+    }
+    matchPatternLocals(pattern, exp)
+    errorMessageOpt match {
+      case Some(m) => return Either.Right(m)
+      case _ =>
+    }
+    halt("TODO")
   }
 }
