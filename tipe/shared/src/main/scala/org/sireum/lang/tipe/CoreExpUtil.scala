@@ -30,15 +30,41 @@ import org.sireum.lang.{ast => AST}
 
 object CoreExpUtil {
   type FunStack = Stack[(String, AST.Typed)]
+  type LocalMap = HashSMap[(ISZ[String], String), AST.CoreExp]
 
   @pure def translate(th: TypeHierarchy, exp: AST.Exp): AST.CoreExp = {
-    @pure def recAssignExp(ae: AST.AssignExp, funStack: FunStack): AST.CoreExp = {
-      ae match {
-        case ae: AST.Stmt.Expr => return rec(ae.exp, funStack)
-        case ae => halt(s"TODO: $ae")
+    @pure def recBody(body: AST.Body, funStack: FunStack, localMap: LocalMap): AST.CoreExp = {
+      val stmts = body.stmts
+      var m = localMap
+      for (i <- 0 until stmts.size - 2) {
+        m = recStmt(stmts(i), funStack, m)._2
+      }
+      return recAssignExp(stmts(stmts.size - 1).asAssignExp, funStack, m)
+    }
+    @pure def recStmt(stmt: AST.Stmt, funStack: FunStack, localMap: LocalMap): (Option[AST.CoreExp], LocalMap) = {
+      stmt match {
+        case stmt: AST.Stmt.Expr => return (Some(rec(stmt.exp, funStack, localMap)), localMap)
+        case stmt: AST.Stmt.Var =>
+          val res = stmt.attr.resOpt.get.asInstanceOf[AST.ResolvedInfo.LocalVar]
+          return (None(), localMap + (res.context, res.id) ~>
+            recAssignExp(stmt.initOpt.get, funStack, localMap))
+        case stmt: AST.Stmt.Block =>
+          return (Some(recBody(stmt.body, funStack, localMap)), localMap)
+        case stmt: AST.Stmt.If =>
+          val condExp = rec(stmt.cond, funStack, localMap)
+          val tExp = recBody(stmt.thenBody, funStack, localMap)
+          val fExp = recBody(stmt.elseBody, funStack, localMap)
+          return (Some(AST.CoreExp.If(condExp, tExp, fExp, stmt.attr.typedOpt.get)), localMap)
+        case stmt: AST.Stmt.VarPattern => halt(s"TODO: $stmt")
+        case stmt: AST.Stmt.Match => halt(s"TODO: $stmt")
+        case _ => halt(s"Infeasible: $stmt")
       }
     }
-    @pure def rec(e: AST.Exp, funStack: FunStack): AST.CoreExp = {
+    @pure def recAssignExp(ae: AST.AssignExp, funStack: FunStack, localMap: LocalMap): AST.CoreExp = {
+      val (Some(r), _) = recStmt(ae.asStmt, funStack, localMap)
+      return r
+    }
+    @pure def rec(e: AST.Exp, funStack: FunStack, localMap: LocalMap): AST.CoreExp = {
       e match {
         case e: AST.Exp.LitB => return AST.CoreExp.LitB(e.value)
         case e: AST.Exp.LitZ => return AST.CoreExp.LitZ(e.value)
@@ -63,16 +89,20 @@ object CoreExpUtil {
           }
         case e: AST.Exp.Tuple =>
           if (e.args.size == 1) {
-            return rec(e.args(0), funStack)
+            return rec(e.args(0), funStack, localMap)
           } else {
             val t = e.typedOpt.get
             return AST.CoreExp.Apply(
               AST.CoreExp.ObjectVarRef(AST.CoreExp.tupleOwner, e.args.size.string, t),
-              for (arg <- e.args) yield rec(arg, funStack), t)
+              for (arg <- e.args) yield rec(arg, funStack, localMap), t)
           }
         case e: AST.Exp.Ident =>
           e.resOpt.get match {
             case res: AST.ResolvedInfo.LocalVar =>
+              localMap.get((res.context, res.id)) match {
+                case Some(r) => return r
+                case _ =>
+              }
               val id = res.id
               val stackSize = funStack.size
               for (i <- stackSize - 1 to 0 by -1) {
@@ -89,15 +119,18 @@ object CoreExpUtil {
         case e: AST.Exp.Unary =>
           val t = e.typedOpt.get
           return AST.CoreExp.Apply(AST.CoreExp.ObjectVarRef(AST.CoreExp.unaryOwner, e.opString, t),
-            ISZ(rec(e.exp, funStack)), t)
+            ISZ(rec(e.exp, funStack, localMap)), t)
         case e: AST.Exp.Binary =>
           val t = e.typedOpt.get
           e.attr.resOpt.get match {
             case _: AST.ResolvedInfo.BuiltIn =>
               return AST.CoreExp.Apply(AST.CoreExp.ObjectVarRef(AST.CoreExp.binaryOwner, e.op, t),
-                ISZ(rec(e.left, funStack), rec(e.right, funStack)), t)
+                ISZ(rec(e.left, funStack, localMap), rec(e.right, funStack, localMap)), t)
             case _ => halt(s"TODO: $e")
           }
+        case e: AST.Exp.If =>
+          return AST.CoreExp.If(rec(e.cond, funStack, localMap), rec(e.elseExp, funStack, localMap),
+            rec(e.elseExp, funStack, localMap), e.typedOpt.get)
         case e: AST.Exp.Fun =>
           val params: ISZ[(String, AST.Typed)] = for (p <- e.params) yield
             (p.idOpt.get.value, p.typedOpt.get)
@@ -106,7 +139,7 @@ object CoreExpUtil {
             stack = stack.push(p)
           }
           val last = params(params.size - 1)
-          var r = AST.CoreExp.Fun(AST.CoreExp.Param(last._1, last._2), recAssignExp(e.exp, stack))
+          var r = AST.CoreExp.Fun(AST.CoreExp.Param(last._1, last._2), recAssignExp(e.exp, stack, localMap))
           for (i <- params.size - 2 to 0 by -1) {
             val p = params(i)
             r = AST.CoreExp.Fun(AST.CoreExp.Param(p._1, p._2), r)
@@ -124,7 +157,7 @@ object CoreExpUtil {
           }
           val last = params(params.size - 1)
           var r = AST.CoreExp.Quant(kind, AST.CoreExp.Param(last._1, last._2),
-            recAssignExp(e.fun.exp, stack))
+            recAssignExp(e.fun.exp, stack, localMap))
           for (i <- params.size - 2 to 0 by -1) {
             val p = params(i)
             r = AST.CoreExp.Quant(kind, AST.CoreExp.Param(p._1, p._2), r)
@@ -133,6 +166,6 @@ object CoreExpUtil {
         case e => halt(s"TODO: $e")
       }
     }
-    return rec(exp, Stack.empty)
+    return rec(exp, Stack.empty, HashSMap.empty)
   }
 }

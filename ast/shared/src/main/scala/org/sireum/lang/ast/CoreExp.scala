@@ -32,8 +32,8 @@ import org.sireum._
  e ::= c
      | x[𝜏]
      | e.f[𝜏]
-     | if (e) eT else eF
-     | e(e1, ..., eN) : 𝜏
+     | (if (e) eT else eF): 𝜏
+     | (e(e1, ..., eN)): 𝜏
      | (x: 𝜏) => e
      | ( ∀ | ∃ | Λ ) {(x: 𝜏) => e}
  */
