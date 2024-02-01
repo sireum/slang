@@ -3299,8 +3299,17 @@ import TypeChecker._
         }
         if (ok) typeHierarchy.lub(ts) else None[AST.Typed]()
       }
-
-      return (AST.Exp.StrictPureBlock(newBlock.asInstanceOf[AST.Stmt.Block], spBlock.attr(typedOpt = tOpt)), tOpt)
+      var newBlock2 = newBlock.asInstanceOf[AST.Stmt.Block]
+      val newStmts = newBlock2.body.stmts
+      val lastIndex = newStmts.size - 1
+      newStmts(lastIndex) match {
+        case stmt: AST.Stmt.If => newBlock2 = newBlock2(body = newBlock2.body(stmts =
+          newStmts(lastIndex ~> stmt(attr = stmt.attr(typedOpt = tOpt)))))
+        case stmt: AST.Stmt.Match => newBlock2 = newBlock2(body = newBlock2.body(stmts =
+          newStmts(lastIndex ~> stmt(attr = stmt.attr(typedOpt = tOpt)))))
+        case _ =>
+      }
+      return (AST.Exp.StrictPureBlock(newBlock2, spBlock.attr(typedOpt = tOpt)), tOpt)
     }
 
     def checkLoopIndex(idx: AST.Exp.LoopIndex): (AST.Exp, Option[AST.Typed]) = {
