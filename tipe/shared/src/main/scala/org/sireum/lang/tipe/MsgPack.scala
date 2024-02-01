@@ -927,14 +927,14 @@ object MsgPack {
       write_astExp(o.cond)
       write_astBody(o.thenBody)
       write_astBody(o.elseBody)
-      write_astAttr(o.attr)
+      write_astTypedAttr(o.attr)
     }
 
     def write_astStmtMatch(o: org.sireum.lang.ast.Stmt.Match): Unit = {
       writer.writeZ(Constants._astStmtMatch)
       write_astExp(o.exp)
       writer.writeISZ(o.cases, write_astCase _)
-      write_astAttr(o.attr)
+      write_astTypedAttr(o.attr)
     }
 
     def write_astStmtWhile(o: org.sireum.lang.ast.Stmt.While): Unit = {
@@ -3052,7 +3052,7 @@ object MsgPack {
       val cond = read_astExp()
       val thenBody = read_astBody()
       val elseBody = read_astBody()
-      val attr = read_astAttr()
+      val attr = read_astTypedAttr()
       return org.sireum.lang.ast.Stmt.If(cond, thenBody, elseBody, attr)
     }
 
@@ -3067,7 +3067,7 @@ object MsgPack {
       }
       val exp = read_astExp()
       val cases = reader.readISZ(read_astCase _)
-      val attr = read_astAttr()
+      val attr = read_astTypedAttr()
       return org.sireum.lang.ast.Stmt.Match(exp, cases, attr)
     }
 

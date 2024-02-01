@@ -3681,13 +3681,20 @@ import TypeChecker._
     }
 
     val newAssignExp = newStmt.asAssignExp
+    var tOpt = expectedOpt
     if (expectedOpt.isEmpty) {
       val exprs = newAssignExp.exprs
       if (exprs.size == 1) {
-        return (newAssignExp, exprs(0).exp.typedOpt)
+        tOpt = exprs(0).exp.typedOpt
       }
     }
-    return (newAssignExp, expectedOpt)
+    newAssignExp match {
+      case newAssignExp: AST.Stmt.If =>
+        return (newAssignExp(attr = newAssignExp.attr(typedOpt = tOpt)), tOpt)
+      case newAssignExp: AST.Stmt.Match =>
+        return (newAssignExp(attr = newAssignExp.attr(typedOpt = tOpt)), tOpt)
+      case _ => return (newAssignExp, tOpt)
+    }
   }
 
   def checkStmts(
@@ -4317,7 +4324,8 @@ import TypeChecker._
     val (newCond, _) = checkExp(AST.Typed.bOpt, scope, stmt.cond, reporter)
     val (_, tBody) = checkBody(F, isAssignExp, expectedOpt, createNewScope(scope), stmt.thenBody, reporter)
     val (_, eBody) = checkBody(F, isAssignExp, expectedOpt, createNewScope(scope), stmt.elseBody, reporter)
-    return stmt(cond = newCond, thenBody = tBody, elseBody = eBody)
+    return stmt(cond = newCond, thenBody = tBody, elseBody = eBody,
+      attr = if (isAssignExp) stmt.attr else stmt.attr(typedOpt = AST.Typed.unitOpt))
   }
 
   def checkMatch(
@@ -4405,7 +4413,8 @@ import TypeChecker._
       }
     }
 
-    return stmt(exp = newExp, cases = newCases)
+    return stmt(exp = newExp, cases = newCases,
+      attr = if (isAssignExp) stmt.attr else stmt.attr(typedOpt = AST.Typed.unitOpt))
   }
 
   def checkVarStmt(scope: Scope.Local, stmt: AST.Stmt.Var, reporter: Reporter): (Option[Scope.Local], AST.Stmt) = {

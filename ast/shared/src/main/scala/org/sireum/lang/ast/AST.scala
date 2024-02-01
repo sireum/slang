@@ -497,9 +497,13 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = T
     @strictpure override def hasReturn: B = body.hasReturn
+    @strictpure override def typedOpt: Option[Typed] = body.stmts(body.stmts.size - 1) match {
+      case ae: AssignExp => ae.typedOpt
+      case _ => Typed.unitOpt
+    }
   }
 
-  @datatype class If(val cond: Exp, val thenBody: Body, val elseBody: Body, @hidden val attr: Attr) extends Stmt with AssignExp {
+  @datatype class If(val cond: Exp, val thenBody: Body, val elseBody: Body, @hidden val attr: TypedAttr) extends Stmt with AssignExp {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure override def asAssignExp: AssignExp = this
     @strictpure override def asStmt: Stmt = this
@@ -522,9 +526,10 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = T
     @strictpure override def hasReturn: B = thenBody.hasReturn || elseBody.hasReturn
+    @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
   }
 
-  @datatype class Match(val exp: Exp, val cases: ISZ[Case], @hidden val attr: Attr) extends Stmt with AssignExp {
+  @datatype class Match(val exp: Exp, val cases: ISZ[Case], @hidden val attr: TypedAttr) extends Stmt with AssignExp {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure override def asAssignExp: AssignExp = this
     @strictpure override def asStmt: Stmt = this
@@ -536,6 +541,7 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = T
     @strictpure override def hasReturn: B = ops.ISZOps(cases).exists((c: Case) => c.body.hasReturn)
+    @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
   }
 
   @datatype class While(val context: ISZ[String],
@@ -607,6 +613,7 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = T
     @strictpure override def hasReturn: B = T
+    @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
   }
 
   @datatype class Expr(val exp: Exp, @hidden val attr: TypedAttr) extends Stmt with AssignExp {
@@ -1156,6 +1163,7 @@ object ProofAst {
     }
   }
 
+  @pure def typedOpt: Option[Typed]
 }
 
 @enum object Purity {

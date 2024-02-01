@@ -2481,7 +2481,7 @@ import Transformer._
           val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.cond)
           val r1: TPostResult[Context, Body] = transformBody(r0.ctx, o2.thenBody)
           val r2: TPostResult[Context, Body] = transformBody(r1.ctx, o2.elseBody)
-          val r3: TPostResult[Context, Attr] = transformAttr(r2.ctx, o2.attr)
+          val r3: TPostResult[Context, TypedAttr] = transformTypedAttr(r2.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
             TPostResult(r3.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), thenBody = r1.resultOpt.getOrElse(o2.thenBody), elseBody = r2.resultOpt.getOrElse(o2.elseBody), attr = r3.resultOpt.getOrElse(o2.attr))))
           else
@@ -2489,7 +2489,7 @@ import Transformer._
         case o2: Stmt.Match =>
           val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.exp)
           val r1: TPostResult[Context, IS[Z, Case]] = transformISZ(r0.ctx, o2.cases, transformCase _)
-          val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
+          val r2: TPostResult[Context, TypedAttr] = transformTypedAttr(r1.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
             TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), cases = r1.resultOpt.getOrElse(o2.cases), attr = r2.resultOpt.getOrElse(o2.attr))))
           else
@@ -3426,7 +3426,7 @@ import Transformer._
           val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.cond)
           val r1: TPostResult[Context, Body] = transformBody(r0.ctx, o2.thenBody)
           val r2: TPostResult[Context, Body] = transformBody(r1.ctx, o2.elseBody)
-          val r3: TPostResult[Context, Attr] = transformAttr(r2.ctx, o2.attr)
+          val r3: TPostResult[Context, TypedAttr] = transformTypedAttr(r2.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
             TPostResult(r3.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), thenBody = r1.resultOpt.getOrElse(o2.thenBody), elseBody = r2.resultOpt.getOrElse(o2.elseBody), attr = r3.resultOpt.getOrElse(o2.attr))))
           else
@@ -3434,7 +3434,7 @@ import Transformer._
         case o2: Stmt.Match =>
           val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.exp)
           val r1: TPostResult[Context, IS[Z, Case]] = transformISZ(r0.ctx, o2.cases, transformCase _)
-          val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
+          val r2: TPostResult[Context, TypedAttr] = transformTypedAttr(r1.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
             TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), cases = r1.resultOpt.getOrElse(o2.cases), attr = r2.resultOpt.getOrElse(o2.attr))))
           else

@@ -3109,7 +3109,7 @@ import MTransformer._
           val r0: MOption[Exp] = transformExp(o2.cond)
           val r1: MOption[Body] = transformBody(o2.thenBody)
           val r2: MOption[Body] = transformBody(o2.elseBody)
-          val r3: MOption[Attr] = transformAttr(o2.attr)
+          val r3: MOption[TypedAttr] = transformTypedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
             MSome(o2(cond = r0.getOrElse(o2.cond), thenBody = r1.getOrElse(o2.thenBody), elseBody = r2.getOrElse(o2.elseBody), attr = r3.getOrElse(o2.attr)))
           else
@@ -3117,7 +3117,7 @@ import MTransformer._
         case o2: Stmt.Match =>
           val r0: MOption[Exp] = transformExp(o2.exp)
           val r1: MOption[IS[Z, Case]] = transformISZ(o2.cases, transformCase _)
-          val r2: MOption[Attr] = transformAttr(o2.attr)
+          val r2: MOption[TypedAttr] = transformTypedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
             MSome(o2(exp = r0.getOrElse(o2.exp), cases = r1.getOrElse(o2.cases), attr = r2.getOrElse(o2.attr)))
           else
@@ -4054,7 +4054,7 @@ import MTransformer._
           val r0: MOption[Exp] = transformExp(o2.cond)
           val r1: MOption[Body] = transformBody(o2.thenBody)
           val r2: MOption[Body] = transformBody(o2.elseBody)
-          val r3: MOption[Attr] = transformAttr(o2.attr)
+          val r3: MOption[TypedAttr] = transformTypedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
             MSome(o2(cond = r0.getOrElse(o2.cond), thenBody = r1.getOrElse(o2.thenBody), elseBody = r2.getOrElse(o2.elseBody), attr = r3.getOrElse(o2.attr)))
           else
@@ -4062,7 +4062,7 @@ import MTransformer._
         case o2: Stmt.Match =>
           val r0: MOption[Exp] = transformExp(o2.exp)
           val r1: MOption[IS[Z, Case]] = transformISZ(o2.cases, transformCase _)
-          val r2: MOption[Attr] = transformAttr(o2.attr)
+          val r2: MOption[TypedAttr] = transformTypedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
             MSome(o2(exp = r0.getOrElse(o2.exp), cases = r1.getOrElse(o2.cases), attr = r2.getOrElse(o2.attr)))
           else

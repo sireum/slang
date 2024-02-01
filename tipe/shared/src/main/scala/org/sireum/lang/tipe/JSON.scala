@@ -643,7 +643,7 @@ object JSON {
         ("cond", print_astExp(o.cond)),
         ("thenBody", print_astBody(o.thenBody)),
         ("elseBody", print_astBody(o.elseBody)),
-        ("attr", print_astAttr(o.attr))
+        ("attr", print_astTypedAttr(o.attr))
       ))
     }
 
@@ -652,7 +652,7 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.Stmt.Match""""),
         ("exp", print_astExp(o.exp)),
         ("cases", printISZ(F, o.cases, print_astCase _)),
-        ("attr", print_astAttr(o.attr))
+        ("attr", print_astTypedAttr(o.attr))
       ))
     }
 
@@ -3560,7 +3560,7 @@ object JSON {
       val elseBody = parse_astBody()
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
+      val attr = parse_astTypedAttr()
       parser.parseObjectNext()
       return org.sireum.lang.ast.Stmt.If(cond, thenBody, elseBody, attr)
     }
@@ -3581,7 +3581,7 @@ object JSON {
       val cases = parser.parseISZ(parse_astCase _)
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
+      val attr = parse_astTypedAttr()
       parser.parseObjectNext()
       return org.sireum.lang.ast.Stmt.Match(exp, cases, attr)
     }

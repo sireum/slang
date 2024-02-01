@@ -2155,7 +2155,7 @@ class SlangParser(
         errorInSlang(stat.elsep.pos, "If-else part should be either a code block or another if-conditional.")
     }
     val cond = translateExp(stat.cond)
-    if (hasError) AST.Stmt.If(cond, bodyCheck(ISZ(), ISZ()), bodyCheck(ISZ(), ISZ()), emptyAttr)
+    if (hasError) AST.Stmt.If(cond, bodyCheck(ISZ(), ISZ()), bodyCheck(ISZ(), ISZ()), emptyTypedAttr)
     else
       ((stat.thenp, stat.elsep): @unchecked) match {
         case (thenp: Term.Block, elsep: Term.Block) =>
@@ -2171,7 +2171,7 @@ class SlangParser(
               else ISZ(elsep.stats.map(translateStat(enclosing)): _*),
               ISZ()
             ),
-            attr(stat.pos)
+            typedAttr(stat.pos)
           )
         case (thenp: Term.Block, elsep: Term.If) =>
           AST.Stmt.If(
@@ -2182,7 +2182,7 @@ class SlangParser(
               ISZ()
             ),
             bodyCheck(ISZ(translateIfStmt(Enclosing.Block, elsep, isAssignExp)), ISZ()),
-            attr(stat.pos)
+            typedAttr(stat.pos)
           )
         case (thenp: Term.Block, elsep: Lit.Unit) =>
           if (isAssignExp) error(elsep.pos, "Expecting a code block with an expression.")
@@ -2190,7 +2190,7 @@ class SlangParser(
             cond,
             bodyCheck(ISZ(thenp.stats.map(translateStat(enclosing)): _*), ISZ()),
             bodyCheck(ISZ(), ISZ()),
-            attr(stat.pos)
+            typedAttr(stat.pos)
           )
       }
   }
@@ -2234,7 +2234,7 @@ class SlangParser(
         }
       case _ =>
     }
-    AST.Stmt.Match(exp, ISZ(cases: _*), attr(stat.pos))
+    AST.Stmt.Match(exp, ISZ(cases: _*), typedAttr(stat.pos))
   }
 
   def translateWhile(enclosing: Enclosing.Type, stat: Term.While): AST.Stmt = {
