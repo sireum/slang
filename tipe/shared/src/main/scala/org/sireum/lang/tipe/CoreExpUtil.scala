@@ -65,7 +65,10 @@ object CoreExpUtil {
           if (e.args.size == 1) {
             return rec(e.args(0), funStack)
           } else {
-            return AST.CoreExp.Tuple(for (arg <- e.args) yield rec(arg, funStack))
+            val t = e.typedOpt.get
+            return AST.CoreExp.Apply(
+              AST.CoreExp.ObjectVarRef(AST.CoreExp.tupleOwner, e.args.size.string, t),
+              for (arg <- e.args) yield rec(arg, funStack), t)
           }
         case e: AST.Exp.Ident =>
           e.resOpt.get match {
@@ -78,7 +81,7 @@ object CoreExpUtil {
                   return AST.CoreExp.ParamVarRef(stackSize - i, id, p._2)
                 }
               }
-              return AST.CoreExp.LocalVarRef(id, e.typedOpt.get)
+              return AST.CoreExp.LocalVarRef(res.context, id, e.typedOpt.get)
             case res: AST.ResolvedInfo.Var if res.isInObject =>
               return AST.CoreExp.ObjectVarRef(res.owner, res.id, e.typedOpt.get)
             case _ => halt(s"TODO: $e")
