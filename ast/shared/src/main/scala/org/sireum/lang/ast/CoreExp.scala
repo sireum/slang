@@ -28,15 +28,7 @@ package org.sireum.lang.ast
 
 import org.sireum._
 
-/*
- e ::= c
-     | x[𝜏]
-     | e.f[𝜏]
-     | (if (e) eT else eF): 𝜏
-     | (e(e1, ..., eN)): 𝜏
-     | (x: 𝜏) => e
-     | ( ∀ | ∃ | Λ ) {(x: 𝜏) => e}
- */
+
 @datatype trait CoreExp {
   @strictpure def tipe: Typed
   @pure def prettyST: ST
@@ -221,7 +213,11 @@ object CoreExp {
     @strictpure def prettyST: ST = st"$id: $tipe"
   }
 
+  @datatype class InstanceOfExp(val isTest: B, val exp: CoreExp, val tipe: Typed) extends CoreExp {
+    @strictpure def prettyST: ST = st"${exp.prettyST}.${if (isTest) "i" else "a"}sInstanceOf[$tipe]"
+  }
+
+  val tupleOwner: ISZ[String] = ISZ("$tuple")
   val unaryOwner: ISZ[String] = ISZ("$unary")
   val binaryOwner: ISZ[String] = ISZ("$binary")
-  val tupleOwner: ISZ[String] = ISZ("$tuple")
 }

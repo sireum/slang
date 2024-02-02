@@ -1,0 +1,8 @@
+ e ::= c
+     | x
+     | e.f
+     | if (e) eT else eF
+     | e(e1, ..., eN)
+     | (x: 𝜏) => e
+     | ⸨ ∀ | ∃ | Λ ⸩{(x: 𝜏) => e}
+     | e.⸨isInstanceOf | asInstanceOf⸩[𝜏]

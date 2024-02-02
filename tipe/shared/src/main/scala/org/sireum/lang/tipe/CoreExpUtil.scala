@@ -165,6 +165,8 @@ object CoreExpUtil {
             r = AST.CoreExp.Quant(kind, AST.CoreExp.Param(p._1, p._2), r)
           }
           return r
+        case e: AST.Exp.StrictPureBlock =>
+          return recStmt(e.block, funStack, localMap)._1.get
         case e => halt(s"TODO: $e")
       }
     }
