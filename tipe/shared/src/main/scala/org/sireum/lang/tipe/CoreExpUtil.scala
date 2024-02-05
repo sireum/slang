@@ -267,17 +267,18 @@ object CoreExpUtil {
                 case f: AST.Typed.Fun => getArgTypes(f.ret, acc :+ f.args(0))
                 case _ => acc
               }
+              @strictpure def paramId(n: Z): String = s"_$n"
               val argTypes = getArgTypes(f.curried, ISZ())
               if (args.size == argTypes.size) {
                 var substMap = HashMap.empty[AST.CoreExp, AST.CoreExp.ParamVarRef]
                 for (i <- 0 until args.size) {
-                  val n = i + 1
-                  substMap = substMap + args(0) ~> AST.CoreExp.ParamVarRef(n, s"_$n", argTypes(i))
+                  val n = args.size - i
+                  substMap = substMap + args(i) ~> AST.CoreExp.ParamVarRef(n, paramId(n), argTypes(i))
                 }
                 val se = CoreExpSubsitutor(substMap).transformCoreExp(e).getOrElse(e)
-                var r: AST.CoreExp = AST.CoreExp.Fun(AST.CoreExp.Param(s"_${args.size - 1}", argTypes(args.size - 1)), se)
+                var r: AST.CoreExp = AST.CoreExp.Fun(AST.CoreExp.Param(paramId(1), argTypes(args.size - 1)), se)
                 for (i <- args.size - 2 to 0 by -1) {
-                  r = AST.CoreExp.Fun(AST.CoreExp.Param(s"_$i", argTypes(i)), r)
+                  r = AST.CoreExp.Fun(AST.CoreExp.Param(paramId(args.size - i), argTypes(i)), r)
                 }
                 val key = (context, id)
                 val s = map.get(key).getOrElse(HashSSet.empty)
