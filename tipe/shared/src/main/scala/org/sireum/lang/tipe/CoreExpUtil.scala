@@ -182,6 +182,15 @@ object CoreExpUtil {
            |${pattern.prettyST}, and
            |${exp.prettyST}""".stripMargin)
     }
+    @pure def rootLocalPatternOpt(e: AST.CoreExp.Apply): Option[(ISZ[String], String)] = {
+      e.exp match {
+        case e2: AST.CoreExp.LocalVarRef =>
+          val p = (e2.context, e2.id)
+          return if (localPatterns.contains(p)) Some(p) else None()
+        case e2: AST.CoreExp.Apply => return rootLocalPatternOpt(e2)
+        case _ => return None()
+      }
+    }
     def matchPatternLocals(p: AST.CoreExp, e: AST.CoreExp): Unit = {
       if (errorMessageOpt.nonEmpty) {
         return
@@ -217,14 +226,22 @@ object CoreExpUtil {
           matchPatternLocals(p.cond, e.cond)
           matchPatternLocals(p.tExp, e.tExp)
           matchPatternLocals(p.fExp, e.fExp)
-        case (p: AST.CoreExp.Apply, e: AST.CoreExp.Apply) =>
-          if (p.args.size != e.args.size) {
-            err(p, e)
-          } else {
-            matchPatternLocals(p.exp, e.exp)
-            for (argPair <- ops.ISZOps(p.args).zip(e.args)) {
-              matchPatternLocals(argPair._1, argPair._2)
-            }
+        case (p: AST.CoreExp.Apply, e) =>
+          rootLocalPatternOpt(p) match {
+            case Some((context, id)) => halt("TODO")
+            case _ =>
+              e match {
+                case e: AST.CoreExp.Apply =>
+                  if (p.args.size != e.args.size) {
+                    err(p, e)
+                  } else {
+                    matchPatternLocals(p.exp, e.exp)
+                    for (argPair <- ops.ISZOps(p.args).zip(e.args)) {
+                      matchPatternLocals(argPair._1, argPair._2)
+                    }
+                  }
+                case _ => err(p, e)
+              }
           }
         case (p: AST.CoreExp.Fun, e: AST.CoreExp.Fun) =>
           matchPatternLocals(p.exp, e.exp)
@@ -238,11 +255,33 @@ object CoreExpUtil {
           err(p, e)
       }
     }
+
     matchPatternLocals(pattern, exp)
+
     errorMessageOpt match {
       case Some(m) => return Either.Right(m)
       case _ =>
     }
-    halt("TODO")
+
+    for (p <- map.entries) {
+      val ((_, id), s) = p
+      if (s.size > 1) {
+        errorMessageOpt = Some(
+          st"""Could not unify local pattern '$id' with multiple expressions:
+              |* ${(for (ce <- s.elements) yield ce.prettyST, "\n* ")}""".render
+        )
+      }
+    }
+
+    errorMessageOpt match {
+      case Some(m) => return Either.Right(m)
+      case _ =>
+    }
+
+    return Either.Left(HashSMap ++ (for (p <- map.entries) yield (p._1, p._2.elements(0))))
+  }
+
+  @pure def simplify(exp: AST.CoreExp): Option[AST.CoreExp] = {
+    return None() // TODO
   }
 }
