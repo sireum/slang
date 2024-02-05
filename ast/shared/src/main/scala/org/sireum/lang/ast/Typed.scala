@@ -313,6 +313,21 @@ object Typed {
       }
       return ret.hasTypeVars
     }
+
+    @pure def curried: Typed.Fun = {
+      if (isByName || args.size < 2) {
+        return this
+      }
+      val rt: Typed = ret match {
+        case ret: Typed.Fun => ret.curried
+        case _ => ret
+      }
+      var r = Typed.Fun(isPureFun, F, ISZ(args(args.size - 1)), rt)
+      for (i <- args.size - 2 to 0 by -1) {
+        r = Typed.Fun(isPureFun, F, ISZ(args(i)), r)
+      }
+      return r
+    }
   }
 
   @datatype class TypeVar(val id: String, val kind: Typed.VarKind.Type) extends Typed {

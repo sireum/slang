@@ -32,7 +32,16 @@ object CoreExpUtil {
   type FunStack = Stack[(String, AST.Typed)]
   type LocalMap = HashSMap[(ISZ[String], String), AST.CoreExp]
   type LocalPatternSet = HashSSet[(ISZ[String], String)]
-  type UnificationResult = Either[HashSMap[(ISZ[String], String), AST.CoreExp], String]
+  type UnificationResult = Either[HashSMap[(ISZ[String], String), AST.CoreExp], ISZ[String]]
+
+  @record class CoreExpSubsitutor(val map: HashMap[AST.CoreExp, AST.CoreExp.ParamVarRef]) extends AST.MCoreExpTransformer {
+    override def transformCoreExp(o: AST.CoreExp): MOption[AST.CoreExp] = {
+      map.get(o) match {
+        case Some(pvr) => return MSome(pvr)
+        case _ => return super.transformCoreExp(o)
+      }
+    }
+  }
 
   @pure def translate(th: TypeHierarchy, exp: AST.Exp): AST.CoreExp = {
     @pure def recBody(body: AST.Body, funStack: FunStack, localMap: LocalMap): AST.CoreExp = {
@@ -116,7 +125,8 @@ object CoreExpUtil {
               return AST.CoreExp.LocalVarRef(res.context, id, e.typedOpt.get)
             case res: AST.ResolvedInfo.Var if res.isInObject =>
               return AST.CoreExp.ObjectVarRef(res.owner, res.id, e.typedOpt.get)
-            case _ => halt(s"TODO: $e")
+            case res: AST.ResolvedInfo.Method => halt(s"TODO: $e")
+            case _ => halt(s"Infeasible: $e")
           }
         case e: AST.Exp.Unary =>
           val t = e.typedOpt.get
@@ -167,6 +177,30 @@ object CoreExpUtil {
           return r
         case e: AST.Exp.StrictPureBlock =>
           return recStmt(e.block, funStack, localMap)._1.get
+        case e: AST.Exp.Invoke =>
+          val args: ISZ[AST.CoreExp] = for (arg <- e.args) yield rec(arg, funStack, localMap)
+          e.receiverOpt match {
+            case Some(receiver) =>
+              return AST.CoreExp.Apply(
+                AST.CoreExp.Select(rec(receiver, funStack, localMap), e.ident.id.value,
+                  e.ident.typedOpt.get), args, e.typedOpt.get)
+            case _ => return AST.CoreExp.Apply(rec(e.ident, funStack, localMap),
+              args, e.typedOpt.get)
+          }
+        case e: AST.Exp.InvokeNamed =>
+          val args = MS.create[Z, AST.CoreExp](e.args.size, AST.CoreExp.LitB(F))
+          for (arg <- e.args) {
+            args(arg.index) = rec(arg.arg, funStack, localMap)
+          }
+          e.receiverOpt match {
+            case Some(receiver) =>
+              return AST.CoreExp.Apply(
+                AST.CoreExp.Select(rec(receiver, funStack, localMap), e.ident.id.value,
+                  e.ident.typedOpt.get),
+                args.toISZ, e.typedOpt.get)
+            case _ => return AST.CoreExp.Apply(rec(e.ident, funStack, localMap),
+              args.toISZ, e.typedOpt.get)
+          }
         case e => halt(s"TODO: $e")
       }
     }
@@ -174,25 +208,25 @@ object CoreExpUtil {
   }
 
   @pure def unify(th: TypeHierarchy, localPatterns: LocalPatternSet, pattern: AST.CoreExp, exp: AST.CoreExp): UnificationResult = {
-    var map = HashSMap.empty[(ISZ[String], String), HashSSet[AST.CoreExp]]
-    var errorMessageOpt = Option.none[String]()
-    def err(p: AST.CoreExp, e: AST.CoreExp): Unit = {
-      errorMessageOpt = Some(
-        s"""Could not unify '${p.prettyST}' with '${e.prettyST}' in
-           |${pattern.prettyST}, and
-           |${exp.prettyST}""".stripMargin)
-    }
-    @pure def rootLocalPatternOpt(e: AST.CoreExp.Apply): Option[(ISZ[String], String)] = {
+    @pure def rootLocalPatternOpt(e: AST.CoreExp.Apply, args: ISZ[AST.CoreExp]): Option[(ISZ[String], String, AST.Typed, ISZ[AST.CoreExp])] = {
       e.exp match {
         case e2: AST.CoreExp.LocalVarRef =>
           val p = (e2.context, e2.id)
-          return if (localPatterns.contains(p)) Some(p) else None()
-        case e2: AST.CoreExp.Apply => return rootLocalPatternOpt(e2)
+          return if (localPatterns.contains(p)) Some((p._1, p._2, e2.tipe, args)) else None()
+        case e2: AST.CoreExp.Apply => return rootLocalPatternOpt(e2, e2.args ++ args)
         case _ => return None()
       }
     }
+    var map = HashSMap.empty[(ISZ[String], String), HashSSet[AST.CoreExp]]
+    var errorMessages = ISZ[String]()
+    def err(p: AST.CoreExp, e: AST.CoreExp): Unit = {
+      errorMessages = errorMessages :+
+        st"""Could not unify '${p.prettyST}' with '${e.prettyST}' in
+            |${pattern.prettyST}, and
+            |${exp.prettyST}""".render
+    }
     def matchPatternLocals(p: AST.CoreExp, e: AST.CoreExp): Unit = {
-      if (errorMessageOpt.nonEmpty) {
+      if (errorMessages.nonEmpty) {
         return
       }
       (p, e) match {
@@ -227,21 +261,42 @@ object CoreExpUtil {
           matchPatternLocals(p.tExp, e.tExp)
           matchPatternLocals(p.fExp, e.fExp)
         case (p: AST.CoreExp.Apply, e) =>
-          rootLocalPatternOpt(p) match {
-            case Some((context, id)) => halt("TODO")
-            case _ =>
-              e match {
-                case e: AST.CoreExp.Apply =>
-                  if (p.args.size != e.args.size) {
-                    err(p, e)
-                  } else {
-                    matchPatternLocals(p.exp, e.exp)
-                    for (argPair <- ops.ISZOps(p.args).zip(e.args)) {
-                      matchPatternLocals(argPair._1, argPair._2)
-                    }
-                  }
-                case _ => err(p, e)
+          rootLocalPatternOpt(p, ISZ()) match {
+            case Some((context, id, f: AST.Typed.Fun, args)) =>
+              @strictpure def getArgTypes(t: AST.Typed, acc: ISZ[AST.Typed]): ISZ[AST.Typed] = t match {
+                case f: AST.Typed.Fun => getArgTypes(f.ret, acc :+ f.args(0))
+                case _ => acc
               }
+              val argTypes = getArgTypes(f.curried, ISZ())
+              if (args.size == argTypes.size) {
+                var substMap = HashMap.empty[AST.CoreExp, AST.CoreExp.ParamVarRef]
+                for (i <- 0 until args.size) {
+                  val n = i + 1
+                  substMap = substMap + args(0) ~> AST.CoreExp.ParamVarRef(n, s"_$n", argTypes(i))
+                }
+                val se = CoreExpSubsitutor(substMap).transformCoreExp(e).getOrElse(e)
+                var r: AST.CoreExp = AST.CoreExp.Fun(AST.CoreExp.Param(s"_${args.size - 1}", argTypes(args.size - 1)), se)
+                for (i <- args.size - 2 to 0 by -1) {
+                  r = AST.CoreExp.Fun(AST.CoreExp.Param(s"_$i", argTypes(i)), r)
+                }
+                val key = (context, id)
+                val s = map.get(key).getOrElse(HashSSet.empty)
+                map = map + key ~> (s + r)
+                return
+              }
+            case _ =>
+          }
+          e match {
+            case e: AST.CoreExp.Apply =>
+              if (p.args.size != e.args.size) {
+                err(p, e)
+              } else {
+                matchPatternLocals(p.exp, e.exp)
+                for (argPair <- ops.ISZOps(p.args).zip(e.args)) {
+                  matchPatternLocals(argPair._1, argPair._2)
+                }
+              }
+            case _ => err(p, e)
           }
         case (p: AST.CoreExp.Fun, e: AST.CoreExp.Fun) =>
           matchPatternLocals(p.exp, e.exp)
@@ -258,24 +313,21 @@ object CoreExpUtil {
 
     matchPatternLocals(pattern, exp)
 
-    errorMessageOpt match {
-      case Some(m) => return Either.Right(m)
-      case _ =>
+    if (errorMessages.nonEmpty) {
+      return Either.Right(errorMessages)
     }
 
     for (p <- map.entries) {
       val ((_, id), s) = p
       if (s.size > 1) {
-        errorMessageOpt = Some(
+        errorMessages = errorMessages :+
           st"""Could not unify local pattern '$id' with multiple expressions:
               |* ${(for (ce <- s.elements) yield ce.prettyST, "\n* ")}""".render
-        )
       }
     }
 
-    errorMessageOpt match {
-      case Some(m) => return Either.Right(m)
-      case _ =>
+    if (errorMessages.nonEmpty) {
+      return Either.Right(errorMessages)
     }
 
     return Either.Left(HashSMap ++ (for (p <- map.entries) yield (p._1, p._2.elements(0))))
