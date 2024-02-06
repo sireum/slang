@@ -30,9 +30,13 @@ import org.sireum.lang.{ast => AST}
 
 object CoreExpUtil {
   type FunStack = Stack[(String, AST.Typed)]
-  type LocalMap = HashSMap[(ISZ[String], String), AST.CoreExp]
-  type LocalPatternSet = HashSSet[(ISZ[String], String)]
-  type UnificationResult = Either[HashSMap[(ISZ[String], String), AST.CoreExp], ISZ[String]]
+  type Local = (ISZ[String], String)
+  type LocalMap = HashSMap[Local, AST.CoreExp]
+  type LocalPatternSet = HashSSet[Local]
+  type UnificationCandidatesMap = HashSMap[Local, HashSSet[AST.CoreExp]]
+  type UnificationMap = HashSMap[Local, AST.CoreExp]
+  type UnificationErrorMessages = ISZ[String]
+  type UnificationResult = Either[UnificationMap, UnificationErrorMessages]
 
   @record class CoreExpSubsitutor(val map: HashMap[AST.CoreExp, AST.CoreExp.ParamVarRef]) extends AST.MCoreExpTransformer {
     override def transformCoreExp(o: AST.CoreExp): MOption[AST.CoreExp] = {
@@ -43,7 +47,7 @@ object CoreExpUtil {
     }
   }
 
-  @pure def translate(th: TypeHierarchy, exp: AST.Exp): AST.CoreExp = {
+  @pure def translate(th: TypeHierarchy, exp: AST.Exp, sm: HashMap[String, AST.Typed]): AST.CoreExp = {
     @pure def recBody(body: AST.Body, funStack: FunStack, localMap: LocalMap): AST.CoreExp = {
       val stmts = body.stmts
       var m = localMap
@@ -119,21 +123,21 @@ object CoreExpUtil {
               for (i <- stackSize - 1 to 0 by -1) {
                 val p = funStack.elements(i)
                 if (p._1 == id) {
-                  return AST.CoreExp.ParamVarRef(stackSize - i, id, p._2)
+                  return AST.CoreExp.ParamVarRef(stackSize - i, id, p._2.subst(sm))
                 }
               }
-              return AST.CoreExp.LocalVarRef(res.context, id, e.typedOpt.get)
+              return AST.CoreExp.LocalVarRef(res.context, id, e.typedOpt.get.subst(sm))
             case res: AST.ResolvedInfo.Var if res.isInObject =>
-              return AST.CoreExp.ObjectVarRef(res.owner, res.id, e.typedOpt.get)
+              return AST.CoreExp.ObjectVarRef(res.owner, res.id, e.typedOpt.get.subst(sm))
             case res: AST.ResolvedInfo.Method => halt(s"TODO: $e")
             case _ => halt(s"Infeasible: $e")
           }
         case e: AST.Exp.Unary =>
-          val t = e.typedOpt.get
+          val t = e.typedOpt.get.subst(sm)
           return AST.CoreExp.Apply(AST.CoreExp.ObjectVarRef(AST.CoreExp.unaryOwner, e.opString, t),
             ISZ(rec(e.exp, funStack, localMap)), t)
         case e: AST.Exp.Binary =>
-          val t = e.typedOpt.get
+          val t = e.typedOpt.get.subst(sm)
           e.attr.resOpt.get match {
             case _: AST.ResolvedInfo.BuiltIn =>
               return AST.CoreExp.Apply(AST.CoreExp.ObjectVarRef(AST.CoreExp.binaryOwner, e.op, t),
@@ -142,10 +146,10 @@ object CoreExpUtil {
           }
         case e: AST.Exp.If =>
           return AST.CoreExp.If(rec(e.cond, funStack, localMap), rec(e.elseExp, funStack, localMap),
-            rec(e.elseExp, funStack, localMap), e.typedOpt.get)
+            rec(e.elseExp, funStack, localMap), e.typedOpt.get.subst(sm))
         case e: AST.Exp.Fun =>
           val params: ISZ[(String, AST.Typed)] = for (p <- e.params) yield
-            (p.idOpt.get.value, p.typedOpt.get)
+            (p.idOpt.get.value, p.typedOpt.get.subst(sm))
           var stack = funStack
           for (p <- params) {
             stack = stack.push(p)
@@ -162,7 +166,7 @@ object CoreExpUtil {
             if (e.isForall) AST.CoreExp.Quant.Kind.ForAll
             else AST.CoreExp.Quant.Kind.Exists
           val params: ISZ[(String, AST.Typed)] = for (i <- 0 until e.fun.params.size) yield
-            (e.fun.params(i).idOpt.get.value, e.fun.params(i).typedOpt.get)
+            (e.fun.params(i).idOpt.get.value, e.fun.params(i).typedOpt.get.subst(sm))
           var stack = funStack
           for (p <- params) {
             stack = stack.push(p)
@@ -183,9 +187,9 @@ object CoreExpUtil {
             case Some(receiver) =>
               return AST.CoreExp.Apply(
                 AST.CoreExp.Select(rec(receiver, funStack, localMap), e.ident.id.value,
-                  e.ident.typedOpt.get), args, e.typedOpt.get)
+                  e.ident.typedOpt.get), args, e.typedOpt.get.subst(sm))
             case _ => return AST.CoreExp.Apply(rec(e.ident, funStack, localMap),
-              args, e.typedOpt.get)
+              args, e.typedOpt.get.subst(sm))
           }
         case e: AST.Exp.InvokeNamed =>
           val args = MS.create[Z, AST.CoreExp](e.args.size, AST.CoreExp.LitB(F))
@@ -196,10 +200,10 @@ object CoreExpUtil {
             case Some(receiver) =>
               return AST.CoreExp.Apply(
                 AST.CoreExp.Select(rec(receiver, funStack, localMap), e.ident.id.value,
-                  e.ident.typedOpt.get),
-                args.toISZ, e.typedOpt.get)
+                  e.ident.typedOpt.get.subst(sm)),
+                args.toISZ, e.typedOpt.get.subst(sm))
             case _ => return AST.CoreExp.Apply(rec(e.ident, funStack, localMap),
-              args.toISZ, e.typedOpt.get)
+              args.toISZ, e.typedOpt.get.subst(sm))
           }
         case e => halt(s"TODO: $e")
       }
@@ -207,7 +211,8 @@ object CoreExpUtil {
     return rec(exp, Stack.empty, HashSMap.empty)
   }
 
-  @pure def unify(th: TypeHierarchy, localPatterns: LocalPatternSet, pattern: AST.CoreExp, exp: AST.CoreExp): UnificationResult = {
+  @pure def unifyExp(th: TypeHierarchy, localPatterns: LocalPatternSet, pattern: AST.CoreExp, exp: AST.CoreExp,
+                     init: UnificationCandidatesMap, errorMessages: MBox[UnificationErrorMessages]): UnificationCandidatesMap = {
     @pure def rootLocalPatternOpt(e: AST.CoreExp.Apply, args: ISZ[AST.CoreExp]): Option[(ISZ[String], String, AST.Typed, ISZ[AST.CoreExp])] = {
       e.exp match {
         case e2: AST.CoreExp.LocalVarRef =>
@@ -217,16 +222,15 @@ object CoreExpUtil {
         case _ => return None()
       }
     }
-    var map = HashSMap.empty[(ISZ[String], String), HashSSet[AST.CoreExp]]
-    var errorMessages = ISZ[String]()
+    var map = init
     def err(p: AST.CoreExp, e: AST.CoreExp): Unit = {
-      errorMessages = errorMessages :+
+      errorMessages.value = errorMessages.value :+
         st"""Could not unify '${p.prettyST}' with '${e.prettyST}' in
             |${pattern.prettyST}, and
             |${exp.prettyST}""".render
     }
     def matchPatternLocals(p: AST.CoreExp, e: AST.CoreExp): Unit = {
-      if (errorMessages.nonEmpty) {
+      if (errorMessages.value.nonEmpty) {
         return
       }
       (p, e) match {
@@ -314,24 +318,29 @@ object CoreExpUtil {
 
     matchPatternLocals(pattern, exp)
 
-    if (errorMessages.nonEmpty) {
-      return Either.Right(errorMessages)
-    }
+    return map
+  }
 
-    for (p <- map.entries) {
+  @pure def unify(th: TypeHierarchy, localPatterns: LocalPatternSet,
+                  patterns: ISZ[AST.CoreExp], exps: ISZ[AST.CoreExp]): UnificationResult = {
+    val errorMessages: MBox[UnificationErrorMessages] = MBox(ISZ())
+    var m: UnificationCandidatesMap = HashSMap.empty
+    for (i <- 0 until patterns.size) {
+      m = unifyExp(th, localPatterns, patterns(i), exps(i), m, errorMessages)
+    }
+    for (p <- m.entries) {
       val ((_, id), s) = p
       if (s.size > 1) {
-        errorMessages = errorMessages :+
+        errorMessages.value = errorMessages.value :+
           st"""Could not unify local pattern '$id' with multiple expressions:
               |* ${(for (ce <- s.elements) yield ce.prettyST, "\n* ")}""".render
       }
     }
-
-    if (errorMessages.nonEmpty) {
-      return Either.Right(errorMessages)
+    for (localPattern <- localPatterns.elements if !m.contains(localPattern)) {
+      errorMessages.value = errorMessages.value :+ s"Could not find any matching expression for '${localPattern._2}'"
     }
-
-    return Either.Left(HashSMap ++ (for (p <- map.entries) yield (p._1, p._2.elements(0))))
+    return if (errorMessages.value.nonEmpty) Either.Right(errorMessages.value)
+    else Either.Left(HashSMap ++ (for (p <- m.entries) yield (p._1, p._2.elements(0))))
   }
 
   @pure def simplify(exp: AST.CoreExp): Option[AST.CoreExp] = {
