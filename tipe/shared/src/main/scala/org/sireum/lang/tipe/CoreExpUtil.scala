@@ -148,9 +148,20 @@ object CoreExpUtil {
         case e: AST.Exp.Binary =>
           val t = e.typedOpt.get.subst(sm)
           e.attr.resOpt.get match {
-            case _: AST.ResolvedInfo.BuiltIn =>
+            case res: AST.ResolvedInfo.BuiltIn =>
+              val left = rec(e.left, funStack, localMap)
+              val right = rec(e.right, funStack, localMap)
+              res.kind match {
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondAnd =>
+                  return AST.CoreExp.If(left, right, AST.CoreExp.LitB(F), AST.Typed.b)
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondOr =>
+                  return AST.CoreExp.If(left, AST.CoreExp.LitB(T), right, AST.Typed.b)
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondImply =>
+                  return AST.CoreExp.If(left, right, AST.CoreExp.LitB(T), AST.Typed.b)
+                case _ =>
+              }
               return AST.CoreExp.Apply(AST.CoreExp.ObjectVarRef(AST.CoreExp.binaryOwner, e.op, t),
-                ISZ(rec(e.left, funStack, localMap), rec(e.right, funStack, localMap)), t)
+                ISZ(left, right), t)
             case _ => halt(s"TODO: $e")
           }
         case e: AST.Exp.If =>
@@ -423,7 +434,118 @@ object CoreExpUtil {
     else Either.Left(m)
   }
 
-  @pure def simplify(exp: AST.CoreExp): Option[AST.CoreExp] = {
-    return None() // TODO
+  @strictpure def evalBinary(lit1: AST.CoreExp.Lit, op: String, lit2: AST.CoreExp.Lit): AST.CoreExp.Lit = {
+    halt("TODO")
+  }
+
+  @strictpure def evalUnary(op: String, lit: AST.CoreExp.Lit): AST.CoreExp.Lit = {
+    halt("TODO")
+  }
+
+  @pure def simplify(th: TypeHierarchy, exp: AST.CoreExp): AST.CoreExp = {
+    @strictpure def incDeBruijnMap(deBruijnMap: HashMap[Z, AST.CoreExp], inc: Z): HashMap[Z, AST.CoreExp] =
+      HashMap ++ (for (p <- deBruijnMap.entries) yield (p._1 + inc, p._2))
+    @pure def rec(deBruijnMap: HashMap[Z, AST.CoreExp], e: AST.CoreExp): Option[AST.CoreExp] = {
+      e match {
+        case _: AST.CoreExp.Lit => return None()
+        case _: AST.CoreExp.LocalVarRef => return None()
+        case e: AST.CoreExp.ParamVarRef =>
+          deBruijnMap.get(e.deBruijn) match {
+            case Some(e2) => return rec(deBruijnMap, e2)
+            case _ => return None()
+          }
+        case _: AST.CoreExp.ObjectVarRef => return None()
+        case e: AST.CoreExp.Select =>
+          rec(deBruijnMap, e.exp) match {
+            case Some(receiver) => return Some(e(exp = receiver))
+            case _ => return None()
+          }
+        case e: AST.CoreExp.If =>
+          var changed = F
+          var cond = e.cond
+          var tExp = e.tExp
+          var fExp = e.fExp
+          rec(deBruijnMap, cond) match {
+            case Some(AST.CoreExp.LitB(b)) => return if (b) rec(deBruijnMap, tExp) else rec(deBruijnMap, fExp)
+            case Some(c) =>
+              cond = c
+              changed = T
+            case _ =>
+          }
+          rec(deBruijnMap, tExp) match {
+            case Some(tExp2) =>
+              tExp = tExp2
+              changed = T
+            case _ =>
+          }
+          rec(deBruijnMap, fExp) match {
+            case Some(fExp2) =>
+              fExp = fExp2
+              changed = T
+            case _ =>
+          }
+          return if (changed) Some(e(cond = cond, tExp = tExp, fExp = fExp)) else None()
+        case e: AST.CoreExp.Apply =>
+          var op = e.exp
+          var changed = F
+          rec(deBruijnMap, e.exp) match {
+            case Some(o) =>
+              op = o
+              changed = T
+            case _ =>
+          }
+          var args = ISZ[AST.CoreExp]()
+          for (arg <- e.args) {
+            rec(deBruijnMap, arg) match {
+              case Some(arg2) =>
+                args = args :+ arg2
+                changed = T
+              case _ =>
+                args = args :+ arg
+            }
+          }
+          op match {
+            case AST.CoreExp.ObjectVarRef(owner, id, _) =>
+              owner match {
+                case AST.CoreExp.binaryOwner =>
+                  args match {
+                    case ISZ(lit1: AST.CoreExp.Lit, lit2: AST.CoreExp.Lit) => return Some(evalBinary(lit1, id, lit2))
+                    case _ =>
+                  }
+                case AST.CoreExp.unaryOwner =>
+                  args match {
+                    case ISZ(lit: AST.CoreExp.Lit) => return Some(evalUnary(id, lit))
+                    case _ =>
+                  }
+                case _ =>
+              }
+            case f: AST.CoreExp.Fun => halt("TODO")
+            case q: AST.CoreExp.Quant => halt("TODO")
+            case _ =>
+          }
+          return if (changed) Some(e(exp = op, args = args)) else None()
+        case e: AST.CoreExp.Fun =>
+          rec(incDeBruijnMap(deBruijnMap, 1), e.exp) match {
+            case Some(body) => return Some(e(exp = body))
+            case _ => return None()
+          }
+        case e: AST.CoreExp.Quant =>
+          rec(incDeBruijnMap(deBruijnMap, 1), e.exp) match {
+            case Some(body) => return Some(e(exp = body))
+            case _ => return None()
+          }
+        case e: AST.CoreExp.InstanceOfExp =>
+          var receiver = e.exp
+          var changed = F
+          rec(deBruijnMap, e.exp) match {
+            case Some(r) =>
+              receiver = r
+              changed = T
+            case _ =>
+          }
+          return if (changed) Some(e(exp = receiver)) else None()
+      }
+    }
+    return rec(HashMap.empty, exp).getOrElse(exp)
   }
 }
