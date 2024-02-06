@@ -38,7 +38,7 @@ object CoreExpUtil {
   type UnificationErrorMessages = ISZ[String]
   type UnificationResult = Either[UnificationMap, UnificationErrorMessages]
 
-  @record class Subsitutor(val map: HashMap[AST.CoreExp, AST.CoreExp.ParamVarRef]) extends AST.MCoreExpTransformer {
+  @record class Substitutor(val map: HashMap[AST.CoreExp, AST.CoreExp.ParamVarRef]) extends AST.MCoreExpTransformer {
     override def transformCoreExp(o: AST.CoreExp): MOption[AST.CoreExp] = {
       map.get(o) match {
         case Some(pvr) => return MSome(pvr)
@@ -310,7 +310,7 @@ object CoreExpUtil {
                     val n = args.size - i
                     substMap = substMap + args(i) ~> AST.CoreExp.ParamVarRef(n, paramId(n), argTypes(i))
                   }
-                  val se = Subsitutor(substMap).transformCoreExp(e).getOrElse(e)
+                  val se = Substitutor(substMap).transformCoreExp(e).getOrElse(e)
                   var r: AST.CoreExp = AST.CoreExp.Fun(AST.CoreExp.Param(paramId(1), argTypes(args.size - 1)), se)
                   for (i <- args.size - 2 to 0 by -1) {
                     r = AST.CoreExp.Fun(AST.CoreExp.Param(paramId(args.size - i), argTypes(i)), r)
