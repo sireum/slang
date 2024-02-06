@@ -32,6 +32,7 @@ import org.sireum._
 @datatype trait CoreExp {
   @strictpure def tipe: Typed
   @pure def prettyST: ST
+  @strictpure override def string: String = prettyST.render
 }
 
 object CoreExp {

@@ -211,14 +211,14 @@ object CoreExpUtil {
     return rec(exp, Stack.empty, HashSMap.empty)
   }
 
-  @pure def unifyExp(th: TypeHierarchy, localPatterns: LocalPatternSet, pattern: AST.CoreExp, exp: AST.CoreExp,
+  @pure def unifyExp(localPatterns: LocalPatternSet, pattern: AST.CoreExp, exp: AST.CoreExp,
                      init: UnificationCandidatesMap, errorMessages: MBox[UnificationErrorMessages]): UnificationCandidatesMap = {
-    @pure def rootLocalPatternOpt(e: AST.CoreExp.Apply, args: ISZ[AST.CoreExp]): Option[(ISZ[String], String, AST.Typed, ISZ[AST.CoreExp])] = {
-      e.exp match {
-        case e2: AST.CoreExp.LocalVarRef =>
-          val p = (e2.context, e2.id)
-          return if (localPatterns.contains(p)) Some((p._1, p._2, e2.tipe, args)) else None()
-        case e2: AST.CoreExp.Apply => return rootLocalPatternOpt(e2, e2.args ++ args)
+    @pure def rootLocalPatternOpt(e: AST.CoreExp, args: ISZ[AST.CoreExp]): Option[(ISZ[String], String, AST.Typed, ISZ[AST.CoreExp])] = {
+      e match {
+        case e: AST.CoreExp.LocalVarRef =>
+          val p = (e.context, e.id)
+          return if (localPatterns.contains(p)) Some((p._1, p._2, e.tipe, args)) else None()
+        case e: AST.CoreExp.Apply => return rootLocalPatternOpt(e.exp, e.args ++ args)
         case _ => return None()
       }
     }
@@ -321,12 +321,14 @@ object CoreExpUtil {
     return map
   }
 
-  @pure def unify(th: TypeHierarchy, localPatterns: LocalPatternSet,
-                  patterns: ISZ[AST.CoreExp], exps: ISZ[AST.CoreExp]): UnificationResult = {
+  @pure def unify(localPatterns: LocalPatternSet, patterns: ISZ[AST.CoreExp], exps: ISZ[AST.CoreExp]): UnificationResult = {
     val errorMessages: MBox[UnificationErrorMessages] = MBox(ISZ())
     var m: UnificationCandidatesMap = HashSMap.empty
     for (i <- 0 until patterns.size) {
-      m = unifyExp(th, localPatterns, patterns(i), exps(i), m, errorMessages)
+      m = unifyExp(localPatterns, patterns(i), exps(i), m, errorMessages)
+      if (errorMessages.value.nonEmpty) {
+        return Either.Right(errorMessages.value)
+      }
     }
     for (p <- m.entries) {
       val ((_, id), s) = p
