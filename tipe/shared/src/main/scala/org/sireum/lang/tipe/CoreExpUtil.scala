@@ -38,6 +38,20 @@ object CoreExpUtil {
   type UnificationErrorMessages = ISZ[String]
   type UnificationResult = Either[UnificationMap, UnificationErrorMessages]
 
+  @datatype class SimplicationConfig(val constantPropagation: B,
+                                     val funApplication: B,
+                                     val quantApplication: B,
+                                     val tupleProjection: B,
+                                     val seqIndexing: B,
+                                     val fieldAccess: B,
+                                     val instanceOf: B)
+
+  object SimplicationConfig {
+    val all: SimplicationConfig = SimplicationConfig(T, T, T, T, T, T, T)
+    val none: SimplicationConfig = SimplicationConfig(F, F, F, F, F, F, F)
+    val funApplicationOnly: SimplicationConfig = none(funApplication = T)
+  }
+
   @record class Substitutor(val map: HashMap[AST.CoreExp, AST.CoreExp.ParamVarRef]) extends AST.MCoreExpTransformer {
     override def transformCoreExp(o: AST.CoreExp): MOption[AST.CoreExp] = {
       map.get(o) match {
@@ -366,36 +380,7 @@ object CoreExpUtil {
     return map
   }
 
-  @pure def applyFun(exp: AST.CoreExp, args: ISZ[AST.CoreExp]): Option[AST.CoreExp] = {
-    @pure def applyFunArg(fun: AST.CoreExp.Fun, arg: AST.CoreExp): AST.CoreExp = {
-      @pure def applyFunRec(deBruijn: Z, e: AST.CoreExp): AST.CoreExp = {
-        e match {
-          case _: AST.CoreExp.Lit => return e
-          case _: AST.CoreExp.LocalVarRef => return e
-          case e: AST.CoreExp.ParamVarRef => return if (e.deBruijn == deBruijn) arg else e
-          case _: AST.CoreExp.ObjectVarRef => return e
-          case e: AST.CoreExp.Select => return e(exp = applyFunRec(deBruijn, e.exp))
-          case e: AST.CoreExp.If => return e(cond = applyFunRec(deBruijn, e.cond), tExp = applyFunRec(deBruijn, e.tExp),
-            fExp = applyFunRec(deBruijn, e.fExp))
-          case e: AST.CoreExp.Apply => return e(exp = applyFunRec(deBruijn, e.exp), args = for (a <- e.args) yield applyFunRec(deBruijn, a))
-          case e: AST.CoreExp.Fun => return e(exp = applyFunRec(deBruijn + 1, e.exp))
-          case e: AST.CoreExp.Quant => return e(exp = applyFunRec(deBruijn + 1, e.exp))
-          case e: AST.CoreExp.InstanceOfExp => return e(exp = applyFunRec(deBruijn, e.exp))
-        }
-      }
-      return applyFunRec(1, fun.exp)
-    }
-    var e = exp
-    for (arg <- args) {
-      e match {
-        case f: AST.CoreExp.Fun => e = applyFunArg(f, arg)
-        case _ => return None()
-      }
-    }
-    return Some(e)
-  }
-
-  @pure def unify(localPatterns: LocalPatternSet, patterns: ISZ[AST.CoreExp], exps: ISZ[AST.CoreExp]): UnificationResult = {
+  @pure def unify(th: TypeHierarchy, localPatterns: LocalPatternSet, patterns: ISZ[AST.CoreExp], exps: ISZ[AST.CoreExp]): UnificationResult = {
     val errorMessages: MBox[UnificationErrorMessages] = MBox(ISZ())
     val pendingApplications: MBox[PendingApplications] = MBox(ISZ())
     var m: UnificationMap = HashSMap.empty
@@ -413,7 +398,7 @@ object CoreExpUtil {
         val (context, id, args, e) = pa
         m.get((context, id)) match {
           case Some(f: AST.CoreExp.Fun) =>
-            applyFun(f, args) match {
+            simplify(th, SimplicationConfig.funApplicationOnly, AST.CoreExp.Apply(f, args, e.tipe)) match {
               case Some(pattern) => m = unifyExp(localPatterns, pattern, e, m, pendingApplications, errorMessages)
               case _ => errorMessages.value = errorMessages.value :+
                 st"Could not reduce '$f(${(for (arg <- args) yield arg.prettyST, ", ")})'".render
@@ -442,7 +427,7 @@ object CoreExpUtil {
     halt("TODO")
   }
 
-  @pure def simplify(th: TypeHierarchy, exp: AST.CoreExp): AST.CoreExp = {
+  @pure def simplify(th: TypeHierarchy, config: SimplicationConfig, exp: AST.CoreExp): Option[AST.CoreExp] = {
     @strictpure def incDeBruijnMap(deBruijnMap: HashMap[Z, AST.CoreExp], inc: Z): HashMap[Z, AST.CoreExp] =
       HashMap ++ (for (p <- deBruijnMap.entries) yield (p._1 + inc, p._2))
     @pure def rec(deBruijnMap: HashMap[Z, AST.CoreExp], e: AST.CoreExp): Option[AST.CoreExp] = {
@@ -451,7 +436,7 @@ object CoreExpUtil {
         case _: AST.CoreExp.LocalVarRef => return None()
         case e: AST.CoreExp.ParamVarRef =>
           deBruijnMap.get(e.deBruijn) match {
-            case Some(e2) => return rec(deBruijnMap, e2)
+            case Some(e2) => return Some(rec(deBruijnMap, e2).getOrElse(e2))
             case _ => return None()
           }
         case _: AST.CoreExp.ObjectVarRef => return None()
@@ -466,7 +451,8 @@ object CoreExpUtil {
           var tExp = e.tExp
           var fExp = e.fExp
           rec(deBruijnMap, cond) match {
-            case Some(AST.CoreExp.LitB(b)) => return if (b) rec(deBruijnMap, tExp) else rec(deBruijnMap, fExp)
+            case Some(AST.CoreExp.LitB(b)) if config.constantPropagation =>
+              return if (b) rec(deBruijnMap, tExp) else rec(deBruijnMap, fExp)
             case Some(c) =>
               cond = c
               changed = T
@@ -505,7 +491,7 @@ object CoreExpUtil {
             }
           }
           op match {
-            case AST.CoreExp.ObjectVarRef(owner, id, _) =>
+            case AST.CoreExp.ObjectVarRef(owner, id, _) if config.constantPropagation =>
               owner match {
                 case AST.CoreExp.binaryOwner =>
                   args match {
@@ -519,8 +505,32 @@ object CoreExpUtil {
                   }
                 case _ =>
               }
-            case f: AST.CoreExp.Fun => halt("TODO")
-            case q: AST.CoreExp.Quant => halt("TODO")
+            case f: AST.CoreExp.Fun if config.funApplication =>
+              var params = ISZ[(String, AST.Typed)]()
+              def recParams(fe: AST.CoreExp): AST.CoreExp = {
+                fe match {
+                  case fe: AST.CoreExp.Fun if params.size < args.size =>
+                    params = params :+ (fe.param.id, fe.param.tipe)
+                    return recParams(fe.exp)
+                  case _ => return fe
+                }
+              }
+              val body = recParams(f)
+              var map = incDeBruijnMap(deBruijnMap, params.size)
+              for (i <- params.size - 1 to 0 by -1) {
+                map = map + (i + 1) ~> args(i)
+              }
+              rec(map, body) match {
+                case Some(body2) =>
+                  if (args.size > params.size) {
+                    return Some(e(exp = body2, args = ops.ISZOps(args).slice(params.size, args.size)))
+                  } else {
+                    return Some(body2)
+                  }
+                case _ =>
+              }
+            case q: AST.CoreExp.Quant if config.quantApplication =>
+              halt("TODO")
             case _ =>
           }
           return if (changed) Some(e(exp = op, args = args)) else None()
@@ -546,6 +556,6 @@ object CoreExpUtil {
           return if (changed) Some(e(exp = receiver)) else None()
       }
     }
-    return rec(HashMap.empty, exp).getOrElse(exp)
+    return rec(HashMap.empty, exp)
   }
 }
