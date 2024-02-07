@@ -25,6 +25,8 @@
 
 package org.sireum.lang.parser
 
+import org.sireum.$internal.MutableMarker
+import org.sireum.lang.ast.MTransformer
 import org.sireum.message
 import org.sireum.message.Reporter
 import org.sireum.lang.{ast => AST}
@@ -554,10 +556,38 @@ class SlangParser(
     }
   }
 
+  def checkRsExp(exp: AST.Exp): AST.Exp = {
+    new MTransformer {
+      override def $clonable: Boolean = false
+
+      override def $clonable_=(b: Boolean): MutableMarker = this
+
+      override def $owned: Boolean = true
+
+      override def $owned_=(b: Boolean): MutableMarker = this
+
+      override def $clone: MutableMarker = this
+
+      override def string: org.sireum.String = "MTransformer"
+
+      override def transformExp(o: AST.Exp): org.sireum.MOption[AST.Exp] = {
+        o match {
+          case _: AST.Exp.Binary =>
+          case _: AST.Exp.RS =>
+          case _: AST.Exp.Ref =>
+          case _ =>
+            reporter.error(o.posOpt, messageKind, "RS expression should be either RS(...), a val reference, or HashSSet binary operation")
+        }
+        super.transformExp(o)
+      }
+    }.transformExp(exp).getOrElse(exp)
+  }
+
   def translateVal(enclosing: Enclosing.Type, stat: Defn.Val): AST.Stmt = {
     var hasError = false
     val mods = stat.mods
     var hasSpec = false
+    var hasRw = false
     for (mod <- mods) mod match {
       case mod"@spec" =>
         if (hasSpec) {
@@ -565,22 +595,37 @@ class SlangParser(
           error(mod.pos, "Redundant @spec.")
         }
         hasSpec = true
+      case mod"@rw" =>
+        if (hasRw) {
+          hasError = true
+          error(mod.pos, "Redundant @rw.")
+        }
+        hasRw = true
       case _ =>
         hasError = true
-        error(mod.pos, "Only the @spec modifier is allowed for val declarations.")
+        error(mod.pos, "Only either @spec or @rw modifier is allowed for val declarations.")
     }
-    enclosing match {
-      case Enclosing.Top | Enclosing.Object | Enclosing.ExtObject | Enclosing.DatatypeClass | Enclosing.RecordClass |
-          Enclosing.Method | Enclosing.Block =>
-      case Enclosing.Sig | Enclosing.MSig | Enclosing.DatatypeTrait | Enclosing.RecordTrait if hasSpec =>
-      case _ =>
-        hasError = true
-        if (isWorksheet)
-          errorInSlang(
-            stat.pos,
-            "Val declarations can only appear at the top-level, inside objects, classes, methods, or code blocks"
-          )
-        else errorInSlang(stat.pos, "Val declarations can only appear inside objects, classes, methods, or code blocks")
+    if (hasSpec && hasRw) {
+      error(stat.pos, "Val declarations cannot have both @spec and @rw.")
+    }
+    if (hasRw) {
+      if (enclosing != Enclosing.Object) {
+        errorInSlang(stat.pos, "@rw val declarations can only appear inside objects")
+      }
+    } else {
+      enclosing match {
+        case Enclosing.Top | Enclosing.Object | Enclosing.ExtObject | Enclosing.DatatypeClass | Enclosing.RecordClass |
+             Enclosing.Method | Enclosing.Block =>
+        case Enclosing.Sig | Enclosing.MSig | Enclosing.DatatypeTrait | Enclosing.RecordTrait if hasSpec =>
+        case _ =>
+          hasError = true
+          if (isWorksheet)
+            errorInSlang(
+              stat.pos,
+              "Val declarations can only appear at the top-level, inside objects, classes, methods, or code blocks"
+            )
+          else errorInSlang(stat.pos, "Val declarations can only appear inside objects, classes, methods, or code blocks")
+      }
     }
     val patsnel = stat.pats
     val tpeopt = stat.decltpe
@@ -614,7 +659,15 @@ class SlangParser(
       errorInSlang(stat.pos, "@spec val field declarations should have the form: '@spec val〈ID〉:〈type〉= $'")
     }
     if (hasError) rStmt
-    else if (hasSpec && !isLocal)
+    else if (hasRw && !isLocal) {
+      val t = translateType(tpeopt.get)
+      t match {
+        case t: AST.Type.Named if t.typeArgs.nonEmpty || ISZ[String]("RS") != (for (id <- t.name.ids) yield id.value) =>
+          errorInSlang(stat.pos, "@rw val should be typed as RS")
+        case _ =>
+      }
+      AST.Stmt.RsVal(cid(patsnel.head.asInstanceOf[Pat.Var]), checkRsExp(translateExp(expr)), resolvedAttr(stat.pos)(typedOpt = AST.Typed.rsOpt))
+    } else if (hasSpec && !isLocal)
       AST.Stmt.SpecVar(isVal = true, cid(patsnel.head.asInstanceOf[Pat.Var]), translateType(tpeopt.get), resolvedAttr(stat.pos))
     else
       patsnel.head match {
@@ -808,6 +861,7 @@ class SlangParser(
   def methodMods(isDecl: Boolean, enclosing: Enclosing.Type, mods: List[Mod]): (AST.Purity.Type, ISZ[String], Option[AST.Exp.LitString], B, B) = {
     var isPure = false
     var isStrictPure = false
+    var isAbs = false
     var hasOverride = false
     var isHelper = false
     var hasInline = false
@@ -832,6 +886,13 @@ class SlangParser(
             hasError = true
             error(mod.pos, "Redundant @strictpure.")
           }
+          isStrictPure = true
+        case mod"@abs" =>
+          if (isAbs) {
+            hasError = true
+            error(mod.pos, "Redundant @abs.")
+          }
+          isAbs = true
           isStrictPure = true
         case mod"@helper" =>
           if (isHelper) {
@@ -912,7 +973,7 @@ class SlangParser(
           }
       }
     }
-    if (isJust && (isPure || isSpec || isStrictPure || hasOverride || isMemoize || isHelper)) {
+    if (isJust && (isPure || isSpec || isAbs || isStrictPure || hasOverride || isMemoize || isHelper)) {
       error(mods.head.pos, s"@just methods cannot have other annotations")
     }
     if (isJust && enclosing != Enclosing.Object) {
@@ -933,14 +994,14 @@ class SlangParser(
       hasError = true
       errorInSlang(
         mods.head.pos,
-        s"Methods cannot be annotated with both @strictpure and @pure (@strictpure methods are always @pure)"
+        s"Methods cannot be annotated with both @strictpure/@abs and @pure (@strictpure/@abs methods are always @pure)"
       )
     }
     if (isMemoize && isStrictPure) {
       hasError = true
       errorInSlang(
         mods.head.pos,
-        s"Methods cannot be annotated with both @strictpure and @memoize"
+        s"Methods cannot be annotated with both @strictpure/@abs and @memoize"
       )
     }
     if (isPure && isSpec) {
@@ -954,7 +1015,7 @@ class SlangParser(
       hasError = true
       errorInSlang(
         mods.head.pos,
-        s"Methods cannot be annotated with both @strictpure and @spec (@spec methods are always @strictpure)"
+        s"Methods cannot be annotated with both @strictpure/@abs and @spec (@spec methods are always @strictpure)"
       )
     }
     if (isMemoize && isSpec) {
@@ -990,6 +1051,7 @@ class SlangParser(
     val purity =
       if (isMemoize) AST.Purity.Memoize
       else if (isPure) AST.Purity.Pure
+      else if (isAbs) AST.Purity.Abs
       else if (isStrictPure) AST.Purity.StrictPure
       else AST.Purity.Impure
     return (purity, r, etaOpt, isJust, isSpec)
@@ -1068,8 +1130,8 @@ class SlangParser(
 
     def body(): AST.Stmt.Method = {
       def err(): AST.Stmt.Method = {
-        if (purity == AST.Purity.StrictPure) {
-          errorInSlang(exp.pos, "Ill-formed @strictpure method body")
+        if (purity == AST.Purity.StrictPure || purity == AST.Purity.Abs) {
+          errorInSlang(exp.pos, "Ill-formed @strictpure/@abs method body")
         } else {
           errorInSlang(exp.pos, "Only block '{ ... }' is allowed for a method body")
         }
@@ -1107,7 +1169,7 @@ class SlangParser(
             case _ => err()
           }
         case _ =>
-          if (purity == AST.Purity.StrictPure && !hasError) {
+          if ((purity == AST.Purity.StrictPure || purity == AST.Purity.Abs) && !hasError) {
             val (mc, newExp) = exp match {
               case exp: Term.Block =>
                 exp.stats.headOption match {
@@ -2650,6 +2712,13 @@ class SlangParser(
             errorInSlang(arg.pos, "The first At(...) argument has to be a variable reference or this")
             rExp
         }
+      case q"${name: Term.Name}(..$args)" if name.value == "RS" =>
+        var rsArgs = ISZ[AST.Exp.Ref]()
+        for (arg <- args) translateExp(arg) match {
+          case e: AST.Exp.Ref => rsArgs = rsArgs :+ e
+          case _ => errorInSlang(arg.pos, "RS(...) argument has to be a val reference")
+        }
+        AST.Exp.RS(rsArgs, attr(exp.pos))
       case q"$expr.$name[..$tpes](...${aexprssnel: List[List[Term]]})" if tpes.nonEmpty && aexprssnel.nonEmpty =>
         translateInvoke(
           scala.Some(expr),
@@ -3871,8 +3940,8 @@ class SlangParser(
       case Enclosing.Top | Enclosing.Object | Enclosing.ExtObject => true
       case _ => false
     }
+    val desc = if (isLemma) "Lemma" else "Theorem"
     if (!isTheoremContext) {
-      val desc = if (isLemma) "Lemma" else "Theorem"
       if (isWorksheet) error(stat.pos, s"$desc can only appear at the top-level, inside object, or @ext object.")
       else error(stat.pos, s"$desc can only appear inside object or @ext object.")
     }
@@ -3881,6 +3950,10 @@ class SlangParser(
       case q"${_: Term.Name}(${d: Lit.String}, $e, $p)" =>
         (Some(translateLit(d).asInstanceOf[AST.Exp.LitString]), translateExp(e), translateProof(p))
       case q"${_: Term.Name}($e, $p)" => (None[AST.Exp.LitString](), translateExp(e), translateProof(p))
+      case q"${_: Term.Name}($e)" => (None[AST.Exp.LitString](), translateExp(e), AST.ProofAst(ISZ(), attr(e.pos)))
+      case q"${_: Term.Name}()" =>
+        error(stat.body.pos, s"$desc cannot be empty")
+        (None[AST.Exp.LitString](), rExp, AST.ProofAst(ISZ(), attr(stat.body.pos)))
     }
     var params = ISZ[AST.Exp.Fun.Param]()
     stat.paramClauses.size match {

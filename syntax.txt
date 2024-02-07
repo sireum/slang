@@ -47,6 +47,7 @@
 
 <val-decl>         ::=  val <pattern> ⸨ : <type> ⸩? = <assign-exp>
                      |  @spec val <ID> : <type> = $
+                     |  @rw val <ID> : RS = <exp>
 
 <var-decl>         ::=  var <pattern> ⸨ : <type> ⸩? = <assign-exp>
                      |  @spec var <ID> : <type> = $
@@ -58,7 +59,7 @@
                      |  @spec def <ID> <type-params>? <params>? : <type> = $
                      |  @just def <ID> <type-params>? <params>? : Unit = $
 
-<def-mod>          ::=  ⸨ @pure | @strictpure | @memoize | @helper | @inline | @tailrec ⸩* ⸨ override ⸩?
+<def-mod>          ::=  ⸨ @pure | @strictpure | @abs | @memoize | @helper | @inline | @tailrec ⸩* ⸨ override ⸩?
 
 <subz-decl>        ::=  @range ( <range-args> ) class <ID>
                      |  @bits ( <bits-args> ) class <ID>
@@ -211,6 +212,7 @@
                      |  <block-assign-exp>                                  // only in spec context
                      |  <exp> : @l( <INT> )                                 // only in spec context
                      |  Res ⸨ [ <type> ] ⸩?                                 // only in contract ensures context
+                     |  RS ( <name> ⸨ , <name> ⸩* )                         // only in spec context
 
 <quant-op>         ::=  ∀
                      |  All

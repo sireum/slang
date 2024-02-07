@@ -45,6 +45,29 @@ class TypeCheckerTest extends TestSuite {
 
         * - passingWorksheet(
           """import org.sireum._
+            |
+            |object A {
+            |  @spec def aFact = Fact(
+            |    T
+            |  )
+            |
+            |  @spec def aTheorem = Theorem(
+            |    T
+            |  )
+            |
+            |  @pure def amTheorem(): Unit = {
+            |    Contract(
+            |      Ensures(T)
+            |    )
+            |  }
+            |
+            |  @rw val a: RS = RS(aFact, aTheorem)
+            |  @rw val b: RS = a ∪ RS(amTheorem)
+            |}""".stripMargin
+        )
+
+        * - passingWorksheet(
+          """import org.sireum._
             |@sig trait Base {
             |  def name: String
             |}

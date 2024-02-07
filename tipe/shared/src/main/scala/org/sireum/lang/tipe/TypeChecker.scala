@@ -907,7 +907,7 @@ object TypeChecker {
   }
 
   def checkStrictPureMethod(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope.Local, isMutableContext: B, stmt: AST.Stmt.Method, reporter: Reporter): AST.Stmt.Method = {
-    assert(stmt.purity == AST.Purity.StrictPure)
+    assert(stmt.isStrictPure)
     var r = stmt
     val tc = TypeChecker(th, context, isMutableContext, TypeChecker.ModeContext.Code, strictAliasing)
     if (r.mcontract.nonEmpty) {
@@ -953,6 +953,13 @@ object TypeChecker {
     val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
     return stmt(claims = for (claim <- stmt.claims) yield tc.checkExp(bExpectedOpt, scope, claim, reporter)._1,
       attr = stmt.attr(typedOpt = AST.Typed.unitOpt))
+  }
+
+  def checkRsValStmt(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope.Local, stmt: AST.Stmt.RsVal, reporter: Reporter): AST.Stmt.RsVal = {
+    val tc = TypeChecker(th, context, F, ModeContext.Spec, strictAliasing)
+    val expectedOpt: Option[AST.Typed] = AST.Typed.rsOpt
+    val newInit = tc.checkExp(expectedOpt, scope, stmt.init, reporter)._1
+    return stmt(init = newInit, attr = stmt.attr(typedOpt = AST.Typed.unitOpt))
   }
 
   def checkDataRefinement(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope.Local, stmt: AST.Stmt.DataRefinement, reporter: Reporter): AST.Stmt.DataRefinement = {
@@ -1072,6 +1079,13 @@ import TypeChecker._
       case info: Info.SpecVar =>
         if (!inSpec) {
           reporter.error(posOpt, typeCheckerKind, "Cannot access @spec var in non-spec context.")
+          return (None(), None())
+        } else {
+          return (info.typedOpt, info.resOpt)
+        }
+      case info: Info.RsVal =>
+        if (!inSpec) {
+          reporter.error(posOpt, typeCheckerKind, "Cannot access @rw val in non-spec context.")
           return (None(), None())
         } else {
           return (info.typedOpt, info.resOpt)
@@ -3426,6 +3440,30 @@ import TypeChecker._
       }
     }
 
+    def checkRS(rs: AST.Exp.RS): (AST.Exp, Option[AST.Typed]) = {
+      var newRefs = ISZ[AST.Exp.Ref]()
+      for (ref <- rs.refs) {
+        val newRef = checkExp(None(), scope, AST.Exp.Eta(ref, AST.TypedAttr(ref.posOpt, ref.typedOpt)), reporter)._1.asInstanceOf[AST.Exp.Eta].ref
+        newRefs = newRefs :+ newRef
+        var ok = F
+        newRef.resOpt match {
+          case Some(_: AST.ResolvedInfo.Fact) => ok = T
+          case Some(_: AST.ResolvedInfo.Theorem) => ok = T
+          case Some(res: AST.ResolvedInfo.Method) =>
+            typeHierarchy.nameMap.get(res.owner :+ res.id) match {
+              case Some(info: Info.Method) if info.ast.sig.returnType.typedOpt == AST.Typed.unitOpt && info.ast.sig.isPure &&
+                info.ast.contract.nonEmpty && info.ast.contract.modifies.isEmpty => ok = T
+              case _ =>
+            }
+          case _ =>
+        }
+        if (!ok) {
+          reporter.error(newRef.posOpt, typeCheckerKind, "Expecting a theorem/lemma, fact, or method theorem/lemma")
+        }
+      }
+      return (rs(refs = newRefs), AST.Typed.rsOpt)
+    }
+
     def checkExpH(): (AST.Exp, Option[AST.Typed]) = {
       exp match {
 
@@ -3563,6 +3601,8 @@ import TypeChecker._
         case exp: AST.Exp.Old => return checkOld(exp)
 
         case exp: AST.Exp.At => return checkAt(exp)
+
+        case exp: AST.Exp.RS => return checkRS(exp)
 
         case _: AST.Exp.StateSeq => halt("Unimplemented") // TODO
 
@@ -4884,6 +4924,8 @@ import TypeChecker._
       case stmt: AST.Stmt.While => return checkWhile(stmt)
 
       case stmt: AST.Stmt.SpecLabel => return stmt
+
+      case stmt: AST.Stmt.RsVal => return stmt
 
       case stmt: AST.Stmt.SpecBlock =>
         val tc = TypeChecker(typeHierarchy, context, isInMutableContext, ModeContext.Spec, strictAliasing)

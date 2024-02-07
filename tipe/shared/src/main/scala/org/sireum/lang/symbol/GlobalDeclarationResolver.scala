@@ -173,6 +173,18 @@ import GlobalDeclarationResolver._
           ),
           stmt.attr.posOpt
         )
+      case stmt: AST.Stmt.RsVal =>
+        val name = currentName :+ stmt.id.value
+        declareName(
+          "val",
+          name,
+          Info.RsVal(
+            currentName,
+            scope(packageName, currentImports, name),
+            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Var(T, T, T, currentName, stmt.id.value))))
+          ),
+          stmt.attr.posOpt
+        )
       case stmt: AST.Stmt.Method =>
         val id = stmt.sig.id.value
         val name = currentName :+ id

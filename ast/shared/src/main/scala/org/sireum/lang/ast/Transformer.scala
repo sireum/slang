@@ -66,6 +66,7 @@ object Transformer {
         case o: Stmt.Var => return preStmtVar(ctx, o)
         case o: Stmt.VarPattern => return preStmtVarPattern(ctx, o)
         case o: Stmt.SpecVar => return preStmtSpecVar(ctx, o)
+        case o: Stmt.RsVal => return preStmtRsVal(ctx, o)
         case o: Stmt.Method => return preStmtMethod(ctx, o)
         case o: Stmt.ExtMethod => return preStmtExtMethod(ctx, o)
         case o: Stmt.JustMethod => return preStmtJustMethod(ctx, o)
@@ -217,6 +218,10 @@ object Transformer {
     }
 
     @pure def preStmtSpecVar(ctx: Context, o: Stmt.SpecVar): PreResult[Context, Stmt] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preStmtRsVal(ctx: Context, o: Stmt.RsVal): PreResult[Context, Stmt] = {
       return PreResult(ctx, T, None())
     }
 
@@ -719,6 +724,7 @@ object Transformer {
           return r
         case o: Exp.Input => return preExpInput(ctx, o)
         case o: Exp.Old => return preExpOld(ctx, o)
+        case o: Exp.RS => return preExpRS(ctx, o)
         case o: Exp.At => return preExpAt(ctx, o)
         case o: Exp.LoopIndex => return preExpLoopIndex(ctx, o)
         case o: Exp.StateSeq => return preExpStateSeq(ctx, o)
@@ -897,6 +903,10 @@ object Transformer {
     }
 
     @pure def preExpOld(ctx: Context, o: Exp.Old): PreResult[Context, Exp] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preExpRS(ctx: Context, o: Exp.RS): PreResult[Context, Exp] = {
       return PreResult(ctx, T, None())
     }
 
@@ -1173,6 +1183,7 @@ object Transformer {
         case o: Stmt.Var => return postStmtVar(ctx, o)
         case o: Stmt.VarPattern => return postStmtVarPattern(ctx, o)
         case o: Stmt.SpecVar => return postStmtSpecVar(ctx, o)
+        case o: Stmt.RsVal => return postStmtRsVal(ctx, o)
         case o: Stmt.Method => return postStmtMethod(ctx, o)
         case o: Stmt.ExtMethod => return postStmtExtMethod(ctx, o)
         case o: Stmt.JustMethod => return postStmtJustMethod(ctx, o)
@@ -1324,6 +1335,10 @@ object Transformer {
     }
 
     @pure def postStmtSpecVar(ctx: Context, o: Stmt.SpecVar): TPostResult[Context, Stmt] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postStmtRsVal(ctx: Context, o: Stmt.RsVal): TPostResult[Context, Stmt] = {
       return TPostResult(ctx, None())
     }
 
@@ -1826,6 +1841,7 @@ object Transformer {
           return r
         case o: Exp.Input => return postExpInput(ctx, o)
         case o: Exp.Old => return postExpOld(ctx, o)
+        case o: Exp.RS => return postExpRS(ctx, o)
         case o: Exp.At => return postExpAt(ctx, o)
         case o: Exp.LoopIndex => return postExpLoopIndex(ctx, o)
         case o: Exp.StateSeq => return postExpStateSeq(ctx, o)
@@ -2004,6 +2020,10 @@ object Transformer {
     }
 
     @pure def postExpOld(ctx: Context, o: Exp.Old): TPostResult[Context, Exp] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postExpRS(ctx: Context, o: Exp.RS): TPostResult[Context, Exp] = {
       return TPostResult(ctx, None())
     }
 
@@ -2375,6 +2395,14 @@ import Transformer._
           val r2: TPostResult[Context, ResolvedAttr] = transformResolvedAttr(r1.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
             TPostResult(r2.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), tipe = r1.resultOpt.getOrElse(o2.tipe), attr = r2.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r2.ctx, None())
+        case o2: Stmt.RsVal =>
+          val r0: TPostResult[Context, Id] = transformId(preR.ctx, o2.id)
+          val r1: TPostResult[Context, Exp] = transformExp(r0.ctx, o2.init)
+          val r2: TPostResult[Context, ResolvedAttr] = transformResolvedAttr(r1.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), init = r1.resultOpt.getOrElse(o2.init), attr = r2.resultOpt.getOrElse(o2.attr))))
           else
             TPostResult(r2.ctx, None())
         case o2: Stmt.Method =>
@@ -3915,6 +3943,13 @@ import Transformer._
           val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
             TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), attr = r1.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: Exp.RS =>
+          val r0: TPostResult[Context, IS[Z, Exp.Ref]] = transformISZ(preR.ctx, o2.refs, transformExpRef _)
+          val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(refs = r0.resultOpt.getOrElse(o2.refs), attr = r1.resultOpt.getOrElse(o2.attr))))
           else
             TPostResult(r1.ctx, None())
         case o2: Exp.At =>

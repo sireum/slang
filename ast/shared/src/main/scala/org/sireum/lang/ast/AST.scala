@@ -243,6 +243,17 @@ object Stmt {
     @strictpure override def hasReturn: B = F
   }
 
+  @datatype class RsVal(val id: Id,
+                        val init: Exp,
+                        @hidden val attr: ResolvedAttr) extends Stmt {
+    @strictpure override def posOpt: Option[Position] = attr.posOpt
+    @pure override def prettyST: ST = {
+      return st"@rw val ${id.prettyST}: RS = ${init.prettyST}"
+    }
+    @strictpure override def isInstruction: B = F
+    @strictpure override def hasReturn: B = F
+  }
+
   @datatype class Method(val typeChecked: B,
                          val purity: Purity.Type,
                          val modifiers: ISZ[String],
@@ -251,6 +262,7 @@ object Stmt {
                          val bodyOpt: Option[Body],
                          @hidden val attr: ResolvedAttr) extends Stmt {
 
+    @strictpure def isStrictPure: B = purity == Purity.StrictPure || purity == Purity.Abs
     @memoize def hasOverride: B = { return ops.ISZOps(modifiers).contains("override") }
     @memoize def isHelper: B = {
       for (m <- modifiers) {
@@ -305,6 +317,7 @@ object Stmt {
         case Purity.Impure => ""
         case Purity.Pure => "@pure "
         case Purity.StrictPure => "@strictpure "
+        case Purity.Abs => "@abs "
         case Purity.Memoize => "@memoize "
       }
       val overr: String = if (hasOverride) "override " else ""
@@ -1171,6 +1184,7 @@ object ProofAst {
   "Pure"
   "Memoize"
   "StrictPure"
+  "Abs"
 }
 
 @datatype class Case(val pattern: Pattern, val condOpt: Option[Exp], val body: Body) {
@@ -1913,6 +1927,16 @@ object Exp {
 
     @pure override def prettyST: ST = {
       return st"Old(${exp.prettyST})"
+    }
+  }
+
+  @datatype class RS(val refs: ISZ[Exp.Ref], @hidden val attr: Attr) extends Exp {
+    @strictpure override def posOpt: Option[Position] = attr.posOpt
+
+    @strictpure override def typedOpt: Option[Typed] = Typed.rsOpt
+
+    @pure override def prettyST: ST = {
+      return st"RS(${(for (ref <- refs) yield ref.asExp.prettyST, ", ")})"
     }
   }
 

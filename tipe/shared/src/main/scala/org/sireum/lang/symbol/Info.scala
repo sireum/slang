@@ -411,6 +411,35 @@ object Info {
     }
   }
 
+  @datatype class RsVal(val owner: ISZ[String],
+                        val scope: Scope,
+                        val ast: AST.Stmt.RsVal) extends Info {
+
+    @pure override def posOpt: Option[Position] = {
+      return ast.attr.posOpt
+    }
+
+    @pure def outlined: B = {
+      return ast.init.typedOpt.nonEmpty
+    }
+
+    @pure override def name: ISZ[String] = {
+      return owner :+ ast.id.value
+    }
+
+    @pure def typedOpt: Option[AST.Typed] = {
+      return ast.attr.typedOpt
+    }
+
+    @pure def resOpt: Option[AST.ResolvedInfo] = {
+      return ast.attr.resOpt
+    }
+
+    def mtransform(t: AST.MTransformer): Unit = {
+      t.transformStmt(ast)
+    }
+  }
+
   @datatype class Method(val owner: ISZ[String], val isInObject: B, val scope: Scope, val hasBody: B, val ast: AST.Stmt.Method)
     extends Info {
 

@@ -321,9 +321,9 @@ object TypeOutliner {
           )
         )
         if (sig.funType.ret == AST.Typed.unit) {
-          if (info.ast.purity == AST.Purity.StrictPure) {
+          if (info.ast.isStrictPure) {
             reporter.error(m.sig.returnType.posOpt, TypeChecker.typeCheckerKind,
-              "@strictpure methods cannot have Unit as their return type")
+              "@strictpure/@ab methods cannot have Unit as their return type")
           }
         }
         if (info.ast.contract.nonEmpty && info.ast.contract.modifies.nonEmpty && info.ast.purity != AST.Purity.Impure) {
@@ -425,6 +425,8 @@ object TypeOutliner {
                   newStmts = newStmts :+ r.ast
                 case _ => newStmts = newStmts :+ stmt
               }
+            case _: Info.RsVal =>
+              newStmts = newStmts :+ stmt
             case inf: Info.Var =>
               val rOpt = outlineVar(inf, reporter)
               rOpt match {
@@ -1166,6 +1168,12 @@ object TypeOutliner {
           val id = stmt.id.value
           val sInfo = typeHierarchy.nameMap.get(info.name :+ id).get.asInstanceOf[Info.SpecVar]
           newStmts = newStmts :+ sInfo.ast
+        case stmt: AST.Stmt.RsVal =>
+          val id = stmt.id.value
+          val sInfo = typeHierarchy.nameMap.get(info.name :+ id).get.asInstanceOf[Info.RsVal]
+          val context = info.name :+ id
+          val newStmt = TypeChecker.checkRsValStmt(strictAliasing, typeHierarchy, context, scope, sInfo.ast, reporter)
+          newStmts = newStmts :+ newStmt
         case stmt: AST.Stmt.SpecMethod =>
           val id = stmt.sig.id.value
           val sInfo = typeHierarchy.nameMap.get(info.name :+ id).get.asInstanceOf[Info.SpecMethod]
@@ -1178,7 +1186,7 @@ object TypeOutliner {
           val id = stmt.sig.id.value
           val context = info.name :+ id
           val mInfo = typeHierarchy.nameMap.get(info.name :+ id).get.asInstanceOf[Info.Method]
-          if (stmt.purity == AST.Purity.StrictPure) {
+          if (stmt.isStrictPure) {
             val newStmt = TypeChecker.checkStrictPureMethod(strictAliasing, typeHierarchy, context, scope, F, mInfo.ast,
               reporter)
             newStmts = newStmts :+ newStmt
@@ -1241,7 +1249,7 @@ object TypeOutliner {
   def checkContract(strictAliasing: B, isMutableContext: B, name: QName, scope: Scope.Local,
                     members: TypeOutliner.TypeMembers, reporter: Reporter): Unit = {
     def checkMethod(id: String, stmt: AST.Stmt.Method): AST.Stmt.Method = {
-      if (stmt.purity == AST.Purity.StrictPure) {
+      if (stmt.isStrictPure) {
         val context = name :+ stmt.sig.id.value
         return TypeChecker.checkStrictPureMethod(strictAliasing, typeHierarchy, context, scope,
           isMutableContext, stmt, reporter)

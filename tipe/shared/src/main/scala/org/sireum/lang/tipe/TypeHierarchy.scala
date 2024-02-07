@@ -579,6 +579,7 @@ object TypeHierarchy {
         case info: Info.Inv => sts = sts :+ st"Inv(${(info.owner, ".")}, ${getScopeNum(info.scope)}, ${info.ast.prettyST})"
         case info: Info.Var => sts = sts :+ st"Var(${(info.owner, ".")}, ${getScopeNum(info.scope)}, ${info.ast(initOpt = None()).prettyST})"
         case info: Info.SpecVar => sts = sts :+ st"SpecVar(${(info.owner, ".")}, ${getScopeNum(info.scope)}, ${info.ast.prettyST})"
+        case info: Info.RsVal => sts = sts :+ st"RsVal(${(info.owner, ".")}, ${getScopeNum(info.scope)}, ${info.ast.prettyST})"
         case info: Info.Method => sts = sts :+ st"Method(${(info.owner, ".")}, ${getScopeNum(info.scope)}, ${info.ast(mcontract = info.ast.contract, bodyOpt = if (keepMethodBody || info.ast.hasInline || (info.ast.purity == lang.ast.Purity.StrictPure && info.ast.mcontract.isEmpty)) info.ast.bodyOpt else None()).prettyST})"
         case info: Info.ExtMethod => sts = sts :+ st"ExtMethod(${(info.owner, ".")}, ${getScopeNum(info.scope)}, ${info.ast.prettyST})"
         case info: Info.Fact => sts = sts :+ st"Fact(${(info.owner, ".")}, ${getScopeNum(info.scope)}, ${info.ast.prettyST})"

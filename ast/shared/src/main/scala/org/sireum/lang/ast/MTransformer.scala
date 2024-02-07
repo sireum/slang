@@ -109,6 +109,10 @@ object MTransformer {
 
   val PostResultStmtSpecVar: MOption[Stmt] = MNone()
 
+  val PreResultStmtRsVal: PreResult[Stmt] = PreResult(T, MNone())
+
+  val PostResultStmtRsVal: MOption[Stmt] = MNone()
+
   val PreResultStmtMethod: PreResult[Stmt] = PreResult(T, MNone())
 
   val PostResultStmtMethod: MOption[Stmt] = MNone()
@@ -497,6 +501,10 @@ object MTransformer {
 
   val PostResultExpOld: MOption[Exp] = MNone()
 
+  val PreResultExpRS: PreResult[Exp] = PreResult(T, MNone())
+
+  val PostResultExpRS: MOption[Exp] = MNone()
+
   val PreResultExpAt: PreResult[Exp] = PreResult(T, MNone())
 
   val PostResultExpAt: MOption[Exp] = MNone()
@@ -732,6 +740,7 @@ import MTransformer._
       case o: Stmt.Var => return preStmtVar(o)
       case o: Stmt.VarPattern => return preStmtVarPattern(o)
       case o: Stmt.SpecVar => return preStmtSpecVar(o)
+      case o: Stmt.RsVal => return preStmtRsVal(o)
       case o: Stmt.Method => return preStmtMethod(o)
       case o: Stmt.ExtMethod => return preStmtExtMethod(o)
       case o: Stmt.JustMethod => return preStmtJustMethod(o)
@@ -884,6 +893,10 @@ import MTransformer._
 
   def preStmtSpecVar(o: Stmt.SpecVar): PreResult[Stmt] = {
     return PreResultStmtSpecVar
+  }
+
+  def preStmtRsVal(o: Stmt.RsVal): PreResult[Stmt] = {
+    return PreResultStmtRsVal
   }
 
   def preStmtMethod(o: Stmt.Method): PreResult[Stmt] = {
@@ -1385,6 +1398,7 @@ import MTransformer._
         return r
       case o: Exp.Input => return preExpInput(o)
       case o: Exp.Old => return preExpOld(o)
+      case o: Exp.RS => return preExpRS(o)
       case o: Exp.At => return preExpAt(o)
       case o: Exp.LoopIndex => return preExpLoopIndex(o)
       case o: Exp.StateSeq => return preExpStateSeq(o)
@@ -1564,6 +1578,10 @@ import MTransformer._
 
   def preExpOld(o: Exp.Old): PreResult[Exp] = {
     return PreResultExpOld
+  }
+
+  def preExpRS(o: Exp.RS): PreResult[Exp] = {
+    return PreResultExpRS
   }
 
   def preExpAt(o: Exp.At): PreResult[Exp] = {
@@ -1839,6 +1857,7 @@ import MTransformer._
       case o: Stmt.Var => return postStmtVar(o)
       case o: Stmt.VarPattern => return postStmtVarPattern(o)
       case o: Stmt.SpecVar => return postStmtSpecVar(o)
+      case o: Stmt.RsVal => return postStmtRsVal(o)
       case o: Stmt.Method => return postStmtMethod(o)
       case o: Stmt.ExtMethod => return postStmtExtMethod(o)
       case o: Stmt.JustMethod => return postStmtJustMethod(o)
@@ -1991,6 +2010,10 @@ import MTransformer._
 
   def postStmtSpecVar(o: Stmt.SpecVar): MOption[Stmt] = {
     return PostResultStmtSpecVar
+  }
+
+  def postStmtRsVal(o: Stmt.RsVal): MOption[Stmt] = {
+    return PostResultStmtRsVal
   }
 
   def postStmtMethod(o: Stmt.Method): MOption[Stmt] = {
@@ -2492,6 +2515,7 @@ import MTransformer._
         return r
       case o: Exp.Input => return postExpInput(o)
       case o: Exp.Old => return postExpOld(o)
+      case o: Exp.RS => return postExpRS(o)
       case o: Exp.At => return postExpAt(o)
       case o: Exp.LoopIndex => return postExpLoopIndex(o)
       case o: Exp.StateSeq => return postExpStateSeq(o)
@@ -2671,6 +2695,10 @@ import MTransformer._
 
   def postExpOld(o: Exp.Old): MOption[Exp] = {
     return PostResultExpOld
+  }
+
+  def postExpRS(o: Exp.RS): MOption[Exp] = {
+    return PostResultExpRS
   }
 
   def postExpAt(o: Exp.At): MOption[Exp] = {
@@ -3003,6 +3031,14 @@ import MTransformer._
           val r2: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
             MSome(o2(id = r0.getOrElse(o2.id), tipe = r1.getOrElse(o2.tipe), attr = r2.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Stmt.RsVal =>
+          val r0: MOption[Id] = transformId(o2.id)
+          val r1: MOption[Exp] = transformExp(o2.init)
+          val r2: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id), init = r1.getOrElse(o2.init), attr = r2.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.Method =>
@@ -4543,6 +4579,13 @@ import MTransformer._
           val r1: MOption[Attr] = transformAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
             MSome(o2(exp = r0.getOrElse(o2.exp), attr = r1.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Exp.RS =>
+          val r0: MOption[IS[Z, Exp.Ref]] = transformISZ(o2.refs, transformExpRef _)
+          val r1: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(refs = r0.getOrElse(o2.refs), attr = r1.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Exp.At =>

@@ -603,6 +603,11 @@ object Typed {
   val stepIdOpt: Option[Typed] = Some(stepId)
   val proc: Typed.Name = Typed.Name(sireumName :+ "OsProto" :+ "Proc", ISZ())
   val procOpt: Option[Typed] = Some(proc)
+  val rsElementName: ISZ[String] = sireumName :+ "RSElement"
+  val rsElement: Typed.Name = Typed.Name(rsElementName, ISZ())
+  val rsElementOpt: Option[Typed] = Some(rsElement)
+  val rs: Typed.Name = Typed.Name(sireumName :+ "HashSSet", ISZ(rsElement))
+  val rsOpt: Option[Typed] = Some(rs)
 
   val optionName: ISZ[String] = sireumName :+ "Option"
   val someName: ISZ[String] = sireumName :+ "Some"
