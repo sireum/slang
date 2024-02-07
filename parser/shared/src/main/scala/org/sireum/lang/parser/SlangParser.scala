@@ -637,7 +637,7 @@ class SlangParser(
       case Enclosing.Block => true
       case _ => false
     }
-    if (tpeopt.isEmpty && !(enclosing match {
+    if (tpeopt.isEmpty && !hasRw && !(enclosing match {
         case Enclosing.Top | Enclosing.Method | Enclosing.Block => true
         case _ => false
       })) {
@@ -660,10 +660,14 @@ class SlangParser(
     }
     if (hasError) rStmt
     else if (hasRw && !isLocal) {
-      val t = translateType(tpeopt.get)
-      t match {
-        case t: AST.Type.Named if t.typeArgs.nonEmpty || ISZ[String]("RS") != (for (id <- t.name.ids) yield id.value) =>
-          errorInSlang(stat.pos, "@rw val should be typed as RS")
+      tpeopt match {
+        case scala.Some(tpe) =>
+          val t = translateType(tpe)
+          t match {
+            case t: AST.Type.Named if t.typeArgs.nonEmpty || ISZ[String]("RS") != (for (id <- t.name.ids) yield id.value) =>
+              errorInSlang(stat.pos, "@rw val should be typed as RS")
+            case _ =>
+          }
         case _ =>
       }
       AST.Stmt.RsVal(cid(patsnel.head.asInstanceOf[Pat.Var]), checkRsExp(translateExp(expr)), resolvedAttr(stat.pos)(typedOpt = AST.Typed.rsOpt))
