@@ -1898,7 +1898,7 @@ import TypeChecker._
                 return (newUnaryExp, None())
               }
               if (unaryExp.op == AST.Exp.UnaryOp.Complement &&
-                !(kind == BasicKind.B || kind == BasicKind.Bits)) {
+                !(kind == BasicKind.B || kind == BasicKind.C || kind == BasicKind.Bits)) {
                 reporter.error(unaryExp.posOpt, typeCheckerKind, st"Undefined unary operation ~ on '$expType'.".render)
                 return (newUnaryExp, None())
               }
