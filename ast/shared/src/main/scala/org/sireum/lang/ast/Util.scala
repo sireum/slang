@@ -474,6 +474,7 @@ object Util {
       case Exp.BinaryOp.CondAnd => return T
       case Exp.BinaryOp.CondOr => return T
       case Exp.BinaryOp.CondImply => return T
+      case Exp.BinaryOp.Arrow => return T
       case _ => return F
     }
   }

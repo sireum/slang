@@ -1560,6 +1560,7 @@ object Exp {
     val AppendAll: String = "++"
     val RemoveAll: String = "--"
     val MapsTo: String = "~>"
+    val Arrow: String = "=>:"
 
     def precendenceLevel(op: String): Z = {
       val c = conversions.String.toCis(op)(0)
@@ -2190,6 +2191,7 @@ object ResolvedInfo {
 
     @enum object Kind {
       "Apply"
+      "Arrow"
       "AsInstanceOf"
       "Assert"
       "AssertMsg"

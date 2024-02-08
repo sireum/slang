@@ -190,6 +190,7 @@ object CoreExpTransformer {
         case o: CoreExp.Fun => return preCoreExpFun(ctx, o)
         case o: CoreExp.Quant => return preCoreExpQuant(ctx, o)
         case o: CoreExp.InstanceOfExp => return preCoreExpInstanceOfExp(ctx, o)
+        case o: CoreExp.Arrow => return preCoreExpArrow(ctx, o)
       }
     }
 
@@ -304,6 +305,10 @@ object CoreExpTransformer {
     }
 
     @pure def preCoreExpInstanceOfExp(ctx: Context, o: CoreExp.InstanceOfExp): PreResult[Context, CoreExp] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preCoreExpArrow(ctx: Context, o: CoreExp.Arrow): PreResult[Context, CoreExp] = {
       return PreResult(ctx, T, None())
     }
 
@@ -452,6 +457,7 @@ object CoreExpTransformer {
         case o: CoreExp.Fun => return postCoreExpFun(ctx, o)
         case o: CoreExp.Quant => return postCoreExpQuant(ctx, o)
         case o: CoreExp.InstanceOfExp => return postCoreExpInstanceOfExp(ctx, o)
+        case o: CoreExp.Arrow => return postCoreExpArrow(ctx, o)
       }
     }
 
@@ -566,6 +572,10 @@ object CoreExpTransformer {
     }
 
     @pure def postCoreExpInstanceOfExp(ctx: Context, o: CoreExp.InstanceOfExp): TPostResult[Context, CoreExp] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postCoreExpArrow(ctx: Context, o: CoreExp.Arrow): TPostResult[Context, CoreExp] = {
       return TPostResult(ctx, None())
     }
 
@@ -844,6 +854,13 @@ import CoreExpTransformer._
           val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.tipe)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
             TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), tipe = r1.resultOpt.getOrElse(o2.tipe))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: CoreExp.Arrow =>
+          val r0: TPostResult[Context, CoreExp] = transformCoreExp(preR.ctx, o2.exp1)
+          val r1: TPostResult[Context, CoreExp] = transformCoreExp(r0.ctx, o2.exp2)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(exp1 = r0.resultOpt.getOrElse(o2.exp1), exp2 = r1.resultOpt.getOrElse(o2.exp2))))
           else
             TPostResult(r1.ctx, None())
       }

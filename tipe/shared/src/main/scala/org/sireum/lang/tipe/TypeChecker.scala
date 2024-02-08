@@ -314,7 +314,8 @@ object TypeChecker {
     AST.Exp.BinaryOp.CondOr ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryCondOr)),
     AST.Exp.BinaryOp.CondImply ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryCondImply)),
     string"___>:" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryCondImply)),
-    AST.Exp.BinaryOp.MapsTo ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryMapsTo))
+    AST.Exp.BinaryOp.MapsTo ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryMapsTo)),
+    AST.Exp.BinaryOp.Arrow ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Arrow))
   )
 
   val eqBinops: HashSet[String] = HashSet ++ ISZ[String](
@@ -4346,6 +4347,7 @@ import TypeChecker._
                 case AST.ResolvedInfo.BuiltIn.Kind.UnaryMinus => F
                 case AST.ResolvedInfo.BuiltIn.Kind.UnaryNot => F
                 case AST.ResolvedInfo.BuiltIn.Kind.UnaryComplement => F
+                case AST.ResolvedInfo.BuiltIn.Kind.Arrow => F
               }
               if (!ok) {
                 reporter.error(newExp.posOpt, typeCheckerKind, s"Ill-formed Slang statement")

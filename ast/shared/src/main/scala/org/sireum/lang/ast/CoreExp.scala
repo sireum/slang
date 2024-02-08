@@ -248,4 +248,11 @@ object CoreExp {
   @datatype class InstanceOfExp(val isTest: B, val exp: CoreExp, val tipe: Typed) extends CoreExp {
     @strictpure def prettyST: ST = st"${exp.prettyST}.${if (isTest) "i" else "a"}sInstanceOf[$tipe]"
   }
+
+  @datatype class Arrow(val exp1: CoreExp, val exp2: CoreExp) extends CoreExp {
+    @pure override def tipe: Typed = {
+      return Typed.b
+    }
+    @strictpure def prettyST: ST = CoreExp.Binary(exp1, Exp.BinaryOp.Arrow, exp2).prettyST
+  }
 }

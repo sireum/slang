@@ -201,6 +201,10 @@ object MCoreExpTransformer {
 
   val PostResultCoreExpInstanceOfExp: MOption[CoreExp] = MNone()
 
+  val PreResultCoreExpArrow: PreResult[CoreExp] = PreResult(T, MNone())
+
+  val PostResultCoreExpArrow: MOption[CoreExp] = MNone()
+
 }
 
 import MCoreExpTransformer._
@@ -352,6 +356,7 @@ import MCoreExpTransformer._
       case o: CoreExp.Fun => return preCoreExpFun(o)
       case o: CoreExp.Quant => return preCoreExpQuant(o)
       case o: CoreExp.InstanceOfExp => return preCoreExpInstanceOfExp(o)
+      case o: CoreExp.Arrow => return preCoreExpArrow(o)
     }
   }
 
@@ -467,6 +472,10 @@ import MCoreExpTransformer._
 
   def preCoreExpInstanceOfExp(o: CoreExp.InstanceOfExp): PreResult[CoreExp] = {
     return PreResultCoreExpInstanceOfExp
+  }
+
+  def preCoreExpArrow(o: CoreExp.Arrow): PreResult[CoreExp] = {
+    return PreResultCoreExpArrow
   }
 
   def postTyped(o: Typed): MOption[Typed] = {
@@ -614,6 +623,7 @@ import MCoreExpTransformer._
       case o: CoreExp.Fun => return postCoreExpFun(o)
       case o: CoreExp.Quant => return postCoreExpQuant(o)
       case o: CoreExp.InstanceOfExp => return postCoreExpInstanceOfExp(o)
+      case o: CoreExp.Arrow => return postCoreExpArrow(o)
     }
   }
 
@@ -729,6 +739,10 @@ import MCoreExpTransformer._
 
   def postCoreExpInstanceOfExp(o: CoreExp.InstanceOfExp): MOption[CoreExp] = {
     return PostResultCoreExpInstanceOfExp
+  }
+
+  def postCoreExpArrow(o: CoreExp.Arrow): MOption[CoreExp] = {
+    return PostResultCoreExpArrow
   }
 
   def transformTyped(o: Typed): MOption[Typed] = {
@@ -980,6 +994,13 @@ import MCoreExpTransformer._
           val r1: MOption[Typed] = transformTyped(o2.tipe)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
             MSome(o2(exp = r0.getOrElse(o2.exp), tipe = r1.getOrElse(o2.tipe)))
+          else
+            MNone()
+        case o2: CoreExp.Arrow =>
+          val r0: MOption[CoreExp] = transformCoreExp(o2.exp1)
+          val r1: MOption[CoreExp] = transformCoreExp(o2.exp2)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(exp1 = r0.getOrElse(o2.exp1), exp2 = r1.getOrElse(o2.exp2)))
           else
             MNone()
       }
