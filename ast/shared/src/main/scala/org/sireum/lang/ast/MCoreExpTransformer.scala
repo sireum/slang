@@ -149,13 +149,37 @@ object MCoreExpTransformer {
 
   val PostResultCoreExpObjectVarRef: MOption[CoreExp] = MNone()
 
+  val PreResultCoreExpBinary: PreResult[CoreExp] = PreResult(T, MNone())
+
+  val PostResultCoreExpBinary: MOption[CoreExp] = MNone()
+
+  val PreResultCoreExpUnary: PreResult[CoreExp] = PreResult(T, MNone())
+
+  val PostResultCoreExpUnary: MOption[CoreExp] = MNone()
+
   val PreResultCoreExpSelect: PreResult[CoreExp] = PreResult(T, MNone())
 
   val PostResultCoreExpSelect: MOption[CoreExp] = MNone()
 
+  val PreResultCoreExpUpdate: PreResult[CoreExp] = PreResult(T, MNone())
+
+  val PostResultCoreExpUpdate: MOption[CoreExp] = MNone()
+
+  val PreResultCoreExpIndexing: PreResult[CoreExp] = PreResult(T, MNone())
+
+  val PostResultCoreExpIndexing: MOption[CoreExp] = MNone()
+
+  val PreResultCoreExpIndexingUpdate: PreResult[CoreExp] = PreResult(T, MNone())
+
+  val PostResultCoreExpIndexingUpdate: MOption[CoreExp] = MNone()
+
   val PreResultCoreExpIf: PreResult[CoreExp] = PreResult(T, MNone())
 
   val PostResultCoreExpIf: MOption[CoreExp] = MNone()
+
+  val PreResultCoreExpTuple: PreResult[CoreExp] = PreResult(T, MNone())
+
+  val PostResultCoreExpTuple: MOption[CoreExp] = MNone()
 
   val PreResultCoreExpApply: PreResult[CoreExp] = PreResult(T, MNone())
 
@@ -316,8 +340,14 @@ import MCoreExpTransformer._
       case o: CoreExp.ParamVarRef => return preCoreExpParamVarRef(o)
       case o: CoreExp.LocalVarRef => return preCoreExpLocalVarRef(o)
       case o: CoreExp.ObjectVarRef => return preCoreExpObjectVarRef(o)
+      case o: CoreExp.Binary => return preCoreExpBinary(o)
+      case o: CoreExp.Unary => return preCoreExpUnary(o)
       case o: CoreExp.Select => return preCoreExpSelect(o)
+      case o: CoreExp.Update => return preCoreExpUpdate(o)
+      case o: CoreExp.Indexing => return preCoreExpIndexing(o)
+      case o: CoreExp.IndexingUpdate => return preCoreExpIndexingUpdate(o)
       case o: CoreExp.If => return preCoreExpIf(o)
+      case o: CoreExp.Tuple => return preCoreExpTuple(o)
       case o: CoreExp.Apply => return preCoreExpApply(o)
       case o: CoreExp.Fun => return preCoreExpFun(o)
       case o: CoreExp.Quant => return preCoreExpQuant(o)
@@ -387,12 +417,36 @@ import MCoreExpTransformer._
     return PreResultCoreExpObjectVarRef
   }
 
+  def preCoreExpBinary(o: CoreExp.Binary): PreResult[CoreExp] = {
+    return PreResultCoreExpBinary
+  }
+
+  def preCoreExpUnary(o: CoreExp.Unary): PreResult[CoreExp] = {
+    return PreResultCoreExpUnary
+  }
+
   def preCoreExpSelect(o: CoreExp.Select): PreResult[CoreExp] = {
     return PreResultCoreExpSelect
   }
 
+  def preCoreExpUpdate(o: CoreExp.Update): PreResult[CoreExp] = {
+    return PreResultCoreExpUpdate
+  }
+
+  def preCoreExpIndexing(o: CoreExp.Indexing): PreResult[CoreExp] = {
+    return PreResultCoreExpIndexing
+  }
+
+  def preCoreExpIndexingUpdate(o: CoreExp.IndexingUpdate): PreResult[CoreExp] = {
+    return PreResultCoreExpIndexingUpdate
+  }
+
   def preCoreExpIf(o: CoreExp.If): PreResult[CoreExp] = {
     return PreResultCoreExpIf
+  }
+
+  def preCoreExpTuple(o: CoreExp.Tuple): PreResult[CoreExp] = {
+    return PreResultCoreExpTuple
   }
 
   def preCoreExpApply(o: CoreExp.Apply): PreResult[CoreExp] = {
@@ -548,8 +602,14 @@ import MCoreExpTransformer._
       case o: CoreExp.ParamVarRef => return postCoreExpParamVarRef(o)
       case o: CoreExp.LocalVarRef => return postCoreExpLocalVarRef(o)
       case o: CoreExp.ObjectVarRef => return postCoreExpObjectVarRef(o)
+      case o: CoreExp.Binary => return postCoreExpBinary(o)
+      case o: CoreExp.Unary => return postCoreExpUnary(o)
       case o: CoreExp.Select => return postCoreExpSelect(o)
+      case o: CoreExp.Update => return postCoreExpUpdate(o)
+      case o: CoreExp.Indexing => return postCoreExpIndexing(o)
+      case o: CoreExp.IndexingUpdate => return postCoreExpIndexingUpdate(o)
       case o: CoreExp.If => return postCoreExpIf(o)
+      case o: CoreExp.Tuple => return postCoreExpTuple(o)
       case o: CoreExp.Apply => return postCoreExpApply(o)
       case o: CoreExp.Fun => return postCoreExpFun(o)
       case o: CoreExp.Quant => return postCoreExpQuant(o)
@@ -619,12 +679,36 @@ import MCoreExpTransformer._
     return PostResultCoreExpObjectVarRef
   }
 
+  def postCoreExpBinary(o: CoreExp.Binary): MOption[CoreExp] = {
+    return PostResultCoreExpBinary
+  }
+
+  def postCoreExpUnary(o: CoreExp.Unary): MOption[CoreExp] = {
+    return PostResultCoreExpUnary
+  }
+
   def postCoreExpSelect(o: CoreExp.Select): MOption[CoreExp] = {
     return PostResultCoreExpSelect
   }
 
+  def postCoreExpUpdate(o: CoreExp.Update): MOption[CoreExp] = {
+    return PostResultCoreExpUpdate
+  }
+
+  def postCoreExpIndexing(o: CoreExp.Indexing): MOption[CoreExp] = {
+    return PostResultCoreExpIndexing
+  }
+
+  def postCoreExpIndexingUpdate(o: CoreExp.IndexingUpdate): MOption[CoreExp] = {
+    return PostResultCoreExpIndexingUpdate
+  }
+
   def postCoreExpIf(o: CoreExp.If): MOption[CoreExp] = {
     return PostResultCoreExpIf
+  }
+
+  def postCoreExpTuple(o: CoreExp.Tuple): MOption[CoreExp] = {
+    return PostResultCoreExpTuple
   }
 
   def postCoreExpApply(o: CoreExp.Apply): MOption[CoreExp] = {
@@ -809,11 +893,49 @@ import MCoreExpTransformer._
             MSome(o2(tipe = r0.getOrElse(o2.tipe)))
           else
             MNone()
+        case o2: CoreExp.Binary =>
+          val r0: MOption[CoreExp] = transformCoreExp(o2.left)
+          val r1: MOption[CoreExp] = transformCoreExp(o2.right)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(left = r0.getOrElse(o2.left), right = r1.getOrElse(o2.right)))
+          else
+            MNone()
+        case o2: CoreExp.Unary =>
+          val r0: MOption[CoreExp] = transformCoreExp(o2.exp)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp)))
+          else
+            MNone()
         case o2: CoreExp.Select =>
           val r0: MOption[CoreExp] = transformCoreExp(o2.exp)
           val r1: MOption[Typed] = transformTyped(o2.tipe)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
             MSome(o2(exp = r0.getOrElse(o2.exp), tipe = r1.getOrElse(o2.tipe)))
+          else
+            MNone()
+        case o2: CoreExp.Update =>
+          val r0: MOption[CoreExp] = transformCoreExp(o2.exp)
+          val r1: MOption[CoreExp] = transformCoreExp(o2.arg)
+          val r2: MOption[Typed] = transformTyped(o2.tipe)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp), arg = r1.getOrElse(o2.arg), tipe = r2.getOrElse(o2.tipe)))
+          else
+            MNone()
+        case o2: CoreExp.Indexing =>
+          val r0: MOption[CoreExp] = transformCoreExp(o2.exp)
+          val r1: MOption[CoreExp] = transformCoreExp(o2.index)
+          val r2: MOption[Typed] = transformTyped(o2.tipe)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp), index = r1.getOrElse(o2.index), tipe = r2.getOrElse(o2.tipe)))
+          else
+            MNone()
+        case o2: CoreExp.IndexingUpdate =>
+          val r0: MOption[CoreExp] = transformCoreExp(o2.exp)
+          val r1: MOption[CoreExp] = transformCoreExp(o2.index)
+          val r2: MOption[CoreExp] = transformCoreExp(o2.arg)
+          val r3: MOption[Typed] = transformTyped(o2.tipe)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp), index = r1.getOrElse(o2.index), arg = r2.getOrElse(o2.arg), tipe = r3.getOrElse(o2.tipe)))
           else
             MNone()
         case o2: CoreExp.If =>
@@ -823,6 +945,12 @@ import MCoreExpTransformer._
           val r3: MOption[Typed] = transformTyped(o2.tipe)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
             MSome(o2(cond = r0.getOrElse(o2.cond), tExp = r1.getOrElse(o2.tExp), fExp = r2.getOrElse(o2.fExp), tipe = r3.getOrElse(o2.tipe)))
+          else
+            MNone()
+        case o2: CoreExp.Tuple =>
+          val r0: MOption[IS[Z, CoreExp]] = transformISZ(o2.args, transformCoreExp _)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(args = r0.getOrElse(o2.args)))
           else
             MNone()
         case o2: CoreExp.Apply =>

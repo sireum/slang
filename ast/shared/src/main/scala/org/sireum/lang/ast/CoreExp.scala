@@ -110,8 +110,64 @@ object CoreExp {
     @strictpure override def prettyST: ST = if (owner.isEmpty) st"$id" else st"${owner(owner.size - 1)}.$id"
   }
 
+  @datatype class Binary(val left: CoreExp, val op: String, val right: CoreExp) extends CoreExp {
+    @strictpure override def tipe: Typed = left.tipe
+    @pure override def prettyST: ST = {
+      val leftOpOpt: Option[String] = left match {
+        case left: CoreExp.Binary => Some(left.op)
+        case _ => None()
+      }
+      val rightOpOpt: Option[String] = left match {
+        case right: CoreExp.Binary => Some(right.op)
+        case _ => None()
+      }
+      return Exp.Binary.prettyST(op, ops.StringOps(op).endsWith(":"), left.prettyST, leftOpOpt,
+        left.isInstanceOf[If], right.prettyST, rightOpOpt, right.isInstanceOf[If])
+    }
+  }
+
+  @datatype class Unary(val op: Exp.UnaryOp.Type, exp: CoreExp) extends CoreExp {
+    @strictpure override def tipe: Typed = exp.tipe
+    @pure override def prettyST: ST = {
+      val paren: B = exp match {
+        case _: CoreExp.LocalVarRef => F
+        case _: CoreExp.ParamVarRef => F
+        case _: CoreExp.ObjectVarRef => F
+        case _: CoreExp.Lit => F
+        case _ => T
+      }
+      val opString: String = op match {
+        case Exp.UnaryOp.Complement => "~"
+        case Exp.UnaryOp.Minus => "-"
+        case Exp.UnaryOp.Not => "!"
+        case Exp.UnaryOp.Plus => "+"
+      }
+      return if (paren) st"$opString(${exp.prettyST})" else st"$opString${exp.prettyST}"
+    }
+  }
+
   @datatype class Select(val exp: CoreExp, val id: String, val tipe: Typed) extends CoreExp {
-    @strictpure override def prettyST: ST = st"${exp.prettyST}.$id"
+    @pure override def prettyST: ST = {
+      return st"${exp.prettyST}.$id"
+    }
+  }
+
+  @datatype class Update(val exp: CoreExp, val id: String, val arg: CoreExp, val tipe: Typed) extends CoreExp {
+    @pure override def prettyST: ST = {
+      return st"${exp.prettyST}($id = ${arg.prettyST})"
+    }
+  }
+
+  @datatype class Indexing(val exp: CoreExp, val index: CoreExp, val tipe: Typed) extends CoreExp {
+    @pure override def prettyST: ST = {
+      return st"${exp.prettyST}(${index.prettyST})"
+    }
+  }
+
+  @datatype class IndexingUpdate(val exp: CoreExp, val index: CoreExp, val arg: CoreExp, val tipe: Typed) extends CoreExp {
+    @pure override def prettyST: ST = {
+      return st"${exp.prettyST}(${index.prettyST} ~> ${arg.prettyST})"
+    }
   }
 
   @datatype class If(val cond: CoreExp, val tExp: CoreExp, val fExp: CoreExp, val tipe: Typed) extends CoreExp {
@@ -120,41 +176,16 @@ object CoreExp {
           |else ${fExp.prettyST}"""
   }
 
+  @datatype class Tuple(args: ISZ[CoreExp]) extends CoreExp {
+    @strictpure override def tipe: Typed = Typed.Tuple(for (arg <- args) yield arg.tipe)
+    @pure override def prettyST: ST = {
+      return st"(${(for (arg <- args) yield arg.prettyST, ", ")})"
+    }
+  }
+
   @datatype class Apply(val exp: CoreExp, val args: ISZ[CoreExp], val tipe: Typed) extends CoreExp {
     @pure override def prettyST: ST = {
-      exp match {
-        case exp: CoreExp.ObjectVarRef =>
-          exp.owner match {
-            case CoreExp.binaryOwner =>
-              val op = exp.id
-              val left = args(0)
-              val right = args(1)
-              val leftOpOpt: Option[String] = left match {
-                case left: CoreExp.ObjectVarRef if left.owner == binaryOwner => Some(left.id)
-                case _ => None()
-              }
-              val rightOpOpt: Option[String] = left match {
-                case right: CoreExp.ObjectVarRef if right.owner == binaryOwner => Some(right.id)
-                case _ => None()
-              }
-              return Exp.Binary.prettyST(op, ops.StringOps(op).endsWith(":"), left.prettyST, leftOpOpt,
-                left.isInstanceOf[If], right.prettyST, rightOpOpt, right.isInstanceOf[If])
-            case CoreExp.tupleOwner =>
-              return st"(${(for (arg <- args) yield arg.prettyST, ", ")})"
-            case CoreExp.unaryOwner =>
-              val paren: B = args(0) match {
-                case _: CoreExp.LocalVarRef => F
-                case _: CoreExp.ParamVarRef => F
-                case _: CoreExp.ObjectVarRef => F
-                case _: CoreExp.Lit => F
-                case _ => T
-              }
-              return if (paren) st"${exp.id}(${args(0).prettyST})" else st"${exp.id}${args(0).prettyST}"
-            case _ =>
-              return st"${exp.prettyST}(${(for (arg <- args) yield arg.prettyST, ", ")})"
-          }
-        case _ => return st"${exp.prettyST}(${(for (arg <- args) yield arg.prettyST, ", ")})"
-      }
+      return st"${exp.prettyST}(${(for (arg <- args) yield arg.prettyST, ", ")})"
     }
   }
 
@@ -217,8 +248,4 @@ object CoreExp {
   @datatype class InstanceOfExp(val isTest: B, val exp: CoreExp, val tipe: Typed) extends CoreExp {
     @strictpure def prettyST: ST = st"${exp.prettyST}.${if (isTest) "i" else "a"}sInstanceOf[$tipe]"
   }
-
-  val tupleOwner: ISZ[String] = ISZ("$tuple")
-  val unaryOwner: ISZ[String] = ISZ("$unary")
-  val binaryOwner: ISZ[String] = ISZ("$binary")
 }
