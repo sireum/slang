@@ -2882,7 +2882,7 @@ import TypeChecker._
                 ident = ident,
                 args = newArgs,
                 receiverOpt = receiverOpt,
-                attr = invokeExp.attr(resOpt = resOpt, typedOpt = Some(t))
+                attr = invokeExp.attr(resOpt = resOpt, typedOpt = Some(t.ret))
               ),
               Some(t.ret)
             )
