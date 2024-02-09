@@ -61,9 +61,9 @@ class TypeCheckerTest extends TestSuite {
             |    )
             |  }
             |
-            |  @rw val a = RS(aFact, aTheorem)
-            |  @rw val b: RS = a + RS(amTheorem)
-            |  @rw val C = b + ~RS(amTheorem)
+            |  @rw val a = RS(aFact _, aTheorem _)
+            |  @rw val b: RS = a + RS(amTheorem _)
+            |  @rw val C = b + ~RS(amTheorem _)
             |}""".stripMargin
         )
 

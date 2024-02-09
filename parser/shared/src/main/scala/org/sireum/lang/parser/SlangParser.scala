@@ -2564,15 +2564,15 @@ class SlangParser(
       case q"~${name: Term.Name}(..$args)" if name.value == "RS" =>
         var rsArgs = ISZ[AST.Exp.Ref]()
         for (arg <- args) translateExp(arg) match {
-          case e: AST.Exp.Ref => rsArgs = rsArgs :+ e
-          case _ => errorInSlang(arg.pos, "RS(...) argument has to be a val reference")
+          case AST.Exp.Eta(e: AST.Exp.Ref) => rsArgs = rsArgs :+ e
+          case _ => errorInSlang(arg.pos, "RS(...) argument has to be an eta-expanded reference")
         }
         AST.Exp.RS(true, rsArgs, attr(exp.pos))
       case q"${name: Term.Name}(..$args)" if name.value == "RS" =>
         var rsArgs = ISZ[AST.Exp.Ref]()
         for (arg <- args) translateExp(arg) match {
-          case e: AST.Exp.Ref => rsArgs = rsArgs :+ e
-          case _ => errorInSlang(arg.pos, "RS(...) argument has to be a val reference")
+          case AST.Exp.Eta(e: AST.Exp.Ref) => rsArgs = rsArgs :+ e
+          case _ => errorInSlang(arg.pos, "RS(...) argument has to be an eta-expanded reference")
         }
         AST.Exp.RS(false, rsArgs, attr(exp.pos))
       case exp: Term.ApplyUnary => translateUnaryExp(exp)
