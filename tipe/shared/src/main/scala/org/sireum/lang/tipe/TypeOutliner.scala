@@ -1174,6 +1174,7 @@ object TypeOutliner {
           val context = info.name :+ id
           val newStmt = TypeChecker.checkRsValStmt(strictAliasing, typeHierarchy, context, scope, sInfo.ast, reporter)
           newStmts = newStmts :+ newStmt
+          nameEntries = nameEntries :+ ((sInfo.name, sInfo(ast = newStmt)))
         case stmt: AST.Stmt.SpecMethod =>
           val id = stmt.sig.id.value
           val sInfo = typeHierarchy.nameMap.get(info.name :+ id).get.asInstanceOf[Info.SpecMethod]

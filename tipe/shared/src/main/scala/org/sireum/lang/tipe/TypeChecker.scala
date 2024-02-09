@@ -960,7 +960,7 @@ object TypeChecker {
     val tc = TypeChecker(th, context, F, ModeContext.Spec, strictAliasing)
     val expectedOpt: Option[AST.Typed] = AST.Typed.rsOpt
     val newInit = tc.checkExp(expectedOpt, scope, stmt.init, reporter)._1
-    return stmt(init = newInit, attr = stmt.attr(typedOpt = AST.Typed.unitOpt))
+    return stmt(init = newInit, attr = stmt.attr(typedOpt = AST.Typed.rsOpt))
   }
 
   def checkDataRefinement(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope.Local, stmt: AST.Stmt.DataRefinement, reporter: Reporter): AST.Stmt.DataRefinement = {
