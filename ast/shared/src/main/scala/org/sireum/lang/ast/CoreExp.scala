@@ -33,10 +33,15 @@ import org.sireum._
   @strictpure def tipe: Typed
   @pure def prettyST: ST
   @strictpure override def string: String = prettyST.render
+  @pure def subst(sm: HashMap[String, Typed]): CoreExp
+  @pure def incDeBruijn(threshold: Z): CoreExp
 }
 
 object CoreExp {
-  @datatype trait Lit extends CoreExp
+  @datatype trait Lit extends CoreExp {
+    @strictpure override def subst(sm: HashMap[String, Typed]): CoreExp = this
+    @strictpure def incDeBruijn(threshold: Z): CoreExp.Lit = this
+  }
 
   @datatype class LitB(val value: B) extends Lit {
     @strictpure override def tipe: Typed = Typed.b
@@ -98,16 +103,43 @@ object CoreExp {
     }
   }
 
-  @datatype class ParamVarRef(val deBruijn: Z, @hidden val id: String, val tipe: Typed) extends CoreExp {
-    @strictpure override def prettyST: ST = st"$id"
+  @datatype class ParamVarRef(val deBruijn: Z, @hidden val id: String, @hidden val tipe: Typed) extends CoreExp {
+    @strictpure override def prettyST: ST = st"$$$deBruijn"
+    @pure override def subst(sm: HashMap[String, Typed]): CoreExp = {
+      if (sm.isEmpty) {
+        return this
+      }
+      val thiz = this
+      return thiz(tipe = tipe.subst(sm))
+    }
+    @pure def incDeBruijn(threshold: Z): CoreExp.ParamVarRef = {
+      val thiz = this
+      return if (deBruijn >= threshold) thiz(deBruijn = deBruijn + 1) else thiz
+    }
   }
 
   @datatype class LocalVarRef(val context: ISZ[String], val id: String, val tipe: Typed) extends CoreExp {
     @strictpure override def prettyST: ST = st"$id"
+    @pure override def subst(sm: HashMap[String, Typed]): CoreExp = {
+      if (sm.isEmpty) {
+        return this
+      }
+      val thiz = this
+      return thiz(tipe = tipe.subst(sm))
+    }
+    @strictpure def incDeBruijn(threshold: Z): CoreExp.LocalVarRef = this
   }
 
   @datatype class ObjectVarRef(val owner: ISZ[String], val id: String, val tipe: Typed) extends CoreExp {
     @strictpure override def prettyST: ST = if (owner.isEmpty) st"$id" else st"${owner(owner.size - 1)}.$id"
+    @pure override def subst(sm: HashMap[String, Typed]): CoreExp = {
+      if (sm.isEmpty) {
+        return this
+      }
+      val thiz = this
+      return thiz(tipe = tipe.subst(sm))
+    }
+    @strictpure def incDeBruijn(threshold: Z): CoreExp.ObjectVarRef = this
   }
 
   @datatype class Binary(val left: CoreExp, val op: String, val right: CoreExp) extends CoreExp {
@@ -123,6 +155,17 @@ object CoreExp {
       }
       return Exp.Binary.prettyST(op, ops.StringOps(op).endsWith(":"), left.prettyST, leftOpOpt,
         left.isInstanceOf[If], right.prettyST, rightOpOpt, right.isInstanceOf[If])
+    }
+    @pure override def subst(sm: HashMap[String, Typed]): CoreExp = {
+      if (sm.isEmpty) {
+        return this
+      }
+      val thiz = this
+      return thiz(left = left.subst(sm), right = right.subst(sm))
+    }
+    @pure def incDeBruijn(threshold: Z): CoreExp.Binary = {
+      val thiz = this
+      return thiz(left = left.incDeBruijn(threshold), right = right.incDeBruijn(threshold))
     }
   }
 
@@ -144,11 +187,33 @@ object CoreExp {
       }
       return if (paren) st"$opString(${exp.prettyST})" else st"$opString${exp.prettyST}"
     }
+    @pure override def subst(sm: HashMap[String, Typed]): CoreExp = {
+      if (sm.isEmpty) {
+        return this
+      }
+      val thiz = this
+      return thiz(exp = exp.subst(sm))
+    }
+    @pure def incDeBruijn(threshold: Z): CoreExp.Unary = {
+      val thiz = this
+      return thiz(exp = exp.incDeBruijn(threshold))
+    }
   }
 
   @datatype class Select(val exp: CoreExp, val id: String, val tipe: Typed) extends CoreExp {
     @pure override def prettyST: ST = {
       return st"${exp.prettyST}.$id"
+    }
+    @pure override def subst(sm: HashMap[String, Typed]): CoreExp = {
+      if (sm.isEmpty) {
+        return this
+      }
+      val thiz = this
+      return thiz(exp = exp.subst(sm), tipe = tipe.subst(sm))
+    }
+    @pure def incDeBruijn(threshold: Z): CoreExp.Select = {
+      val thiz = this
+      return thiz(exp = exp.incDeBruijn(threshold))
     }
   }
 
@@ -156,11 +221,33 @@ object CoreExp {
     @pure override def prettyST: ST = {
       return st"${exp.prettyST}($id = ${arg.prettyST})"
     }
+    @pure override def subst(sm: HashMap[String, Typed]): CoreExp = {
+      if (sm.isEmpty) {
+        return this
+      }
+      val thiz = this
+      return thiz(exp = exp.subst(sm), arg = arg.subst(sm), tipe = tipe.subst(sm))
+    }
+    @pure def incDeBruijn(threshold: Z): CoreExp.Update = {
+      val thiz = this
+      return thiz(exp = exp.incDeBruijn(threshold), arg = arg.incDeBruijn(threshold))
+    }
   }
 
   @datatype class Indexing(val exp: CoreExp, val index: CoreExp, val tipe: Typed) extends CoreExp {
     @pure override def prettyST: ST = {
       return st"${exp.prettyST}(${index.prettyST})"
+    }
+    @pure override def subst(sm: HashMap[String, Typed]): CoreExp = {
+      if (sm.isEmpty) {
+        return this
+      }
+      val thiz = this
+      return thiz(exp = exp.subst(sm), index = index.subst(sm), tipe = tipe.subst(sm))
+    }
+    @pure def incDeBruijn(threshold: Z): CoreExp.Indexing = {
+      val thiz = this
+      return thiz(exp = exp.incDeBruijn(threshold), index = index.incDeBruijn(threshold))
     }
   }
 
@@ -168,12 +255,34 @@ object CoreExp {
     @pure override def prettyST: ST = {
       return st"${exp.prettyST}(${index.prettyST} ~> ${arg.prettyST})"
     }
+    @pure override def subst(sm: HashMap[String, Typed]): CoreExp = {
+      if (sm.isEmpty) {
+        return this
+      }
+      val thiz = this
+      return thiz(exp = exp.subst(sm), index = index.subst(sm), arg = arg.subst(sm), tipe = tipe.subst(sm))
+    }
+    @pure def incDeBruijn(threshold: Z): CoreExp.IndexingUpdate = {
+      val thiz = this
+      return thiz(exp = exp.incDeBruijn(threshold), index = index.incDeBruijn(threshold), arg = arg.incDeBruijn(threshold))
+    }
   }
 
   @datatype class If(val cond: CoreExp, val tExp: CoreExp, val fExp: CoreExp, val tipe: Typed) extends CoreExp {
     @strictpure override def prettyST: ST =
       st"""if (${cond.prettyST}) ${tExp.prettyST}
           |else ${fExp.prettyST}"""
+    @pure override def subst(sm: HashMap[String, Typed]): CoreExp = {
+      if (sm.isEmpty) {
+        return this
+      }
+      val thiz = this
+      return thiz(cond = cond.subst(sm), tExp = tExp.subst(sm), fExp = fExp.subst(sm), tipe = tipe.subst(sm))
+    }
+    @pure def incDeBruijn(threshold: Z): CoreExp.If = {
+      val thiz = this
+      return thiz(cond = cond.incDeBruijn(threshold), tExp = tExp.incDeBruijn(threshold), fExp = fExp.incDeBruijn(threshold))
+    }
   }
 
   @datatype class Tuple(args: ISZ[CoreExp]) extends CoreExp {
@@ -181,11 +290,33 @@ object CoreExp {
     @pure override def prettyST: ST = {
       return st"(${(for (arg <- args) yield arg.prettyST, ", ")})"
     }
+    @pure override def subst(sm: HashMap[String, Typed]): CoreExp = {
+      if (sm.isEmpty) {
+        return this
+      }
+      val thiz = this
+      return thiz(args = for (arg <- args) yield arg.subst(sm))
+    }
+    @pure def incDeBruijn(threshold: Z): CoreExp.Tuple = {
+      val thiz = this
+      return thiz(args = for (arg <- args) yield arg.incDeBruijn(threshold))
+    }
   }
 
   @datatype class Apply(val exp: CoreExp, val args: ISZ[CoreExp], val tipe: Typed) extends CoreExp {
     @pure override def prettyST: ST = {
       return st"${exp.prettyST}(${(for (arg <- args) yield arg.prettyST, ", ")})"
+    }
+    @pure override def subst(sm: HashMap[String, Typed]): CoreExp = {
+      if (sm.isEmpty) {
+        return this
+      }
+      val thiz = this
+      return thiz(exp = exp.subst(sm), args = for (arg <- args) yield arg.subst(sm), tipe = tipe.subst(sm))
+    }
+    @pure def incDeBruijn(threshold: Z): CoreExp.Apply = {
+      val thiz = this
+      return thiz(exp = exp.incDeBruijn(threshold), args = for (arg <- args) yield arg.incDeBruijn(threshold))
     }
   }
 
@@ -206,6 +337,17 @@ object CoreExp {
       else st"{(${(params, ", ")}) => ${e.prettyST}}"
     }
     @strictpure override def tipe: Typed = Typed.Fun(T, F, ISZ(param.tipe), exp.tipe)
+    @pure override def subst(sm: HashMap[String, Typed]): CoreExp = {
+      if (sm.isEmpty) {
+        return this
+      }
+      val thiz = this
+      return thiz(param = param(tipe = param.tipe.subst(sm)), exp = exp.subst(sm))
+    }
+    @pure def incDeBruijn(threshold: Z): CoreExp.Fun = {
+      val thiz = this
+      return thiz(exp = exp.incDeBruijn(threshold + 1))
+    }
   }
 
   @datatype class Quant(val kind: Quant.Kind.Type, val param: Param, val exp: CoreExp) extends CoreExp {
@@ -231,6 +373,17 @@ object CoreExp {
       case Quant.Kind.Exists => "∃"
       case Quant.Kind.Fresh => "Λ"
     }
+    @pure override def subst(sm: HashMap[String, Typed]): CoreExp = {
+      if (sm.isEmpty) {
+        return this
+      }
+      val thiz = this
+      return thiz(param = param(tipe = param.tipe.subst(sm)), exp = exp.subst(sm))
+    }
+    @pure def incDeBruijn(threshold: Z): CoreExp.Quant = {
+      val thiz = this
+      return thiz(exp = exp.incDeBruijn(threshold + 1))
+    }
   }
 
   object Quant {
@@ -247,12 +400,34 @@ object CoreExp {
 
   @datatype class InstanceOfExp(val isTest: B, val exp: CoreExp, val tipe: Typed) extends CoreExp {
     @strictpure def prettyST: ST = st"${exp.prettyST}.${if (isTest) "i" else "a"}sInstanceOf[$tipe]"
+    @pure override def subst(sm: HashMap[String, Typed]): CoreExp = {
+      if (sm.isEmpty) {
+        return this
+      }
+      val thiz = this
+      return thiz(exp = exp.subst(sm), tipe = tipe.subst(sm))
+    }
+    @pure def incDeBruijn(threshold: Z): CoreExp.InstanceOfExp = {
+      val thiz = this
+      return thiz(exp = exp.incDeBruijn(threshold))
+    }
   }
 
-  @datatype class Arrow(val exp1: CoreExp, val exp2: CoreExp) extends CoreExp {
+  @datatype class Arrow(val left: CoreExp, val right: CoreExp) extends CoreExp {
     @pure override def tipe: Typed = {
       return Typed.b
     }
-    @strictpure def prettyST: ST = CoreExp.Binary(exp1, Exp.BinaryOp.Arrow, exp2).prettyST
+    @strictpure def prettyST: ST = CoreExp.Binary(left, Exp.BinaryOp.Arrow, right).prettyST
+    @pure override def subst(sm: HashMap[String, Typed]): CoreExp = {
+      if (sm.isEmpty) {
+        return this
+      }
+      val thiz = this
+      return thiz(left = left.subst(sm), right = right.subst(sm))
+    }
+    @pure def incDeBruijn(threshold: Z): CoreExp.Arrow = {
+      val thiz = this
+      return thiz(left = left.incDeBruijn(threshold), right = right.incDeBruijn(threshold))
+    }
   }
 }

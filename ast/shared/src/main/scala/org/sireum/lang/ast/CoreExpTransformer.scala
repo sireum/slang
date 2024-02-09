@@ -857,10 +857,10 @@ import CoreExpTransformer._
           else
             TPostResult(r1.ctx, None())
         case o2: CoreExp.Arrow =>
-          val r0: TPostResult[Context, CoreExp] = transformCoreExp(preR.ctx, o2.exp1)
-          val r1: TPostResult[Context, CoreExp] = transformCoreExp(r0.ctx, o2.exp2)
+          val r0: TPostResult[Context, CoreExp] = transformCoreExp(preR.ctx, o2.left)
+          val r1: TPostResult[Context, CoreExp] = transformCoreExp(r0.ctx, o2.right)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(exp1 = r0.resultOpt.getOrElse(o2.exp1), exp2 = r1.resultOpt.getOrElse(o2.exp2))))
+            TPostResult(r1.ctx, Some(o2(left = r0.resultOpt.getOrElse(o2.left), right = r1.resultOpt.getOrElse(o2.right))))
           else
             TPostResult(r1.ctx, None())
       }

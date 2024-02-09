@@ -997,10 +997,10 @@ import MCoreExpTransformer._
           else
             MNone()
         case o2: CoreExp.Arrow =>
-          val r0: MOption[CoreExp] = transformCoreExp(o2.exp1)
-          val r1: MOption[CoreExp] = transformCoreExp(o2.exp2)
+          val r0: MOption[CoreExp] = transformCoreExp(o2.left)
+          val r1: MOption[CoreExp] = transformCoreExp(o2.right)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(exp1 = r0.getOrElse(o2.exp1), exp2 = r1.getOrElse(o2.exp2)))
+            MSome(o2(left = r0.getOrElse(o2.left), right = r1.getOrElse(o2.right)))
           else
             MNone()
       }
