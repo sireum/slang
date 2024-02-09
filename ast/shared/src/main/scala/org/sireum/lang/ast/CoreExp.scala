@@ -149,7 +149,7 @@ object CoreExp {
         case left: CoreExp.Binary => Some(left.op)
         case _ => None()
       }
-      val rightOpOpt: Option[String] = left match {
+      val rightOpOpt: Option[String] = right match {
         case right: CoreExp.Binary => Some(right.op)
         case _ => None()
       }
