@@ -188,19 +188,6 @@ object Resolver {
       AST.Stmt.Adt(T, T, AST.Id("Nothing", emptyAttr), ISZ(), ISZ(), ISZ(), ISZ(), emptyAttr)
     )
 
-    tm = tm + (AST.Typed.sireumName :+ "RS") ~> TypeInfo.TypeAlias(
-      AST.Typed.sireumName :+ "RS", scope, AST.Stmt.TypeAlias(
-        AST.Id("RS", emptyAttr), ISZ(),
-        AST.Type.Named(
-          AST.Name(for (id <- AST.Typed.sireumName :+ "HashSSet") yield AST.Id(id, emptyAttr), emptyAttr),
-          ISZ[AST.Type](
-            AST.Type.Named(
-              AST.Name(for (id <- AST.Typed.sireumName :+ "RSElement") yield AST.Id(id, emptyAttr), emptyAttr),
-              ISZ(), emptyTypedAttr)
-          ), emptyTypedAttr
-        ), emptyAttr)
-    )
-
     return (nm, tm)
 
   }

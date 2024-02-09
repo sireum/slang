@@ -3452,14 +3452,15 @@ import TypeChecker._
           case Some(_: AST.ResolvedInfo.Theorem) => ok = T
           case Some(res: AST.ResolvedInfo.Method) =>
             typeHierarchy.nameMap.get(res.owner :+ res.id) match {
-              case Some(info: Info.Method) if info.ast.sig.returnType.typedOpt == AST.Typed.unitOpt && info.ast.sig.isPure &&
-                info.ast.contract.nonEmpty && info.ast.contract.modifies.isEmpty => ok = T
+              case Some(info: Info.Method) if info.ast.purity == AST.Purity.Abs ||
+                (info.ast.sig.returnType.typedOpt == AST.Typed.unitOpt && info.ast.sig.isPure &&
+                 info.ast.contract.nonEmpty && info.ast.contract.modifies.isEmpty) => ok = T
               case _ =>
             }
           case _ =>
         }
         if (!ok) {
-          reporter.error(newRef.posOpt, typeCheckerKind, "Expecting a theorem/lemma, fact, or method theorem/lemma")
+          reporter.error(newRef.posOpt, typeCheckerKind, "Expecting a theorem/lemma, fact, method theorem/lemma, or @abs method")
         }
       }
       return (rs(refs = newRefs), AST.Typed.rsOpt)

@@ -576,7 +576,7 @@ class SlangParser(
           case _: AST.Exp.RS =>
           case _: AST.Exp.Ref =>
           case _ =>
-            reporter.error(o.posOpt, messageKind, "RS expression should be either RS(...), a val reference, or HashSSet binary operation")
+            reporter.error(o.posOpt, messageKind, "RS expression should be either RS(...),  ~RS(...), a val reference, or HashSSet binary operation")
         }
         super.transformExp(o)
       }
@@ -2561,6 +2561,20 @@ class SlangParser(
       case q"${Term.Name(qid)}($d)({ ${f: Term.Function} })" if quantSymbols.contains(qid) => quant(qid, d, f)
       case q"${Term.Name(qid)}(${Term.Block(List(f: Term.Function))})" if quantSymbols.contains(qid) => quantType(qid, f)
       case q"${Term.Name(qid)}(${f: Term.Function})" if quantSymbols.contains(qid) => quantType(qid, f)
+      case q"~${name: Term.Name}(..$args)" if name.value == "RS" =>
+        var rsArgs = ISZ[AST.Exp.Ref]()
+        for (arg <- args) translateExp(arg) match {
+          case e: AST.Exp.Ref => rsArgs = rsArgs :+ e
+          case _ => errorInSlang(arg.pos, "RS(...) argument has to be a val reference")
+        }
+        AST.Exp.RS(false, rsArgs, attr(exp.pos))
+      case q"${name: Term.Name}(..$args)" if name.value == "RS" =>
+        var rsArgs = ISZ[AST.Exp.Ref]()
+        for (arg <- args) translateExp(arg) match {
+          case e: AST.Exp.Ref => rsArgs = rsArgs :+ e
+          case _ => errorInSlang(arg.pos, "RS(...) argument has to be a val reference")
+        }
+        AST.Exp.RS(true, rsArgs, attr(exp.pos))
       case exp: Term.ApplyUnary => translateUnaryExp(exp)
       case exp: Term.ApplyInfix => translateBinaryExp(exp)
 
@@ -2716,13 +2730,6 @@ class SlangParser(
             errorInSlang(arg.pos, "The first At(...) argument has to be a variable reference or this")
             rExp
         }
-      case q"${name: Term.Name}(..$args)" if name.value == "RS" =>
-        var rsArgs = ISZ[AST.Exp.Ref]()
-        for (arg <- args) translateExp(arg) match {
-          case e: AST.Exp.Ref => rsArgs = rsArgs :+ e
-          case _ => errorInSlang(arg.pos, "RS(...) argument has to be a val reference")
-        }
-        AST.Exp.RS(rsArgs, attr(exp.pos))
       case q"$expr.$name[..$tpes](...${aexprssnel: List[List[Term]]})" if tpes.nonEmpty && aexprssnel.nonEmpty =>
         translateInvoke(
           scala.Some(expr),

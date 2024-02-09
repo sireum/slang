@@ -1931,7 +1931,7 @@ object Exp {
     }
   }
 
-  @datatype class RS(val refs: ISZ[Exp.Ref], @hidden val attr: Attr) extends Exp {
+  @datatype class RS(val rightToLeft: B, val refs: ISZ[Exp.Ref], @hidden val attr: Attr) extends Exp {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
 
     @strictpure override def typedOpt: Option[Typed] = Typed.rsOpt

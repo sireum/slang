@@ -1719,6 +1719,7 @@ object MsgPack {
 
     def write_astExpRS(o: org.sireum.lang.ast.Exp.RS): Unit = {
       writer.writeZ(Constants._astExpRS)
+      writer.writeB(o.rightToLeft)
       writer.writeISZ(o.refs, write_astExpRef _)
       write_astAttr(o.attr)
     }
@@ -4649,9 +4650,10 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astExpRS)
       }
+      val rightToLeft = reader.readB()
       val refs = reader.readISZ(read_astExpRef _)
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Exp.RS(refs, attr)
+      return org.sireum.lang.ast.Exp.RS(rightToLeft, refs, attr)
     }
 
     def read_astExpAt(): org.sireum.lang.ast.Exp.At = {
