@@ -175,6 +175,180 @@ object CoreExpTransformer {
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
           }
           return r
+        case o: CoreExp.ParamVarRef =>
+          val r: PreResult[Context, CoreExp] = preCoreExpParamVarRef(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.LocalVarRef =>
+          val r: PreResult[Context, CoreExp] = preCoreExpLocalVarRef(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.ObjectVarRef =>
+          val r: PreResult[Context, CoreExp] = preCoreExpObjectVarRef(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Binary =>
+          val r: PreResult[Context, CoreExp] = preCoreExpBinary(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Unary =>
+          val r: PreResult[Context, CoreExp] = preCoreExpUnary(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Select =>
+          val r: PreResult[Context, CoreExp] = preCoreExpSelect(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Update =>
+          val r: PreResult[Context, CoreExp] = preCoreExpUpdate(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Indexing =>
+          val r: PreResult[Context, CoreExp] = preCoreExpIndexing(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.IndexingUpdate =>
+          val r: PreResult[Context, CoreExp] = preCoreExpIndexingUpdate(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.If =>
+          val r: PreResult[Context, CoreExp] = preCoreExpIf(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Tuple =>
+          val r: PreResult[Context, CoreExp] = preCoreExpTuple(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Apply =>
+          val r: PreResult[Context, CoreExp] = preCoreExpApply(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Fun =>
+          val r: PreResult[Context, CoreExp] = preCoreExpFun(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Quant =>
+          val r: PreResult[Context, CoreExp] = preCoreExpQuant(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.InstanceOfExp =>
+          val r: PreResult[Context, CoreExp] = preCoreExpInstanceOfExp(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Arrow => return preCoreExpArrow(ctx, o)
+      }
+    }
+
+    @pure def preCoreExpBase(ctx: Context, o: CoreExp.Base): PreResult[Context, CoreExp.Base] = {
+      o match {
+        case o: CoreExp.LitB =>
+          val r: PreResult[Context, CoreExp.Base] = preCoreExpLitB(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp.Base)) => PreResult(preCtx, continu, Some[CoreExp.Base](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp.Base]())
+          }
+          return r
+        case o: CoreExp.LitC =>
+          val r: PreResult[Context, CoreExp.Base] = preCoreExpLitC(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp.Base)) => PreResult(preCtx, continu, Some[CoreExp.Base](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp.Base]())
+          }
+          return r
+        case o: CoreExp.LitZ =>
+          val r: PreResult[Context, CoreExp.Base] = preCoreExpLitZ(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp.Base)) => PreResult(preCtx, continu, Some[CoreExp.Base](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp.Base]())
+          }
+          return r
+        case o: CoreExp.LitF32 =>
+          val r: PreResult[Context, CoreExp.Base] = preCoreExpLitF32(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp.Base)) => PreResult(preCtx, continu, Some[CoreExp.Base](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp.Base]())
+          }
+          return r
+        case o: CoreExp.LitF64 =>
+          val r: PreResult[Context, CoreExp.Base] = preCoreExpLitF64(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp.Base)) => PreResult(preCtx, continu, Some[CoreExp.Base](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp.Base]())
+          }
+          return r
+        case o: CoreExp.LitR =>
+          val r: PreResult[Context, CoreExp.Base] = preCoreExpLitR(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp.Base)) => PreResult(preCtx, continu, Some[CoreExp.Base](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp.Base]())
+          }
+          return r
+        case o: CoreExp.LitString =>
+          val r: PreResult[Context, CoreExp.Base] = preCoreExpLitString(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp.Base)) => PreResult(preCtx, continu, Some[CoreExp.Base](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp.Base]())
+          }
+          return r
+        case o: CoreExp.LitRange =>
+          val r: PreResult[Context, CoreExp.Base] = preCoreExpLitRange(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp.Base)) => PreResult(preCtx, continu, Some[CoreExp.Base](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp.Base]())
+          }
+          return r
+        case o: CoreExp.LitBits =>
+          val r: PreResult[Context, CoreExp.Base] = preCoreExpLitBits(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp.Base)) => PreResult(preCtx, continu, Some[CoreExp.Base](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp.Base]())
+          }
+          return r
         case o: CoreExp.ParamVarRef => return preCoreExpParamVarRef(ctx, o)
         case o: CoreExp.LocalVarRef => return preCoreExpLocalVarRef(ctx, o)
         case o: CoreExp.ObjectVarRef => return preCoreExpObjectVarRef(ctx, o)
@@ -190,7 +364,6 @@ object CoreExpTransformer {
         case o: CoreExp.Fun => return preCoreExpFun(ctx, o)
         case o: CoreExp.Quant => return preCoreExpQuant(ctx, o)
         case o: CoreExp.InstanceOfExp => return preCoreExpInstanceOfExp(ctx, o)
-        case o: CoreExp.Arrow => return preCoreExpArrow(ctx, o)
       }
     }
 
@@ -244,59 +417,59 @@ object CoreExpTransformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preCoreExpParamVarRef(ctx: Context, o: CoreExp.ParamVarRef): PreResult[Context, CoreExp] = {
+    @pure def preCoreExpParamVarRef(ctx: Context, o: CoreExp.ParamVarRef): PreResult[Context, CoreExp.Base] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preCoreExpLocalVarRef(ctx: Context, o: CoreExp.LocalVarRef): PreResult[Context, CoreExp] = {
+    @pure def preCoreExpLocalVarRef(ctx: Context, o: CoreExp.LocalVarRef): PreResult[Context, CoreExp.Base] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preCoreExpObjectVarRef(ctx: Context, o: CoreExp.ObjectVarRef): PreResult[Context, CoreExp] = {
+    @pure def preCoreExpObjectVarRef(ctx: Context, o: CoreExp.ObjectVarRef): PreResult[Context, CoreExp.Base] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preCoreExpBinary(ctx: Context, o: CoreExp.Binary): PreResult[Context, CoreExp] = {
+    @pure def preCoreExpBinary(ctx: Context, o: CoreExp.Binary): PreResult[Context, CoreExp.Base] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preCoreExpUnary(ctx: Context, o: CoreExp.Unary): PreResult[Context, CoreExp] = {
+    @pure def preCoreExpUnary(ctx: Context, o: CoreExp.Unary): PreResult[Context, CoreExp.Base] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preCoreExpSelect(ctx: Context, o: CoreExp.Select): PreResult[Context, CoreExp] = {
+    @pure def preCoreExpSelect(ctx: Context, o: CoreExp.Select): PreResult[Context, CoreExp.Base] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preCoreExpUpdate(ctx: Context, o: CoreExp.Update): PreResult[Context, CoreExp] = {
+    @pure def preCoreExpUpdate(ctx: Context, o: CoreExp.Update): PreResult[Context, CoreExp.Base] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preCoreExpIndexing(ctx: Context, o: CoreExp.Indexing): PreResult[Context, CoreExp] = {
+    @pure def preCoreExpIndexing(ctx: Context, o: CoreExp.Indexing): PreResult[Context, CoreExp.Base] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preCoreExpIndexingUpdate(ctx: Context, o: CoreExp.IndexingUpdate): PreResult[Context, CoreExp] = {
+    @pure def preCoreExpIndexingUpdate(ctx: Context, o: CoreExp.IndexingUpdate): PreResult[Context, CoreExp.Base] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preCoreExpIf(ctx: Context, o: CoreExp.If): PreResult[Context, CoreExp] = {
+    @pure def preCoreExpIf(ctx: Context, o: CoreExp.If): PreResult[Context, CoreExp.Base] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preCoreExpTuple(ctx: Context, o: CoreExp.Tuple): PreResult[Context, CoreExp] = {
+    @pure def preCoreExpTuple(ctx: Context, o: CoreExp.Tuple): PreResult[Context, CoreExp.Base] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preCoreExpApply(ctx: Context, o: CoreExp.Apply): PreResult[Context, CoreExp] = {
+    @pure def preCoreExpApply(ctx: Context, o: CoreExp.Apply): PreResult[Context, CoreExp.Base] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preCoreExpFun(ctx: Context, o: CoreExp.Fun): PreResult[Context, CoreExp] = {
+    @pure def preCoreExpFun(ctx: Context, o: CoreExp.Fun): PreResult[Context, CoreExp.Base] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preCoreExpQuant(ctx: Context, o: CoreExp.Quant): PreResult[Context, CoreExp] = {
+    @pure def preCoreExpQuant(ctx: Context, o: CoreExp.Quant): PreResult[Context, CoreExp.Base] = {
       return PreResult(ctx, T, None())
     }
 
@@ -304,7 +477,7 @@ object CoreExpTransformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preCoreExpInstanceOfExp(ctx: Context, o: CoreExp.InstanceOfExp): PreResult[Context, CoreExp] = {
+    @pure def preCoreExpInstanceOfExp(ctx: Context, o: CoreExp.InstanceOfExp): PreResult[Context, CoreExp.Base] = {
       return PreResult(ctx, T, None())
     }
 
@@ -442,6 +615,180 @@ object CoreExpTransformer {
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
           }
           return r
+        case o: CoreExp.ParamVarRef =>
+          val r: TPostResult[Context, CoreExp] = postCoreExpParamVarRef(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.LocalVarRef =>
+          val r: TPostResult[Context, CoreExp] = postCoreExpLocalVarRef(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.ObjectVarRef =>
+          val r: TPostResult[Context, CoreExp] = postCoreExpObjectVarRef(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Binary =>
+          val r: TPostResult[Context, CoreExp] = postCoreExpBinary(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Unary =>
+          val r: TPostResult[Context, CoreExp] = postCoreExpUnary(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Select =>
+          val r: TPostResult[Context, CoreExp] = postCoreExpSelect(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Update =>
+          val r: TPostResult[Context, CoreExp] = postCoreExpUpdate(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Indexing =>
+          val r: TPostResult[Context, CoreExp] = postCoreExpIndexing(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.IndexingUpdate =>
+          val r: TPostResult[Context, CoreExp] = postCoreExpIndexingUpdate(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.If =>
+          val r: TPostResult[Context, CoreExp] = postCoreExpIf(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Tuple =>
+          val r: TPostResult[Context, CoreExp] = postCoreExpTuple(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Apply =>
+          val r: TPostResult[Context, CoreExp] = postCoreExpApply(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Fun =>
+          val r: TPostResult[Context, CoreExp] = postCoreExpFun(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Quant =>
+          val r: TPostResult[Context, CoreExp] = postCoreExpQuant(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.InstanceOfExp =>
+          val r: TPostResult[Context, CoreExp] = postCoreExpInstanceOfExp(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Arrow => return postCoreExpArrow(ctx, o)
+      }
+    }
+
+    @pure def postCoreExpBase(ctx: Context, o: CoreExp.Base): TPostResult[Context, CoreExp.Base] = {
+      o match {
+        case o: CoreExp.LitB =>
+          val r: TPostResult[Context, CoreExp.Base] = postCoreExpLitB(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp.Base)) => TPostResult(postCtx, Some[CoreExp.Base](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp.Base]())
+          }
+          return r
+        case o: CoreExp.LitC =>
+          val r: TPostResult[Context, CoreExp.Base] = postCoreExpLitC(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp.Base)) => TPostResult(postCtx, Some[CoreExp.Base](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp.Base]())
+          }
+          return r
+        case o: CoreExp.LitZ =>
+          val r: TPostResult[Context, CoreExp.Base] = postCoreExpLitZ(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp.Base)) => TPostResult(postCtx, Some[CoreExp.Base](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp.Base]())
+          }
+          return r
+        case o: CoreExp.LitF32 =>
+          val r: TPostResult[Context, CoreExp.Base] = postCoreExpLitF32(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp.Base)) => TPostResult(postCtx, Some[CoreExp.Base](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp.Base]())
+          }
+          return r
+        case o: CoreExp.LitF64 =>
+          val r: TPostResult[Context, CoreExp.Base] = postCoreExpLitF64(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp.Base)) => TPostResult(postCtx, Some[CoreExp.Base](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp.Base]())
+          }
+          return r
+        case o: CoreExp.LitR =>
+          val r: TPostResult[Context, CoreExp.Base] = postCoreExpLitR(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp.Base)) => TPostResult(postCtx, Some[CoreExp.Base](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp.Base]())
+          }
+          return r
+        case o: CoreExp.LitString =>
+          val r: TPostResult[Context, CoreExp.Base] = postCoreExpLitString(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp.Base)) => TPostResult(postCtx, Some[CoreExp.Base](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp.Base]())
+          }
+          return r
+        case o: CoreExp.LitRange =>
+          val r: TPostResult[Context, CoreExp.Base] = postCoreExpLitRange(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp.Base)) => TPostResult(postCtx, Some[CoreExp.Base](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp.Base]())
+          }
+          return r
+        case o: CoreExp.LitBits =>
+          val r: TPostResult[Context, CoreExp.Base] = postCoreExpLitBits(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp.Base)) => TPostResult(postCtx, Some[CoreExp.Base](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp.Base]())
+          }
+          return r
         case o: CoreExp.ParamVarRef => return postCoreExpParamVarRef(ctx, o)
         case o: CoreExp.LocalVarRef => return postCoreExpLocalVarRef(ctx, o)
         case o: CoreExp.ObjectVarRef => return postCoreExpObjectVarRef(ctx, o)
@@ -457,7 +804,6 @@ object CoreExpTransformer {
         case o: CoreExp.Fun => return postCoreExpFun(ctx, o)
         case o: CoreExp.Quant => return postCoreExpQuant(ctx, o)
         case o: CoreExp.InstanceOfExp => return postCoreExpInstanceOfExp(ctx, o)
-        case o: CoreExp.Arrow => return postCoreExpArrow(ctx, o)
       }
     }
 
@@ -511,59 +857,59 @@ object CoreExpTransformer {
       return TPostResult(ctx, None())
     }
 
-    @pure def postCoreExpParamVarRef(ctx: Context, o: CoreExp.ParamVarRef): TPostResult[Context, CoreExp] = {
+    @pure def postCoreExpParamVarRef(ctx: Context, o: CoreExp.ParamVarRef): TPostResult[Context, CoreExp.Base] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postCoreExpLocalVarRef(ctx: Context, o: CoreExp.LocalVarRef): TPostResult[Context, CoreExp] = {
+    @pure def postCoreExpLocalVarRef(ctx: Context, o: CoreExp.LocalVarRef): TPostResult[Context, CoreExp.Base] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postCoreExpObjectVarRef(ctx: Context, o: CoreExp.ObjectVarRef): TPostResult[Context, CoreExp] = {
+    @pure def postCoreExpObjectVarRef(ctx: Context, o: CoreExp.ObjectVarRef): TPostResult[Context, CoreExp.Base] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postCoreExpBinary(ctx: Context, o: CoreExp.Binary): TPostResult[Context, CoreExp] = {
+    @pure def postCoreExpBinary(ctx: Context, o: CoreExp.Binary): TPostResult[Context, CoreExp.Base] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postCoreExpUnary(ctx: Context, o: CoreExp.Unary): TPostResult[Context, CoreExp] = {
+    @pure def postCoreExpUnary(ctx: Context, o: CoreExp.Unary): TPostResult[Context, CoreExp.Base] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postCoreExpSelect(ctx: Context, o: CoreExp.Select): TPostResult[Context, CoreExp] = {
+    @pure def postCoreExpSelect(ctx: Context, o: CoreExp.Select): TPostResult[Context, CoreExp.Base] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postCoreExpUpdate(ctx: Context, o: CoreExp.Update): TPostResult[Context, CoreExp] = {
+    @pure def postCoreExpUpdate(ctx: Context, o: CoreExp.Update): TPostResult[Context, CoreExp.Base] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postCoreExpIndexing(ctx: Context, o: CoreExp.Indexing): TPostResult[Context, CoreExp] = {
+    @pure def postCoreExpIndexing(ctx: Context, o: CoreExp.Indexing): TPostResult[Context, CoreExp.Base] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postCoreExpIndexingUpdate(ctx: Context, o: CoreExp.IndexingUpdate): TPostResult[Context, CoreExp] = {
+    @pure def postCoreExpIndexingUpdate(ctx: Context, o: CoreExp.IndexingUpdate): TPostResult[Context, CoreExp.Base] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postCoreExpIf(ctx: Context, o: CoreExp.If): TPostResult[Context, CoreExp] = {
+    @pure def postCoreExpIf(ctx: Context, o: CoreExp.If): TPostResult[Context, CoreExp.Base] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postCoreExpTuple(ctx: Context, o: CoreExp.Tuple): TPostResult[Context, CoreExp] = {
+    @pure def postCoreExpTuple(ctx: Context, o: CoreExp.Tuple): TPostResult[Context, CoreExp.Base] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postCoreExpApply(ctx: Context, o: CoreExp.Apply): TPostResult[Context, CoreExp] = {
+    @pure def postCoreExpApply(ctx: Context, o: CoreExp.Apply): TPostResult[Context, CoreExp.Base] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postCoreExpFun(ctx: Context, o: CoreExp.Fun): TPostResult[Context, CoreExp] = {
+    @pure def postCoreExpFun(ctx: Context, o: CoreExp.Fun): TPostResult[Context, CoreExp.Base] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postCoreExpQuant(ctx: Context, o: CoreExp.Quant): TPostResult[Context, CoreExp] = {
+    @pure def postCoreExpQuant(ctx: Context, o: CoreExp.Quant): TPostResult[Context, CoreExp.Base] = {
       return TPostResult(ctx, None())
     }
 
@@ -571,7 +917,7 @@ object CoreExpTransformer {
       return TPostResult(ctx, None())
     }
 
-    @pure def postCoreExpInstanceOfExp(ctx: Context, o: CoreExp.InstanceOfExp): TPostResult[Context, CoreExp] = {
+    @pure def postCoreExpInstanceOfExp(ctx: Context, o: CoreExp.InstanceOfExp): TPostResult[Context, CoreExp.Base] = {
       return TPostResult(ctx, None())
     }
 
@@ -768,68 +1114,68 @@ import CoreExpTransformer._
           else
             TPostResult(r0.ctx, None())
         case o2: CoreExp.Binary =>
-          val r0: TPostResult[Context, CoreExp] = transformCoreExp(preR.ctx, o2.left)
-          val r1: TPostResult[Context, CoreExp] = transformCoreExp(r0.ctx, o2.right)
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.left)
+          val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.right)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
             TPostResult(r1.ctx, Some(o2(left = r0.resultOpt.getOrElse(o2.left), right = r1.resultOpt.getOrElse(o2.right))))
           else
             TPostResult(r1.ctx, None())
         case o2: CoreExp.Unary =>
-          val r0: TPostResult[Context, CoreExp] = transformCoreExp(preR.ctx, o2.exp)
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
           if (hasChanged || r0.resultOpt.nonEmpty)
             TPostResult(r0.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp))))
           else
             TPostResult(r0.ctx, None())
         case o2: CoreExp.Select =>
-          val r0: TPostResult[Context, CoreExp] = transformCoreExp(preR.ctx, o2.exp)
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
           val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.tipe)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
             TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), tipe = r1.resultOpt.getOrElse(o2.tipe))))
           else
             TPostResult(r1.ctx, None())
         case o2: CoreExp.Update =>
-          val r0: TPostResult[Context, CoreExp] = transformCoreExp(preR.ctx, o2.exp)
-          val r1: TPostResult[Context, CoreExp] = transformCoreExp(r0.ctx, o2.arg)
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
+          val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.arg)
           val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.tipe)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
             TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), arg = r1.resultOpt.getOrElse(o2.arg), tipe = r2.resultOpt.getOrElse(o2.tipe))))
           else
             TPostResult(r2.ctx, None())
         case o2: CoreExp.Indexing =>
-          val r0: TPostResult[Context, CoreExp] = transformCoreExp(preR.ctx, o2.exp)
-          val r1: TPostResult[Context, CoreExp] = transformCoreExp(r0.ctx, o2.index)
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
+          val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.index)
           val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.tipe)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
             TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), index = r1.resultOpt.getOrElse(o2.index), tipe = r2.resultOpt.getOrElse(o2.tipe))))
           else
             TPostResult(r2.ctx, None())
         case o2: CoreExp.IndexingUpdate =>
-          val r0: TPostResult[Context, CoreExp] = transformCoreExp(preR.ctx, o2.exp)
-          val r1: TPostResult[Context, CoreExp] = transformCoreExp(r0.ctx, o2.index)
-          val r2: TPostResult[Context, CoreExp] = transformCoreExp(r1.ctx, o2.arg)
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
+          val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.index)
+          val r2: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r1.ctx, o2.arg)
           val r3: TPostResult[Context, Typed] = transformTyped(r2.ctx, o2.tipe)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
             TPostResult(r3.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), index = r1.resultOpt.getOrElse(o2.index), arg = r2.resultOpt.getOrElse(o2.arg), tipe = r3.resultOpt.getOrElse(o2.tipe))))
           else
             TPostResult(r3.ctx, None())
         case o2: CoreExp.If =>
-          val r0: TPostResult[Context, CoreExp] = transformCoreExp(preR.ctx, o2.cond)
-          val r1: TPostResult[Context, CoreExp] = transformCoreExp(r0.ctx, o2.tExp)
-          val r2: TPostResult[Context, CoreExp] = transformCoreExp(r1.ctx, o2.fExp)
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.cond)
+          val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.tExp)
+          val r2: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r1.ctx, o2.fExp)
           val r3: TPostResult[Context, Typed] = transformTyped(r2.ctx, o2.tipe)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
             TPostResult(r3.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), tExp = r1.resultOpt.getOrElse(o2.tExp), fExp = r2.resultOpt.getOrElse(o2.fExp), tipe = r3.resultOpt.getOrElse(o2.tipe))))
           else
             TPostResult(r3.ctx, None())
         case o2: CoreExp.Tuple =>
-          val r0: TPostResult[Context, IS[Z, CoreExp]] = transformISZ(preR.ctx, o2.args, transformCoreExp _)
+          val r0: TPostResult[Context, IS[Z, CoreExp.Base]] = transformISZ(preR.ctx, o2.args, transformCoreExpBase _)
           if (hasChanged || r0.resultOpt.nonEmpty)
             TPostResult(r0.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args))))
           else
             TPostResult(r0.ctx, None())
         case o2: CoreExp.Apply =>
-          val r0: TPostResult[Context, CoreExp] = transformCoreExp(preR.ctx, o2.exp)
-          val r1: TPostResult[Context, IS[Z, CoreExp]] = transformISZ(r0.ctx, o2.args, transformCoreExp _)
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
+          val r1: TPostResult[Context, IS[Z, CoreExp.Base]] = transformISZ(r0.ctx, o2.args, transformCoreExpBase _)
           val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.tipe)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
             TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), args = r1.resultOpt.getOrElse(o2.args), tipe = r2.resultOpt.getOrElse(o2.tipe))))
@@ -837,27 +1183,27 @@ import CoreExpTransformer._
             TPostResult(r2.ctx, None())
         case o2: CoreExp.Fun =>
           val r0: TPostResult[Context, CoreExp.Param] = transformCoreExpParam(preR.ctx, o2.param)
-          val r1: TPostResult[Context, CoreExp] = transformCoreExp(r0.ctx, o2.exp)
+          val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.exp)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
             TPostResult(r1.ctx, Some(o2(param = r0.resultOpt.getOrElse(o2.param), exp = r1.resultOpt.getOrElse(o2.exp))))
           else
             TPostResult(r1.ctx, None())
         case o2: CoreExp.Quant =>
           val r0: TPostResult[Context, CoreExp.Param] = transformCoreExpParam(preR.ctx, o2.param)
-          val r1: TPostResult[Context, CoreExp] = transformCoreExp(r0.ctx, o2.exp)
+          val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.exp)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
             TPostResult(r1.ctx, Some(o2(param = r0.resultOpt.getOrElse(o2.param), exp = r1.resultOpt.getOrElse(o2.exp))))
           else
             TPostResult(r1.ctx, None())
         case o2: CoreExp.InstanceOfExp =>
-          val r0: TPostResult[Context, CoreExp] = transformCoreExp(preR.ctx, o2.exp)
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
           val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.tipe)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
             TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), tipe = r1.resultOpt.getOrElse(o2.tipe))))
           else
             TPostResult(r1.ctx, None())
         case o2: CoreExp.Arrow =>
-          val r0: TPostResult[Context, CoreExp] = transformCoreExp(preR.ctx, o2.left)
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.left)
           val r1: TPostResult[Context, CoreExp] = transformCoreExp(r0.ctx, o2.right)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
             TPostResult(r1.ctx, Some(o2(left = r0.resultOpt.getOrElse(o2.left), right = r1.resultOpt.getOrElse(o2.right))))
@@ -873,6 +1219,185 @@ import CoreExpTransformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: CoreExp = r.resultOpt.getOrElse(o)
     val postR: TPostResult[Context, CoreExp] = pp.postCoreExp(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformCoreExpBase(ctx: Context, o: CoreExp.Base): TPostResult[Context, CoreExp.Base] = {
+    val preR: PreResult[Context, CoreExp.Base] = pp.preCoreExpBase(ctx, o)
+    val r: TPostResult[Context, CoreExp.Base] = if (preR.continu) {
+      val o2: CoreExp.Base = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: TPostResult[Context, CoreExp.Base] = o2 match {
+        case o2: CoreExp.LitB =>
+          if (hasChanged)
+            TPostResult(preR.ctx, Some(o2))
+          else
+            TPostResult(preR.ctx, None())
+        case o2: CoreExp.LitC =>
+          if (hasChanged)
+            TPostResult(preR.ctx, Some(o2))
+          else
+            TPostResult(preR.ctx, None())
+        case o2: CoreExp.LitZ =>
+          if (hasChanged)
+            TPostResult(preR.ctx, Some(o2))
+          else
+            TPostResult(preR.ctx, None())
+        case o2: CoreExp.LitF32 =>
+          if (hasChanged)
+            TPostResult(preR.ctx, Some(o2))
+          else
+            TPostResult(preR.ctx, None())
+        case o2: CoreExp.LitF64 =>
+          if (hasChanged)
+            TPostResult(preR.ctx, Some(o2))
+          else
+            TPostResult(preR.ctx, None())
+        case o2: CoreExp.LitR =>
+          if (hasChanged)
+            TPostResult(preR.ctx, Some(o2))
+          else
+            TPostResult(preR.ctx, None())
+        case o2: CoreExp.LitString =>
+          if (hasChanged)
+            TPostResult(preR.ctx, Some(o2))
+          else
+            TPostResult(preR.ctx, None())
+        case o2: CoreExp.LitRange =>
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+          else
+            TPostResult(r0.ctx, None())
+        case o2: CoreExp.LitBits =>
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+          else
+            TPostResult(r0.ctx, None())
+        case o2: CoreExp.ParamVarRef =>
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+          else
+            TPostResult(r0.ctx, None())
+        case o2: CoreExp.LocalVarRef =>
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+          else
+            TPostResult(r0.ctx, None())
+        case o2: CoreExp.ObjectVarRef =>
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+          else
+            TPostResult(r0.ctx, None())
+        case o2: CoreExp.Binary =>
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.left)
+          val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.right)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(left = r0.resultOpt.getOrElse(o2.left), right = r1.resultOpt.getOrElse(o2.right))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: CoreExp.Unary =>
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp))))
+          else
+            TPostResult(r0.ctx, None())
+        case o2: CoreExp.Select =>
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
+          val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), tipe = r1.resultOpt.getOrElse(o2.tipe))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: CoreExp.Update =>
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
+          val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.arg)
+          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), arg = r1.resultOpt.getOrElse(o2.arg), tipe = r2.resultOpt.getOrElse(o2.tipe))))
+          else
+            TPostResult(r2.ctx, None())
+        case o2: CoreExp.Indexing =>
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
+          val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.index)
+          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), index = r1.resultOpt.getOrElse(o2.index), tipe = r2.resultOpt.getOrElse(o2.tipe))))
+          else
+            TPostResult(r2.ctx, None())
+        case o2: CoreExp.IndexingUpdate =>
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
+          val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.index)
+          val r2: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r1.ctx, o2.arg)
+          val r3: TPostResult[Context, Typed] = transformTyped(r2.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+            TPostResult(r3.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), index = r1.resultOpt.getOrElse(o2.index), arg = r2.resultOpt.getOrElse(o2.arg), tipe = r3.resultOpt.getOrElse(o2.tipe))))
+          else
+            TPostResult(r3.ctx, None())
+        case o2: CoreExp.If =>
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.cond)
+          val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.tExp)
+          val r2: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r1.ctx, o2.fExp)
+          val r3: TPostResult[Context, Typed] = transformTyped(r2.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+            TPostResult(r3.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), tExp = r1.resultOpt.getOrElse(o2.tExp), fExp = r2.resultOpt.getOrElse(o2.fExp), tipe = r3.resultOpt.getOrElse(o2.tipe))))
+          else
+            TPostResult(r3.ctx, None())
+        case o2: CoreExp.Tuple =>
+          val r0: TPostResult[Context, IS[Z, CoreExp.Base]] = transformISZ(preR.ctx, o2.args, transformCoreExpBase _)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args))))
+          else
+            TPostResult(r0.ctx, None())
+        case o2: CoreExp.Apply =>
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
+          val r1: TPostResult[Context, IS[Z, CoreExp.Base]] = transformISZ(r0.ctx, o2.args, transformCoreExpBase _)
+          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), args = r1.resultOpt.getOrElse(o2.args), tipe = r2.resultOpt.getOrElse(o2.tipe))))
+          else
+            TPostResult(r2.ctx, None())
+        case o2: CoreExp.Fun =>
+          val r0: TPostResult[Context, CoreExp.Param] = transformCoreExpParam(preR.ctx, o2.param)
+          val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.exp)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(param = r0.resultOpt.getOrElse(o2.param), exp = r1.resultOpt.getOrElse(o2.exp))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: CoreExp.Quant =>
+          val r0: TPostResult[Context, CoreExp.Param] = transformCoreExpParam(preR.ctx, o2.param)
+          val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.exp)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(param = r0.resultOpt.getOrElse(o2.param), exp = r1.resultOpt.getOrElse(o2.exp))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: CoreExp.InstanceOfExp =>
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
+          val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), tipe = r1.resultOpt.getOrElse(o2.tipe))))
+          else
+            TPostResult(r1.ctx, None())
+      }
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: CoreExp.Base = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, CoreExp.Base] = pp.postCoreExpBase(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {
