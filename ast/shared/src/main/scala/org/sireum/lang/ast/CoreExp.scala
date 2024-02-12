@@ -60,7 +60,7 @@ object CoreExp {
 
   @datatype class LitB(val value: B) extends Lit {
     @strictpure override def tipe: Typed = Typed.b
-    @strictpure override def prettyST: ST = if (value) st"true" else st"false"
+    @strictpure override def prettyST: ST = if (value) st"T" else st"F"
   }
 
   @datatype class LitC(val value: C) extends Lit {
