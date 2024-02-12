@@ -925,7 +925,24 @@ object TypeChecker {
     val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
     val typeParams = typeParamMap(stmt.typeParams, reporter)
     val sc = Scope.Local.create(typeParams.map, scope)
-    return stmt(claims = for (claim <- stmt.claims) yield tc.checkExp(bExpectedOpt, sc, claim, reporter)._1)
+    var newClaims = ISZ[AST.Exp]()
+    if (stmt.isFun) {
+      for (claim <- stmt.claims) {
+        val qclaim = claim.asInstanceOf[AST.Exp.QuantType]
+        val (newFun, tOpt, _) = tc.checkFun(None(), sc, qclaim.fun(context = context), reporter)
+        tOpt match {
+          case Some(t: AST.Typed.Fun) if t.ret != AST.Typed.b =>
+            reporter.error(qclaim.fun.posOpt, TypeChecker.typeCheckerKind, s"Expecting type 'B', but '${t.ret}' found.")
+          case _ =>
+        }
+        newClaims = newClaims :+ qclaim(fun = newFun.asInstanceOf[AST.Exp.Fun])
+      }
+    } else {
+      for (claim <- stmt.claims) {
+        newClaims = newClaims :+ tc.checkExp(bExpectedOpt, sc, claim, reporter)._1
+      }
+    }
+    return stmt(claims = newClaims)
   }
 
   def checkTheoremStmt(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope, stmt: AST.Stmt.Theorem, reporter: Reporter): AST.Stmt.Theorem = {
@@ -935,7 +952,7 @@ object TypeChecker {
     val sc = Scope.Local.create(typeParams.map, scope)
     if (stmt.isFun) {
       val qclaim = stmt.claim.asInstanceOf[AST.Exp.QuantType]
-      val (newFun, tOpt, proofScope) = tc.checkFun(None(), sc, qclaim.fun, reporter)
+      val (newFun, tOpt, proofScope) = tc.checkFun(None(), sc, qclaim.fun(context = context), reporter)
       tOpt match {
         case Some(t: AST.Typed.Fun) if t.ret != AST.Typed.b =>
           reporter.error(qclaim.fun.posOpt, TypeChecker.typeCheckerKind, s"Expecting type 'B', but '${t.ret}' found.")
