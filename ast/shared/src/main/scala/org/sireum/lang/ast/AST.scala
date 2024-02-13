@@ -948,16 +948,18 @@ object ProofAst {
     @strictpure def posOpt: Option[Position] = attr.posOpt
     @strictpure def isSynthetic: B
     @strictpure def prettyST: ST
+    @strictpure def isPremise: B
   }
 
   object StepId {
     @datatype class Num(val no: Z, @hidden val attr: Attr) extends StepId {
       override def string: String = {
-        return s"#$no"
+        return if (no < 0) s"Premise#${-no}" else s"#$no"
       }
       @strictpure def isSynthetic: B = F
-      @strictpure override def prettyST: ST = st"$no"
+      @strictpure override def prettyST: ST = if (no < 0) st"Premise#${-no}" else st"$no"
       @strictpure def typedOpt: Option[Typed] = Typed.stepIdOpt
+      @strictpure def isPremise: B = no < 0
     }
     @datatype class Str(val isSynthetic: B, val value: String, @hidden val attr: Attr) extends StepId {
       override def string: String = {
@@ -965,6 +967,7 @@ object ProofAst {
       }
       @strictpure override def prettyST: ST = st""""$value""""
       @strictpure def typedOpt: Option[Typed] = Typed.stepIdOpt
+      @strictpure def isPremise: B = F
     }
   }
 
@@ -1937,7 +1940,7 @@ object Exp {
     @strictpure override def typedOpt: Option[Typed] = Typed.rsOpt
 
     @pure override def prettyST: ST = {
-      return st"RS(${(for (ref <- refs) yield ref.asExp.prettyST, ", ")})"
+      return st"${if (rightToLeft) "~" else ""}RS(${(for (ref <- refs) yield ref.asExp.prettyST, ", ")})"
     }
   }
 

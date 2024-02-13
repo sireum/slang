@@ -39,6 +39,7 @@ import org.sireum._
   @pure def <(other: CoreExp): B = {
     return string < other.string
   }
+  @strictpure def isEquiv: B = F
 }
 
 object CoreExp {
@@ -46,15 +47,15 @@ object CoreExp {
   @datatype trait Base extends CoreExp {
     @pure override def subst(sm: HashMap[String, Typed]): Base
     @pure def incDeBruijn(threshold: Z): Base
-    @pure def numberPattern(num: Z): (Z, CoreExp.Base)
+    def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base
   }
 
   @datatype trait Lit extends Base {
     @strictpure override def subst(sm: HashMap[String, Typed]): Lit = this
     @strictpure def incDeBruijn(threshold: Z): Lit = this
     @strictpure override def prettyPatternST: ST = prettyST
-    @pure def numberPattern(num: Z): (Z, Base) = {
-      return (num, this)
+    override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
+      return this
     }
   }
 
@@ -125,8 +126,8 @@ object CoreExp {
       val thiz = this
       return if (deBruijn >= threshold) thiz(deBruijn = deBruijn + 1) else thiz
     }
-    @pure def numberPattern(num: Z): (Z, Base) = {
-      return (num, this)
+    override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
+      return this
     }
   }
 
@@ -141,12 +142,20 @@ object CoreExp {
       return thiz(tipe = tipe.subst(sm))
     }
     @strictpure def incDeBruijn(threshold: Z): LocalVarRef = this
-    @pure def numberPattern(num: Z): (Z, Base) = {
+    override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
       if (isPattern) {
+        val key = (context, id)
+        val num: Z = numMap.value.get(key) match {
+          case Some(n) => n
+          case _ =>
+            val n = numMap.value.size
+            numMap.value = numMap.value + key ~> n
+            n
+        }
         val thiz = this
-        return (num + 1, thiz(context = ISZ(), id = s"$num", tipe = Typed.nothing))
+        return thiz(context = ISZ(), id = num.string, tipe = Typed.nothing)
       } else {
-        return (num, this)
+        return this
       }
     }
   }
@@ -162,8 +171,8 @@ object CoreExp {
       return thiz(tipe = tipe.subst(sm))
     }
     @strictpure def incDeBruijn(threshold: Z): ObjectVarRef = this
-    @pure def numberPattern(num: Z): (Z, Base) = {
-      return (num, this)
+    override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
+      return this
     }
   }
 
@@ -198,12 +207,11 @@ object CoreExp {
       val thiz = this
       return thiz(left = left.incDeBruijn(threshold), right = right.incDeBruijn(threshold))
     }
-    @pure def numberPattern(num: Z): (Z, Base) = {
-      val (num1, l) = left.numberPattern(num)
-      val (num2, r) = right.numberPattern(num1)
+    override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
       val thiz = this
-      return (num2, thiz(left = l, right = r))
+      return thiz(left = left.numberPattern(numMap), right = right.numberPattern(numMap))
     }
+    @strictpure override def isEquiv: B = op == Exp.BinaryOp.EquivUni
   }
 
   @datatype class Unary(val op: Exp.UnaryOp.Type, exp: Base) extends Base {
@@ -241,10 +249,9 @@ object CoreExp {
       val thiz = this
       return thiz(exp = exp.incDeBruijn(threshold))
     }
-    @pure def numberPattern(num: Z): (Z, Base) = {
-      val (num1, e) = exp.numberPattern(num)
+    override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
       val thiz = this
-      return (num1, thiz(exp = e))
+      return thiz(exp = exp.numberPattern(numMap))
     }
   }
 
@@ -266,10 +273,9 @@ object CoreExp {
       val thiz = this
       return thiz(exp = exp.incDeBruijn(threshold))
     }
-    @pure def numberPattern(num: Z): (Z, Base) = {
-      val (num1, e) = exp.numberPattern(num)
+    override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
       val thiz = this
-      return (num1, thiz(exp = e))
+      return thiz(exp = exp.numberPattern(numMap))
     }
   }
 
@@ -291,10 +297,9 @@ object CoreExp {
       val thiz = this
       return thiz(exp = exp.incDeBruijn(threshold), arg = arg.incDeBruijn(threshold))
     }
-    @pure def numberPattern(num: Z): (Z, Base) = {
-      val (num1, e) = exp.numberPattern(num)
+    override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
       val thiz = this
-      return (num1, thiz(exp = e))
+      return thiz(exp = exp.numberPattern(numMap))
     }
   }
 
@@ -316,11 +321,9 @@ object CoreExp {
       val thiz = this
       return thiz(exp = exp.incDeBruijn(threshold), index = index.incDeBruijn(threshold))
     }
-    @pure def numberPattern(num: Z): (Z, Base) = {
-      val (num1, e) = exp.numberPattern(num)
-      val (num2, i) = index.numberPattern(num1)
+    override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
       val thiz = this
-      return (num2, thiz(exp = e,  index = i))
+      return thiz(exp = exp.numberPattern(numMap), index = index.numberPattern(numMap))
     }
   }
 
@@ -342,12 +345,9 @@ object CoreExp {
       val thiz = this
       return thiz(exp = exp.incDeBruijn(threshold), index = index.incDeBruijn(threshold), arg = arg.incDeBruijn(threshold))
     }
-    @pure def numberPattern(num: Z): (Z, Base) = {
-      val (num1, e) = exp.numberPattern(num)
-      val (num2, i) = index.numberPattern(num1)
-      val (num3, a) = arg.numberPattern(num2)
+    override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
       val thiz = this
-      return (num3, thiz(exp = e, index = i, arg = a))
+      return thiz(exp = exp.numberPattern(numMap), index = index.numberPattern(numMap), arg = arg.numberPattern(numMap))
     }
   }
 
@@ -371,12 +371,9 @@ object CoreExp {
       val thiz = this
       return thiz(cond = cond.incDeBruijn(threshold), tExp = tExp.incDeBruijn(threshold), fExp = fExp.incDeBruijn(threshold))
     }
-    @pure def numberPattern(num: Z): (Z, Base) = {
-      val (num1, c) = cond.numberPattern(num)
-      val (num2, t) = tExp.numberPattern(num1)
-      val (num3, f) = fExp.numberPattern(num2)
+    override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
       val thiz = this
-      return (num3, thiz(cond = c, tExp = t, fExp = f))
+      return thiz(cond = cond.numberPattern(numMap), tExp = tExp.numberPattern(numMap), fExp = fExp.numberPattern(numMap))
     }
   }
 
@@ -399,16 +396,9 @@ object CoreExp {
       val thiz = this
       return thiz(args = for (arg <- args) yield arg.incDeBruijn(threshold))
     }
-    @pure def numberPattern(num: Z): (Z, Base) = {
-      var n = num
-      var newArgs = ISZ[Base]()
-      for (arg <- args) {
-        val (num1, a) = arg.numberPattern(n)
-        newArgs = newArgs :+ a
-        n = num1
-      }
+    override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
       val thiz = this
-      return (n, thiz(args = newArgs))
+      return thiz(args = for (arg <- args) yield arg.numberPattern(numMap))
     }
   }
 
@@ -430,16 +420,9 @@ object CoreExp {
       val thiz = this
       return thiz(exp = exp.incDeBruijn(threshold), args = for (arg <- args) yield arg.incDeBruijn(threshold))
     }
-    @pure def numberPattern(num: Z): (Z, Base) = {
-      var (n, e) = exp.numberPattern(num)
-      var newArgs = ISZ[Base]()
-      for (arg <- args) {
-        val (num1, a) = arg.numberPattern(n)
-        newArgs = newArgs :+ a
-        n = num1
-      }
+    override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
       val thiz = this
-      return (n, thiz(exp = e, args = newArgs))
+      return thiz(exp = exp.numberPattern(numMap), args = for (arg <- args) yield arg.numberPattern(numMap))
     }
   }
 
@@ -477,10 +460,9 @@ object CoreExp {
       val thiz = this
       return thiz(exp = exp.incDeBruijn(threshold + 1))
     }
-    @pure def numberPattern(num: Z): (Z, Base) = {
-      val (num1, e) = exp.numberPattern(num)
+    override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
       val thiz = this
-      return (num1, thiz(exp = e))
+      return thiz(exp = exp.numberPattern(numMap))
     }
   }
 
@@ -522,10 +504,9 @@ object CoreExp {
       val thiz = this
       return thiz(exp = exp.incDeBruijn(threshold + 1))
     }
-    @pure def numberPattern(num: Z): (Z, Base) = {
-      val (num1, e) = exp.numberPattern(num)
+    override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
       val thiz = this
-      return (num1, thiz(exp = e))
+      return thiz(exp = exp.numberPattern(numMap))
     }
   }
 
@@ -555,10 +536,9 @@ object CoreExp {
       val thiz = this
       return thiz(exp = exp.incDeBruijn(threshold))
     }
-    @pure def numberPattern(num: Z): (Z, Base) = {
-      val (num1, e) = exp.numberPattern(num)
+    override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
       val thiz = this
-      return (num1, thiz(exp = e))
+      return thiz(exp = exp.numberPattern(numMap))
     }
   }
 
