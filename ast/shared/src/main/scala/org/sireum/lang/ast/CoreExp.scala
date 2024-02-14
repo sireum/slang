@@ -403,10 +403,12 @@ object CoreExp {
 
   @datatype class Apply(val hasReceiver: B, val exp: Base, val args: ISZ[Base], val tipe: Typed) extends Base {
     @pure override def prettyST: ST = {
-      return st"${exp.prettyST}(${(for (arg <- args) yield arg.prettyST, ", ")})"
+      return if (hasReceiver) st"${args(0).prettyST}.${exp.prettyST}(${(for (arg <- ops.ISZOps(args).drop(1)) yield arg.prettyST, ", ")})"
+      else st"${exp.prettyST}(${(for (arg <- args) yield arg.prettyST, ", ")})"
     }
     @pure override def prettyPatternST: ST = {
-      return st"${exp.prettyPatternST}(${(for (arg <- args) yield arg.prettyPatternST, ", ")})"
+      return if (hasReceiver) st"${args(0).prettyPatternST}.${exp.prettyPatternST}(${(for (arg <- ops.ISZOps(args).drop(1)) yield arg.prettyPatternST, ", ")})"
+      else st"${exp.prettyPatternST}(${(for (arg <- args) yield arg.prettyPatternST, ", ")})"
     }
     @pure override def subst(sm: HashMap[String, Typed]): Apply = {
       if (sm.isEmpty) {
