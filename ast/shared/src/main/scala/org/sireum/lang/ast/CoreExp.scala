@@ -255,6 +255,30 @@ object CoreExp {
     }
   }
 
+  @datatype class Constructor(val tipe: Typed, args: ISZ[Base]) extends Base {
+    @pure override def prettyST: ST = {
+      return st"$tipe(${(for (arg <- args) yield arg.prettyST, ", ")})"
+    }
+    @pure override def prettyPatternST: ST = {
+      return st"$tipe(${(for (arg <- args) yield arg.prettyPatternST, ", ")})"
+    }
+    @pure override def subst(sm: HashMap[String, Typed]): Constructor = {
+      if (sm.isEmpty) {
+        return this
+      }
+      val thiz = this
+      return thiz(args = for (arg <- args) yield arg.subst(sm))
+    }
+    @pure def incDeBruijn(threshold: Z): Constructor = {
+      val thiz = this
+      return thiz(args = for (arg <- args) yield arg.incDeBruijn(threshold))
+    }
+    override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
+      val thiz = this
+      return thiz(args = for (arg <- args) yield arg.numberPattern(numMap))
+    }
+  }
+
   @datatype class Select(val exp: Base, val id: String, val tipe: Typed) extends Base {
     @pure override def prettyST: ST = {
       return st"${exp.prettyST}.$id"
@@ -377,32 +401,7 @@ object CoreExp {
     }
   }
 
-  @datatype class Tuple(args: ISZ[Base]) extends Base {
-    @strictpure override def tipe: Typed = Typed.Tuple(for (arg <- args) yield arg.tipe)
-    @pure override def prettyST: ST = {
-      return st"(${(for (arg <- args) yield arg.prettyST, ", ")})"
-    }
-    @pure override def prettyPatternST: ST = {
-      return st"(${(for (arg <- args) yield arg.prettyPatternST, ", ")})"
-    }
-    @pure override def subst(sm: HashMap[String, Typed]): Tuple = {
-      if (sm.isEmpty) {
-        return this
-      }
-      val thiz = this
-      return thiz(args = for (arg <- args) yield arg.subst(sm))
-    }
-    @pure def incDeBruijn(threshold: Z): Tuple = {
-      val thiz = this
-      return thiz(args = for (arg <- args) yield arg.incDeBruijn(threshold))
-    }
-    override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
-      val thiz = this
-      return thiz(args = for (arg <- args) yield arg.numberPattern(numMap))
-    }
-  }
-
-  @datatype class Apply(val exp: Base, val args: ISZ[Base], val tipe: Typed) extends Base {
+  @datatype class Apply(val hasReceiver: B, val exp: Base, val args: ISZ[Base], val tipe: Typed) extends Base {
     @pure override def prettyST: ST = {
       return st"${exp.prettyST}(${(for (arg <- args) yield arg.prettyST, ", ")})"
     }

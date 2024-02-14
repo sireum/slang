@@ -210,6 +210,13 @@ object CoreExpTransformer {
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
           }
           return r
+        case o: CoreExp.Constructor =>
+          val r: PreResult[Context, CoreExp] = preCoreExpConstructor(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
+          }
+          return r
         case o: CoreExp.Select =>
           val r: PreResult[Context, CoreExp] = preCoreExpSelect(ctx, o) match {
            case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
@@ -240,13 +247,6 @@ object CoreExpTransformer {
           return r
         case o: CoreExp.If =>
           val r: PreResult[Context, CoreExp] = preCoreExpIf(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
-          }
-          return r
-        case o: CoreExp.Tuple =>
-          val r: PreResult[Context, CoreExp] = preCoreExpTuple(ctx, o) match {
            case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
            case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
@@ -354,12 +354,12 @@ object CoreExpTransformer {
         case o: CoreExp.ObjectVarRef => return preCoreExpObjectVarRef(ctx, o)
         case o: CoreExp.Binary => return preCoreExpBinary(ctx, o)
         case o: CoreExp.Unary => return preCoreExpUnary(ctx, o)
+        case o: CoreExp.Constructor => return preCoreExpConstructor(ctx, o)
         case o: CoreExp.Select => return preCoreExpSelect(ctx, o)
         case o: CoreExp.Update => return preCoreExpUpdate(ctx, o)
         case o: CoreExp.Indexing => return preCoreExpIndexing(ctx, o)
         case o: CoreExp.IndexingUpdate => return preCoreExpIndexingUpdate(ctx, o)
         case o: CoreExp.If => return preCoreExpIf(ctx, o)
-        case o: CoreExp.Tuple => return preCoreExpTuple(ctx, o)
         case o: CoreExp.Apply => return preCoreExpApply(ctx, o)
         case o: CoreExp.Fun => return preCoreExpFun(ctx, o)
         case o: CoreExp.Quant => return preCoreExpQuant(ctx, o)
@@ -437,6 +437,10 @@ object CoreExpTransformer {
       return PreResult(ctx, T, None())
     }
 
+    @pure def preCoreExpConstructor(ctx: Context, o: CoreExp.Constructor): PreResult[Context, CoreExp.Base] = {
+      return PreResult(ctx, T, None())
+    }
+
     @pure def preCoreExpSelect(ctx: Context, o: CoreExp.Select): PreResult[Context, CoreExp.Base] = {
       return PreResult(ctx, T, None())
     }
@@ -454,10 +458,6 @@ object CoreExpTransformer {
     }
 
     @pure def preCoreExpIf(ctx: Context, o: CoreExp.If): PreResult[Context, CoreExp.Base] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preCoreExpTuple(ctx: Context, o: CoreExp.Tuple): PreResult[Context, CoreExp.Base] = {
       return PreResult(ctx, T, None())
     }
 
@@ -650,6 +650,13 @@ object CoreExpTransformer {
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
           }
           return r
+        case o: CoreExp.Constructor =>
+          val r: TPostResult[Context, CoreExp] = postCoreExpConstructor(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
+          }
+          return r
         case o: CoreExp.Select =>
           val r: TPostResult[Context, CoreExp] = postCoreExpSelect(ctx, o) match {
            case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
@@ -680,13 +687,6 @@ object CoreExpTransformer {
           return r
         case o: CoreExp.If =>
           val r: TPostResult[Context, CoreExp] = postCoreExpIf(ctx, o) match {
-           case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
-          }
-          return r
-        case o: CoreExp.Tuple =>
-          val r: TPostResult[Context, CoreExp] = postCoreExpTuple(ctx, o) match {
            case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
            case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
@@ -794,12 +794,12 @@ object CoreExpTransformer {
         case o: CoreExp.ObjectVarRef => return postCoreExpObjectVarRef(ctx, o)
         case o: CoreExp.Binary => return postCoreExpBinary(ctx, o)
         case o: CoreExp.Unary => return postCoreExpUnary(ctx, o)
+        case o: CoreExp.Constructor => return postCoreExpConstructor(ctx, o)
         case o: CoreExp.Select => return postCoreExpSelect(ctx, o)
         case o: CoreExp.Update => return postCoreExpUpdate(ctx, o)
         case o: CoreExp.Indexing => return postCoreExpIndexing(ctx, o)
         case o: CoreExp.IndexingUpdate => return postCoreExpIndexingUpdate(ctx, o)
         case o: CoreExp.If => return postCoreExpIf(ctx, o)
-        case o: CoreExp.Tuple => return postCoreExpTuple(ctx, o)
         case o: CoreExp.Apply => return postCoreExpApply(ctx, o)
         case o: CoreExp.Fun => return postCoreExpFun(ctx, o)
         case o: CoreExp.Quant => return postCoreExpQuant(ctx, o)
@@ -877,6 +877,10 @@ object CoreExpTransformer {
       return TPostResult(ctx, None())
     }
 
+    @pure def postCoreExpConstructor(ctx: Context, o: CoreExp.Constructor): TPostResult[Context, CoreExp.Base] = {
+      return TPostResult(ctx, None())
+    }
+
     @pure def postCoreExpSelect(ctx: Context, o: CoreExp.Select): TPostResult[Context, CoreExp.Base] = {
       return TPostResult(ctx, None())
     }
@@ -894,10 +898,6 @@ object CoreExpTransformer {
     }
 
     @pure def postCoreExpIf(ctx: Context, o: CoreExp.If): TPostResult[Context, CoreExp.Base] = {
-      return TPostResult(ctx, None())
-    }
-
-    @pure def postCoreExpTuple(ctx: Context, o: CoreExp.Tuple): TPostResult[Context, CoreExp.Base] = {
       return TPostResult(ctx, None())
     }
 
@@ -1126,6 +1126,13 @@ import CoreExpTransformer._
             TPostResult(r0.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp))))
           else
             TPostResult(r0.ctx, None())
+        case o2: CoreExp.Constructor =>
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          val r1: TPostResult[Context, IS[Z, CoreExp.Base]] = transformISZ(r0.ctx, o2.args, transformCoreExpBase _)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe), args = r1.resultOpt.getOrElse(o2.args))))
+          else
+            TPostResult(r1.ctx, None())
         case o2: CoreExp.Select =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
           val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.tipe)
@@ -1167,12 +1174,6 @@ import CoreExpTransformer._
             TPostResult(r3.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), tExp = r1.resultOpt.getOrElse(o2.tExp), fExp = r2.resultOpt.getOrElse(o2.fExp), tipe = r3.resultOpt.getOrElse(o2.tipe))))
           else
             TPostResult(r3.ctx, None())
-        case o2: CoreExp.Tuple =>
-          val r0: TPostResult[Context, IS[Z, CoreExp.Base]] = transformISZ(preR.ctx, o2.args, transformCoreExpBase _)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args))))
-          else
-            TPostResult(r0.ctx, None())
         case o2: CoreExp.Apply =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
           val r1: TPostResult[Context, IS[Z, CoreExp.Base]] = transformISZ(r0.ctx, o2.args, transformCoreExpBase _)
@@ -1312,6 +1313,13 @@ import CoreExpTransformer._
             TPostResult(r0.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp))))
           else
             TPostResult(r0.ctx, None())
+        case o2: CoreExp.Constructor =>
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          val r1: TPostResult[Context, IS[Z, CoreExp.Base]] = transformISZ(r0.ctx, o2.args, transformCoreExpBase _)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe), args = r1.resultOpt.getOrElse(o2.args))))
+          else
+            TPostResult(r1.ctx, None())
         case o2: CoreExp.Select =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
           val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.tipe)
@@ -1353,12 +1361,6 @@ import CoreExpTransformer._
             TPostResult(r3.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), tExp = r1.resultOpt.getOrElse(o2.tExp), fExp = r2.resultOpt.getOrElse(o2.fExp), tipe = r3.resultOpt.getOrElse(o2.tipe))))
           else
             TPostResult(r3.ctx, None())
-        case o2: CoreExp.Tuple =>
-          val r0: TPostResult[Context, IS[Z, CoreExp.Base]] = transformISZ(preR.ctx, o2.args, transformCoreExpBase _)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args))))
-          else
-            TPostResult(r0.ctx, None())
         case o2: CoreExp.Apply =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
           val r1: TPostResult[Context, IS[Z, CoreExp.Base]] = transformISZ(r0.ctx, o2.args, transformCoreExpBase _)
