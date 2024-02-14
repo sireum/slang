@@ -40,6 +40,7 @@ import org.sireum._
     return string < other.string
   }
   @strictpure def isEquiv: B = F
+  @strictpure def shouldParen: B = F
 }
 
 object CoreExp {
@@ -176,8 +177,7 @@ object CoreExp {
     }
   }
 
-  @datatype class Binary(val left: Base, val op: String, val right: Base) extends Base {
-    @strictpure override def tipe: Typed = left.tipe
+  @datatype class Binary(val left: Base, val op: String, val right: Base, val tipe: Typed) extends Base {
     @pure def prettySTH(leftST: ST, rightST: ST): ST = {
       val leftOpOpt: Option[String] = left match {
         case left: Binary => Some(left.op)
@@ -212,6 +212,7 @@ object CoreExp {
       return thiz(left = left.numberPattern(numMap), right = right.numberPattern(numMap))
     }
     @strictpure override def isEquiv: B = op == Exp.BinaryOp.EquivUni
+    @strictpure override def shouldParen: B = T
   }
 
   @datatype class Unary(val op: Exp.UnaryOp.Type, exp: Base) extends Base {
@@ -253,6 +254,7 @@ object CoreExp {
       val thiz = this
       return thiz(exp = exp.numberPattern(numMap))
     }
+    @strictpure override def shouldParen: B = T
   }
 
   @datatype class Constructor(val tipe: Typed, args: ISZ[Base]) extends Base {
@@ -281,10 +283,10 @@ object CoreExp {
 
   @datatype class Select(val exp: Base, val id: String, val tipe: Typed) extends Base {
     @pure override def prettyST: ST = {
-      return st"${exp.prettyST}.$id"
+      return if (exp.shouldParen) st"(${exp.prettyST}).$id" else st"${exp.prettyST}.$id"
     }
     @pure override def prettyPatternST: ST = {
-      return st"${exp.prettyPatternST}.$id"
+      return if (exp.shouldParen) st"(${exp.prettyPatternST}).$id" else st"${exp.prettyPatternST}.$id"
     }
     @pure override def subst(sm: HashMap[String, Typed]): Select = {
       if (sm.isEmpty) {
@@ -399,6 +401,7 @@ object CoreExp {
       val thiz = this
       return thiz(cond = cond.numberPattern(numMap), tExp = tExp.numberPattern(numMap), fExp = fExp.numberPattern(numMap))
     }
+    @strictpure override def shouldParen: B = T
   }
 
   @datatype class Apply(val hasReceiver: B, val exp: Base, val args: ISZ[Base], val tipe: Typed) extends Base {
@@ -465,6 +468,7 @@ object CoreExp {
       val thiz = this
       return thiz(exp = exp.numberPattern(numMap))
     }
+    @strictpure override def shouldParen: B = T
   }
 
   @datatype class Quant(val kind: Quant.Kind.Type, val param: Param, val exp: Base) extends Base {
@@ -541,6 +545,7 @@ object CoreExp {
       val thiz = this
       return thiz(exp = exp.numberPattern(numMap))
     }
+    @strictpure override def shouldParen: B = T
   }
 
   @datatype class Arrow(val left: Base, val right: CoreExp) extends CoreExp {

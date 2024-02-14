@@ -1116,10 +1116,11 @@ import CoreExpTransformer._
         case o2: CoreExp.Binary =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.left)
           val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.right)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(left = r0.resultOpt.getOrElse(o2.left), right = r1.resultOpt.getOrElse(o2.right))))
+          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(left = r0.resultOpt.getOrElse(o2.left), right = r1.resultOpt.getOrElse(o2.right), tipe = r2.resultOpt.getOrElse(o2.tipe))))
           else
-            TPostResult(r1.ctx, None())
+            TPostResult(r2.ctx, None())
         case o2: CoreExp.Unary =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
           if (hasChanged || r0.resultOpt.nonEmpty)
@@ -1303,10 +1304,11 @@ import CoreExpTransformer._
         case o2: CoreExp.Binary =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.left)
           val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.right)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(left = r0.resultOpt.getOrElse(o2.left), right = r1.resultOpt.getOrElse(o2.right))))
+          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(left = r0.resultOpt.getOrElse(o2.left), right = r1.resultOpt.getOrElse(o2.right), tipe = r2.resultOpt.getOrElse(o2.tipe))))
           else
-            TPostResult(r1.ctx, None())
+            TPostResult(r2.ctx, None())
         case o2: CoreExp.Unary =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
           if (hasChanged || r0.resultOpt.nonEmpty)
