@@ -37,7 +37,9 @@ import org.sireum._
   @pure def subst(sm: HashMap[String, Typed]): CoreExp
   @pure def incDeBruijn(threshold: Z): CoreExp
   @pure def <(other: CoreExp): B = {
-    return string < other.string
+    val s1 = string
+    val s2 = other.string
+    return if (s1.size < s2.size) T else if (s2.size < s1.size) F else s1 < s2
   }
   @strictpure def isEquiv: B = F
   @strictpure def shouldParen: B = F
@@ -259,10 +261,12 @@ object CoreExp {
 
   @datatype class Constructor(val tipe: Typed, args: ISZ[Base]) extends Base {
     @pure override def prettyST: ST = {
-      return st"$tipe(${(for (arg <- args) yield arg.prettyST, ", ")})"
+      val tOpt: Option[Typed] = if (tipe.isInstanceOf[Typed.Tuple]) None() else Some(tipe)
+      return st"$tOpt(${(for (arg <- args) yield arg.prettyST, ", ")})"
     }
     @pure override def prettyPatternST: ST = {
-      return st"$tipe(${(for (arg <- args) yield arg.prettyPatternST, ", ")})"
+      val tOpt: Option[Typed] = if (tipe.isInstanceOf[Typed.Tuple]) None() else Some(tipe)
+      return st"$tOpt(${(for (arg <- args) yield arg.prettyPatternST, ", ")})"
     }
     @pure override def subst(sm: HashMap[String, Typed]): Constructor = {
       if (sm.isEmpty) {
