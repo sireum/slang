@@ -466,6 +466,7 @@ class SlangParser(
       case stat: Term.Return => translateReturn(enclosing, stat)
       case q"Spec(${_: Lit.String})" => translateSpecLabel(enclosing, stat)
       case q"Spec { ..$_ }" => translateSpecBlock(enclosing, stat)
+      case q"Spec ($_)" => translateSpecBlock(enclosing, stat)
       case q"Deduce(..$_)" => translateDeduce(enclosing, stat)
       case q"Contract(DataRefinement($_)(..$_)(..$_))" => translateDataRefinement(enclosing, stat)
       case q"Contract.Havoc(..$args)" => translateHavoc(enclosing, stat)
@@ -3640,8 +3641,10 @@ class SlangParser(
   }
 
   def translateSpecBlock(enclosing: Enclosing.Type, stat: Stat): AST.Stmt.SpecBlock = {
-    val q"Spec(${b: Term.Block})" = stat
-    AST.Stmt.SpecBlock(translateBlock(enclosing, b, isAssignExp = false))
+    stat match {
+      case q"Spec(${b: Term.Block})" => AST.Stmt.SpecBlock(translateBlock(enclosing, b, isAssignExp = false))
+      case q"Spec($stmt)" => AST.Stmt.SpecBlock(AST.Stmt.Block(AST.Body(ISZ(translateStat(enclosing)(stmt)), ISZ()), attr(stmt.pos)))
+    }
   }
 
   def translateStructuralInduction(n: AST.ProofAst.StepId, claim: AST.Exp, m: Term): AST.ProofAst.Step.StructInduction = {
