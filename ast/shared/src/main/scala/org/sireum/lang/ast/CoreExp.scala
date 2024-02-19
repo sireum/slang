@@ -30,7 +30,11 @@ import org.sireum._
 
 
 @datatype trait CoreExp {
-  @strictpure def tipe: Typed
+  @strictpure def rawType: Typed
+  @strictpure def tipe: Typed = rawType match {
+    case t: Typed.Method if t.tpe.isByName => t.tpe.ret
+    case t => t
+  }
   @pure def prettyST: ST
   @strictpure def prettyPatternST: ST
   @strictpure override def string: String = prettyST.render
@@ -63,59 +67,59 @@ object CoreExp {
   }
 
   @datatype class LitB(val value: B) extends Lit {
-    @strictpure override def tipe: Typed = Typed.b
+    @strictpure override def rawType: Typed = Typed.b
     @strictpure override def prettyST: ST = if (value) st"T" else st"F"
   }
 
   @datatype class LitC(val value: C) extends Lit {
-    @strictpure override def tipe: Typed = Typed.c
+    @strictpure override def rawType: Typed = Typed.c
     @pure override def prettyST: ST = {
       return st"'${ops.COps(value).escapeString}'"
     }
   }
 
   @datatype class LitZ(val value: Z) extends Lit {
-    @strictpure override def tipe: Typed = Typed.z
+    @strictpure override def rawType: Typed = Typed.z
     @strictpure override def prettyST: ST = st"$value"
   }
 
   @datatype class LitF32(val value: F32) extends Lit {
-    @strictpure override def tipe: Typed = Typed.f32
+    @strictpure override def rawType: Typed = Typed.f32
     @strictpure override def prettyST: ST = st"${value}f"
   }
 
   @datatype class LitF64(val value: F64) extends Lit {
-    @strictpure override def tipe: Typed = Typed.f64
+    @strictpure override def rawType: Typed = Typed.f64
     @strictpure override def prettyST: ST = st"${value}d"
   }
 
   @datatype class LitR(val value: R) extends Lit {
-    @strictpure override def tipe: Typed = Typed.r
+    @strictpure override def rawType: Typed = Typed.r
     @strictpure override def prettyST: ST = st"""r"$value""""
   }
 
   @datatype class LitString(val value: String) extends Lit {
-    @strictpure override def tipe: Typed = Typed.string
+    @strictpure override def rawType: Typed = Typed.string
     @pure override def prettyST: ST = {
       return st""""${ops.StringOps(value).escapeST}""""
     }
   }
 
-  @datatype class LitRange(val value: Z, val tipe: Typed) extends Lit {
+  @datatype class LitRange(val value: Z, val rawType: Typed) extends Lit {
     @pure override def prettyST: ST = {
       val ids = tipe.asInstanceOf[Typed.Name].ids
       return st"""${ops.StringOps(ids(ids.size - 1)).toLower}"$value""""
     }
   }
 
-  @datatype class LitBits(val value: String, val tipe: Typed) extends Lit {
+  @datatype class LitBits(val value: String, val rawType: Typed) extends Lit {
     @pure override def prettyST: ST = {
       val ids = tipe.asInstanceOf[Typed.Name].ids
       return st"""${ops.StringOps(ids(ids.size - 1)).toLower}"$value""""
     }
   }
 
-  @datatype class ParamVarRef(val deBruijn: Z, @hidden val id: String, @hidden val tipe: Typed) extends Base {
+  @datatype class ParamVarRef(val deBruijn: Z, @hidden val id: String, @hidden val rawType: Typed) extends Base {
     @strictpure override def prettyST: ST = st"$id"
     @strictpure override def prettyPatternST: ST = prettyST
     @pure override def subst(sm: HashMap[String, Typed]): ParamVarRef = {
@@ -123,7 +127,7 @@ object CoreExp {
         return this
       }
       val thiz = this
-      return thiz(tipe = tipe.subst(sm))
+      return thiz(rawType = rawType.subst(sm))
     }
     @pure def incDeBruijn(threshold: Z): ParamVarRef = {
       val thiz = this
@@ -134,7 +138,7 @@ object CoreExp {
     }
   }
 
-  @datatype class LocalVarRef(val isPattern: B, val context: ISZ[String], val id: String, val tipe: Typed) extends Base {
+  @datatype class LocalVarRef(val isPattern: B, val context: ISZ[String], val id: String, val rawType: Typed) extends Base {
     @strictpure override def prettyST: ST = st"$id"
     @strictpure override def prettyPatternST: ST = st"${if (isPattern) "?" else ""}$id"
     @pure override def subst(sm: HashMap[String, Typed]): LocalVarRef = {
@@ -142,7 +146,7 @@ object CoreExp {
         return this
       }
       val thiz = this
-      return thiz(tipe = tipe.subst(sm))
+      return thiz(rawType = rawType.subst(sm))
     }
     @strictpure def incDeBruijn(threshold: Z): LocalVarRef = this
     override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
@@ -156,14 +160,14 @@ object CoreExp {
             n
         }
         val thiz = this
-        return thiz(context = ISZ(), id = num.string, tipe = Typed.nothing)
+        return thiz(context = ISZ(), id = num.string, rawType = Typed.nothing)
       } else {
         return this
       }
     }
   }
 
-  @datatype class ObjectVarRef(val owner: ISZ[String], val id: String, val tipe: Typed) extends Base {
+  @datatype class ObjectVarRef(val owner: ISZ[String], val id: String, val rawType: Typed) extends Base {
     @strictpure override def prettyST: ST = if (owner.isEmpty) st"$id" else st"${owner(owner.size - 1)}.$id"
     @strictpure override def prettyPatternST: ST = prettyST
     @pure override def subst(sm: HashMap[String, Typed]): ObjectVarRef = {
@@ -171,7 +175,7 @@ object CoreExp {
         return this
       }
       val thiz = this
-      return thiz(tipe = tipe.subst(sm))
+      return thiz(rawType = rawType.subst(sm))
     }
     @strictpure def incDeBruijn(threshold: Z): ObjectVarRef = this
     override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
@@ -179,7 +183,7 @@ object CoreExp {
     }
   }
 
-  @datatype class Binary(val left: Base, val op: String, val right: Base, val tipe: Typed) extends Base {
+  @datatype class Binary(val left: Base, val op: String, val right: Base, val rawType: Typed) extends Base {
     @pure def prettySTH(leftST: ST, rightST: ST): ST = {
       val leftOpOpt: Option[String] = left match {
         case left: Binary => Some(left.op)
@@ -218,7 +222,7 @@ object CoreExp {
   }
 
   @datatype class Unary(val op: Exp.UnaryOp.Type, exp: Base) extends Base {
-    @strictpure override def tipe: Typed = exp.tipe
+    @strictpure override def rawType: Typed = exp.tipe
     @pure def prettySTH(expST: ST): ST = {
       val paren: B = exp match {
         case _: CoreExp.LocalVarRef => F
@@ -262,7 +266,7 @@ object CoreExp {
     @strictpure override def shouldParen: B = T
   }
 
-  @datatype class Constructor(val tipe: Typed, args: ISZ[Base]) extends Base {
+  @datatype class Constructor(val rawType: Typed, args: ISZ[Base]) extends Base {
     @pure override def prettyST: ST = {
       val tOpt: Option[Typed] = if (tipe.isInstanceOf[Typed.Tuple]) None() else Some(tipe)
       return st"$tOpt(${(for (arg <- args) yield arg.prettyST, ", ")})"
@@ -288,7 +292,7 @@ object CoreExp {
     }
   }
 
-  @datatype class Select(val exp: Base, val id: String, val tipe: Typed) extends Base {
+  @datatype class Select(val exp: Base, val id: String, val rawType: Typed) extends Base {
     @pure override def prettyST: ST = {
       return if (exp.shouldParen) st"(${exp.prettyST}).$id" else st"${exp.prettyST}.$id"
     }
@@ -300,7 +304,7 @@ object CoreExp {
         return this
       }
       val thiz = this
-      return thiz(exp = exp.subst(sm), tipe = tipe.subst(sm))
+      return thiz(exp = exp.subst(sm), rawType = rawType.subst(sm))
     }
     @pure def incDeBruijn(threshold: Z): Select = {
       val thiz = this
@@ -312,7 +316,7 @@ object CoreExp {
     }
   }
 
-  @datatype class Update(val exp: Base, val id: String, val arg: Base, val tipe: Typed) extends Base {
+  @datatype class Update(val exp: Base, val id: String, val arg: Base, val rawType: Typed) extends Base {
     @pure override def prettyST: ST = {
       return st"${exp.prettyST}($id = ${arg.prettyST})"
     }
@@ -324,7 +328,7 @@ object CoreExp {
         return this
       }
       val thiz = this
-      return thiz(exp = exp.subst(sm), arg = arg.subst(sm), tipe = tipe.subst(sm))
+      return thiz(exp = exp.subst(sm), arg = arg.subst(sm), rawType = rawType.subst(sm))
     }
     @pure def incDeBruijn(threshold: Z): Update = {
       val thiz = this
@@ -336,7 +340,7 @@ object CoreExp {
     }
   }
 
-  @datatype class Indexing(val exp: Base, val index: Base, val tipe: Typed) extends Base {
+  @datatype class Indexing(val exp: Base, val index: Base, val rawType: Typed) extends Base {
     @pure override def prettyST: ST = {
       return st"${exp.prettyST}(${index.prettyST})"
     }
@@ -348,7 +352,7 @@ object CoreExp {
         return this
       }
       val thiz = this
-      return thiz(exp = exp.subst(sm), index = index.subst(sm), tipe = tipe.subst(sm))
+      return thiz(exp = exp.subst(sm), index = index.subst(sm), rawType = rawType.subst(sm))
     }
     @pure def incDeBruijn(threshold: Z): Indexing = {
       val thiz = this
@@ -360,7 +364,7 @@ object CoreExp {
     }
   }
 
-  @datatype class IndexingUpdate(val exp: Base, val index: Base, val arg: Base, val tipe: Typed) extends Base {
+  @datatype class IndexingUpdate(val exp: Base, val index: Base, val arg: Base, val rawType: Typed) extends Base {
     @pure override def prettyST: ST = {
       return st"${exp.prettyST}(${index.prettyST} ~> ${arg.prettyST})"
     }
@@ -372,7 +376,7 @@ object CoreExp {
         return this
       }
       val thiz = this
-      return thiz(exp = exp.subst(sm), index = index.subst(sm), arg = arg.subst(sm), tipe = tipe.subst(sm))
+      return thiz(exp = exp.subst(sm), index = index.subst(sm), arg = arg.subst(sm), rawType = rawType.subst(sm))
     }
     @pure def incDeBruijn(threshold: Z): IndexingUpdate = {
       val thiz = this
@@ -384,7 +388,7 @@ object CoreExp {
     }
   }
 
-  @datatype class If(val cond: Base, val tExp: Base, val fExp: Base, val tipe: Typed) extends Base {
+  @datatype class If(val cond: Base, val tExp: Base, val fExp: Base, val rawType: Typed) extends Base {
     @pure override def prettyST: ST = {
       return st"""if (${cond.prettyST}) ${tExp.prettyST}
                  |else ${fExp.prettyST}"""
@@ -398,7 +402,7 @@ object CoreExp {
         return this
       }
       val thiz = this
-      return thiz(cond = cond.subst(sm), tExp = tExp.subst(sm), fExp = fExp.subst(sm), tipe = tipe.subst(sm))
+      return thiz(cond = cond.subst(sm), tExp = tExp.subst(sm), fExp = fExp.subst(sm), rawType = rawType.subst(sm))
     }
     @pure def incDeBruijn(threshold: Z): If = {
       val thiz = this
@@ -411,7 +415,7 @@ object CoreExp {
     @strictpure override def shouldParen: B = T
   }
 
-  @datatype class Apply(val hasReceiver: B, val exp: Base, val args: ISZ[Base], val tipe: Typed) extends Base {
+  @datatype class Apply(val hasReceiver: B, val exp: Base, val args: ISZ[Base], val rawType: Typed) extends Base {
     @pure override def prettyST: ST = {
       return if (hasReceiver) st"${args(0).prettyST}.${exp.prettyST}(${(for (arg <- ops.ISZOps(args).drop(1)) yield arg.prettyST, ", ")})"
       else st"${exp.prettyST}(${(for (arg <- args) yield arg.prettyST, ", ")})"
@@ -425,7 +429,7 @@ object CoreExp {
         return this
       }
       val thiz = this
-      return thiz(exp = exp.subst(sm), args = for (arg <- args) yield arg.subst(sm), tipe = tipe.subst(sm))
+      return thiz(exp = exp.subst(sm), args = for (arg <- args) yield arg.subst(sm), rawType = rawType.subst(sm))
     }
     @pure def incDeBruijn(threshold: Z): Apply = {
       val thiz = this
@@ -459,7 +463,7 @@ object CoreExp {
     @pure def prettyPatternST: ST = {
       return prettySTH(exp.prettyPatternST)
     }
-    @strictpure override def tipe: Typed = Typed.Fun(T, F, ISZ(param.tipe), exp.tipe)
+    @strictpure override def rawType: Typed = Typed.Fun(T, F, ISZ(param.tipe), exp.tipe)
     @pure override def subst(sm: HashMap[String, Typed]): Fun = {
       if (sm.isEmpty) {
         return this
@@ -479,7 +483,7 @@ object CoreExp {
   }
 
   @datatype class Quant(val kind: Quant.Kind.Type, val param: Param, val exp: Base) extends Base {
-    @strictpure override def tipe: Typed = Typed.b
+    @strictpure override def rawType: Typed = Typed.b
     @pure def prettySTH(expST: ST): ST = {
       var params = ISZ[ST](param.prettyST)
       var e = exp
@@ -534,7 +538,7 @@ object CoreExp {
     @strictpure def prettyST: ST = st"$id: $tipe"
   }
 
-  @datatype class InstanceOfExp(val isTest: B, val exp: Base, val tipe: Typed) extends Base {
+  @datatype class InstanceOfExp(val isTest: B, val exp: Base, val rawType: Typed) extends Base {
     @strictpure def prettyST: ST = st"${exp.prettyST}.${if (isTest) "i" else "a"}sInstanceOf[$tipe]"
     @strictpure def prettyPatternST: ST = st"${exp.prettyPatternST}.${if (isTest) "i" else "a"}sInstanceOf[$tipe]"
     @pure override def subst(sm: HashMap[String, Typed]): InstanceOfExp = {
@@ -542,7 +546,7 @@ object CoreExp {
         return this
       }
       val thiz = this
-      return thiz(exp = exp.subst(sm), tipe = tipe.subst(sm))
+      return thiz(exp = exp.subst(sm), rawType = rawType.subst(sm))
     }
     @pure def incDeBruijn(threshold: Z): InstanceOfExp = {
       val thiz = this
@@ -556,7 +560,7 @@ object CoreExp {
   }
 
   @datatype class Arrow(val left: Base, val right: CoreExp) extends CoreExp {
-    @pure override def tipe: Typed = {
+    @pure override def rawType: Typed = {
       return Typed.b
     }
     @pure def prettySTH(leftST: ST, rightST: ST): ST = {

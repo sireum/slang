@@ -1084,41 +1084,41 @@ import CoreExpTransformer._
           else
             TPostResult(preR.ctx, None())
         case o2: CoreExp.LitRange =>
-          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r0.ctx, Some(o2(rawType = r0.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r0.ctx, None())
         case o2: CoreExp.LitBits =>
-          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r0.ctx, Some(o2(rawType = r0.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r0.ctx, None())
         case o2: CoreExp.ParamVarRef =>
-          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r0.ctx, Some(o2(rawType = r0.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r0.ctx, None())
         case o2: CoreExp.LocalVarRef =>
-          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r0.ctx, Some(o2(rawType = r0.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r0.ctx, None())
         case o2: CoreExp.ObjectVarRef =>
-          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r0.ctx, Some(o2(rawType = r0.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r0.ctx, None())
         case o2: CoreExp.Binary =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.left)
           val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.right)
-          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.tipe)
+          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            TPostResult(r2.ctx, Some(o2(left = r0.resultOpt.getOrElse(o2.left), right = r1.resultOpt.getOrElse(o2.right), tipe = r2.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r2.ctx, Some(o2(left = r0.resultOpt.getOrElse(o2.left), right = r1.resultOpt.getOrElse(o2.right), rawType = r2.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r2.ctx, None())
         case o2: CoreExp.Unary =>
@@ -1128,59 +1128,59 @@ import CoreExpTransformer._
           else
             TPostResult(r0.ctx, None())
         case o2: CoreExp.Constructor =>
-          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.rawType)
           val r1: TPostResult[Context, IS[Z, CoreExp.Base]] = transformISZ(r0.ctx, o2.args, transformCoreExpBase _)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe), args = r1.resultOpt.getOrElse(o2.args))))
+            TPostResult(r1.ctx, Some(o2(rawType = r0.resultOpt.getOrElse(o2.rawType), args = r1.resultOpt.getOrElse(o2.args))))
           else
             TPostResult(r1.ctx, None())
         case o2: CoreExp.Select =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
-          val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.tipe)
+          val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), tipe = r1.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), rawType = r1.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r1.ctx, None())
         case o2: CoreExp.Update =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
           val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.arg)
-          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.tipe)
+          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), arg = r1.resultOpt.getOrElse(o2.arg), tipe = r2.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), arg = r1.resultOpt.getOrElse(o2.arg), rawType = r2.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r2.ctx, None())
         case o2: CoreExp.Indexing =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
           val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.index)
-          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.tipe)
+          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), index = r1.resultOpt.getOrElse(o2.index), tipe = r2.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), index = r1.resultOpt.getOrElse(o2.index), rawType = r2.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r2.ctx, None())
         case o2: CoreExp.IndexingUpdate =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
           val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.index)
           val r2: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r1.ctx, o2.arg)
-          val r3: TPostResult[Context, Typed] = transformTyped(r2.ctx, o2.tipe)
+          val r3: TPostResult[Context, Typed] = transformTyped(r2.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
-            TPostResult(r3.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), index = r1.resultOpt.getOrElse(o2.index), arg = r2.resultOpt.getOrElse(o2.arg), tipe = r3.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r3.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), index = r1.resultOpt.getOrElse(o2.index), arg = r2.resultOpt.getOrElse(o2.arg), rawType = r3.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r3.ctx, None())
         case o2: CoreExp.If =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.cond)
           val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.tExp)
           val r2: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r1.ctx, o2.fExp)
-          val r3: TPostResult[Context, Typed] = transformTyped(r2.ctx, o2.tipe)
+          val r3: TPostResult[Context, Typed] = transformTyped(r2.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
-            TPostResult(r3.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), tExp = r1.resultOpt.getOrElse(o2.tExp), fExp = r2.resultOpt.getOrElse(o2.fExp), tipe = r3.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r3.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), tExp = r1.resultOpt.getOrElse(o2.tExp), fExp = r2.resultOpt.getOrElse(o2.fExp), rawType = r3.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r3.ctx, None())
         case o2: CoreExp.Apply =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
           val r1: TPostResult[Context, IS[Z, CoreExp.Base]] = transformISZ(r0.ctx, o2.args, transformCoreExpBase _)
-          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.tipe)
+          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), args = r1.resultOpt.getOrElse(o2.args), tipe = r2.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), args = r1.resultOpt.getOrElse(o2.args), rawType = r2.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r2.ctx, None())
         case o2: CoreExp.Fun =>
@@ -1199,9 +1199,9 @@ import CoreExpTransformer._
             TPostResult(r1.ctx, None())
         case o2: CoreExp.InstanceOfExp =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
-          val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.tipe)
+          val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), tipe = r1.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), rawType = r1.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r1.ctx, None())
         case o2: CoreExp.Arrow =>
@@ -1272,41 +1272,41 @@ import CoreExpTransformer._
           else
             TPostResult(preR.ctx, None())
         case o2: CoreExp.LitRange =>
-          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r0.ctx, Some(o2(rawType = r0.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r0.ctx, None())
         case o2: CoreExp.LitBits =>
-          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r0.ctx, Some(o2(rawType = r0.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r0.ctx, None())
         case o2: CoreExp.ParamVarRef =>
-          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r0.ctx, Some(o2(rawType = r0.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r0.ctx, None())
         case o2: CoreExp.LocalVarRef =>
-          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r0.ctx, Some(o2(rawType = r0.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r0.ctx, None())
         case o2: CoreExp.ObjectVarRef =>
-          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r0.ctx, Some(o2(rawType = r0.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r0.ctx, None())
         case o2: CoreExp.Binary =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.left)
           val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.right)
-          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.tipe)
+          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            TPostResult(r2.ctx, Some(o2(left = r0.resultOpt.getOrElse(o2.left), right = r1.resultOpt.getOrElse(o2.right), tipe = r2.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r2.ctx, Some(o2(left = r0.resultOpt.getOrElse(o2.left), right = r1.resultOpt.getOrElse(o2.right), rawType = r2.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r2.ctx, None())
         case o2: CoreExp.Unary =>
@@ -1316,59 +1316,59 @@ import CoreExpTransformer._
           else
             TPostResult(r0.ctx, None())
         case o2: CoreExp.Constructor =>
-          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.rawType)
           val r1: TPostResult[Context, IS[Z, CoreExp.Base]] = transformISZ(r0.ctx, o2.args, transformCoreExpBase _)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe), args = r1.resultOpt.getOrElse(o2.args))))
+            TPostResult(r1.ctx, Some(o2(rawType = r0.resultOpt.getOrElse(o2.rawType), args = r1.resultOpt.getOrElse(o2.args))))
           else
             TPostResult(r1.ctx, None())
         case o2: CoreExp.Select =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
-          val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.tipe)
+          val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), tipe = r1.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), rawType = r1.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r1.ctx, None())
         case o2: CoreExp.Update =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
           val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.arg)
-          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.tipe)
+          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), arg = r1.resultOpt.getOrElse(o2.arg), tipe = r2.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), arg = r1.resultOpt.getOrElse(o2.arg), rawType = r2.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r2.ctx, None())
         case o2: CoreExp.Indexing =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
           val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.index)
-          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.tipe)
+          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), index = r1.resultOpt.getOrElse(o2.index), tipe = r2.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), index = r1.resultOpt.getOrElse(o2.index), rawType = r2.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r2.ctx, None())
         case o2: CoreExp.IndexingUpdate =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
           val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.index)
           val r2: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r1.ctx, o2.arg)
-          val r3: TPostResult[Context, Typed] = transformTyped(r2.ctx, o2.tipe)
+          val r3: TPostResult[Context, Typed] = transformTyped(r2.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
-            TPostResult(r3.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), index = r1.resultOpt.getOrElse(o2.index), arg = r2.resultOpt.getOrElse(o2.arg), tipe = r3.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r3.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), index = r1.resultOpt.getOrElse(o2.index), arg = r2.resultOpt.getOrElse(o2.arg), rawType = r3.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r3.ctx, None())
         case o2: CoreExp.If =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.cond)
           val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.tExp)
           val r2: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r1.ctx, o2.fExp)
-          val r3: TPostResult[Context, Typed] = transformTyped(r2.ctx, o2.tipe)
+          val r3: TPostResult[Context, Typed] = transformTyped(r2.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
-            TPostResult(r3.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), tExp = r1.resultOpt.getOrElse(o2.tExp), fExp = r2.resultOpt.getOrElse(o2.fExp), tipe = r3.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r3.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), tExp = r1.resultOpt.getOrElse(o2.tExp), fExp = r2.resultOpt.getOrElse(o2.fExp), rawType = r3.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r3.ctx, None())
         case o2: CoreExp.Apply =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
           val r1: TPostResult[Context, IS[Z, CoreExp.Base]] = transformISZ(r0.ctx, o2.args, transformCoreExpBase _)
-          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.tipe)
+          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), args = r1.resultOpt.getOrElse(o2.args), tipe = r2.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), args = r1.resultOpt.getOrElse(o2.args), rawType = r2.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r2.ctx, None())
         case o2: CoreExp.Fun =>
@@ -1387,9 +1387,9 @@ import CoreExpTransformer._
             TPostResult(r1.ctx, None())
         case o2: CoreExp.InstanceOfExp =>
           val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
-          val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.tipe)
+          val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), tipe = r1.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), rawType = r1.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r1.ctx, None())
       }
@@ -1453,15 +1453,15 @@ import CoreExpTransformer._
           else
             TPostResult(preR.ctx, None())
         case o2: CoreExp.LitRange =>
-          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r0.ctx, Some(o2(rawType = r0.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r0.ctx, None())
         case o2: CoreExp.LitBits =>
-          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r0.ctx, Some(o2(rawType = r0.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r0.ctx, None())
       }

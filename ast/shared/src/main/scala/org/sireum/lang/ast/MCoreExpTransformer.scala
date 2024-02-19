@@ -1224,41 +1224,41 @@ import MCoreExpTransformer._
           else
             MNone()
         case o2: CoreExp.LitRange =>
-          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          val r0: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty)
-            MSome(o2(tipe = r0.getOrElse(o2.tipe)))
+            MSome(o2(rawType = r0.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.LitBits =>
-          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          val r0: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty)
-            MSome(o2(tipe = r0.getOrElse(o2.tipe)))
+            MSome(o2(rawType = r0.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.ParamVarRef =>
-          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          val r0: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty)
-            MSome(o2(tipe = r0.getOrElse(o2.tipe)))
+            MSome(o2(rawType = r0.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.LocalVarRef =>
-          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          val r0: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty)
-            MSome(o2(tipe = r0.getOrElse(o2.tipe)))
+            MSome(o2(rawType = r0.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.ObjectVarRef =>
-          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          val r0: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty)
-            MSome(o2(tipe = r0.getOrElse(o2.tipe)))
+            MSome(o2(rawType = r0.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.Binary =>
           val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.left)
           val r1: MOption[CoreExp.Base] = transformCoreExpBase(o2.right)
-          val r2: MOption[Typed] = transformTyped(o2.tipe)
+          val r2: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(left = r0.getOrElse(o2.left), right = r1.getOrElse(o2.right), tipe = r2.getOrElse(o2.tipe)))
+            MSome(o2(left = r0.getOrElse(o2.left), right = r1.getOrElse(o2.right), rawType = r2.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.Unary =>
@@ -1268,59 +1268,59 @@ import MCoreExpTransformer._
           else
             MNone()
         case o2: CoreExp.Constructor =>
-          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          val r0: MOption[Typed] = transformTyped(o2.rawType)
           val r1: MOption[IS[Z, CoreExp.Base]] = transformISZ(o2.args, transformCoreExpBase _)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(tipe = r0.getOrElse(o2.tipe), args = r1.getOrElse(o2.args)))
+            MSome(o2(rawType = r0.getOrElse(o2.rawType), args = r1.getOrElse(o2.args)))
           else
             MNone()
         case o2: CoreExp.Select =>
           val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
-          val r1: MOption[Typed] = transformTyped(o2.tipe)
+          val r1: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(exp = r0.getOrElse(o2.exp), tipe = r1.getOrElse(o2.tipe)))
+            MSome(o2(exp = r0.getOrElse(o2.exp), rawType = r1.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.Update =>
           val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
           val r1: MOption[CoreExp.Base] = transformCoreExpBase(o2.arg)
-          val r2: MOption[Typed] = transformTyped(o2.tipe)
+          val r2: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(exp = r0.getOrElse(o2.exp), arg = r1.getOrElse(o2.arg), tipe = r2.getOrElse(o2.tipe)))
+            MSome(o2(exp = r0.getOrElse(o2.exp), arg = r1.getOrElse(o2.arg), rawType = r2.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.Indexing =>
           val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
           val r1: MOption[CoreExp.Base] = transformCoreExpBase(o2.index)
-          val r2: MOption[Typed] = transformTyped(o2.tipe)
+          val r2: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(exp = r0.getOrElse(o2.exp), index = r1.getOrElse(o2.index), tipe = r2.getOrElse(o2.tipe)))
+            MSome(o2(exp = r0.getOrElse(o2.exp), index = r1.getOrElse(o2.index), rawType = r2.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.IndexingUpdate =>
           val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
           val r1: MOption[CoreExp.Base] = transformCoreExpBase(o2.index)
           val r2: MOption[CoreExp.Base] = transformCoreExpBase(o2.arg)
-          val r3: MOption[Typed] = transformTyped(o2.tipe)
+          val r3: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-            MSome(o2(exp = r0.getOrElse(o2.exp), index = r1.getOrElse(o2.index), arg = r2.getOrElse(o2.arg), tipe = r3.getOrElse(o2.tipe)))
+            MSome(o2(exp = r0.getOrElse(o2.exp), index = r1.getOrElse(o2.index), arg = r2.getOrElse(o2.arg), rawType = r3.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.If =>
           val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.cond)
           val r1: MOption[CoreExp.Base] = transformCoreExpBase(o2.tExp)
           val r2: MOption[CoreExp.Base] = transformCoreExpBase(o2.fExp)
-          val r3: MOption[Typed] = transformTyped(o2.tipe)
+          val r3: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-            MSome(o2(cond = r0.getOrElse(o2.cond), tExp = r1.getOrElse(o2.tExp), fExp = r2.getOrElse(o2.fExp), tipe = r3.getOrElse(o2.tipe)))
+            MSome(o2(cond = r0.getOrElse(o2.cond), tExp = r1.getOrElse(o2.tExp), fExp = r2.getOrElse(o2.fExp), rawType = r3.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.Apply =>
           val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
           val r1: MOption[IS[Z, CoreExp.Base]] = transformISZ(o2.args, transformCoreExpBase _)
-          val r2: MOption[Typed] = transformTyped(o2.tipe)
+          val r2: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(exp = r0.getOrElse(o2.exp), args = r1.getOrElse(o2.args), tipe = r2.getOrElse(o2.tipe)))
+            MSome(o2(exp = r0.getOrElse(o2.exp), args = r1.getOrElse(o2.args), rawType = r2.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.Fun =>
@@ -1339,9 +1339,9 @@ import MCoreExpTransformer._
             MNone()
         case o2: CoreExp.InstanceOfExp =>
           val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
-          val r1: MOption[Typed] = transformTyped(o2.tipe)
+          val r1: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(exp = r0.getOrElse(o2.exp), tipe = r1.getOrElse(o2.tipe)))
+            MSome(o2(exp = r0.getOrElse(o2.exp), rawType = r1.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.Arrow =>
@@ -1412,41 +1412,41 @@ import MCoreExpTransformer._
           else
             MNone()
         case o2: CoreExp.LitRange =>
-          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          val r0: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty)
-            MSome(o2(tipe = r0.getOrElse(o2.tipe)))
+            MSome(o2(rawType = r0.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.LitBits =>
-          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          val r0: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty)
-            MSome(o2(tipe = r0.getOrElse(o2.tipe)))
+            MSome(o2(rawType = r0.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.ParamVarRef =>
-          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          val r0: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty)
-            MSome(o2(tipe = r0.getOrElse(o2.tipe)))
+            MSome(o2(rawType = r0.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.LocalVarRef =>
-          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          val r0: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty)
-            MSome(o2(tipe = r0.getOrElse(o2.tipe)))
+            MSome(o2(rawType = r0.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.ObjectVarRef =>
-          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          val r0: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty)
-            MSome(o2(tipe = r0.getOrElse(o2.tipe)))
+            MSome(o2(rawType = r0.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.Binary =>
           val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.left)
           val r1: MOption[CoreExp.Base] = transformCoreExpBase(o2.right)
-          val r2: MOption[Typed] = transformTyped(o2.tipe)
+          val r2: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(left = r0.getOrElse(o2.left), right = r1.getOrElse(o2.right), tipe = r2.getOrElse(o2.tipe)))
+            MSome(o2(left = r0.getOrElse(o2.left), right = r1.getOrElse(o2.right), rawType = r2.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.Unary =>
@@ -1456,59 +1456,59 @@ import MCoreExpTransformer._
           else
             MNone()
         case o2: CoreExp.Constructor =>
-          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          val r0: MOption[Typed] = transformTyped(o2.rawType)
           val r1: MOption[IS[Z, CoreExp.Base]] = transformISZ(o2.args, transformCoreExpBase _)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(tipe = r0.getOrElse(o2.tipe), args = r1.getOrElse(o2.args)))
+            MSome(o2(rawType = r0.getOrElse(o2.rawType), args = r1.getOrElse(o2.args)))
           else
             MNone()
         case o2: CoreExp.Select =>
           val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
-          val r1: MOption[Typed] = transformTyped(o2.tipe)
+          val r1: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(exp = r0.getOrElse(o2.exp), tipe = r1.getOrElse(o2.tipe)))
+            MSome(o2(exp = r0.getOrElse(o2.exp), rawType = r1.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.Update =>
           val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
           val r1: MOption[CoreExp.Base] = transformCoreExpBase(o2.arg)
-          val r2: MOption[Typed] = transformTyped(o2.tipe)
+          val r2: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(exp = r0.getOrElse(o2.exp), arg = r1.getOrElse(o2.arg), tipe = r2.getOrElse(o2.tipe)))
+            MSome(o2(exp = r0.getOrElse(o2.exp), arg = r1.getOrElse(o2.arg), rawType = r2.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.Indexing =>
           val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
           val r1: MOption[CoreExp.Base] = transformCoreExpBase(o2.index)
-          val r2: MOption[Typed] = transformTyped(o2.tipe)
+          val r2: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(exp = r0.getOrElse(o2.exp), index = r1.getOrElse(o2.index), tipe = r2.getOrElse(o2.tipe)))
+            MSome(o2(exp = r0.getOrElse(o2.exp), index = r1.getOrElse(o2.index), rawType = r2.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.IndexingUpdate =>
           val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
           val r1: MOption[CoreExp.Base] = transformCoreExpBase(o2.index)
           val r2: MOption[CoreExp.Base] = transformCoreExpBase(o2.arg)
-          val r3: MOption[Typed] = transformTyped(o2.tipe)
+          val r3: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-            MSome(o2(exp = r0.getOrElse(o2.exp), index = r1.getOrElse(o2.index), arg = r2.getOrElse(o2.arg), tipe = r3.getOrElse(o2.tipe)))
+            MSome(o2(exp = r0.getOrElse(o2.exp), index = r1.getOrElse(o2.index), arg = r2.getOrElse(o2.arg), rawType = r3.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.If =>
           val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.cond)
           val r1: MOption[CoreExp.Base] = transformCoreExpBase(o2.tExp)
           val r2: MOption[CoreExp.Base] = transformCoreExpBase(o2.fExp)
-          val r3: MOption[Typed] = transformTyped(o2.tipe)
+          val r3: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-            MSome(o2(cond = r0.getOrElse(o2.cond), tExp = r1.getOrElse(o2.tExp), fExp = r2.getOrElse(o2.fExp), tipe = r3.getOrElse(o2.tipe)))
+            MSome(o2(cond = r0.getOrElse(o2.cond), tExp = r1.getOrElse(o2.tExp), fExp = r2.getOrElse(o2.fExp), rawType = r3.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.Apply =>
           val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
           val r1: MOption[IS[Z, CoreExp.Base]] = transformISZ(o2.args, transformCoreExpBase _)
-          val r2: MOption[Typed] = transformTyped(o2.tipe)
+          val r2: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(exp = r0.getOrElse(o2.exp), args = r1.getOrElse(o2.args), tipe = r2.getOrElse(o2.tipe)))
+            MSome(o2(exp = r0.getOrElse(o2.exp), args = r1.getOrElse(o2.args), rawType = r2.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.Fun =>
@@ -1527,9 +1527,9 @@ import MCoreExpTransformer._
             MNone()
         case o2: CoreExp.InstanceOfExp =>
           val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
-          val r1: MOption[Typed] = transformTyped(o2.tipe)
+          val r1: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(exp = r0.getOrElse(o2.exp), tipe = r1.getOrElse(o2.tipe)))
+            MSome(o2(exp = r0.getOrElse(o2.exp), rawType = r1.getOrElse(o2.rawType)))
           else
             MNone()
       }
@@ -1593,15 +1593,15 @@ import MCoreExpTransformer._
           else
             MNone()
         case o2: CoreExp.LitRange =>
-          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          val r0: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty)
-            MSome(o2(tipe = r0.getOrElse(o2.tipe)))
+            MSome(o2(rawType = r0.getOrElse(o2.rawType)))
           else
             MNone()
         case o2: CoreExp.LitBits =>
-          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          val r0: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty)
-            MSome(o2(tipe = r0.getOrElse(o2.tipe)))
+            MSome(o2(rawType = r0.getOrElse(o2.rawType)))
           else
             MNone()
       }
