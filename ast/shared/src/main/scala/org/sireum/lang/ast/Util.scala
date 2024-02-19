@@ -790,26 +790,26 @@ object Util {
     }
   }
 
-  @pure def getLhsGroundExp(thisOpt: Option[Typed], lhs: Exp): Option[Exp] = {
+  @pure def getLhsGroundExp(thisOwner: ISZ[String], thisOpt: Option[Typed], lhs: Exp): Option[Exp] = {
     lhs match {
       case lhs: Exp.Ident =>
         lhs.resOpt match {
           case Some(_: ResolvedInfo.LocalVar) => return Some(lhs)
           case Some(res: ResolvedInfo.Var) =>
-            return Some(if (res.isInObject) lhs else Exp.This(TypedAttr(lhs.posOpt, thisOpt)))
+            return Some(if (res.isInObject) lhs else Exp.This(thisOwner, TypedAttr(lhs.posOpt, thisOpt)))
           case _ => return None()
         }
       case lhs: Exp.Select =>
         lhs.resOpt match {
           case Some(_: ResolvedInfo.LocalVar) => return Some(lhs)
           case Some(res: ResolvedInfo.Var) if res.isInObject => return Some(lhs)
-          case _ => return getLhsGroundExp(thisOpt, lhs.receiverOpt.get)
+          case _ => return getLhsGroundExp(thisOwner, thisOpt, lhs.receiverOpt.get)
         }
       case lhs: Exp.This => return Some(lhs)
       case lhs: Exp.Invoke =>
         lhs.receiverOpt match {
-          case Some(rcv) => return getLhsGroundExp(thisOpt, rcv)
-          case _ => return getLhsGroundExp(thisOpt, lhs.ident)
+          case Some(rcv) => return getLhsGroundExp(thisOwner, thisOpt, rcv)
+          case _ => return getLhsGroundExp(thisOwner, thisOpt, lhs.ident)
         }
       case _ => return None()
     }

@@ -1486,7 +1486,7 @@ object Exp {
     }
   }
 
-  @datatype class This(@hidden val attr: TypedAttr) extends Exp {
+  @datatype class This(val owner: ISZ[String], @hidden val attr: TypedAttr) extends Exp {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
     @strictpure override def prettyST: ST = st"this"

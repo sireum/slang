@@ -1550,6 +1550,7 @@ object MsgPack {
 
     def write_astExpThis(o: org.sireum.lang.ast.Exp.This): Unit = {
       writer.writeZ(Constants._astExpThis)
+      writer.writeISZ(o.owner, writer.writeString _)
       write_astTypedAttr(o.attr)
     }
 
@@ -4300,8 +4301,9 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astExpThis)
       }
+      val owner = reader.readISZ(reader.readString _)
       val attr = read_astTypedAttr()
-      return org.sireum.lang.ast.Exp.This(attr)
+      return org.sireum.lang.ast.Exp.This(owner, attr)
     }
 
     def read_astExpSuper(): org.sireum.lang.ast.Exp.Super = {

@@ -2307,7 +2307,7 @@ import TypeChecker._
       }
       newIdentExp.resOpt match {
         case Some(res: AST.ResolvedInfo.Var) if !res.isInObject =>
-          newExp = AST.Exp.Select(Some(AST.Exp.This(AST.TypedAttr(newExp.posOpt, scope.thisOpt))), newIdentExp.id,
+          newExp = AST.Exp.Select(Some(AST.Exp.This(context, AST.TypedAttr(newExp.posOpt, scope.thisOpt))), newIdentExp.id,
             newIdentExp.targs, AST.ResolvedAttr(newExp.posOpt, newIdentExp.resOpt, newExp.typedOpt))
         case _ =>
       }
@@ -3168,7 +3168,7 @@ import TypeChecker._
 
     def checkThis(thisExp: AST.Exp.This): (AST.Exp, Option[AST.Typed]) = {
       scope.thisOpt match {
-        case tOpt @ Some(_) => return (thisExp(attr = thisExp.attr(typedOpt = tOpt)), tOpt)
+        case tOpt @ Some(_) => return (thisExp(owner = context, attr = thisExp.attr(typedOpt = tOpt)), tOpt)
         case _ =>
           reporter.error(thisExp.posOpt, typeCheckerKind, "Cannot access 'this' at this location.")
           return (thisExp, None())
@@ -3552,7 +3552,7 @@ import TypeChecker._
               var r = newExp.asInstanceOf[AST.Exp.Invoke]
               if (r.receiverOpt.isEmpty) {
                 def updateR(): Unit = {
-                  r = r(receiverOpt = Some(AST.Exp.This(AST.TypedAttr(r.ident.posOpt, scope.thisOpt))))
+                  r = r(receiverOpt = Some(AST.Exp.This(context, AST.TypedAttr(r.ident.posOpt, scope.thisOpt))))
                 }
                 r.ident.resOpt match {
                   case Some(res: AST.ResolvedInfo.Var) if !res.isInObject => updateR()
@@ -3575,7 +3575,7 @@ import TypeChecker._
               var r = newExp.asInstanceOf[AST.Exp.InvokeNamed]
               if (r.receiverOpt.isEmpty) {
                 def updateNamedR(): Unit = {
-                  r = r(receiverOpt = Some(AST.Exp.This(AST.TypedAttr(r.ident.posOpt, scope.thisOpt))))
+                  r = r(receiverOpt = Some(AST.Exp.This(context, AST.TypedAttr(r.ident.posOpt, scope.thisOpt))))
                 }
                 r.ident.resOpt match {
                   case Some(res: AST.ResolvedInfo.Var) if !res.isInObject => updateNamedR()

@@ -2531,7 +2531,7 @@ class SlangParser(
         } else {
           AST.Exp.Ident(cid(exp), resolvedAttr(exp.pos))
         }
-      case exp: Term.This => AST.Exp.This(typedAttr(exp.pos))
+      case exp: Term.This => AST.Exp.This(ISZ(), typedAttr(exp.pos))
       case exp: Term.Super if exp.thisp.value == "" =>
         if (exp.superp.value != "") AST.Exp.Super(Some(cid(exp.superp)), typedAttr(exp.pos))
         else AST.Exp.Super(None(), typedAttr(exp.pos))
