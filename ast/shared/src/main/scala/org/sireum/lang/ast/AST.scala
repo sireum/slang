@@ -1523,7 +1523,10 @@ object Exp {
     @pure override def prettyST: ST = {
       val paren: B = exp match {
         case _: Exp.Ident => F
-        case _: Lit => F
+        case exp: LitZ if exp.value >= 0 => F
+        case exp: LitF32 if exp.value >= 0f => F
+        case exp: LitF64 if exp.value >= 0d => F
+        case exp: LitR if exp.value >= r"0" => F
         case _ => T
       }
       return if (paren) st"$opString(${exp.prettyST})" else st"$opString${exp.prettyST}"

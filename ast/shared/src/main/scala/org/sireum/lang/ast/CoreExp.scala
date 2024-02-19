@@ -224,16 +224,19 @@ object CoreExp {
         case _: CoreExp.LocalVarRef => F
         case _: CoreExp.ParamVarRef => F
         case _: CoreExp.ObjectVarRef => F
-        case _: CoreExp.Lit => F
+        case exp: CoreExp.LitZ if exp.value >= 0 => F
+        case exp: CoreExp.LitF32 if exp.value >= 0f => F
+        case exp: CoreExp.LitF64 if exp.value >= 0d => F
+        case exp: CoreExp.LitR if exp.value >= r"0" => F
         case _ => T
       }
-      val opString: String = op match {
-        case Exp.UnaryOp.Complement => "~"
-        case Exp.UnaryOp.Minus => "-"
-        case Exp.UnaryOp.Not => "!"
-        case Exp.UnaryOp.Plus => "+"
-      }
       return if (paren) st"$opString($expST)" else st"$opString$expST"
+    }
+    @strictpure def opString: String = op match {
+      case Exp.UnaryOp.Complement => "~"
+      case Exp.UnaryOp.Minus => "-"
+      case Exp.UnaryOp.Not => "!"
+      case Exp.UnaryOp.Plus => "+"
     }
     @pure override def prettyST: ST = {
       return prettySTH(exp.prettyST)
