@@ -47,6 +47,9 @@ import org.sireum._
   }
   @strictpure def isEquiv: B = F
   @strictpure def shouldParen: B = F
+  @strictpure def isZero: B = F
+  @strictpure def isOne: B = F
+  @strictpure def isMinusOne: B = F
 }
 
 object CoreExp {
@@ -81,21 +84,33 @@ object CoreExp {
   @datatype class LitZ(val value: Z) extends Lit {
     @strictpure override def rawType: Typed = Typed.z
     @strictpure override def prettyST: ST = st"$value"
+    @strictpure override def isZero: B = value == 0
+    @strictpure override def isOne: B = value == 1
+    @strictpure override def isMinusOne: B = value == -1
   }
 
   @datatype class LitF32(val value: F32) extends Lit {
     @strictpure override def rawType: Typed = Typed.f32
     @strictpure override def prettyST: ST = st"${value}f"
+    @strictpure override def isZero: B = value == 0f
+    @strictpure override def isOne: B = value == 1f
+    @strictpure override def isMinusOne: B = value == -1f
   }
 
   @datatype class LitF64(val value: F64) extends Lit {
     @strictpure override def rawType: Typed = Typed.f64
     @strictpure override def prettyST: ST = st"${value}d"
+    @strictpure override def isZero: B = value == 0d
+    @strictpure override def isOne: B = value == 1d
+    @strictpure override def isMinusOne: B = value == -1d
   }
 
   @datatype class LitR(val value: R) extends Lit {
     @strictpure override def rawType: Typed = Typed.r
     @strictpure override def prettyST: ST = st"""r"$value""""
+    @strictpure override def isZero: B = value == r"0"
+    @strictpure override def isOne: B = value == r"1"
+    @strictpure override def isMinusOne: B = value == r"-1"
   }
 
   @datatype class LitString(val value: String) extends Lit {
@@ -110,6 +125,9 @@ object CoreExp {
       val ids = tipe.asInstanceOf[Typed.Name].ids
       return st"""${ops.StringOps(ids(ids.size - 1)).toLower}"$value""""
     }
+    @strictpure override def isZero: B = value == 0
+    @strictpure override def isOne: B = value == 1
+    @strictpure override def isMinusOne: B = value == -1
   }
 
   @datatype class LitBits(val value: String, val rawType: Typed) extends Lit {
@@ -117,6 +135,9 @@ object CoreExp {
       val ids = tipe.asInstanceOf[Typed.Name].ids
       return st"""${ops.StringOps(ids(ids.size - 1)).toLower}"$value""""
     }
+    @strictpure override def isZero: B = Z(value).get == 0
+    @strictpure override def isOne: B = Z(value).get == 1
+    @strictpure override def isMinusOne: B = Z(value).get == -1
   }
 
   @datatype class ParamVarRef(val deBruijn: Z, @hidden val id: String, @hidden val rawType: Typed) extends Base {
@@ -391,7 +412,7 @@ object CoreExp {
   @datatype class If(val cond: Base, val tExp: Base, val fExp: Base, val rawType: Typed) extends Base {
     @pure def simplOpt: Option[CoreExp.Base] = {
       tExp match {
-        case CoreExp.LitB(T) =>
+        case True =>
           return Some(CoreExp.Binary(cond, Exp.BinaryOp.Or, fExp, Typed.b))
         case _ =>
       }
@@ -614,4 +635,45 @@ object CoreExp {
       return thiz(left = left.incDeBruijn(threshold), right = right.incDeBruijn(threshold))
     }
   }
+
+  val True: CoreExp.LitB = CoreExp.LitB(T)
+  val False: CoreExp.LitB = CoreExp.LitB(F)
+  val Z_0: CoreExp.LitZ = CoreExp.LitZ(0)
+  val Z_1: CoreExp.LitZ = CoreExp.LitZ(1)
+  val Z_M1: CoreExp.LitZ = CoreExp.LitZ(-1)
+  val F32_0: CoreExp.LitF32 = CoreExp.LitF32(0f)
+  val F32_1: CoreExp.LitF32 = CoreExp.LitF32(1f)
+  val F32_M1: CoreExp.LitF32 = CoreExp.LitF32(-1f)
+  val F32_Max: CoreExp.LitF32 = CoreExp.LitF32(F32.MaxValue)
+  val F32_Min: CoreExp.LitF32 = CoreExp.LitF32(F32.MinValue)
+  val F32_NaN: CoreExp.LitF32 = CoreExp.LitF32(F32.NaN)
+  val F32_PInf: CoreExp.LitF32 = CoreExp.LitF32(F32.PInf)
+  val F32_NInf: CoreExp.LitF32 = CoreExp.LitF32(F32.NInf)
+  val F64_0: CoreExp.LitF64 = CoreExp.LitF64(0d)
+  val F64_1: CoreExp.LitF64 = CoreExp.LitF64(1d)
+  val F64_M1: CoreExp.LitF64 = CoreExp.LitF64(-1d)
+  val F64_Max: CoreExp.LitF64 = CoreExp.LitF64(F64.MaxValue)
+  val F64_Min: CoreExp.LitF64 = CoreExp.LitF64(F64.MinValue)
+  val F64_NaN: CoreExp.LitF64 = CoreExp.LitF64(F64.NaN)
+  val F64_PInf: CoreExp.LitF64 = CoreExp.LitF64(F64.PInf)
+  val F64_NInf: CoreExp.LitF64 = CoreExp.LitF64(F64.NInf)
+  val R_0: CoreExp.LitR = CoreExp.LitR(r"0")
+  val R_1: CoreExp.LitR = CoreExp.LitR(r"1")
+  val R_M1: CoreExp.LitR = CoreExp.LitR(r"-1")
+
+  @strictpure def ite(cond: CoreExp.Base, tExp: CoreExp.Base, fExp: CoreExp.Base, t: Typed): CoreExp.Base = (tExp, fExp) match {
+    case (True, True) => True
+    case (True, False) => cond
+    case (False, True) => CoreExp.Unary(Exp.UnaryOp.Not, cond)
+    case (False, False) => False
+    case (_, _) => CoreExp.If(cond, tExp, fExp, t)
+  }
+  @strictpure def condAnd(left: CoreExp.Base, right: CoreExp.Base): CoreExp.Base =
+    ite(left, right, False, Typed.b)
+  @strictpure def condOr(left: CoreExp.Base, right: CoreExp.Base): CoreExp.Base =
+    ite(left, True, right, Typed.b)
+  @strictpure def condImply(left: CoreExp.Base, right: CoreExp.Base): CoreExp.Base =
+    ite(left, right, True, Typed.b)
+
+
 }
