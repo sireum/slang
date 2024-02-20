@@ -389,11 +389,32 @@ object CoreExp {
   }
 
   @datatype class If(val cond: Base, val tExp: Base, val fExp: Base, val rawType: Typed) extends Base {
+    @pure def simplOpt: Option[CoreExp.Base] = {
+      tExp match {
+        case CoreExp.LitB(T) =>
+          return Some(CoreExp.Binary(cond, Exp.BinaryOp.Or, fExp, Typed.b))
+        case _ =>
+      }
+      fExp match {
+        case CoreExp.LitB(b) =>
+          return Some(CoreExp.Binary(cond, if (b) Exp.BinaryOp.Imply else Exp.BinaryOp.And, tExp, Typed.b))
+        case _ =>
+      }
+      return None()
+    }
     @pure override def prettyST: ST = {
+      simplOpt match {
+        case Some(e) => return e.prettyST
+        case _ =>
+      }
       return st"""if (${cond.prettyST}) ${tExp.prettyST}
                  |else ${fExp.prettyST}"""
     }
     @pure override def prettyPatternST: ST = {
+      simplOpt match {
+        case Some(e) => return e.prettyPatternST
+        case _ =>
+      }
       return st"""if (${cond.prettyPatternST}) ${tExp.prettyPatternST}
                  |else ${fExp.prettyPatternST}"""
     }
