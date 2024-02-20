@@ -848,6 +848,8 @@ object Info {
   @pure def canHaveCompanion: B
 
   @pure def posOpt: Option[Position]
+
+  @pure def tpe: AST.Typed
 }
 
 object TypeInfo {
@@ -868,10 +870,14 @@ object TypeInfo {
       return ast.attr.posOpt
     }
 
+    @strictpure override def tpe: AST.Typed = typedOpt.get
+
   }
 
   @datatype class Enum(val owner: ISZ[String], val elements: Map[String, AST.ResolvedInfo], val posOpt: Option[Position])
     extends TypeInfo {
+
+    val typedOpt: Option[AST.Typed] = Some(AST.Typed.Name(name, ISZ()))
 
     val nameTypedOpt: Option[AST.Typed] = Some(
       AST.Typed
@@ -899,6 +905,7 @@ object TypeInfo {
     @pure override def canHaveCompanion: B = {
       return F
     }
+    @strictpure override def tpe: AST.Typed = typedOpt.get
   }
 
   @datatype class Sig(val owner: ISZ[String],
@@ -1085,6 +1092,7 @@ object TypeInfo {
     @pure override def posOpt: Option[Position] = {
       return ast.attr.posOpt
     }
+    @strictpure override def tpe: AST.Typed = ast.tipe.typedOpt.get
   }
 
   @datatype class TypeVar(val id: String, val ast: AST.TypeParam) extends TypeInfo {
@@ -1100,6 +1108,7 @@ object TypeInfo {
     @pure override def posOpt: Option[Position] = {
       return ast.id.attr.posOpt
     }
+    @strictpure override def tpe: AST.Typed = AST.Typed.TypeVar(id, ast.kind)
   }
 
   @datatype class Members(val specVars: HashSMap[String, Info.SpecVar],
