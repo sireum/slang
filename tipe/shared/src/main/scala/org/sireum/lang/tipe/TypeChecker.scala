@@ -3469,7 +3469,8 @@ import TypeChecker._
           case Some(_: AST.ResolvedInfo.Theorem) => ok = T
           case Some(res: AST.ResolvedInfo.Method) =>
             res.tpeOpt match {
-              case Some(tpe) if tpe.purity == AST.Purity.Abs => ok = T
+              case Some(tpe) if tpe.purity == AST.Purity.Abs ||
+                (tpe.ret == AST.Typed.unit && tpe.isPureFun && res.writes.isEmpty) => ok = T
               case _ =>
             }
           case _ =>
