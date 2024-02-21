@@ -619,7 +619,7 @@ object Info {
         name,
         "byName",
         ISZ(),
-        AST.Typed.Fun(T, F, ISZ(AST.Typed.string), AST.Typed.Name(AST.Typed.optionName, ISZ(elementTypedOpt.get)))
+        AST.Typed.Fun(AST.Purity.Pure, F, ISZ(AST.Typed.string), AST.Typed.Name(AST.Typed.optionName, ISZ(elementTypedOpt.get)))
       )
     )
 
@@ -631,7 +631,7 @@ object Info {
         name,
         "byOrdinal",
         ISZ(),
-        AST.Typed.Fun(T, F, ISZ(AST.Typed.z), AST.Typed.Name(AST.Typed.optionName, ISZ(elementTypedOpt.get)))
+        AST.Typed.Fun(AST.Purity.Pure, F, ISZ(AST.Typed.z), AST.Typed.Name(AST.Typed.optionName, ISZ(elementTypedOpt.get)))
       )
     )
 
@@ -643,7 +643,7 @@ object Info {
         name,
         "elements",
         ISZ(),
-        AST.Typed.Fun(T, T, ISZ(), AST.Typed.Name(AST.Typed.isName, ISZ(AST.Typed.z, elementTypedOpt.get)))
+        AST.Typed.Fun(AST.Purity.Pure, T, ISZ(), AST.Typed.Name(AST.Typed.isName, ISZ(AST.Typed.z, elementTypedOpt.get)))
       )
     )
 
@@ -655,7 +655,7 @@ object Info {
         name,
         "numOfElements",
         ISZ(),
-        AST.Typed.Fun(T, T, ISZ(), AST.Typed.z)
+        AST.Typed.Fun(AST.Purity.Pure, T, ISZ(), AST.Typed.z)
       )
     )
 
@@ -667,7 +667,7 @@ object Info {
         name,
         "byName",
         ISZ(),
-        Some(AST.Typed.Fun(T, F, ISZ(AST.Typed.string), AST.Typed.Name(AST.Typed.optionName, ISZ(elementTypedOpt.get)))),
+        Some(AST.Typed.Fun(AST.Purity.Pure, F, ISZ(AST.Typed.string), AST.Typed.Name(AST.Typed.optionName, ISZ(elementTypedOpt.get)))),
         ISZ(),
         ISZ()
       )
@@ -681,7 +681,7 @@ object Info {
         name,
         "byOrdinal",
         ISZ(),
-        Some(AST.Typed.Fun(T, F, ISZ(AST.Typed.z), AST.Typed.Name(AST.Typed.optionName, ISZ(elementTypedOpt.get)))),
+        Some(AST.Typed.Fun(AST.Purity.Pure, F, ISZ(AST.Typed.z), AST.Typed.Name(AST.Typed.optionName, ISZ(elementTypedOpt.get)))),
         ISZ(),
         ISZ()
       )
@@ -695,7 +695,7 @@ object Info {
         name,
         "elements",
         ISZ(),
-        Some(AST.Typed.Fun(T, T, ISZ(), AST.Typed.Name(AST.Typed.isName, ISZ(AST.Typed.z, elementTypedOpt.get)))),
+        Some(AST.Typed.Fun(AST.Purity.Pure, T, ISZ(), AST.Typed.Name(AST.Typed.isName, ISZ(AST.Typed.z, elementTypedOpt.get)))),
         ISZ(),
         ISZ()
       )
@@ -709,7 +709,7 @@ object Info {
         name,
         "numOfElements",
         ISZ(),
-        Some(AST.Typed.Fun(T, T, ISZ(), AST.Typed.z)),
+        Some(AST.Typed.Fun(AST.Purity.Pure, T, ISZ(), AST.Typed.z)),
         ISZ(),
         ISZ()
       )
@@ -881,20 +881,20 @@ object TypeInfo {
 
     val nameTypedOpt: Option[AST.Typed] = Some(
       AST.Typed
-        .Method(F, AST.MethodMode.Ext, ISZ(), name, "name", ISZ(), AST.Typed.Fun(T, T, ISZ(), AST.Typed.string))
+        .Method(F, AST.MethodMode.Ext, ISZ(), name, "name", ISZ(), AST.Typed.Fun(AST.Purity.Pure, T, ISZ(), AST.Typed.string))
     )
 
     val ordinalTypedOpt: Option[AST.Typed] = Some(
-      AST.Typed.Method(F, AST.MethodMode.Ext, ISZ(), name, "ordinal", ISZ(), AST.Typed.Fun(T, T, ISZ(), AST.Typed.z))
+      AST.Typed.Method(F, AST.MethodMode.Ext, ISZ(), name, "ordinal", ISZ(), AST.Typed.Fun(AST.Purity.Pure, T, ISZ(), AST.Typed.z))
     )
 
     val nameResOpt: Option[AST.ResolvedInfo] = Some(
-      AST.ResolvedInfo.Method(F, AST.MethodMode.Ext, ISZ(), name, "name", ISZ(), Some(AST.Typed.Fun(T, T, ISZ(),
+      AST.ResolvedInfo.Method(F, AST.MethodMode.Ext, ISZ(), name, "name", ISZ(), Some(AST.Typed.Fun(AST.Purity.Pure, T, ISZ(),
         AST.Typed.string)), ISZ(), ISZ())
     )
 
     val ordinalResOpt: Option[AST.ResolvedInfo] = Some(
-      AST.ResolvedInfo.Method(F, AST.MethodMode.Ext, ISZ(), name, "ordinal", ISZ(), Some(AST.Typed.Fun(T, T, ISZ(),
+      AST.ResolvedInfo.Method(F, AST.MethodMode.Ext, ISZ(), name, "ordinal", ISZ(), Some(AST.Typed.Fun(AST.Purity.Pure, T, ISZ(),
         AST.Typed.z)), ISZ(), ISZ())
     )
 

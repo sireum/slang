@@ -84,19 +84,19 @@ object Resolver {
           Some[AST.ResolvedInfo](AST.ResolvedInfo.Var(T, F, T, AST.Typed.sireumName, "F")), AST.Typed.bOpt)))
 
     val randomIntId = "randomInt"
-    val randomIntTyped = AST.Typed.Fun(F, F, ISZ(), AST.Typed.z)
+    val randomIntTyped = AST.Typed.Fun(AST.Purity.Impure, F, ISZ(), AST.Typed.z)
     val randomIntName = AST.Typed.sireumName :+ randomIntId
     val zType = AST.Type.Named(AST.Name(for (id <- AST.Typed.zName) yield AST.Id(id, emptyAttr), emptyAttr), ISZ(),
       AST.TypedAttr(None(), Some(AST.Typed.z)))
     nm = nm + randomIntName ~> Info.ExtMethod(AST.Typed.sireumName, scope,
-      AST.Stmt.ExtMethod(F, AST.MethodSig(F, AST.Id(randomIntId, emptyAttr), ISZ(), F, ISZ(), zType),
+      AST.Stmt.ExtMethod(F, AST.MethodSig(AST.Purity.Impure, AST.Id(randomIntId, emptyAttr), ISZ(), F, ISZ(), zType),
         AST.MethodContract.Simple.empty,
         AST.ResolvedAttr(None[Position](), Some[AST.ResolvedInfo](AST.ResolvedInfo.Method(
           T, AST.MethodMode.Ext, ISZ(), AST.Typed.sireumName, randomIntId, ISZ(), Some(randomIntTyped), ISZ(), ISZ())),
           Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), AST.Typed.sireumName, randomIntId, ISZ(), randomIntTyped)))))
 
     val seqIndexValidSizeId = "seqIndexValidSize"
-    val seqIndexValidSizeTyped = AST.Typed.Fun(T, F, ISZ(AST.Typed.z), AST.Typed.b)
+    val seqIndexValidSizeTyped = AST.Typed.Fun(AST.Purity.Pure, F, ISZ(AST.Typed.z), AST.Typed.b)
     val seqIndexValidSizeName = AST.Typed.sireumName :+ seqIndexValidSizeId
     val seqIndexValidSizeTypeParamId = "I"
     val seqIndexValidSizeParamId = "size"
@@ -104,7 +104,7 @@ object Resolver {
       AST.TypedAttr(None(), Some(AST.Typed.b)))
     nm = nm + seqIndexValidSizeName ~> Info.SpecMethod(AST.Typed.sireumName, T, scope,
       AST.Stmt.SpecMethod(
-        AST.MethodSig(T, AST.Id(seqIndexValidSizeId, emptyAttr), ISZ(
+        AST.MethodSig(AST.Purity.Pure, AST.Id(seqIndexValidSizeId, emptyAttr), ISZ(
           AST.TypeParam(AST.Id(seqIndexValidSizeTypeParamId, emptyAttr), AST.Typed.VarKind.Immutable)), F, ISZ(
           AST.Param(F, AST.Id(seqIndexValidSizeParamId, emptyAttr), zType)), bType),
         AST.ResolvedAttr(None[Position](), Some[AST.ResolvedInfo](AST.ResolvedInfo.Method(T, AST.MethodMode.Spec,

@@ -858,7 +858,7 @@ class SlangParser(
       case _ => (false, ISZ[AST.Param]())
     }
     val (purity, mods, _, _, _) = methodMods(true, enclosing, stat.mods)
-    val sig = AST.MethodSig(purity != AST.Purity.Impure, cid(name), ISZ(
+    val sig = AST.MethodSig(purity, cid(name), ISZ(
       tparams.map(translateTypeParam(AST.Typed.VarKind.Immutable, true)): _*), hasParams, params, translateType(tpe))
     AST.Stmt.Method(false, purity, mods, sig, emptyContract, None(), resolvedAttr(stat.pos))
   }
@@ -1125,7 +1125,7 @@ class SlangParser(
       case _ => (false, ISZ[AST.Param]())
     }
     val sig = AST.MethodSig(
-      purity != AST.Purity.Impure || org.sireum.ops.ISZOps(mods).contains("@spec"),
+      if (purity == AST.Purity.Impure && org.sireum.ops.ISZOps(mods).contains("@spec")) AST.Purity.Pure else purity,
       cid(name),
       ISZ(tparams.map(translateTypeParam(AST.Typed.VarKind.Immutable, true)): _*),
       hasParams,

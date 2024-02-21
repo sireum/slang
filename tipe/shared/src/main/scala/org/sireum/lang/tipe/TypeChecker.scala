@@ -234,10 +234,10 @@ object TypeChecker {
   val assumeMsgResOpt: Option[AST.ResolvedInfo] = Some(
     AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.AssumeMsg)
   )
-  val assertumeTypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(F, F, ISZ(AST.Typed.b), AST.Typed.unit))
+  val assertumeTypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(AST.Purity.Impure,F, ISZ(AST.Typed.b), AST.Typed.unit))
 
   val assertumeMsgTypedOpt: Option[AST.Typed] = Some(
-    AST.Typed.Fun(F, F, ISZ(AST.Typed.b, AST.Typed.string), AST.Typed.unit)
+    AST.Typed.Fun(AST.Purity.Impure,F, ISZ(AST.Typed.b, AST.Typed.string), AST.Typed.unit)
   )
   val printlnResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Println))
   val printResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Print))
@@ -247,12 +247,12 @@ object TypeChecker {
   val eprintResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Eprint))
   val haltResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Halt))
 
-  val haltTypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(F, F, ISZ(AST.Typed.string), AST.Typed.nothing))
+  val haltTypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(AST.Purity.Impure,F, ISZ(AST.Typed.string), AST.Typed.nothing))
   val nativeResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Native))
-  val nativeCTypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(F, T, ISZ(), AST.Typed.c))
-  val nativeStringTypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(F, T, ISZ(), AST.Typed.string))
-  val nativeF32TypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(F, T, ISZ(), AST.Typed.f32))
-  val nativeF64TypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(F, T, ISZ(), AST.Typed.f64))
+  val nativeCTypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(AST.Purity.Impure,T, ISZ(), AST.Typed.c))
+  val nativeStringTypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(AST.Purity.Impure,T, ISZ(), AST.Typed.string))
+  val nativeF32TypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(AST.Purity.Impure,T, ISZ(), AST.Typed.f32))
+  val nativeF64TypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(AST.Purity.Impure,T, ISZ(), AST.Typed.f64))
   val applyResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Apply))
   val stringResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.String))
   val hashResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Hash))
@@ -326,7 +326,7 @@ object TypeChecker {
   val emptySubstMap: HashMap[String, AST.Typed] = HashMap.empty
 
   val setOptionsResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.SetOptions))
-  val setOptionsTypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(F, F, ISZ(AST.Typed.string, AST.Typed.string), AST.Typed.unit))
+  val setOptionsTypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(AST.Purity.Impure,F, ISZ(AST.Typed.string, AST.Typed.string), AST.Typed.unit))
 
   @strictpure def extResOpt(isInObject: B, owner: ISZ[String], id: String, paramNames: ISZ[String],
                             tpe: AST.Typed.Fun): Option[AST.ResolvedInfo] = Some(
@@ -338,7 +338,7 @@ object TypeChecker {
         val indexTypeVar = AST.Typed.TypeVar("I", AST.Typed.VarKind.Index)
         val valueTypeVar = AST.Typed.TypeVar("V", AST.Typed.VarKind.Immutable)
         val argTypes: ISZ[AST.Typed] = for (_ <- z"0" until numOfArgs) yield valueTypeVar
-        val constructorType = AST.Typed.Fun(T, F, argTypes, AST.Typed.Name(AST.Typed.isName, ISZ(indexTypeVar, valueTypeVar)))
+        val constructorType = AST.Typed.Fun(AST.Purity.Pure,F, argTypes, AST.Typed.Name(AST.Typed.isName, ISZ(indexTypeVar, valueTypeVar)))
         return (
           Some(AST.Typed.Method(T, AST.MethodMode.Constructor, sTypeParams, AST.Typed.sireumName, "IS", ISZ(),
             constructorType)),
@@ -349,7 +349,7 @@ object TypeChecker {
         val indexTypeVar = AST.Typed.TypeVar("I", AST.Typed.VarKind.Index)
         val valueTypeVar = AST.Typed.TypeVar("V", AST.Typed.VarKind.Mutable)
         val argTypes: ISZ[AST.Typed] = for (_ <- z"0" until numOfArgs) yield valueTypeVar
-        val constructorType = AST.Typed.Fun(T, F, argTypes, AST.Typed.Name(AST.Typed.msName, ISZ(indexTypeVar, valueTypeVar)))
+        val constructorType = AST.Typed.Fun(AST.Purity.Pure,F, argTypes, AST.Typed.Name(AST.Typed.msName, ISZ(indexTypeVar, valueTypeVar)))
         return (
           Some(AST.Typed.Method(T, AST.MethodMode.Constructor, sTypeParams, AST.Typed.sireumName, "MS", ISZ(), constructorType)),
           Some(AST.ResolvedInfo.Method(T, AST.MethodMode.Constructor, sTypeParams, AST.Typed.sireumName, "MS", ISZ(),
@@ -358,7 +358,7 @@ object TypeChecker {
       case AST.Typed.`iszName` =>
         val valueTypeVar = AST.Typed.TypeVar("V", AST.Typed.VarKind.Immutable)
         val argTypes: ISZ[AST.Typed] = for (_ <- z"0" until numOfArgs) yield valueTypeVar
-        val constructorType = AST.Typed.Fun(T, F, argTypes, AST.Typed.Name(AST.Typed.isName, ISZ(AST.Typed.z, valueTypeVar)))
+        val constructorType = AST.Typed.Fun(AST.Purity.Pure,F, argTypes, AST.Typed.Name(AST.Typed.isName, ISZ(AST.Typed.z, valueTypeVar)))
         val typeParams = ISZ[String]("V")
         return (
           Some(AST.Typed.Method(T, AST.MethodMode.Constructor, typeParams, AST.Typed.sireumName, "IS", ISZ(), constructorType)),
@@ -368,7 +368,7 @@ object TypeChecker {
       case AST.Typed.`mszName` =>
         val valueTypeVar = AST.Typed.TypeVar("V", AST.Typed.VarKind.Mutable)
         val argTypes: ISZ[AST.Typed] = for (_ <- z"0" until numOfArgs) yield valueTypeVar
-        val constructorType = AST.Typed.Fun(T, F, argTypes, AST.Typed.Name(AST.Typed.msName, ISZ(AST.Typed.z, valueTypeVar)))
+        val constructorType = AST.Typed.Fun(AST.Purity.Pure,F, argTypes, AST.Typed.Name(AST.Typed.msName, ISZ(AST.Typed.z, valueTypeVar)))
         val typeParams = ISZ[String]("V")
         return (
           Some(AST.Typed.Method(T, AST.MethodMode.Constructor, typeParams, AST.Typed.sireumName, "MS", ISZ(), constructorType)),
@@ -377,7 +377,7 @@ object TypeChecker {
         )
       case AST.Typed.`zsName` =>
         val argTypes: ISZ[AST.Typed] = for (_ <- z"0" until numOfArgs) yield AST.Typed.z
-        val constructorType = AST.Typed.Fun(T, F, argTypes, AST.Typed.Name(AST.Typed.msName, ISZ(AST.Typed.z, AST.Typed.z)))
+        val constructorType = AST.Typed.Fun(AST.Purity.Pure,F, argTypes, AST.Typed.Name(AST.Typed.msName, ISZ(AST.Typed.z, AST.Typed.z)))
         return (
           Some(AST.Typed.Method(T, AST.MethodMode.Constructor, ISZ(), AST.Typed.sireumName, "IS", ISZ(), constructorType)),
           Some(AST.ResolvedInfo.Method(T, AST.MethodMode.Constructor, ISZ(), AST.Typed.sireumName, "IS", ISZ(),
@@ -446,7 +446,7 @@ object TypeChecker {
     val smOpt = unify(typeHierarchy, posOpt, TypeRelation.Equal, tpe, t, reporter)
     smOpt match {
       case Some(sm) =>
-        val copyType = AST.Typed.Fun(T, F, pts, tpe).subst(sm)
+        val copyType = AST.Typed.Fun(AST.Purity.Pure,F, pts, tpe).subst(sm)
         val owner = ops.ISZOps(t.ids).dropRight(1)
         val id = t.ids(t.ids.size - 1)
         return (
@@ -465,7 +465,7 @@ object TypeChecker {
     val tupleVars = AST.Typed.Tuple(ISZ(indexType, valueType))
     val argTypes: ISZ[AST.Typed] = for (_ <- z"0" until numOfArgs)
       yield tupleVars
-    val storeType = AST.Typed.Fun(T, F, argTypes, tpe)
+    val storeType = AST.Typed.Fun(AST.Purity.Pure,F, argTypes, tpe)
     val id = tpe.ids(tpe.ids.size - 1)
     return (
       Some(AST.Typed.Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, id, ISZ(), storeType)),
@@ -478,8 +478,8 @@ object TypeChecker {
     val indexType = tpe.args(0)
     val valueType = tpe.args(1)
     val tupleVars = AST.Typed.Tuple(ISZ(indexType, valueType))
-    val storeType = AST.Typed.Fun(T, F, ISZ(tupleVars), tpe)
-    val selectType = AST.Typed.Fun(T, F, ISZ(indexType), valueType)
+    val storeType = AST.Typed.Fun(AST.Purity.Pure,F, ISZ(tupleVars), tpe)
+    val selectType = AST.Typed.Fun(AST.Purity.Pure,F, ISZ(indexType), valueType)
     val id = tpe.ids(tpe.ids.size - 1)
     val selectTypeMethod = AST.Typed.Method(F, AST.MethodMode.Select, ISZ(), AST.Typed.sireumName, id, ISZ(), selectType)
     val selectResMethod = AST.ResolvedInfo.Method(F, AST.MethodMode.Select, ISZ(), AST.Typed.sireumName, id, ISZ(),
@@ -1485,7 +1485,7 @@ import TypeChecker._
       }
       val (newExp, retTypeOpt) = checkAssignExp(expectedRetOpt, scope, exp.exp, reporter)
       val tOpt: Option[AST.Typed] = retTypeOpt match {
-        case Some(retType) => Some(AST.Typed.Fun(T, F, paramTypes, retType))
+        case Some(retType) => Some(AST.Typed.Fun(AST.Purity.Pure,F, paramTypes, retType))
         case _ => None()
       }
       return (exp(context = context, params = newParams, exp = newExp, attr = exp.attr(typedOpt = tOpt)), tOpt, scope)
@@ -1598,7 +1598,7 @@ import TypeChecker._
           case _: TypeInfo.SubZ =>
             id.native match {
               case "toZ" if typeArgs.isEmpty => return (AST.Typed.zOpt, extResOpt(F, receiverType.ids, id, ISZ(),
-                AST.Typed.Fun(T, T, ISZ(), AST.Typed.z)), typeArgs)
+                AST.Typed.Fun(AST.Purity.Pure,T, ISZ(), AST.Typed.z)), typeArgs)
               case _ => val res = checkAccess(receiverType); return res
             }
           case _ => val res = checkAccess(receiverType); return res
@@ -1645,7 +1645,7 @@ import TypeChecker._
               case "Min" if info.ast.hasMin || info.ast.isBitVector => return (info.typedOpt, minResOpt, typeArgs)
               case "random" =>
                 val t = AST.Typed.Name(info.name, ISZ())
-                val f = AST.Typed.Fun(F, T, ISZ(), t)
+                val f = AST.Typed.Fun(AST.Purity.Impure,T, ISZ(), t)
                 return (
                   Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), info.name, id, ISZ(), f)),
                   extResOpt(T, info.name, id, ISZ(), f),
@@ -1653,7 +1653,7 @@ import TypeChecker._
                 )
               case "randomSeed" =>
                 val t = AST.Typed.Name(info.name, ISZ())
-                val f = AST.Typed.Fun(T, F, ISZ(AST.Typed.z), t)
+                val f = AST.Typed.Fun(AST.Purity.Pure,F, ISZ(AST.Typed.z), t)
                 val paramNames = ISZ[String]("seed")
                 return (
                   Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), info.name, id, paramNames, f)),
@@ -1662,7 +1662,7 @@ import TypeChecker._
                 )
               case "randomBetween" =>
                 val t = AST.Typed.Name(info.name, ISZ())
-                val f = AST.Typed.Fun(F, F, ISZ(t, t), t)
+                val f = AST.Typed.Fun(AST.Purity.Impure,F, ISZ(t, t), t)
                 val paramNames = ISZ[String]("min", "max")
                 return (
                   Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), info.name, id, paramNames, f)),
@@ -1671,7 +1671,7 @@ import TypeChecker._
                 )
               case "randomSeedBetween" =>
                 val t = AST.Typed.Name(info.name, ISZ())
-                val f = AST.Typed.Fun(T, F, ISZ(AST.Typed.z, t, t), t)
+                val f = AST.Typed.Fun(AST.Purity.Pure,F, ISZ(AST.Typed.z, t, t), t)
                 val paramNames = ISZ[String]("seed", "min", "max")
                 return (
                   Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), info.name, id, paramNames, f)),
@@ -1680,7 +1680,7 @@ import TypeChecker._
                 )
               case "fromZ" =>
                 val t = AST.Typed.Name(info.name, ISZ())
-                val f = AST.Typed.Fun(T, F, ISZ(AST.Typed.z), t)
+                val f = AST.Typed.Fun(AST.Purity.Pure,F, ISZ(AST.Typed.z), t)
                 val paramNames = ISZ[String]("n")
                 return (
                   Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), info.name, id, paramNames, f)),
@@ -1711,7 +1711,7 @@ import TypeChecker._
               case "numOfElements" => return (info.numOfElementsTypedOpt, info.numOfElementsResOpt, typeArgs)
               case "random" =>
                 val t = AST.Typed.Name(info.name :+ Info.Enum.elementTypeSuffix, ISZ())
-                val f = AST.Typed.Fun(F, T, ISZ(), t)
+                val f = AST.Typed.Fun(AST.Purity.Impure,T, ISZ(), t)
                 return (
                   Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), info.name, id, ISZ(), f)),
                   extResOpt(T, info.name, id, ISZ(), f),
@@ -1719,7 +1719,7 @@ import TypeChecker._
                 )
               case "randomSeed" =>
                 val t = AST.Typed.Name(info.name :+ Info.Enum.elementTypeSuffix, ISZ())
-                val f = AST.Typed.Fun(T, F, ISZ(AST.Typed.z), t)
+                val f = AST.Typed.Fun(AST.Purity.Pure,F, ISZ(AST.Typed.z), t)
                 val paramNames = ISZ[String]("seed")
                 return (
                   Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), info.name, id, paramNames, f)),
@@ -1728,7 +1728,7 @@ import TypeChecker._
                 )
               case "randomBetween" =>
                 val t = AST.Typed.Name(info.name :+ Info.Enum.elementTypeSuffix, ISZ())
-                val f = AST.Typed.Fun(F, F, ISZ(t, t), t)
+                val f = AST.Typed.Fun(AST.Purity.Impure,F, ISZ(t, t), t)
                 val paramNames = ISZ[String]("min", "max")
                 return (
                   Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), info.name, id, paramNames, f)),
@@ -1737,7 +1737,7 @@ import TypeChecker._
                 )
               case "randomSeedBetween" =>
                 val t = AST.Typed.Name(info.name :+ Info.Enum.elementTypeSuffix, ISZ())
-                val f = AST.Typed.Fun(T, F, ISZ(AST.Typed.z, t, t), t)
+                val f = AST.Typed.Fun(AST.Purity.Pure,F, ISZ(AST.Typed.z, t, t), t)
                 val paramNames = ISZ[String]("seed", "min", "max")
                 return (
                   Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), info.name, id, paramNames, f)),
@@ -1763,7 +1763,7 @@ import TypeChecker._
       case receiverType: AST.Typed.TypeVar if receiverType.isIndex && typeArgs.isEmpty =>
         id.native match {
           case "toZ" => return (AST.Typed.zOpt, extResOpt(F, ISZ(receiverType.id), id, ISZ(),
-            AST.Typed.Fun(T, T, ISZ(), AST.Typed.z)), typeArgs)
+            AST.Typed.Fun(AST.Purity.Pure,T, ISZ(), AST.Typed.z)), typeArgs)
           case _ => val res = checkAccess(receiverType); return res
         }
       case receiverType: AST.Typed.Method =>
@@ -1868,7 +1868,7 @@ import TypeChecker._
         attr = printExp.attr(
           posOpt = printExp.ident.id.attr.posOpt,
           resOpt = resOpt,
-          typedOpt = Some(AST.Typed.Fun(F, F, argTypes, AST.Typed.unit))
+          typedOpt = Some(AST.Typed.Fun(AST.Purity.Impure,F, argTypes, AST.Typed.unit))
         )
       )
       val attr = printExp.attr(typedOpt = AST.Typed.unitOpt, resOpt = resOpt)
@@ -2400,7 +2400,7 @@ import TypeChecker._
                         case info: TypeInfo.SubZ =>
                           val t = AST.Typed.Name(tpe.name, ISZ())
                           val constructorType: AST.Typed.Fun =
-                            AST.Typed.Fun(T, F, ISZ(AST.Typed.string), AST.Typed.Name(AST.Typed.optionName, ISZ(t)))
+                            AST.Typed.Fun(AST.Purity.Pure,F, ISZ(AST.Typed.string), AST.Typed.Name(AST.Typed.optionName, ISZ(t)))
                           return (
                             Some(AST.Typed.Method(T, AST.MethodMode.Constructor, ISZ(), info.owner, info.ast.id.value,
                               ISZ(), constructorType)),
@@ -2454,7 +2454,7 @@ import TypeChecker._
     ): (AST.Exp, Option[AST.Typed]) = {
 
       @pure def partResult: (AST.Exp, Option[AST.Typed]) = {
-        return (make(expArgs, None(), AST.Typed.Fun(F, F, ISZ(), AST.Typed.nothing)), None())
+        return (make(expArgs, None(), AST.Typed.Fun(AST.Purity.Impure,F, ISZ(), AST.Typed.nothing)), None())
       }
 
       def checkH(sm: HashMap[String, AST.Typed]): (AST.Exp, Option[AST.Typed]) = {
@@ -2541,13 +2541,13 @@ import TypeChecker._
             case Some(sm) =>
               val ok = checkUnboundTypeVar(expId.attr.posOpt, m, sm, m.typeParams, repArgs)
               if (!ok) {
-                return (make(newArgs, None(), AST.Typed.Fun(F, F, ISZ(), AST.Typed.nothing)), None())
+                return (make(newArgs, None(), AST.Typed.Fun(AST.Purity.Impure,F, ISZ(), AST.Typed.nothing)), None())
               }
               val funType = m.tpe.subst(sm)
               return (make(newArgs, Some(funType.ret), funType), Some(funType.ret))
             case _ =>
               repArgs.error(expId.attr.posOpt, typeCheckerKind, st"Could not unify (${(argTypes, ", ")}) with (${(m.tpe.args, ", ")})".render)
-              return (make(newArgs, None(), AST.Typed.Fun(F, F, ISZ(), AST.Typed.nothing)), None())
+              return (make(newArgs, None(), AST.Typed.Fun(AST.Purity.Impure,F, ISZ(), AST.Typed.nothing)), None())
           }
         }
         val rArgs = tryArgs()
@@ -3245,7 +3245,7 @@ import TypeChecker._
           val (newHi, _) = checkExp(tLoOpt, scope, quant.hi, reporter)
           tLoOpt match {
             case Some(tLo) =>
-              val (newFun, _) = checkExp(Some(AST.Typed.Fun(F, F, ISZ(tLo), AST.Typed.b)), scope, quant.fun, reporter)
+              val (newFun, _) = checkExp(Some(AST.Typed.Fun(AST.Purity.Impure,F, ISZ(tLo), AST.Typed.b)), scope, quant.fun, reporter)
               checkIndexType(quant.lo.posOpt, tLo, reporter)
               val newFunExp = newFun.asInstanceOf[AST.Exp.Fun]
               val res = AST.ResolvedInfo.LocalVar(newFunExp.context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T,
@@ -3264,7 +3264,7 @@ import TypeChecker._
               st match {
                 case st: AST.Typed.Name if st.ids == AST.Typed.isName || st.ids == AST.Typed.msName =>
                   val eType = st.args(1)
-                  val (newFun, _) = checkExp(Some(AST.Typed.Fun(F, F, ISZ(eType), AST.Typed.b)), scope, quant.fun, reporter)
+                  val (newFun, _) = checkExp(Some(AST.Typed.Fun(AST.Purity.Impure,F, ISZ(eType), AST.Typed.b)), scope, quant.fun, reporter)
                   val newFunExp = newFun.asInstanceOf[AST.Exp.Fun]
                   val res = AST.ResolvedInfo.LocalVar(newFunExp.context,
                     AST.ResolvedInfo.LocalVar.Scope.Current, F, T, quant.fun.params(0).idOpt.get.value)
@@ -3468,10 +3468,8 @@ import TypeChecker._
           case Some(_: AST.ResolvedInfo.Fact) => ok = T
           case Some(_: AST.ResolvedInfo.Theorem) => ok = T
           case Some(res: AST.ResolvedInfo.Method) =>
-            typeHierarchy.nameMap.get(res.owner :+ res.id) match {
-              case Some(info: Info.Method) if info.ast.purity == AST.Purity.Abs ||
-                (info.ast.sig.returnType.typedOpt == AST.Typed.unitOpt && info.ast.sig.isPure &&
-                 info.ast.contract.nonEmpty && info.ast.contract.modifies.isEmpty) => ok = T
+            res.tpeOpt match {
+              case Some(tpe) if tpe.purity == AST.Purity.Abs => ok = T
               case _ =>
             }
           case _ =>
@@ -4998,7 +4996,7 @@ import TypeChecker._
         case just: AST.ProofAst.Step.Justification.Apply =>
           val newInvoke = checkExp(None(), scope, just.invoke, reporter)._1.asInstanceOf[AST.Exp.Invoke]
           newInvoke.ident.typedOpt match {
-            case Some(t: AST.Typed.Method) if t.isInObject && (t.tpe.isPure || t.mode == AST.MethodMode.Just) && t.tpe.ret == AST.Typed.unit =>
+            case Some(t: AST.Typed.Method) if t.isInObject && (t.tpe.isPureFun || t.mode == AST.MethodMode.Just) && t.tpe.ret == AST.Typed.unit =>
             case Some(_: AST.Typed.Fact) =>
             case Some(_: AST.Typed.Theorem) =>
             case Some(_) => reporter.error(newInvoke.posOpt, typeCheckerKind, errMessage)
@@ -5012,7 +5010,7 @@ import TypeChecker._
             return r
           }
           r.invoke.ident.typedOpt match {
-            case Some(t: AST.Typed.Method) if t.isInObject && (t.tpe.isPure || t.mode == AST.MethodMode.Just) &&
+            case Some(t: AST.Typed.Method) if t.isInObject && (t.tpe.isPureFun || t.mode == AST.MethodMode.Just) &&
               t.tpe.ret == AST.Typed.unit =>
             case Some(_) => reporter.error(r.invoke.posOpt, typeCheckerKind, errMessage)
             case _ =>
@@ -5023,7 +5021,7 @@ import TypeChecker._
         case just: AST.ProofAst.Step.Justification.ApplyEta =>
           val newEta = checkExp(None(), scope, just.eta, reporter)._1.asInstanceOf[AST.Exp.Eta]
           newEta.ref.asExp.typedOpt match {
-            case Some(t: AST.Typed.Method) if t.isInObject && (t.tpe.isPure || t.mode == AST.MethodMode.Just) && t.tpe.ret == AST.Typed.unit =>
+            case Some(t: AST.Typed.Method) if t.isInObject && (t.tpe.isPureFun || t.mode == AST.MethodMode.Just) && t.tpe.ret == AST.Typed.unit =>
             case Some(_) => reporter.error(newEta.posOpt, typeCheckerKind, errMessage)
             case _ =>
           }

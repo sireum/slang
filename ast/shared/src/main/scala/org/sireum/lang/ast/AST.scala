@@ -1182,14 +1182,6 @@ object ProofAst {
   @pure def typedOpt: Option[Typed]
 }
 
-@enum object Purity {
-  "Impure"
-  "Pure"
-  "Memoize"
-  "StrictPure"
-  "Abs"
-}
-
 @datatype class Case(val pattern: Pattern, val condOpt: Option[Exp], val body: Body) {
   @pure def prettyST: ST = {
     return st"""case ${pattern.prettyST}${if (condOpt.nonEmpty) st" if ${condOpt.get.prettyST}" else st""} =>
@@ -2127,7 +2119,7 @@ object Exp {
   }
 }
 
-@datatype class MethodSig(val isPure: B,
+@datatype class MethodSig(val purity: Purity.Type,
                           val id: Id,
                           val typeParams: ISZ[TypeParam],
                           val hasParams: B,
@@ -2138,7 +2130,7 @@ object Exp {
 
   @strictpure def funType: Typed.Fun = {
     val pts: ISZ[Typed] = for (p <- params) yield p.tipe.typedOpt.get
-    Typed.Fun(isPure, !hasParams, pts, returnType.typedOpt.get)
+    Typed.Fun(purity, !hasParams, pts, returnType.typedOpt.get)
   }
 
   @strictpure def prettyST: ST = {

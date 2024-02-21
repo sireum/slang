@@ -1309,10 +1309,6 @@ object MsgPack {
       }
     }
 
-    def write_astPurityType(o: org.sireum.lang.ast.Purity.Type): Unit = {
-      writer.writeZ(o.ordinal)
-    }
-
     def write_astCase(o: org.sireum.lang.ast.Case): Unit = {
       writer.writeZ(Constants._astCase)
       write_astPattern(o.pattern)
@@ -1829,7 +1825,7 @@ object MsgPack {
 
     def write_astMethodSig(o: org.sireum.lang.ast.MethodSig): Unit = {
       writer.writeZ(Constants._astMethodSig)
-      writer.writeB(o.isPure)
+      write_astPurityType(o.purity)
       write_astId(o.id)
       writer.writeISZ(o.typeParams, write_astTypeParam _)
       writer.writeB(o.hasParams)
@@ -2026,6 +2022,10 @@ object MsgPack {
       write_astAttr(o.attr)
     }
 
+    def write_astPurityType(o: org.sireum.lang.ast.Purity.Type): Unit = {
+      writer.writeZ(o.ordinal)
+    }
+
     def write_astMethodModeType(o: org.sireum.lang.ast.MethodMode.Type): Unit = {
       writer.writeZ(o.ordinal)
     }
@@ -2064,7 +2064,7 @@ object MsgPack {
 
     def write_astTypedFun(o: org.sireum.lang.ast.Typed.Fun): Unit = {
       writer.writeZ(Constants._astTypedFun)
-      writer.writeB(o.isPure)
+      write_astPurityType(o.purity)
       writer.writeB(o.isByName)
       writer.writeISZ(o.args, write_astTyped _)
       write_astTyped(o.ret)
@@ -3846,11 +3846,6 @@ object MsgPack {
       }
     }
 
-    def read_astPurityType(): org.sireum.lang.ast.Purity.Type = {
-      val r = reader.readZ()
-      return org.sireum.lang.ast.Purity.byOrdinal(r).get
-    }
-
     def read_astCase(): org.sireum.lang.ast.Case = {
       val r = read_astCaseT(F)
       return r
@@ -4889,13 +4884,13 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astMethodSig)
       }
-      val isPure = reader.readB()
+      val purity = read_astPurityType()
       val id = read_astId()
       val typeParams = reader.readISZ(read_astTypeParam _)
       val hasParams = reader.readB()
       val params = reader.readISZ(read_astParam _)
       val returnType = read_astType()
-      return org.sireum.lang.ast.MethodSig(isPure, id, typeParams, hasParams, params, returnType)
+      return org.sireum.lang.ast.MethodSig(purity, id, typeParams, hasParams, params, returnType)
     }
 
     def read_astParam(): org.sireum.lang.ast.Param = {
@@ -5293,6 +5288,11 @@ object MsgPack {
       return org.sireum.lang.ast.TruthTable.Conclusion.Contingent(trueAssignments, falseAssignments, attr)
     }
 
+    def read_astPurityType(): org.sireum.lang.ast.Purity.Type = {
+      val r = reader.readZ()
+      return org.sireum.lang.ast.Purity.byOrdinal(r).get
+    }
+
     def read_astMethodModeType(): org.sireum.lang.ast.MethodMode.Type = {
       val r = reader.readZ()
       return org.sireum.lang.ast.MethodMode.byOrdinal(r).get
@@ -5362,11 +5362,11 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astTypedFun)
       }
-      val isPure = reader.readB()
+      val purity = read_astPurityType()
       val isByName = reader.readB()
       val args = reader.readISZ(read_astTyped _)
       val ret = read_astTyped()
-      return org.sireum.lang.ast.Typed.Fun(isPure, isByName, args, ret)
+      return org.sireum.lang.ast.Typed.Fun(purity, isByName, args, ret)
     }
 
     def read_astTypedTypeVar(): org.sireum.lang.ast.Typed.TypeVar = {

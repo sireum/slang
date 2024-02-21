@@ -590,7 +590,7 @@ object TypeOutliner {
           invariants = invariants
         )
       } else {
-        val constructorFun = AST.Typed.Fun(T, F, paramTypes, info.tpe)
+        val constructorFun = AST.Typed.Fun(AST.Purity.Pure,F, paramTypes, info.tpe)
         val constructorRes = info.constructorResOpt.get.asInstanceOf[AST.ResolvedInfo.Method]
         info(
           outlined = T,

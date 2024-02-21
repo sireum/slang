@@ -496,8 +496,7 @@ object CoreExp {
           case _ => stop = T
         }
       }
-      return if (params.size == 1) st"(${params(0)}) => $expST"
-      else st"{(${(params, ", ")}) => $expST}"
+      return st"{(${(params, ", ")}) => $expST}"
     }
     @pure def prettyST: ST = {
       return prettySTH(exp.prettyST)
@@ -505,7 +504,7 @@ object CoreExp {
     @pure def prettyPatternST: ST = {
       return prettySTH(exp.prettyPatternST)
     }
-    @strictpure override def rawType: Typed = Typed.Fun(T, F, ISZ(param.tipe), exp.tipe)
+    @strictpure override def rawType: Typed = Typed.Fun(Purity.StrictPure, F, ISZ(param.tipe), exp.tipe)
     @pure override def subst(sm: HashMap[String, Typed]): Fun = {
       if (sm.isEmpty) {
         return this

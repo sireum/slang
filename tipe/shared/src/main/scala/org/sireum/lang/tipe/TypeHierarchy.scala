@@ -444,7 +444,7 @@ object TypeHierarchy {
             as
           }
           val rt = resolveType(scope, t.ret)
-          return AST.Typed.Fun(t.isPure || rt.isPureFun, t.isByName, ts, rt)
+          return AST.Typed.Fun(if (t.isPure || rt.isPureFun) AST.Purity.Pure else AST.Purity.Impure, t.isByName, ts, rt)
       }
     }
 
@@ -971,7 +971,7 @@ object TypeHierarchy {
                   args = newArgs,
                   ret = newRet,
                   attr = tipe.attr(
-                    typedOpt = Some(AST.Typed.Fun(tipe.isPure || retType.isPureFun, tipe.isByName, paramTypes, retType))
+                    typedOpt = Some(AST.Typed.Fun(if (tipe.isPure || retType.isPureFun) AST.Purity.Pure else AST.Purity.Impure, tipe.isByName, paramTypes, retType))
                   )
                 )
               )
@@ -1152,7 +1152,7 @@ object TypeHierarchy {
           }
         }
         if (t1.isByName == t2.isByName && isSubType(t1.ret, t2.ret)) {
-          (t1.isPure, t2.isPure) match {
+          (t1.isPureFun, t2.isPureFun) match {
             case (F, T) => return F
             case (_, _) => return T
           }

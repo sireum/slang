@@ -167,7 +167,7 @@ object CustomMessagePack {
         case o: AST.Typed.Fun => return o
         case _ =>
           if (errorOpt.nonEmpty) {
-            return AST.Typed.Fun(F, F, ISZ(), AST.Typed.unit)
+            return AST.Typed.Fun(AST.Purity.Impure, F, ISZ(), AST.Typed.unit)
           } else {
             halt("Unexpected situation when reading AST.Typed.Fun MessagePack")
           }
