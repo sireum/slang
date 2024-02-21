@@ -484,7 +484,7 @@ object CoreExp {
   }
 
   @datatype class Fun(val param: Param, val exp: Base) extends Base {
-    @pure def prettySTH(expST: ST): ST = {
+    @pure def prettySTH(expST: Base => ST @pure): ST = {
       var params = ISZ[ST](param.prettyST)
       var e = exp
       var stop = F
@@ -496,13 +496,13 @@ object CoreExp {
           case _ => stop = T
         }
       }
-      return st"{(${(params, ", ")}) => $expST}"
+      return st"{(${(params, ", ")}) => ${expST(e)}}"
     }
     @pure def prettyST: ST = {
-      return prettySTH(exp.prettyST)
+      return prettySTH((e: Base) => e.prettyST)
     }
     @pure def prettyPatternST: ST = {
-      return prettySTH(exp.prettyPatternST)
+      return prettySTH((e: Base) => e.prettyPatternST)
     }
     @strictpure override def rawType: Typed = Typed.Fun(Purity.StrictPure, F, ISZ(param.tipe), exp.tipe)
     @pure override def subst(sm: HashMap[String, Typed]): Fun = {
@@ -525,7 +525,7 @@ object CoreExp {
 
   @datatype class Quant(val kind: Quant.Kind.Type, val param: Param, val exp: Base) extends Base {
     @strictpure override def rawType: Typed = Typed.b
-    @pure def prettySTH(expST: ST): ST = {
+    @pure def prettySTH(expST: Base => ST @pure): ST = {
       var params = ISZ[ST](param.prettyST)
       var e = exp
       var stop = F
@@ -537,13 +537,13 @@ object CoreExp {
           case _ => stop = T
         }
       }
-      return st"$kindString{(${(params, ", ")}) => $expST}"
+      return st"$kindString{(${(params, ", ")}) => ${expST(e)}}"
     }
     @pure def prettyST: ST = {
-      return prettySTH(exp.prettyST)
+      return prettySTH((e: Base) => e.prettyST)
     }
     @pure def prettyPatternST: ST = {
-      return prettySTH(exp.prettyPatternST)
+      return prettySTH((e: Base) => e.prettyPatternST)
     }
     @strictpure def kindString: String = kind match {
       case Quant.Kind.ForAll => "∀"
