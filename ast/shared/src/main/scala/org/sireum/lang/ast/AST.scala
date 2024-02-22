@@ -1006,7 +1006,7 @@ object ProofAst {
 
     @datatype class Let(val id: StepId, val params: ISZ[Let.Param], val steps: ISZ[Step]) extends Step {
       @pure override def prettyST: ST = {
-        return st"""${id.prettyST}  Let {(${(for (p <- params) yield p.prettyST, ", ")}) => SubProof(
+        return st"""${id.prettyST}  SubProof {(${(for (p <- params) yield p.prettyST, ", ")}) => (
                    |  ${(for (step <- steps) yield step.prettyST, ", ")}
                    |)}"""
       }

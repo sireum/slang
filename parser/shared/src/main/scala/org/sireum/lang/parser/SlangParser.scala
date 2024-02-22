@@ -3694,6 +3694,14 @@ class SlangParser(
 
   def toLitZ(n: Lit.Int): AST.Exp.LitZ = AST.Exp.LitZ(n.value, attr(n.pos))
 
+  def translateAssumeSubClaims(term: Term): ISZ[AST.ProofAst.Step] = {
+    term match {
+      case term: Term.Tuple => translateAssumeSubClaims(term.args)
+      case _: Lit.Unit => ISZ()
+      case _ => translateAssumeSubClaims(Seq(term))
+    }
+  }
+
   def translateAssumeSubClaims(claims: Seq[Term]): ISZ[AST.ProofAst.Step] =
     if (claims.nonEmpty)
       translateProofStep(true)(claims.head) +:
@@ -3825,6 +3833,35 @@ class SlangParser(
           case just: Term.Ref => justRef(Left(no), claim, just, hasWitness = false, Seq())
           case _ => err()
         }
+      case q"$no #> Assume($claim)" if isStepId(no) =>
+        val stepNo = toStepId(no)
+        if (!allowAssume) {
+          reporter.error(stepNo.posOpt, messageKind, "Assume justification cannot be used at this location")
+        }
+        AST.ProofAst.Step.Assume(stepNo, translateExp(claim))
+      case q"$no #> Assert($claim, SubProof(..$claims))" if isStepId(no) =>
+        AST.ProofAst.Step.Assert(toStepId(no), translateExp(claim), ISZ(claims.map(translateProofStep(false)): _*))
+      case q"$no #> SubProof(..$claims)" if isStepId(no) =>
+        val stepNo = toStepId(no)
+        val subClaims = translateAssumeSubClaims(claims)
+        if (subClaims.nonEmpty && !subClaims(0).isInstanceOf[AST.ProofAst.Step.Assume]) {
+          reporter.error(subClaims(0).id.posOpt, messageKind, "Expecting an Assume(...) claim")
+        }
+        AST.ProofAst.Step.SubProof(stepNo, subClaims)
+      case Term.ApplyInfix.After_4_6_0(no, Term.Name("#>"), Type.ArgClause(Nil), Term.ArgClause(List(Term.Apply.After_4_6_0(Term.Name("SubProof"), Term.ArgClause(List(Term.Function.After_4_6_0(Term.ParamClause(params, scala.None), term)), scala.None))), scala.None)) if isStepId(no) =>
+        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(term))
+      case Term.ApplyInfix.After_4_6_0(no, Term.Name("#>"), Type.ArgClause(Nil), Term.ArgClause(List(Term.Apply.After_4_6_0(Term.Name("SubProof"), Term.ArgClause(List(Term.Function.After_4_6_0(Term.ParamClause(params, scala.None), term)), scala.None))), scala.None)) if isStepId(no) =>
+        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(term))
+      case Term.ApplyInfix.After_4_6_0(no, Term.Name("SubProof"), Type.ArgClause(Nil), Term.ArgClause(List(Term.Function.After_4_6_0(Term.ParamClause(params, scala.None), term)), scala.None)) =>
+        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(term))
+      case Term.ApplyInfix.After_4_6_0(no, Term.Name("SubProof"), Type.ArgClause(Nil), Term.ArgClause(List(Term.Block(List(Term.Function.After_4_6_0(Term.ParamClause(params, scala.None), term)))), scala.None)) if isStepId(no) =>
+        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(term))
+      case q"$no #> Let ((..$params) => SubProof(..$claims))" if isStepId(no) =>
+        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims))
+      case q"$no #> Let {(..$params) => SubProof(..$claims)}" if isStepId(no) =>
+        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims))
+      case q"$no #> $claim by StructuralInduction($m)" if isStepId(no) =>
+        translateStructuralInduction(toStepId(no), translateExp(claim), m)
       case q"$no ($claim) by ${just: Term} and (..$witnesses)" if isStepId(no) =>
         just match {
           case just: Term.Eta => justApplyEta(Left(no), claim, just, hasWitness = true, witnesses)
@@ -3879,27 +3916,6 @@ class SlangParser(
           case just: Term.Ref => justRef(Right(claim.pos), claim, just, hasWitness = false, Seq())
           case _ => err()
         }
-      case q"$no #> Assume($claim)" if isStepId(no) =>
-        val stepNo = toStepId(no)
-        if (!allowAssume) {
-          reporter.error(stepNo.posOpt, messageKind, "Assume justification cannot be used at this location")
-        }
-        AST.ProofAst.Step.Assume(stepNo, translateExp(claim))
-      case q"$no #> Assert($claim, SubProof(..$claims))" if isStepId(no) =>
-        AST.ProofAst.Step.Assert(toStepId(no), translateExp(claim), ISZ(claims.map(translateProofStep(false)): _*))
-      case q"$no #> SubProof(..$claims)" if isStepId(no) =>
-        val stepNo = toStepId(no)
-        val subClaims = translateAssumeSubClaims(claims)
-        if (subClaims.nonEmpty && !subClaims(0).isInstanceOf[AST.ProofAst.Step.Assume]) {
-          reporter.error(subClaims(0).id.posOpt, messageKind, "Expecting an Assume(...) claim")
-        }
-        AST.ProofAst.Step.SubProof(stepNo, subClaims)
-      case q"$no #> Let ((..$params) => SubProof(..$claims))" if isStepId(no) =>
-        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims))
-      case q"$no #> Let {(..$params) => SubProof(..$claims)}" if isStepId(no) =>
-        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims))
-      case q"$no #> $claim by StructuralInduction($m)" if isStepId(no) =>
-        translateStructuralInduction(toStepId(no), translateExp(claim), m)
       case q"$no Assume($claim)" if isStepId(no) =>
         val stepNo = toStepId(no)
         if (!allowAssume) {
