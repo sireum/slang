@@ -1404,6 +1404,8 @@ object MsgPack {
       writer.writeZ(Constants._astPatternRef)
       writer.writeB(o.isAccess)
       write_astName(o.name)
+      writer.writeOption(o.receiverTipeOpt, write_astTypedName _)
+      writer.writeISZ(o.idContext, writer.writeString _)
       write_astResolvedAttr(o.attr)
     }
 
@@ -4038,8 +4040,10 @@ object MsgPack {
       }
       val isAccess = reader.readB()
       val name = read_astName()
+      val receiverTipeOpt = reader.readOption(read_astTypedName _)
+      val idContext = reader.readISZ(reader.readString _)
       val attr = read_astResolvedAttr()
-      return org.sireum.lang.ast.Pattern.Ref(isAccess, name, attr)
+      return org.sireum.lang.ast.Pattern.Ref(isAccess, name, receiverTipeOpt, idContext, attr)
     }
 
     def read_astPatternVarBinding(): org.sireum.lang.ast.Pattern.VarBinding = {

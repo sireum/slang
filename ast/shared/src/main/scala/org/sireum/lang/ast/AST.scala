@@ -1355,7 +1355,7 @@ object Pattern {
     @strictpure override def prettyST: ST = st"""$prefix"$value""""
   }
 
-  @datatype class Ref(val isAccess: B, val name: Name, @hidden val attr: ResolvedAttr) extends Pattern {
+  @datatype class Ref(val isAccess: B, val name: Name, val receiverTipeOpt: Option[Typed.Name], @hidden val idContext: ISZ[String], @hidden val attr: ResolvedAttr) extends Pattern {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
     @strictpure override def prettyST: ST = if (isAccess) name.prettyST else st"`${name.prettyST}`"

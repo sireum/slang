@@ -4304,9 +4304,10 @@ import MTransformer._
             MNone()
         case o2: Pattern.Ref =>
           val r0: MOption[Name] = transformName(o2.name)
-          val r1: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(name = r0.getOrElse(o2.name), attr = r1.getOrElse(o2.attr)))
+          val r1: MOption[Option[Typed.Name]] = transformOption(o2.receiverTipeOpt, transformTypedName _)
+          val r2: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(name = r0.getOrElse(o2.name), receiverTipeOpt = r1.getOrElse(o2.receiverTipeOpt), attr = r2.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Pattern.VarBinding =>
@@ -5860,6 +5861,41 @@ import MTransformer._
      case MSome(result: Exp.Eta) => MSome[Exp.Eta](result)
      case MSome(_) => halt("Can only produce object of type Exp.Eta")
      case _ => MNone[Exp.Eta]()
+    }
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformTypedName(o: Typed.Name): MOption[Typed.Name] = {
+    val preR: PreResult[Typed.Name] = preTypedName(o) match {
+     case PreResult(continu, MSome(r: Typed.Name)) => PreResult(continu, MSome[Typed.Name](r))
+     case PreResult(_, MSome(_)) => halt("Can only produce object of type Typed.Name")
+     case PreResult(continu, _) => PreResult(continu, MNone[Typed.Name]())
+    }
+    val r: MOption[Typed.Name] = if (preR.continu) {
+      val o2: Typed.Name = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[IS[Z, Typed]] = transformISZ(o2.args, transformTyped _)
+      if (hasChanged || r0.nonEmpty)
+        MSome(o2(args = r0.getOrElse(o2.args)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Typed.Name = r.getOrElse(o)
+    val postR: MOption[Typed.Name] = postTypedName(o2) match {
+     case MSome(result: Typed.Name) => MSome[Typed.Name](result)
+     case MSome(_) => halt("Can only produce object of type Typed.Name")
+     case _ => MNone[Typed.Name]()
     }
     if (postR.nonEmpty) {
       return postR

@@ -281,6 +281,13 @@ object CoreExpTransformer {
           }
           return r
         case o: CoreExp.Arrow => return preCoreExpArrow(ctx, o)
+        case o: CoreExp.Halt =>
+          val r: PreResult[Context, CoreExp] = preCoreExpHalt(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
+          }
+          return r
       }
     }
 
@@ -364,6 +371,7 @@ object CoreExpTransformer {
         case o: CoreExp.Fun => return preCoreExpFun(ctx, o)
         case o: CoreExp.Quant => return preCoreExpQuant(ctx, o)
         case o: CoreExp.InstanceOfExp => return preCoreExpInstanceOfExp(ctx, o)
+        case o: CoreExp.Halt => return preCoreExpHalt(ctx, o)
       }
     }
 
@@ -482,6 +490,10 @@ object CoreExpTransformer {
     }
 
     @pure def preCoreExpArrow(ctx: Context, o: CoreExp.Arrow): PreResult[Context, CoreExp] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preCoreExpHalt(ctx: Context, o: CoreExp.Halt): PreResult[Context, CoreExp.Base] = {
       return PreResult(ctx, T, None())
     }
 
@@ -721,6 +733,13 @@ object CoreExpTransformer {
           }
           return r
         case o: CoreExp.Arrow => return postCoreExpArrow(ctx, o)
+        case o: CoreExp.Halt =>
+          val r: TPostResult[Context, CoreExp] = postCoreExpHalt(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
+          }
+          return r
       }
     }
 
@@ -804,6 +823,7 @@ object CoreExpTransformer {
         case o: CoreExp.Fun => return postCoreExpFun(ctx, o)
         case o: CoreExp.Quant => return postCoreExpQuant(ctx, o)
         case o: CoreExp.InstanceOfExp => return postCoreExpInstanceOfExp(ctx, o)
+        case o: CoreExp.Halt => return postCoreExpHalt(ctx, o)
       }
     }
 
@@ -922,6 +942,10 @@ object CoreExpTransformer {
     }
 
     @pure def postCoreExpArrow(ctx: Context, o: CoreExp.Arrow): TPostResult[Context, CoreExp] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postCoreExpHalt(ctx: Context, o: CoreExp.Halt): TPostResult[Context, CoreExp.Base] = {
       return TPostResult(ctx, None())
     }
 
@@ -1211,6 +1235,11 @@ import CoreExpTransformer._
             TPostResult(r1.ctx, Some(o2(left = r0.resultOpt.getOrElse(o2.left), right = r1.resultOpt.getOrElse(o2.right))))
           else
             TPostResult(r1.ctx, None())
+        case o2: CoreExp.Halt =>
+          if (hasChanged)
+            TPostResult(preR.ctx, Some(o2))
+          else
+            TPostResult(preR.ctx, None())
       }
       rOpt
     } else if (preR.resultOpt.nonEmpty) {
@@ -1392,6 +1421,11 @@ import CoreExpTransformer._
             TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), rawType = r1.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r1.ctx, None())
+        case o2: CoreExp.Halt =>
+          if (hasChanged)
+            TPostResult(preR.ctx, Some(o2))
+          else
+            TPostResult(preR.ctx, None())
       }
       rOpt
     } else if (preR.resultOpt.nonEmpty) {

@@ -58,6 +58,7 @@ object CoreExp {
     @pure override def subst(sm: HashMap[String, Typed]): Base
     @pure def incDeBruijn(threshold: Z): Base
     def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base
+    @strictpure def isHalt: B = F
   }
 
   @datatype trait Lit extends Base {
@@ -635,6 +636,19 @@ object CoreExp {
     }
   }
 
+  @datatype class Halt extends CoreExp.Base {
+    @strictpure override def subst(sm: HashMap[String, Typed]): Base = this
+    @strictpure override def incDeBruijn(threshold: Z): Base = this
+    @strictpure override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): Base = this
+    @strictpure override def rawType: Typed = Typed.nothing
+    @strictpure override def prettyST: ST = st"""halt("")"""
+    @strictpure override def prettyPatternST: ST = prettyST
+    @strictpure override def hash: Z = """halt("")""".hash
+    @strictpure def isEqual(other: Halt): B = F
+    @strictpure override def isHalt: B = T
+  }
+
+  val Abort: CoreExp.Halt = CoreExp.Halt()
   val True: CoreExp.LitB = CoreExp.LitB(T)
   val False: CoreExp.LitB = CoreExp.LitB(F)
   val Z_0: CoreExp.LitZ = CoreExp.LitZ(0)
@@ -673,6 +687,15 @@ object CoreExp {
     ite(left, True, right, Typed.b)
   @strictpure def condImply(left: CoreExp.Base, right: CoreExp.Base): CoreExp.Base =
     ite(left, right, True, Typed.b)
-
+  @pure def bigAnd(conjuncts: ISZ[CoreExp.Base]): CoreExp.Base = {
+    if (conjuncts.isEmpty) {
+      return True
+    }
+    var r = conjuncts(0)
+    for (i <- 1 until conjuncts.size) {
+      r = CoreExp.Binary(r, Exp.BinaryOp.And, conjuncts(i), Typed.b)
+    }
+    return r
+  }
 
 }

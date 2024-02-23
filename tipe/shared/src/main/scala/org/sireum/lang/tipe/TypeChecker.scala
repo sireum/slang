@@ -4093,7 +4093,12 @@ import TypeChecker._
                   s"Fruitless matching because it is always going to be unsuccessful (i.e., $t and $expectedType do not have a common subtype).")
                 ok = F
               }
-              return pattern(attr = pattern.attr(typedOpt = Some(t), resOpt = resOpt))
+              val (rcvOpt, ctx): (Option[AST.Typed.Name], ISZ[String]) = resOpt match {
+                case Some(res: AST.ResolvedInfo.Var) if !res.isInObject =>
+                  (Some(scope.thisOpt.get.asInstanceOf[AST.Typed.Name]), context)
+                case _ => (None(), ISZ())
+              }
+              return pattern(receiverTipeOpt = rcvOpt, idContext = ctx, attr = pattern.attr(typedOpt = Some(t), resOpt = resOpt))
             case _ =>
               reporter.error(pattern.posOpt, typeCheckerKind, st"Could not resolve '${(refName, ".")}'.".render)
               return pattern

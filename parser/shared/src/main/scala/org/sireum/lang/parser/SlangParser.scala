@@ -1921,10 +1921,10 @@ class SlangParser(
       case p"(..$patsnel)" if patsnel.size > 1 =>
         AST.Pattern.Structure(None(), None(), ISZ(patsnel.map(translatePattern): _*), ISZ(), resolvedAttr(pat.pos))
       case p"${ref: Term.Ref}.$ename" =>
-        AST.Pattern.Ref(true, AST.Name(ref2IS(ref) :+ cid(ename), attr(pat.pos)), resolvedAttr(pat.pos))
+        AST.Pattern.Ref(true, AST.Name(ref2IS(ref) :+ cid(ename), attr(pat.pos)), None(), ISZ(), resolvedAttr(pat.pos))
       case pat: Term.Name =>
         checkReservedId(false, pat.pos, pat.value)
-        AST.Pattern.Ref(false, AST.Name(ISZ(cid(pat)), attr(pat.pos)), resolvedAttr(pat.pos))
+        AST.Pattern.Ref(false, AST.Name(ISZ(cid(pat)), attr(pat.pos)), None(), ISZ(), resolvedAttr(pat.pos))
       case p"${name: Pat.Var} : $tpe" =>
         checkReservedId(true, name.name.pos, name.name.value)
         AST.Pattern.VarBinding(cid(name), Some(translateType(tpe)), ISZ(), typedAttr(pat.pos))
