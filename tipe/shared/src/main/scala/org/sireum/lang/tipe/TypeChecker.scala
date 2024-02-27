@@ -5075,48 +5075,6 @@ import TypeChecker._
       case step: AST.ProofAst.Step.Assert =>
         return step(claim = checkExp(bExpectedOpt, scope, step.claim, reporter)._1,
           steps = for (s <- step.steps) yield checkStep(scope, s, reporter))
-      case step: AST.ProofAst.Step.StructInduction =>
-        val newClaim = checkExp(bExpectedOpt, scope, step.claim, reporter)._1
-        val (newExp, tOpt) = checkExp(None(), scope, step.exp, reporter)
-        tOpt match {
-          case Some(t) =>
-            val unrefinedIdOpt: Option[AST.Id] = newExp match {
-              case newExp: AST.Exp.Ident => Some(newExp.id)
-              case _ => None()
-            }
-            var newCases = ISZ[AST.ProofAst.Step.StructInduction.MatchCase]()
-            for (cas <- step.cases) {
-              val (scOpt, newPattern) = checkPattern(T, unrefinedIdOpt, t, scope, cas.pattern, reporter)
-              scOpt match {
-                case Some(sc) =>
-                  val newHypoOpt: Option[AST.ProofAst.Step.Assume] = cas.hypoOpt match {
-                    case Some(hypo) => Some(checkStep(sc, hypo, reporter).asInstanceOf[AST.ProofAst.Step.Assume])
-                    case _ => None()
-                  }
-                  newCases = newCases :+ cas(
-                    pattern = newPattern.asInstanceOf[AST.Pattern.Structure],
-                    hypoOpt = newHypoOpt,
-                    steps = for (s <- cas.steps) yield checkStep(sc, s, reporter)
-                  )
-                case _ =>
-                  newCases = newCases :+ cas(
-                    pattern = newPattern.asInstanceOf[AST.Pattern.Structure]
-                  )
-              }
-            }
-            val newDefaultOpt: Option[AST.ProofAst.Step.StructInduction.MatchDefault] = step.defaultOpt match {
-              case Some(default) =>
-                val newHypoOpt: Option[AST.ProofAst.Step.Assume] = default.hypoOpt match {
-                  case Some(hypo) => Some(checkStep(scope, hypo, reporter).asInstanceOf[AST.ProofAst.Step.Assume])
-                  case _ => None()
-                }
-                Some(default(hypoOpt = newHypoOpt, steps = for (s <- default.steps) yield checkStep(scope, s, reporter)))
-              case _ => None()
-            }
-            return step(claim = newClaim, exp = newExp, cases = newCases, defaultOpt = newDefaultOpt)
-          case _ =>
-            return step(claim = newClaim, exp = newExp)
-        }
     }
   }
 

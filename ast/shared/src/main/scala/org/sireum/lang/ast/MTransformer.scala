@@ -301,18 +301,6 @@ object MTransformer {
 
   val PostResultProofAstStepLetParam: MOption[ProofAst.Step.Let.Param] = MNone()
 
-  val PreResultProofAstStepStructInduction: PreResult[ProofAst.Step] = PreResult(T, MNone())
-
-  val PostResultProofAstStepStructInduction: MOption[ProofAst.Step] = MNone()
-
-  val PreResultProofAstStepStructInductionMatchCase: PreResult[ProofAst.Step.StructInduction.MatchCase] = PreResult(T, MNone())
-
-  val PostResultProofAstStepStructInductionMatchCase: MOption[ProofAst.Step.StructInduction.MatchCase] = MNone()
-
-  val PreResultProofAstStepStructInductionMatchDefault: PreResult[ProofAst.Step.StructInduction.MatchDefault] = PreResult(T, MNone())
-
-  val PostResultProofAstStepStructInductionMatchDefault: MOption[ProofAst.Step.StructInduction.MatchDefault] = MNone()
-
   val PreResultProofAstStepJustificationRef: PreResult[ProofAst.Step.Justification] = PreResult(T, MNone())
 
   val PostResultProofAstStepJustificationRef: MOption[ProofAst.Step.Justification] = MNone()
@@ -1091,7 +1079,6 @@ import MTransformer._
       case o: ProofAst.Step.Assert => return preProofAstStepAssert(o)
       case o: ProofAst.Step.SubProof => return preProofAstStepSubProof(o)
       case o: ProofAst.Step.Let => return preProofAstStepLet(o)
-      case o: ProofAst.Step.StructInduction => return preProofAstStepStructInduction(o)
     }
   }
 
@@ -1132,18 +1119,6 @@ import MTransformer._
 
   def preProofAstStepLetParam(o: ProofAst.Step.Let.Param): PreResult[ProofAst.Step.Let.Param] = {
     return PreResultProofAstStepLetParam
-  }
-
-  def preProofAstStepStructInduction(o: ProofAst.Step.StructInduction): PreResult[ProofAst.Step] = {
-    return PreResultProofAstStepStructInduction
-  }
-
-  def preProofAstStepStructInductionMatchCase(o: ProofAst.Step.StructInduction.MatchCase): PreResult[ProofAst.Step.StructInduction.MatchCase] = {
-    return PreResultProofAstStepStructInductionMatchCase
-  }
-
-  def preProofAstStepStructInductionMatchDefault(o: ProofAst.Step.StructInduction.MatchDefault): PreResult[ProofAst.Step.StructInduction.MatchDefault] = {
-    return PreResultProofAstStepStructInductionMatchDefault
   }
 
   def preProofAstStepJustification(o: ProofAst.Step.Justification): PreResult[ProofAst.Step.Justification] = {
@@ -2208,7 +2183,6 @@ import MTransformer._
       case o: ProofAst.Step.Assert => return postProofAstStepAssert(o)
       case o: ProofAst.Step.SubProof => return postProofAstStepSubProof(o)
       case o: ProofAst.Step.Let => return postProofAstStepLet(o)
-      case o: ProofAst.Step.StructInduction => return postProofAstStepStructInduction(o)
     }
   }
 
@@ -2249,18 +2223,6 @@ import MTransformer._
 
   def postProofAstStepLetParam(o: ProofAst.Step.Let.Param): MOption[ProofAst.Step.Let.Param] = {
     return PostResultProofAstStepLetParam
-  }
-
-  def postProofAstStepStructInduction(o: ProofAst.Step.StructInduction): MOption[ProofAst.Step] = {
-    return PostResultProofAstStepStructInduction
-  }
-
-  def postProofAstStepStructInductionMatchCase(o: ProofAst.Step.StructInduction.MatchCase): MOption[ProofAst.Step.StructInduction.MatchCase] = {
-    return PostResultProofAstStepStructInductionMatchCase
-  }
-
-  def postProofAstStepStructInductionMatchDefault(o: ProofAst.Step.StructInduction.MatchDefault): MOption[ProofAst.Step.StructInduction.MatchDefault] = {
-    return PostResultProofAstStepStructInductionMatchDefault
   }
 
   def postProofAstStepJustification(o: ProofAst.Step.Justification): MOption[ProofAst.Step.Justification] = {
@@ -3835,48 +3797,43 @@ import MTransformer._
           val r0: MOption[ProofAst.StepId] = transformProofAstStepId(o2.id)
           val r1: MOption[Exp] = transformExp(o2.claim)
           val r2: MOption[ProofAst.Step.Justification] = transformProofAstStepJustification(o2.just)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(id = r0.getOrElse(o2.id), claim = r1.getOrElse(o2.claim), just = r2.getOrElse(o2.just)))
+          val r3: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id), claim = r1.getOrElse(o2.claim), just = r2.getOrElse(o2.just), attr = r3.getOrElse(o2.attr)))
           else
             MNone()
         case o2: ProofAst.Step.Assume =>
           val r0: MOption[ProofAst.StepId] = transformProofAstStepId(o2.id)
           val r1: MOption[Exp] = transformExp(o2.claim)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(id = r0.getOrElse(o2.id), claim = r1.getOrElse(o2.claim)))
+          val r2: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id), claim = r1.getOrElse(o2.claim), attr = r2.getOrElse(o2.attr)))
           else
             MNone()
         case o2: ProofAst.Step.Assert =>
           val r0: MOption[ProofAst.StepId] = transformProofAstStepId(o2.id)
           val r1: MOption[Exp] = transformExp(o2.claim)
           val r2: MOption[IS[Z, ProofAst.Step]] = transformISZ(o2.steps, transformProofAstStep _)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(id = r0.getOrElse(o2.id), claim = r1.getOrElse(o2.claim), steps = r2.getOrElse(o2.steps)))
+          val r3: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id), claim = r1.getOrElse(o2.claim), steps = r2.getOrElse(o2.steps), attr = r3.getOrElse(o2.attr)))
           else
             MNone()
         case o2: ProofAst.Step.SubProof =>
           val r0: MOption[ProofAst.StepId] = transformProofAstStepId(o2.id)
           val r1: MOption[IS[Z, ProofAst.Step]] = transformISZ(o2.steps, transformProofAstStep _)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(id = r0.getOrElse(o2.id), steps = r1.getOrElse(o2.steps)))
+          val r2: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id), steps = r1.getOrElse(o2.steps), attr = r2.getOrElse(o2.attr)))
           else
             MNone()
         case o2: ProofAst.Step.Let =>
           val r0: MOption[ProofAst.StepId] = transformProofAstStepId(o2.id)
           val r1: MOption[IS[Z, ProofAst.Step.Let.Param]] = transformISZ(o2.params, transformProofAstStepLetParam _)
           val r2: MOption[IS[Z, ProofAst.Step]] = transformISZ(o2.steps, transformProofAstStep _)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(id = r0.getOrElse(o2.id), params = r1.getOrElse(o2.params), steps = r2.getOrElse(o2.steps)))
-          else
-            MNone()
-        case o2: ProofAst.Step.StructInduction =>
-          val r0: MOption[ProofAst.StepId] = transformProofAstStepId(o2.id)
-          val r1: MOption[Exp] = transformExp(o2.claim)
-          val r2: MOption[Exp] = transformExp(o2.exp)
-          val r3: MOption[IS[Z, ProofAst.Step.StructInduction.MatchCase]] = transformISZ(o2.cases, transformProofAstStepStructInductionMatchCase _)
-          val r4: MOption[Option[ProofAst.Step.StructInduction.MatchDefault]] = transformOption(o2.defaultOpt, transformProofAstStepStructInductionMatchDefault _)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
-            MSome(o2(id = r0.getOrElse(o2.id), claim = r1.getOrElse(o2.claim), exp = r2.getOrElse(o2.exp), cases = r3.getOrElse(o2.cases), defaultOpt = r4.getOrElse(o2.defaultOpt)))
+          val r3: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id), params = r1.getOrElse(o2.params), steps = r2.getOrElse(o2.steps), attr = r3.getOrElse(o2.attr)))
           else
             MNone()
       }
@@ -3954,63 +3911,6 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: ProofAst.Step.Let.Param = r.getOrElse(o)
     val postR: MOption[ProofAst.Step.Let.Param] = postProofAstStepLetParam(o2)
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
-  def transformProofAstStepStructInductionMatchCase(o: ProofAst.Step.StructInduction.MatchCase): MOption[ProofAst.Step.StructInduction.MatchCase] = {
-    val preR: PreResult[ProofAst.Step.StructInduction.MatchCase] = preProofAstStepStructInductionMatchCase(o)
-    val r: MOption[ProofAst.Step.StructInduction.MatchCase] = if (preR.continu) {
-      val o2: ProofAst.Step.StructInduction.MatchCase = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[Pattern.Structure] = transformPatternStructure(o2.pattern)
-      val r1: MOption[Option[ProofAst.Step.Assume]] = transformOption(o2.hypoOpt, transformProofAstStepAssume _)
-      val r2: MOption[IS[Z, ProofAst.Step]] = transformISZ(o2.steps, transformProofAstStep _)
-      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-        MSome(o2(pattern = r0.getOrElse(o2.pattern), hypoOpt = r1.getOrElse(o2.hypoOpt), steps = r2.getOrElse(o2.steps)))
-      else
-        MNone()
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: ProofAst.Step.StructInduction.MatchCase = r.getOrElse(o)
-    val postR: MOption[ProofAst.Step.StructInduction.MatchCase] = postProofAstStepStructInductionMatchCase(o2)
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
-  def transformProofAstStepStructInductionMatchDefault(o: ProofAst.Step.StructInduction.MatchDefault): MOption[ProofAst.Step.StructInduction.MatchDefault] = {
-    val preR: PreResult[ProofAst.Step.StructInduction.MatchDefault] = preProofAstStepStructInductionMatchDefault(o)
-    val r: MOption[ProofAst.Step.StructInduction.MatchDefault] = if (preR.continu) {
-      val o2: ProofAst.Step.StructInduction.MatchDefault = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[Option[ProofAst.Step.Assume]] = transformOption(o2.hypoOpt, transformProofAstStepAssume _)
-      val r1: MOption[IS[Z, ProofAst.Step]] = transformISZ(o2.steps, transformProofAstStep _)
-      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-        MSome(o2(hypoOpt = r0.getOrElse(o2.hypoOpt), steps = r1.getOrElse(o2.steps)))
-      else
-        MNone()
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: ProofAst.Step.StructInduction.MatchDefault = r.getOrElse(o)
-    val postR: MOption[ProofAst.Step.StructInduction.MatchDefault] = postProofAstStepStructInductionMatchDefault(o2)
     if (postR.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -5637,80 +5537,6 @@ import MTransformer._
      case MSome(result: Exp.LitZ) => MSome[Exp.LitZ](result)
      case MSome(_) => halt("Can only produce object of type Exp.LitZ")
      case _ => MNone[Exp.LitZ]()
-    }
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
-  def transformPatternStructure(o: Pattern.Structure): MOption[Pattern.Structure] = {
-    val preR: PreResult[Pattern.Structure] = prePatternStructure(o) match {
-     case PreResult(continu, MSome(r: Pattern.Structure)) => PreResult(continu, MSome[Pattern.Structure](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Pattern.Structure")
-     case PreResult(continu, _) => PreResult(continu, MNone[Pattern.Structure]())
-    }
-    val r: MOption[Pattern.Structure] = if (preR.continu) {
-      val o2: Pattern.Structure = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[Option[Id]] = transformOption(o2.idOpt, transformId _)
-      val r1: MOption[Option[Name]] = transformOption(o2.nameOpt, transformName _)
-      val r2: MOption[IS[Z, Pattern]] = transformISZ(o2.patterns, transformPattern _)
-      val r3: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
-      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-        MSome(o2(idOpt = r0.getOrElse(o2.idOpt), nameOpt = r1.getOrElse(o2.nameOpt), patterns = r2.getOrElse(o2.patterns), attr = r3.getOrElse(o2.attr)))
-      else
-        MNone()
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: Pattern.Structure = r.getOrElse(o)
-    val postR: MOption[Pattern.Structure] = postPatternStructure(o2) match {
-     case MSome(result: Pattern.Structure) => MSome[Pattern.Structure](result)
-     case MSome(_) => halt("Can only produce object of type Pattern.Structure")
-     case _ => MNone[Pattern.Structure]()
-    }
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
-  def transformProofAstStepAssume(o: ProofAst.Step.Assume): MOption[ProofAst.Step.Assume] = {
-    val preR: PreResult[ProofAst.Step.Assume] = preProofAstStepAssume(o) match {
-     case PreResult(continu, MSome(r: ProofAst.Step.Assume)) => PreResult(continu, MSome[ProofAst.Step.Assume](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type ProofAst.Step.Assume")
-     case PreResult(continu, _) => PreResult(continu, MNone[ProofAst.Step.Assume]())
-    }
-    val r: MOption[ProofAst.Step.Assume] = if (preR.continu) {
-      val o2: ProofAst.Step.Assume = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[ProofAst.StepId] = transformProofAstStepId(o2.id)
-      val r1: MOption[Exp] = transformExp(o2.claim)
-      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-        MSome(o2(id = r0.getOrElse(o2.id), claim = r1.getOrElse(o2.claim)))
-      else
-        MNone()
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: ProofAst.Step.Assume = r.getOrElse(o)
-    val postR: MOption[ProofAst.Step.Assume] = postProofAstStepAssume(o2) match {
-     case MSome(result: ProofAst.Step.Assume) => MSome[ProofAst.Step.Assume](result)
-     case MSome(_) => halt("Can only produce object of type ProofAst.Step.Assume")
-     case _ => MNone[ProofAst.Step.Assume]()
     }
     if (postR.nonEmpty) {
       return postR

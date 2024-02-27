@@ -941,6 +941,7 @@ object ProofAst {
   @datatype trait Step {
     @strictpure def id: StepId
     @pure def prettyST: ST
+    @pure def attr: Attr
   }
 
   @datatype trait StepId extends Lit {
@@ -973,7 +974,7 @@ object ProofAst {
 
   object Step {
 
-    @datatype class Regular(val id: StepId, val claim: Exp, val just: Justification) extends Step {
+    @datatype class Regular(val id: StepId, val claim: Exp, val just: Justification, @hidden val attr: Attr) extends Step {
       @pure override def prettyST: ST = {
         return if (id.isSynthetic)
           st"(${claim.prettyST}) by ${just.prettyST}"
@@ -982,13 +983,13 @@ object ProofAst {
       }
     }
 
-    @datatype class Assume(val id: StepId, val claim: Exp) extends Step {
+    @datatype class Assume(val id: StepId, val claim: Exp, @hidden val attr: Attr) extends Step {
       @pure override def prettyST: ST = {
         return st"${id.prettyST}  Assume(${claim.prettyST})"
       }
     }
 
-    @datatype class Assert(val id: StepId, val claim: Exp, val steps: ISZ[Step]) extends Step {
+    @datatype class Assert(val id: StepId, val claim: Exp, val steps: ISZ[Step], @hidden val attr: Attr) extends Step {
       @pure override def prettyST: ST = {
         return st"""${id.prettyST}  Assert(${claim.prettyST}, SubProof(
                    |  ${(for (step <- steps) yield step.prettyST, ", ")}
@@ -996,7 +997,7 @@ object ProofAst {
       }
     }
 
-    @datatype class SubProof(val id: StepId, val steps: ISZ[Step]) extends Step {
+    @datatype class SubProof(val id: StepId, val steps: ISZ[Step], @hidden val attr: Attr) extends Step {
       @pure override def prettyST: ST = {
         return st"""${id.prettyST}  SubProof(
                    |  ${(for (step <- steps) yield step.prettyST, ", ")}
@@ -1004,7 +1005,7 @@ object ProofAst {
       }
     }
 
-    @datatype class Let(val id: StepId, val params: ISZ[Let.Param], val steps: ISZ[Step]) extends Step {
+    @datatype class Let(val id: StepId, val params: ISZ[Let.Param], val steps: ISZ[Step], @hidden val attr: Attr) extends Step {
       @pure override def prettyST: ST = {
         return st"""${id.prettyST}  SubProof {(${(for (p <- params) yield p.prettyST, ", ")}) => (
                    |  ${(for (step <- steps) yield step.prettyST, ", ")}
@@ -1021,44 +1022,6 @@ object ProofAst {
         }
       }
 
-    }
-
-    @datatype class StructInduction(val id: StepId,
-                                    val claim: Exp,
-                                    val exp: Exp,
-                                    val cases: ISZ[StructInduction.MatchCase],
-                                    val defaultOpt: Option[StructInduction.MatchDefault]) extends Step {
-      @pure override def prettyST: ST = {
-        val cs: ISZ[ST] = (for (c <- cases) yield c.prettyST) ++
-          (if (defaultOpt.nonEmpty) ISZ(defaultOpt.get.prettyST) else ISZ[ST]())
-        return st"""${id.prettyST}  (${claim.prettyST}) by StructuralInduction(
-                   |  ${exp.prettyST} match {
-                   |    ${(cs, "\n")}
-                   |  }
-                   |)"""
-      }
-    }
-
-    object StructInduction {
-
-      @datatype class MatchCase(val pattern: Pattern.Structure,
-                                val hypoOpt: Option[Assume],
-                                val steps: ISZ[Step]) {
-        @pure def prettyST: ST = {
-          return st"""case ${pattern.prettyST} => SubProof(
-                     |  ${((if (hypoOpt.isEmpty) ISZ[ST]() else ISZ(hypoOpt.get.prettyST)) ++ (for (step <- steps) yield step.prettyST) , ",\n")}
-                     |)"""
-        }
-      }
-
-      @datatype class MatchDefault(val hypoOpt: Option[Assume],
-                                   val steps: ISZ[Step]) {
-        @pure def prettyST: ST = {
-          return st"""case _ => SubProof(
-                     |  ${((if (hypoOpt.isEmpty) ISZ[ST]() else ISZ(hypoOpt.get.prettyST)) ++ (for (step <- steps) yield step.prettyST) , ",\n")}
-                     |)"""
-        }
-      }
     }
 
     @datatype trait Justification {
@@ -1409,6 +1372,9 @@ object Pattern {
   @strictpure def posOpt: Option[Position]
   @strictpure def typedOpt: Option[Typed]
   @pure def prettyST: ST
+  @pure def fullPosOpt: Option[Position] = {
+    return posOpt
+  }
 
   override def string: String = {
     return prettyST.render
@@ -1503,14 +1469,17 @@ object Exp {
     "Complement"
   }
 
-  @datatype class Unary(val op: UnaryOp.Type, val exp: Exp, @hidden val attr: ResolvedAttr) extends Exp {
-    @strictpure override def posOpt: Option[Position] = attr.posOpt
+  @datatype class Unary(val op: UnaryOp.Type, val exp: Exp, @hidden val attr: ResolvedAttr, @hidden val opPosOpt: Option[Position]) extends Exp {
+    @strictpure override def posOpt: Option[Position] = opPosOpt
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
     @strictpure def opString: String = op match {
       case Exp.UnaryOp.Complement => "~"
       case Exp.UnaryOp.Minus => "-"
       case Exp.UnaryOp.Not => "!"
       case Exp.UnaryOp.Plus => "+"
+    }
+    @pure override def fullPosOpt: Option[Position] = {
+      return attr.posOpt
     }
     @pure override def prettyST: ST = {
       val paren: B = exp match {
@@ -1648,15 +1617,18 @@ object Exp {
     }
   }
 
-  @datatype class Binary(val left: Exp, val op: String, val right: Exp, @hidden val attr: ResolvedAttr) extends Exp {
+  @datatype class Binary(val left: Exp, val op: String, val right: Exp, @hidden val attr: ResolvedAttr, @hidden val opPosOpt: Option[Position]) extends Exp {
 
     @memoize def isRightAssoc: B = {
       return ops.StringOps(op).endsWith(":")
     }
 
-    @strictpure override def posOpt: Option[Position] = attr.posOpt
+    @strictpure override def posOpt: Option[Position] = opPosOpt
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
 
+    @pure override def fullPosOpt: Option[Position] = {
+      return attr.posOpt
+    }
 
     @pure override def prettyST: ST = {
       val leftOpOpt: Option[String] = left match {

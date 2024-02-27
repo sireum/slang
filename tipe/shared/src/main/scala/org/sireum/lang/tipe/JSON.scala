@@ -944,7 +944,6 @@ object JSON {
         case o: org.sireum.lang.ast.ProofAst.Step.Assert => return print_astProofAstStepAssert(o)
         case o: org.sireum.lang.ast.ProofAst.Step.SubProof => return print_astProofAstStepSubProof(o)
         case o: org.sireum.lang.ast.ProofAst.Step.Let => return print_astProofAstStepLet(o)
-        case o: org.sireum.lang.ast.ProofAst.Step.StructInduction => return print_astProofAstStepStructInduction(o)
       }
     }
 
@@ -977,7 +976,8 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.ProofAst.Step.Regular""""),
         ("id", print_astProofAstStepId(o.id)),
         ("claim", print_astExp(o.claim)),
-        ("just", print_astProofAstStepJustification(o.just))
+        ("just", print_astProofAstStepJustification(o.just)),
+        ("attr", print_astAttr(o.attr))
       ))
     }
 
@@ -985,7 +985,8 @@ object JSON {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.ProofAst.Step.Assume""""),
         ("id", print_astProofAstStepId(o.id)),
-        ("claim", print_astExp(o.claim))
+        ("claim", print_astExp(o.claim)),
+        ("attr", print_astAttr(o.attr))
       ))
     }
 
@@ -994,7 +995,8 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.ProofAst.Step.Assert""""),
         ("id", print_astProofAstStepId(o.id)),
         ("claim", print_astExp(o.claim)),
-        ("steps", printISZ(F, o.steps, print_astProofAstStep _))
+        ("steps", printISZ(F, o.steps, print_astProofAstStep _)),
+        ("attr", print_astAttr(o.attr))
       ))
     }
 
@@ -1002,7 +1004,8 @@ object JSON {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.ProofAst.Step.SubProof""""),
         ("id", print_astProofAstStepId(o.id)),
-        ("steps", printISZ(F, o.steps, print_astProofAstStep _))
+        ("steps", printISZ(F, o.steps, print_astProofAstStep _)),
+        ("attr", print_astAttr(o.attr))
       ))
     }
 
@@ -1011,7 +1014,8 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.ProofAst.Step.Let""""),
         ("id", print_astProofAstStepId(o.id)),
         ("params", printISZ(F, o.params, print_astProofAstStepLetParam _)),
-        ("steps", printISZ(F, o.steps, print_astProofAstStep _))
+        ("steps", printISZ(F, o.steps, print_astProofAstStep _)),
+        ("attr", print_astAttr(o.attr))
       ))
     }
 
@@ -1020,34 +1024,6 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.ProofAst.Step.Let.Param""""),
         ("id", print_astId(o.id)),
         ("tipeOpt", printOption(F, o.tipeOpt, print_astType _))
-      ))
-    }
-
-    @pure def print_astProofAstStepStructInduction(o: org.sireum.lang.ast.ProofAst.Step.StructInduction): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.ProofAst.Step.StructInduction""""),
-        ("id", print_astProofAstStepId(o.id)),
-        ("claim", print_astExp(o.claim)),
-        ("exp", print_astExp(o.exp)),
-        ("cases", printISZ(F, o.cases, print_astProofAstStepStructInductionMatchCase _)),
-        ("defaultOpt", printOption(F, o.defaultOpt, print_astProofAstStepStructInductionMatchDefault _))
-      ))
-    }
-
-    @pure def print_astProofAstStepStructInductionMatchCase(o: org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchCase): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchCase""""),
-        ("pattern", print_astPatternStructure(o.pattern)),
-        ("hypoOpt", printOption(F, o.hypoOpt, print_astProofAstStepAssume _)),
-        ("steps", printISZ(F, o.steps, print_astProofAstStep _))
-      ))
-    }
-
-    @pure def print_astProofAstStepStructInductionMatchDefault(o: org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchDefault): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchDefault""""),
-        ("hypoOpt", printOption(F, o.hypoOpt, print_astProofAstStepAssume _)),
-        ("steps", printISZ(F, o.steps, print_astProofAstStep _))
       ))
     }
 
@@ -1421,7 +1397,8 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.Exp.Unary""""),
         ("op", print_astExpUnaryOpType(o.op)),
         ("exp", print_astExp(o.exp)),
-        ("attr", print_astResolvedAttr(o.attr))
+        ("attr", print_astResolvedAttr(o.attr)),
+        ("opPosOpt", printOption(F, o.opPosOpt, printPosition _))
       ))
     }
 
@@ -1438,7 +1415,8 @@ object JSON {
         ("left", print_astExp(o.left)),
         ("op", printString(o.op)),
         ("right", print_astExp(o.right)),
-        ("attr", print_astResolvedAttr(o.attr))
+        ("attr", print_astResolvedAttr(o.attr)),
+        ("opPosOpt", printOption(F, o.opPosOpt, printPosition _))
       ))
     }
 
@@ -4247,15 +4225,14 @@ object JSON {
     }
 
     def parse_astProofAstStep(): org.sireum.lang.ast.ProofAst.Step = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.ProofAst.Step.Regular", "org.sireum.lang.ast.ProofAst.Step.Assume", "org.sireum.lang.ast.ProofAst.Step.Assert", "org.sireum.lang.ast.ProofAst.Step.SubProof", "org.sireum.lang.ast.ProofAst.Step.Let", "org.sireum.lang.ast.ProofAst.Step.StructInduction"))
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.ProofAst.Step.Regular", "org.sireum.lang.ast.ProofAst.Step.Assume", "org.sireum.lang.ast.ProofAst.Step.Assert", "org.sireum.lang.ast.ProofAst.Step.SubProof", "org.sireum.lang.ast.ProofAst.Step.Let"))
       t.native match {
         case "org.sireum.lang.ast.ProofAst.Step.Regular" => val r = parse_astProofAstStepRegularT(T); return r
         case "org.sireum.lang.ast.ProofAst.Step.Assume" => val r = parse_astProofAstStepAssumeT(T); return r
         case "org.sireum.lang.ast.ProofAst.Step.Assert" => val r = parse_astProofAstStepAssertT(T); return r
         case "org.sireum.lang.ast.ProofAst.Step.SubProof" => val r = parse_astProofAstStepSubProofT(T); return r
         case "org.sireum.lang.ast.ProofAst.Step.Let" => val r = parse_astProofAstStepLetT(T); return r
-        case "org.sireum.lang.ast.ProofAst.Step.StructInduction" => val r = parse_astProofAstStepStructInductionT(T); return r
-        case _ => val r = parse_astProofAstStepStructInductionT(T); return r
+        case _ => val r = parse_astProofAstStepLetT(T); return r
       }
     }
 
@@ -4325,7 +4302,10 @@ object JSON {
       parser.parseObjectKey("just")
       val just = parse_astProofAstStepJustification()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ProofAst.Step.Regular(id, claim, just)
+      parser.parseObjectKey("attr")
+      val attr = parse_astAttr()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.ProofAst.Step.Regular(id, claim, just, attr)
     }
 
     def parse_astProofAstStepAssume(): org.sireum.lang.ast.ProofAst.Step.Assume = {
@@ -4343,7 +4323,10 @@ object JSON {
       parser.parseObjectKey("claim")
       val claim = parse_astExp()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ProofAst.Step.Assume(id, claim)
+      parser.parseObjectKey("attr")
+      val attr = parse_astAttr()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.ProofAst.Step.Assume(id, claim, attr)
     }
 
     def parse_astProofAstStepAssert(): org.sireum.lang.ast.ProofAst.Step.Assert = {
@@ -4364,7 +4347,10 @@ object JSON {
       parser.parseObjectKey("steps")
       val steps = parser.parseISZ(parse_astProofAstStep _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ProofAst.Step.Assert(id, claim, steps)
+      parser.parseObjectKey("attr")
+      val attr = parse_astAttr()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.ProofAst.Step.Assert(id, claim, steps, attr)
     }
 
     def parse_astProofAstStepSubProof(): org.sireum.lang.ast.ProofAst.Step.SubProof = {
@@ -4382,7 +4368,10 @@ object JSON {
       parser.parseObjectKey("steps")
       val steps = parser.parseISZ(parse_astProofAstStep _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ProofAst.Step.SubProof(id, steps)
+      parser.parseObjectKey("attr")
+      val attr = parse_astAttr()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.ProofAst.Step.SubProof(id, steps, attr)
     }
 
     def parse_astProofAstStepLet(): org.sireum.lang.ast.ProofAst.Step.Let = {
@@ -4403,7 +4392,10 @@ object JSON {
       parser.parseObjectKey("steps")
       val steps = parser.parseISZ(parse_astProofAstStep _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ProofAst.Step.Let(id, params, steps)
+      parser.parseObjectKey("attr")
+      val attr = parse_astAttr()
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.ProofAst.Step.Let(id, params, steps, attr)
     }
 
     def parse_astProofAstStepLetParam(): org.sireum.lang.ast.ProofAst.Step.Let.Param = {
@@ -4422,72 +4414,6 @@ object JSON {
       val tipeOpt = parser.parseOption(parse_astType _)
       parser.parseObjectNext()
       return org.sireum.lang.ast.ProofAst.Step.Let.Param(id, tipeOpt)
-    }
-
-    def parse_astProofAstStepStructInduction(): org.sireum.lang.ast.ProofAst.Step.StructInduction = {
-      val r = parse_astProofAstStepStructInductionT(F)
-      return r
-    }
-
-    def parse_astProofAstStepStructInductionT(typeParsed: B): org.sireum.lang.ast.ProofAst.Step.StructInduction = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.ProofAst.Step.StructInduction")
-      }
-      parser.parseObjectKey("id")
-      val id = parse_astProofAstStepId()
-      parser.parseObjectNext()
-      parser.parseObjectKey("claim")
-      val claim = parse_astExp()
-      parser.parseObjectNext()
-      parser.parseObjectKey("exp")
-      val exp = parse_astExp()
-      parser.parseObjectNext()
-      parser.parseObjectKey("cases")
-      val cases = parser.parseISZ(parse_astProofAstStepStructInductionMatchCase _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("defaultOpt")
-      val defaultOpt = parser.parseOption(parse_astProofAstStepStructInductionMatchDefault _)
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.ProofAst.Step.StructInduction(id, claim, exp, cases, defaultOpt)
-    }
-
-    def parse_astProofAstStepStructInductionMatchCase(): org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchCase = {
-      val r = parse_astProofAstStepStructInductionMatchCaseT(F)
-      return r
-    }
-
-    def parse_astProofAstStepStructInductionMatchCaseT(typeParsed: B): org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchCase = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchCase")
-      }
-      parser.parseObjectKey("pattern")
-      val pattern = parse_astPatternStructure()
-      parser.parseObjectNext()
-      parser.parseObjectKey("hypoOpt")
-      val hypoOpt = parser.parseOption(parse_astProofAstStepAssume _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("steps")
-      val steps = parser.parseISZ(parse_astProofAstStep _)
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchCase(pattern, hypoOpt, steps)
-    }
-
-    def parse_astProofAstStepStructInductionMatchDefault(): org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchDefault = {
-      val r = parse_astProofAstStepStructInductionMatchDefaultT(F)
-      return r
-    }
-
-    def parse_astProofAstStepStructInductionMatchDefaultT(typeParsed: B): org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchDefault = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchDefault")
-      }
-      parser.parseObjectKey("hypoOpt")
-      val hypoOpt = parser.parseOption(parse_astProofAstStepAssume _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("steps")
-      val steps = parser.parseISZ(parse_astProofAstStep _)
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchDefault(hypoOpt, steps)
     }
 
     def parse_astProofAstStepJustification(): org.sireum.lang.ast.ProofAst.Step.Justification = {
@@ -5221,7 +5147,10 @@ object JSON {
       parser.parseObjectKey("attr")
       val attr = parse_astResolvedAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Exp.Unary(op, exp, attr)
+      parser.parseObjectKey("opPosOpt")
+      val opPosOpt = parser.parseOption(parser.parsePosition _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Exp.Unary(op, exp, attr, opPosOpt)
     }
 
     def parse_astExpRef(): org.sireum.lang.ast.Exp.Ref = {
@@ -5254,7 +5183,10 @@ object JSON {
       parser.parseObjectKey("attr")
       val attr = parse_astResolvedAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Exp.Binary(left, op, right, attr)
+      parser.parseObjectKey("opPosOpt")
+      val opPosOpt = parser.parseOption(parser.parsePosition _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Exp.Binary(left, op, right, attr, opPosOpt)
     }
 
     def parse_astExpIdent(): org.sireum.lang.ast.Exp.Ident = {
@@ -8583,60 +8515,6 @@ object JSON {
       return r
     }
     val r = to(s, f_astProofAstStepLetParam _)
-    return r
-  }
-
-  def from_astProofAstStepStructInduction(o: org.sireum.lang.ast.ProofAst.Step.StructInduction, isCompact: B): String = {
-    val st = Printer.print_astProofAstStepStructInduction(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astProofAstStepStructInduction(s: String): Either[org.sireum.lang.ast.ProofAst.Step.StructInduction, Json.ErrorMsg] = {
-    def f_astProofAstStepStructInduction(parser: Parser): org.sireum.lang.ast.ProofAst.Step.StructInduction = {
-      val r = parser.parse_astProofAstStepStructInduction()
-      return r
-    }
-    val r = to(s, f_astProofAstStepStructInduction _)
-    return r
-  }
-
-  def from_astProofAstStepStructInductionMatchCase(o: org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchCase, isCompact: B): String = {
-    val st = Printer.print_astProofAstStepStructInductionMatchCase(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astProofAstStepStructInductionMatchCase(s: String): Either[org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchCase, Json.ErrorMsg] = {
-    def f_astProofAstStepStructInductionMatchCase(parser: Parser): org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchCase = {
-      val r = parser.parse_astProofAstStepStructInductionMatchCase()
-      return r
-    }
-    val r = to(s, f_astProofAstStepStructInductionMatchCase _)
-    return r
-  }
-
-  def from_astProofAstStepStructInductionMatchDefault(o: org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchDefault, isCompact: B): String = {
-    val st = Printer.print_astProofAstStepStructInductionMatchDefault(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astProofAstStepStructInductionMatchDefault(s: String): Either[org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchDefault, Json.ErrorMsg] = {
-    def f_astProofAstStepStructInductionMatchDefault(parser: Parser): org.sireum.lang.ast.ProofAst.Step.StructInduction.MatchDefault = {
-      val r = parser.parse_astProofAstStepStructInductionMatchDefault()
-      return r
-    }
-    val r = to(s, f_astProofAstStepStructInductionMatchDefault _)
     return r
   }
 

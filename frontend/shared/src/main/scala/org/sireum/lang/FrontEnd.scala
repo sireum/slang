@@ -83,11 +83,36 @@ object FrontEnd {
 
   def rewrite(kind: Rewrite.Type, isWorksheet: B, fileUriOpt: Option[String], text: String, reporter: Reporter): Option[(String, Z)] = {
     Parser.parseTopUnit[AST.TopUnit](text, isWorksheet, F, fileUriOpt, reporter) match {
-      case Some(program) if !reporter.hasError =>
+      case Some(unit) if !reporter.hasError =>
         kind match {
-          case Rewrite.InsertConstructorVals => return Some(AST.Util.insertConstructorVal(text, program))
-          case Rewrite.ReplaceEnumSymbols => return Some(AST.Util.replaceEnumSymbols(text, program))
+          case Rewrite.InsertConstructorVals => return Some(AST.Util.insertConstructorVal(text, unit))
+          case Rewrite.ReplaceEnumSymbols => return Some(AST.Util.replaceEnumSymbols(text, unit))
         }
+      case _ => return None()
+    }
+  }
+
+  def reformatProof(isWorksheet: B, fileUriOpt: Option[String], text: String): Option[(String, Z)] = {
+    def reformat(content: String): Option[(String, Z)] = {
+      val reporter = Reporter.create
+      Parser.parseTopUnit[AST.TopUnit](content, isWorksheet, F, fileUriOpt, reporter) match {
+        case Some(unit) if !reporter.hasError => return AST.Util.reformatProof(content, unit)
+        case _ => return None()
+      }
+    }
+    reformat(text) match {
+      case Some((r, n)) => reformat(r) match {
+        case Some((r2, m)) => return Some((r2, n + m))
+        case _ => return Some((r, n))
+      }
+      case _ => return None()
+    }
+  }
+
+  def insertProofStep(lineSep: String, isWorksheet: B, fileUriOpt: Option[String], text: String, insert: String, line: Z): Option[String] = {
+    val reporter = Reporter.create
+    Parser.parseTopUnit[AST.TopUnit](text, isWorksheet, F, fileUriOpt, reporter) match {
+      case Some(unit) if !reporter.hasError => return AST.Util.insertProofStep(lineSep, text, unit, insert, line)
       case _ => return None()
     }
   }

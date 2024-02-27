@@ -350,17 +350,17 @@ object TypeHierarchy {
         AST.ResolvedInfo.LocalVar(o.fun.context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T, id.value)),
         param.typedOpt))
       val loCond = AST.Exp.Binary(o.lo, AST.Exp.BinaryOp.Le, ident, AST.ResolvedAttr(o.lo.posOpt, Some(
-        AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryLe)), o.lo.typedOpt))
+        AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryLe)), o.lo.typedOpt), o.lo.posOpt)
       val hiCond = AST.Exp.Binary(ident, if (o.hiExact) AST.Exp.BinaryOp.Le else AST.Exp.BinaryOp.Lt, o.hi,
         AST.ResolvedAttr(o.lo.posOpt, Some(AST.ResolvedInfo.BuiltIn(
           if (o.hiExact) AST.ResolvedInfo.BuiltIn.Kind.BinaryLe else AST.ResolvedInfo.BuiltIn.Kind.BinaryLt)),
-          o.hi.typedOpt))
+          o.hi.typedOpt), o.lo.posOpt)
       val cond = AST.Exp.Binary(loCond, AST.Exp.BinaryOp.And, hiCond, AST.ResolvedAttr(
         o.posOpt, Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryAnd)), AST.Typed.bOpt
-      ))
+      ), o.posOpt)
       val fun = AST.Exp.Fun(o.fun.context, o.fun.params, AST.Stmt.Expr(
         AST.Exp.Binary(cond, AST.Exp.BinaryOp.CondImply, exp, AST.ResolvedAttr(o.posOpt,
-          Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryCondImply)), AST.Typed.bOpt)),
+          Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryCondImply)), AST.Typed.bOpt), o.posOpt),
         AST.TypedAttr(o.posOpt, AST.Typed.bOpt)
       ), AST.TypedAttr(o.attr.posOpt, o.attr.typedOpt))
       val newQuant = AST.Exp.QuantType(o.isForall, fun, AST.Attr(o.posOpt))

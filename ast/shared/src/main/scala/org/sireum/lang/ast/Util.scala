@@ -128,7 +128,7 @@ object Util {
       }
     }
   }
-  
+
   @record class EnumSymbolMapper(val content: ISZ[C], var map: HashMap[Z, (String, String)]) extends MTransformer {
     override def postStmtEnum(o: Stmt.Enum): MOption[Stmt] = {
       for (id <- o.elements) {
@@ -226,6 +226,380 @@ object Util {
     }
   }
 
+  @record class ProofReformatter(val docInfo: DocInfo,
+                                 val content: ISZ[C],
+                                 var map: HashMap[Z, (String, String)]) extends MTransformer {
+    override def preProofAst(o: ProofAst): MTransformer.PreResult[ProofAst] = {
+      format(o.steps)
+      return MTransformer.PreResultProofAst
+    }
+
+    override def preSequent(o: Sequent): MTransformer.PreResult[Sequent] = {
+      format(o.steps)
+      return MTransformer.PreResultSequent
+    }
+
+    override def preStmtDeduceSteps(o: Stmt.DeduceSteps): MTransformer.PreResult[Stmt.Spec] = {
+      format(o.steps)
+      return MTransformer.PreResultStmtDeduceSteps
+    }
+
+    def format(steps: ISZ[ProofAst.Step]): Unit = {
+      @pure def getMaxColumn: (Z, ProofAst.Step) = {
+        var r: Z = -1
+        var stepOpt = Option.none[ProofAst.Step]()
+
+        def maxColumnH(step: ProofAst.Step): Unit = {
+          step match {
+            case step: ProofAst.Step.SubProof =>
+              for (step2 <- step.steps) {
+                maxColumnH(step2)
+              }
+            case step: ProofAst.Step.Let =>
+              for (step2 <- step.steps) {
+                maxColumnH(step2)
+              }
+            case _ =>
+              val pos = step.attr.posOpt.get
+              val justLine: Z = step match {
+                case step: ProofAst.Step.Regular =>
+                  val p = step.just.posOpt.get
+                  p.beginLine
+                case _ => 0
+              }
+              for (i <- pos.beginLine to pos.endLine) {
+                val lineOffset = docInfo.lineOffsets(i - 1).toZ
+                val k: Z = if (justLine == i) {
+                  val claimPos = step.asInstanceOf[ProofAst.Step.Regular].claim.fullPosOpt.get
+                  claimPos.offset + claimPos.length + 1
+                } else {
+                  var j = lineOffset
+                  while (j < content.size && content(j) != '\n' && content(j) != '\r') {
+                    j = j + 1
+                  }
+                  j = j - 1
+                  while (content(j).isWhitespace) {
+                    j = j - 1
+                  }
+                  j + 1
+                }
+                var column = k - lineOffset
+
+                def subImply(imply: ISZ[C]): Unit = {
+                  var l = lineOffset
+                  while (l != -1 && l <= pos.offset + pos.length) {
+                    l = ops.StringOps.stringIndexOfFrom(content, imply, l)
+                    if (l != -1 && l <= pos.offset + pos.length) {
+                      if ((imply.size == 4) ___>: (content(i - 1) != '_')) {
+                        column = column - (imply.size - 1)
+                      }
+                      l = l + imply.size
+                    }
+                  }
+                }
+
+                subImply(ProofReformatter.imply)
+                subImply(ProofReformatter.simply)
+                if (column > r) {
+                  r = column
+                  stepOpt = Some(step)
+                }
+              }
+          }
+        }
+
+        for (step <- steps) {
+          maxColumnH(step)
+        }
+        return (r + 3, stepOpt.get)
+      }
+
+      def patchBeginning(step: ProofAst.Step): Unit = {
+        var i: Z = 0
+        step match {
+          case _: ProofAst.Step.SubProof => return
+          case _: ProofAst.Step.Let => return
+          case step: ProofAst.Step.Assert =>
+            val j = ops.StringOps.stringIndexOfFrom(content, ProofReformatter.asser, step.attr.posOpt.get.offset) + 6
+            i = j
+            while (content(i).isWhitespace) {
+              i = i + 1
+            }
+            if (i - j > 0) {
+              map = map + j ~> (ops.StringOps.substring(content, i, j), "")
+            }
+          case step: ProofAst.Step.Assume =>
+            val j = ops.StringOps.stringIndexOfFrom(content, ProofReformatter.assum, step.attr.posOpt.get.offset) + 6
+            i = j
+            while (content(i).isWhitespace) {
+              i = i + 1
+            }
+            if (i - j > 0) {
+              map = map + j ~> (ops.StringOps.substring(content, i, j), "")
+            }
+          case _ =>
+            if (step.id.isSynthetic) {
+              i = step.attr.posOpt.get.offset
+            } else {
+              val pos = step.id.posOpt.get
+              val offset = pos.offset + pos.length + 1
+              i = offset
+              while (content(i).isWhitespace || content(i) == '#' || content(i) == '>') {
+                i = i + 1
+              }
+              if (i - offset != 1) {
+                map = map + offset ~> (ops.StringOps.substring(content, offset, i), " ")
+              }
+            }
+        }
+        if (content(i) == '(') {
+          if (!content(i + 1).isWhitespace) {
+            map = map + (i + 1) ~> ("", "  ")
+          }
+        } else {
+          map = map + i ~> ("", "(  ")
+        }
+      }
+
+      def patchEnd(maxColumn: Z, maxStep: ProofAst.Step, step: ProofAst.Step.Regular): Unit = {
+        val pos = step.claim.fullPosOpt.get
+        val offset = pos.offset + pos.length
+        val paren: Z = {
+          val end = ops.StringOps.stringIndexOfFrom(content, ProofReformatter.by, offset)
+          var i = offset
+          while (i < end && content(i).isWhitespace) {
+            i = i + 1
+          }
+          if (content(i) == ')') end else -1
+        }
+        var add = maxColumn - pos.endColumn - 2
+
+        def addImply(imply: ISZ[C]): Unit = {
+          var i = pos.offset
+          while (i != -1 && i <= offset) {
+            i = ops.StringOps.stringIndexOfFrom(content, imply, i)
+            if (i != -1 && i <= offset) {
+              if ((imply.size == 4) ___>: (content(i - 1) != '_')) {
+                add = add + (imply.size - 1)
+              }
+              i = i + imply.size
+            }
+          }
+        }
+
+        if (maxStep != step) {
+          addImply(ProofReformatter.imply)
+          addImply(ProofReformatter.simply)
+        }
+        var spaces: ISZ[C] = for (_ <- 0 until add) yield ' '
+        spaces = spaces :+ ')' :+ ' '
+        val pad = conversions.String.fromCis(spaces)
+        if (paren >= 0) {
+          val orig = ops.StringOps.substring(content, offset, paren)
+          map = map + offset ~> (orig, pad)
+        } else {
+          map = map + offset ~> ("", pad)
+        }
+        val i = ops.StringOps.stringIndexOfFrom(content, ProofReformatter.by, offset)
+        map = map + (offset + 1) ~> (ops.StringOps.substring(content, offset + 1, i), "")
+      }
+      def patchEndClaim(pos: Position, claimPos: Position): Unit = {
+        val end = pos.offset + pos.length
+        val i = claimPos.offset + claimPos.length
+        var j = i
+        while (content(j) != ')' && j < end) {
+          j = j + 1
+        }
+        if ((content(j) == ')' __>: (j - i != 2)) && (j - i != 3)) {
+          if (content(j) != ')') {
+            map = map + i ~> ("", "  )")
+          } else {
+            map = map + i ~> (ops.StringOps.substring(content, i, j), "  ")
+          }
+        }
+      }
+
+      val (maxColumn, maxStep) = getMaxColumn
+
+      def rec(step: ProofAst.Step): Unit = {
+        patchBeginning(step)
+        step match {
+          case step: ProofAst.Step.Regular => patchEnd(maxColumn, maxStep, step)
+          case step: ProofAst.Step.Assert => patchEndClaim(step.attr.posOpt.get, step.claim.fullPosOpt.get)
+          case step: ProofAst.Step.Assume => patchEndClaim(step.attr.posOpt.get, step.claim.fullPosOpt.get)
+          case step: ProofAst.Step.SubProof =>
+            for (step2 <- step.steps) {
+              rec(step2)
+            }
+          case step: ProofAst.Step.Let =>
+            for (step2 <- step.steps) {
+              rec(step2)
+            }
+        }
+      }
+
+      for (step <- steps) {
+        rec(step)
+      }
+    }
+  }
+
+  object ProofReformatter {
+    val assum: ISZ[C] = ISZ[C]('A', 's', 's', 'u', 'm', 'e')
+    val asser: ISZ[C] = ISZ[C]('A', 's', 's', 'e', 'r', 't')
+    val imply: ISZ[C] = ISZ[C]('_', '_', '>', ':')
+    val simply: ISZ[C] = ISZ[C]('_', '_', '_', '>', ':')
+    val by: ISZ[C] = ISZ[C]('b', 'y')
+  }
+
+  @record class ProofStepInserter(val lineSep: String,
+                                  val docInfo: DocInfo,
+                                  val line: Z,
+                                  val content: ISZ[C],
+                                  val insert: String,
+                                  var map: HashMap[Z, (String, String)]) extends MTransformer {
+    @strictpure def abs(n: Z): Z = if (n < 0) -n else n
+
+    def insertBeginning(no: Z, isEmpty: B, pos: Position, after: ISZ[C]): Unit = {
+      var i = ops.StringOps.stringIndexOfFrom(content, ISZ[C]('/', '/'), docInfo.lineOffsets(pos.beginLine).toZ)
+      if (0 <= i && i < docInfo.lineOffsets(pos.beginLine + 1).toZ) {
+        while (i < content.size && content(i) != '\n') {
+          i = i + 1
+        }
+      } else {
+        i = ops.StringOps.stringIndexOfFrom(content, after, pos.offset)
+        while (i <= content.size && content(i) != '(') {
+          i = i + 1
+        }
+        i = i + 1
+      }
+      insertPos(no, "", i, pos.beginColumn + 1, if (isEmpty) "" else ",")
+    }
+
+    override def preProofAst(o: ProofAst): MTransformer.PreResult[ProofAst] = {
+      val r = MTransformer.PreResultProofAst(continu = F)
+      val pos = o.attr.posOpt.get
+      if (map.nonEmpty || !(pos.beginLine <= line && line <= pos.endLine)) {
+        return r
+      }
+      val no = freshNum(o.steps)
+      insertSteps(no, o.steps)
+      if (map.nonEmpty) {
+        return r
+      }
+      if (o.steps.nonEmpty && abs(line - pos.beginLine) >= abs(line - pos.endLine)) {
+        insertStep(no, o.steps(o.steps.size - 1))
+      } else {
+        insertBeginning(no, o.steps.isEmpty, pos, ProofStepInserter.proof)
+      }
+      return r
+    }
+
+    override def preSequent(o: Sequent): MTransformer.PreResult[Sequent] = {
+      val r = MTransformer.PreResultSequent(continu = F)
+      val pos = o.attr.posOpt.get
+      if (map.nonEmpty || !(pos.beginLine <= line && line <= pos.endLine)) {
+        return r
+      }
+      val no = freshNum(o.steps)
+      insertSteps(no, o.steps)
+      if (map.nonEmpty) {
+        return r
+      }
+      if (o.steps.nonEmpty && abs(line - pos.beginLine) >= abs(line - pos.endLine)) {
+        insertStep(no, o.steps(o.steps.size - 1))
+      } else {
+        insertBeginning(no, o.steps.isEmpty, pos, ProofStepInserter.proof)
+      }
+      return r
+    }
+
+    override def preStmtDeduceSteps(o: Stmt.DeduceSteps): MTransformer.PreResult[Stmt.Spec] = {
+      val r = MTransformer.PreResultStmtDeduceSteps(continu = F)
+      val pos = o.attr.posOpt.get
+      if (map.nonEmpty || !(pos.beginLine <= line && line <= pos.endLine)) {
+        return r
+      }
+      val no = freshNum(o.steps)
+      insertSteps(no, o.steps)
+      if (map.nonEmpty) {
+        return r
+      }
+      if (o.steps.nonEmpty && abs(line - pos.beginLine) >= abs(line - pos.endLine)) {
+        insertStep(no, o.steps(o.steps.size - 1))
+      } else {
+        insertBeginning(no, o.steps.isEmpty, pos, ProofStepInserter.deduce)
+      }
+      return r
+    }
+
+    @pure def freshNum(steps: ISZ[ProofAst.Step]): Z = {
+      var set = HashSet.empty[Z]
+
+      def rec(step: ProofAst.Step): Unit = {
+        step.id match {
+          case id: ProofAst.StepId.Num => set = set + id.no
+          case _ =>
+        }
+        step match {
+          case step: ProofAst.Step.Let =>
+            for (step2 <- step.steps) {
+              rec(step2)
+            }
+          case step: ProofAst.Step.SubProof =>
+            for (step2 <- step.steps) {
+              rec(step2)
+            }
+          case _ =>
+        }
+      }
+
+      for (step <- steps) {
+        rec(step)
+      }
+      var i = 1
+      while (set.contains(i)) {
+        i = i + 1
+      }
+      return i
+    }
+
+    def insertSteps(no: Z, steps: ISZ[ProofAst.Step]): Unit = {
+      for (step <- steps if map.isEmpty) {
+        step match {
+          case step: ProofAst.Step.SubProof => insertSteps(no, step.steps)
+          case step: ProofAst.Step.Let => insertSteps(no, step.steps)
+          case _ =>
+        }
+        val pos = step.attr.posOpt.get
+        if (pos.beginLine <= line && line <= pos.endLine) {
+          insertStep(no, step)
+        }
+      }
+    }
+
+    def insertStep(no: Z, o: ProofAst.Step): Unit = {
+      if (map.nonEmpty) {
+        return
+      }
+      val pos = o.attr.posOpt.get
+      val bpos: Position = if (o.id.isSynthetic) pos else o.id.posOpt.get
+      insertPos(no, ",", pos.offset + pos.length, bpos.beginColumn - 1, "")
+    }
+
+    def insertPos(no: Z, comma: String, offset: Z, column: Z, endComma: String): Unit = {
+      val indent: String = conversions.String.fromCis(for (_ <- 0 until column) yield ' ')
+      val lines = ops.StringOps(insert).split((c: C) => c == '\n')
+      val str = s"$comma$lineSep$indent$no ${st"${(lines, s"$lineSep$indent")}".render}$endComma"
+      map = map + offset ~> ("", str)
+    }
+  }
+
+  object ProofStepInserter {
+    val deduce: ISZ[C] = ISZ[C]('D', 'e', 'd', 'u', 'c', 'e')
+    val proof: ISZ[C] = ISZ[C]('P', 'r', 'o', 'o', 'f')
+  }
+
   @record class ConstructorValMapper(val content: ISZ[C], var map: HashMap[Z, (String, String)]) extends MTransformer {
     override def postAdtParam(o: AdtParam): MOption[AdtParam] = {
       if (o.isVal) {
@@ -315,6 +689,7 @@ object Util {
     override def preResolvedInfoMethod(ctx: B, o: ResolvedInfo.Method): Transformer.PreResult[B, ResolvedInfo] = {
       return Transformer.PreResult(ctx, F, None())
     }
+
     override def postTypedTypeVar(ctx: B, o: Typed.TypeVar): Transformer.TPostResult[B, Typed] = {
       substMap.get(o.id) match {
         case Some(t) => return Transformer.TPostResult(ctx, Some(t))
@@ -396,7 +771,7 @@ object Util {
   }
 
   @pure def beginColumn(posOpt: Option[Position]): Z = {
-//    l""" requires ∃pos: Position  posOpt == Some(pos) """
+    //    l""" requires ∃pos: Position  posOpt == Some(pos) """
     posOpt match {
       case Some(pos) => return pos.beginColumn
       case _ => return 0
@@ -645,6 +1020,7 @@ object Util {
           reporter.error(id.attr.posOpt, "Slang front-end", "Cannot introduce a top-level entity named args in Slang script")
         }
       }
+
       stmt match {
         case stmt: Stmt.Method => checkId(stmt.sig.id)
         case stmt: Stmt.Var => checkId(stmt.id)
@@ -729,6 +1105,30 @@ object Util {
     ops.StringOps.replace(content, trans.map) match {
       case Either.Left(value) => return (value, n)
       case Either.Right(message) => halt(s"Internal error: $message")
+    }
+  }
+
+  @pure def reformatProof(text: String, topUnit: TopUnit): Option[(String, Z)] = {
+    val pr = ProofReformatter(DocInfo.create(topUnit.fileUriOpt, text),
+      conversions.String.toCis(text), HashMap.empty)
+    pr.transformTopUnit(topUnit)
+    ops.StringOps.replace(pr.content, pr.map) match {
+      case Either.Left(r) => return Some((r, pr.map.size))
+      case Either.Right(msg) => return None()
+    }
+  }
+
+  @pure def insertProofStep(lineSep: String, text: String, topUnit: TopUnit, insert: String, line: Z): Option[String] = {
+    val psi = ProofStepInserter(lineSep, DocInfo.create(topUnit.fileUriOpt, text), line, conversions.String.toCis(text),
+      insert, HashMap.empty)
+    psi.transformTopUnit(topUnit)
+    if (psi.map.isEmpty) {
+      return None()
+    } else {
+      ops.StringOps.replace(psi.content, psi.map) match {
+        case Either.Left(r) => return Some(r)
+        case Either.Right(msg) => halt(s"Infeasible: $msg")
+      }
     }
   }
 

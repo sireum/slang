@@ -227,7 +227,7 @@ object SlangParser {
   private[SlangParser] lazy val rExp = AST.Exp.Ident(rDollarId, emptyResolvedAttr)
   private[SlangParser] lazy val rStmt = AST.Stmt.Expr(rExp, emptyTypedAttr)
   private[SlangParser] lazy val emptyContract = AST.MethodContract.Simple.empty
-  private[SlangParser] lazy val emptyProofStep = AST.ProofAst.Step.SubProof(AST.ProofAst.StepId.Num(42, emptyAttr), ISZ())
+  private[SlangParser] lazy val emptyProofStep = AST.ProofAst.Step.SubProof(AST.ProofAst.StepId.Num(42, emptyAttr), ISZ(), emptyAttr)
 
 }
 
@@ -2544,7 +2544,8 @@ class SlangParser(
             rExp
         }
         AST.Exp.Eta(ref, typedAttr(exp.pos))
-      case exp: Term.Tuple => AST.Exp.Tuple(ISZ(exp.args.map(translateExp): _*), typedAttr(exp.pos))
+      case exp: Term.Tuple =>
+        AST.Exp.Tuple(ISZ(exp.args.map(translateExp): _*), typedAttr(exp.pos))
       case q"${res@Term.Name("Res")}[$t]" =>
         val pos = if (exp.pos == Position.None) res.pos else exp.pos
         AST.Exp.Result(Some(translateType(t)), typedAttr(pos))
@@ -2738,7 +2739,7 @@ class SlangParser(
           name.pos,
           tpes,
           aexprssnel,
-          Position.Range(expr.pos.input, name.pos.start, exp.pos.end)
+          exp.pos
         )
       case q"$expr.$name(...${aexprssnel: List[List[Term]]})" if aexprssnel.nonEmpty =>
         translateInvoke(
@@ -2747,7 +2748,7 @@ class SlangParser(
           name.pos,
           List(),
           aexprssnel,
-          Position.Range(expr.pos.input, name.pos.start, exp.pos.end)
+          exp.pos
         )
       case q"${name: Term.Name}[..$tpes](...${aexprssnel: List[List[Term]]})" if aexprssnel.nonEmpty =>
         name.value match {
@@ -2944,7 +2945,8 @@ class SlangParser(
 
   def translateUnaryExp(t: Term.ApplyUnary): AST.Exp = {
     unops.get(t.op.value) match {
-      case scala.Some(op) => AST.Exp.Unary(op, translateExp(t.arg), resolvedAttr(t.op.pos))
+      case scala.Some(op) =>
+        AST.Exp.Unary(op, translateExp(t.arg), resolvedAttr(t.pos), attr(t.op.pos).posOpt)
       case _ =>
         errorInSlang(t.op.pos, s"'${t.op.value}' is not a unary operator")
         rExp
@@ -2990,11 +2992,11 @@ class SlangParser(
           )
         }
         t.argClause.values match {
-          case List(right) => AST.Exp.Binary(translateExp(t.lhs), id, translateExp(right), resolvedAttr(t.op.pos))
+          case List(right) => AST.Exp.Binary(translateExp(t.lhs), id, translateExp(right), resolvedAttr(t.pos), attr(t.op.pos).posOpt)
           case values =>
             AST.Exp.Binary(translateExp(t.lhs), id,
               AST.Exp.Tuple(ISZ((for (value <- values) yield translateExp(value)): _*), typedAttr(t.argClause.pos)),
-              resolvedAttr(t.op.pos))
+              resolvedAttr(t.pos), attr(t.op.pos).posOpt)
         }
     }
   }
@@ -3048,7 +3050,11 @@ class SlangParser(
       prevPos = pos
       r = translateApply(r, argss(i), pos)
     }
-    r
+    r match {
+      case r: AST.Exp.Invoke => r(attr = r.attr(posOpt = attr(pos).posOpt))
+      case r: AST.Exp.InvokeNamed => r(attr = r.attr(posOpt = attr(pos).posOpt))
+      case _ => org.sireum.halt(s"Infeasible: $r")
+    }
   }
 
   def translateSelect(receiver: Term, name: Term.Name, tpes: Seq[Type], pos: Position): AST.Exp = {
@@ -3647,51 +3653,6 @@ class SlangParser(
     }
   }
 
-  def translateStructuralInduction(n: AST.ProofAst.StepId, claim: AST.Exp, m: Term): AST.ProofAst.Step.StructInduction = {
-    def hypoSteps(steps: Seq[Term]): (Option[AST.ProofAst.Step.Assume], ISZ[AST.ProofAst.Step]) = {
-      steps.headOption match {
-        case scala.Some(q"$no #> Assume($claim)") if isStepId(no) =>
-          (Some(AST.ProofAst.Step.Assume(toStepId(no), translateExp(claim))),
-            ISZ(steps.tail.map(translateProofStep(false)): _*))
-        case _ =>
-          (None(), ISZ(steps.map(translateProofStep(false)): _*))
-      }
-    }
-    m match {
-      case q"$e match { ..case $cs }" =>
-        var cases = ISZ[AST.ProofAst.Step.StructInduction.MatchCase]()
-        val (defaultOpt, rest): (Option[AST.ProofAst.Step.StructInduction.MatchDefault], Seq[Case]) =
-          cs.lastOption match {
-            case scala.Some(p"case _ => SubProof(..$pexprs)") =>
-              val (hypoOpt, proofSteps) = hypoSteps(pexprs)
-              (Some(AST.ProofAst.Step.StructInduction.MatchDefault(hypoOpt, proofSteps)), cs.dropRight(1))
-            case _ => (None(), cs)
-          }
-        for (c <- rest) {
-          c match {
-            case p"case $ref(..$pats) => SubProof(..$steps)" =>
-              var patterns = ISZ[AST.Pattern]()
-              for (pat <- pats) {
-                pat match {
-                  case pat: Pat.Var => patterns = patterns :+ translatePattern(pat)
-                  case _ => error(pat.pos, "Only pattern variable is allowed.")
-                }
-              }
-              val (hypoOpt, proofSteps) = hypoSteps(steps)
-              cases = cases :+ AST.ProofAst.Step.StructInduction.MatchCase(
-                AST.Pattern.Structure(None(), Some(AST.Name(ref2IS(ref), attr(ref.pos))),
-                  patterns, ISZ(), resolvedAttr(c.pat.pos)), hypoOpt, proofSteps
-              )
-            case _ => error(c.pos, "Expecting 'case ...(...) => SubProof(...)'.")
-          }
-        }
-        AST.ProofAst.Step.StructInduction(n, claim, translateExp(e), cases, defaultOpt)
-      case _ =>
-        error(m.pos, "Expecting '... match { case ...(...) => SubProof(...) ... }'.")
-        AST.ProofAst.Step.StructInduction(n, claim, AST.Exp.LitB(false, emptyAttr), ISZ(), None())
-    }
-  }
-
   def toLitZ(n: Lit.Int): AST.Exp.LitZ = AST.Exp.LitZ(n.value, attr(n.pos))
 
   def translateAssumeSubClaims(term: Term): ISZ[AST.ProofAst.Step] = {
@@ -3734,7 +3695,7 @@ class SlangParser(
     }
 
     def justRef(no: Either[Term, Position], claim: Term, just: Term.Ref, hasWitness: Boolean,
-                witnesses: Seq[Term]): AST.ProofAst.Step = {
+                witnesses: Seq[Term], pos: Position): AST.ProofAst.Step = {
       val stepNo = no match {
         case Left(t) => toStepId(t)
         case Right(p) => toStepId(p)
@@ -3745,10 +3706,10 @@ class SlangParser(
         case _ => return err()
       }
       AST.ProofAst.Step.Regular(stepNo, stepClaim,
-        AST.ProofAst.Step.Justification.Ref(justExp, hasWitness, translateWitnesses(witnesses)))
+        AST.ProofAst.Step.Justification.Ref(justExp, hasWitness, translateWitnesses(witnesses)), attr(pos))
     }
     def justApply(no: Either[Term, Position], claim: Term, just: Term.Apply, hasWitness: Boolean,
-                  witnesses: Seq[Term]): AST.ProofAst.Step.Regular = {
+                  witnesses: Seq[Term], pos: Position): AST.ProofAst.Step.Regular = {
       val stepNo = no match {
         case Left(t) => toStepId(t)
         case Right(p) => toStepId(p)
@@ -3758,18 +3719,20 @@ class SlangParser(
       justExp match {
         case tExp: AST.Exp.Invoke =>
           AST.ProofAst.Step.Regular(stepNo, stepClaim,
-            AST.ProofAst.Step.Justification.Apply(tExp, hasWitness, translateWitnesses(witnesses)))
+            AST.ProofAst.Step.Justification.Apply(tExp, hasWitness, translateWitnesses(witnesses)),
+            attr(pos))
         case tExp: AST.Exp.InvokeNamed =>
           AST.ProofAst.Step.Regular(stepNo, stepClaim,
-            AST.ProofAst.Step.Justification.ApplyNamed(tExp, hasWitness, translateWitnesses(witnesses)))
+            AST.ProofAst.Step.Justification.ApplyNamed(tExp, hasWitness, translateWitnesses(witnesses)), attr(pos))
         case _ =>
           reporter.error(justExp.posOpt, messageKind, s"Expecting a method invocation but found '${just.syntax}'")
           AST.ProofAst.Step.Regular(stepNo, stepClaim,
-            AST.ProofAst.Step.Justification.Ref(AST.Exp.Ident(AST.Id("?", emptyAttr), emptyResolvedAttr), false, ISZ()))
+            AST.ProofAst.Step.Justification.Ref(AST.Exp.Ident(AST.Id("?", emptyAttr), emptyResolvedAttr), false, ISZ()),
+            attr(pos))
       }
     }
     def justApplyEta(no: Either[Term, Position], claim: Term, just: Term.Eta, hasWitness: Boolean,
-                     witnesses: Seq[Term]): AST.ProofAst.Step.Regular = {
+                     witnesses: Seq[Term], pos: Position): AST.ProofAst.Step.Regular = {
       val stepNo = no match {
         case Left(t) => toStepId(t)
         case Right(p) => toStepId(p)
@@ -3777,7 +3740,7 @@ class SlangParser(
       val stepClaim = translateExp(claim)
       val justExp = translateExp(just).asInstanceOf[AST.Exp.Eta]
       AST.ProofAst.Step.Regular(stepNo, stepClaim,
-        AST.ProofAst.Step.Justification.ApplyEta(justExp, hasWitness, translateWitnesses(witnesses)))
+        AST.ProofAst.Step.Justification.ApplyEta(justExp, hasWitness, translateWitnesses(witnesses)), attr(pos))
     }
 
     def translateLetParam(param: Term.Param): AST.ProofAst.Step.Let.Param = {
@@ -3808,29 +3771,29 @@ class SlangParser(
     val r: AST.ProofAst.Step = proofStep match {
       case q"$no #> $claim by ${just: Term} and (..$witnesses)" if isStepId(no) =>
         just match {
-          case just: Term.Eta => justApplyEta(Left(no), claim, just, hasWitness = true, witnesses)
-          case just: Term.Apply => justApply(Left(no), claim, just, hasWitness = true, witnesses)
-          case just: Term.Ref => justRef(Left(no), claim, just, hasWitness = true, witnesses)
+          case just: Term.Eta => justApplyEta(Left(no), claim, just, hasWitness = true, witnesses, proofStep.pos)
+          case just: Term.Apply => justApply(Left(no), claim, just, hasWitness = true, witnesses, proofStep.pos)
+          case just: Term.Ref => justRef(Left(no), claim, just, hasWitness = true, witnesses, proofStep.pos)
           case _ => err()
         }
       case q"$no #> $claim by ${just: Term} * (..$witnesses)" if isStepId(no) =>
         just match {
-          case just: Term.Eta => justApplyEta(Left(no), claim, just, hasWitness = true, witnesses)
-          case just: Term.Apply => justApply(Left(no), claim, just, hasWitness = true, witnesses)
-          case just: Term.Ref => justRef(Left(no), claim, just, hasWitness = true, witnesses)
+          case just: Term.Eta => justApplyEta(Left(no), claim, just, hasWitness = true, witnesses, proofStep.pos)
+          case just: Term.Apply => justApply(Left(no), claim, just, hasWitness = true, witnesses, proofStep.pos)
+          case just: Term.Ref => justRef(Left(no), claim, just, hasWitness = true, witnesses, proofStep.pos)
           case _ => err()
         }
       case q"$no #> $claim by ${just: Term} T" if isStepId(no) =>
         just match {
-          case just: Term.Eta => justApplyEta(Left(no), claim, just, hasWitness = true, Seq())
-          case just: Term.Apply => justApply(Left(no), claim, just, hasWitness = true, Seq())
-          case just: Term.Ref => justRef(Left(no), claim, just, hasWitness = true, Seq())
+          case just: Term.Eta => justApplyEta(Left(no), claim, just, hasWitness = true, Seq(), proofStep.pos)
+          case just: Term.Apply => justApply(Left(no), claim, just, hasWitness = true, Seq(), proofStep.pos)
+          case just: Term.Ref => justRef(Left(no), claim, just, hasWitness = true, Seq(), proofStep.pos)
           case _ => err()
         }
       case q"$no #> $claim by ${just: Term}" if isStepId(no) =>
         just match {
-          case just: Term.Apply => justApply(Left(no), claim, just, hasWitness = false, Seq())
-          case just: Term.Ref => justRef(Left(no), claim, just, hasWitness = false, Seq())
+          case just: Term.Apply => justApply(Left(no), claim, just, hasWitness = false, Seq(), proofStep.pos)
+          case just: Term.Ref => justRef(Left(no), claim, just, hasWitness = false, Seq(), proofStep.pos)
           case _ => err()
         }
       case q"$no #> Assume($claim)" if isStepId(no) =>
@@ -3838,82 +3801,87 @@ class SlangParser(
         if (!allowAssume) {
           reporter.error(stepNo.posOpt, messageKind, "Assume justification cannot be used at this location")
         }
-        AST.ProofAst.Step.Assume(stepNo, translateExp(claim))
+        AST.ProofAst.Step.Assume(stepNo, translateExp(claim), attr(proofStep.pos))
       case q"$no #> Assert($claim, SubProof(..$claims))" if isStepId(no) =>
-        AST.ProofAst.Step.Assert(toStepId(no), translateExp(claim), ISZ(claims.map(translateProofStep(false)): _*))
+        AST.ProofAst.Step.Assert(toStepId(no), translateExp(claim), ISZ(claims.map(translateProofStep(false)): _*),
+          attr(proofStep.pos))
       case q"$no #> SubProof(..$claims)" if isStepId(no) =>
         val stepNo = toStepId(no)
         val subClaims = translateAssumeSubClaims(claims)
         if (subClaims.nonEmpty && !subClaims(0).isInstanceOf[AST.ProofAst.Step.Assume]) {
           reporter.error(subClaims(0).id.posOpt, messageKind, "Expecting an Assume(...) claim")
         }
-        AST.ProofAst.Step.SubProof(stepNo, subClaims)
+        AST.ProofAst.Step.SubProof(stepNo, subClaims, attr(proofStep.pos))
       case Term.ApplyInfix.After_4_6_0(no, Term.Name("#>"), Type.ArgClause(Nil), Term.ArgClause(List(Term.Apply.After_4_6_0(Term.Name("SubProof"), Term.ArgClause(List(Term.Function.After_4_6_0(Term.ParamClause(params, scala.None), term)), scala.None))), scala.None)) if isStepId(no) =>
-        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(term))
+        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(term),
+          attr(proofStep.pos))
       case Term.ApplyInfix.After_4_6_0(no, Term.Name("#>"), Type.ArgClause(Nil), Term.ArgClause(List(Term.Apply.After_4_6_0(Term.Name("SubProof"), Term.ArgClause(List(Term.Function.After_4_6_0(Term.ParamClause(params, scala.None), term)), scala.None))), scala.None)) if isStepId(no) =>
-        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(term))
+        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(term),
+          attr(proofStep.pos))
       case Term.ApplyInfix.After_4_6_0(no, Term.Name("SubProof"), Type.ArgClause(Nil), Term.ArgClause(List(Term.Function.After_4_6_0(Term.ParamClause(params, scala.None), term)), scala.None)) =>
-        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(term))
+        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(term),
+          attr(proofStep.pos))
       case Term.ApplyInfix.After_4_6_0(no, Term.Name("SubProof"), Type.ArgClause(Nil), Term.ArgClause(List(Term.Block(List(Term.Function.After_4_6_0(Term.ParamClause(params, scala.None), term)))), scala.None)) if isStepId(no) =>
-        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(term))
+        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(term),
+          attr(proofStep.pos))
       case q"$no #> Let ((..$params) => SubProof(..$claims))" if isStepId(no) =>
-        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims))
+        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims),
+          attr(proofStep.pos))
       case q"$no #> Let {(..$params) => SubProof(..$claims)}" if isStepId(no) =>
-        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims))
-      case q"$no #> $claim by StructuralInduction($m)" if isStepId(no) =>
-        translateStructuralInduction(toStepId(no), translateExp(claim), m)
+        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims),
+          attr(proofStep.pos))
       case q"$no ($claim) by ${just: Term} and (..$witnesses)" if isStepId(no) =>
         just match {
-          case just: Term.Eta => justApplyEta(Left(no), claim, just, hasWitness = true, witnesses)
-          case just: Term.Apply => justApply(Left(no), claim, just, hasWitness = true, witnesses)
-          case just: Term.Ref => justRef(Left(no), claim, just, hasWitness = true, witnesses)
+          case just: Term.Eta => justApplyEta(Left(no), claim, just, hasWitness = true, witnesses, proofStep.pos)
+          case just: Term.Apply => justApply(Left(no), claim, just, hasWitness = true, witnesses, proofStep.pos)
+          case just: Term.Ref => justRef(Left(no), claim, just, hasWitness = true, witnesses, proofStep.pos)
           case _ => err()
         }
       case q"$no ($claim) by ${just: Term} * (..$witnesses)" if isStepId(no) =>
         just match {
-          case just: Term.Eta => justApplyEta(Left(no), claim, just, hasWitness = true, witnesses)
-          case just: Term.Apply => justApply(Left(no), claim, just, hasWitness = true, witnesses)
-          case just: Term.Ref => justRef(Left(no), claim, just, hasWitness = true, witnesses)
+          case just: Term.Eta => justApplyEta(Left(no), claim, just, hasWitness = true, witnesses, proofStep.pos)
+          case just: Term.Apply => justApply(Left(no), claim, just, hasWitness = true, witnesses, proofStep.pos)
+          case just: Term.Ref => justRef(Left(no), claim, just, hasWitness = true, witnesses, proofStep.pos)
           case _ => err()
         }
       case q"$no ($claim) by ${just: Term} T" if isStepId(no) =>
         just match {
-          case just: Term.Eta => justApplyEta(Left(no), claim, just, hasWitness = true, Seq())
-          case just: Term.Apply => justApply(Left(no), claim, just, hasWitness = true, Seq())
-          case just: Term.Ref => justRef(Left(no), claim, just, hasWitness = true, Seq())
+          case just: Term.Eta => justApplyEta(Left(no), claim, just, hasWitness = true, Seq(), proofStep.pos)
+          case just: Term.Apply => justApply(Left(no), claim, just, hasWitness = true, Seq(), proofStep.pos)
+          case just: Term.Ref => justRef(Left(no), claim, just, hasWitness = true, Seq(), proofStep.pos)
           case _ => err()
         }
       case q"$no ($claim) by ${just: Term}" if isStepId(no) =>
         just match {
-          case just: Term.Apply => justApply(Left(no), claim, just, hasWitness = false, Seq())
-          case just: Term.Ref => justRef(Left(no), claim, just, hasWitness = false, Seq())
+          case just: Term.Apply => justApply(Left(no), claim, just, hasWitness = false, Seq(), proofStep.pos)
+          case just: Term.Ref => justRef(Left(no), claim, just, hasWitness = false, Seq(), proofStep.pos)
           case _ => err()
         }
       case q"$claim by ${just: Term} and (..$witnesses)" =>
         just match {
-          case just: Term.Eta => justApplyEta(Right(claim.pos), claim, just, hasWitness = true, witnesses)
-          case just: Term.Apply => justApply(Right(claim.pos), claim, just, hasWitness = true, witnesses)
-          case just: Term.Ref => justRef(Right(claim.pos), claim, just, hasWitness = true, witnesses)
+          case just: Term.Eta => justApplyEta(Right(claim.pos), claim, just, hasWitness = true, witnesses, proofStep.pos)
+          case just: Term.Apply => justApply(Right(claim.pos), claim, just, hasWitness = true, witnesses, proofStep.pos)
+          case just: Term.Ref => justRef(Right(claim.pos), claim, just, hasWitness = true, witnesses, proofStep.pos)
           case _ => err()
         }
       case q"$claim by ${just: Term} * (..$witnesses)" =>
         just match {
-          case just: Term.Eta => justApplyEta(Right(claim.pos), claim, just, hasWitness = true, witnesses)
-          case just: Term.Apply => justApply(Right(claim.pos), claim, just, hasWitness = true, witnesses)
-          case just: Term.Ref => justRef(Right(claim.pos), claim, just, hasWitness = true, witnesses)
+          case just: Term.Eta => justApplyEta(Right(claim.pos), claim, just, hasWitness = true, witnesses, proofStep.pos)
+          case just: Term.Apply => justApply(Right(claim.pos), claim, just, hasWitness = true, witnesses, proofStep.pos)
+          case just: Term.Ref => justRef(Right(claim.pos), claim, just, hasWitness = true, witnesses, proofStep.pos)
           case _ => err()
         }
       case q"$claim by ${just: Term} T" =>
         just match {
-          case just: Term.Eta => justApplyEta(Right(claim.pos), claim, just, hasWitness = true, Seq())
-          case just: Term.Apply => justApply(Right(claim.pos), claim, just, hasWitness = true, Seq())
-          case just: Term.Ref => justRef(Right(claim.pos), claim, just, hasWitness = true, Seq())
+          case just: Term.Eta => justApplyEta(Right(claim.pos), claim, just, hasWitness = true, Seq(), proofStep.pos)
+          case just: Term.Apply => justApply(Right(claim.pos), claim, just, hasWitness = true, Seq(), proofStep.pos)
+          case just: Term.Ref => justRef(Right(claim.pos), claim, just, hasWitness = true, Seq(), proofStep.pos)
           case _ => err()
         }
       case q"$claim by ${just: Term}" =>
         just match {
-          case just: Term.Apply => justApply(Right(claim.pos), claim, just, hasWitness = false, Seq())
-          case just: Term.Ref => justRef(Right(claim.pos), claim, just, hasWitness = false, Seq())
+          case just: Term.Apply => justApply(Right(claim.pos), claim, just, hasWitness = false, Seq(), proofStep.pos)
+          case just: Term.Ref => justRef(Right(claim.pos), claim, just, hasWitness = false, Seq(), proofStep.pos)
           case _ => err()
         }
       case q"$no Assume($claim)" if isStepId(no) =>
@@ -3921,20 +3889,23 @@ class SlangParser(
         if (!allowAssume) {
           reporter.error(stepNo.posOpt, messageKind, "Assume justification cannot be used at this location")
         }
-        AST.ProofAst.Step.Assume(stepNo, translateExp(claim))
+        AST.ProofAst.Step.Assume(stepNo, translateExp(claim), attr(proofStep.pos))
       case q"$no Assert($claim, SubProof(..$claims))" if isStepId(no) =>
-        AST.ProofAst.Step.Assert(toStepId(no), translateExp(claim), ISZ(claims.map(translateProofStep(false)): _*))
+        AST.ProofAst.Step.Assert(toStepId(no), translateExp(claim), ISZ(claims.map(translateProofStep(false)): _*),
+          attr(proofStep.pos))
       case q"$no SubProof(..$claims)" if isStepId(no) =>
         val stepNo = toStepId(no)
         val subClaims = translateAssumeSubClaims(claims)
         if (subClaims.nonEmpty && !subClaims(0).isInstanceOf[AST.ProofAst.Step.Assume]) {
           reporter.error(subClaims(0).id.posOpt, messageKind, "Expecting an Assume(...) claim")
         }
-        AST.ProofAst.Step.SubProof(stepNo, subClaims)
+        AST.ProofAst.Step.SubProof(stepNo, subClaims, attr(proofStep.pos))
       case q"$no Let ((..$params) => SubProof(..$claims))" if isStepId(no) =>
-        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims))
+        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims),
+          attr(proofStep.pos))
       case q"$no Let {(..$params) => SubProof(..$claims)}" if isStepId(no) =>
-        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims))
+        AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims),
+          attr(proofStep.pos))
       case _ => err()
     }
     r.id match {
