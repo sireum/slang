@@ -766,11 +766,11 @@ object Util {
     val all: String = "∀((ID: TYPE) => CLAIM)"
     val exists: String = "∃((ID: TYPE) => CLAIM)"
     val allRange: String = "∀(LO until HI)(I => CLAIM)"
-    val existsRange: String = "∃((ID: TYPE) => CLAIM)"
+    val existsRange: String = "∃(LO until HI)(I => CLAIM)"
     val allEach: String = "∀(EXP)(E => CLAIM)"
     val existsEach: String = "∃(EXP)(E => CLAIM)"
-    val allEachIndex: String = "∀(EXP.indices)(E => CLAIM)"
-    val existsEachIndex: String = "∃(EXP.indices)(E => CLAIM)"
+    val allEachIndex: String = "∀(EXP.indices)(I => CLAIM)"
+    val existsEachIndex: String = "∃(EXP.indices)(I => CLAIM)"
   }
 
 
