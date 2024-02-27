@@ -586,7 +586,7 @@ object Util {
     def insertPos(no: Z, comma: String, offset: Z, column: Z, endComma: String): Unit = {
       val indent: String = conversions.String.fromCis(for (_ <- 0 until column) yield ' ')
       val lines = ops.StringOps(insert).split((c: C) => c == '\n')
-      val str = s"$comma$lineSep$indent$no ${st"${(lines, s"$lineSep$indent")}".render}$endComma"
+      val str = s"$comma$lineSep$indent$no  ${st"${(lines, s"$lineSep$indent")}".render}$endComma"
       map = map + offset ~> ("", str)
     }
   }
