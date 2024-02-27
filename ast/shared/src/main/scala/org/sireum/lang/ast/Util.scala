@@ -751,6 +751,29 @@ object Util {
     ',' ~> "__comma"
   )
 
+  object ProofStepTemplate {
+    val regular: String = st"""(  CLAIM  ) by Premise""".render
+    val assum: String = st"""Assume(  CLAIM  )""".render
+    val asser: String =
+      st"""Assert(  CLAIM, SubProof {
+          |})""".render
+    val subProof: String =
+      st"""SubProof {
+          |})""".render
+    val let: String =
+      st"""SubProof { (ID: TYPE) =>
+          |})""".render
+    val all: String = "∀((ID: TYPE) => CLAIM)"
+    val exists: String = "∃((ID: TYPE) => CLAIM)"
+    val allRange: String = "∀(LO until HI)(I => CLAIM)"
+    val existsRange: String = "∃((ID: TYPE) => CLAIM)"
+    val allEach: String = "∀(EXP)(E => CLAIM)"
+    val existsEach: String = "∃(EXP)(E => CLAIM)"
+    val allEachIndex: String = "∀(EXP.indices)(E => CLAIM)"
+    val existsEachIndex: String = "∃(EXP.indices)(E => CLAIM)"
+  }
+
+
   @pure def ids2strings(ids: ISZ[Id]): ISZ[String] = {
     val r = MSZ.create[String](ids.size, "")
     for (i <- ids.indices) {
