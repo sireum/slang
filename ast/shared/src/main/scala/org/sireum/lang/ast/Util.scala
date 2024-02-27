@@ -245,9 +245,8 @@ object Util {
     }
 
     def format(steps: ISZ[ProofAst.Step]): Unit = {
-      @pure def getMaxColumn: (Z, ProofAst.Step) = {
+      @pure def getMaxColumn: Z = {
         var r: Z = -1
-        var stepOpt = Option.none[ProofAst.Step]()
 
         def maxColumnH(step: ProofAst.Step): Unit = {
           step match {
@@ -290,7 +289,7 @@ object Util {
                   while (l != -1 && l <= pos.offset + pos.length) {
                     l = ops.StringOps.stringIndexOfFrom(content, imply, l)
                     if (l != -1 && l <= pos.offset + pos.length) {
-                      if ((imply.size == 4) ___>: (content(i - 1) != '_')) {
+                      if ((imply.size == 4) ___>: (content(l - 1) != '_')) {
                         column = column - (imply.size - 1)
                       }
                       l = l + imply.size
@@ -302,7 +301,6 @@ object Util {
                 subImply(ProofReformatter.simply)
                 if (column > r) {
                   r = column
-                  stepOpt = Some(step)
                 }
               }
           }
@@ -311,7 +309,7 @@ object Util {
         for (step <- steps) {
           maxColumnH(step)
         }
-        return (r + 3, stepOpt.get)
+        return r + 3
       }
 
       def patchBeginning(step: ProofAst.Step): Unit = {
@@ -361,7 +359,7 @@ object Util {
         }
       }
 
-      def patchEnd(maxColumn: Z, maxStep: ProofAst.Step, step: ProofAst.Step.Regular): Unit = {
+      def patchEnd(maxColumn: Z, step: ProofAst.Step.Regular): Unit = {
         val pos = step.claim.fullPosOpt.get
         val offset = pos.offset + pos.length
         val paren: Z = {
@@ -387,10 +385,8 @@ object Util {
           }
         }
 
-        if (maxStep != step) {
-          addImply(ProofReformatter.imply)
-          addImply(ProofReformatter.simply)
-        }
+        addImply(ProofReformatter.imply)
+        addImply(ProofReformatter.simply)
         var spaces: ISZ[C] = for (_ <- 0 until add) yield ' '
         spaces = spaces :+ ')' :+ ' '
         val pad = conversions.String.fromCis(spaces)
@@ -419,12 +415,12 @@ object Util {
         }
       }
 
-      val (maxColumn, maxStep) = getMaxColumn
+      val maxColumn = getMaxColumn
 
       def rec(step: ProofAst.Step): Unit = {
         patchBeginning(step)
         step match {
-          case step: ProofAst.Step.Regular => patchEnd(maxColumn, maxStep, step)
+          case step: ProofAst.Step.Regular => patchEnd(maxColumn, step)
           case step: ProofAst.Step.Assert => patchEndClaim(step.attr.posOpt.get, step.claim.fullPosOpt.get)
           case step: ProofAst.Step.Assume => patchEndClaim(step.attr.posOpt.get, step.claim.fullPosOpt.get)
           case step: ProofAst.Step.SubProof =>
