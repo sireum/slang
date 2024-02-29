@@ -3530,6 +3530,7 @@ class SlangParser(
     val q"Deduce(..$dexprs)" = stat
     val isProofStep = dexprs.headOption match {
       case scala.Some(head: Term) => !(head.pos.text.contains("|-") || head.pos.text.contains("⊢"))
+      case scala.None => true
       case _ => false
     }
     if (isProofStep) {
