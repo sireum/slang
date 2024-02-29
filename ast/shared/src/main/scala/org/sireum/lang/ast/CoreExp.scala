@@ -289,12 +289,21 @@ object CoreExp {
   }
 
   @datatype class Constructor(val rawType: Typed, args: ISZ[Base]) extends Base {
+    @strictpure def tOpt: Option[ST] = tipe match {
+      case _: Typed.Tuple => None()
+      case tipe: Typed.Name =>
+        if (tipe.ids == Typed.isName || tipe.ids == Typed.msName)
+          if (tipe.args(0) == Typed.z) Some(st"${tipe.ids(tipe.ids.size - 1)}Z")
+          else Some(st"${tipe.ids(tipe.ids.size - 1)}[${tipe.args(0)}, ${tipe.args(1)}]")
+        else if (tipe.ids.size > 2 && tipe.ids(0) == "org" && tipe.ids(1) == "sireum")
+          Some(st"${(ops.ISZOps(tipe.ids).drop(2), ".")}")
+        else Some(st"${(tipe.ids, ".")}")
+      case tipe => Some(st"$tipe")
+    }
     @pure override def prettyST: ST = {
-      val tOpt: Option[Typed] = if (tipe.isInstanceOf[Typed.Tuple]) None() else Some(tipe)
       return st"$tOpt(${(for (arg <- args) yield arg.prettyST, ", ")})"
     }
     @pure override def prettyPatternST: ST = {
-      val tOpt: Option[Typed] = if (tipe.isInstanceOf[Typed.Tuple]) None() else Some(tipe)
       return st"$tOpt(${(for (arg <- args) yield arg.prettyPatternST, ", ")})"
     }
     @pure override def subst(sm: HashMap[String, Typed]): Constructor = {
@@ -651,8 +660,6 @@ object CoreExp {
     @strictpure override def rawType: Typed = Typed.nothing
     @strictpure override def prettyST: ST = st"""abort"""
     @strictpure override def prettyPatternST: ST = prettyST
-    @strictpure override def hash: Z = """abort""".hash
-    @strictpure def isEqual(other: Halt): B = F
     @strictpure override def isHalt: B = T
   }
 
