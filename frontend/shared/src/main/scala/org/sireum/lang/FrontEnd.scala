@@ -102,7 +102,8 @@ object FrontEnd {
     }
     reformat(text) match {
       case Some((r, n)) => reformat(r) match {
-        case Some((r2, m)) => return Some((r2, n + m))
+        case Some((r2, m)) =>
+          return if (r == r2) Some((r, n)) else Some((r2, n + m))
         case _ => return Some((r, n))
       }
       case _ => return None()
