@@ -340,7 +340,7 @@ object Util {
               i = step.attr.posOpt.get.offset
             } else {
               val pos = step.id.posOpt.get
-              val offset = pos.offset + pos.length + 1
+              val offset = pos.offset + pos.length
               i = offset
               while (content(i).isWhitespace || content(i) == '#' || content(i) == '>') {
                 i = i + 1
@@ -351,8 +351,12 @@ object Util {
             }
         }
         if (content(i) == '(') {
-          if (!content(i + 1).isWhitespace) {
-            map = map + (i + 1) ~> ("", "  ")
+          var j = i + 1
+          while (content(j).isWhitespace) {
+            j = j + 1
+          }
+          if (j - i != 2) {
+            map = map + (i + 1) ~> (ops.StringOps.substring(content, i + 1, j), "  ")
           }
         } else {
           map = map + i ~> ("", "(  ")
