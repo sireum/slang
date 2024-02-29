@@ -429,16 +429,20 @@ object CoreExp {
         case Some(e) => return e.prettyST
         case _ =>
       }
-      return st"""if (${cond.prettyST}) ${tExp.prettyST}
-                 |else ${fExp.prettyST}"""
+      return st"""if (${cond.prettyST})
+                 |  ${tExp.prettyST}
+                 |else
+                 |  ${fExp.prettyST}"""
     }
     @pure override def prettyPatternST: ST = {
       simplOpt match {
         case Some(e) => return e.prettyPatternST
         case _ =>
       }
-      return st"""if (${cond.prettyPatternST}) ${tExp.prettyPatternST}
-                 |else ${fExp.prettyPatternST}"""
+      return st"""if (${cond.prettyPatternST})
+                 |  ${tExp.prettyPatternST}
+                 |else
+                 |  ${fExp.prettyPatternST}"""
     }
     @pure override def subst(sm: HashMap[String, Typed]): If = {
       if (sm.isEmpty) {
@@ -497,7 +501,11 @@ object CoreExp {
           case _ => stop = T
         }
       }
-      return st"{(${(params, ", ")}) => ${expST(e)}}"
+      val r =
+        st"""{(${(params, ", ")}) =>
+            |  ${expST(e)}
+            |}"""
+      return r
     }
     @pure def prettyST: ST = {
       return prettySTH((e: Base) => e.prettyST)
@@ -641,9 +649,9 @@ object CoreExp {
     @strictpure override def incDeBruijn(threshold: Z): Base = this
     @strictpure override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): Base = this
     @strictpure override def rawType: Typed = Typed.nothing
-    @strictpure override def prettyST: ST = st"""halt("")"""
+    @strictpure override def prettyST: ST = st"""abort"""
     @strictpure override def prettyPatternST: ST = prettyST
-    @strictpure override def hash: Z = """halt("")""".hash
+    @strictpure override def hash: Z = """abort""".hash
     @strictpure def isEqual(other: Halt): B = F
     @strictpure override def isHalt: B = T
   }
