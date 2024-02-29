@@ -381,7 +381,13 @@ import GlobalDeclarationResolver._
         globalTypeMap.get(name) match {
           case Some(info) =>
             val posOpt = stmt.attr.posOpt
-            if (stmt.extNameOpt.nonEmpty || !info.canHaveCompanion) {
+            if (!info.canHaveCompanion) {
+              reporter.error(
+                posOpt,
+                resolverKind,
+                st"Cannot declare companion object for ${(info.name, ".")}.".render
+              )
+            } else if (stmt.extNameOpt.nonEmpty) {
               reporter.error(
                 posOpt,
                 resolverKind,

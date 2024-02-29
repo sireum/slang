@@ -1086,7 +1086,7 @@ object TypeInfo {
     }
 
     @pure override def canHaveCompanion: B = {
-      return F
+      return T
     }
 
     @pure override def posOpt: Option[Position] = {
