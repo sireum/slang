@@ -100,20 +100,46 @@ object FrontEnd {
         case _ => return None()
       }
     }
-    reformat(text) match {
-      case Some((r, n)) => reformat(r) match {
-        case Some((r2, m)) =>
-          return if (r == r2) Some((r, n)) else Some((r2, n + m))
-        case _ => return Some((r, n))
-      }
-      case _ => return None()
+    var content = text
+    val contentOps = ops.StringOps(content)
+    val crlf = ops.StringOps(content).contains("\r\n")
+    if (crlf) {
+      content = contentOps.replaceAllLiterally("\r\n", "\n")
     }
+    var rOpt: Option[(String, Z)] = reformat(text) match {
+      case Some((r, n)) => reformat(r) match {
+        case Some((r2, m)) => if (r == r2) Some((r, n)) else Some((r2, n + m))
+        case _ => Some((r, n))
+      }
+      case _ => None()
+    }
+    if (crlf) {
+      rOpt match {
+        case Some((r, n)) => rOpt = Some((ops.StringOps(r).replaceAllLiterally("\n", "\r\n"), n))
+        case _ =>
+      }
+    }
+    return rOpt
   }
 
-  def insertProofStep(lineSep: String, isWorksheet: B, fileUriOpt: Option[String], text: String, insert: String, line: Z): Option[String] = {
+  def insertProofStep(isWorksheet: B, fileUriOpt: Option[String], text: String, insert: String, line: Z): Option[String] = {
     val reporter = Reporter.create
-    Parser.parseTopUnit[AST.TopUnit](text, isWorksheet, F, fileUriOpt, reporter) match {
-      case Some(unit) if !reporter.hasError => return AST.Util.insertProofStep(lineSep, text, unit, insert, line)
+    var content = text
+    val contentOps = ops.StringOps(content)
+    val crlf = ops.StringOps(content).contains("\r\n")
+    if (crlf) {
+      content = contentOps.replaceAllLiterally("\r\n", "\n")
+    }
+    Parser.parseTopUnit[AST.TopUnit](content, isWorksheet, F, fileUriOpt, reporter) match {
+      case Some(unit) if !reporter.hasError =>
+        var rOpt = AST.Util.insertProofStep(content, unit, insert, line)
+        if (crlf) {
+          rOpt match {
+            case Some(r) => rOpt = Some(ops.StringOps(r).replaceAllLiterally("\n", "\r\n"))
+            case _ =>
+          }
+        }
+        return rOpt
       case _ => return None()
     }
   }

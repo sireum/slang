@@ -452,8 +452,7 @@ object Util {
     val by: ISZ[C] = ISZ[C]('b', 'y')
   }
 
-  @record class ProofStepInserter(val lineSep: String,
-                                  val docInfo: DocInfo,
+  @record class ProofStepInserter(val docInfo: DocInfo,
                                   val line: Z,
                                   val content: ISZ[C],
                                   val insert: String,
@@ -590,7 +589,7 @@ object Util {
     def insertPos(no: Z, comma: String, offset: Z, column: Z, endComma: String): Unit = {
       val indent: String = conversions.String.fromCis(for (_ <- 0 until column) yield ' ')
       val lines = ops.StringOps(insert).split((c: C) => c == '\n')
-      val str = s"$comma$lineSep$indent$no ${st"${(lines, s"$lineSep$indent")}".render}$endComma"
+      val str = s"$comma\n$indent$no ${st"${(lines, s"\n$indent")}".render}$endComma"
       map = map + offset ~> ("", str)
     }
   }
@@ -1141,8 +1140,8 @@ object Util {
     }
   }
 
-  @pure def insertProofStep(lineSep: String, text: String, topUnit: TopUnit, insert: String, line: Z): Option[String] = {
-    val psi = ProofStepInserter(lineSep, DocInfo.create(topUnit.fileUriOpt, text), line, conversions.String.toCis(text),
+  @pure def insertProofStep(text: String, topUnit: TopUnit, insert: String, line: Z): Option[String] = {
+    val psi = ProofStepInserter(DocInfo.create(topUnit.fileUriOpt, text), line, conversions.String.toCis(text),
       insert, HashMap.empty)
     psi.transformTopUnit(topUnit)
     if (psi.map.isEmpty) {
