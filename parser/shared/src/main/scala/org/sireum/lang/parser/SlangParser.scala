@@ -466,7 +466,6 @@ class SlangParser(
       case stat: Term.Return => translateReturn(enclosing, stat)
       case q"Spec(${_: Lit.String})" => translateSpecLabel(enclosing, stat)
       case q"Spec { ..$_ }" => translateSpecBlock(enclosing, stat)
-      case q"Spec ($_)" => translateSpecBlock(enclosing, stat)
       case q"Deduce(..$_)" => translateDeduce(enclosing, stat)
       case q"Contract(DataRefinement($_)(..$_)(..$_))" => translateDataRefinement(enclosing, stat)
       case q"Contract.Havoc(..$args)" => translateHavoc(enclosing, stat)
@@ -2935,12 +2934,19 @@ class SlangParser(
 
         }
     }
+    var args = ISZ[AST.Exp]()
+    for (arg <- s.args) {
+      arg match {
+        case Term.Block(List(e: Term)) => args = args :+ translateExp(e)
+        case _ => args = args :+ translateExp(arg)
+      }
+    }
     AST.Exp.StringInterpolate(s.prefix.value, ISZ(s.parts.map({
       case Lit.String(value) => AST.Exp.LitString(value, attr(s.pos))
       case _ =>
         error(s.pos, s"Invalid string interpolation: '${syntax(s)}'")
         AST.Exp.LitString("", attr(s.pos))
-    }): _*), ISZ(s.args.map(translateExp): _*), typedAttr(s.pos))
+    }): _*), args, typedAttr(s.pos))
   }
 
   def translateUnaryExp(t: Term.ApplyUnary): AST.Exp = {
@@ -3650,7 +3656,6 @@ class SlangParser(
   def translateSpecBlock(enclosing: Enclosing.Type, stat: Stat): AST.Stmt.SpecBlock = {
     stat match {
       case q"Spec(${b: Term.Block})" => AST.Stmt.SpecBlock(translateBlock(enclosing, b, isAssignExp = false))
-      case q"Spec($stmt)" => AST.Stmt.SpecBlock(AST.Stmt.Block(AST.Body(ISZ(translateStat(enclosing)(stmt)), ISZ()), attr(stmt.pos)))
     }
   }
 
