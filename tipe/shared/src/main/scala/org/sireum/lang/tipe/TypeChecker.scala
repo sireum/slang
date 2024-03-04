@@ -1692,6 +1692,18 @@ import TypeChecker._
                 )
               case _ =>
             }
+          case Some(info) if mode == ModeContext.RS && id == "$" && (info.isInstanceOf[TypeInfo.Adt] ||
+            info.isInstanceOf[TypeInfo.Sig]) =>
+            val t = info.tpe
+            if (typeArgs.nonEmpty) {
+              reporter.error(ident.attr.posOpt, typeCheckerKind, s"$$ should be used without type arguments" )
+            }
+            val ft = AST.Typed.Fun(AST.Purity.Pure, T, ISZ(), t)
+            return (
+              Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), receiverType.name, "$", ISZ(), ft)),
+              Some(AST.ResolvedInfo.Method(T, AST.MethodMode.Ext, ISZ(), receiverType.name, "$", ISZ(), Some(ft), ISZ(), ISZ())),
+              ISZ()
+            )
           case _ =>
         }
         val r = checkInfoOpt(None(), typeHierarchy.nameMap.get(receiverType.name :+ normalizeSpecId(id)),
@@ -3471,22 +3483,26 @@ import TypeChecker._
       thiz = thiz(mode = ModeContext.RS)
       var newRefs = ISZ[AST.Exp.Ref]()
       for (ref <- rs.refs) {
-        val newRef = thiz.checkExp(None(), scope, AST.Exp.Eta(ref, AST.TypedAttr(ref.posOpt, ref.typedOpt)), reporter)._1.asInstanceOf[AST.Exp.Eta].ref
-        newRefs = newRefs :+ newRef
-        var ok = F
-        newRef.resOpt match {
-          case Some(_: AST.ResolvedInfo.Fact) => ok = T
-          case Some(_: AST.ResolvedInfo.Theorem) => ok = T
-          case Some(res: AST.ResolvedInfo.Method) =>
-            res.tpeOpt match {
-              case Some(tpe) if tpe.purity == AST.Purity.Abs ||
-                (tpe.ret == AST.Typed.unit && tpe.isPureFun && res.writes.isEmpty) => ok = T
+        thiz.checkExp(None(), scope, AST.Exp.Eta(ref, AST.TypedAttr(ref.posOpt, ref.typedOpt)), reporter)._1 match {
+          case eta: AST.Exp.Eta =>
+            val newRef = eta.ref
+            newRefs = newRefs :+ newRef
+            var ok = F
+            newRef.resOpt match {
+              case Some(_: AST.ResolvedInfo.Fact) => ok = T
+              case Some(_: AST.ResolvedInfo.Theorem) => ok = T
+              case Some(res: AST.ResolvedInfo.Method) =>
+                res.tpeOpt match {
+                  case Some(tpe) if tpe.purity == AST.Purity.Abs ||
+                    (tpe.ret == AST.Typed.unit && tpe.isPureFun && res.writes.isEmpty) => ok = T
+                  case _ =>
+                }
               case _ =>
             }
+            if (!ok) {
+              reporter.error(newRef.posOpt, typeCheckerKind, "Expecting a theorem/lemma, fact, method theorem/lemma, or @abs method")
+            }
           case _ =>
-        }
-        if (!ok) {
-          reporter.error(newRef.posOpt, typeCheckerKind, "Expecting a theorem/lemma, fact, method theorem/lemma, or @abs method")
         }
       }
       return (rs(refs = newRefs), AST.Typed.rsOpt)
