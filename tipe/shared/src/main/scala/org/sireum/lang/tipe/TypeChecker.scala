@@ -63,6 +63,7 @@ object TypeChecker {
     "Code"
     "Spec"
     "SpecPost"
+    "RS"
   }
 
   @record class StrictPureChecker(val isMethod: B,
@@ -388,16 +389,16 @@ object TypeChecker {
   }
 
   def adtCopyTypedResOpt(isCode: B, typeHierarchy: TypeHierarchy, posOpt: Option[Position], tpe: AST.Typed.Name,
-                         argNames: ISZ[String], reporter: Reporter): (Option[AST.Typed], Option[AST.ResolvedInfo], B) = {
+                         argNames: ISZ[String], reporter: Reporter): (Option[AST.Typed], Option[AST.ResolvedInfo], B, ISZ[String]) = {
     if (!isCode && argNames.isEmpty) {
       reporter.error(posOpt, typeCheckerKind, st"Cannot perform copy of '$tpe' without argument.".render)
-      return (None(), None(), T)
+      return (None(), None(), T, ISZ())
     }
     val (t, paramNames, paramTypes): (AST.Typed.Name, ISZ[String], ISZ[AST.Typed]) = typeHierarchy.typeMap.get(tpe.ids) match {
       case Some(info: TypeInfo.Adt) =>
         if (info.ast.isRoot) {
           if (isCode) {
-            return (None(), None(), F)
+            return (None(), None(), F, ISZ())
           }
           val pns = info.specVars.keys
           val pts: ISZ[AST.Typed] = for (v <- info.specVars.values) yield v.typedOpt.get
@@ -425,7 +426,7 @@ object TypeChecker {
         val pns = info.specVars.keys
         val pts: ISZ[AST.Typed] = for (v <- info.specVars.values) yield v.typedOpt.get
         (info.tpe, pns, pts)
-      case _ => return (None(), None(), F)
+      case _ => return (None(), None(), F, ISZ())
     }
     val paramNameIndexMap = HashMap.empty[String, Z] ++ (for (i <- paramNames.indices) yield (paramNames(i), i))
     var pns = ISZ[String]()
@@ -441,7 +442,7 @@ object TypeChecker {
     }
     if (pns.isEmpty && paramNames.nonEmpty) {
       reporter.error(posOpt, typeCheckerKind, st"Cannot perform copy of '$tpe' without argument.".render)
-      return (None(), None(), T)
+      return (None(), None(), T, ISZ())
     }
     val smOpt = unify(typeHierarchy, posOpt, TypeRelation.Equal, tpe, t, reporter)
     smOpt match {
@@ -453,9 +454,10 @@ object TypeChecker {
           Some(AST.Typed.Method(F, AST.MethodMode.Copy, ISZ(), owner, id, pns, copyType)),
           Some(AST.ResolvedInfo.Method(F, AST.MethodMode.Copy, ISZ(), owner, id, pns,
             Some(copyType), ISZ(), ISZ())),
-          T
+          T,
+          paramNames
         )
-      case _ => return (None(), None(), T)
+      case _ => return (None(), None(), T, ISZ())
     }
   }
 
@@ -999,6 +1001,7 @@ import TypeChecker._
       case ModeContext.Code => return F
       case ModeContext.Spec => return T
       case ModeContext.SpecPost => return T
+      case ModeContext.RS => return T
     }
   }
 
@@ -2211,17 +2214,19 @@ import TypeChecker._
                   return noResult
               }
             } else {
-              if (t.typeParams.size != typeArgs.size) {
+              if (t.typeParams.size != typeArgs.size && mode != ModeContext.RS) {
                 reporter.error(refExp.posOpt, typeCheckerKind,
                   s"Expecting ${t.typeParams.size} type arguments, but ${typeArgs.size} found.")
                 return noResult
               }
               var sm = HashMap.emptyInit[String, AST.Typed](typeArgs.size)
-              val size = typeArgs.size
-              var i = 0
-              while (i < size) {
-                sm = sm + t.typeParams(i) ~> typeArgs(i)
-                i = i + 1
+              if (mode != ModeContext.RS) {
+                val size = typeArgs.size
+                var i = 0
+                while (i < size) {
+                  sm = sm + t.typeParams(i) ~> typeArgs(i)
+                  i = i + 1
+                }
               }
               sm
             }
@@ -2376,23 +2381,23 @@ import TypeChecker._
       typeArgs: ISZ[AST.Typed],
       numOfArgs: Z,
       argNames: ISZ[String]
-    ): (Option[AST.Typed], Option[AST.ResolvedInfo], ISZ[AST.Typed]) = {
+    ): (Option[AST.Typed], Option[AST.ResolvedInfo], ISZ[AST.Typed], ISZ[String]) = {
       val (tpe, newTypeArgs): (AST.Typed, ISZ[AST.Typed]) = typed match {
         case typed: AST.Typed.Method if typed.tpe.isByName =>
           val smOpt = buildMethodSubstMap(typed, posOpt, typeArgs, reporter)
           smOpt match {
             case Some(sm) => (typed.tpe.ret.subst(sm), ISZ())
-            case _ => return (None(), None(), typeArgs)
+            case _ => return (None(), None(), typeArgs, ISZ())
           }
         case _ => (typed, typeArgs)
       }
       tpe match {
         case tpe: AST.Typed.Object =>
           AST.Typed.basicConstructorMap.get(tpe.name) match {
-            case Some(r @ (_, _)) => return (r._1, r._2, newTypeArgs)
+            case Some(r @ (_, _)) => return (r._1, r._2, newTypeArgs, ISZ())
             case _ =>
               sConstructorTypedResOpt(tpe.name, numOfArgs) match {
-                case (typedOpt@Some(_), resOpt@Some(_)) => return (typedOpt, resOpt, newTypeArgs)
+                case (typedOpt@Some(_), resOpt@Some(_)) => return (typedOpt, resOpt, newTypeArgs, ISZ())
                 case _ =>
                   typeHierarchy.typeMap.get(tpe.name) match {
                     case Some(info) =>
@@ -2406,17 +2411,19 @@ import TypeChecker._
                               ISZ(), constructorType)),
                             Some(AST.ResolvedInfo.Method(T, AST.MethodMode.Constructor, ISZ(), info.owner,
                               info.ast.id.value, ISZ(), Some(constructorType), ISZ(), ISZ())),
-                            newTypeArgs
+                            newTypeArgs,
+                            ISZ()
                           )
 
                         case info: TypeInfo.Adt if !info.ast.isRoot =>
                           info.constructorTypeOpt match {
                             case Some(constructorType) =>
-                              return (Some(constructorType), info.constructorResOpt, newTypeArgs)
+                              return (Some(constructorType), info.constructorResOpt, newTypeArgs,
+                                for (p <- info.ast.params if !p.isHidden) yield p.id.value)
                             case _ =>
                               reporter.error(posOpt, typeCheckerKind,
                                 st"Cannot create an object of type ${(tpe.name, ".")}.".render)
-                              return (None(), None(), newTypeArgs)
+                              return (None(), None(), newTypeArgs, ISZ())
                           }
                         case _ =>
                       }
@@ -2428,20 +2435,20 @@ import TypeChecker._
           if (tpe.args.size == z"2" && (tpe.ids == AST.Typed.isName || tpe.ids == AST.Typed.msName)) {
             if (numOfArgs == z"1") {
               val p = sSelectTypedResOpt(tpe, T)
-              return (p._1, p._2, newTypeArgs)
+              return (p._1, p._2, newTypeArgs, ISZ())
             } else {
               val p = sStoreTypedResOpt(tpe, numOfArgs)
-              return (p._1, p._2, newTypeArgs)
+              return (p._1, p._2, newTypeArgs, ISZ())
             }
           } else {
             val p = adtCopyTypedResOpt(mode == TypeChecker.ModeContext.Code, typeHierarchy, posOpt, tpe, argNames, reporter)
             if (p._3) {
-              return (p._1, p._2, newTypeArgs)
+              return (p._1, p._2, newTypeArgs, p._4)
             }
           }
         case _ =>
       }
-      return (Some(tpe), resOpt, newTypeArgs)
+      return (Some(tpe), resOpt, newTypeArgs, ISZ())
     }
 
     def checkInvokeGenH(
@@ -2678,7 +2685,7 @@ import TypeChecker._
 
         val (t, resOpt, typeArgs): (AST.Typed, Option[AST.ResolvedInfo], ISZ[AST.Typed]) = tOpt match {
           case Some(tpe) =>
-            val (t2Opt, newResOpt, targs) =
+            val (t2Opt, newResOpt, targs, _) =
               checkInvokeType(invokeExp.ident.attr.posOpt, rOpt, tpe, typeArguments, invokeExp.args.size, ISZ())
             t2Opt match {
               case Some(t2) => (t2, newResOpt, targs)
@@ -2956,12 +2963,12 @@ import TypeChecker._
           return (invokeExp(targs = targs, receiverOpt = receiverOpt), None())
         }
 
-        val (t, resOpt, typeArgs): (AST.Typed, Option[AST.ResolvedInfo], ISZ[AST.Typed]) = tOpt match {
+        val (t, resOpt, typeArgs, paramNames): (AST.Typed, Option[AST.ResolvedInfo], ISZ[AST.Typed], ISZ[String]) = tOpt match {
           case Some(tpe) =>
-            val (t2Opt, newResOpt, targs) = checkInvokeType(invokeExp.ident.attr.posOpt, rOpt, tpe, typeArguments,
+            val (t2Opt, newResOpt, targs, pns) = checkInvokeType(invokeExp.ident.attr.posOpt, rOpt, tpe, typeArguments,
               invokeExp.args.size, invokeExp.args.map(na => na.id.value))
             t2Opt match {
-              case Some(t2) => (t2, newResOpt, targs)
+              case Some(t2) => (t2, newResOpt, targs, pns)
               case _ => return partResultNamedH
             }
           case _ => return partResultNamedH
@@ -3012,13 +3019,14 @@ import TypeChecker._
             }
 
             @pure def makeNamed(eArgs: ISZ[AST.Exp], tpeOpt: Option[AST.Typed], funType: AST.Typed.Fun): AST.Exp = {
+              val mi = HashMap ++ (for (i <- 0 until paramNames.size) yield (paramNames(i), i))
               val args: ISZ[AST.NamedArg] =
                 if (eArgs.size == expArgs.size) {
                   var r = ISZ[AST.NamedArg]()
                   for (na <- invokeExp.args) {
                     val name = na.id.value
                     val index = nameToIndexMap.get(name).get
-                    r = r :+ na(arg = eArgs(index), index = index)
+                    r = r :+ na(arg = eArgs(index), index = mi.get(na.id.value).getOrElse(index))
                   }
                   r
                 } else {
@@ -3459,9 +3467,11 @@ import TypeChecker._
     }
 
     def checkRS(rs: AST.Exp.RS): (AST.Exp, Option[AST.Typed]) = {
+      var thiz = this
+      thiz = thiz(mode = ModeContext.RS)
       var newRefs = ISZ[AST.Exp.Ref]()
       for (ref <- rs.refs) {
-        val newRef = checkExp(None(), scope, AST.Exp.Eta(ref, AST.TypedAttr(ref.posOpt, ref.typedOpt)), reporter)._1.asInstanceOf[AST.Exp.Eta].ref
+        val newRef = thiz.checkExp(None(), scope, AST.Exp.Eta(ref, AST.TypedAttr(ref.posOpt, ref.typedOpt)), reporter)._1.asInstanceOf[AST.Exp.Eta].ref
         newRefs = newRefs :+ newRef
         var ok = F
         newRef.resOpt match {
