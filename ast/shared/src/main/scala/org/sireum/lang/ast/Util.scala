@@ -761,9 +761,9 @@ object Util {
   object ProofStepTemplate {
     val regular: String = "(  CLAIM  ) by Premise"
     val assum: String = "Assume(  CLAIM  )"
-    val asser: String = "Assert(  CLAIM, SubProof {\n})"
+    val asser: String = "Assert(  CLAIM, SubProof(\n))"
     val subProof: String = "SubProof(\n)"
-    val let: String = "SubProof { (ID: TYPE) =>\n}"
+    val let: String = "SubProof { (ID: TYPE) => (\n)}"
     val all: String = "∀((ID: TYPE) => CLAIM)"
     val exists: String = "∃((ID: TYPE) => CLAIM)"
     val allRange: String = "∀(LO until HI)(I => CLAIM)"
