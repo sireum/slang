@@ -589,7 +589,11 @@ object Util {
     def insertPos(no: Z, comma: String, offset: Z, column: Z, endComma: String): Unit = {
       val indent: String = conversions.String.fromCis(for (_ <- 0 until column) yield ' ')
       val lines = ops.StringOps(insert).split((c: C) => c == '\n')
-      val str = s"$comma\n$indent$no ${st"${(lines, s"\n$indent")}".render}$endComma"
+      var str: String = if (lines.isEmpty) "" else lines(0)
+      for (i <- 1 until lines.size) {
+        str = s"$str\n$indent${lines(i)}"
+      }
+      str = s"$comma\n$indent$no $str$endComma"
       map = map + offset ~> ("", str)
     }
   }
@@ -755,17 +759,11 @@ object Util {
   )
 
   object ProofStepTemplate {
-    val regular: String = st"""(  CLAIM  ) by Premise""".render
-    val assum: String = st"""Assume(  CLAIM  )""".render
-    val asser: String =
-      st"""Assert(  CLAIM, SubProof {
-          |})""".render
-    val subProof: String =
-      st"""SubProof {
-          |})""".render
-    val let: String =
-      st"""SubProof { (ID: TYPE) =>
-          |})""".render
+    val regular: String = "(  CLAIM  ) by Premise"
+    val assum: String = "Assume(  CLAIM  )"
+    val asser: String = "Assert(  CLAIM, SubProof {\n})"
+    val subProof: String = "SubProof {\n})"
+    val let: String = "SubProof { (ID: TYPE) =>\n})"
     val all: String = "∀((ID: TYPE) => CLAIM)"
     val exists: String = "∃((ID: TYPE) => CLAIM)"
     val allRange: String = "∀(LO until HI)(I => CLAIM)"
