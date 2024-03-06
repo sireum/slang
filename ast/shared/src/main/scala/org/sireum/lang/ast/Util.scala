@@ -457,10 +457,8 @@ object Util {
                                   val content: ISZ[C],
                                   val insert: String,
                                   var map: HashMap[Z, (String, String)]) extends MTransformer {
-    @strictpure def abs(n: Z): Z = if (n < 0) -n else n
-
     def insertBeginning(no: Z, isEmpty: B, pos: Position, after: ISZ[C]): Unit = {
-      var i = ops.StringOps.stringIndexOfFrom(content, ISZ[C]('/', '/'), docInfo.lineOffsets(pos.beginLine).toZ)
+      var i = ops.StringOps.stringIndexOfFrom(content, ProofStepInserter.lineCommentPrefix, docInfo.lineOffsets(pos.beginLine).toZ)
       if (0 <= i && i < docInfo.lineOffsets(pos.beginLine + 1).toZ) {
         while (i < content.size && content(i) != '\n') {
           i = i + 1
@@ -486,9 +484,10 @@ object Util {
       if (map.nonEmpty) {
         return r
       }
-      if (o.steps.nonEmpty && abs(line - pos.beginLine) >= abs(line - pos.endLine)) {
-        insertStep(no, o.steps(o.steps.size - 1))
-      } else {
+      if (o.steps.nonEmpty) {
+        insertBetween(no, o.steps)
+      }
+      if (map.isEmpty) {
         insertBeginning(no, o.steps.isEmpty, pos, ProofStepInserter.proof)
       }
       return r
@@ -505,9 +504,10 @@ object Util {
       if (map.nonEmpty) {
         return r
       }
-      if (o.steps.nonEmpty && abs(line - pos.beginLine) >= abs(line - pos.endLine)) {
-        insertStep(no, o.steps(o.steps.size - 1))
-      } else {
+      if (o.steps.nonEmpty) {
+        insertBetween(no, o.steps)
+      }
+      if (map.isEmpty) {
         insertBeginning(no, o.steps.isEmpty, pos, ProofStepInserter.proof)
       }
       return r
@@ -524,9 +524,10 @@ object Util {
       if (map.nonEmpty) {
         return r
       }
-      if (o.steps.nonEmpty && abs(line - pos.beginLine) >= abs(line - pos.endLine)) {
-        insertStep(no, o.steps(o.steps.size - 1))
-      } else {
+      if (o.steps.nonEmpty) {
+        insertBetween(no, o.steps)
+      }
+      if (map.isEmpty) {
         insertBeginning(no, o.steps.isEmpty, pos, ProofStepInserter.deduce)
       }
       return r
@@ -563,12 +564,52 @@ object Util {
       return i
     }
 
+    def insertBetween(no: Z, steps: ISZ[ProofAst.Step]): Unit = {
+      for (i <- 1 until steps.size if map.isEmpty) {
+        val pos1 = steps(i - 1).attr.posOpt.get
+        val pos2 = steps(i).attr.posOpt.get
+        if (pos1.endLine < line && line < pos2.beginLine) {
+          insertStep(no, steps(i - 1))
+        }
+      }
+      if (map.nonEmpty) {
+        return
+      }
+      val last = steps(steps.size - 1)
+      val lastPos = last.attr.posOpt.get
+      if (lastPos.endLine < line) {
+        insertStep(no, last)
+      }
+    }
+
     def insertSteps(no: Z, steps: ISZ[ProofAst.Step]): Unit = {
       for (step <- steps if map.isEmpty) {
         step match {
-          case step: ProofAst.Step.SubProof => insertSteps(no, step.steps)
-          case step: ProofAst.Step.Let => insertSteps(no, step.steps)
+          case step: ProofAst.Step.SubProof =>
+            insertSteps(no, step.steps)
+            val pos = step.attr.posOpt.get
+            if (map.isEmpty && pos.beginLine <= line && line <= pos.endLine) {
+              insertBetween(no, steps)
+              if (map.isEmpty) {
+                val i = ops.StringOps.indexOfFrom(content, '(', pos.offset)
+                insertPos(no, "", i + 1, pos.beginColumn + 2, "")
+              }
+            }
+          case step: ProofAst.Step.Let =>
+            insertSteps(no, step.steps)
+            val pos = step.attr.posOpt.get
+            if (map.isEmpty && pos.beginLine <= line && line <= pos.endLine) {
+              insertBetween(no, steps)
+              if (map.isEmpty) {
+                var i = ops.StringOps.stringIndexOfFrom(content, ProofStepInserter.rightArrow, pos.offset)
+                i = ops.StringOps.indexOfFrom(content, '(', i + 2)
+                insertPos(no, "", i + 1, pos.beginColumn + 2, "")
+              }
+            }
           case _ =>
+        }
+        if (map.nonEmpty) {
+          return
         }
         val pos = step.attr.posOpt.get
         if (pos.beginLine <= line && line <= pos.endLine) {
@@ -601,6 +642,8 @@ object Util {
   object ProofStepInserter {
     val deduce: ISZ[C] = ISZ[C]('D', 'e', 'd', 'u', 'c', 'e')
     val proof: ISZ[C] = ISZ[C]('P', 'r', 'o', 'o', 'f')
+    val lineCommentPrefix: ISZ[C] = ISZ[C]('/', '/')
+    val rightArrow: ISZ[C] = ISZ[C]('=', '>')
   }
 
   @record class ConstructorValMapper(val content: ISZ[C], var map: HashMap[Z, (String, String)]) extends MTransformer {
