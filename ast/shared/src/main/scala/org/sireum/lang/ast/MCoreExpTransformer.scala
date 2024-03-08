@@ -209,6 +209,10 @@ object MCoreExpTransformer {
 
   val PostResultCoreExpHalt: MOption[CoreExp.Base] = MNone()
 
+  val PreResultCoreExpLabeled: PreResult[CoreExp.Base] = PreResult(T, MNone())
+
+  val PostResultCoreExpLabeled: MOption[CoreExp.Base] = MNone()
+
 }
 
 import MCoreExpTransformer._
@@ -458,6 +462,13 @@ import MCoreExpTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
+      case o: CoreExp.Labeled =>
+        val r: PreResult[CoreExp] = preCoreExpLabeled(o) match {
+         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
+        }
+        return r
     }
   }
 
@@ -542,6 +553,7 @@ import MCoreExpTransformer._
       case o: CoreExp.Quant => return preCoreExpQuant(o)
       case o: CoreExp.InstanceOfExp => return preCoreExpInstanceOfExp(o)
       case o: CoreExp.Halt => return preCoreExpHalt(o)
+      case o: CoreExp.Labeled => return preCoreExpLabeled(o)
     }
   }
 
@@ -665,6 +677,10 @@ import MCoreExpTransformer._
 
   def preCoreExpHalt(o: CoreExp.Halt): PreResult[CoreExp.Base] = {
     return PreResultCoreExpHalt
+  }
+
+  def preCoreExpLabeled(o: CoreExp.Labeled): PreResult[CoreExp.Base] = {
+    return PreResultCoreExpLabeled
   }
 
   def postTyped(o: Typed): MOption[Typed] = {
@@ -910,6 +926,13 @@ import MCoreExpTransformer._
          case _ => MNone[CoreExp]()
         }
         return r
+      case o: CoreExp.Labeled =>
+        val r: MOption[CoreExp] = postCoreExpLabeled(o) match {
+         case MSome(result: CoreExp) => MSome[CoreExp](result)
+         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case _ => MNone[CoreExp]()
+        }
+        return r
     }
   }
 
@@ -994,6 +1017,7 @@ import MCoreExpTransformer._
       case o: CoreExp.Quant => return postCoreExpQuant(o)
       case o: CoreExp.InstanceOfExp => return postCoreExpInstanceOfExp(o)
       case o: CoreExp.Halt => return postCoreExpHalt(o)
+      case o: CoreExp.Labeled => return postCoreExpLabeled(o)
     }
   }
 
@@ -1117,6 +1141,10 @@ import MCoreExpTransformer._
 
   def postCoreExpHalt(o: CoreExp.Halt): MOption[CoreExp.Base] = {
     return PostResultCoreExpHalt
+  }
+
+  def postCoreExpLabeled(o: CoreExp.Labeled): MOption[CoreExp.Base] = {
+    return PostResultCoreExpLabeled
   }
 
   def transformTyped(o: Typed): MOption[Typed] = {
@@ -1384,6 +1412,12 @@ import MCoreExpTransformer._
             MSome(o2)
           else
             MNone()
+        case o2: CoreExp.Labeled =>
+          val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp)))
+          else
+            MNone()
       }
       rOpt
     } else if (preR.resultOpt.nonEmpty) {
@@ -1568,6 +1602,12 @@ import MCoreExpTransformer._
         case o2: CoreExp.Halt =>
           if (hasChanged)
             MSome(o2)
+          else
+            MNone()
+        case o2: CoreExp.Labeled =>
+          val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp)))
           else
             MNone()
       }

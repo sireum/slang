@@ -663,6 +663,28 @@ object CoreExp {
     @strictpure override def isHalt: B = T
   }
 
+  @datatype class Labeled(val numOpt: Option[Z], val exp: Base) extends CoreExp.Base {
+    @strictpure override def rawType: Typed = exp.rawType
+    @strictpure override def prettyST: ST = st"(${exp.prettyST}) : @l"
+    @strictpure override def prettyPatternST: ST = prettyST
+    @pure override def subst(sm: HashMap[String, Typed]): Labeled = {
+      if (sm.isEmpty) {
+        return this
+      }
+      val thiz = this
+      return thiz(exp = exp.subst(sm))
+    }
+    @pure def incDeBruijn(threshold: Z): Labeled = {
+      val thiz = this
+      return thiz(exp = exp.incDeBruijn(threshold))
+    }
+    override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
+      val thiz = this
+      return thiz(exp = exp.numberPattern(numMap))
+    }
+    @strictpure override def shouldParen: B = T
+  }
+
   val Abort: CoreExp.Halt = CoreExp.Halt()
   val True: CoreExp.LitB = CoreExp.LitB(T)
   val False: CoreExp.LitB = CoreExp.LitB(F)
