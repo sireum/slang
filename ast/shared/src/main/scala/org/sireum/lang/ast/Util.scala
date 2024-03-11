@@ -591,8 +591,12 @@ object Util {
             if (map.isEmpty && pos.beginLine <= line && line <= pos.endLine) {
               insertBetween(no, steps)
               if (map.isEmpty) {
-                val i = ops.StringOps.indexOfFrom(content, '(', pos.offset)
-                insertPos(no, "", i + 1, pos.beginColumn + 2, if (step.steps.isEmpty) "" else ",")
+                if (step.steps.nonEmpty && step.steps(step.steps.size - 1).attr.posOpt.get.endLine <  line) {
+                  insertStep(no, step.steps(step.steps.size - 1))
+                } else {
+                  val i = ops.StringOps.indexOfFrom(content, '(', pos.offset)
+                  insertPos(no, "", i + 1, pos.beginColumn + 2, if (step.steps.isEmpty) "" else ",")
+                }
               }
             }
           case step: ProofAst.Step.Let =>
@@ -601,9 +605,13 @@ object Util {
             if (map.isEmpty && pos.beginLine <= line && line <= pos.endLine) {
               insertBetween(no, steps)
               if (map.isEmpty) {
-                var i = ops.StringOps.stringIndexOfFrom(content, ProofStepInserter.rightArrow, pos.offset)
-                i = ops.StringOps.indexOfFrom(content, '(', i + 2)
-                insertPos(no, "", i + 1, pos.beginColumn + 2, if (step.steps.isEmpty) "" else ",")
+                if (step.steps.nonEmpty && step.steps(step.steps.size - 1).attr.posOpt.get.endLine <  line) {
+                  insertStep(no, step.steps(step.steps.size - 1))
+                } else {
+                  var i = ops.StringOps.stringIndexOfFrom(content, ProofStepInserter.rightArrow, pos.offset)
+                  i = ops.StringOps.indexOfFrom(content, '(', i + 2)
+                  insertPos(no, "", i + 1, pos.beginColumn + 2, if (step.steps.isEmpty) "" else ",")
+                }
               }
             }
           case _ =>
