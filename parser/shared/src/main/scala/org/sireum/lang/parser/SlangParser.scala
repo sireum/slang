@@ -3666,6 +3666,18 @@ class SlangParser(
     term match {
       case term: Term.Tuple => translateAssumeSubClaims(term.args)
       case _: Lit.Unit => ISZ()
+      case Term.ApplyInfix.After_4_6_0(no, _, Type.ArgClause(Nil), ac@Term.ArgClause(List(_), scala.None)) =>
+        translateAssumeSubClaims(Seq(term)) match {
+          case ISZ(step: AST.ProofAst.Step.Assume) =>
+            ISZ(step(attr = step.attr(posOpt = Some(attr(no.pos).posOpt.get.to(attr(ac.pos).posOpt.get)))))
+          case r => r
+        }
+      case Term.Apply.After_4_6_0(name, ac@Term.ArgClause(List(_), scala.None)) =>
+        translateAssumeSubClaims(Seq(term)) match {
+          case ISZ(step: AST.ProofAst.Step.Assume) =>
+            ISZ(step(attr = step.attr(posOpt = Some(attr(name.pos).posOpt.get.to(attr(ac.pos).posOpt.get)))))
+          case r => r
+        }
       case _ => translateAssumeSubClaims(Seq(term))
     }
   }
@@ -3897,8 +3909,17 @@ class SlangParser(
           reporter.error(stepNo.posOpt, messageKind, "Assume justification cannot be used at this location")
         }
         AST.ProofAst.Step.Assume(stepNo, translateExp(claim), attr(proofStep.pos))
+      case q"Assume($claim)" =>
+        val stepNo = toStepId(proofStep.pos)
+        if (!allowAssume) {
+          reporter.error(stepNo.posOpt, messageKind, "Assume justification cannot be used at this location")
+        }
+        AST.ProofAst.Step.Assume(stepNo, translateExp(claim), attr(proofStep.pos))
       case q"$no Assert($claim, SubProof(..$claims))" if isStepId(no) =>
         AST.ProofAst.Step.Assert(toStepId(no), translateExp(claim), ISZ(claims.map(translateProofStep(false)): _*),
+          attr(proofStep.pos))
+      case q"Assert($claim, SubProof(..$claims))" =>
+        AST.ProofAst.Step.Assert(toStepId(proofStep.pos), translateExp(claim), ISZ(claims.map(translateProofStep(false)): _*),
           attr(proofStep.pos))
       case q"$no SubProof(..$claims)" if isStepId(no) =>
         val stepNo = toStepId(no)
