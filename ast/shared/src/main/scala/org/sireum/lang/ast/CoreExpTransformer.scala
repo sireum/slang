@@ -175,6 +175,13 @@ object CoreExpTransformer {
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
           }
           return r
+        case o: CoreExp.LitEnum =>
+          val r: PreResult[Context, CoreExp] = preCoreExpLitEnum(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
+          }
+          return r
         case o: CoreExp.ParamVarRef =>
           val r: PreResult[Context, CoreExp] = preCoreExpParamVarRef(ctx, o) match {
            case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
@@ -189,8 +196,8 @@ object CoreExpTransformer {
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
           }
           return r
-        case o: CoreExp.ObjectVarRef =>
-          val r: PreResult[Context, CoreExp] = preCoreExpObjectVarRef(ctx, o) match {
+        case o: CoreExp.VarRef =>
+          val r: PreResult[Context, CoreExp] = preCoreExpVarRef(ctx, o) match {
            case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
            case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
@@ -363,9 +370,16 @@ object CoreExpTransformer {
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp.Base]())
           }
           return r
+        case o: CoreExp.LitEnum =>
+          val r: PreResult[Context, CoreExp.Base] = preCoreExpLitEnum(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp.Base)) => PreResult(preCtx, continu, Some[CoreExp.Base](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp.Base]())
+          }
+          return r
         case o: CoreExp.ParamVarRef => return preCoreExpParamVarRef(ctx, o)
         case o: CoreExp.LocalVarRef => return preCoreExpLocalVarRef(ctx, o)
-        case o: CoreExp.ObjectVarRef => return preCoreExpObjectVarRef(ctx, o)
+        case o: CoreExp.VarRef => return preCoreExpVarRef(ctx, o)
         case o: CoreExp.Binary => return preCoreExpBinary(ctx, o)
         case o: CoreExp.Unary => return preCoreExpUnary(ctx, o)
         case o: CoreExp.Constructor => return preCoreExpConstructor(ctx, o)
@@ -394,6 +408,7 @@ object CoreExpTransformer {
         case o: CoreExp.LitString => return preCoreExpLitString(ctx, o)
         case o: CoreExp.LitRange => return preCoreExpLitRange(ctx, o)
         case o: CoreExp.LitBits => return preCoreExpLitBits(ctx, o)
+        case o: CoreExp.LitEnum => return preCoreExpLitEnum(ctx, o)
       }
     }
 
@@ -433,6 +448,10 @@ object CoreExpTransformer {
       return PreResult(ctx, T, None())
     }
 
+    @pure def preCoreExpLitEnum(ctx: Context, o: CoreExp.LitEnum): PreResult[Context, CoreExp.Lit] = {
+      return PreResult(ctx, T, None())
+    }
+
     @pure def preCoreExpParamVarRef(ctx: Context, o: CoreExp.ParamVarRef): PreResult[Context, CoreExp.Base] = {
       return PreResult(ctx, T, None())
     }
@@ -441,7 +460,7 @@ object CoreExpTransformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preCoreExpObjectVarRef(ctx: Context, o: CoreExp.ObjectVarRef): PreResult[Context, CoreExp.Base] = {
+    @pure def preCoreExpVarRef(ctx: Context, o: CoreExp.VarRef): PreResult[Context, CoreExp.Base] = {
       return PreResult(ctx, T, None())
     }
 
@@ -639,6 +658,13 @@ object CoreExpTransformer {
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
           }
           return r
+        case o: CoreExp.LitEnum =>
+          val r: TPostResult[Context, CoreExp] = postCoreExpLitEnum(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
+          }
+          return r
         case o: CoreExp.ParamVarRef =>
           val r: TPostResult[Context, CoreExp] = postCoreExpParamVarRef(ctx, o) match {
            case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
@@ -653,8 +679,8 @@ object CoreExpTransformer {
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
           }
           return r
-        case o: CoreExp.ObjectVarRef =>
-          val r: TPostResult[Context, CoreExp] = postCoreExpObjectVarRef(ctx, o) match {
+        case o: CoreExp.VarRef =>
+          val r: TPostResult[Context, CoreExp] = postCoreExpVarRef(ctx, o) match {
            case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
            case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
@@ -827,9 +853,16 @@ object CoreExpTransformer {
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp.Base]())
           }
           return r
+        case o: CoreExp.LitEnum =>
+          val r: TPostResult[Context, CoreExp.Base] = postCoreExpLitEnum(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp.Base)) => TPostResult(postCtx, Some[CoreExp.Base](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp.Base]())
+          }
+          return r
         case o: CoreExp.ParamVarRef => return postCoreExpParamVarRef(ctx, o)
         case o: CoreExp.LocalVarRef => return postCoreExpLocalVarRef(ctx, o)
-        case o: CoreExp.ObjectVarRef => return postCoreExpObjectVarRef(ctx, o)
+        case o: CoreExp.VarRef => return postCoreExpVarRef(ctx, o)
         case o: CoreExp.Binary => return postCoreExpBinary(ctx, o)
         case o: CoreExp.Unary => return postCoreExpUnary(ctx, o)
         case o: CoreExp.Constructor => return postCoreExpConstructor(ctx, o)
@@ -858,6 +891,7 @@ object CoreExpTransformer {
         case o: CoreExp.LitString => return postCoreExpLitString(ctx, o)
         case o: CoreExp.LitRange => return postCoreExpLitRange(ctx, o)
         case o: CoreExp.LitBits => return postCoreExpLitBits(ctx, o)
+        case o: CoreExp.LitEnum => return postCoreExpLitEnum(ctx, o)
       }
     }
 
@@ -897,6 +931,10 @@ object CoreExpTransformer {
       return TPostResult(ctx, None())
     }
 
+    @pure def postCoreExpLitEnum(ctx: Context, o: CoreExp.LitEnum): TPostResult[Context, CoreExp.Lit] = {
+      return TPostResult(ctx, None())
+    }
+
     @pure def postCoreExpParamVarRef(ctx: Context, o: CoreExp.ParamVarRef): TPostResult[Context, CoreExp.Base] = {
       return TPostResult(ctx, None())
     }
@@ -905,7 +943,7 @@ object CoreExpTransformer {
       return TPostResult(ctx, None())
     }
 
-    @pure def postCoreExpObjectVarRef(ctx: Context, o: CoreExp.ObjectVarRef): TPostResult[Context, CoreExp.Base] = {
+    @pure def postCoreExpVarRef(ctx: Context, o: CoreExp.VarRef): TPostResult[Context, CoreExp.Base] = {
       return TPostResult(ctx, None())
     }
 
@@ -1143,6 +1181,11 @@ import CoreExpTransformer._
             TPostResult(r0.ctx, Some(o2(rawType = r0.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r0.ctx, None())
+        case o2: CoreExp.LitEnum =>
+          if (hasChanged)
+            TPostResult(preR.ctx, Some(o2))
+          else
+            TPostResult(preR.ctx, None())
         case o2: CoreExp.ParamVarRef =>
           val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty)
@@ -1155,7 +1198,7 @@ import CoreExpTransformer._
             TPostResult(r0.ctx, Some(o2(rawType = r0.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r0.ctx, None())
-        case o2: CoreExp.ObjectVarRef =>
+        case o2: CoreExp.VarRef =>
           val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty)
             TPostResult(r0.ctx, Some(o2(rawType = r0.resultOpt.getOrElse(o2.rawType))))
@@ -1342,6 +1385,11 @@ import CoreExpTransformer._
             TPostResult(r0.ctx, Some(o2(rawType = r0.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r0.ctx, None())
+        case o2: CoreExp.LitEnum =>
+          if (hasChanged)
+            TPostResult(preR.ctx, Some(o2))
+          else
+            TPostResult(preR.ctx, None())
         case o2: CoreExp.ParamVarRef =>
           val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty)
@@ -1354,7 +1402,7 @@ import CoreExpTransformer._
             TPostResult(r0.ctx, Some(o2(rawType = r0.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r0.ctx, None())
-        case o2: CoreExp.ObjectVarRef =>
+        case o2: CoreExp.VarRef =>
           val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.rawType)
           if (hasChanged || r0.resultOpt.nonEmpty)
             TPostResult(r0.ctx, Some(o2(rawType = r0.resultOpt.getOrElse(o2.rawType))))
@@ -1534,6 +1582,11 @@ import CoreExpTransformer._
             TPostResult(r0.ctx, Some(o2(rawType = r0.resultOpt.getOrElse(o2.rawType))))
           else
             TPostResult(r0.ctx, None())
+        case o2: CoreExp.LitEnum =>
+          if (hasChanged)
+            TPostResult(preR.ctx, Some(o2))
+          else
+            TPostResult(preR.ctx, None())
       }
       rOpt
     } else if (preR.resultOpt.nonEmpty) {

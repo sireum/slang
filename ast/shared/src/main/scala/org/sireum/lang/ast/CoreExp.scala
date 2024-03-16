@@ -141,6 +141,16 @@ object CoreExp {
     @strictpure override def isMinusOne: B = Z(value).get == -1
   }
 
+  @datatype class LitEnum(val owner: ISZ[String], val id: String, val ordinal: Z) extends Lit {
+    @strictpure def rawType: Typed = Typed.Enum(owner :+ "Type")
+    @pure override def prettyST: ST = {
+      return st"""${owner(owner.size - 1)}.$id"""
+    }
+    @strictpure override def isZero: B = F
+    @strictpure override def isOne: B = F
+    @strictpure override def isMinusOne: B = F
+  }
+
   @datatype class ParamVarRef(val deBruijn: Z, @hidden val id: String, @hidden val rawType: Typed) extends Base {
     @strictpure override def prettyST: ST = st"$id"
     @strictpure override def prettyPatternST: ST = prettyST
@@ -189,17 +199,18 @@ object CoreExp {
     }
   }
 
-  @datatype class ObjectVarRef(val owner: ISZ[String], val id: String, val rawType: Typed) extends Base {
-    @strictpure override def prettyST: ST = if (owner.isEmpty) st"$id" else st"${owner(owner.size - 1)}.$id"
+  @datatype class VarRef(val isInObject: B, val owner: ISZ[String], val id: String, val rawType: Typed) extends Base {
+    @strictpure override def prettyST: ST =
+      if (owner.isEmpty) st"$id" else st"${owner(owner.size - 1)}${if (isInObject) "." else "#"}$id"
     @strictpure override def prettyPatternST: ST = prettyST
-    @pure override def subst(sm: HashMap[String, Typed]): ObjectVarRef = {
+    @pure override def subst(sm: HashMap[String, Typed]): VarRef = {
       if (sm.isEmpty) {
         return this
       }
       val thiz = this
       return thiz(rawType = rawType.subst(sm))
     }
-    @strictpure def incDeBruijn(threshold: Z): ObjectVarRef = this
+    @strictpure def incDeBruijn(threshold: Z): VarRef = this
     override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
       return this
     }
@@ -249,7 +260,7 @@ object CoreExp {
       val paren: B = exp match {
         case _: CoreExp.LocalVarRef => F
         case _: CoreExp.ParamVarRef => F
-        case _: CoreExp.ObjectVarRef => F
+        case _: CoreExp.VarRef => F
         case exp: CoreExp.LitZ if exp.value >= 0 => F
         case exp: CoreExp.LitF32 if exp.value >= 0f => F
         case exp: CoreExp.LitF64 if exp.value >= 0d => F
@@ -471,14 +482,12 @@ object CoreExp {
     @strictpure override def shouldParen: B = T
   }
 
-  @datatype class Apply(val hasReceiver: B, val exp: Base, val args: ISZ[Base], val rawType: Typed) extends Base {
+  @datatype class Apply(val exp: Base, val args: ISZ[Base], val rawType: Typed) extends Base {
     @pure override def prettyST: ST = {
-      return if (hasReceiver) st"${args(0).prettyST}.${exp.prettyST}(${(for (arg <- ops.ISZOps(args).drop(1)) yield arg.prettyST, ", ")})"
-      else st"${exp.prettyST}(${(for (arg <- args) yield arg.prettyST, ", ")})"
+      return st"${exp.prettyST}(${(for (arg <- args) yield arg.prettyST, ", ")})"
     }
     @pure override def prettyPatternST: ST = {
-      return if (hasReceiver) st"${args(0).prettyPatternST}.${exp.prettyPatternST}(${(for (arg <- ops.ISZOps(args).drop(1)) yield arg.prettyPatternST, ", ")})"
-      else st"${exp.prettyPatternST}(${(for (arg <- args) yield arg.prettyPatternST, ", ")})"
+      return st"${exp.prettyPatternST}(${(for (arg <- args) yield arg.prettyPatternST, ", ")})"
     }
     @pure override def subst(sm: HashMap[String, Typed]): Apply = {
       if (sm.isEmpty) {

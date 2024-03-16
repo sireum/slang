@@ -137,6 +137,10 @@ object MCoreExpTransformer {
 
   val PostResultCoreExpLitBits: MOption[CoreExp.Lit] = MNone()
 
+  val PreResultCoreExpLitEnum: PreResult[CoreExp.Lit] = PreResult(T, MNone())
+
+  val PostResultCoreExpLitEnum: MOption[CoreExp.Lit] = MNone()
+
   val PreResultCoreExpParamVarRef: PreResult[CoreExp.Base] = PreResult(T, MNone())
 
   val PostResultCoreExpParamVarRef: MOption[CoreExp.Base] = MNone()
@@ -145,9 +149,9 @@ object MCoreExpTransformer {
 
   val PostResultCoreExpLocalVarRef: MOption[CoreExp.Base] = MNone()
 
-  val PreResultCoreExpObjectVarRef: PreResult[CoreExp.Base] = PreResult(T, MNone())
+  val PreResultCoreExpVarRef: PreResult[CoreExp.Base] = PreResult(T, MNone())
 
-  val PostResultCoreExpObjectVarRef: MOption[CoreExp.Base] = MNone()
+  val PostResultCoreExpVarRef: MOption[CoreExp.Base] = MNone()
 
   val PreResultCoreExpBinary: PreResult[CoreExp.Base] = PreResult(T, MNone())
 
@@ -349,6 +353,13 @@ import MCoreExpTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
+      case o: CoreExp.LitEnum =>
+        val r: PreResult[CoreExp] = preCoreExpLitEnum(o) match {
+         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
+        }
+        return r
       case o: CoreExp.ParamVarRef =>
         val r: PreResult[CoreExp] = preCoreExpParamVarRef(o) match {
          case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
@@ -363,8 +374,8 @@ import MCoreExpTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
-      case o: CoreExp.ObjectVarRef =>
-        val r: PreResult[CoreExp] = preCoreExpObjectVarRef(o) match {
+      case o: CoreExp.VarRef =>
+        val r: PreResult[CoreExp] = preCoreExpVarRef(o) match {
          case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
          case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
@@ -537,9 +548,16 @@ import MCoreExpTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp.Base]())
         }
         return r
+      case o: CoreExp.LitEnum =>
+        val r: PreResult[CoreExp.Base] = preCoreExpLitEnum(o) match {
+         case PreResult(continu, MSome(r: CoreExp.Base)) => PreResult(continu, MSome[CoreExp.Base](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp.Base")
+         case PreResult(continu, _) => PreResult(continu, MNone[CoreExp.Base]())
+        }
+        return r
       case o: CoreExp.ParamVarRef => return preCoreExpParamVarRef(o)
       case o: CoreExp.LocalVarRef => return preCoreExpLocalVarRef(o)
-      case o: CoreExp.ObjectVarRef => return preCoreExpObjectVarRef(o)
+      case o: CoreExp.VarRef => return preCoreExpVarRef(o)
       case o: CoreExp.Binary => return preCoreExpBinary(o)
       case o: CoreExp.Unary => return preCoreExpUnary(o)
       case o: CoreExp.Constructor => return preCoreExpConstructor(o)
@@ -568,6 +586,7 @@ import MCoreExpTransformer._
       case o: CoreExp.LitString => return preCoreExpLitString(o)
       case o: CoreExp.LitRange => return preCoreExpLitRange(o)
       case o: CoreExp.LitBits => return preCoreExpLitBits(o)
+      case o: CoreExp.LitEnum => return preCoreExpLitEnum(o)
     }
   }
 
@@ -607,6 +626,10 @@ import MCoreExpTransformer._
     return PreResultCoreExpLitBits
   }
 
+  def preCoreExpLitEnum(o: CoreExp.LitEnum): PreResult[CoreExp.Lit] = {
+    return PreResultCoreExpLitEnum
+  }
+
   def preCoreExpParamVarRef(o: CoreExp.ParamVarRef): PreResult[CoreExp.Base] = {
     return PreResultCoreExpParamVarRef
   }
@@ -615,8 +638,8 @@ import MCoreExpTransformer._
     return PreResultCoreExpLocalVarRef
   }
 
-  def preCoreExpObjectVarRef(o: CoreExp.ObjectVarRef): PreResult[CoreExp.Base] = {
-    return PreResultCoreExpObjectVarRef
+  def preCoreExpVarRef(o: CoreExp.VarRef): PreResult[CoreExp.Base] = {
+    return PreResultCoreExpVarRef
   }
 
   def preCoreExpBinary(o: CoreExp.Binary): PreResult[CoreExp.Base] = {
@@ -813,6 +836,13 @@ import MCoreExpTransformer._
          case _ => MNone[CoreExp]()
         }
         return r
+      case o: CoreExp.LitEnum =>
+        val r: MOption[CoreExp] = postCoreExpLitEnum(o) match {
+         case MSome(result: CoreExp) => MSome[CoreExp](result)
+         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case _ => MNone[CoreExp]()
+        }
+        return r
       case o: CoreExp.ParamVarRef =>
         val r: MOption[CoreExp] = postCoreExpParamVarRef(o) match {
          case MSome(result: CoreExp) => MSome[CoreExp](result)
@@ -827,8 +857,8 @@ import MCoreExpTransformer._
          case _ => MNone[CoreExp]()
         }
         return r
-      case o: CoreExp.ObjectVarRef =>
-        val r: MOption[CoreExp] = postCoreExpObjectVarRef(o) match {
+      case o: CoreExp.VarRef =>
+        val r: MOption[CoreExp] = postCoreExpVarRef(o) match {
          case MSome(result: CoreExp) => MSome[CoreExp](result)
          case MSome(_) => halt("Can only produce object of type CoreExp")
          case _ => MNone[CoreExp]()
@@ -1001,9 +1031,16 @@ import MCoreExpTransformer._
          case _ => MNone[CoreExp.Base]()
         }
         return r
+      case o: CoreExp.LitEnum =>
+        val r: MOption[CoreExp.Base] = postCoreExpLitEnum(o) match {
+         case MSome(result: CoreExp.Base) => MSome[CoreExp.Base](result)
+         case MSome(_) => halt("Can only produce object of type CoreExp.Base")
+         case _ => MNone[CoreExp.Base]()
+        }
+        return r
       case o: CoreExp.ParamVarRef => return postCoreExpParamVarRef(o)
       case o: CoreExp.LocalVarRef => return postCoreExpLocalVarRef(o)
-      case o: CoreExp.ObjectVarRef => return postCoreExpObjectVarRef(o)
+      case o: CoreExp.VarRef => return postCoreExpVarRef(o)
       case o: CoreExp.Binary => return postCoreExpBinary(o)
       case o: CoreExp.Unary => return postCoreExpUnary(o)
       case o: CoreExp.Constructor => return postCoreExpConstructor(o)
@@ -1032,6 +1069,7 @@ import MCoreExpTransformer._
       case o: CoreExp.LitString => return postCoreExpLitString(o)
       case o: CoreExp.LitRange => return postCoreExpLitRange(o)
       case o: CoreExp.LitBits => return postCoreExpLitBits(o)
+      case o: CoreExp.LitEnum => return postCoreExpLitEnum(o)
     }
   }
 
@@ -1071,6 +1109,10 @@ import MCoreExpTransformer._
     return PostResultCoreExpLitBits
   }
 
+  def postCoreExpLitEnum(o: CoreExp.LitEnum): MOption[CoreExp.Lit] = {
+    return PostResultCoreExpLitEnum
+  }
+
   def postCoreExpParamVarRef(o: CoreExp.ParamVarRef): MOption[CoreExp.Base] = {
     return PostResultCoreExpParamVarRef
   }
@@ -1079,8 +1121,8 @@ import MCoreExpTransformer._
     return PostResultCoreExpLocalVarRef
   }
 
-  def postCoreExpObjectVarRef(o: CoreExp.ObjectVarRef): MOption[CoreExp.Base] = {
-    return PostResultCoreExpObjectVarRef
+  def postCoreExpVarRef(o: CoreExp.VarRef): MOption[CoreExp.Base] = {
+    return PostResultCoreExpVarRef
   }
 
   def postCoreExpBinary(o: CoreExp.Binary): MOption[CoreExp.Base] = {
@@ -1291,6 +1333,11 @@ import MCoreExpTransformer._
             MSome(o2(rawType = r0.getOrElse(o2.rawType)))
           else
             MNone()
+        case o2: CoreExp.LitEnum =>
+          if (hasChanged)
+            MSome(o2)
+          else
+            MNone()
         case o2: CoreExp.ParamVarRef =>
           val r0: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty)
@@ -1303,7 +1350,7 @@ import MCoreExpTransformer._
             MSome(o2(rawType = r0.getOrElse(o2.rawType)))
           else
             MNone()
-        case o2: CoreExp.ObjectVarRef =>
+        case o2: CoreExp.VarRef =>
           val r0: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty)
             MSome(o2(rawType = r0.getOrElse(o2.rawType)))
@@ -1490,6 +1537,11 @@ import MCoreExpTransformer._
             MSome(o2(rawType = r0.getOrElse(o2.rawType)))
           else
             MNone()
+        case o2: CoreExp.LitEnum =>
+          if (hasChanged)
+            MSome(o2)
+          else
+            MNone()
         case o2: CoreExp.ParamVarRef =>
           val r0: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty)
@@ -1502,7 +1554,7 @@ import MCoreExpTransformer._
             MSome(o2(rawType = r0.getOrElse(o2.rawType)))
           else
             MNone()
-        case o2: CoreExp.ObjectVarRef =>
+        case o2: CoreExp.VarRef =>
           val r0: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty)
             MSome(o2(rawType = r0.getOrElse(o2.rawType)))
@@ -1680,6 +1732,11 @@ import MCoreExpTransformer._
           val r0: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty)
             MSome(o2(rawType = r0.getOrElse(o2.rawType)))
+          else
+            MNone()
+        case o2: CoreExp.LitEnum =>
+          if (hasChanged)
+            MSome(o2)
           else
             MNone()
       }
