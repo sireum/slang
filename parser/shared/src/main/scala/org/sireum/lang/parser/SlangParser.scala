@@ -3067,7 +3067,7 @@ class SlangParser(
     if (name.value == "native" && tpes.nonEmpty) {
       error(name.pos, "Selector 'native' does not accept type arguments.")
     }
-    val id = if (name.value == "$") cidNoCheck(name.value, name.pos) else cid(name)
+    val id = if (name.value == "$$") cidNoCheck(name.value, name.pos) else cid(name)
     AST.Exp.Select(Some(translateExp(receiver)), id, ISZ(tpes.map(translateType): _*), resolvedAttr(pos))
   }
 

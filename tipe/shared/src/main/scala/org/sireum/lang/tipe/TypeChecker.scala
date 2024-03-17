@@ -1692,16 +1692,16 @@ import TypeChecker._
                 )
               case _ =>
             }
-          case Some(info) if mode == ModeContext.RS && id == "$" && (info.isInstanceOf[TypeInfo.Adt] ||
+          case Some(info) if mode == ModeContext.RS && id == "$$" && (info.isInstanceOf[TypeInfo.Adt] ||
             info.isInstanceOf[TypeInfo.Sig]) =>
             val t = info.tpe
             if (typeArgs.nonEmpty) {
-              reporter.error(ident.attr.posOpt, typeCheckerKind, s"$$ should be used without type arguments" )
+              reporter.error(ident.attr.posOpt, typeCheckerKind, s"$id should be used without type arguments" )
             }
             val ft = AST.Typed.Fun(AST.Purity.Pure, T, ISZ(), t)
             return (
-              Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), receiverType.name, "$", ISZ(), ft)),
-              Some(AST.ResolvedInfo.Method(T, AST.MethodMode.Ext, ISZ(), receiverType.name, "$", ISZ(), Some(ft), ISZ(), ISZ())),
+              Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), receiverType.name, id, ISZ(), ft)),
+              Some(AST.ResolvedInfo.Method(T, AST.MethodMode.Ext, ISZ(), receiverType.name, id, ISZ(), Some(ft), ISZ(), ISZ())),
               ISZ()
             )
           case _ =>
