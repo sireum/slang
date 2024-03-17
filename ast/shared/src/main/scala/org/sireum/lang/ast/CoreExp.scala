@@ -547,7 +547,6 @@ object CoreExp {
       val thiz = this
       return thiz(exp = exp.numberPattern(numMap))
     }
-    @strictpure override def shouldParen: B = T
   }
 
   @datatype class Quant(val kind: Quant.Kind.Type, val param: Param, val exp: Base) extends Base {
@@ -624,7 +623,6 @@ object CoreExp {
       val thiz = this
       return thiz(exp = exp.numberPattern(numMap))
     }
-    @strictpure override def shouldParen: B = T
   }
 
   @datatype class Arrow(val left: Base, val right: CoreExp) extends CoreExp {

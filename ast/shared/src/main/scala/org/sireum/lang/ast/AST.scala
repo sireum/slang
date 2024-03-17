@@ -2044,12 +2044,18 @@ object Exp {
   }
 
   @pure def receiverOptST(posOpt: Option[Position], receiverOpt: Option[Exp]): Option[ST] = {
-    receiverOpt match {
-      case Some(exp: Exp.This) if posOpt.nonEmpty && exp.posOpt == posOpt => return None()
-      case Some(exp: Exp.Ref) => return Some(st"${exp.asExp.prettyST}.")
-      case Some(exp) => return Some(st"(${exp.prettyST}).")
-      case _ => return None()
+    if (receiverOpt.isEmpty) {
+      return None()
     }
+    val exp = receiverOpt.get
+    exp match {
+      case _: Exp.Ref =>
+      case _: Exp.Invoke =>
+      case _: Exp.InvokeNamed =>
+      case exp: Exp.This if posOpt.nonEmpty && exp.posOpt == posOpt => return None()
+      case exp => return Some(st"(${exp.prettyST}).")
+    }
+    return Some(st"${exp.prettyST}.")
   }
 }
 
