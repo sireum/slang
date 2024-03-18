@@ -80,6 +80,7 @@ object Transformer {
         case o: Stmt.Assign => return preStmtAssign(ctx, o)
         case o: Stmt.Block => return preStmtBlock(ctx, o)
         case o: Stmt.If => return preStmtIf(ctx, o)
+        case o: Stmt.Induct => return preStmtInduct(ctx, o)
         case o: Stmt.Match => return preStmtMatch(ctx, o)
         case o: Stmt.While => return preStmtWhile(ctx, o)
         case o: Stmt.DoWhile => return preStmtDoWhile(ctx, o)
@@ -274,6 +275,10 @@ object Transformer {
     }
 
     @pure def preStmtIf(ctx: Context, o: Stmt.If): PreResult[Context, Stmt] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preStmtInduct(ctx: Context, o: Stmt.Induct): PreResult[Context, Stmt] = {
       return PreResult(ctx, T, None())
     }
 
@@ -1184,6 +1189,7 @@ object Transformer {
         case o: Stmt.Assign => return postStmtAssign(ctx, o)
         case o: Stmt.Block => return postStmtBlock(ctx, o)
         case o: Stmt.If => return postStmtIf(ctx, o)
+        case o: Stmt.Induct => return postStmtInduct(ctx, o)
         case o: Stmt.Match => return postStmtMatch(ctx, o)
         case o: Stmt.While => return postStmtWhile(ctx, o)
         case o: Stmt.DoWhile => return postStmtDoWhile(ctx, o)
@@ -1378,6 +1384,10 @@ object Transformer {
     }
 
     @pure def postStmtIf(ctx: Context, o: Stmt.If): TPostResult[Context, Stmt] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postStmtInduct(ctx: Context, o: Stmt.Induct): TPostResult[Context, Stmt] = {
       return TPostResult(ctx, None())
     }
 
@@ -2488,6 +2498,13 @@ import Transformer._
             TPostResult(r3.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), thenBody = r1.resultOpt.getOrElse(o2.thenBody), elseBody = r2.resultOpt.getOrElse(o2.elseBody), attr = r3.resultOpt.getOrElse(o2.attr))))
           else
             TPostResult(r3.ctx, None())
+        case o2: Stmt.Induct =>
+          val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.exp)
+          val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), attr = r1.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r1.ctx, None())
         case o2: Stmt.Match =>
           val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.exp)
           val r1: TPostResult[Context, IS[Z, Case]] = transformISZ(r0.ctx, o2.cases, transformCase _)

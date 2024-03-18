@@ -165,6 +165,10 @@ object MTransformer {
 
   val PostResultStmtIf: MOption[Stmt] = MNone()
 
+  val PreResultStmtInduct: PreResult[Stmt] = PreResult(T, MNone())
+
+  val PostResultStmtInduct: MOption[Stmt] = MNone()
+
   val PreResultStmtMatch: PreResult[Stmt] = PreResult(T, MNone())
 
   val PostResultStmtMatch: MOption[Stmt] = MNone()
@@ -742,6 +746,7 @@ import MTransformer._
       case o: Stmt.Assign => return preStmtAssign(o)
       case o: Stmt.Block => return preStmtBlock(o)
       case o: Stmt.If => return preStmtIf(o)
+      case o: Stmt.Induct => return preStmtInduct(o)
       case o: Stmt.Match => return preStmtMatch(o)
       case o: Stmt.While => return preStmtWhile(o)
       case o: Stmt.DoWhile => return preStmtDoWhile(o)
@@ -937,6 +942,10 @@ import MTransformer._
 
   def preStmtIf(o: Stmt.If): PreResult[Stmt] = {
     return PreResultStmtIf
+  }
+
+  def preStmtInduct(o: Stmt.Induct): PreResult[Stmt] = {
+    return PreResultStmtInduct
   }
 
   def preStmtMatch(o: Stmt.Match): PreResult[Stmt] = {
@@ -1846,6 +1855,7 @@ import MTransformer._
       case o: Stmt.Assign => return postStmtAssign(o)
       case o: Stmt.Block => return postStmtBlock(o)
       case o: Stmt.If => return postStmtIf(o)
+      case o: Stmt.Induct => return postStmtInduct(o)
       case o: Stmt.Match => return postStmtMatch(o)
       case o: Stmt.While => return postStmtWhile(o)
       case o: Stmt.DoWhile => return postStmtDoWhile(o)
@@ -2041,6 +2051,10 @@ import MTransformer._
 
   def postStmtIf(o: Stmt.If): MOption[Stmt] = {
     return PostResultStmtIf
+  }
+
+  def postStmtInduct(o: Stmt.Induct): MOption[Stmt] = {
+    return PostResultStmtInduct
   }
 
   def postStmtMatch(o: Stmt.Match): MOption[Stmt] = {
@@ -3110,6 +3124,13 @@ import MTransformer._
           val r3: MOption[TypedAttr] = transformTypedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
             MSome(o2(cond = r0.getOrElse(o2.cond), thenBody = r1.getOrElse(o2.thenBody), elseBody = r2.getOrElse(o2.elseBody), attr = r3.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Stmt.Induct =>
+          val r0: MOption[Exp] = transformExp(o2.exp)
+          val r1: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp), attr = r1.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.Match =>

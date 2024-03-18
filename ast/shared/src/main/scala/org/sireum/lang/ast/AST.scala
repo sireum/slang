@@ -542,13 +542,22 @@ object Stmt {
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
   }
 
+  @datatype class Induct(val exp: Exp, val locals: ISZ[String], @hidden val attr: Attr) extends Stmt {
+    @strictpure override def posOpt: Option[Position] = attr.posOpt
+    @strictpure override def hasReturn: B = F
+    @strictpure override def isInstruction: B = T
+    @pure override def prettyST: ST = {
+      return if (Exp.shouldParenthesize(exp)) st"((${exp.prettyST}): @induct)" else st"(${exp.prettyST}: @induct)"
+    }
+  }
+
   @datatype class Match(val isInduct: B, val exp: Exp, val cases: ISZ[Case], @hidden val attr: TypedAttr) extends Stmt with AssignExp {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure override def asAssignExp: AssignExp = this
     @strictpure override def asStmt: Stmt = this
     @strictpure override def leaves: ISZ[Option[Stmt]] = for (c <- cases; leaf <- c.body.leaves) yield leaf
     @pure override def prettyST: ST = {
-      val expST: ST = if (isInduct && Exp.shouldParenthesize(exp)) st"(${exp.prettyST}) : @induct" else st"${exp.prettyST} : @induct"
+      val expST: ST = if (isInduct && Exp.shouldParenthesize(exp)) st"((${exp.prettyST}): @induct)" else st"(${exp.prettyST}: @induct)"
       if (cases.isEmpty) {
         return st"$expST"
       } else {

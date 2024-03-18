@@ -412,6 +412,16 @@ class SlangParser(
     }
   }
 
+  def checkInduct(exp: AST.Exp): AST.Exp = {
+    exp match {
+      case _: AST.Exp.Ident =>
+      case exp: AST.Exp.Tuple if org.sireum.ops.ISZOps(exp.args).forall(e => e.isInstanceOf[AST.Exp.Ident]) =>
+      case _ =>
+        reporter.error(exp.posOpt, messageKind, "@induct expression should be an identifier or a tuple of identifiers")
+    }
+    exp
+  }
+
   def translateStat(enclosing: Enclosing.Type)(stat: Stat): AST.Stmt = {
     val r: AST.Stmt = stat match {
       case stat: Import => translateImport(enclosing, stat)
@@ -470,7 +480,7 @@ class SlangParser(
       case q"Contract(DataRefinement($_)(..$_)(..$_))" => translateDataRefinement(enclosing, stat)
       case q"Contract.Havoc(..$args)" => translateHavoc(enclosing, stat)
       case q"$t : @induct" =>
-        AST.Stmt.Match(true, translateExp(t), ISZ(), typedAttr(stat.pos))
+        AST.Stmt.Induct(checkInduct(translateExp(t)), ISZ(), attr(stat.pos))
       case _: Term.Apply | _: Term.ApplyInfix =>
         val term = stat.asInstanceOf[Term]
         stmtCheck(enclosing, term, s"${syntax(stat)}")
@@ -2304,6 +2314,9 @@ class SlangParser(
           i = i + 1
         }
       case _ =>
+    }
+    if (isInduct) {
+      checkInduct(exp)
     }
     AST.Stmt.Match(isInduct, exp, ISZ(cases: _*), typedAttr(stat.pos))
   }

@@ -27,6 +27,7 @@
 package org.sireum.lang
 
 import org.sireum._
+import org.sireum.lang.ast.Util.ExpSubstitutor
 import org.sireum.message._
 import org.sireum.lang.parser._
 import org.sireum.lang.{ast => AST}
@@ -459,6 +460,98 @@ object FrontEnd {
     }
 
     return (typeChecker.typeHierarchy(nameMap = nameMap), program(body = newBody(stmts = newStmts)))
+  }
+
+  @datatype class InductResult(val isClosed: B,
+                               val cases: ISZ[InductResult.Case])
+
+  object InductResult {
+    @datatype class Case(val pattern: AST.Pattern, val premises: ISZ[AST.Exp])
+  }
+
+  @pure def induct(th: TypeHierarchy, context: ISZ[String], tipe: AST.Typed,
+                   theorem: AST.Exp, exp: AST.Exp, pos: Position): Option[InductResult] = {
+    val posOpt = Option.some(pos)
+    val attr = AST.Attr(posOpt)
+    val resolvedAttr = AST.ResolvedAttr(posOpt, None(), None())
+    val typedAttr = AST.TypedAttr(posOpt, None())
+
+    @pure def ids2name(ids: ISZ[String]): AST.Name = {
+      return AST.Name(for (id <- ids) yield AST.Id(id, attr), attr)
+    }
+
+    @pure def inductEnum(ti: TypeInfo.Enum): InductResult = {
+      val tOpt = Option.some(tipe)
+      var cases = ISZ[InductResult.Case]()
+      for (e <- ti.elements.entries) {
+        cases = cases :+ InductResult.Case(
+          AST.Pattern.Ref(F, ids2name(ti.name :+ e._1), None(), context,
+            resolvedAttr(resOpt = Some(e._2), typedOpt = tOpt)), ISZ())
+      }
+      return InductResult(F, cases)
+    }
+
+    @pure def inductTrait(isOpen: B, t: AST.Typed.Name): InductResult = {
+      var cases = ISZ[InductResult.Case]()
+      for (sub <- th.substLeavesOfType(None(), t).left) {
+        th.typeMap.get(sub.ids).get match {
+          case ti: TypeInfo.Adt =>
+            val sm = TypeChecker.buildTypeSubstMap(sub.ids, posOpt, ti.ast.typeParams, t.args, Reporter.create).get
+            val pats: ISZ[AST.Pattern] = for (p <- ti.ast.params if !p.isHidden) yield
+              AST.Pattern.VarBinding(p.id, None(), context, typedAttr(typedOpt = Some(p.tipe.typedOpt.get.subst(sm))))
+            val pat = AST.Pattern.Structure(None(), Some(ids2name(ti.name)), pats, context,
+              resolvedAttr(resOpt = ti.extractorResOpt, typedOpt = Some(sub)))
+            cases = cases :+ InductResult.Case(pat, ISZ())
+          case _ =>
+        }
+      }
+      return InductResult(isOpen, cases)
+    }
+
+    @pure def substMap(pattern: AST.Pattern.Structure, expType: AST.Typed): HashSMap[AST.Exp, AST.Exp] = {
+      var r = HashSMap.empty[AST.Exp, AST.Exp]
+      for (p <- pattern.patterns) {
+        val vb = p.asInstanceOf[AST.Pattern.VarBinding]
+        val t = vb.attr.typedOpt.get
+        if (th.isSubType(t, expType)) {
+          r = r + exp ~> AST.Exp.Ident(vb.id, AST.ResolvedAttr(
+            vb.posOpt,
+            Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Closure, F, T, vb.id.value)),
+            Some(t)))
+        }
+      }
+      return r
+    }
+
+    val adtInduct: InductResult = tipe match {
+      case tipe: AST.Typed.Name if AST.Typed.builtInTypes.contains(tipe) && tipe.ids != AST.Typed.isName && tipe.ids != AST.Typed.msName =>
+        th.typeMap.get(tipe.ids).get match {
+          case ti: TypeInfo.Adt =>
+            if (!ti.ast.isRoot) {
+              return None()
+            }
+            inductTrait(F, tipe)
+          case ti: TypeInfo.Sig => inductTrait(!ti.ast.isSealed, tipe)
+          case ti: TypeInfo.Enum => return Some(inductEnum(ti))
+          case _ => return None()
+        }
+      case _: AST.Typed.Tuple => halt("TODO")
+      case _ => return None()
+    }
+    var cases = ISZ[InductResult.Case]()
+    for (cas <- adtInduct.cases) {
+      val sm = substMap(cas.pattern.asInstanceOf[AST.Pattern.Structure], exp.typedOpt.get)
+      if (sm.nonEmpty) {
+        var premises = ISZ[AST.Exp]()
+        for (p <- sm.entries) {
+          premises = premises :+ ExpSubstitutor(HashMap ++ ISZ(p._1 ~> p._2)).transformExp(theorem).getOrElse(theorem)
+        }
+        cases = cases :+ cas(premises = premises)
+      } else {
+        cases = cases :+ cas
+      }
+    }
+    return Some(adtInduct(cases = cases))
   }
 
 }
