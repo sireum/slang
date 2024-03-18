@@ -2325,10 +2325,10 @@ import TypeChecker._
         return (newExp.asExp, typedOpt)
       }
       newIdentExp.resOpt match {
-        case Some(res: AST.ResolvedInfo.Var) if !res.isInObject && scope.thisOpt.nonEmpty =>
+        case Some(res: AST.ResolvedInfo.Var) if !res.isInObject =>
           newExp = AST.Exp.Select(Some(AST.Exp.This(context, AST.TypedAttr(newExp.posOpt, scope.thisOpt))), newIdentExp.id,
             newIdentExp.targs, AST.ResolvedAttr(newExp.posOpt, newIdentExp.resOpt, newExp.typedOpt))
-        case Some(res: AST.ResolvedInfo.Method) if !res.isInObject && scope.thisOpt.nonEmpty =>
+        case Some(res: AST.ResolvedInfo.Method) if !res.isInObject && typeHierarchy.typeMap.get(res.owner).nonEmpty =>
           newExp = AST.Exp.Select(Some(AST.Exp.This(context, AST.TypedAttr(newExp.posOpt, scope.thisOpt))), newIdentExp.id,
             newIdentExp.targs, AST.ResolvedAttr(newExp.posOpt, newIdentExp.resOpt, newExp.typedOpt))
         case _ =>
