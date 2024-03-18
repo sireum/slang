@@ -61,6 +61,7 @@ object TypeChecker {
 
   @enum object ModeContext {
     "Code"
+    "TheoremCode"
     "Spec"
     "SpecPost"
     "RS"
@@ -999,6 +1000,7 @@ import TypeChecker._
   @pure def inSpec: B = {
     mode match {
       case ModeContext.Code => return F
+      case ModeContext.TheoremCode => return F
       case ModeContext.Spec => return T
       case ModeContext.SpecPost => return T
       case ModeContext.RS => return T
@@ -4438,6 +4440,10 @@ import TypeChecker._
     reporter: Reporter
   ): AST.Stmt = {
 
+    if (stmt.isInduct && mode != ModeContext.TheoremCode) {
+      reporter.error(stmt.exp.posOpt, typeCheckerKind, s"@induct can only be used in a theorem/lemma @pure method returning the unit type")
+    }
+
     def checkSelectNative(exp: AST.Exp.Select): (AST.Exp, Option[AST.Typed]) = {
       val receiver: AST.Exp = exp.receiverOpt.get
       val (newExp, expTypeOpt) = checkExp(None(), scope, receiver, reporter)
@@ -4944,7 +4950,11 @@ import TypeChecker._
         if (stmt.typeChecked) {
           return stmt
         }
-        val tc = TypeChecker(typeHierarchy, context :+ stmt.sig.id.value, isInMutableContext, mode, strictAliasing)
+        val m: ModeContext.Type =
+          if (stmt.sig.purity == AST.Purity.Pure && stmt.sig.returnType.typedOpt == AST.Typed.unitOpt)
+            ModeContext.TheoremCode
+          else mode
+        val tc = TypeChecker(typeHierarchy, context :+ stmt.sig.id.value, isInMutableContext, m, strictAliasing)
         val r = tc.checkMethod(scope, stmt, reporter)
         return r
 

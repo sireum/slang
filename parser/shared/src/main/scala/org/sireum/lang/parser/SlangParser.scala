@@ -469,6 +469,8 @@ class SlangParser(
       case q"Deduce(..$_)" => translateDeduce(enclosing, stat)
       case q"Contract(DataRefinement($_)(..$_)(..$_))" => translateDataRefinement(enclosing, stat)
       case q"Contract.Havoc(..$args)" => translateHavoc(enclosing, stat)
+      case q"$t : @induct" =>
+        AST.Stmt.Match(true, translateExp(t), ISZ(), typedAttr(stat.pos))
       case _: Term.Apply | _: Term.ApplyInfix =>
         val term = stat.asInstanceOf[Term]
         stmtCheck(enclosing, term, s"${syntax(stat)}")
@@ -2285,7 +2287,10 @@ class SlangParser(
     }
 
     stmtCheck(enclosing, stat, "Match-statements")
-    val exp = translateExp(stat.expr)
+    val (isInduct, exp) = stat.expr match {
+      case q"$t : @induct" => (true, translateExp(t))
+      case _ => (false, translateExp(stat.expr))
+    }
     val cases = stat.cases.map(translateCase)
     exp match {
       case AST.Exp.Select(_, AST.Id(String("native")), _) =>
@@ -2300,7 +2305,7 @@ class SlangParser(
         }
       case _ =>
     }
-    AST.Stmt.Match(exp, ISZ(cases: _*), typedAttr(stat.pos))
+    AST.Stmt.Match(isInduct, exp, ISZ(cases: _*), typedAttr(stat.pos))
   }
 
   def translateWhile(enclosing: Enclosing.Type, stat: Term.While): AST.Stmt = {

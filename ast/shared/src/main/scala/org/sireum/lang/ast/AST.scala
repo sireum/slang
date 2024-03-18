@@ -542,15 +542,20 @@ object Stmt {
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
   }
 
-  @datatype class Match(val exp: Exp, val cases: ISZ[Case], @hidden val attr: TypedAttr) extends Stmt with AssignExp {
+  @datatype class Match(val isInduct: B, val exp: Exp, val cases: ISZ[Case], @hidden val attr: TypedAttr) extends Stmt with AssignExp {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure override def asAssignExp: AssignExp = this
     @strictpure override def asStmt: Stmt = this
     @strictpure override def leaves: ISZ[Option[Stmt]] = for (c <- cases; leaf <- c.body.leaves) yield leaf
     @pure override def prettyST: ST = {
-      return st"""${exp.prettyST} match {
-                 |  ${(for (cas <- cases) yield cas.prettyST, "\n")}
-                 |}"""
+      val expST: ST = if (isInduct && Exp.shouldParenthesize(exp)) st"(${exp.prettyST}) : @induct" else st"${exp.prettyST} : @induct"
+      if (cases.isEmpty) {
+        return st"$expST"
+      } else {
+        return st"""$expST match {
+                   |  ${(for (cas <- cases) yield cas.prettyST, "\n")}
+                   |}"""
+      }
     }
     @strictpure override def isInstruction: B = T
     @strictpure override def hasReturn: B = ops.ISZOps(cases).exists((c: Case) => c.body.hasReturn)
@@ -2043,19 +2048,27 @@ object Exp {
     }
   }
 
+  @pure def shouldParenthesize(exp: Exp): B = {
+    exp match {
+      case _: Exp.Ref =>
+      case _: Exp.Invoke =>
+      case _: Exp.InvokeNamed =>
+      case _: Lit =>
+      case _: Exp.Tuple =>
+      case _ => return T
+    }
+    return F
+  }
+
   @pure def receiverOptST(posOpt: Option[Position], receiverOpt: Option[Exp]): Option[ST] = {
     if (receiverOpt.isEmpty) {
       return None()
     }
     val exp = receiverOpt.get
     exp match {
-      case _: Exp.Ref =>
-      case _: Exp.Invoke =>
-      case _: Exp.InvokeNamed =>
       case exp: Exp.This if posOpt.nonEmpty && exp.posOpt == posOpt => return None()
-      case exp => return Some(st"(${exp.prettyST}).")
+      case exp => return if (shouldParenthesize(exp)) Some(st"(${exp.prettyST}).") else Some(st"${exp.prettyST}.")
     }
-    return Some(st"${exp.prettyST}.")
   }
 }
 

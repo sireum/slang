@@ -948,6 +948,7 @@ object MsgPack {
 
     def write_astStmtMatch(o: org.sireum.lang.ast.Stmt.Match): Unit = {
       writer.writeZ(Constants._astStmtMatch)
+      writer.writeB(o.isInduct)
       write_astExp(o.exp)
       writer.writeISZ(o.cases, write_astCase _)
       write_astTypedAttr(o.attr)
@@ -3108,10 +3109,11 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astStmtMatch)
       }
+      val isInduct = reader.readB()
       val exp = read_astExp()
       val cases = reader.readISZ(read_astCase _)
       val attr = read_astTypedAttr()
-      return org.sireum.lang.ast.Stmt.Match(exp, cases, attr)
+      return org.sireum.lang.ast.Stmt.Match(isInduct, exp, cases, attr)
     }
 
     def read_astStmtWhile(): org.sireum.lang.ast.Stmt.While = {

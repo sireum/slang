@@ -670,6 +670,7 @@ object JSON {
     @pure def print_astStmtMatch(o: org.sireum.lang.ast.Stmt.Match): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Stmt.Match""""),
+        ("isInduct", printB(o.isInduct)),
         ("exp", print_astExp(o.exp)),
         ("cases", printISZ(F, o.cases, print_astCase _)),
         ("attr", print_astTypedAttr(o.attr))
@@ -3631,6 +3632,9 @@ object JSON {
       if (!typeParsed) {
         parser.parseObjectType("org.sireum.lang.ast.Stmt.Match")
       }
+      parser.parseObjectKey("isInduct")
+      val isInduct = parser.parseB()
+      parser.parseObjectNext()
       parser.parseObjectKey("exp")
       val exp = parse_astExp()
       parser.parseObjectNext()
@@ -3640,7 +3644,7 @@ object JSON {
       parser.parseObjectKey("attr")
       val attr = parse_astTypedAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.Match(exp, cases, attr)
+      return org.sireum.lang.ast.Stmt.Match(isInduct, exp, cases, attr)
     }
 
     def parse_astStmtWhile(): org.sireum.lang.ast.Stmt.While = {
