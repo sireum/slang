@@ -912,6 +912,8 @@ object Util {
       case Exp.BinaryOp.CondOr => return T
       case Exp.BinaryOp.CondImply => return T
       case Exp.BinaryOp.Arrow => return T
+      case "->:" => return T
+      case "-->:" => return T
       case _ => return F
     }
   }
@@ -1275,6 +1277,93 @@ object Util {
         }
       case _ => return None()
     }
+  }
+
+  val trueLit: Exp.LitB = Exp.LitB(T, Attr(None()))
+  val falseLit: Exp = Exp.LitB(F, trueLit.attr)
+
+  @pure def esToBinary(es: ISZ[Exp], dflt: Exp, op: String, tOpt: Option[Typed], res: ResolvedInfo, pOpt: Option[Position]): Exp = {
+    if (es.isEmpty) {
+      return dflt
+    }
+    var r = es(0)
+    for (i <- 1 until es.size) {
+      r = Exp.Binary(r, op, es(i), ResolvedAttr(pOpt, Some(res), tOpt), pOpt)
+    }
+    return r
+  }
+
+  @pure def bigAnd(exps: ISZ[Exp], pOpt: Option[Position]): Exp = {
+    var set = HashSSet.empty[Exp]
+    for (exp <- exps) {
+      if (exp == trueLit) {
+        // skip
+      } else if (exp == falseLit) {
+        return falseLit
+      } else {
+        set = set + exp
+      }
+    }
+    return esToBinary(set.elements, trueLit, Exp.BinaryOp.And,
+      Typed.bOpt, ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.BinaryAnd), pOpt)
+  }
+
+  @pure def bigOr(exps: ISZ[Exp], pOpt: Option[Position]): Exp = {
+    var set = HashSSet.empty[Exp]
+    for (exp <- exps) {
+      if (exp == trueLit) {
+        return trueLit
+      } else if (exp == falseLit) {
+        // skip
+      } else {
+        set = set + exp
+      }
+    }
+    return esToBinary(set.elements, falseLit, Exp.BinaryOp.Or,
+      Typed.bOpt, ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.BinaryOr), pOpt)
+  }
+
+  @pure def bigImply(isCond: B, exps: ISZ[Exp], pOpt: Option[Position]): Exp = {
+    var es = ISZ[Exp]()
+    for (i <- 0 until exps.size - 1) {
+      val exp = exps(i)
+      if (exp == falseLit) {
+        return trueLit
+      } else {
+        es = es :+ exp
+      }
+    }
+    es = es :+ exps(exps.size - 1)
+    assert(es.size >= 2)
+    var r = es(es.size - 1)
+    val op: String = if (isCond) Exp.BinaryOp.CondImply else Exp.BinaryOp.Imply
+    val res = ResolvedInfo.BuiltIn(if (isCond) ResolvedInfo.BuiltIn.Kind.BinaryCondImply else
+      ResolvedInfo.BuiltIn.Kind.BinaryImply)
+    var i = es.size - 2
+    while (i >= 0) {
+      if (r != trueLit) {
+        r = Exp.Binary(es(i), op, r, ResolvedAttr(pOpt, Some(res), Typed.bOpt), pOpt)
+      }
+      i = i - 1
+    }
+    return r
+  }
+
+  @pure def ite(cond: Exp, left: Exp, right: Exp, pOpt: Option[Position], tOpt: Option[Typed]): Exp = {
+    if (right == trueLit) {
+      if (left == trueLit) {
+        return trueLit
+      }
+      return Exp.Binary(cond, Exp.BinaryOp.CondImply, left, ResolvedAttr(pOpt,
+        Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.BinaryCondImply)), Typed.bOpt), pOpt)
+    } else if (right == falseLit) {
+      return Exp.Binary(cond, Exp.BinaryOp.CondAnd, left, ResolvedAttr(pOpt,
+        Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.BinaryCondAnd)), Typed.bOpt), pOpt)
+    } else if (left == trueLit) {
+      return Exp.Binary(cond, Exp.BinaryOp.CondOr, right, ResolvedAttr(pOpt,
+        Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.BinaryCondOr)), Typed.bOpt), pOpt)
+    }
+    return Exp.If(cond, left, right, TypedAttr(pOpt, tOpt))
   }
 
   @pure def typedToType(t: Typed, pos: Position): Type = {
