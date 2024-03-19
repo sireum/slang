@@ -469,8 +469,8 @@ object FrontEnd {
     @datatype class Case(val pattern: AST.Pattern, val premises: ISZ[AST.Exp])
   }
 
-  @pure def induct(th: TypeHierarchy, localIds: HashSet[String], context: ISZ[String], tipe: AST.Typed,
-                   theorem: AST.Exp, exp: AST.Exp, pos: Position): Option[InductResult] = {
+  @pure def induct(th: TypeHierarchy, localIds: HashSet[String], context: ISZ[String],
+                   claim: AST.Exp, exp: AST.Exp, pos: Position): Option[InductResult] = {
     val posOpt = Option.some(pos)
     val attr = AST.Attr(posOpt)
     val resolvedAttr = AST.ResolvedAttr(posOpt, None(), None())
@@ -483,7 +483,7 @@ object FrontEnd {
     }
 
     @pure def inductEnum(ti: TypeInfo.Enum, e: AST.Exp): InductResult = {
-      val tOpt = Option.some(tipe)
+      val tOpt = Option.some(e.typedOpt.get)
       var cases = ISZ[InductResult.Case]()
       val eResAttr = resolvedAttr(typedOpt = Some(AST.Typed.Enum(ti.name)), resOpt = Some(
         AST.ResolvedInfo.Enum(ti.name)))
@@ -550,8 +550,8 @@ object FrontEnd {
       return r
     }
 
-    val adtInduct: InductResult = tipe match {
-      case tipe: AST.Typed.Name if AST.Typed.builtInTypes.contains(tipe) && tipe.ids != AST.Typed.isName && tipe.ids != AST.Typed.msName =>
+    val adtInduct: InductResult = exp.typedOpt.get match {
+      case tipe: AST.Typed.Name if !AST.Typed.builtInTypes.contains(tipe) && tipe.ids != AST.Typed.isName && tipe.ids != AST.Typed.msName =>
         th.typeMap.get(tipe.ids).get match {
           case ti: TypeInfo.Adt =>
             if (!ti.ast.isRoot) {
@@ -572,7 +572,7 @@ object FrontEnd {
       if (sm.nonEmpty) {
         var premises = cas.premises
         for (p <- sm.entries) {
-          premises = premises :+ ExpSubstitutor(HashMap ++ ISZ(p._1 ~> p._2)).transformExp(theorem).getOrElse(theorem)
+          premises = premises :+ ExpSubstitutor(HashMap ++ ISZ(p._1 ~> p._2)).transformExp(claim).getOrElse(claim)
         }
         cases = cases :+ cas(premises = premises)
       } else {
