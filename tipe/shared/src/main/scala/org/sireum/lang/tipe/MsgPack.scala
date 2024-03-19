@@ -427,7 +427,7 @@ object MsgPack {
 
     def write_symbolScopeLocal(o: org.sireum.lang.symbol.Scope.Local): Unit = {
       writer.writeZ(Constants._symbolScopeLocal)
-      writer.writeHashSMap(o.nameMap, writer.writeString _, write_symbolInfo _)
+      writer.writeHashMap(o.nameMap, writer.writeString _, write_symbolInfo _)
       writer.writeHashMap(o.typeMap, writer.writeString _, write_symbolTypeInfo _)
       writer.writeOption(o.localThisOpt, write_astTyped _)
       writer.writeOption(o.methodReturnOpt, write_astTyped _)
@@ -2160,7 +2160,7 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._symbolScopeLocal)
       }
-      val nameMap = reader.readHashSMap(reader.readString _, read_symbolInfo _)
+      val nameMap = reader.readHashMap(reader.readString _, read_symbolInfo _)
       val typeMap = reader.readHashMap(reader.readString _, read_symbolTypeInfo _)
       val localThisOpt = reader.readOption(read_astTyped _)
       val methodReturnOpt = reader.readOption(read_astTyped _)

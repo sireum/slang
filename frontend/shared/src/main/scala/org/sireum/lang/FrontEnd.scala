@@ -469,7 +469,7 @@ object FrontEnd {
     @datatype class Case(val pattern: AST.Pattern, val premises: ISZ[AST.Exp])
   }
 
-  @pure def induct(th: TypeHierarchy, context: ISZ[String], tipe: AST.Typed,
+  @pure def induct(th: TypeHierarchy, localIds: HashSet[String], context: ISZ[String], tipe: AST.Typed,
                    theorem: AST.Exp, exp: AST.Exp, pos: Position): Option[InductResult] = {
     val posOpt = Option.some(pos)
     val attr = AST.Attr(posOpt)
@@ -492,16 +492,28 @@ object FrontEnd {
     }
 
     @pure def inductTrait(isOpen: B, t: AST.Typed.Name): InductResult = {
+      @pure def fresh(id: String): String = {
+        if (!localIds.contains(id)) {
+          return id
+        }
+        var i = 2
+        var r = s"$id$i"
+        while (localIds.contains(r)) {
+          i = i + 1
+          r = s"$id$i"
+        }
+        return r
+      }
       var cases = ISZ[InductResult.Case]()
       for (sub <- th.substLeavesOfType(None(), t).left) {
         th.typeMap.get(sub.ids).get match {
           case ti: TypeInfo.Adt =>
             val sm = TypeChecker.buildTypeSubstMap(sub.ids, posOpt, ti.ast.typeParams, t.args, Reporter.create).get
-            val pats: ISZ[AST.Pattern] = for (p <- ti.ast.params if !p.isHidden) yield
-              AST.Pattern.VarBinding(p.id, None(), context, typedAttr(typedOpt = Some(p.tipe.typedOpt.get.subst(sm))))
-            val pat = AST.Pattern.Structure(None(), Some(ids2name(ti.name)), pats, context,
-              resolvedAttr(resOpt = ti.extractorResOpt, typedOpt = Some(sub)))
-            cases = cases :+ InductResult.Case(pat, ISZ())
+            val vbs: ISZ[AST.Pattern] = for (p <- ti.ast.params if !p.isHidden) yield
+              AST.Pattern.VarBinding(p.id(value = fresh(p.id.value)), None(), context,
+                typedAttr(typedOpt = Some(p.tipe.typedOpt.get.subst(sm))))
+            cases = cases :+ InductResult.Case(AST.Pattern.Structure(None(), Some(ids2name(ti.name)), vbs, context,
+              resolvedAttr(resOpt = ti.extractorResOpt, typedOpt = Some(sub))), ISZ())
           case _ =>
         }
       }

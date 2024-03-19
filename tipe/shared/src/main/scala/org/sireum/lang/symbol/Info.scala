@@ -51,11 +51,11 @@ object Scope {
 
   object Local {
     @pure def create(typeMap: HashMap[String, TypeInfo], outer: Scope): Local = {
-      return Local(HashSMap.empty, typeMap, None(), None(), HashMap.empty, Some(outer))
+      return Local(HashMap.empty, typeMap, None(), None(), HashMap.empty, Some(outer))
     }
   }
 
-  @datatype class Local(val nameMap: HashSMap[String, Info],
+  @datatype class Local(val nameMap: HashMap[String, Info],
                         val typeMap: HashMap[String, TypeInfo],
                         val localThisOpt: Option[AST.Typed],
                         val methodReturnOpt: Option[AST.Typed],

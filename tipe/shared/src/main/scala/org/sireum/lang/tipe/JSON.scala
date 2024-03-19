@@ -47,7 +47,7 @@ object JSON {
     @pure def print_symbolScopeLocal(o: org.sireum.lang.symbol.Scope.Local): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.symbol.Scope.Local""""),
-        ("nameMap", printHashSMap(F, o.nameMap, printString _, print_symbolInfo _)),
+        ("nameMap", printHashMap(F, o.nameMap, printString _, print_symbolInfo _)),
         ("typeMap", printHashMap(F, o.typeMap, printString _, print_symbolTypeInfo _)),
         ("localThisOpt", printOption(F, o.localThisOpt, print_astTyped _)),
         ("methodReturnOpt", printOption(F, o.methodReturnOpt, print_astTyped _)),
@@ -2244,7 +2244,7 @@ object JSON {
         parser.parseObjectType("org.sireum.lang.symbol.Scope.Local")
       }
       parser.parseObjectKey("nameMap")
-      val nameMap = parser.parseHashSMap(parser.parseString _, parse_symbolInfo _)
+      val nameMap = parser.parseHashMap(parser.parseString _, parse_symbolInfo _)
       parser.parseObjectNext()
       parser.parseObjectKey("typeMap")
       val typeMap = parser.parseHashMap(parser.parseString _, parse_symbolTypeInfo _)

@@ -5016,7 +5016,7 @@ import TypeChecker._
 
       case stmt: AST.Stmt.Induct =>
         val newExp = checkExp(None(), scope, stmt.exp, reporter)._1
-        return stmt(exp = newExp, locals = scope.localIds)
+        return stmt(exp = newExp, locals = ops.ISZOps(scope.localIds).sortWith((s1: String, s2: String) => s1 <= s2))
     }
   }
 
@@ -5354,7 +5354,7 @@ import TypeChecker._
     val reporter = Reporter.create
     val typeParams = typeParamMap(info.ast.typeParams, reporter)
     var scope = Scope.Local.create(typeParams.map, info.scope)
-    var nameMap = HashSMap.empty[String, Info]
+    var nameMap = HashMap.empty[String, Info]
     for (p <- info.vars.map.entries) {
       nameMap = nameMap + p._1 ~> p._2
     }
@@ -5405,7 +5405,7 @@ import TypeChecker._
     val reporter = Reporter.create
     val typeParams = typeParamMap(info.ast.typeParams, reporter)
     var scope = Scope.Local.create(typeParams.map, info.scope)
-    var nameMap = HashSMap.empty[String, Info]
+    var nameMap = HashMap.empty[String, Info]
     for (p <- info.specVars.entries) {
       nameMap = nameMap + p._1 ~> p._2
     }
@@ -5450,7 +5450,7 @@ import TypeChecker._
     }
     val reporter = Reporter.create
     var scope = createNewScope(info.scope(enclosingName = name))
-    var nameMap = HashSMap.empty[String, Info]
+    var nameMap = HashMap.empty[String, Info]
     for (stmt <- info.ast.stmts) {
       stmt match {
         case stmt: AST.Stmt.Var => nameMap = nameMap + stmt.id.value ~> typeHierarchy.nameMap.get(info.name :+ stmt.id.value).get
