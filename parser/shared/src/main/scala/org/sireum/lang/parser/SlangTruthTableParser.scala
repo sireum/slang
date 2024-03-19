@@ -46,7 +46,7 @@ object SlangTruthTableParser {
           o.op match {
             case AST.Exp.BinaryOp.And =>
             case AST.Exp.BinaryOp.Or =>
-            case AST.Exp.BinaryOp.Imply =>
+            case "->:" =>
             case _ =>
               reporter.error(o.posOpt, kind, s"Invalid truth table binary operator '${o.op}'")
               return AST.MTransformer.PreResult(F, MNone())
