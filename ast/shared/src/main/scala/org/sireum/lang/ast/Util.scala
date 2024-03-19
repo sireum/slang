@@ -1276,4 +1276,34 @@ object Util {
       case _ => return None()
     }
   }
+
+  @pure def typedToType(t: Typed, pos: Position): Type = {
+    val attr = Attr(Some(pos))
+    val typedAttr = TypedAttr(attr.posOpt, Some(t))
+
+    @pure def toName(ids: ISZ[String]): Name = {
+      ids match {
+        case ISZ(string"org", string"sireum", _*) if ids.size > 2 =>
+          return org.sireum.lang.ast.Name(for (i <- 2 until ids.size) yield Id(ids(i), attr), attr)
+        case _ => return org.sireum.lang.ast.Name(for (id <- ids) yield Id(id, attr), attr)
+      }
+    }
+
+    t match {
+      case t: Typed.Name => return Type.Named(toName(t.ids),
+        for (arg <- t.args) yield typedToType(arg, pos), typedAttr)
+      case t: Typed.TypeVar => return Type.Named(toName(ISZ(t.id)), ISZ(), typedAttr)
+      case t: Typed.Tuple => return Type.Tuple(for (arg <- t.args) yield typedToType(arg, pos), typedAttr)
+      case t: Typed.Enum => return Type.Named(toName(t.name), ISZ(), typedAttr)
+      case t: Typed.Fun => return Type.Fun(t.isPureFun, t.isByName, for (arg <- t.args) yield typedToType(arg, pos),
+        typedToType(t.ret, pos), typedAttr)
+      case t: Typed.Method => halt(s"Infeasible: $t")
+      case t: Typed.Object => halt(s"Infeasible: $t")
+      case t: Typed.Methods => halt(s"Infeasible: $t")
+      case t: Typed.Package => halt(s"Infeasible: $t")
+      case t: Typed.Fact => halt(s"Infeasible: $t")
+      case t: Typed.Theorem => halt(s"Infeasible: $t")
+      case t: Typed.Inv => halt(s"Infeasible: $t")
+    }
+  }
 }

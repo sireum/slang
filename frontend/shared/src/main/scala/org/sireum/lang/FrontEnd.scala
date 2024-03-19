@@ -475,23 +475,30 @@ object FrontEnd {
     val attr = AST.Attr(posOpt)
     val resolvedAttr = AST.ResolvedAttr(posOpt, None(), None())
     val typedAttr = AST.TypedAttr(posOpt, None())
+    val equivResAttr = AST.ResolvedAttr(posOpt,
+      Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEquiv)), AST.Typed.bOpt)
 
     @pure def ids2name(ids: ISZ[String]): AST.Name = {
       return AST.Name(for (id <- ids) yield AST.Id(id, attr), attr)
     }
 
-    @pure def inductEnum(ti: TypeInfo.Enum): InductResult = {
+    @pure def inductEnum(ti: TypeInfo.Enum, e: AST.Exp): InductResult = {
       val tOpt = Option.some(tipe)
       var cases = ISZ[InductResult.Case]()
-      for (e <- ti.elements.entries) {
+      val eResAttr = resolvedAttr(typedOpt = Some(AST.Typed.Enum(ti.name)), resOpt = Some(
+        AST.ResolvedInfo.Enum(ti.name)))
+      for (element <- ti.elements.entries) {
+        val resAttr = resolvedAttr(resOpt = Some(element._2), typedOpt = tOpt)
+        val premise = AST.Exp.Binary(e, AST.Exp.BinaryOp.EquivUni, AST.Exp.Select(
+          Some(AST.Exp.Ident(AST.Id(ti.name(ti.name.size - 1), attr), eResAttr)), AST.Id(element._1, attr), ISZ(), resAttr), equivResAttr, posOpt)
         cases = cases :+ InductResult.Case(
-          AST.Pattern.Ref(F, ids2name(ti.name :+ e._1), None(), context,
-            resolvedAttr(resOpt = Some(e._2), typedOpt = tOpt)), ISZ())
+          AST.Pattern.Ref(F, ids2name(ti.name :+ element._1), None(), context,
+            resAttr), ISZ(premise))
       }
       return InductResult(F, cases)
     }
 
-    @pure def inductTrait(isOpen: B, t: AST.Typed.Name): InductResult = {
+    @pure def inductTrait(isOpen: B, e: AST.Exp, t: AST.Typed.Name): InductResult = {
       @pure def fresh(id: String): String = {
         if (!localIds.contains(id)) {
           return id
@@ -512,8 +519,16 @@ object FrontEnd {
             val vbs: ISZ[AST.Pattern] = for (p <- ti.ast.params if !p.isHidden) yield
               AST.Pattern.VarBinding(p.id(value = fresh(p.id.value)), None(), context,
                 typedAttr(typedOpt = Some(p.tipe.typedOpt.get.subst(sm))))
+            val args: ISZ[AST.Exp] = for (vb <- vbs) yield AST.Exp.Ident(vb.asInstanceOf[AST.Pattern.VarBinding].id,
+              AST.ResolvedAttr(posOpt, Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T,
+                vb.asInstanceOf[AST.Pattern.VarBinding].id.value)), vb.typedOpt))
+            val right = AST.Exp.Invoke(
+              None(), AST.Exp.Ident(ti.ast.id, AST.ResolvedAttr(posOpt, Some(AST.ResolvedInfo.Object(ti.name)),
+                Some(AST.Typed.Object(ti.owner, ti.ast.id.value)))), for (arg <- sub.args) yield AST.Util.typedToType(arg, pos),
+              args, AST.ResolvedAttr(posOpt, ti.constructorResOpt, Some(sub)))
             cases = cases :+ InductResult.Case(AST.Pattern.Structure(None(), Some(ids2name(ti.name)), vbs, context,
-              resolvedAttr(resOpt = ti.extractorResOpt, typedOpt = Some(sub))), ISZ())
+              resolvedAttr(resOpt = ti.extractorResOpt, typedOpt = Some(sub))), ISZ(
+              AST.Exp.Binary(e, AST.Exp.BinaryOp.EquivUni, right, equivResAttr, posOpt)))
           case _ =>
         }
       }
@@ -542,9 +557,9 @@ object FrontEnd {
             if (!ti.ast.isRoot) {
               return None()
             }
-            inductTrait(F, tipe)
-          case ti: TypeInfo.Sig => inductTrait(!ti.ast.isSealed, tipe)
-          case ti: TypeInfo.Enum => return Some(inductEnum(ti))
+            inductTrait(F, exp, tipe)
+          case ti: TypeInfo.Sig => inductTrait(!ti.ast.isSealed, exp, tipe)
+          case ti: TypeInfo.Enum => return Some(inductEnum(ti, exp))
           case _ => return None()
         }
       case _: AST.Typed.Tuple => halt("TODO")
@@ -552,9 +567,10 @@ object FrontEnd {
     }
     var cases = ISZ[InductResult.Case]()
     for (cas <- adtInduct.cases) {
-      val sm = substMap(cas.pattern.asInstanceOf[AST.Pattern.Structure], exp.typedOpt.get)
+      val struct = cas.pattern.asInstanceOf[AST.Pattern.Structure]
+      val sm = substMap(struct, exp.typedOpt.get)
       if (sm.nonEmpty) {
-        var premises = ISZ[AST.Exp]()
+        var premises = cas.premises
         for (p <- sm.entries) {
           premises = premises :+ ExpSubstitutor(HashMap ++ ISZ(p._1 ~> p._2)).transformExp(theorem).getOrElse(theorem)
         }
