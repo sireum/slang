@@ -1738,6 +1738,23 @@ object Exp {
       return st"${receiverOptST(posOpt, receiverOpt)}${id.value}$targsOpt"
     }
 
+    @strictpure override def hash: Z = (id.value, attr.resOpt).hash
+    @pure def isEqual(other: Select): B = {
+      val skipReceiver: B = attr.resOpt match {
+        case Some(res) => res match {
+          case res: ResolvedInfo.Var => res.isInObject
+          case res: ResolvedInfo.Method => res.isInObject
+          case _: ResolvedInfo.EnumElement => T
+          case _: ResolvedInfo.Object => T
+          case _ => F
+        }
+        case _ => F
+      }
+      if (skipReceiver) {
+        return id.value == other.id.value && resOpt == other.resOpt
+      }
+      return receiverOpt == other.receiverOpt && id.value == other.id.value
+    }
   }
 
   @datatype class Invoke(val receiverOpt: Option[Exp],
@@ -1758,6 +1775,22 @@ object Exp {
           return st"${receiverOptST(posOpt, receiverOpt)}${ident.id.value}$targsOpt$as"
       }
     }
+    @strictpure override def hash: Z = (ident, args).hash
+    @pure def isEqual(other: Invoke): B = {
+      val skipReceiver: B = ident.resOpt match {
+        case Some(res) => res match {
+          case res: ResolvedInfo.Var => res.isInObject
+          case res: ResolvedInfo.Method if res.isInObject => res.isInObject
+          case _: ResolvedInfo.Object => T
+          case _ => F
+        }
+        case _ => F
+      }
+      if (skipReceiver) {
+        return ident == other.ident && args == other.args
+      }
+      return receiverOpt == other.receiverOpt && ident == other.ident && args == other.args
+    }
   }
 
   @datatype class InvokeNamed(val receiverOpt: Option[Exp],
@@ -1777,6 +1810,22 @@ object Exp {
         case _ =>
           return st"${receiverOptST(posOpt, receiverOpt)}${ident.id.value}$targsOpt$as"
       }
+    }
+    @strictpure override def hash: Z = (ident, args).hash
+    @pure def isEqual(other: InvokeNamed): B = {
+      val skipReceiver: B = ident.resOpt match {
+        case Some(res) => res match {
+          case res: ResolvedInfo.Var => res.isInObject
+          case res: ResolvedInfo.Method if res.isInObject => res.isInObject
+          case _: ResolvedInfo.Object => T
+          case _ => F
+        }
+        case _ => F
+      }
+      if (skipReceiver) {
+        return ident == other.ident && args == other.args
+      }
+      return receiverOpt == other.receiverOpt && ident == other.ident && args == other.args
     }
   }
 

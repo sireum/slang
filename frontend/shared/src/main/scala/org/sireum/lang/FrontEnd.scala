@@ -501,7 +501,7 @@ object FrontEnd {
     @pure def inductTrait(isOpen: B, e: AST.Exp, t: AST.Typed.Name): InductResult = {
       @pure def fresh(id: String): String = {
         if (!localIds.contains(id)) {
-          return id
+          return s"$$$id"
         }
         var i = 2
         var r = s"$id$i"
@@ -509,7 +509,7 @@ object FrontEnd {
           i = i + 1
           r = s"$id$i"
         }
-        return r
+        return s"$$$r"
       }
       var cases = ISZ[InductResult.Case]()
       for (sub <- th.substLeavesOfType(None(), t).left) {
