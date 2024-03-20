@@ -952,6 +952,7 @@ object MsgPack {
     def write_astStmtInduct(o: org.sireum.lang.ast.Stmt.Induct): Unit = {
       writer.writeZ(Constants._astStmtInduct)
       write_astExp(o.exp)
+      writer.writeISZ(o.context, writer.writeString _)
       writer.writeISZ(o.locals, writer.writeString _)
       write_astAttr(o.attr)
     }
@@ -3121,9 +3122,10 @@ object MsgPack {
         reader.expectZ(Constants._astStmtInduct)
       }
       val exp = read_astExp()
+      val context = reader.readISZ(reader.readString _)
       val locals = reader.readISZ(reader.readString _)
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.Induct(exp, locals, attr)
+      return org.sireum.lang.ast.Stmt.Induct(exp, context, locals, attr)
     }
 
     def read_astStmtMatch(): org.sireum.lang.ast.Stmt.Match = {

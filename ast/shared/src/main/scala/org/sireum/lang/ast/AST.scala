@@ -542,7 +542,7 @@ object Stmt {
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
   }
 
-  @datatype class Induct(val exp: Exp, val locals: ISZ[String], @hidden val attr: Attr) extends Stmt {
+  @datatype class Induct(val exp: Exp, val context: ISZ[String], val locals: ISZ[String], @hidden val attr: Attr) extends Stmt {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure override def hasReturn: B = F
     @strictpure override def isInstruction: B = T
@@ -817,6 +817,7 @@ object MethodContract {
     @strictpure override def modifies: ISZ[Exp.Ref] = modifiesClause.refs
     @strictpure def ensures: ISZ[Exp] = ensuresClause.claims
     @strictpure def infoFlows: ISZ[InfoFlowElement] = infoFlowsClause.flows
+    @strictpure def cases: ISZ[Case] = ISZ(Case(Exp.LitString("", Attr(None())), requiresClause, ensuresClause))
 
     @strictpure override def isEmpty: B =
       reads.isEmpty && requires.isEmpty && modifies.isEmpty && ensures.isEmpty && infoFlows.isEmpty

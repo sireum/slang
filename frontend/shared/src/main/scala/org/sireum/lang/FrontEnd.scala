@@ -27,7 +27,7 @@
 package org.sireum.lang
 
 import org.sireum._
-import org.sireum.lang.ast.Util.ExpSubstitutor
+import org.sireum.lang.ast.{MTransformer, Stmt}
 import org.sireum.message._
 import org.sireum.lang.parser._
 import org.sireum.lang.{ast => AST}
@@ -81,6 +81,88 @@ object FrontEnd {
       return ops.ISZOps(map.values).foldLeft(combineParseResult _, (ISZ[Message](), ISZ[AST.TopUnit.Program](), nameMap, typeMap))
     }
   }
+
+  @record class InductExpander(val th: TypeHierarchy,
+                               var contract: AST.MethodContract,
+                               var mPosOpt: Option[Position],
+                               var map: HashMap[Z, (String, String)],
+                               val reporter: Reporter) extends AST.MTransformer {
+    val kind: String = "Slang Rewrite"
+    def claim(contract: AST.MethodContract): AST.Exp = {
+      contract match {
+        case contract: AST.MethodContract.Simple =>
+          return if (contract.requires.isEmpty) AST.Util.bigAnd(contract.ensures, mPosOpt)
+          else AST.Util.bigImply(T, contract.requires :+ AST.Util.bigAnd(contract.ensures, mPosOpt), mPosOpt)
+        case _ =>
+          if (!reporter.hasError) {
+            reporter.error(mPosOpt, kind, "Cannot use @induct with method case contracts")
+          }
+          return AST.Util.trueLit
+      }
+    }
+    override def postStmtInduct(o: AST.Stmt.Induct): MOption[AST.Stmt] = {
+      val pos = o.posOpt.get
+      println(claim(contract))
+      th.induct(F, HashSet ++ o.locals, o.context, claim(contract), o.exp, pos) match {
+        case Some(r) =>
+          var caseSTs = ISZ[ST]()
+          for (cas <- r.cases) {
+            val deduceOpt: Option[ST] = if (cas.premises.isEmpty) None() else Some(
+              st"""Deduce(
+                  |  //@formatter:off
+                  |  ${(for (i <- 1 to cas.premises.size) yield st"$i (  ${cas.premises(i - 1)}  ) by Premise${if (i == cas.premises.size) "" else ","} // auto-generated", "\n")}
+                  |  //@formatter:on
+                  |)"""
+            )
+            caseSTs = caseSTs :+
+              st"""case ${cas.pattern.prettyST} => {
+                  |  $deduceOpt
+                  |  return
+                  |}"""
+          }
+          val lines = ops.StringOps(
+            st""") match {
+                |  ${(caseSTs, "\n")}
+                |}""".render).split((c: C) => c == '\n' || c == '\r')
+          var indent = ""
+          for (_ <- 0 until pos.beginColumn) {
+            indent = s" $indent"
+          }
+          var rs = lines(0)
+          for (i <- 1 until lines.size) {
+            rs = s"$rs\n$indent${lines(i)}"
+          }
+          map = map + pos.offset ~> ("", "(")
+          map = map + (pos.offset + pos.length) ~> ("", rs)
+        case _ =>
+          reporter.error(o.posOpt, kind, s"Cannot @induct over ${o.exp.prettyST}")
+      }
+      return MNone()
+    }
+
+    var mStack: Stack[(Option[Position], AST.MethodContract)] = Stack.empty
+
+    override def preStmtMethod(o: AST.Stmt.Method): AST.MTransformer.PreResult[AST.Stmt] = {
+      mStack = mStack.push((mPosOpt, contract))
+
+      mPosOpt = o.sig.id.attr.posOpt
+      contract = o.contract
+      return AST.MTransformer.PreResultStmtMethod
+    }
+
+    override def postStmtMethod(o: AST.Stmt.Method): MOption[AST.Stmt] = {
+      mStack.pop match {
+        case Some((p, s)) =>
+          mStack = s
+          mPosOpt = p._1
+          contract = p._2
+        case _ =>
+      }
+
+      return MNone()
+    }
+  }
+
 
   def rewrite(kind: Rewrite.Type, isWorksheet: B, fileUriOpt: Option[String], text: String, reporter: Reporter): Option[(String, Z)] = {
     Parser.parseTopUnit[AST.TopUnit](text, isWorksheet, F, fileUriOpt, reporter) match {
@@ -460,126 +542,6 @@ object FrontEnd {
     }
 
     return (typeChecker.typeHierarchy(nameMap = nameMap), program(body = newBody(stmts = newStmts)))
-  }
-
-  @datatype class InductResult(val isClosed: B,
-                               val cases: ISZ[InductResult.Case])
-
-  object InductResult {
-    @datatype class Case(val pattern: AST.Pattern, val premises: ISZ[AST.Exp])
-  }
-
-  @pure def induct(th: TypeHierarchy, localIds: HashSet[String], context: ISZ[String],
-                   claim: AST.Exp, exp: AST.Exp, pos: Position): Option[InductResult] = {
-    val posOpt = Option.some(pos)
-    val attr = AST.Attr(posOpt)
-    val resolvedAttr = AST.ResolvedAttr(posOpt, None(), None())
-    val typedAttr = AST.TypedAttr(posOpt, None())
-    val equivResAttr = AST.ResolvedAttr(posOpt,
-      Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEquiv)), AST.Typed.bOpt)
-
-    @pure def ids2name(ids: ISZ[String]): AST.Name = {
-      return AST.Name(for (id <- ids) yield AST.Id(id, attr), attr)
-    }
-
-    @pure def inductEnum(ti: TypeInfo.Enum, e: AST.Exp): InductResult = {
-      val tOpt = Option.some(e.typedOpt.get)
-      var cases = ISZ[InductResult.Case]()
-      val eResAttr = resolvedAttr(typedOpt = Some(AST.Typed.Enum(ti.name)), resOpt = Some(
-        AST.ResolvedInfo.Enum(ti.name)))
-      for (element <- ti.elements.entries) {
-        val resAttr = resolvedAttr(resOpt = Some(element._2), typedOpt = tOpt)
-        val premise = AST.Exp.Binary(e, AST.Exp.BinaryOp.EquivUni, AST.Exp.Select(
-          Some(AST.Exp.Ident(AST.Id(ti.name(ti.name.size - 1), attr), eResAttr)), AST.Id(element._1, attr), ISZ(), resAttr), equivResAttr, posOpt)
-        cases = cases :+ InductResult.Case(
-          AST.Pattern.Ref(F, ids2name(ti.name :+ element._1), None(), context,
-            resAttr), ISZ(premise))
-      }
-      return InductResult(F, cases)
-    }
-
-    @pure def inductTrait(isOpen: B, e: AST.Exp, t: AST.Typed.Name): InductResult = {
-      @pure def fresh(id: String): String = {
-        if (!localIds.contains(id)) {
-          return s"$$$id"
-        }
-        var i = 2
-        var r = s"$id$i"
-        while (localIds.contains(r)) {
-          i = i + 1
-          r = s"$id$i"
-        }
-        return s"$$$r"
-      }
-      var cases = ISZ[InductResult.Case]()
-      for (sub <- th.substLeavesOfType(None(), t).left) {
-        th.typeMap.get(sub.ids).get match {
-          case ti: TypeInfo.Adt =>
-            val sm = TypeChecker.buildTypeSubstMap(sub.ids, posOpt, ti.ast.typeParams, t.args, Reporter.create).get
-            val vbs: ISZ[AST.Pattern] = for (p <- ti.ast.params if !p.isHidden) yield
-              AST.Pattern.VarBinding(p.id(value = fresh(p.id.value)), None(), context,
-                typedAttr(typedOpt = Some(p.tipe.typedOpt.get.subst(sm))))
-            val args: ISZ[AST.Exp] = for (vb <- vbs) yield AST.Exp.Ident(vb.asInstanceOf[AST.Pattern.VarBinding].id,
-              AST.ResolvedAttr(posOpt, Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T,
-                vb.asInstanceOf[AST.Pattern.VarBinding].id.value)), vb.typedOpt))
-            val right = AST.Exp.Invoke(
-              None(), AST.Exp.Ident(ti.ast.id, AST.ResolvedAttr(posOpt, Some(AST.ResolvedInfo.Object(ti.name)),
-                Some(AST.Typed.Object(ti.owner, ti.ast.id.value)))), for (arg <- sub.args) yield AST.Util.typedToType(arg, pos),
-              args, AST.ResolvedAttr(posOpt, ti.constructorResOpt, Some(sub)))
-            cases = cases :+ InductResult.Case(AST.Pattern.Structure(None(), Some(ids2name(ti.name)), vbs, context,
-              resolvedAttr(resOpt = ti.extractorResOpt, typedOpt = Some(sub))), ISZ(
-              AST.Exp.Binary(e, AST.Exp.BinaryOp.EquivUni, right, equivResAttr, posOpt)))
-          case _ =>
-        }
-      }
-      return InductResult(isOpen, cases)
-    }
-
-    @pure def substMap(pattern: AST.Pattern.Structure, expType: AST.Typed): HashSMap[AST.Exp, AST.Exp] = {
-      var r = HashSMap.empty[AST.Exp, AST.Exp]
-      for (p <- pattern.patterns) {
-        val vb = p.asInstanceOf[AST.Pattern.VarBinding]
-        val t = vb.attr.typedOpt.get
-        if (th.isSubType(t, expType)) {
-          r = r + exp ~> AST.Exp.Ident(vb.id, AST.ResolvedAttr(
-            vb.posOpt,
-            Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Closure, F, T, vb.id.value)),
-            Some(t)))
-        }
-      }
-      return r
-    }
-
-    val adtInduct: InductResult = exp.typedOpt.get match {
-      case tipe: AST.Typed.Name if !AST.Typed.builtInTypes.contains(tipe) && tipe.ids != AST.Typed.isName && tipe.ids != AST.Typed.msName =>
-        th.typeMap.get(tipe.ids).get match {
-          case ti: TypeInfo.Adt =>
-            if (!ti.ast.isRoot) {
-              return None()
-            }
-            inductTrait(F, exp, tipe)
-          case ti: TypeInfo.Sig => inductTrait(!ti.ast.isSealed, exp, tipe)
-          case ti: TypeInfo.Enum => return Some(inductEnum(ti, exp))
-          case _ => return None()
-        }
-      case _: AST.Typed.Tuple => halt("TODO")
-      case _ => return None()
-    }
-    var cases = ISZ[InductResult.Case]()
-    for (cas <- adtInduct.cases) {
-      val struct = cas.pattern.asInstanceOf[AST.Pattern.Structure]
-      val sm = substMap(struct, exp.typedOpt.get)
-      if (sm.nonEmpty) {
-        var premises = cas.premises
-        for (p <- sm.entries) {
-          premises = premises :+ ExpSubstitutor(HashMap ++ ISZ(p._1 ~> p._2)).transformExp(claim).getOrElse(claim)
-        }
-        cases = cases :+ cas(premises = premises)
-      } else {
-        cases = cases :+ cas
-      }
-    }
-    return Some(adtInduct(cases = cases))
   }
 
 }

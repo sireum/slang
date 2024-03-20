@@ -4440,10 +4440,6 @@ import TypeChecker._
     reporter: Reporter
   ): AST.Stmt = {
 
-    if (stmt.isInduct && mode != ModeContext.TheoremCode) {
-      reporter.error(stmt.exp.posOpt, typeCheckerKind, s"@induct can only be used in a theorem/lemma @pure method returning the unit type")
-    }
-
     def checkSelectNative(exp: AST.Exp.Select): (AST.Exp, Option[AST.Typed]) = {
       val receiver: AST.Exp = exp.receiverOpt.get
       val (newExp, expTypeOpt) = checkExp(None(), scope, receiver, reporter)
@@ -4498,6 +4494,18 @@ import TypeChecker._
     val expType: AST.Typed = expTypeOpt match {
       case Some(et) => et
       case _ => return stmt(exp = newExp)
+    }
+
+    if (stmt.isInduct) {
+      if (mode != ModeContext.TheoremCode) {
+        reporter.error(stmt.exp.posOpt, typeCheckerKind, s"@induct can only be used in a theorem/lemma @pure method returning the unit type")
+      }
+      if (newExp.typedOpt.nonEmpty) {
+        typeHierarchy.induct(T, HashSet.empty, context, AST.Util.trueLit, newExp, newExp.posOpt.get) match {
+          case Some(_) =>
+          case _ => reporter.error(newExp.posOpt, typeCheckerKind, s"Cannot @induct over ${newExp.prettyST}")
+        }
+      }
     }
 
     var newCases = ISZ[AST.Case]()
@@ -5016,7 +5024,14 @@ import TypeChecker._
 
       case stmt: AST.Stmt.Induct =>
         val newExp = checkExp(None(), scope, stmt.exp, reporter)._1
-        return stmt(exp = newExp, locals = ops.ISZOps(scope.localIds).sortWith((s1: String, s2: String) => s1 <= s2))
+        val locals = ops.ISZOps(scope.localIds).sortWith((s1: String, s2: String) => s1 <= s2)
+        if (newExp.typedOpt.nonEmpty) {
+          typeHierarchy.induct(T, HashSet.empty, context, AST.Util.trueLit, newExp, newExp.posOpt.get) match {
+            case Some(_) =>
+            case _ => reporter.error(newExp.posOpt, typeCheckerKind, s"Cannot @induct over ${newExp.prettyST}")
+          }
+        }
+        return stmt(exp = newExp, context = context, locals = locals)
     }
   }
 

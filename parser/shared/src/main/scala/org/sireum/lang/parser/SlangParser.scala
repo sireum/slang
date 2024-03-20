@@ -480,7 +480,7 @@ class SlangParser(
       case q"Contract(DataRefinement($_)(..$_)(..$_))" => translateDataRefinement(enclosing, stat)
       case q"Contract.Havoc(..$args)" => translateHavoc(enclosing, stat)
       case q"$t : @induct" =>
-        AST.Stmt.Induct(checkInduct(translateExp(t)), ISZ(), attr(stat.pos))
+        AST.Stmt.Induct(checkInduct(translateExp(t)), ISZ(), ISZ(), attr(stat.pos))
       case _: Term.Apply | _: Term.ApplyInfix =>
         val term = stat.asInstanceOf[Term]
         stmtCheck(enclosing, term, s"${syntax(stat)}")
