@@ -414,10 +414,10 @@ class SlangParser(
 
   def checkInduct(exp: AST.Exp): AST.Exp = {
     exp match {
-      case _: AST.Exp.Ident =>
-      case exp: AST.Exp.Tuple if org.sireum.ops.ISZOps(exp.args).forall(e => e.isInstanceOf[AST.Exp.Ident]) =>
+      case _: AST.Exp.Ref =>
+      case exp: AST.Exp.Tuple if org.sireum.ops.ISZOps(exp.args).forall(e => e.isInstanceOf[AST.Exp.Ref]) =>
       case _ =>
-        reporter.error(exp.posOpt, messageKind, "@induct expression should be an identifier or a tuple of identifiers")
+        reporter.error(exp.posOpt, messageKind, "@induct expression should be an identifier, a select, or a tuple of identifiers")
     }
     exp
   }
