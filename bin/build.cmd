@@ -65,19 +65,8 @@ if (Os.cliArgs.isEmpty) {
 val homeBin = Os.slashDir
 val home = homeBin.up
 val sireumJar = homeBin / "sireum.jar"
-val mill = homeBin / "mill.bat"
 var didTipe = F
 var didCompile = F
-
-
-def downloadMill(): Unit = {
-  if (!mill.exists) {
-    println("Downloading mill ...")
-    mill.downloadFrom("https://github.com/sireum/rolling/releases/download/mill/standalone")
-    mill.chmod("+x")
-    println()
-  }
-}
 
 
 def getBranch(path: Os.Path): String = {
@@ -117,8 +106,7 @@ def compile(): Unit = {
     didCompile = T
     tipe()
     println("Compiling ...")
-    mill.call(ISZ("all", "slang.frontend.shared.tests.compile",
-      "slang.frontend.js.tests.compile")).at(home).console.runCheck()
+    proc"java -jar $sireumJar proyek compile $home".console.echo.runCheck()
     println()
   }
 }
@@ -126,21 +114,11 @@ def compile(): Unit = {
 
 def test(): Unit = {
   compile()
-  println("Running shared tests ...")
-  mill.call(ISZ("all", "slang.parser.shared.tests", "slang.frontend.shared.tests")).at(home).console.runCheck()
+  println("Running tests ...")
+  proc"java -jar $sireumJar proyek test $home org.sireum.lang".console.echo.runCheck()
   println()
 }
 
-
-def testJs(): Unit = {
-  compile()
-  println("Running js tests ...")
-  mill.call(ISZ("all", "slang.parser.js.tests", "slang.frontend.js.tests")).at(home).console.runCheck()
-  println()
-}
-
-
-downloadMill()
 
 clone("runtime")
 
@@ -148,7 +126,6 @@ for (i <- 0 until Os.cliArgs.size) {
   Os.cliArgs(i) match {
     case string"compile" => compile()
     case string"test" => test()
-    case string"test-js" => testJs()
     case cmd =>
       usage()
       eprintln(s"Unrecognized command: $cmd")
