@@ -67,6 +67,7 @@ val home = homeBin.up
 val sireumJar = homeBin / "sireum.jar"
 var didTipe = F
 var didCompile = F
+val projectStandalone = home / "bin" / "project-standalone.cmd"
 
 
 def getBranch(path: Os.Path): String = {
@@ -106,7 +107,7 @@ def compile(): Unit = {
     didCompile = T
     tipe()
     println("Compiling ...")
-    proc"java -jar $sireumJar proyek compile $home".console.echo.runCheck()
+    proc"java -jar $sireumJar proyek compile --project $projectStandalone $home".console.echo.runCheck()
     println()
   }
 }
@@ -115,7 +116,7 @@ def compile(): Unit = {
 def test(): Unit = {
   compile()
   println("Running tests ...")
-  proc"java -jar $sireumJar proyek test $home org.sireum.lang".console.echo.runCheck()
+  proc"java -jar $sireumJar proyek test --project $projectStandalone $home org.sireum.lang".console.echo.runCheck()
   println()
 }
 
