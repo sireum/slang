@@ -29,6 +29,7 @@ package org.sireum.lang.ast
 import org.sireum._
 import org.sireum.message._
 import org.sireum.U64._
+import org.sireum.lang.ast.ProofAst.Step
 
 object Util {
 
@@ -767,6 +768,74 @@ object Util {
         return Transformer.PreResult(ctx, T, None())
       }
     }
+  }
+
+  @record class ProofStats(var inTheoremMethod: B,
+                           var theorems: Z,
+                           var autoDischargedTheorems: Z,
+                           var inductOnlyTheorems: Z,
+                           var inductions: Z,
+                           var inductionCases: Z,
+                           var autoInductionCases: Z,
+                           var justs: HashSMap[String, Z]) extends MTransformer {
+
+    override def postStmtTheorem(o: Stmt.Theorem): MOption[Stmt.Spec] = {
+      theorems = theorems + 1
+      if (o.proof.steps.isEmpty) {
+        autoDischargedTheorems = autoDischargedTheorems + 1
+      }
+      return MNone()
+    }
+
+    override def preStmtMethod(o: Stmt.Method): MTransformer.PreResult[Stmt] = {
+      if (o.sig.returnType.string == "Unit" && o.sig.purity == Purity.Pure) {
+        inTheoremMethod = T
+        theorems = theorems + 1
+        o.bodyOpt match {
+          case Some(body) if body.stmts.isEmpty => autoDischargedTheorems = autoDischargedTheorems + 1
+          case _ =>
+        }
+      }
+      return MTransformer.PreResultStmtMethod
+    }
+
+    override def preStmtMatch(o: Stmt.Match): MTransformer.PreResult[Stmt] = {
+      if (!inTheoremMethod) {
+        return MTransformer.PreResultStmtMatch
+      }
+
+      inductions = inductions + 1
+      var allCaseEmpty = T
+      for (c <- o.cases) {
+        inductionCases = inductionCases + 1
+        c.body.stmts match {
+          case ISZ() => autoInductionCases = autoInductionCases + 1
+          case ISZ(_: Stmt.Return) => autoInductionCases = autoInductionCases + 1
+          case _ => allCaseEmpty = F
+        }
+      }
+      if (allCaseEmpty) {
+        inductOnlyTheorems = inductOnlyTheorems + 1
+      }
+
+      return MTransformer.PreResultStmtMatch
+    }
+
+    override def postStmtMethod(o: Stmt.Method): MOption[Stmt] = {
+      inTheoremMethod = F
+      return MNone()
+    }
+
+    override def postProofAstStepRegular(o: Step.Regular): MOption[ProofAst.Step] = {
+      val id = o.just.id.value
+      justs = justs + id ~> (justs.get(id).getOrElse(0) + 1)
+      return MNone()
+    }
+
+  }
+
+  object ProofStats {
+    @strictpure def empty: ProofStats = ProofStats(F, 0, 0, 0, 0, 0, 0, HashSMap.empty)
   }
 
   val nonConstantPrefixes: HashSet[String] = HashSet ++ ISZ[String]("proc")
