@@ -38,38 +38,40 @@ options {
 
 file: program EOF ;
 
-expFile: exp EOF ;
+expFile: annot? exp EOF ;
 
-stmtFile: stmt EOF ;
+stmtFile: annot? stmt EOF ;
 
-program: impor* mainMember* typeDef* pkg* ;
+program: annot? imprt* mainMember* pkg* ;
 
-impor: IMPORT ID ( DOT importSuffix )? ;
+imprt: IMPORT ID ( DOT importSuffix )? ;
 
-importSuffix: UNDERSCORE
-            | ID ( DOT importSuffix )?
+importSuffix: UNDERSCORE annot?
+            | ID ( annot | DOT importSuffix )?
             | LBRACE importRename ( COMMA importRename )* RBRACE ;
 
-importRename: ID ARROW ID ;
+importRename: ID ARROW ID annot? ;
 
-mainMember: defStmt | commonStmt ;
+mainMember: stmt | typeDef ;
 
-member: varDef | defDef ;
+pkg: PACKAGE mod* name? annot? imprt* member* ;
 
-pkg: PACKAGE mod* name? impor* member* typeDef* ;
+init: DOT DOT LBRACE annot? stmt* RBRACE ;
 
-mod: ID LSQUARE args RSQUARE ;
+member: varDef | funDef | typeDef | init ;
 
-args: rhs ( COMMA rhs )*
+mod: AT ID ( LSQUARE args RSQUARE )? ;
+
+args: annot? rhs ( COMMA annot? rhs )*
     | namedArg ( COMMA namedArg )* ;
     
-namedArg: ID ASSIGN rhs ;
+namedArg: ID ASSIGN annot? rhs ;
 
 name: ID ( DOT ID )* ;
 
 typeDef: TYPE typeParams? mod* ID ( COLON enumMembers
                                   | ASSIGN type
-                                  | params? supers? annot? member* ) ;
+                                  | params? supers? annot? ( LBRACE member* RBRACE )? ) ;
 
 typeParams: LSQUARE typeParam ( COMMA typeParam )* RSQUARE ;
 
@@ -83,69 +85,69 @@ param: VAR? mod* ID COLON ARROW? type ;
 
 supers: COLON supr ( COMMA supr )* ;
 
-supr: name typeArgs? ;
+supr: annot? name typeArgs? ;
 
 annot: AT LSQUARE args? RSQUARE ;
 
-varDef: VAR mod* ID COLON type ( ASSIGN rhs )? ;
+varDef: VAR mod* ID COLON type ( ASSIGN annot? rhs )? ;
 
-defDef: DEF typeParams? mod* defId defParams? COLON type ( ASSIGN ( annot rhs? | rhs ) )? ;
+funDef: FUN typeParams? mod* funId funParams? COLON type ( ASSIGN annot? rhs )? ;
 
-defId: ID | OP | SYMBOL ;
+funId: ID | OP | SYMBOL ;
 
-defParams: LPAREN defParam defParamSuffix? RPAREN ;
+funParams: LPAREN funParam funParamSuffix? RPAREN ;
 
-defParamSuffix: COMMA ( TO defParam  
-                      | defParam defParamSuffix? ) ;
+funParam: mod* ID COLON type ;
 
-defParam: mod* ID COLON type ;
+funParamSuffix: COMMA ( TO funParam  
+                      | funParam funParamSuffix? ) ;
 
-stmt: commonStmt | funStmt ;
+stmt: expOrAssignStmt | varPattern | ifStmt | whileStmt | forStmt | deduceStmt | matchStmt | funStmt ;
 
-commonStmt: varPattern | doStmt | ifStmt | whileStmt | forStmt | deduceStmt | matchStmt | exp0Stmt ;
+funStmt: FUN typeParams? mod* funId funParams? COLON type ASSIGN annot? rhs ;
 
-defStmt: DEF typeParams? mod* defId defParams? COLON type ASSIGN annot? rhs ;
+expOrAssignStmt: ID ( annot
+                    | ASSIGN annot? rhs
+                    | COLON annot? )?
+               | exp0 access+ annot? ( ASSIGN annot? rhs )?
+               | SEMI annot? ( exp | mod* block ) ;
 
-doStmt: DO ( exp | mod* block ) ;
-
-exp0Stmt: ID ( ASSIGN rhs )?
-        | exp0 access+ ( ASSIGN rhs )? ;
-
-varPattern: VAR pattern ASSIGN rhs ;
+varPattern: VAR pattern ASSIGN annot? rhs ;
 
 rhs: exp | block | ifStmt | matchStmt ;
 
-ifStmt: IF exp block els? ;
+ifStmt: IF exp annot? block els? ;
 
-block: LBRACE blockContent RBRACE ;
+block: LBRACE annot? blockContent RBRACE ;
 
-blockContent: stmt* ret ;
+blockContent: stmt* ret? ;
 
-ret: RETURN rhs? ;
+ret: RETURN annot? rhs? ;
 
-els: ELSE ( IF exp block els?
+els: ELSE ( IF exp annot? block els?
           | block             ) ;
 
 whileStmt: WHILE exp annot? block ;
 
 forStmt: FOR forRange+ block ;
 
-forRange: ID COLON exp ( ( TO |  UNTIL ) exp ( ASSIGN exp )? )? annot? ;
+forRange: ID COLON exp ( ( TO |  UNTIL ) exp ( COMMA exp )? )? annot? ;
 
-funStmt: FUN mod* defId defParams? COLON type ASSIGN annot? rhs ;
+matchStmt: MATCH exp annot? LBRACE cas+ RBRACE ;
 
-matchStmt: MATCH exp LBRACE cas+ RBRACE ;
+pattern:  annot? ( lit
+                 | patterns
+                 | name patterns?
+                 | ID COLON type1
+                 | ID AT name patterns
+                 | UNDERSCORE ( COLON type1 )? ) ;
 
-pattern: lit
-       | patterns
-       | name patterns?
-       | ID COLON type1
-       | ID AT name patterns
-       | UNDERSCORE ( COLON type1 )? ;
+patterns: LPAREN patternsArg RPAREN ;
+        
+patternsArg: pattern ( COMMA pattern )*
+	         | ID ASSIGN pattern ( COMMA ID ASSIGN pattern )* ;
 
-patterns: LPAREN pattern ( COMMA pattern )* RPAREN ;
-
-exp: exp3 | forExp | fun | quant ;
+exp: exp3 | forExp | funAnon | quant ;
 
 exp3: exp2 infixSuffix* condSuffix? ;
 
@@ -162,22 +164,25 @@ condSuffix: QUESTION ( exp COLON exp
 
 access: DOT ID typeArgs? ( LPAREN args? RPAREN )? fn? ;
 
-fn: LBRACE annot? ARROW ( blockContent | cas+ ) RBRACE ; 
+fn: LBRACE ARROW annot? ( blockContent | cas+ ) RBRACE ; 
  
-lit: TRUE | FALSE | INT | HEX | BIN | REAL | STRING | MSTRING ;
+lit: TRUE | FALSE | INT | HEX | BIN | REAL | STRING |  MSTR /* | MSTRING */ ;
 
-paren: LPAREN exp RPAREN ;
+paren: LPAREN annot? parenArgs RPAREN ;
 
-cas: CASE pattern ( IF exp )? ARROW blockContent ;
+parenArgs
+	: exp annot? ( COMMA exp annot? )*
+	| ID ASSIGN exp annot? ( COMMA ID ASSIGN exp annot? )* ;
 
-forExp: FOR forRange+ ARROW rhs ;
+cas: CASE pattern ( IF exp )?  ARROW annot? blockContent ;
 
-fun: ( FUN mod* | LAMBDA ) defParams ( COLON type )? DOT annot? rhs ;
+forExp: FORYIELD annot? forRange+ ARROW annot? rhs ;
 
-quant: ( ALL | SOME | SYMBOL ) ( quantRange+ ARROW rhs
-                               | defParams ( COLON type )? DOT annot? rhs ) ;
+funAnon: FUN mod* funParams ( COLON type )? DOT annot? rhs ;
+
+quant: ( ALL | SOME | SYMBOL ) quantRange+ ARROW annot? rhs ;
                                
-quantRange: ID COLON exp ( ( TO |  UNTIL ) exp )? ;
+quantRange: ( ID COMMA )* ID annot? COLON annot? exp ( ( TO |  UNTIL ) annot? exp )? ; // first exp can refer to a type
 
 deduceStmt: DEDUCE ( truthTable
                    | LBRACE proofStep* RBRACE
@@ -212,37 +217,45 @@ truthTableCase: CASE ID ARROW ( truthTableAssignment ( COMMA truthTableAssignmen
 
 truthTableAssignment: ID+ ;
 
-type: type1 ( ARROW annot? type1 )* ;
+type: type2 annot? ;
 
-type1: LPAREN type? RPAREN 
+type2: type1 ( ARROW annot? type1 )* ;
+
+type1: LPAREN typeParenArgs RPAREN 
      | type0 ( ( OP | SYMBOL ) type0 )* ;
         
+typeParenArgs
+	:	annot? type ( COMMA annot? type )*
+	| ID ASSIGN annot? type ( COMMA ID ASSIGN annot? type )* ;
+	        
 type0: ID typeArgs? ;
 
-typeArgs: LSQUARE type ( COMMA type )* RSQUARE ;
+typeArgs: LSQUARE typeParenArgs RSQUARE ;
 
-interp: SP | MSP | SPB sinterp | MSPB minterp ;
+interp: SP | SPB sinterp | MSTRP | MSTRPB mstrinterp /* | MSP | MSPB minterp */ ;
 
 sinterp: exp ( SPM sinterp | SPE ) ;
 
-minterp: exp ( MSPM minterp | MSPE ) ;
+strinterp: exp ( MSTRPM sinterp | MSTRPE ) ;
+
+mstrinterp: exp ( MSTRPM mstrinterp | MSTRPE ) ;
 
 // Lexical definitions
 ALL:        '∀'           ; ARROW:      '=>'          ; ASSIGN:     ':='          ; AT:         '@'           ;
-COMMA:      ','           ; COLON:      ':'           ; DOT:        '.'           ; LAMBDA:     'λ'           ;
+COMMA:      ','           ; COLON:      ':'           ; DOT:        '.'           ; UNDERSCORE: '_'           ;
 LBRACE:     '{'           ; LPAREN:     '('           ; LSQUARE:    '['           ; QUESTION:   '?'           ;
 RBRACE:     '}'           ; RPAREN:     ')'           ; RSQUARE:    ']'           ; SEQUENT:    '⊢' | '|-'    ;
-SOME:       '∃'           ; TO:         '..'          ; UNDERSCORE: '_'           ; UNTIL:      '..<'         ;
+SOME:       '∃'           ; TO:         '..'          ; UNTIL:      '..<'         ; SEMI:       ';'           ;
 
-CASE:       'case'        ; DEDUCE:     'deduce'      ; DEF:        'def'         ; DO:         'do'          ;
-FALSE:      'false'       ; ELSE:       'else'        ; FOR:        'for'         ; FUN:        'fun'         ;
+CASE:       'case'        ; DEDUCE:     'deduce'      ; TRUE:       'true'        ; FUN:        'fun' | 'λ'   ;
+FALSE:      'false'       ; ELSE:       'else'        ; FOR:        'for'         ; TYPE:       'type'        ;
 IF:         'if'          ; IMPORT:     'import'      ; MATCH:      'match'       ; PACKAGE:    'package'     ;
-RETURN:     'return'      ; SUPER:      'super'       ; THIS:       'this'        ; TRUE:       'true'        ;
-TYPE:       'type'        ; VAR:        'val' | 'var' ; WHILE:      'while'       ;
+RETURN:     'return'      ; SUPER:      'super'       ; THIS:       'this'        ; WHILE:      'while'       ;
+FORYIELD:   'yield'       ; VAR:        'val' | 'var' ; 
 
 SYMBOL: '\\' IDF ;
 
-STRING: '"' (ESC_SEQ | ~( '\\' | '"' ) )* '"' ;
+STRING: '"' ( ESC_SEQ | ~( '\\' | '"' ) )* '"' ;
 
 SP: IDF '"' SPI* '"' ;
 
@@ -252,15 +265,15 @@ SPM: '$' SPI* '$' ;
 
 SPE: '$' SPI* '"' ;
 
-MSTRING: '"""' ( ~'"'|  '"' ~'"' | '""' ~'"' )* ( '"""' | '""""' | '"""""' ) ;
+MSTR:	( '#' MSTRF WSF? )* '#' MSTRF ;
 
-MSP: IDF '"""' MSPI* '"""' ;
+MSTRP:	IDF ( '#' MSTRF WSF? )* '#' MSTRF ;
 
-MSPB: IDF '"""' MSPI* '$' ;
+MSTRPB: IDF ( '#' MSTRF WSF? )* '#' MSTRI '$' ;
 
-MSPM: '$' MSPI* '$' ;
+MSTRPM: '$' MSTRF WSF? ( '#' MSTRF WSF? )* '#' MSTRI '$' ;
 
-MSPE: '$' MSPI* ( '"""' | '""""' | '"""""' ) ;
+MSTRPE: '$' MSTRF WSF? ( '#' MSTRF WSF? )* '#' MSTRF ;
 
 ID: IDF | IDESC;
 
@@ -278,10 +291,16 @@ REAL: ( '0' | '-'? '1'..'9' ( DIGIT | '_' )* ) ( '.' DIGIT ( DIGIT | '_' )* EXPO
 
 CHAR: '\'' ( ESC_SEQ | ~('\''|'\\') ) '\'' ;
 
-COMMENT: '//' ~( '\n' | '\r' )* '\r'? '\n'          {$channel=HIDDEN;}
-       | '/*' ( ~'*' | '*' ~'/' )* ( '*/' | '**/' ) {$channel=HIDDEN;} ;
+COMMENT: '//' ~( '\n' | '\r' )* '\r'? '\n'           {$channel=HIDDEN;}
+       | '/*' ( ~'*' | '*' ~'/' )* ( '*/' | '**/' )  {$channel=HIDDEN;} ;
 
-WS: ( ' ' | '\t' | '\r' | '\n' )+ {$channel=HIDDEN;} ;
+WS: ( ' ' | '\t' | '\r' | '\n' )+                    {$channel=HIDDEN;} ;
+
+fragment MSTRF:	~( '\n' | '\r' )* '\r'? '\n' ;
+
+fragment MSTRI:	( ~( '\n' | '\r' | '$' ) | '$$' )* ;
+
+fragment WSF:	( ' ' | '\t' )+ ;
 
 fragment IDESC: '`' ~( '\n' | '\r' | '\t' )* '`' ;
 
@@ -289,7 +308,6 @@ fragment IDF: ( LETTER | '_' ) ( LETTER | DIGIT | '_' | '$' ( LETTER | DIGIT | '
 
 fragment SPI: ESC_SEQ | ~( '\\' | '"' | '$' ) | '$$' ;
 
-fragment MSPI: ~( '"' | '$' ) | '$$' | '"' ~'"' | '""' ~'"' ;
 
 fragment LETTER: 'a'..'z' | 'A'..'Z';
 
@@ -308,3 +326,19 @@ fragment HEX_DIGIT: ( DIGIT | 'a'..'f' | 'A'..'F' ) ;
 fragment ESC_SEQ: '\\' ( 'b' | 't' | 'n' | 'f' | 'r' | '\"' | '\'' | '\\' ) | UNICODE_ESC ;
 
 fragment UNICODE_ESC: '\\' 'u' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT? ;
+
+/*
+minterp: exp ( MSPM minterp | MSPE ) ;
+
+MSTRING: '"""' ( ~'"'|  '"' ~'"' | '""' ~'"' )* ( '"""' | '""""' | '"""""' ) ;
+
+MSP: IDF '"""' MSPI* '"""' ;
+
+MSPB: IDF '"""' MSPI* '$' ;
+
+MSPM: '$' MSPI* '$' ;
+
+MSPE: '$' MSPI* ( '"""' | '""""' | '"""""' ) ;
+
+fragment MSPI: ~( '"' | '$' ) | '$$' | '"' ~'"' | '""' ~'"' ;
+*/
