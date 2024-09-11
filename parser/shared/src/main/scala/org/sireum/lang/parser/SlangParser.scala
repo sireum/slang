@@ -3846,7 +3846,11 @@ class SlangParser(
         val stepNo = toStepId(no)
         val subClaims = translateAssumeSubClaims(claims)
         if (subClaims.nonEmpty && !subClaims(0).isInstanceOf[AST.ProofAst.Step.Assume]) {
-          reporter.error(subClaims(0).id.posOpt, messageKind, "Expecting an Assume(...) claim")
+          var posOpt = subClaims(0).id.posOpt
+          if (posOpt.isEmpty) {
+            posOpt = stepNo.posOpt
+          }
+          reporter.error(posOpt, messageKind, "Expecting an Assume(...) claim")
         }
         AST.ProofAst.Step.SubProof(stepNo, subClaims, attr(proofStep.pos))
       case Term.ApplyInfix.After_4_6_0(no, Term.Name("#>"), Type.ArgClause(Nil), Term.ArgClause(List(Term.Apply.After_4_6_0(Term.Name("SubProof"), Term.ArgClause(List(Term.Function.After_4_6_0(Term.ParamClause(params, scala.None), term)), scala.None))), scala.None)) if isStepId(no) =>
@@ -3943,7 +3947,11 @@ class SlangParser(
         val stepNo = toStepId(no)
         val subClaims = translateAssumeSubClaims(claims)
         if (subClaims.nonEmpty && !subClaims(0).isInstanceOf[AST.ProofAst.Step.Assume]) {
-          reporter.error(subClaims(0).id.posOpt, messageKind, "Expecting an Assume(...) claim")
+          var posOpt = subClaims(0).id.posOpt
+          if (posOpt.isEmpty) {
+            posOpt = stepNo.posOpt
+          }
+          reporter.error(posOpt, messageKind, "Expecting an Assume(...) claim")
         }
         AST.ProofAst.Step.SubProof(stepNo, subClaims, attr(proofStep.pos))
       case q"$no Let ((..$params) => SubProof(..$claims))" if isStepId(no) =>
