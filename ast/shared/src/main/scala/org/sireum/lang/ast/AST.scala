@@ -653,6 +653,45 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = T
     @strictpure override def hasReturn: B = F
+    @strictpure def kind: Expr.Kind.Type = exp match {
+      case exp: Exp.Invoke =>
+        exp.attr.resOpt match {
+          case Some(res: ResolvedInfo.BuiltIn) =>
+            res.kind match {
+              case ResolvedInfo.BuiltIn.Kind.Assert => Expr.Kind.Assert
+              case ResolvedInfo.BuiltIn.Kind.AssertMsg => Expr.Kind.AssertMsg
+              case ResolvedInfo.BuiltIn.Kind.Assume => Expr.Kind.Assume
+              case ResolvedInfo.BuiltIn.Kind.AssumeMsg => Expr.Kind.AssumeMsg
+              case ResolvedInfo.BuiltIn.Kind.Cprint => Expr.Kind.Cprint
+              case ResolvedInfo.BuiltIn.Kind.Cprintln => Expr.Kind.Cprintln
+              case ResolvedInfo.BuiltIn.Kind.Eprint => Expr.Kind.Eprint
+              case ResolvedInfo.BuiltIn.Kind.Eprintln => Expr.Kind.Eprintln
+              case ResolvedInfo.BuiltIn.Kind.Print => Expr.Kind.Print
+              case ResolvedInfo.BuiltIn.Kind.Println => Expr.Kind.Println
+              case ResolvedInfo.BuiltIn.Kind.SetOptions => Expr.Kind.SetOptions
+              case _ => Expr.Kind.General
+            }
+          case _ => Expr.Kind.General
+        }
+      case _ => halt("This method can only be used on resolved/type checked AST")
+    }
+  }
+
+  object Expr {
+    @enum object Kind {
+      "General"
+      "Assert"
+      "AssertMsg"
+      "Assume"
+      "AssumeMsg"
+      "Cprint"
+      "Cprintln"
+      "Eprint"
+      "Eprintln"
+      "Print"
+      "Println"
+      "SetOptions"
+    }
   }
 
   @datatype trait Spec extends Stmt
