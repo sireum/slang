@@ -196,8 +196,12 @@ import CoreExpTranslator._
     }
   }
   @pure def translateAssignExp(ae: AST.AssignExp, funStack: FunStack, localMap: LocalMap): AST.CoreExp.Base = {
-    val (Some(r), _) = translateStmt(ae.asStmt, funStack, localMap)
-    return r
+    if (mode == Mode.Extended) {
+      return AST.CoreExp.Extended.StrictPureBlock(ae, funStack, localMap)
+    } else {
+      val (Some(r), _) = translateStmt(ae.asStmt, funStack, localMap)
+      return r
+    }
   }
   @pure def translateExp(e: AST.Exp, funStack: FunStack, localMap: LocalMap): AST.CoreExp.Base = {
     e match {

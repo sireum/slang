@@ -217,41 +217,9 @@ object MCoreExpTransformer {
 
   val PostResultCoreExpLabeled: MOption[CoreExp.Base] = MNone()
 
-  val PreResultCoreExpExtendedDeclVal: PreResult[CoreExp.Extended.Decl] = PreResult(T, MNone())
+  val PreResultCoreExpExtendedStrictPureBlock: PreResult[CoreExp.Extended] = PreResult(T, MNone())
 
-  val PostResultCoreExpExtendedDeclVal: MOption[CoreExp.Extended.Decl] = MNone()
-
-  val PreResultCoreExpExtendedDeclValPattern: PreResult[CoreExp.Extended.Decl] = PreResult(T, MNone())
-
-  val PostResultCoreExpExtendedDeclValPattern: MOption[CoreExp.Extended.Decl] = MNone()
-
-  val PreResultCoreExpExtendedBlock: PreResult[CoreExp.Extended] = PreResult(T, MNone())
-
-  val PostResultCoreExpExtendedBlock: MOption[CoreExp.Extended] = MNone()
-
-  val PreResultCoreExpExtendedIf: PreResult[CoreExp.Extended] = PreResult(T, MNone())
-
-  val PostResultCoreExpExtendedIf: MOption[CoreExp.Extended] = MNone()
-
-  val PreResultCoreExpExtendedMatch: PreResult[CoreExp.Extended] = PreResult(T, MNone())
-
-  val PostResultCoreExpExtendedMatch: MOption[CoreExp.Extended] = MNone()
-
-  val PreResultCoreExpExtendedMatchCase: PreResult[CoreExp.Extended.Match.Case] = PreResult(T, MNone())
-
-  val PostResultCoreExpExtendedMatchCase: MOption[CoreExp.Extended.Match.Case] = MNone()
-
-  def transformOption[T](option: Option[T], f: T => MOption[T]): MOption[Option[T]] = {
-    option match {
-      case Some(v) =>
-        val r = f(v)
-        r match {
-          case MSome(v2) => return MSome(Some(v2))
-          case _ => return MNone()
-        }
-      case _ => return MNone()
-    }
-  }
+  val PostResultCoreExpExtendedStrictPureBlock: MOption[CoreExp.Extended] = MNone()
 
 }
 
@@ -516,22 +484,8 @@ import MCoreExpTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
-      case o: CoreExp.Extended.Block =>
-        val r: PreResult[CoreExp] = preCoreExpExtendedBlock(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
-         case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
-        }
-        return r
-      case o: CoreExp.Extended.If =>
-        val r: PreResult[CoreExp] = preCoreExpExtendedIf(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
-         case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
-        }
-        return r
-      case o: CoreExp.Extended.Match =>
-        val r: PreResult[CoreExp] = preCoreExpExtendedMatch(o) match {
+      case o: CoreExp.Extended.StrictPureBlock =>
+        val r: PreResult[CoreExp] = preCoreExpExtendedStrictPureBlock(o) match {
          case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
          case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
@@ -629,22 +583,8 @@ import MCoreExpTransformer._
       case o: CoreExp.InstanceOfExp => return preCoreExpInstanceOfExp(o)
       case o: CoreExp.Halt => return preCoreExpHalt(o)
       case o: CoreExp.Labeled => return preCoreExpLabeled(o)
-      case o: CoreExp.Extended.Block =>
-        val r: PreResult[CoreExp.Base] = preCoreExpExtendedBlock(o) match {
-         case PreResult(continu, MSome(r: CoreExp.Base)) => PreResult(continu, MSome[CoreExp.Base](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp.Base")
-         case PreResult(continu, _) => PreResult(continu, MNone[CoreExp.Base]())
-        }
-        return r
-      case o: CoreExp.Extended.If =>
-        val r: PreResult[CoreExp.Base] = preCoreExpExtendedIf(o) match {
-         case PreResult(continu, MSome(r: CoreExp.Base)) => PreResult(continu, MSome[CoreExp.Base](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp.Base")
-         case PreResult(continu, _) => PreResult(continu, MNone[CoreExp.Base]())
-        }
-        return r
-      case o: CoreExp.Extended.Match =>
-        val r: PreResult[CoreExp.Base] = preCoreExpExtendedMatch(o) match {
+      case o: CoreExp.Extended.StrictPureBlock =>
+        val r: PreResult[CoreExp.Base] = preCoreExpExtendedStrictPureBlock(o) match {
          case PreResult(continu, MSome(r: CoreExp.Base)) => PreResult(continu, MSome[CoreExp.Base](r))
          case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp.Base")
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp.Base]())
@@ -786,41 +726,12 @@ import MCoreExpTransformer._
 
   def preCoreExpExtended(o: CoreExp.Extended): PreResult[CoreExp.Extended] = {
     o match {
-      case o: CoreExp.Extended.Block => return preCoreExpExtendedBlock(o)
-      case o: CoreExp.Extended.If => return preCoreExpExtendedIf(o)
-      case o: CoreExp.Extended.Match => return preCoreExpExtendedMatch(o)
+      case o: CoreExp.Extended.StrictPureBlock => return preCoreExpExtendedStrictPureBlock(o)
     }
   }
 
-  def preCoreExpExtendedDecl(o: CoreExp.Extended.Decl): PreResult[CoreExp.Extended.Decl] = {
-    o match {
-      case o: CoreExp.Extended.Decl.Val => return preCoreExpExtendedDeclVal(o)
-      case o: CoreExp.Extended.Decl.ValPattern => return preCoreExpExtendedDeclValPattern(o)
-    }
-  }
-
-  def preCoreExpExtendedDeclVal(o: CoreExp.Extended.Decl.Val): PreResult[CoreExp.Extended.Decl] = {
-    return PreResultCoreExpExtendedDeclVal
-  }
-
-  def preCoreExpExtendedDeclValPattern(o: CoreExp.Extended.Decl.ValPattern): PreResult[CoreExp.Extended.Decl] = {
-    return PreResultCoreExpExtendedDeclValPattern
-  }
-
-  def preCoreExpExtendedBlock(o: CoreExp.Extended.Block): PreResult[CoreExp.Extended] = {
-    return PreResultCoreExpExtendedBlock
-  }
-
-  def preCoreExpExtendedIf(o: CoreExp.Extended.If): PreResult[CoreExp.Extended] = {
-    return PreResultCoreExpExtendedIf
-  }
-
-  def preCoreExpExtendedMatch(o: CoreExp.Extended.Match): PreResult[CoreExp.Extended] = {
-    return PreResultCoreExpExtendedMatch
-  }
-
-  def preCoreExpExtendedMatchCase(o: CoreExp.Extended.Match.Case): PreResult[CoreExp.Extended.Match.Case] = {
-    return PreResultCoreExpExtendedMatchCase
+  def preCoreExpExtendedStrictPureBlock(o: CoreExp.Extended.StrictPureBlock): PreResult[CoreExp.Extended] = {
+    return PreResultCoreExpExtendedStrictPureBlock
   }
 
   def postTyped(o: Typed): MOption[Typed] = {
@@ -1080,22 +991,8 @@ import MCoreExpTransformer._
          case _ => MNone[CoreExp]()
         }
         return r
-      case o: CoreExp.Extended.Block =>
-        val r: MOption[CoreExp] = postCoreExpExtendedBlock(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
-         case _ => MNone[CoreExp]()
-        }
-        return r
-      case o: CoreExp.Extended.If =>
-        val r: MOption[CoreExp] = postCoreExpExtendedIf(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
-         case _ => MNone[CoreExp]()
-        }
-        return r
-      case o: CoreExp.Extended.Match =>
-        val r: MOption[CoreExp] = postCoreExpExtendedMatch(o) match {
+      case o: CoreExp.Extended.StrictPureBlock =>
+        val r: MOption[CoreExp] = postCoreExpExtendedStrictPureBlock(o) match {
          case MSome(result: CoreExp) => MSome[CoreExp](result)
          case MSome(_) => halt("Can only produce object of type CoreExp")
          case _ => MNone[CoreExp]()
@@ -1193,22 +1090,8 @@ import MCoreExpTransformer._
       case o: CoreExp.InstanceOfExp => return postCoreExpInstanceOfExp(o)
       case o: CoreExp.Halt => return postCoreExpHalt(o)
       case o: CoreExp.Labeled => return postCoreExpLabeled(o)
-      case o: CoreExp.Extended.Block =>
-        val r: MOption[CoreExp.Base] = postCoreExpExtendedBlock(o) match {
-         case MSome(result: CoreExp.Base) => MSome[CoreExp.Base](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp.Base")
-         case _ => MNone[CoreExp.Base]()
-        }
-        return r
-      case o: CoreExp.Extended.If =>
-        val r: MOption[CoreExp.Base] = postCoreExpExtendedIf(o) match {
-         case MSome(result: CoreExp.Base) => MSome[CoreExp.Base](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp.Base")
-         case _ => MNone[CoreExp.Base]()
-        }
-        return r
-      case o: CoreExp.Extended.Match =>
-        val r: MOption[CoreExp.Base] = postCoreExpExtendedMatch(o) match {
+      case o: CoreExp.Extended.StrictPureBlock =>
+        val r: MOption[CoreExp.Base] = postCoreExpExtendedStrictPureBlock(o) match {
          case MSome(result: CoreExp.Base) => MSome[CoreExp.Base](result)
          case MSome(_) => halt("Can only produce object of type CoreExp.Base")
          case _ => MNone[CoreExp.Base]()
@@ -1350,41 +1233,12 @@ import MCoreExpTransformer._
 
   def postCoreExpExtended(o: CoreExp.Extended): MOption[CoreExp.Extended] = {
     o match {
-      case o: CoreExp.Extended.Block => return postCoreExpExtendedBlock(o)
-      case o: CoreExp.Extended.If => return postCoreExpExtendedIf(o)
-      case o: CoreExp.Extended.Match => return postCoreExpExtendedMatch(o)
+      case o: CoreExp.Extended.StrictPureBlock => return postCoreExpExtendedStrictPureBlock(o)
     }
   }
 
-  def postCoreExpExtendedDecl(o: CoreExp.Extended.Decl): MOption[CoreExp.Extended.Decl] = {
-    o match {
-      case o: CoreExp.Extended.Decl.Val => return postCoreExpExtendedDeclVal(o)
-      case o: CoreExp.Extended.Decl.ValPattern => return postCoreExpExtendedDeclValPattern(o)
-    }
-  }
-
-  def postCoreExpExtendedDeclVal(o: CoreExp.Extended.Decl.Val): MOption[CoreExp.Extended.Decl] = {
-    return PostResultCoreExpExtendedDeclVal
-  }
-
-  def postCoreExpExtendedDeclValPattern(o: CoreExp.Extended.Decl.ValPattern): MOption[CoreExp.Extended.Decl] = {
-    return PostResultCoreExpExtendedDeclValPattern
-  }
-
-  def postCoreExpExtendedBlock(o: CoreExp.Extended.Block): MOption[CoreExp.Extended] = {
-    return PostResultCoreExpExtendedBlock
-  }
-
-  def postCoreExpExtendedIf(o: CoreExp.Extended.If): MOption[CoreExp.Extended] = {
-    return PostResultCoreExpExtendedIf
-  }
-
-  def postCoreExpExtendedMatch(o: CoreExp.Extended.Match): MOption[CoreExp.Extended] = {
-    return PostResultCoreExpExtendedMatch
-  }
-
-  def postCoreExpExtendedMatchCase(o: CoreExp.Extended.Match.Case): MOption[CoreExp.Extended.Match.Case] = {
-    return PostResultCoreExpExtendedMatchCase
+  def postCoreExpExtendedStrictPureBlock(o: CoreExp.Extended.StrictPureBlock): MOption[CoreExp.Extended] = {
+    return PostResultCoreExpExtendedStrictPureBlock
   }
 
   def transformTyped(o: Typed): MOption[Typed] = {
@@ -1663,28 +1517,9 @@ import MCoreExpTransformer._
             MSome(o2(exp = r0.getOrElse(o2.exp)))
           else
             MNone()
-        case o2: CoreExp.Extended.Block =>
-          val r0: MOption[IS[Z, CoreExp.Extended.Decl]] = transformISZ(o2.decls, transformCoreExpExtendedDecl _)
-          val r1: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(decls = r0.getOrElse(o2.decls), exp = r1.getOrElse(o2.exp)))
-          else
-            MNone()
-        case o2: CoreExp.Extended.If =>
-          val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.cond)
-          val r1: MOption[CoreExp.Extended.Block] = transformCoreExpExtendedBlock(o2.thenBlock)
-          val r2: MOption[CoreExp.Extended.Block] = transformCoreExpExtendedBlock(o2.elseBlock)
-          val r3: MOption[Typed] = transformTyped(o2.rawType)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-            MSome(o2(cond = r0.getOrElse(o2.cond), thenBlock = r1.getOrElse(o2.thenBlock), elseBlock = r2.getOrElse(o2.elseBlock), rawType = r3.getOrElse(o2.rawType)))
-          else
-            MNone()
-        case o2: CoreExp.Extended.Match =>
-          val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
-          val r1: MOption[IS[Z, CoreExp.Extended.Match.Case]] = transformISZ(o2.cases, transformCoreExpExtendedMatchCase _)
-          val r2: MOption[Typed] = transformTyped(o2.rawType)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(exp = r0.getOrElse(o2.exp), cases = r1.getOrElse(o2.cases), rawType = r2.getOrElse(o2.rawType)))
+        case o2: CoreExp.Extended.StrictPureBlock =>
+          if (hasChanged)
+            MSome(o2)
           else
             MNone()
       }
@@ -1884,28 +1719,9 @@ import MCoreExpTransformer._
             MSome(o2(exp = r0.getOrElse(o2.exp)))
           else
             MNone()
-        case o2: CoreExp.Extended.Block =>
-          val r0: MOption[IS[Z, CoreExp.Extended.Decl]] = transformISZ(o2.decls, transformCoreExpExtendedDecl _)
-          val r1: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(decls = r0.getOrElse(o2.decls), exp = r1.getOrElse(o2.exp)))
-          else
-            MNone()
-        case o2: CoreExp.Extended.If =>
-          val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.cond)
-          val r1: MOption[CoreExp.Extended.Block] = transformCoreExpExtendedBlock(o2.thenBlock)
-          val r2: MOption[CoreExp.Extended.Block] = transformCoreExpExtendedBlock(o2.elseBlock)
-          val r3: MOption[Typed] = transformTyped(o2.rawType)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-            MSome(o2(cond = r0.getOrElse(o2.cond), thenBlock = r1.getOrElse(o2.thenBlock), elseBlock = r2.getOrElse(o2.elseBlock), rawType = r3.getOrElse(o2.rawType)))
-          else
-            MNone()
-        case o2: CoreExp.Extended.Match =>
-          val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
-          val r1: MOption[IS[Z, CoreExp.Extended.Match.Case]] = transformISZ(o2.cases, transformCoreExpExtendedMatchCase _)
-          val r2: MOption[Typed] = transformTyped(o2.rawType)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(exp = r0.getOrElse(o2.exp), cases = r1.getOrElse(o2.cases), rawType = r2.getOrElse(o2.rawType)))
+        case o2: CoreExp.Extended.StrictPureBlock =>
+          if (hasChanged)
+            MSome(o2)
           else
             MNone()
       }
@@ -2037,28 +1853,9 @@ import MCoreExpTransformer._
       val o2: CoreExp.Extended = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val rOpt: MOption[CoreExp.Extended] = o2 match {
-        case o2: CoreExp.Extended.Block =>
-          val r0: MOption[IS[Z, CoreExp.Extended.Decl]] = transformISZ(o2.decls, transformCoreExpExtendedDecl _)
-          val r1: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(decls = r0.getOrElse(o2.decls), exp = r1.getOrElse(o2.exp)))
-          else
-            MNone()
-        case o2: CoreExp.Extended.If =>
-          val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.cond)
-          val r1: MOption[CoreExp.Extended.Block] = transformCoreExpExtendedBlock(o2.thenBlock)
-          val r2: MOption[CoreExp.Extended.Block] = transformCoreExpExtendedBlock(o2.elseBlock)
-          val r3: MOption[Typed] = transformTyped(o2.rawType)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-            MSome(o2(cond = r0.getOrElse(o2.cond), thenBlock = r1.getOrElse(o2.thenBlock), elseBlock = r2.getOrElse(o2.elseBlock), rawType = r3.getOrElse(o2.rawType)))
-          else
-            MNone()
-        case o2: CoreExp.Extended.Match =>
-          val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
-          val r1: MOption[IS[Z, CoreExp.Extended.Match.Case]] = transformISZ(o2.cases, transformCoreExpExtendedMatchCase _)
-          val r2: MOption[Typed] = transformTyped(o2.rawType)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(exp = r0.getOrElse(o2.exp), cases = r1.getOrElse(o2.cases), rawType = r2.getOrElse(o2.rawType)))
+        case o2: CoreExp.Extended.StrictPureBlock =>
+          if (hasChanged)
+            MSome(o2)
           else
             MNone()
       }
@@ -2071,71 +1868,6 @@ import MCoreExpTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: CoreExp.Extended = r.getOrElse(o)
     val postR: MOption[CoreExp.Extended] = postCoreExpExtended(o2)
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
-  def transformCoreExpExtendedDecl(o: CoreExp.Extended.Decl): MOption[CoreExp.Extended.Decl] = {
-    val preR: PreResult[CoreExp.Extended.Decl] = preCoreExpExtendedDecl(o)
-    val r: MOption[CoreExp.Extended.Decl] = if (preR.continu) {
-      val o2: CoreExp.Extended.Decl = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val rOpt: MOption[CoreExp.Extended.Decl] = o2 match {
-        case o2: CoreExp.Extended.Decl.Val =>
-          val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.init)
-          if (hasChanged || r0.nonEmpty)
-            MSome(o2(init = r0.getOrElse(o2.init)))
-          else
-            MNone()
-        case o2: CoreExp.Extended.Decl.ValPattern =>
-          val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.init)
-          if (hasChanged || r0.nonEmpty)
-            MSome(o2(init = r0.getOrElse(o2.init)))
-          else
-            MNone()
-      }
-      rOpt
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: CoreExp.Extended.Decl = r.getOrElse(o)
-    val postR: MOption[CoreExp.Extended.Decl] = postCoreExpExtendedDecl(o2)
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
-  def transformCoreExpExtendedMatchCase(o: CoreExp.Extended.Match.Case): MOption[CoreExp.Extended.Match.Case] = {
-    val preR: PreResult[CoreExp.Extended.Match.Case] = preCoreExpExtendedMatchCase(o)
-    val r: MOption[CoreExp.Extended.Match.Case] = if (preR.continu) {
-      val o2: CoreExp.Extended.Match.Case = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[Option[CoreExp.Base]] = transformOption(o2.condOpt, transformCoreExpBase _)
-      val r1: MOption[CoreExp.Extended.Block] = transformCoreExpExtendedBlock(o2.block)
-      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-        MSome(o2(condOpt = r0.getOrElse(o2.condOpt), block = r1.getOrElse(o2.block)))
-      else
-        MNone()
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: CoreExp.Extended.Match.Case = r.getOrElse(o)
-    val postR: MOption[CoreExp.Extended.Match.Case] = postCoreExpExtendedMatchCase(o2)
     if (postR.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -2206,42 +1938,6 @@ import MCoreExpTransformer._
      case MSome(result: Typed.Method) => MSome[Typed.Method](result)
      case MSome(_) => halt("Can only produce object of type Typed.Method")
      case _ => MNone[Typed.Method]()
-    }
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
-  def transformCoreExpExtendedBlock(o: CoreExp.Extended.Block): MOption[CoreExp.Extended.Block] = {
-    val preR: PreResult[CoreExp.Extended.Block] = preCoreExpExtendedBlock(o) match {
-     case PreResult(continu, MSome(r: CoreExp.Extended.Block)) => PreResult(continu, MSome[CoreExp.Extended.Block](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp.Extended.Block")
-     case PreResult(continu, _) => PreResult(continu, MNone[CoreExp.Extended.Block]())
-    }
-    val r: MOption[CoreExp.Extended.Block] = if (preR.continu) {
-      val o2: CoreExp.Extended.Block = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[IS[Z, CoreExp.Extended.Decl]] = transformISZ(o2.decls, transformCoreExpExtendedDecl _)
-      val r1: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
-      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-        MSome(o2(decls = r0.getOrElse(o2.decls), exp = r1.getOrElse(o2.exp)))
-      else
-        MNone()
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: CoreExp.Extended.Block = r.getOrElse(o)
-    val postR: MOption[CoreExp.Extended.Block] = postCoreExpExtendedBlock(o2) match {
-     case MSome(result: CoreExp.Extended.Block) => MSome[CoreExp.Extended.Block](result)
-     case MSome(_) => halt("Can only produce object of type CoreExp.Extended.Block")
-     case _ => MNone[CoreExp.Extended.Block]()
     }
     if (postR.nonEmpty) {
       return postR

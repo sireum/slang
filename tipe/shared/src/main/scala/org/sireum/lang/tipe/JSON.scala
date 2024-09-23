@@ -736,6 +736,27 @@ object JSON {
       ))
     }
 
+    @pure def print_astStmtExprKindType(o: org.sireum.lang.ast.Stmt.Expr.Kind.Type): ST = {
+      val value: String = o match {
+        case org.sireum.lang.ast.Stmt.Expr.Kind.General => "General"
+        case org.sireum.lang.ast.Stmt.Expr.Kind.Assert => "Assert"
+        case org.sireum.lang.ast.Stmt.Expr.Kind.AssertMsg => "AssertMsg"
+        case org.sireum.lang.ast.Stmt.Expr.Kind.Assume => "Assume"
+        case org.sireum.lang.ast.Stmt.Expr.Kind.AssumeMsg => "AssumeMsg"
+        case org.sireum.lang.ast.Stmt.Expr.Kind.Cprint => "Cprint"
+        case org.sireum.lang.ast.Stmt.Expr.Kind.Cprintln => "Cprintln"
+        case org.sireum.lang.ast.Stmt.Expr.Kind.Eprint => "Eprint"
+        case org.sireum.lang.ast.Stmt.Expr.Kind.Eprintln => "Eprintln"
+        case org.sireum.lang.ast.Stmt.Expr.Kind.Print => "Print"
+        case org.sireum.lang.ast.Stmt.Expr.Kind.Println => "Println"
+        case org.sireum.lang.ast.Stmt.Expr.Kind.SetOptions => "SetOptions"
+      }
+      return printObject(ISZ(
+        ("type", printString("org.sireum.lang.ast.Stmt.Expr.Kind")),
+        ("value", printString(value))
+      ))
+    }
+
     @pure def print_astStmtSpec(o: org.sireum.lang.ast.Stmt.Spec): ST = {
       o match {
         case o: org.sireum.lang.ast.Stmt.Fact => return print_astStmtFact(o)
@@ -3795,6 +3816,27 @@ object JSON {
       val attr = parse_astTypedAttr()
       parser.parseObjectNext()
       return org.sireum.lang.ast.Stmt.Expr(exp, attr)
+    }
+
+    def parse_astStmtExprKindType(): org.sireum.lang.ast.Stmt.Expr.Kind.Type = {
+      val r = parse_astStmtExprKindT(F)
+      return r
+    }
+
+    def parse_astStmtExprKindT(typeParsed: B): org.sireum.lang.ast.Stmt.Expr.Kind.Type = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Stmt.Expr.Kind")
+      }
+      parser.parseObjectKey("value")
+      var i = parser.offset
+      val s = parser.parseString()
+      parser.parseObjectNext()
+      org.sireum.lang.ast.Stmt.Expr.Kind.byName(s) match {
+        case Some(r) => return r
+        case _ =>
+          parser.parseException(i, s"Invalid element name '$s' for org.sireum.lang.ast.Stmt.Expr.Kind.")
+          return org.sireum.lang.ast.Stmt.Expr.Kind.byOrdinal(0).get
+      }
     }
 
     def parse_astStmtSpec(): org.sireum.lang.ast.Stmt.Spec = {

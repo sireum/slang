@@ -1003,6 +1003,10 @@ object MsgPack {
       write_astTypedAttr(o.attr)
     }
 
+    def write_astStmtExprKindType(o: org.sireum.lang.ast.Stmt.Expr.Kind.Type): Unit = {
+      writer.writeZ(o.ordinal)
+    }
+
     def write_astStmtSpec(o: org.sireum.lang.ast.Stmt.Spec): Unit = {
       o match {
         case o: org.sireum.lang.ast.Stmt.Fact => write_astStmtFact(o)
@@ -3220,6 +3224,11 @@ object MsgPack {
       val exp = read_astExp()
       val attr = read_astTypedAttr()
       return org.sireum.lang.ast.Stmt.Expr(exp, attr)
+    }
+
+    def read_astStmtExprKindType(): org.sireum.lang.ast.Stmt.Expr.Kind.Type = {
+      val r = reader.readZ()
+      return org.sireum.lang.ast.Stmt.Expr.Kind.byOrdinal(r).get
     }
 
     def read_astStmtSpec(): org.sireum.lang.ast.Stmt.Spec = {
