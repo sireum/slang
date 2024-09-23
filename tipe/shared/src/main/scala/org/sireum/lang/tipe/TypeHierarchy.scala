@@ -1740,4 +1740,14 @@ object TypeHierarchy {
     }
     return Some(adtInduct(cases = cases))
   }
+
+  @pure def translateToExtendedCoreExp(exp: AST.Exp): AST.CoreExp.Base = {
+    return CoreExpTranslator(this, CoreExpTranslator.Mode.Extended).
+      translateExp(exp, Stack.empty, HashSMap.empty)
+  }
+
+  @pure def translateToBaseCoreExp(exp: AST.Exp, isPattern: B): AST.CoreExp.Base = {
+    return CoreExpTranslator(this, if (isPattern) CoreExpTranslator.Mode.BasePattern else CoreExpTranslator.Mode.Base).
+      translateExp(exp, Stack.empty, HashSMap.empty)
+  }
 }

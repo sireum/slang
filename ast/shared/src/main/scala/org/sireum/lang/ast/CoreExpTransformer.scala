@@ -302,6 +302,27 @@ object CoreExpTransformer {
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
           }
           return r
+        case o: CoreExp.Extended.Block =>
+          val r: PreResult[Context, CoreExp] = preCoreExpExtendedBlock(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Extended.If =>
+          val r: PreResult[Context, CoreExp] = preCoreExpExtendedIf(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Extended.Match =>
+          val r: PreResult[Context, CoreExp] = preCoreExpExtendedMatch(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp)) => PreResult(preCtx, continu, Some[CoreExp](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp]())
+          }
+          return r
       }
     }
 
@@ -394,6 +415,27 @@ object CoreExpTransformer {
         case o: CoreExp.InstanceOfExp => return preCoreExpInstanceOfExp(ctx, o)
         case o: CoreExp.Halt => return preCoreExpHalt(ctx, o)
         case o: CoreExp.Labeled => return preCoreExpLabeled(ctx, o)
+        case o: CoreExp.Extended.Block =>
+          val r: PreResult[Context, CoreExp.Base] = preCoreExpExtendedBlock(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp.Base)) => PreResult(preCtx, continu, Some[CoreExp.Base](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp.Base]())
+          }
+          return r
+        case o: CoreExp.Extended.If =>
+          val r: PreResult[Context, CoreExp.Base] = preCoreExpExtendedIf(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp.Base)) => PreResult(preCtx, continu, Some[CoreExp.Base](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp.Base]())
+          }
+          return r
+        case o: CoreExp.Extended.Match =>
+          val r: PreResult[Context, CoreExp.Base] = preCoreExpExtendedMatch(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: CoreExp.Base)) => PreResult(preCtx, continu, Some[CoreExp.Base](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp.Base]())
+          }
+          return r
       }
     }
 
@@ -525,6 +567,45 @@ object CoreExpTransformer {
     }
 
     @pure def preCoreExpLabeled(ctx: Context, o: CoreExp.Labeled): PreResult[Context, CoreExp.Base] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preCoreExpExtended(ctx: Context, o: CoreExp.Extended): PreResult[Context, CoreExp.Extended] = {
+      o match {
+        case o: CoreExp.Extended.Block => return preCoreExpExtendedBlock(ctx, o)
+        case o: CoreExp.Extended.If => return preCoreExpExtendedIf(ctx, o)
+        case o: CoreExp.Extended.Match => return preCoreExpExtendedMatch(ctx, o)
+      }
+    }
+
+    @pure def preCoreExpExtendedDecl(ctx: Context, o: CoreExp.Extended.Decl): PreResult[Context, CoreExp.Extended.Decl] = {
+      o match {
+        case o: CoreExp.Extended.Decl.Val => return preCoreExpExtendedDeclVal(ctx, o)
+        case o: CoreExp.Extended.Decl.ValPattern => return preCoreExpExtendedDeclValPattern(ctx, o)
+      }
+    }
+
+    @pure def preCoreExpExtendedDeclVal(ctx: Context, o: CoreExp.Extended.Decl.Val): PreResult[Context, CoreExp.Extended.Decl] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preCoreExpExtendedDeclValPattern(ctx: Context, o: CoreExp.Extended.Decl.ValPattern): PreResult[Context, CoreExp.Extended.Decl] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preCoreExpExtendedBlock(ctx: Context, o: CoreExp.Extended.Block): PreResult[Context, CoreExp.Extended] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preCoreExpExtendedIf(ctx: Context, o: CoreExp.Extended.If): PreResult[Context, CoreExp.Extended] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preCoreExpExtendedMatch(ctx: Context, o: CoreExp.Extended.Match): PreResult[Context, CoreExp.Extended] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preCoreExpExtendedMatchCase(ctx: Context, o: CoreExp.Extended.Match.Case): PreResult[Context, CoreExp.Extended.Match.Case] = {
       return PreResult(ctx, T, None())
     }
 
@@ -785,6 +866,27 @@ object CoreExpTransformer {
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
           }
           return r
+        case o: CoreExp.Extended.Block =>
+          val r: TPostResult[Context, CoreExp] = postCoreExpExtendedBlock(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Extended.If =>
+          val r: TPostResult[Context, CoreExp] = postCoreExpExtendedIf(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
+          }
+          return r
+        case o: CoreExp.Extended.Match =>
+          val r: TPostResult[Context, CoreExp] = postCoreExpExtendedMatch(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp)) => TPostResult(postCtx, Some[CoreExp](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp]())
+          }
+          return r
       }
     }
 
@@ -877,6 +979,27 @@ object CoreExpTransformer {
         case o: CoreExp.InstanceOfExp => return postCoreExpInstanceOfExp(ctx, o)
         case o: CoreExp.Halt => return postCoreExpHalt(ctx, o)
         case o: CoreExp.Labeled => return postCoreExpLabeled(ctx, o)
+        case o: CoreExp.Extended.Block =>
+          val r: TPostResult[Context, CoreExp.Base] = postCoreExpExtendedBlock(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp.Base)) => TPostResult(postCtx, Some[CoreExp.Base](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp.Base]())
+          }
+          return r
+        case o: CoreExp.Extended.If =>
+          val r: TPostResult[Context, CoreExp.Base] = postCoreExpExtendedIf(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp.Base)) => TPostResult(postCtx, Some[CoreExp.Base](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp.Base]())
+          }
+          return r
+        case o: CoreExp.Extended.Match =>
+          val r: TPostResult[Context, CoreExp.Base] = postCoreExpExtendedMatch(ctx, o) match {
+           case TPostResult(postCtx, Some(result: CoreExp.Base)) => TPostResult(postCtx, Some[CoreExp.Base](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp.Base")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp.Base]())
+          }
+          return r
       }
     }
 
@@ -1011,6 +1134,45 @@ object CoreExpTransformer {
       return TPostResult(ctx, None())
     }
 
+    @pure def postCoreExpExtended(ctx: Context, o: CoreExp.Extended): TPostResult[Context, CoreExp.Extended] = {
+      o match {
+        case o: CoreExp.Extended.Block => return postCoreExpExtendedBlock(ctx, o)
+        case o: CoreExp.Extended.If => return postCoreExpExtendedIf(ctx, o)
+        case o: CoreExp.Extended.Match => return postCoreExpExtendedMatch(ctx, o)
+      }
+    }
+
+    @pure def postCoreExpExtendedDecl(ctx: Context, o: CoreExp.Extended.Decl): TPostResult[Context, CoreExp.Extended.Decl] = {
+      o match {
+        case o: CoreExp.Extended.Decl.Val => return postCoreExpExtendedDeclVal(ctx, o)
+        case o: CoreExp.Extended.Decl.ValPattern => return postCoreExpExtendedDeclValPattern(ctx, o)
+      }
+    }
+
+    @pure def postCoreExpExtendedDeclVal(ctx: Context, o: CoreExp.Extended.Decl.Val): TPostResult[Context, CoreExp.Extended.Decl] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postCoreExpExtendedDeclValPattern(ctx: Context, o: CoreExp.Extended.Decl.ValPattern): TPostResult[Context, CoreExp.Extended.Decl] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postCoreExpExtendedBlock(ctx: Context, o: CoreExp.Extended.Block): TPostResult[Context, CoreExp.Extended] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postCoreExpExtendedIf(ctx: Context, o: CoreExp.Extended.If): TPostResult[Context, CoreExp.Extended] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postCoreExpExtendedMatch(ctx: Context, o: CoreExp.Extended.Match): TPostResult[Context, CoreExp.Extended] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postCoreExpExtendedMatchCase(ctx: Context, o: CoreExp.Extended.Match.Case): TPostResult[Context, CoreExp.Extended.Match.Case] = {
+      return TPostResult(ctx, None())
+    }
+
   }
 
   @pure def transformISZ[Context, T](ctx: Context, s: IS[Z, T], f: (Context, T) => TPostResult[Context, T] @pure): TPostResult[Context, IS[Z, T]] = {
@@ -1028,6 +1190,18 @@ object CoreExpTransformer {
       return TPostResult(ctxi, Some(s2.toIS))
     } else {
       return TPostResult[Context, IS[Z, T]](ctxi, None[IS[Z, T]]())
+    }
+  }
+
+  @pure def transformOption[Context, T](ctx: Context, option: Option[T], f: (Context, T) => TPostResult[Context, T] @pure): TPostResult[Context, Option[T]] = {
+    option match {
+      case Some(v) =>
+        val r = f(ctx, v)
+        r.resultOpt match {
+          case Some(_) => return TPostResult(r.ctx, Some(r.resultOpt))
+          case _ => return TPostResult[Context, Option[T]](r.ctx, None[Option[T]]())
+        }
+      case _ => return TPostResult[Context, Option[T]](ctx, None[Option[T]]())
     }
   }
 
@@ -1313,6 +1487,30 @@ import CoreExpTransformer._
             TPostResult(r0.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp))))
           else
             TPostResult(r0.ctx, None())
+        case o2: CoreExp.Extended.Block =>
+          val r0: TPostResult[Context, IS[Z, CoreExp.Extended.Decl]] = transformISZ(preR.ctx, o2.decls, transformCoreExpExtendedDecl _)
+          val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.exp)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(decls = r0.resultOpt.getOrElse(o2.decls), exp = r1.resultOpt.getOrElse(o2.exp))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: CoreExp.Extended.If =>
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.cond)
+          val r1: TPostResult[Context, CoreExp.Extended.Block] = transformCoreExpExtendedBlock(r0.ctx, o2.thenBlock)
+          val r2: TPostResult[Context, CoreExp.Extended.Block] = transformCoreExpExtendedBlock(r1.ctx, o2.elseBlock)
+          val r3: TPostResult[Context, Typed] = transformTyped(r2.ctx, o2.rawType)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+            TPostResult(r3.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), thenBlock = r1.resultOpt.getOrElse(o2.thenBlock), elseBlock = r2.resultOpt.getOrElse(o2.elseBlock), rawType = r3.resultOpt.getOrElse(o2.rawType))))
+          else
+            TPostResult(r3.ctx, None())
+        case o2: CoreExp.Extended.Match =>
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
+          val r1: TPostResult[Context, IS[Z, CoreExp.Extended.Match.Case]] = transformISZ(r0.ctx, o2.cases, transformCoreExpExtendedMatchCase _)
+          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.rawType)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), cases = r1.resultOpt.getOrElse(o2.cases), rawType = r2.resultOpt.getOrElse(o2.rawType))))
+          else
+            TPostResult(r2.ctx, None())
       }
       rOpt
     } else if (preR.resultOpt.nonEmpty) {
@@ -1510,6 +1708,30 @@ import CoreExpTransformer._
             TPostResult(r0.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp))))
           else
             TPostResult(r0.ctx, None())
+        case o2: CoreExp.Extended.Block =>
+          val r0: TPostResult[Context, IS[Z, CoreExp.Extended.Decl]] = transformISZ(preR.ctx, o2.decls, transformCoreExpExtendedDecl _)
+          val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.exp)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(decls = r0.resultOpt.getOrElse(o2.decls), exp = r1.resultOpt.getOrElse(o2.exp))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: CoreExp.Extended.If =>
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.cond)
+          val r1: TPostResult[Context, CoreExp.Extended.Block] = transformCoreExpExtendedBlock(r0.ctx, o2.thenBlock)
+          val r2: TPostResult[Context, CoreExp.Extended.Block] = transformCoreExpExtendedBlock(r1.ctx, o2.elseBlock)
+          val r3: TPostResult[Context, Typed] = transformTyped(r2.ctx, o2.rawType)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+            TPostResult(r3.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), thenBlock = r1.resultOpt.getOrElse(o2.thenBlock), elseBlock = r2.resultOpt.getOrElse(o2.elseBlock), rawType = r3.resultOpt.getOrElse(o2.rawType))))
+          else
+            TPostResult(r3.ctx, None())
+        case o2: CoreExp.Extended.Match =>
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
+          val r1: TPostResult[Context, IS[Z, CoreExp.Extended.Match.Case]] = transformISZ(r0.ctx, o2.cases, transformCoreExpExtendedMatchCase _)
+          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.rawType)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), cases = r1.resultOpt.getOrElse(o2.cases), rawType = r2.resultOpt.getOrElse(o2.rawType))))
+          else
+            TPostResult(r2.ctx, None())
       }
       rOpt
     } else if (preR.resultOpt.nonEmpty) {
@@ -1633,6 +1855,120 @@ import CoreExpTransformer._
     }
   }
 
+  @pure def transformCoreExpExtended(ctx: Context, o: CoreExp.Extended): TPostResult[Context, CoreExp.Extended] = {
+    val preR: PreResult[Context, CoreExp.Extended] = pp.preCoreExpExtended(ctx, o)
+    val r: TPostResult[Context, CoreExp.Extended] = if (preR.continu) {
+      val o2: CoreExp.Extended = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: TPostResult[Context, CoreExp.Extended] = o2 match {
+        case o2: CoreExp.Extended.Block =>
+          val r0: TPostResult[Context, IS[Z, CoreExp.Extended.Decl]] = transformISZ(preR.ctx, o2.decls, transformCoreExpExtendedDecl _)
+          val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.exp)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(decls = r0.resultOpt.getOrElse(o2.decls), exp = r1.resultOpt.getOrElse(o2.exp))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: CoreExp.Extended.If =>
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.cond)
+          val r1: TPostResult[Context, CoreExp.Extended.Block] = transformCoreExpExtendedBlock(r0.ctx, o2.thenBlock)
+          val r2: TPostResult[Context, CoreExp.Extended.Block] = transformCoreExpExtendedBlock(r1.ctx, o2.elseBlock)
+          val r3: TPostResult[Context, Typed] = transformTyped(r2.ctx, o2.rawType)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+            TPostResult(r3.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), thenBlock = r1.resultOpt.getOrElse(o2.thenBlock), elseBlock = r2.resultOpt.getOrElse(o2.elseBlock), rawType = r3.resultOpt.getOrElse(o2.rawType))))
+          else
+            TPostResult(r3.ctx, None())
+        case o2: CoreExp.Extended.Match =>
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.exp)
+          val r1: TPostResult[Context, IS[Z, CoreExp.Extended.Match.Case]] = transformISZ(r0.ctx, o2.cases, transformCoreExpExtendedMatchCase _)
+          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.rawType)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), cases = r1.resultOpt.getOrElse(o2.cases), rawType = r2.resultOpt.getOrElse(o2.rawType))))
+          else
+            TPostResult(r2.ctx, None())
+      }
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: CoreExp.Extended = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, CoreExp.Extended] = pp.postCoreExpExtended(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformCoreExpExtendedDecl(ctx: Context, o: CoreExp.Extended.Decl): TPostResult[Context, CoreExp.Extended.Decl] = {
+    val preR: PreResult[Context, CoreExp.Extended.Decl] = pp.preCoreExpExtendedDecl(ctx, o)
+    val r: TPostResult[Context, CoreExp.Extended.Decl] = if (preR.continu) {
+      val o2: CoreExp.Extended.Decl = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: TPostResult[Context, CoreExp.Extended.Decl] = o2 match {
+        case o2: CoreExp.Extended.Decl.Val =>
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.init)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(init = r0.resultOpt.getOrElse(o2.init))))
+          else
+            TPostResult(r0.ctx, None())
+        case o2: CoreExp.Extended.Decl.ValPattern =>
+          val r0: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(preR.ctx, o2.init)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(init = r0.resultOpt.getOrElse(o2.init))))
+          else
+            TPostResult(r0.ctx, None())
+      }
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: CoreExp.Extended.Decl = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, CoreExp.Extended.Decl] = pp.postCoreExpExtendedDecl(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformCoreExpExtendedMatchCase(ctx: Context, o: CoreExp.Extended.Match.Case): TPostResult[Context, CoreExp.Extended.Match.Case] = {
+    val preR: PreResult[Context, CoreExp.Extended.Match.Case] = pp.preCoreExpExtendedMatchCase(ctx, o)
+    val r: TPostResult[Context, CoreExp.Extended.Match.Case] = if (preR.continu) {
+      val o2: CoreExp.Extended.Match.Case = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: TPostResult[Context, Option[CoreExp.Base]] = transformOption(preR.ctx, o2.condOpt, transformCoreExpBase _)
+      val r1: TPostResult[Context, CoreExp.Extended.Block] = transformCoreExpExtendedBlock(r0.ctx, o2.block)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+        TPostResult(r1.ctx, Some(o2(condOpt = r0.resultOpt.getOrElse(o2.condOpt), block = r1.resultOpt.getOrElse(o2.block))))
+      else
+        TPostResult(r1.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: CoreExp.Extended.Match.Case = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, CoreExp.Extended.Match.Case] = pp.postCoreExpExtendedMatchCase(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
   @pure def transformTypedFun(ctx: Context, o: Typed.Fun): TPostResult[Context, Typed.Fun] = {
     val preR: PreResult[Context, Typed.Fun] = pp.preTypedFun(ctx, o) match {
      case PreResult(preCtx, continu, Some(r: Typed.Fun)) => PreResult(preCtx, continu, Some[Typed.Fun](r))
@@ -1694,6 +2030,42 @@ import CoreExpTransformer._
      case TPostResult(postCtx, Some(result: Typed.Method)) => TPostResult(postCtx, Some[Typed.Method](result))
      case TPostResult(_, Some(_)) => halt("Can only produce object of type Typed.Method")
      case TPostResult(postCtx, _) => TPostResult(postCtx, None[Typed.Method]())
+    }
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformCoreExpExtendedBlock(ctx: Context, o: CoreExp.Extended.Block): TPostResult[Context, CoreExp.Extended.Block] = {
+    val preR: PreResult[Context, CoreExp.Extended.Block] = pp.preCoreExpExtendedBlock(ctx, o) match {
+     case PreResult(preCtx, continu, Some(r: CoreExp.Extended.Block)) => PreResult(preCtx, continu, Some[CoreExp.Extended.Block](r))
+     case PreResult(_, _, Some(_)) => halt("Can only produce object of type CoreExp.Extended.Block")
+     case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[CoreExp.Extended.Block]())
+    }
+    val r: TPostResult[Context, CoreExp.Extended.Block] = if (preR.continu) {
+      val o2: CoreExp.Extended.Block = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: TPostResult[Context, IS[Z, CoreExp.Extended.Decl]] = transformISZ(preR.ctx, o2.decls, transformCoreExpExtendedDecl _)
+      val r1: TPostResult[Context, CoreExp.Base] = transformCoreExpBase(r0.ctx, o2.exp)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+        TPostResult(r1.ctx, Some(o2(decls = r0.resultOpt.getOrElse(o2.decls), exp = r1.resultOpt.getOrElse(o2.exp))))
+      else
+        TPostResult(r1.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: CoreExp.Extended.Block = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, CoreExp.Extended.Block] = pp.postCoreExpExtendedBlock(r.ctx, o2) match {
+     case TPostResult(postCtx, Some(result: CoreExp.Extended.Block)) => TPostResult(postCtx, Some[CoreExp.Extended.Block](result))
+     case TPostResult(_, Some(_)) => halt("Can only produce object of type CoreExp.Extended.Block")
+     case TPostResult(postCtx, _) => TPostResult(postCtx, None[CoreExp.Extended.Block]())
     }
     if (postR.resultOpt.nonEmpty) {
       return postR

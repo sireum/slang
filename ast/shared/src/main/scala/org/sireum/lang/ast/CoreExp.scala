@@ -692,6 +692,87 @@ object CoreExp {
     @strictpure override def shouldParen: B = T
   }
 
+  @datatype trait Extended extends CoreExp.Base {
+    @pure def pos: message.Position
+    @pure override def subst(sm: HashMap[String, Typed]): Base = {
+      halt("Unsupported operation CoreExp.Extended.subst")
+    }
+    @pure def incDeBruijn(threshold: Z): Base = {
+      halt("Unsupported operation CoreExp.Extended.incDeBruijn")
+    }
+    def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
+      halt("Unsupported operation CoreExp.Extended.numberPattern")
+    }
+    @strictpure override def prettyPatternST: ST = {
+      halt("Unsupported operation CoreExp.Extended.prettyPatternST")
+    }
+  }
+
+  object Extended {
+
+    @datatype trait Decl {
+      @pure def prettyST: ST
+      @strictpure def init: Base
+    }
+
+    object Decl {
+      @datatype class Val(val id: Id, val typed: Typed, val init: Base) extends Decl {
+        @pure def prettyST: ST = {
+          return st"val ${id.value}: $typed = ${init.prettyST}"
+        }
+      }
+      @datatype class ValPattern(val pattern: Pattern, val init: Base) extends Decl {
+        @pure def prettyST: ST = {
+          return st"val ${pattern.prettyST} = ${init.prettyST}"
+        }
+      }
+    }
+
+    @datatype class Block(val decls: ISZ[Decl], val exp: Base, @hidden val pos: message.Position) extends Extended {
+      @strictpure override def rawType: Typed = exp.rawType
+
+      @pure override def prettyST: ST = {
+        val r =
+          st"""{
+              |  ${(for (d <- decls) yield d.prettyST, "\n")}
+              |}"""
+        return r
+      }
+
+    }
+
+    @datatype class If(val cond: Base, val thenBlock: Block, val elseBlock: Block, val rawType: Typed, @hidden val pos: message.Position) extends Extended {
+      @pure override def prettyST: ST = {
+        val r =
+          st"""if (${cond.prettyST}) $thenBlock else $elseBlock"""
+        return r
+      }
+    }
+
+    @datatype class Match(val exp: Base, val cases: ISZ[Match.Case], val rawType: Typed, @hidden val pos: message.Position) extends Extended {
+      @pure override def prettyST: ST = {
+        val r =
+          st"""${exp.prettyST} match {
+              |  ${(for (c <- cases) yield c.prettyST, "\n")}
+              |}"""
+        return r
+      }
+    }
+
+    object Match {
+      @datatype class Case(val pattern: Pattern, val condOpt: Option[Base], val block: Block, @hidden val pos: message.Position) {
+        @pure def prettyST: ST = {
+          val condSTOpt: Option[ST] = condOpt.map((e: Base) => st" if ${e.prettyST}")
+          val r =
+            st"""case ${pattern.prettyST}$condSTOpt =>
+                |  ${((for (d <- block.decls) yield d.prettyST) :+ block.exp.prettyST, "\n")}"""
+          return r
+        }
+      }
+    }
+
+  }
+
   val Abort: CoreExp.Halt = CoreExp.Halt()
   val True: CoreExp.LitB = CoreExp.LitB(T)
   val False: CoreExp.LitB = CoreExp.LitB(F)

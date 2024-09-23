@@ -10,11 +10,19 @@ object CoreExpTranslator {
   type Local = (ISZ[String], String)
   type LocalMap = HashSMap[Local, AST.CoreExp.Base]
   type LocalPatternSet = HashSSet[Local]
+
+  @enum object Mode {
+    "Base"
+    "BasePattern"
+    "Extended"
+  }
 }
 
 import CoreExpTranslator._
 
-@datatype class CoreExpTranslator(val th: TypeHierarchy, val isPattern: B) {
+@datatype class CoreExpTranslator(val th: TypeHierarchy, val mode: Mode.Type) {
+  val isPattern: B = mode == Mode.BasePattern
+
   @pure def translateBody(body: AST.Body, funStack: FunStack, localMap: LocalMap): AST.CoreExp.Base = {
     val stmts = body.stmts
     var m = localMap
