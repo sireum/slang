@@ -216,8 +216,6 @@ object SlangParser {
     case _ => false
   }
 
-  def hasSelfType(p: Self): Boolean = p.name.value != "" || p.decltpe.nonEmpty
-
   private[SlangParser] lazy val emptyAttr = AST.Attr(posOpt = None())
   private[SlangParser] lazy val emptyTypedAttr = AST.TypedAttr(posOpt = None(), typedOpt = None())
   private[SlangParser] lazy val emptyResolvedAttr =
@@ -369,7 +367,7 @@ class SlangParser(
     source.stats match {
       case List(pkg: Pkg) =>
         val ref = pkg.ref
-        val stats = pkg.stats
+        val stats = pkg.body.stats
         val name = AST.Name(ref2IS(ref), attr(ref.pos))
         def process(): Result = {
           def packageF(rest: List[Stat]) =
@@ -1468,10 +1466,10 @@ class SlangParser(
     }
     val mods = stat.mods
     val name = stat.name
-    val estats = stat.templ.early
+    val estats = stat.templ.earlyClause.map(_.stats).getOrElse(List.empty)
     val ctorcalls = stat.templ.inits
-    val stats = stat.templ.stats
-    val self = stat.templ.self
+    val stats = stat.templ.body.stats
+    val self = stat.templ.body.selfOpt
     var extNameOpt: Option[String] = None()
     var hasEnum = false
     var hasApp = false
@@ -1524,9 +1522,9 @@ class SlangParser(
       if (extNameOpt.nonEmpty)
         error(name.pos, "Slang @ext objects have to be of the form '@ext[(...)] object〈ID〉[ extends App ] { ... }'.")
       else error(name.pos, "Slang objects have to be of the form 'object〈ID〉〉[ extends App ] { ... }'.")
-    } else if (hasSelfType(self)) {
+    } else if (self.nonEmpty) {
       hasError = true
-      errorNotSlang(self.pos, s"Self type: ${syntax(self)} is")
+      errorNotSlang(self.get.pos, s"Self type: ${syntax(self.get)} is")
     }
     if (hasEnum) {
       val elements: Seq[AST.Id] = (for (stat <- stats)
@@ -1551,13 +1549,13 @@ class SlangParser(
     val mods = stat.mods
     val tname = stat.name
     val tparams = stat.tparamClause.values
-    val estats = stat.templ.early
+    val estats = stat.templ.earlyClause.map(_.stats).getOrElse(List.empty)
     val ctorcalls = stat.templ.inits
-    val self = stat.templ.self
-    val stats = stat.templ.stats
+    val self = stat.templ.body.selfOpt
+    val stats = stat.templ.body.stats
 
-    if (hasSelfType(self)) {
-      errorNotSlang(tname.pos, s"Self type: ${syntax(self)} is")
+    if (self.nonEmpty) {
+      errorNotSlang(tname.pos, s"Self type: ${syntax(self.get)} is")
     }
 
     var hasSig = false
@@ -1640,11 +1638,11 @@ class SlangParser(
     val mods = stat.mods
     val tname = stat.name
     val tparams = stat.tparamClause.values
-    val estats = stat.templ.early
+    val estats = stat.templ.earlyClause.map(_.stats).getOrElse(List.empty)
     val ctorcalls = stat.templ.inits
-    val self = stat.templ.self
-    val stats = stat.templ.stats
-    if (estats.nonEmpty || hasSelfType(self))
+    val self = stat.templ.body.selfOpt
+    val stats = stat.templ.body.stats
+    if (estats.nonEmpty || self.nonEmpty)
       error(tname.pos, "Slang @datatype traits have to be of the form '@datatype trait〈ID〉... { ... }'.")
     var hasDatatype = false
     for (mod <- mods) mod match {
@@ -1684,11 +1682,11 @@ class SlangParser(
     val tparams = stat.tparamClause.values
     val ctorMods = stat.ctor.mods
     val paramss = stat.ctor.paramClauses.map(_.values)
-    val estats = stat.templ.early
+    val estats = stat.templ.earlyClause.map(_.stats).getOrElse(List.empty)
     val ctorcalls = stat.templ.inits
-    val self = stat.templ.self
-    val stats = stat.templ.stats
-    if (ctorMods.nonEmpty || paramss.size > 1 || estats.nonEmpty || hasSelfType(self)) {
+    val self = stat.templ.body.selfOpt
+    val stats = stat.templ.body.stats
+    if (ctorMods.nonEmpty || paramss.size > 1 || estats.nonEmpty || self.nonEmpty) {
       error(tname.pos, "Slang @datatype classes have to be of the form '@datatype class〈ID〉... (...) ... { ... }'.")
     }
     var hasDatatype = false
@@ -1728,11 +1726,11 @@ class SlangParser(
     val mods = stat.mods
     val tname = stat.name
     val tparams = stat.tparamClause.values
-    val estats = stat.templ.early
+    val estats = stat.templ.earlyClause.map(_.stats).getOrElse(List.empty)
     val ctorcalls = stat.templ.inits
-    val self = stat.templ.self
-    val stats = stat.templ.stats
-    if (estats.nonEmpty || hasSelfType(self))
+    val self = stat.templ.body.selfOpt
+    val stats = stat.templ.body.stats
+    if (estats.nonEmpty || self.nonEmpty)
       error(tname.pos, "Slang @record traits have to be of the form '@record trait〈ID〉... { ... }'.")
     var hasRecord = false
     for (mod <- mods) mod match {
@@ -1772,11 +1770,11 @@ class SlangParser(
     val tparams = stat.tparamClause.values
     val ctorMods = stat.ctor.mods
     val paramss = stat.ctor.paramClauses.map(_.values)
-    val estats = stat.templ.early
+    val estats = stat.templ.earlyClause.map(_.stats).getOrElse(List.empty)
     val ctorcalls = stat.templ.inits
-    val self = stat.templ.self
-    val stats = stat.templ.stats
-    if (ctorMods.nonEmpty || paramss.size > 1 || estats.nonEmpty || hasSelfType(self)) {
+    val self = stat.templ.body.selfOpt
+    val stats = stat.templ.body.stats
+    if (ctorMods.nonEmpty || paramss.size > 1 || estats.nonEmpty || self.nonEmpty) {
       error(tname.pos, "Slang @record classes have to be of the form '@record class〈ID〉(...) { ... }'.")
     }
     var hasRecord = false
@@ -2301,14 +2299,14 @@ class SlangParser(
       case q"$t : @induct" => (true, translateExp(t))
       case _ => (false, translateExp(stat.expr))
     }
-    val cases = stat.cases.map(translateCase)
+    val cases = stat.casesBlock.cases.map(translateCase)
     exp match {
       case AST.Exp.Select(_, AST.Id(String("native")), _) =>
         var i = 0
         for (c <- cases) {
           c.pattern match {
             case _: AST.Pattern.LitInterpolate =>
-              error(stat.cases(i).pat.pos, s"Cannot use a literal interpolator when matching using 'native'.")
+              error(stat.casesBlock.cases(i).pat.pos, s"Cannot use a literal interpolator when matching using 'native'.")
             case _ =>
           }
           i = i + 1
@@ -2420,7 +2418,7 @@ class SlangParser(
     }
     if (hasError) rStmt
     else {
-      val enumGens = translateEnumGens(stat.enums)
+      val enumGens = translateEnumGens(stat.enumsBlock.enums)
 
       AST.Stmt.For(
         ISZ(),
@@ -3113,7 +3111,7 @@ class SlangParser(
   }
 
   def translateForYield(exp: Term.ForYield): AST.Exp = {
-    val enums = translateEnumGens(exp.enums)
+    val enums = translateEnumGens(exp.enumsBlock.enums)
     var hasError = enums.isEmpty
     exp.body match {
       case body: Term.Block =>
