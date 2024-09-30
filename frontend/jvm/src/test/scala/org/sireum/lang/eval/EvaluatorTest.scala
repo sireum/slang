@@ -95,13 +95,12 @@ class EvaluatorTest extends TestSuite {
 
     System.setProperty("org.sireum.silenthalt", "true")
 
-    val ev = Evaluator(th, State.empty(1024), ISZ(LibJvmUtil.Ext.create), message.Reporter.create)
+    val ev = Evaluator(th, State.empty(1024), ISZ(LibJvmUtil.Ext.create))
     try {
       ev.evalWorksheet(unit)
     } catch {
-      case _: Throwable =>
+      case t: Throwable => reporter.error(None(), Evaluator.kind, t.getMessage)
     }
-    reporter.reports(ev.reporter.messages)
     end()
   }
 }

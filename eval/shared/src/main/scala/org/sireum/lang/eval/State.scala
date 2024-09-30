@@ -39,7 +39,23 @@ object State {
 
   object Type {
 
-    @datatype class Class(val isImmutable: B, val name: ISZ[String]) extends Type
+    @datatype class Class(val isImmutable: B, val name: ISZ[String]) extends Type {
+      @memoize def tupleNumOfArgsOpt: Option[Z] = {
+        if (name.size != 3 || name(0) != "org" || name(1) != "sireum") {
+          return None()
+        }
+        val tuplePrefix: String = "Tuple"
+        val mTuplePrefix: String = "MTuple"
+        val nameOps = ops.StringOps(name(2))
+        if (nameOps.startsWith(tuplePrefix)) {
+          return org.sireum.Z(nameOps.substring(tuplePrefix.size, nameOps.size))
+        }
+        if (nameOps.startsWith(mTuplePrefix)) {
+          return org.sireum.Z(nameOps.substring(mTuplePrefix.size, nameOps.size))
+        }
+        return None()
+      }
+    }
 
     @datatype class Seq(val isImmutable: B) extends Type
 
@@ -59,11 +75,8 @@ object State {
       @strictpure override def isImmutable: B = T
     }
 
-    @datatype class Tuple(val numOfArgs: Z) extends Type {
-      @strictpure override def isImmutable: B = T
-    }
-
     val Nothing: Class = Class(T, AST.Typed.nothing.ids)
+    val Unit: Class = Class(T, AST.Typed.unit.ids)
     val B: Primitive = Primitive(AST.Typed.bName)
     val Z: Primitive = Primitive(AST.Typed.zName)
     val C: Primitive = Primitive(AST.Typed.cName)
@@ -72,28 +85,48 @@ object State {
     val F64: Primitive = Primitive(AST.Typed.f64Name)
     val R: Primitive = Primitive(AST.Typed.rName)
     val ST: Primitive = Primitive(AST.Typed.stName)
-    val Tuple1: Tuple = Tuple(1)
-    val Tuple2: Tuple = Tuple(2)
-    val Tuple3: Tuple = Tuple(3)
-    val Tuple4: Tuple = Tuple(4)
-    val Tuple5: Tuple = Tuple(5)
-    val Tuple6: Tuple = Tuple(6)
-    val Tuple7: Tuple = Tuple(7)
-    val Tuple8: Tuple = Tuple(8)
-    val Tuple9: Tuple = Tuple(9)
-    val Tuple10: Tuple = Tuple(10)
-    val Tuple11: Tuple = Tuple(11)
-    val Tuple12: Tuple = Tuple(12)
-    val Tuple13: Tuple = Tuple(13)
-    val Tuple14: Tuple = Tuple(14)
-    val Tuple15: Tuple = Tuple(15)
-    val Tuple16: Tuple = Tuple(16)
-    val Tuple17: Tuple = Tuple(17)
-    val Tuple18: Tuple = Tuple(18)
-    val Tuple19: Tuple = Tuple(19)
-    val Tuple20: Tuple = Tuple(20)
-    val Tuple21: Tuple = Tuple(21)
-    val Tuple22: Tuple = Tuple(22)
+    val Tuple2: Class = Class(T, AST.Typed.sireumName :+ "Tuple2")
+    val Tuple3: Class = Class(T, AST.Typed.sireumName :+ "Tuple3")
+    val Tuple4: Class = Class(T, AST.Typed.sireumName :+ "Tuple4")
+    val Tuple5: Class = Class(T, AST.Typed.sireumName :+ "Tuple5")
+    val Tuple6: Class = Class(T, AST.Typed.sireumName :+ "Tuple6")
+    val Tuple7: Class = Class(T, AST.Typed.sireumName :+ "Tuple7")
+    val Tuple8: Class = Class(T, AST.Typed.sireumName :+ "Tuple8")
+    val Tuple9: Class = Class(T, AST.Typed.sireumName :+ "Tuple9")
+    val Tuple10: Class = Class(T, AST.Typed.sireumName :+ "Tuple10")
+    val Tuple11: Class = Class(T, AST.Typed.sireumName :+ "Tuple11")
+    val Tuple12: Class = Class(T, AST.Typed.sireumName :+ "Tuple12")
+    val Tuple13: Class = Class(T, AST.Typed.sireumName :+ "Tuple13")
+    val Tuple14: Class = Class(T, AST.Typed.sireumName :+ "Tuple14")
+    val Tuple15: Class = Class(T, AST.Typed.sireumName :+ "Tuple15")
+    val Tuple16: Class = Class(T, AST.Typed.sireumName :+ "Tuple16")
+    val Tuple17: Class = Class(T, AST.Typed.sireumName :+ "Tuple17")
+    val Tuple18: Class = Class(T, AST.Typed.sireumName :+ "Tuple18")
+    val Tuple19: Class = Class(T, AST.Typed.sireumName :+ "Tuple19")
+    val Tuple20: Class = Class(T, AST.Typed.sireumName :+ "Tuple20")
+    val Tuple21: Class = Class(T, AST.Typed.sireumName :+ "Tuple21")
+    val Tuple22: Class = Class(T, AST.Typed.sireumName :+ "Tuple22")
+    val MTuple2: Class = Class(F, AST.Typed.sireumName :+ "MTuple2")
+    val MTuple3: Class = Class(F, AST.Typed.sireumName :+ "MTuple3")
+    val MTuple4: Class = Class(F, AST.Typed.sireumName :+ "MTuple4")
+    val MTuple5: Class = Class(F, AST.Typed.sireumName :+ "MTuple5")
+    val MTuple6: Class = Class(F, AST.Typed.sireumName :+ "MTuple6")
+    val MTuple7: Class = Class(F, AST.Typed.sireumName :+ "MTuple7")
+    val MTuple8: Class = Class(F, AST.Typed.sireumName :+ "MTuple8")
+    val MTuple9: Class = Class(F, AST.Typed.sireumName :+ "MTuple9")
+    val MTuple10: Class = Class(F, AST.Typed.sireumName :+ "MTuple10")
+    val MTuple11: Class = Class(F, AST.Typed.sireumName :+ "MTuple11")
+    val MTuple12: Class = Class(F, AST.Typed.sireumName :+ "MTuple12")
+    val MTuple13: Class = Class(F, AST.Typed.sireumName :+ "MTuple13")
+    val MTuple14: Class = Class(F, AST.Typed.sireumName :+ "MTuple14")
+    val MTuple15: Class = Class(F, AST.Typed.sireumName :+ "MTuple15")
+    val MTuple16: Class = Class(F, AST.Typed.sireumName :+ "MTuple16")
+    val MTuple17: Class = Class(F, AST.Typed.sireumName :+ "MTuple17")
+    val MTuple18: Class = Class(F, AST.Typed.sireumName :+ "MTuple18")
+    val MTuple19: Class = Class(F, AST.Typed.sireumName :+ "MTuple19")
+    val MTuple20: Class = Class(F, AST.Typed.sireumName :+ "MTuple20")
+    val MTuple21: Class = Class(F, AST.Typed.sireumName :+ "MTuple21")
+    val MTuple22: Class = Class(F, AST.Typed.sireumName :+ "MTuple22")
   }
 
   @record trait Value {
@@ -106,6 +139,7 @@ object State {
     @pure def objectMap: Store
     @pure def boxedValue: Ptr
     @pure def updateBoxedValue(newValue: Ptr): Value.Box
+    @pure def nativeValueString: String
   }
 
   object Value {
@@ -131,10 +165,13 @@ object State {
       @pure def objectMap: Store = {
         halt("Infeasible")
       }
-      @pure def boxedValue: Z = {
+      @pure def boxedValue: Ptr = {
         halt("Infeasible")
       }
       @pure def updateBoxedValue(newValue: Ptr): Value.Box = {
+        halt("Infeasible")
+      }
+      @pure def nativeValueString: String = {
         halt("Infeasible")
       }
     }
@@ -152,6 +189,9 @@ object State {
         halt("Infeasible")
       }
       @strictpure def updateBoxedValue(newValue: Ptr): Value.Box = this(boxedValue = newValue)
+      @pure def nativeValueString: String = {
+        halt("Infeasible")
+      }
     }
     @record class Native[@mut T](val tipe: Type, val counter: Z, val value: T) extends Value {
       @pure def inc(): Value = {
@@ -173,6 +213,9 @@ object State {
       @pure def updateBoxedValue(newValue: Ptr): Value.Box = {
         halt("Infeasible")
       }
+      @pure def nativeValueString: String = {
+        return value.string
+      }
     }
     @record class Object(val tipe: Type.Class, val counter: Z, val objectMap: Store) extends Value {
       @pure def inc(): Value = {
@@ -189,6 +232,9 @@ object State {
         halt("Infeasible")
       }
       @pure def updateBoxedValue(newValue: Ptr): Value.Box = {
+        halt("Infeasible")
+      }
+      @pure def nativeValueString: String = {
         halt("Infeasible")
       }
     }
