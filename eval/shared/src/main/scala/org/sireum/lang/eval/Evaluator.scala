@@ -690,6 +690,7 @@ import Evaluator._
           case AST.Exp.BinaryOp.Append =>
           case AST.Exp.BinaryOp.AppendAll =>
           case AST.Exp.BinaryOp.Prepend =>
+          case _ =>
         }
 
         state.tipe(l) match {
