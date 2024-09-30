@@ -105,13 +105,13 @@ object MTransformer {
 
   val PostResultStmtVarPattern: MOption[Stmt] = MNone()
 
-  val PreResultStmtSpecVar: PreResult[Stmt] = PreResult(T, MNone())
+  val PreResultStmtSpecVar: PreResult[Stmt.Spec] = PreResult(T, MNone())
 
-  val PostResultStmtSpecVar: MOption[Stmt] = MNone()
+  val PostResultStmtSpecVar: MOption[Stmt.Spec] = MNone()
 
-  val PreResultStmtRsVal: PreResult[Stmt] = PreResult(T, MNone())
+  val PreResultStmtRsVal: PreResult[Stmt.Spec] = PreResult(T, MNone())
 
-  val PostResultStmtRsVal: MOption[Stmt] = MNone()
+  val PostResultStmtRsVal: MOption[Stmt.Spec] = MNone()
 
   val PreResultStmtMethod: PreResult[Stmt] = PreResult(T, MNone())
 
@@ -121,13 +121,13 @@ object MTransformer {
 
   val PostResultStmtExtMethod: MOption[Stmt] = MNone()
 
-  val PreResultStmtJustMethod: PreResult[Stmt] = PreResult(T, MNone())
+  val PreResultStmtJustMethod: PreResult[Stmt.Spec] = PreResult(T, MNone())
 
-  val PostResultStmtJustMethod: MOption[Stmt] = MNone()
+  val PostResultStmtJustMethod: MOption[Stmt.Spec] = MNone()
 
-  val PreResultStmtSpecMethod: PreResult[Stmt] = PreResult(T, MNone())
+  val PreResultStmtSpecMethod: PreResult[Stmt.Spec] = PreResult(T, MNone())
 
-  val PostResultStmtSpecMethod: MOption[Stmt] = MNone()
+  val PostResultStmtSpecMethod: MOption[Stmt.Spec] = MNone()
 
   val PreResultStmtEnum: PreResult[Stmt] = PreResult(T, MNone())
 
@@ -165,9 +165,9 @@ object MTransformer {
 
   val PostResultStmtIf: MOption[Stmt] = MNone()
 
-  val PreResultStmtInduct: PreResult[Stmt] = PreResult(T, MNone())
+  val PreResultStmtInduct: PreResult[Stmt.Spec] = PreResult(T, MNone())
 
-  val PostResultStmtInduct: MOption[Stmt] = MNone()
+  val PostResultStmtInduct: MOption[Stmt.Spec] = MNone()
 
   val PreResultStmtMatch: PreResult[Stmt] = PreResult(T, MNone())
 
@@ -731,12 +731,36 @@ import MTransformer._
       case o: Stmt.Import => return preStmtImport(o)
       case o: Stmt.Var => return preStmtVar(o)
       case o: Stmt.VarPattern => return preStmtVarPattern(o)
-      case o: Stmt.SpecVar => return preStmtSpecVar(o)
-      case o: Stmt.RsVal => return preStmtRsVal(o)
+      case o: Stmt.SpecVar =>
+        val r: PreResult[Stmt] = preStmtSpecVar(o) match {
+         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
+        }
+        return r
+      case o: Stmt.RsVal =>
+        val r: PreResult[Stmt] = preStmtRsVal(o) match {
+         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
+        }
+        return r
       case o: Stmt.Method => return preStmtMethod(o)
       case o: Stmt.ExtMethod => return preStmtExtMethod(o)
-      case o: Stmt.JustMethod => return preStmtJustMethod(o)
-      case o: Stmt.SpecMethod => return preStmtSpecMethod(o)
+      case o: Stmt.JustMethod =>
+        val r: PreResult[Stmt] = preStmtJustMethod(o) match {
+         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
+        }
+        return r
+      case o: Stmt.SpecMethod =>
+        val r: PreResult[Stmt] = preStmtSpecMethod(o) match {
+         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
+        }
+        return r
       case o: Stmt.Enum => return preStmtEnum(o)
       case o: Stmt.SubZ => return preStmtSubZ(o)
       case o: Stmt.Object => return preStmtObject(o)
@@ -746,7 +770,13 @@ import MTransformer._
       case o: Stmt.Assign => return preStmtAssign(o)
       case o: Stmt.Block => return preStmtBlock(o)
       case o: Stmt.If => return preStmtIf(o)
-      case o: Stmt.Induct => return preStmtInduct(o)
+      case o: Stmt.Induct =>
+        val r: PreResult[Stmt] = preStmtInduct(o) match {
+         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
+        }
+        return r
       case o: Stmt.Match => return preStmtMatch(o)
       case o: Stmt.While => return preStmtWhile(o)
       case o: Stmt.DoWhile => return preStmtDoWhile(o)
@@ -884,11 +914,11 @@ import MTransformer._
     return PreResultStmtVarPattern
   }
 
-  def preStmtSpecVar(o: Stmt.SpecVar): PreResult[Stmt] = {
+  def preStmtSpecVar(o: Stmt.SpecVar): PreResult[Stmt.Spec] = {
     return PreResultStmtSpecVar
   }
 
-  def preStmtRsVal(o: Stmt.RsVal): PreResult[Stmt] = {
+  def preStmtRsVal(o: Stmt.RsVal): PreResult[Stmt.Spec] = {
     return PreResultStmtRsVal
   }
 
@@ -900,11 +930,11 @@ import MTransformer._
     return PreResultStmtExtMethod
   }
 
-  def preStmtJustMethod(o: Stmt.JustMethod): PreResult[Stmt] = {
+  def preStmtJustMethod(o: Stmt.JustMethod): PreResult[Stmt.Spec] = {
     return PreResultStmtJustMethod
   }
 
-  def preStmtSpecMethod(o: Stmt.SpecMethod): PreResult[Stmt] = {
+  def preStmtSpecMethod(o: Stmt.SpecMethod): PreResult[Stmt.Spec] = {
     return PreResultStmtSpecMethod
   }
 
@@ -944,7 +974,7 @@ import MTransformer._
     return PreResultStmtIf
   }
 
-  def preStmtInduct(o: Stmt.Induct): PreResult[Stmt] = {
+  def preStmtInduct(o: Stmt.Induct): PreResult[Stmt.Spec] = {
     return PreResultStmtInduct
   }
 
@@ -974,6 +1004,11 @@ import MTransformer._
 
   def preStmtSpec(o: Stmt.Spec): PreResult[Stmt.Spec] = {
     o match {
+      case o: Stmt.SpecVar => return preStmtSpecVar(o)
+      case o: Stmt.RsVal => return preStmtRsVal(o)
+      case o: Stmt.JustMethod => return preStmtJustMethod(o)
+      case o: Stmt.SpecMethod => return preStmtSpecMethod(o)
+      case o: Stmt.Induct => return preStmtInduct(o)
       case o: Stmt.Fact => return preStmtFact(o)
       case o: Stmt.Inv => return preStmtInv(o)
       case o: Stmt.Theorem => return preStmtTheorem(o)
@@ -1840,12 +1875,36 @@ import MTransformer._
       case o: Stmt.Import => return postStmtImport(o)
       case o: Stmt.Var => return postStmtVar(o)
       case o: Stmt.VarPattern => return postStmtVarPattern(o)
-      case o: Stmt.SpecVar => return postStmtSpecVar(o)
-      case o: Stmt.RsVal => return postStmtRsVal(o)
+      case o: Stmt.SpecVar =>
+        val r: MOption[Stmt] = postStmtSpecVar(o) match {
+         case MSome(result: Stmt) => MSome[Stmt](result)
+         case MSome(_) => halt("Can only produce object of type Stmt")
+         case _ => MNone[Stmt]()
+        }
+        return r
+      case o: Stmt.RsVal =>
+        val r: MOption[Stmt] = postStmtRsVal(o) match {
+         case MSome(result: Stmt) => MSome[Stmt](result)
+         case MSome(_) => halt("Can only produce object of type Stmt")
+         case _ => MNone[Stmt]()
+        }
+        return r
       case o: Stmt.Method => return postStmtMethod(o)
       case o: Stmt.ExtMethod => return postStmtExtMethod(o)
-      case o: Stmt.JustMethod => return postStmtJustMethod(o)
-      case o: Stmt.SpecMethod => return postStmtSpecMethod(o)
+      case o: Stmt.JustMethod =>
+        val r: MOption[Stmt] = postStmtJustMethod(o) match {
+         case MSome(result: Stmt) => MSome[Stmt](result)
+         case MSome(_) => halt("Can only produce object of type Stmt")
+         case _ => MNone[Stmt]()
+        }
+        return r
+      case o: Stmt.SpecMethod =>
+        val r: MOption[Stmt] = postStmtSpecMethod(o) match {
+         case MSome(result: Stmt) => MSome[Stmt](result)
+         case MSome(_) => halt("Can only produce object of type Stmt")
+         case _ => MNone[Stmt]()
+        }
+        return r
       case o: Stmt.Enum => return postStmtEnum(o)
       case o: Stmt.SubZ => return postStmtSubZ(o)
       case o: Stmt.Object => return postStmtObject(o)
@@ -1855,7 +1914,13 @@ import MTransformer._
       case o: Stmt.Assign => return postStmtAssign(o)
       case o: Stmt.Block => return postStmtBlock(o)
       case o: Stmt.If => return postStmtIf(o)
-      case o: Stmt.Induct => return postStmtInduct(o)
+      case o: Stmt.Induct =>
+        val r: MOption[Stmt] = postStmtInduct(o) match {
+         case MSome(result: Stmt) => MSome[Stmt](result)
+         case MSome(_) => halt("Can only produce object of type Stmt")
+         case _ => MNone[Stmt]()
+        }
+        return r
       case o: Stmt.Match => return postStmtMatch(o)
       case o: Stmt.While => return postStmtWhile(o)
       case o: Stmt.DoWhile => return postStmtDoWhile(o)
@@ -1993,11 +2058,11 @@ import MTransformer._
     return PostResultStmtVarPattern
   }
 
-  def postStmtSpecVar(o: Stmt.SpecVar): MOption[Stmt] = {
+  def postStmtSpecVar(o: Stmt.SpecVar): MOption[Stmt.Spec] = {
     return PostResultStmtSpecVar
   }
 
-  def postStmtRsVal(o: Stmt.RsVal): MOption[Stmt] = {
+  def postStmtRsVal(o: Stmt.RsVal): MOption[Stmt.Spec] = {
     return PostResultStmtRsVal
   }
 
@@ -2009,11 +2074,11 @@ import MTransformer._
     return PostResultStmtExtMethod
   }
 
-  def postStmtJustMethod(o: Stmt.JustMethod): MOption[Stmt] = {
+  def postStmtJustMethod(o: Stmt.JustMethod): MOption[Stmt.Spec] = {
     return PostResultStmtJustMethod
   }
 
-  def postStmtSpecMethod(o: Stmt.SpecMethod): MOption[Stmt] = {
+  def postStmtSpecMethod(o: Stmt.SpecMethod): MOption[Stmt.Spec] = {
     return PostResultStmtSpecMethod
   }
 
@@ -2053,7 +2118,7 @@ import MTransformer._
     return PostResultStmtIf
   }
 
-  def postStmtInduct(o: Stmt.Induct): MOption[Stmt] = {
+  def postStmtInduct(o: Stmt.Induct): MOption[Stmt.Spec] = {
     return PostResultStmtInduct
   }
 
@@ -2083,6 +2148,11 @@ import MTransformer._
 
   def postStmtSpec(o: Stmt.Spec): MOption[Stmt.Spec] = {
     o match {
+      case o: Stmt.SpecVar => return postStmtSpecVar(o)
+      case o: Stmt.RsVal => return postStmtRsVal(o)
+      case o: Stmt.JustMethod => return postStmtJustMethod(o)
+      case o: Stmt.SpecMethod => return postStmtSpecMethod(o)
+      case o: Stmt.Induct => return postStmtInduct(o)
       case o: Stmt.Fact => return postStmtFact(o)
       case o: Stmt.Inv => return postStmtInv(o)
       case o: Stmt.Theorem => return postStmtTheorem(o)
@@ -3452,6 +3522,44 @@ import MTransformer._
       val o2: Stmt.Spec = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val rOpt: MOption[Stmt.Spec] = o2 match {
+        case o2: Stmt.SpecVar =>
+          val r0: MOption[Id] = transformId(o2.id)
+          val r1: MOption[Type] = transformType(o2.tipe)
+          val r2: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id), tipe = r1.getOrElse(o2.tipe), attr = r2.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Stmt.RsVal =>
+          val r0: MOption[Id] = transformId(o2.id)
+          val r1: MOption[Exp] = transformExp(o2.init)
+          val r2: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(id = r0.getOrElse(o2.id), init = r1.getOrElse(o2.init), attr = r2.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Stmt.JustMethod =>
+          val r0: MOption[Option[Exp.LitString]] = transformOption(o2.etaOpt, transformExpLitString _)
+          val r1: MOption[MethodSig] = transformMethodSig(o2.sig)
+          val r2: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(etaOpt = r0.getOrElse(o2.etaOpt), sig = r1.getOrElse(o2.sig), attr = r2.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Stmt.SpecMethod =>
+          val r0: MOption[MethodSig] = transformMethodSig(o2.sig)
+          val r1: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(sig = r0.getOrElse(o2.sig), attr = r1.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Stmt.Induct =>
+          val r0: MOption[Exp] = transformExp(o2.exp)
+          val r1: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp), attr = r1.getOrElse(o2.attr)))
+          else
+            MNone()
         case o2: Stmt.Fact =>
           val r0: MOption[Id] = transformId(o2.id)
           val r1: MOption[IS[Z, TypeParam]] = transformISZ(o2.typeParams, transformTypeParam _)

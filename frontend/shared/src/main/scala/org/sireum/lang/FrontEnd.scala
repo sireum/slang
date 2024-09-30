@@ -100,7 +100,7 @@ object FrontEnd {
           return AST.Util.trueLit
       }
     }
-    override def postStmtInduct(o: AST.Stmt.Induct): MOption[AST.Stmt] = {
+    override def postStmtInduct(o: AST.Stmt.Induct): MOption[AST.Stmt.Spec] = {
       val pos = o.posOpt.get
       println(claim(contract))
       th.induct(F, HashSet ++ o.locals, o.context, claim(contract), o.exp, pos) match {
@@ -328,16 +328,27 @@ object FrontEnd {
   }
 
   def libraryReporter: (TypeChecker, Reporter) = {
+    return libraryReporterPar(0)
+  }
+
+  def libraryReporterPar(par: Z): (TypeChecker, Reporter) = {
     val (initNameMap, initTypeMap) =
       Resolver.addBuiltIns(HashSMap.empty, HashSMap.empty)
     val (reporter, _, nameMap, typeMap) =
-      parseProgramAndGloballyResolve(0, for (f <- Library.files) yield Input(f._2, f._1), initNameMap, initTypeMap)
+      parseProgramAndGloballyResolve(par, for (f <- Library.files) yield Input(f._2, f._1), initNameMap, initTypeMap)
     val th =
       TypeHierarchy.build(F, TypeHierarchy(nameMap, typeMap, Poset.empty, HashSMap.empty), reporter)
-    val thOutlined = TypeOutliner.checkOutline(0, T, th, reporter)
+    val thOutlined = TypeOutliner.checkOutline(par, T, th, reporter)
     val tc = TypeChecker(thOutlined, ISZ(), F, TypeChecker.ModeContext.Code, T)
     val r = (tc, reporter)
     return r
+  }
+
+  def checkedLibraryReporterPar(par: Z): (TypeChecker, Reporter) = {
+    val (tc, reporter) = libraryReporterPar(par)
+    val th = tc.typeHierarchy
+    val th2 = TypeChecker.checkComponents(par, T, th, th.nameMap, th.typeMap, reporter)
+    return (TypeChecker(th2, ISZ(), F, TypeChecker.ModeContext.Code, T), reporter)
   }
 
   @memoize def checkedLibraryReporter: (TypeChecker, Reporter) = {

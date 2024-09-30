@@ -233,7 +233,7 @@ object Stmt {
   @datatype class SpecVar(val isVal: B,
                           val id: Id,
                           val tipe: Type,
-                          @hidden val attr: ResolvedAttr) extends Stmt {
+                          @hidden val attr: ResolvedAttr) extends Spec {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure override def prettyST: ST = {
       val valVar: String = if (isVal) "val" else "var"
@@ -245,7 +245,7 @@ object Stmt {
 
   @datatype class RsVal(val id: Id,
                         val init: Exp,
-                        @hidden val attr: ResolvedAttr) extends Stmt {
+                        @hidden val attr: ResolvedAttr) extends Spec {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @pure override def prettyST: ST = {
       return st"@rw val ${id.prettyST}: RS = ${init.prettyST}"
@@ -356,7 +356,7 @@ object Stmt {
 
   @datatype class JustMethod(val etaOpt: Option[Exp.LitString],
                              val sig: MethodSig,
-                             @hidden val attr: ResolvedAttr) extends Stmt {
+                             @hidden val attr: ResolvedAttr) extends Spec {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @pure override def prettyST: ST = {
       val just: ST = if (etaOpt.isEmpty) st"@just " else st"@just(${etaOpt.get.prettyST}}) "
@@ -366,7 +366,7 @@ object Stmt {
     @strictpure override def hasReturn: B = F
   }
 
-  @datatype class SpecMethod(val sig: MethodSig, @hidden val attr: ResolvedAttr) extends Stmt {
+  @datatype class SpecMethod(val sig: MethodSig, @hidden val attr: ResolvedAttr) extends Spec {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure override def prettyST: ST = st"@spec def ${sig.prettyST}"
     @strictpure override def isInstruction: B = F
@@ -542,7 +542,7 @@ object Stmt {
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
   }
 
-  @datatype class Induct(val exp: Exp, val context: ISZ[String], val locals: ISZ[String], @hidden val attr: Attr) extends Stmt {
+  @datatype class Induct(val exp: Exp, val context: ISZ[String], val locals: ISZ[String], @hidden val attr: Attr) extends Spec {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure override def hasReturn: B = F
     @strictpure override def isInstruction: B = T

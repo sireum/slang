@@ -759,6 +759,11 @@ object JSON {
 
     @pure def print_astStmtSpec(o: org.sireum.lang.ast.Stmt.Spec): ST = {
       o match {
+        case o: org.sireum.lang.ast.Stmt.SpecVar => return print_astStmtSpecVar(o)
+        case o: org.sireum.lang.ast.Stmt.RsVal => return print_astStmtRsVal(o)
+        case o: org.sireum.lang.ast.Stmt.JustMethod => return print_astStmtJustMethod(o)
+        case o: org.sireum.lang.ast.Stmt.SpecMethod => return print_astStmtSpecMethod(o)
+        case o: org.sireum.lang.ast.Stmt.Induct => return print_astStmtInduct(o)
         case o: org.sireum.lang.ast.Stmt.Fact => return print_astStmtFact(o)
         case o: org.sireum.lang.ast.Stmt.Inv => return print_astStmtInv(o)
         case o: org.sireum.lang.ast.Stmt.Theorem => return print_astStmtTheorem(o)
@@ -3840,8 +3845,13 @@ object JSON {
     }
 
     def parse_astStmtSpec(): org.sireum.lang.ast.Stmt.Spec = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Stmt.Fact", "org.sireum.lang.ast.Stmt.Inv", "org.sireum.lang.ast.Stmt.Theorem", "org.sireum.lang.ast.Stmt.DataRefinement", "org.sireum.lang.ast.Stmt.SpecLabel", "org.sireum.lang.ast.Stmt.SpecBlock", "org.sireum.lang.ast.Stmt.DeduceSequent", "org.sireum.lang.ast.Stmt.DeduceSteps", "org.sireum.lang.ast.Stmt.Havoc"))
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Stmt.SpecVar", "org.sireum.lang.ast.Stmt.RsVal", "org.sireum.lang.ast.Stmt.JustMethod", "org.sireum.lang.ast.Stmt.SpecMethod", "org.sireum.lang.ast.Stmt.Induct", "org.sireum.lang.ast.Stmt.Fact", "org.sireum.lang.ast.Stmt.Inv", "org.sireum.lang.ast.Stmt.Theorem", "org.sireum.lang.ast.Stmt.DataRefinement", "org.sireum.lang.ast.Stmt.SpecLabel", "org.sireum.lang.ast.Stmt.SpecBlock", "org.sireum.lang.ast.Stmt.DeduceSequent", "org.sireum.lang.ast.Stmt.DeduceSteps", "org.sireum.lang.ast.Stmt.Havoc"))
       t.native match {
+        case "org.sireum.lang.ast.Stmt.SpecVar" => val r = parse_astStmtSpecVarT(T); return r
+        case "org.sireum.lang.ast.Stmt.RsVal" => val r = parse_astStmtRsValT(T); return r
+        case "org.sireum.lang.ast.Stmt.JustMethod" => val r = parse_astStmtJustMethodT(T); return r
+        case "org.sireum.lang.ast.Stmt.SpecMethod" => val r = parse_astStmtSpecMethodT(T); return r
+        case "org.sireum.lang.ast.Stmt.Induct" => val r = parse_astStmtInductT(T); return r
         case "org.sireum.lang.ast.Stmt.Fact" => val r = parse_astStmtFactT(T); return r
         case "org.sireum.lang.ast.Stmt.Inv" => val r = parse_astStmtInvT(T); return r
         case "org.sireum.lang.ast.Stmt.Theorem" => val r = parse_astStmtTheoremT(T); return r

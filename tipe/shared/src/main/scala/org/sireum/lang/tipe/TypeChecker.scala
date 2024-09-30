@@ -111,7 +111,7 @@ object TypeChecker {
       return AST.MTransformer.PostResultStmtVarPattern
     }
 
-    override def postStmtSpecVar(o: AST.Stmt.SpecVar): MOption[AST.Stmt] = {
+    override def postStmtSpecVar(o: AST.Stmt.SpecVar): MOption[AST.Stmt.Spec] = {
       reporter.error(o.posOpt, messageKind, s"$messagePrefix cannot define @spec val/var")
       return AST.MTransformer.PostResultStmtSpecVar
     }

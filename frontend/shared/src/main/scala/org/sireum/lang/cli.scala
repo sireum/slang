@@ -39,6 +39,9 @@ object cli {
     usage = "<option>* <slang-file> <arg>*",
     usageDescOpt = None(),
     opts = ISZ(
+      Opt(name = "eval", longKey = "eval", shortKey = Some('e'),
+        tpe = Type.Flag(F),
+        description = "Use Slang evaluator (all other options are ignored)"),
       Opt(name = "input", longKey = "input", shortKey = Some('i'),
         tpe = Type.Path(multiple = F, default = None()),
         description = "Input file for stdin (default: <slang-file>.txt, if any)"),
@@ -47,7 +50,7 @@ object cli {
       Opt(name = "transformed", longKey = "transformed", shortKey = Some('t'),
         tpe = Type.Flag(F), description = "Show Scala transformed tree"),
       Opt(name = "nativ", longKey = "native", shortKey = Some('n'),
-        tpe = Type.Flag(F), description = "Generate native executable"),
+        tpe = Type.Flag(F), description = "Generate native executable")
     ),
     groups = ISZ()
   )

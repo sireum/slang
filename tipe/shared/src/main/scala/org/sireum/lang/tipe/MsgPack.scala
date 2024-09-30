@@ -1009,6 +1009,11 @@ object MsgPack {
 
     def write_astStmtSpec(o: org.sireum.lang.ast.Stmt.Spec): Unit = {
       o match {
+        case o: org.sireum.lang.ast.Stmt.SpecVar => write_astStmtSpecVar(o)
+        case o: org.sireum.lang.ast.Stmt.RsVal => write_astStmtRsVal(o)
+        case o: org.sireum.lang.ast.Stmt.JustMethod => write_astStmtJustMethod(o)
+        case o: org.sireum.lang.ast.Stmt.SpecMethod => write_astStmtSpecMethod(o)
+        case o: org.sireum.lang.ast.Stmt.Induct => write_astStmtInduct(o)
         case o: org.sireum.lang.ast.Stmt.Fact => write_astStmtFact(o)
         case o: org.sireum.lang.ast.Stmt.Inv => write_astStmtInv(o)
         case o: org.sireum.lang.ast.Stmt.Theorem => write_astStmtTheorem(o)
@@ -3235,6 +3240,11 @@ object MsgPack {
       val i = reader.curr
       val t = reader.readZ()
       t match {
+        case Constants._astStmtSpecVar => val r = read_astStmtSpecVarT(T); return r
+        case Constants._astStmtRsVal => val r = read_astStmtRsValT(T); return r
+        case Constants._astStmtJustMethod => val r = read_astStmtJustMethodT(T); return r
+        case Constants._astStmtSpecMethod => val r = read_astStmtSpecMethodT(T); return r
+        case Constants._astStmtInduct => val r = read_astStmtInductT(T); return r
         case Constants._astStmtFact => val r = read_astStmtFactT(T); return r
         case Constants._astStmtInv => val r = read_astStmtInvT(T); return r
         case Constants._astStmtTheorem => val r = read_astStmtTheoremT(T); return r

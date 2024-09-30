@@ -65,12 +65,36 @@ object Transformer {
         case o: Stmt.Import => return preStmtImport(ctx, o)
         case o: Stmt.Var => return preStmtVar(ctx, o)
         case o: Stmt.VarPattern => return preStmtVarPattern(ctx, o)
-        case o: Stmt.SpecVar => return preStmtSpecVar(ctx, o)
-        case o: Stmt.RsVal => return preStmtRsVal(ctx, o)
+        case o: Stmt.SpecVar =>
+          val r: PreResult[Context, Stmt] = preStmtSpecVar(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Stmt)) => PreResult(preCtx, continu, Some[Stmt](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Stmt")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Stmt]())
+          }
+          return r
+        case o: Stmt.RsVal =>
+          val r: PreResult[Context, Stmt] = preStmtRsVal(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Stmt)) => PreResult(preCtx, continu, Some[Stmt](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Stmt")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Stmt]())
+          }
+          return r
         case o: Stmt.Method => return preStmtMethod(ctx, o)
         case o: Stmt.ExtMethod => return preStmtExtMethod(ctx, o)
-        case o: Stmt.JustMethod => return preStmtJustMethod(ctx, o)
-        case o: Stmt.SpecMethod => return preStmtSpecMethod(ctx, o)
+        case o: Stmt.JustMethod =>
+          val r: PreResult[Context, Stmt] = preStmtJustMethod(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Stmt)) => PreResult(preCtx, continu, Some[Stmt](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Stmt")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Stmt]())
+          }
+          return r
+        case o: Stmt.SpecMethod =>
+          val r: PreResult[Context, Stmt] = preStmtSpecMethod(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Stmt)) => PreResult(preCtx, continu, Some[Stmt](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Stmt")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Stmt]())
+          }
+          return r
         case o: Stmt.Enum => return preStmtEnum(ctx, o)
         case o: Stmt.SubZ => return preStmtSubZ(ctx, o)
         case o: Stmt.Object => return preStmtObject(ctx, o)
@@ -80,7 +104,13 @@ object Transformer {
         case o: Stmt.Assign => return preStmtAssign(ctx, o)
         case o: Stmt.Block => return preStmtBlock(ctx, o)
         case o: Stmt.If => return preStmtIf(ctx, o)
-        case o: Stmt.Induct => return preStmtInduct(ctx, o)
+        case o: Stmt.Induct =>
+          val r: PreResult[Context, Stmt] = preStmtInduct(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: Stmt)) => PreResult(preCtx, continu, Some[Stmt](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type Stmt")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Stmt]())
+          }
+          return r
         case o: Stmt.Match => return preStmtMatch(ctx, o)
         case o: Stmt.While => return preStmtWhile(ctx, o)
         case o: Stmt.DoWhile => return preStmtDoWhile(ctx, o)
@@ -218,11 +248,11 @@ object Transformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preStmtSpecVar(ctx: Context, o: Stmt.SpecVar): PreResult[Context, Stmt] = {
+    @pure def preStmtSpecVar(ctx: Context, o: Stmt.SpecVar): PreResult[Context, Stmt.Spec] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preStmtRsVal(ctx: Context, o: Stmt.RsVal): PreResult[Context, Stmt] = {
+    @pure def preStmtRsVal(ctx: Context, o: Stmt.RsVal): PreResult[Context, Stmt.Spec] = {
       return PreResult(ctx, T, None())
     }
 
@@ -234,11 +264,11 @@ object Transformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preStmtJustMethod(ctx: Context, o: Stmt.JustMethod): PreResult[Context, Stmt] = {
+    @pure def preStmtJustMethod(ctx: Context, o: Stmt.JustMethod): PreResult[Context, Stmt.Spec] = {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preStmtSpecMethod(ctx: Context, o: Stmt.SpecMethod): PreResult[Context, Stmt] = {
+    @pure def preStmtSpecMethod(ctx: Context, o: Stmt.SpecMethod): PreResult[Context, Stmt.Spec] = {
       return PreResult(ctx, T, None())
     }
 
@@ -278,7 +308,7 @@ object Transformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preStmtInduct(ctx: Context, o: Stmt.Induct): PreResult[Context, Stmt] = {
+    @pure def preStmtInduct(ctx: Context, o: Stmt.Induct): PreResult[Context, Stmt.Spec] = {
       return PreResult(ctx, T, None())
     }
 
@@ -308,6 +338,11 @@ object Transformer {
 
     @pure def preStmtSpec(ctx: Context, o: Stmt.Spec): PreResult[Context, Stmt.Spec] = {
       o match {
+        case o: Stmt.SpecVar => return preStmtSpecVar(ctx, o)
+        case o: Stmt.RsVal => return preStmtRsVal(ctx, o)
+        case o: Stmt.JustMethod => return preStmtJustMethod(ctx, o)
+        case o: Stmt.SpecMethod => return preStmtSpecMethod(ctx, o)
+        case o: Stmt.Induct => return preStmtInduct(ctx, o)
         case o: Stmt.Fact => return preStmtFact(ctx, o)
         case o: Stmt.Inv => return preStmtInv(ctx, o)
         case o: Stmt.Theorem => return preStmtTheorem(ctx, o)
@@ -1174,12 +1209,36 @@ object Transformer {
         case o: Stmt.Import => return postStmtImport(ctx, o)
         case o: Stmt.Var => return postStmtVar(ctx, o)
         case o: Stmt.VarPattern => return postStmtVarPattern(ctx, o)
-        case o: Stmt.SpecVar => return postStmtSpecVar(ctx, o)
-        case o: Stmt.RsVal => return postStmtRsVal(ctx, o)
+        case o: Stmt.SpecVar =>
+          val r: TPostResult[Context, Stmt] = postStmtSpecVar(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Stmt)) => TPostResult(postCtx, Some[Stmt](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Stmt")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Stmt]())
+          }
+          return r
+        case o: Stmt.RsVal =>
+          val r: TPostResult[Context, Stmt] = postStmtRsVal(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Stmt)) => TPostResult(postCtx, Some[Stmt](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Stmt")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Stmt]())
+          }
+          return r
         case o: Stmt.Method => return postStmtMethod(ctx, o)
         case o: Stmt.ExtMethod => return postStmtExtMethod(ctx, o)
-        case o: Stmt.JustMethod => return postStmtJustMethod(ctx, o)
-        case o: Stmt.SpecMethod => return postStmtSpecMethod(ctx, o)
+        case o: Stmt.JustMethod =>
+          val r: TPostResult[Context, Stmt] = postStmtJustMethod(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Stmt)) => TPostResult(postCtx, Some[Stmt](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Stmt")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Stmt]())
+          }
+          return r
+        case o: Stmt.SpecMethod =>
+          val r: TPostResult[Context, Stmt] = postStmtSpecMethod(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Stmt)) => TPostResult(postCtx, Some[Stmt](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Stmt")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Stmt]())
+          }
+          return r
         case o: Stmt.Enum => return postStmtEnum(ctx, o)
         case o: Stmt.SubZ => return postStmtSubZ(ctx, o)
         case o: Stmt.Object => return postStmtObject(ctx, o)
@@ -1189,7 +1248,13 @@ object Transformer {
         case o: Stmt.Assign => return postStmtAssign(ctx, o)
         case o: Stmt.Block => return postStmtBlock(ctx, o)
         case o: Stmt.If => return postStmtIf(ctx, o)
-        case o: Stmt.Induct => return postStmtInduct(ctx, o)
+        case o: Stmt.Induct =>
+          val r: TPostResult[Context, Stmt] = postStmtInduct(ctx, o) match {
+           case TPostResult(postCtx, Some(result: Stmt)) => TPostResult(postCtx, Some[Stmt](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type Stmt")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[Stmt]())
+          }
+          return r
         case o: Stmt.Match => return postStmtMatch(ctx, o)
         case o: Stmt.While => return postStmtWhile(ctx, o)
         case o: Stmt.DoWhile => return postStmtDoWhile(ctx, o)
@@ -1327,11 +1392,11 @@ object Transformer {
       return TPostResult(ctx, None())
     }
 
-    @pure def postStmtSpecVar(ctx: Context, o: Stmt.SpecVar): TPostResult[Context, Stmt] = {
+    @pure def postStmtSpecVar(ctx: Context, o: Stmt.SpecVar): TPostResult[Context, Stmt.Spec] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postStmtRsVal(ctx: Context, o: Stmt.RsVal): TPostResult[Context, Stmt] = {
+    @pure def postStmtRsVal(ctx: Context, o: Stmt.RsVal): TPostResult[Context, Stmt.Spec] = {
       return TPostResult(ctx, None())
     }
 
@@ -1343,11 +1408,11 @@ object Transformer {
       return TPostResult(ctx, None())
     }
 
-    @pure def postStmtJustMethod(ctx: Context, o: Stmt.JustMethod): TPostResult[Context, Stmt] = {
+    @pure def postStmtJustMethod(ctx: Context, o: Stmt.JustMethod): TPostResult[Context, Stmt.Spec] = {
       return TPostResult(ctx, None())
     }
 
-    @pure def postStmtSpecMethod(ctx: Context, o: Stmt.SpecMethod): TPostResult[Context, Stmt] = {
+    @pure def postStmtSpecMethod(ctx: Context, o: Stmt.SpecMethod): TPostResult[Context, Stmt.Spec] = {
       return TPostResult(ctx, None())
     }
 
@@ -1387,7 +1452,7 @@ object Transformer {
       return TPostResult(ctx, None())
     }
 
-    @pure def postStmtInduct(ctx: Context, o: Stmt.Induct): TPostResult[Context, Stmt] = {
+    @pure def postStmtInduct(ctx: Context, o: Stmt.Induct): TPostResult[Context, Stmt.Spec] = {
       return TPostResult(ctx, None())
     }
 
@@ -1417,6 +1482,11 @@ object Transformer {
 
     @pure def postStmtSpec(ctx: Context, o: Stmt.Spec): TPostResult[Context, Stmt.Spec] = {
       o match {
+        case o: Stmt.SpecVar => return postStmtSpecVar(ctx, o)
+        case o: Stmt.RsVal => return postStmtRsVal(ctx, o)
+        case o: Stmt.JustMethod => return postStmtJustMethod(ctx, o)
+        case o: Stmt.SpecMethod => return postStmtSpecMethod(ctx, o)
+        case o: Stmt.Induct => return postStmtInduct(ctx, o)
         case o: Stmt.Fact => return postStmtFact(ctx, o)
         case o: Stmt.Inv => return postStmtInv(ctx, o)
         case o: Stmt.Theorem => return postStmtTheorem(ctx, o)
@@ -2824,6 +2894,44 @@ import Transformer._
       val o2: Stmt.Spec = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val rOpt: TPostResult[Context, Stmt.Spec] = o2 match {
+        case o2: Stmt.SpecVar =>
+          val r0: TPostResult[Context, Id] = transformId(preR.ctx, o2.id)
+          val r1: TPostResult[Context, Type] = transformType(r0.ctx, o2.tipe)
+          val r2: TPostResult[Context, ResolvedAttr] = transformResolvedAttr(r1.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), tipe = r1.resultOpt.getOrElse(o2.tipe), attr = r2.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r2.ctx, None())
+        case o2: Stmt.RsVal =>
+          val r0: TPostResult[Context, Id] = transformId(preR.ctx, o2.id)
+          val r1: TPostResult[Context, Exp] = transformExp(r0.ctx, o2.init)
+          val r2: TPostResult[Context, ResolvedAttr] = transformResolvedAttr(r1.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), init = r1.resultOpt.getOrElse(o2.init), attr = r2.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r2.ctx, None())
+        case o2: Stmt.JustMethod =>
+          val r0: TPostResult[Context, Option[Exp.LitString]] = transformOption(preR.ctx, o2.etaOpt, transformExpLitString _)
+          val r1: TPostResult[Context, MethodSig] = transformMethodSig(r0.ctx, o2.sig)
+          val r2: TPostResult[Context, ResolvedAttr] = transformResolvedAttr(r1.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(etaOpt = r0.resultOpt.getOrElse(o2.etaOpt), sig = r1.resultOpt.getOrElse(o2.sig), attr = r2.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r2.ctx, None())
+        case o2: Stmt.SpecMethod =>
+          val r0: TPostResult[Context, MethodSig] = transformMethodSig(preR.ctx, o2.sig)
+          val r1: TPostResult[Context, ResolvedAttr] = transformResolvedAttr(r0.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(sig = r0.resultOpt.getOrElse(o2.sig), attr = r1.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: Stmt.Induct =>
+          val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.exp)
+          val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), attr = r1.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r1.ctx, None())
         case o2: Stmt.Fact =>
           val r0: TPostResult[Context, Id] = transformId(preR.ctx, o2.id)
           val r1: TPostResult[Context, IS[Z, TypeParam]] = transformISZ(r0.ctx, o2.typeParams, transformTypeParam _)
