@@ -352,10 +352,7 @@ object FrontEnd {
   }
 
   @memoize def checkedLibraryReporter: (TypeChecker, Reporter) = {
-    val (tc, reporter) = libraryReporter
-    val th = tc.typeHierarchy
-    val th2 = TypeChecker.checkComponents(0, T, th, th.nameMap, th.typeMap, reporter)
-    return (TypeChecker(th2, ISZ(), F, TypeChecker.ModeContext.Code, T), reporter)
+    return checkedLibraryReporterPar(0)
   }
 
   @memoize def checkedSharedMaps: (NameMap, TypeMap) = {
