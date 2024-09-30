@@ -264,7 +264,7 @@ object State {
     }
     val r = free(free.size - 1)
     heap(r) = v.inc()
-    free = Evaluator.Ext.dropRight(free)
+    free = Util.Ext.dropRight(free)
     return r
   }
 
@@ -294,7 +294,7 @@ object State {
       return ptr
     }
     if (!heap(ptr).isObject) {
-      return alloc(Evaluator.Ext.deepClone(heap(ptr)))
+      return alloc(Util.Ext.deepClone(heap(ptr)))
     }
     var map: State.Store = HashSMap.empty
     for (p <- heap(ptr).objectMap.entries) {

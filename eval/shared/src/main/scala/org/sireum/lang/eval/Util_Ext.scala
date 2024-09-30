@@ -28,11 +28,27 @@ package org.sireum.lang.eval
 import org.sireum.$internal.MutableMarker
 import org.sireum._
 
-object Evaluator_Ext {
+object Util_Ext {
   @pure def extractValue[O](v: State.Value): O = v.asInstanceOf[State.Value.Native[_]].value.asInstanceOf[O]
   @pure def dropRight[T](s: ISZ[T]): ISZ[T] = new IS(s.companion, s.data, s.length - 1, s.boxer)
   @pure def deepClone(v: State.Value): State.Value = State.Value.Native[MutableMarker](v.tipe, 0,
     v.asInstanceOf[State.Value.Native[_]].value.asInstanceOf[MutableMarker].$clone)
+  @pure def append(s: State.Value, e: State.Value): State.Value =
+    if (s.tipe.asInstanceOf[State.Type.Seq].isImmutable)
+      State.Value.Native(s.tipe, 0, extractValue[IS[ZLike[_], Any]](s) :+ (if (e.isObject) e else extractValue[Any](e)))
+    else
+      State.Value.Native(s.tipe, 0, extractValue[MS[ZLike[_], Any]](s) :+ (if (e.isObject) e else extractValue[Any](e)))
+
+  @pure def prepend(e: State.Value, s: State.Value): State.Value =
+    if (s.tipe.asInstanceOf[State.Type.Seq].isImmutable)
+      State.Value.Native(s.tipe, 0, (if (e.isObject) e else extractValue[Any](e)) +: extractValue[IS[ZLike[_], Any]](s))
+    else
+      State.Value.Native(s.tipe, 0, (if (e.isObject) e else extractValue[Any](e)) +: extractValue[MS[ZLike[_], Any]](s))
+  @pure def appendAll(s1: State.Value, s2: State.Value): State.Value =
+    if (s1.tipe.asInstanceOf[State.Type.Seq].isImmutable)
+      State.Value.Native(s1.tipe, 0, extractValue[IS[ZLike[_], Any]](s1) :+ extractValue[IS[ZLike[_], Any]](s2))
+    else
+      State.Value.Native(s1.tipe, 0, extractValue[MS[ZLike[_], Any]](s1) :+ extractValue[MS[ZLike[_], Any]](s2))
   @pure def tuple2(v1: State.Value, v2: State.Value): State.Value =
     State.Value.Native(State.Type.Tuple2, 0, (extractValue(v1), extractValue(v2)))
   @pure def tuple3(v1: State.Value, v2: State.Value, v3: State.Value): State.Value =
