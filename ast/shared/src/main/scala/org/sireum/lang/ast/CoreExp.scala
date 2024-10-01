@@ -155,7 +155,7 @@ object CoreExp {
     @pure override def prettyST: ST = {
       val size: Z = if (lits.size < args.size) args.size else lits.size
       val sts: ISZ[ST] = for (i <- 0 until size;
-                              e <- (if (i < lits.size) ISZ(ops.StringOps(lits(i).value).escapeST) else ISZ[ST]()) ++
+                              e <- (if (i < lits.size) ISZ(ops.StringOps(lits(i)).escapeST) else ISZ[ST]()) ++
                                 (if (i < args.size) ISZ(st"$${${args(i).prettyST}}") else ISZ[ST]())) yield e
       return st"""$prefix"${(sts, "")}""""
     }
@@ -181,7 +181,7 @@ object CoreExp {
     @pure override def prettyPatternST: ST = {
       val size: Z = if (lits.size < args.size) args.size else lits.size
       val sts: ISZ[ST] = for (i <- 0 until size;
-                              e <- (if (i < lits.size) ISZ(ops.StringOps(lits(i).value).escapeST) else ISZ[ST]()) ++
+                              e <- (if (i < lits.size) ISZ(ops.StringOps(lits(i)).escapeST) else ISZ[ST]()) ++
                                 (if (i < args.size) ISZ(st"$${${args(i).prettyPatternST}}") else ISZ[ST]())) yield e
       return st"""$prefix"${(sts, "")}""""
     }
