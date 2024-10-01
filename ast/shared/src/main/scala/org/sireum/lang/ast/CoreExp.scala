@@ -151,6 +151,42 @@ object CoreExp {
     @strictpure override def isMinusOne: B = F
   }
 
+  @datatype class StringInterpolate(val prefix: String, val lits: ISZ[String], val args: ISZ[Base], @hidden val rawType: Typed) extends Base {
+    @pure override def prettyST: ST = {
+      val size: Z = if (lits.size < args.size) args.size else lits.size
+      val sts: ISZ[ST] = for (i <- 0 until size;
+                              e <- (if (i < lits.size) ISZ(ops.StringOps(lits(i).value).escapeST) else ISZ[ST]()) ++
+                                (if (i < args.size) ISZ(st"$${${args(i).prettyST}}") else ISZ[ST]())) yield e
+      return st"""$prefix"${(sts, "")}""""
+    }
+
+    @pure override def subst(sm: HashMap[String, Typed]): StringInterpolate = {
+      if (sm.isEmpty) {
+        return this
+      }
+      val thiz = this
+      return thiz(args = for (arg <- args) yield arg.subst(sm))
+    }
+
+    @pure override def incDeBruijn(threshold: Z): StringInterpolate = {
+      val thiz = this
+      return thiz(args = for (arg <- args) yield arg.incDeBruijn(threshold))
+    }
+
+    @pure override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): StringInterpolate = {
+      val thiz = this
+      return thiz(args = for (arg <- args) yield arg.numberPattern(numMap))
+    }
+
+    @pure override def prettyPatternST: ST = {
+      val size: Z = if (lits.size < args.size) args.size else lits.size
+      val sts: ISZ[ST] = for (i <- 0 until size;
+                              e <- (if (i < lits.size) ISZ(ops.StringOps(lits(i).value).escapeST) else ISZ[ST]()) ++
+                                (if (i < args.size) ISZ(st"$${${args(i).prettyPatternST}}") else ISZ[ST]())) yield e
+      return st"""$prefix"${(sts, "")}""""
+    }
+  }
+
   @datatype class ParamVarRef(val deBruijn: Z, @hidden val id: String, @hidden val rawType: Typed) extends Base {
     @strictpure override def prettyST: ST = st"$id"
     @strictpure override def prettyPatternST: ST = prettyST

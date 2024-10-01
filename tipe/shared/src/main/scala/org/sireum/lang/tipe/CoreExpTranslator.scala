@@ -247,7 +247,8 @@ import CoreExpTranslator._
                 } else {
                   return AST.CoreExp.LitRange(Z(e.lits(0).value).get, t)
                 }
-              case _ => halt(s"TODO: $e")
+              case _ => return AST.CoreExp.StringInterpolate(e.prefix, for (lit <- e.lits) yield lit.value,
+                for (arg <- e.args) yield translateExp(arg, funStack, localMap), e.typedOpt.get)
             }
           case _ => halt(s"Infeasible: expected typed expression")
         }

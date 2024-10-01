@@ -70,6 +70,7 @@ import Evaluator._
       case exp: AST.CoreExp.LitBits => return state.alloc(toValue(State.Type.Bits(exp.tipe.asInstanceOf[AST.Typed.Name].ids), exp.value))
       case exp: AST.CoreExp.LitRange => return state.alloc(toValue(State.Type.Range(exp.tipe.asInstanceOf[AST.Typed.Name].ids), exp.value))
       case exp: AST.CoreExp.LitEnum => halt(s"TODO: $exp") // TODO
+      case exp: AST.CoreExp.StringInterpolate => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Binary =>
         val l = evalCoreExp(pos, exp.left, funStack, localMap)
         def evalRight(): State.Ptr = {
