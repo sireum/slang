@@ -26,6 +26,7 @@
 package org.sireum.lang
 
 import org.sireum.$internal.{RC, Trie}
+import org.sireum.NativeUtil
 
 object $SlangFiles {
 
@@ -42,9 +43,11 @@ object $SlangFiles {
         val r = _root_.java.nio.file.Files.newBufferedReader(f.toPath, _root_.java.nio.charset.StandardCharsets.UTF_8)
         val line: Predef.String = r.readLine
         r.close()
-        line != null && line.replaceAllLiterally(" ", "").contains("#Sireum")
+        line != null && line.replace(" ", "").contains("#Sireum")
       } else false
     }
 
   def trie: Trie.Node[Predef.String, Predef.String] = RC.toTrie(map)
+
+  def par: org.sireum.Z = if (NativeUtil.isNative) 0 else Runtime.getRuntime.availableProcessors
 }

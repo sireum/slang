@@ -328,7 +328,7 @@ object FrontEnd {
   }
 
   def libraryReporter: (TypeChecker, Reporter) = {
-    return libraryReporterPar(0)
+    return libraryReporterPar(Ext.par)
   }
 
   def libraryReporterPar(par: Z): (TypeChecker, Reporter) = {
@@ -352,7 +352,7 @@ object FrontEnd {
   }
 
   @memoize def checkedLibraryReporter: (TypeChecker, Reporter) = {
-    return checkedLibraryReporterPar(0)
+    return checkedLibraryReporterPar(Ext.par)
   }
 
   @memoize def checkedSharedMaps: (NameMap, TypeMap) = {
@@ -552,4 +552,7 @@ object FrontEnd {
     return (typeChecker.typeHierarchy(nameMap = nameMap), program(body = newBody(stmts = newStmts)))
   }
 
+  @ext("$SlangFiles") object Ext {
+    def par: Z = $
+  }
 }
