@@ -517,6 +517,12 @@ class TypeCheckerTest extends TestSuite {
     "Failing" - {
 
       "Worksheet" - {
+        * - failingWorksheet(
+          """import org.sireum._
+            |def foo(lits: ISZ[String], i: Z): Unit = {
+            |  ISZ(ops.StringOps(lits(i).value).escapeST)
+            |}""".stripMargin, "'value' is not a member")
+
 
         * - failingWorksheet(
           """import org.sireum._

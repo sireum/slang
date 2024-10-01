@@ -1515,7 +1515,9 @@ import TypeChecker._
     }
 
     def errAccess(t: AST.Typed): Unit = {
-      reporter.error(ident.attr.posOpt, typeCheckerKind, s"'$id' is not a member of type '$t'.")
+      if (!reporter.ignore) {
+        reporter.error(ident.attr.posOpt, typeCheckerKind, s"'$id' is not a member of type '$t'.")
+      }
     }
 
     def checkAccess(t: AST.Typed): (Option[AST.Typed], Option[AST.ResolvedInfo], ISZ[AST.Typed]) = {
@@ -2575,7 +2577,7 @@ import TypeChecker._
           }
         }
         val rArgs = tryArgs()
-        if (rArgs._2.nonEmpty) {
+        if (rArgs._2.nonEmpty && !repArgs.hasError) {
           return rArgs
         }
         if (repArgs.hasIssue) {
