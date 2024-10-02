@@ -25,8 +25,7 @@
 
 package org.sireum.lang
 
-import org.sireum.$internal.{RC, Trie}
-import org.sireum.NativeUtil
+import org.sireum.$internal.{Macro, RC, Trie}
 
 object $SlangFiles {
 
@@ -49,5 +48,5 @@ object $SlangFiles {
 
   def trie: Trie.Node[Predef.String, Predef.String] = RC.toTrie(map)
 
-  def par: org.sireum.Z = if (NativeUtil.isNative) 0 else Runtime.getRuntime.availableProcessors
+  def par: org.sireum.Z = if (Macro.isNative) 0 else Runtime.getRuntime.availableProcessors
 }
