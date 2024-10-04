@@ -288,424 +288,173 @@ object Util {
   }
 
   def tuple2(state: State, v1: State.Value, v2: State.Value): State.Value = {
-    if (!(v1.isObject || v2.isObject)) {
+    if (v1.isNative || v2.isNative) {
       return Ext.tuple2(v1, v2)
     }
-    var map: State.Store = HashSMap.empty
-    map = map + "_1" ~> state.alloc(v1)
-    map = map + "_2" ~> state.alloc(v2)
-    return State.Value.Object(State.Type.Tuple2, 0, map)
+    val isImmutable: B = v1.tipe.isImmutable && v2.tipe.isImmutable
+    return State.Value.Tuple(isImmutable, 0, ISZ(state.alloc(v1), state.alloc(v2)))
   }
 
   def tuple3(state: State, v1: State.Value, v2: State.Value, v3: State.Value): State.Value = {
-    if (!(v1.isObject || v2.isObject || v3.isObject)) {
+    if (v1.isNative || v2.isNative || v3.isNative) {
       return Ext.tuple3(v1, v2, v3)
     }
-    var map: State.Store = HashSMap.empty
-    map = map + "_1" ~> state.alloc(v1)
-    map = map + "_2" ~> state.alloc(v2)
-    map = map + "_3" ~> state.alloc(v3)
-    return State.Value.Object(State.Type.Tuple3, 0, map)
+    val isImmutable: B = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable
+    return State.Value.Tuple(isImmutable, 0, ISZ(state.alloc(v1), state.alloc(v2), state.alloc(v3)))
   }
 
   def tuple4(state: State, v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value): State.Value = {
-    if (!(v1.isObject || v2.isObject || v3.isObject || v4.isObject)) {
+    if (v1.isNative || v2.isNative || v3.isNative || v4.isNative) {
       return Ext.tuple4(v1, v2, v3, v4)
     }
-    var map: State.Store = HashSMap.empty
-    map = map + "_1" ~> state.alloc(v1)
-    map = map + "_2" ~> state.alloc(v2)
-    map = map + "_3" ~> state.alloc(v3)
-    map = map + "_4" ~> state.alloc(v4)
-    return State.Value.Object(State.Type.Tuple4, 0, map)
+    val isImmutable: B = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable
+    return State.Value.Tuple(isImmutable, 0, ISZ(state.alloc(v1), state.alloc(v2), state.alloc(v3), state.alloc(v4)))
   }
 
   def tuple5(state: State, v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value): State.Value = {
-    if (!(v1.isObject || v2.isObject || v3.isObject || v4.isObject || v5.isObject)) {
+    if (v1.isNative || v2.isNative || v3.isNative || v4.isNative || v5.isNative) {
       return Ext.tuple5(v1, v2, v3, v4, v5)
     }
-    var map: State.Store = HashSMap.empty
-    map = map + "_1" ~> state.alloc(v1)
-    map = map + "_2" ~> state.alloc(v2)
-    map = map + "_3" ~> state.alloc(v3)
-    map = map + "_4" ~> state.alloc(v4)
-    map = map + "_5" ~> state.alloc(v5)
-    return State.Value.Object(State.Type.Tuple5, 0, map)
+    val isImmutable: B = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable
+    return State.Value.Tuple(isImmutable, 0, ISZ(state.alloc(v1), state.alloc(v2), state.alloc(v3), state.alloc(v4), state.alloc(v5)))
   }
 
   def tuple6(state: State, v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value): State.Value = {
-    if (!(v1.isObject || v2.isObject || v3.isObject || v4.isObject || v5.isObject || v6.isObject)) {
+    if (v1.isNative || v2.isNative || v3.isNative || v4.isNative || v5.isNative || v6.isNative) {
       return Ext.tuple6(v1, v2, v3, v4, v5, v6)
     }
-    var map: State.Store = HashSMap.empty
-    map = map + "_1" ~> state.alloc(v1)
-    map = map + "_2" ~> state.alloc(v2)
-    map = map + "_3" ~> state.alloc(v3)
-    map = map + "_4" ~> state.alloc(v4)
-    map = map + "_5" ~> state.alloc(v5)
-    map = map + "_6" ~> state.alloc(v6)
-    return State.Value.Object(State.Type.Tuple6, 0, map)
+    val isImmutable: B = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable
+    return State.Value.Tuple(isImmutable, 0, ISZ(state.alloc(v1), state.alloc(v2), state.alloc(v3), state.alloc(v4), state.alloc(v5), state.alloc(v6)))
   }
 
   def tuple7(state: State, v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value): State.Value = {
-    if (!(v1.isObject || v2.isObject || v3.isObject || v4.isObject || v5.isObject || v6.isObject || v7.isObject)) {
+    if (v1.isNative || v2.isNative || v3.isNative || v4.isNative || v5.isNative || v6.isNative || v7.isNative) {
       return Ext.tuple7(v1, v2, v3, v4, v5, v6, v7)
     }
-    var map: State.Store = HashSMap.empty
-    map = map + "_1" ~> state.alloc(v1)
-    map = map + "_2" ~> state.alloc(v2)
-    map = map + "_3" ~> state.alloc(v3)
-    map = map + "_4" ~> state.alloc(v4)
-    map = map + "_5" ~> state.alloc(v5)
-    map = map + "_6" ~> state.alloc(v6)
-    map = map + "_7" ~> state.alloc(v7)
-    return State.Value.Object(State.Type.Tuple7, 0, map)
+    val isImmutable: B = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable
+    return State.Value.Tuple(isImmutable, 0, ISZ(state.alloc(v1), state.alloc(v2), state.alloc(v3), state.alloc(v4), state.alloc(v5), state.alloc(v6), state.alloc(v7)))
   }
 
   def tuple8(state: State, v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value): State.Value = {
-    if (!(v1.isObject || v2.isObject || v3.isObject || v4.isObject || v5.isObject || v6.isObject || v7.isObject || v8.isObject)) {
+    if (v1.isNative || v2.isNative || v3.isNative || v4.isNative || v5.isNative || v6.isNative || v7.isNative || v8.isNative) {
       return Ext.tuple8(v1, v2, v3, v4, v5, v6, v7, v8)
     }
-    var map: State.Store = HashSMap.empty
-    map = map + "_1" ~> state.alloc(v1)
-    map = map + "_2" ~> state.alloc(v2)
-    map = map + "_3" ~> state.alloc(v3)
-    map = map + "_4" ~> state.alloc(v4)
-    map = map + "_5" ~> state.alloc(v5)
-    map = map + "_6" ~> state.alloc(v6)
-    map = map + "_7" ~> state.alloc(v7)
-    map = map + "_8" ~> state.alloc(v8)
-    return State.Value.Object(State.Type.Tuple8, 0, map)
+    val isImmutable: B = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable
+    return State.Value.Tuple(isImmutable, 0, ISZ(state.alloc(v1), state.alloc(v2), state.alloc(v3), state.alloc(v4), state.alloc(v5), state.alloc(v6), state.alloc(v7), state.alloc(v8)))
   }
 
   def tuple9(state: State, v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value): State.Value = {
-    if (!(v1.isObject || v2.isObject || v3.isObject || v4.isObject || v5.isObject || v6.isObject || v7.isObject || v8.isObject || v9.isObject)) {
+    if (v1.isNative || v2.isNative || v3.isNative || v4.isNative || v5.isNative || v6.isNative || v7.isNative || v8.isNative || v9.isNative) {
       return Ext.tuple9(v1, v2, v3, v4, v5, v6, v7, v8, v9)
     }
-    var map: State.Store = HashSMap.empty
-    map = map + "_1" ~> state.alloc(v1)
-    map = map + "_2" ~> state.alloc(v2)
-    map = map + "_3" ~> state.alloc(v3)
-    map = map + "_4" ~> state.alloc(v4)
-    map = map + "_5" ~> state.alloc(v5)
-    map = map + "_6" ~> state.alloc(v6)
-    map = map + "_7" ~> state.alloc(v7)
-    map = map + "_8" ~> state.alloc(v8)
-    map = map + "_9" ~> state.alloc(v9)
-    return State.Value.Object(State.Type.Tuple9, 0, map)
+    val isImmutable: B = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable
+    return State.Value.Tuple(isImmutable, 0, ISZ(state.alloc(v1), state.alloc(v2), state.alloc(v3), state.alloc(v4), state.alloc(v5), state.alloc(v6), state.alloc(v7), state.alloc(v8), state.alloc(v9)))
   }
 
   def tuple10(state: State, v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value): State.Value = {
-    if (!(v1.isObject || v2.isObject || v3.isObject || v4.isObject || v5.isObject || v6.isObject || v7.isObject || v8.isObject || v9.isObject || v10.isObject)) {
+    if (v1.isNative || v2.isNative || v3.isNative || v4.isNative || v5.isNative || v6.isNative || v7.isNative || v8.isNative || v9.isNative || v10.isNative) {
       return Ext.tuple10(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10)
     }
-    var map: State.Store = HashSMap.empty
-    map = map + "_1" ~> state.alloc(v1)
-    map = map + "_2" ~> state.alloc(v2)
-    map = map + "_3" ~> state.alloc(v3)
-    map = map + "_4" ~> state.alloc(v4)
-    map = map + "_5" ~> state.alloc(v5)
-    map = map + "_6" ~> state.alloc(v6)
-    map = map + "_7" ~> state.alloc(v7)
-    map = map + "_8" ~> state.alloc(v8)
-    map = map + "_9" ~> state.alloc(v9)
-    map = map + "_10" ~> state.alloc(v10)
-    return State.Value.Object(State.Type.Tuple10, 0, map)
+    val isImmutable: B = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable
+    return State.Value.Tuple(isImmutable, 0, ISZ(state.alloc(v1), state.alloc(v2), state.alloc(v3), state.alloc(v4), state.alloc(v5), state.alloc(v6), state.alloc(v7), state.alloc(v8), state.alloc(v9), state.alloc(v10)))
   }
 
   def tuple11(state: State, v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value): State.Value = {
-    if (!(v1.isObject || v2.isObject || v3.isObject || v4.isObject || v5.isObject || v6.isObject || v7.isObject || v8.isObject || v9.isObject || v10.isObject || v11.isObject)) {
+    if (v1.isNative || v2.isNative || v3.isNative || v4.isNative || v5.isNative || v6.isNative || v7.isNative || v8.isNative || v9.isNative || v10.isNative || v11.isNative) {
       return Ext.tuple11(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11)
     }
-    var map: State.Store = HashSMap.empty
-    map = map + "_1" ~> state.alloc(v1)
-    map = map + "_2" ~> state.alloc(v2)
-    map = map + "_3" ~> state.alloc(v3)
-    map = map + "_4" ~> state.alloc(v4)
-    map = map + "_5" ~> state.alloc(v5)
-    map = map + "_6" ~> state.alloc(v6)
-    map = map + "_7" ~> state.alloc(v7)
-    map = map + "_8" ~> state.alloc(v8)
-    map = map + "_9" ~> state.alloc(v9)
-    map = map + "_10" ~> state.alloc(v10)
-    map = map + "_11" ~> state.alloc(v11)
-    return State.Value.Object(State.Type.Tuple11, 0, map)
+    val isImmutable: B = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable
+    return State.Value.Tuple(isImmutable, 0, ISZ(state.alloc(v1), state.alloc(v2), state.alloc(v3), state.alloc(v4), state.alloc(v5), state.alloc(v6), state.alloc(v7), state.alloc(v8), state.alloc(v9), state.alloc(v10), state.alloc(v11)))
   }
 
   def tuple12(state: State, v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value): State.Value = {
-    if (!(v1.isObject || v2.isObject || v3.isObject || v4.isObject || v5.isObject || v6.isObject || v7.isObject || v8.isObject || v9.isObject || v10.isObject || v11.isObject || v12.isObject)) {
+    if (v1.isNative || v2.isNative || v3.isNative || v4.isNative || v5.isNative || v6.isNative || v7.isNative || v8.isNative || v9.isNative || v10.isNative || v11.isNative || v12.isNative) {
       return Ext.tuple12(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12)
     }
-    var map: State.Store = HashSMap.empty
-    map = map + "_1" ~> state.alloc(v1)
-    map = map + "_2" ~> state.alloc(v2)
-    map = map + "_3" ~> state.alloc(v3)
-    map = map + "_4" ~> state.alloc(v4)
-    map = map + "_5" ~> state.alloc(v5)
-    map = map + "_6" ~> state.alloc(v6)
-    map = map + "_7" ~> state.alloc(v7)
-    map = map + "_8" ~> state.alloc(v8)
-    map = map + "_9" ~> state.alloc(v9)
-    map = map + "_10" ~> state.alloc(v10)
-    map = map + "_11" ~> state.alloc(v11)
-    map = map + "_12" ~> state.alloc(v12)
-    return State.Value.Object(State.Type.Tuple12, 0, map)
+    val isImmutable: B = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable && v12.tipe.isImmutable
+    return State.Value.Tuple(isImmutable, 0, ISZ(state.alloc(v1), state.alloc(v2), state.alloc(v3), state.alloc(v4), state.alloc(v5), state.alloc(v6), state.alloc(v7), state.alloc(v8), state.alloc(v9), state.alloc(v10), state.alloc(v11), state.alloc(v12)))
   }
 
   def tuple13(state: State, v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value): State.Value = {
-    if (!(v1.isObject || v2.isObject || v3.isObject || v4.isObject || v5.isObject || v6.isObject || v7.isObject || v8.isObject || v9.isObject || v10.isObject || v11.isObject || v12.isObject || v13.isObject)) {
+    if (v1.isNative || v2.isNative || v3.isNative || v4.isNative || v5.isNative || v6.isNative || v7.isNative || v8.isNative || v9.isNative || v10.isNative || v11.isNative || v12.isNative || v13.isNative) {
       return Ext.tuple13(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13)
     }
-    var map: State.Store = HashSMap.empty
-    map = map + "_1" ~> state.alloc(v1)
-    map = map + "_2" ~> state.alloc(v2)
-    map = map + "_3" ~> state.alloc(v3)
-    map = map + "_4" ~> state.alloc(v4)
-    map = map + "_5" ~> state.alloc(v5)
-    map = map + "_6" ~> state.alloc(v6)
-    map = map + "_7" ~> state.alloc(v7)
-    map = map + "_8" ~> state.alloc(v8)
-    map = map + "_9" ~> state.alloc(v9)
-    map = map + "_10" ~> state.alloc(v10)
-    map = map + "_11" ~> state.alloc(v11)
-    map = map + "_12" ~> state.alloc(v12)
-    map = map + "_13" ~> state.alloc(v13)
-    return State.Value.Object(State.Type.Tuple13, 0, map)
+    val isImmutable: B = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable && v12.tipe.isImmutable && v13.tipe.isImmutable
+    return State.Value.Tuple(isImmutable, 0, ISZ(state.alloc(v1), state.alloc(v2), state.alloc(v3), state.alloc(v4), state.alloc(v5), state.alloc(v6), state.alloc(v7), state.alloc(v8), state.alloc(v9), state.alloc(v10), state.alloc(v11), state.alloc(v12), state.alloc(v13)))
   }
 
   def tuple14(state: State, v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value): State.Value = {
-    if (!(v1.isObject || v2.isObject || v3.isObject || v4.isObject || v5.isObject || v6.isObject || v7.isObject || v8.isObject || v9.isObject || v10.isObject || v11.isObject || v12.isObject || v13.isObject || v14.isObject)) {
+    if (v1.isNative || v2.isNative || v3.isNative || v4.isNative || v5.isNative || v6.isNative || v7.isNative || v8.isNative || v9.isNative || v10.isNative || v11.isNative || v12.isNative || v13.isNative || v14.isNative) {
       return Ext.tuple14(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14)
     }
-    var map: State.Store = HashSMap.empty
-    map = map + "_1" ~> state.alloc(v1)
-    map = map + "_2" ~> state.alloc(v2)
-    map = map + "_3" ~> state.alloc(v3)
-    map = map + "_4" ~> state.alloc(v4)
-    map = map + "_5" ~> state.alloc(v5)
-    map = map + "_6" ~> state.alloc(v6)
-    map = map + "_7" ~> state.alloc(v7)
-    map = map + "_8" ~> state.alloc(v8)
-    map = map + "_9" ~> state.alloc(v9)
-    map = map + "_10" ~> state.alloc(v10)
-    map = map + "_11" ~> state.alloc(v11)
-    map = map + "_12" ~> state.alloc(v12)
-    map = map + "_13" ~> state.alloc(v13)
-    map = map + "_14" ~> state.alloc(v14)
-    return State.Value.Object(State.Type.Tuple14, 0, map)
+    val isImmutable: B = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable && v12.tipe.isImmutable && v13.tipe.isImmutable && v14.tipe.isImmutable
+    return State.Value.Tuple(isImmutable, 0, ISZ(state.alloc(v1), state.alloc(v2), state.alloc(v3), state.alloc(v4), state.alloc(v5), state.alloc(v6), state.alloc(v7), state.alloc(v8), state.alloc(v9), state.alloc(v10), state.alloc(v11), state.alloc(v12), state.alloc(v13), state.alloc(v14)))
   }
 
   def tuple15(state: State, v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value): State.Value = {
-    if (!(v1.isObject || v2.isObject || v3.isObject || v4.isObject || v5.isObject || v6.isObject || v7.isObject || v8.isObject || v9.isObject || v10.isObject || v11.isObject || v12.isObject || v13.isObject || v14.isObject || v15.isObject)) {
+    if (v1.isNative || v2.isNative || v3.isNative || v4.isNative || v5.isNative || v6.isNative || v7.isNative || v8.isNative || v9.isNative || v10.isNative || v11.isNative || v12.isNative || v13.isNative || v14.isNative || v15.isNative) {
       return Ext.tuple15(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15)
     }
-    var map: State.Store = HashSMap.empty
-    map = map + "_1" ~> state.alloc(v1)
-    map = map + "_2" ~> state.alloc(v2)
-    map = map + "_3" ~> state.alloc(v3)
-    map = map + "_4" ~> state.alloc(v4)
-    map = map + "_5" ~> state.alloc(v5)
-    map = map + "_6" ~> state.alloc(v6)
-    map = map + "_7" ~> state.alloc(v7)
-    map = map + "_8" ~> state.alloc(v8)
-    map = map + "_9" ~> state.alloc(v9)
-    map = map + "_10" ~> state.alloc(v10)
-    map = map + "_11" ~> state.alloc(v11)
-    map = map + "_12" ~> state.alloc(v12)
-    map = map + "_13" ~> state.alloc(v13)
-    map = map + "_14" ~> state.alloc(v14)
-    map = map + "_15" ~> state.alloc(v15)
-    return State.Value.Object(State.Type.Tuple15, 0, map)
+    val isImmutable: B = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable && v12.tipe.isImmutable && v13.tipe.isImmutable && v14.tipe.isImmutable && v15.tipe.isImmutable
+    return State.Value.Tuple(isImmutable, 0, ISZ(state.alloc(v1), state.alloc(v2), state.alloc(v3), state.alloc(v4), state.alloc(v5), state.alloc(v6), state.alloc(v7), state.alloc(v8), state.alloc(v9), state.alloc(v10), state.alloc(v11), state.alloc(v12), state.alloc(v13), state.alloc(v14), state.alloc(v15)))
   }
 
   def tuple16(state: State, v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value, v16: State.Value): State.Value = {
-    if (!(v1.isObject || v2.isObject || v3.isObject || v4.isObject || v5.isObject || v6.isObject || v7.isObject || v8.isObject || v9.isObject || v10.isObject || v11.isObject || v12.isObject || v13.isObject || v14.isObject || v15.isObject || v16.isObject)) {
+    if (v1.isNative || v2.isNative || v3.isNative || v4.isNative || v5.isNative || v6.isNative || v7.isNative || v8.isNative || v9.isNative || v10.isNative || v11.isNative || v12.isNative || v13.isNative || v14.isNative || v15.isNative || v16.isNative) {
       return Ext.tuple16(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16)
     }
-    var map: State.Store = HashSMap.empty
-    map = map + "_1" ~> state.alloc(v1)
-    map = map + "_2" ~> state.alloc(v2)
-    map = map + "_3" ~> state.alloc(v3)
-    map = map + "_4" ~> state.alloc(v4)
-    map = map + "_5" ~> state.alloc(v5)
-    map = map + "_6" ~> state.alloc(v6)
-    map = map + "_7" ~> state.alloc(v7)
-    map = map + "_8" ~> state.alloc(v8)
-    map = map + "_9" ~> state.alloc(v9)
-    map = map + "_10" ~> state.alloc(v10)
-    map = map + "_11" ~> state.alloc(v11)
-    map = map + "_12" ~> state.alloc(v12)
-    map = map + "_13" ~> state.alloc(v13)
-    map = map + "_14" ~> state.alloc(v14)
-    map = map + "_15" ~> state.alloc(v15)
-    map = map + "_16" ~> state.alloc(v16)
-    return State.Value.Object(State.Type.Tuple16, 0, map)
+    val isImmutable: B = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable && v12.tipe.isImmutable && v13.tipe.isImmutable && v14.tipe.isImmutable && v15.tipe.isImmutable && v16.tipe.isImmutable
+    return State.Value.Tuple(isImmutable, 0, ISZ(state.alloc(v1), state.alloc(v2), state.alloc(v3), state.alloc(v4), state.alloc(v5), state.alloc(v6), state.alloc(v7), state.alloc(v8), state.alloc(v9), state.alloc(v10), state.alloc(v11), state.alloc(v12), state.alloc(v13), state.alloc(v14), state.alloc(v15), state.alloc(v16)))
   }
 
   def tuple17(state: State, v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value, v16: State.Value, v17: State.Value): State.Value = {
-    if (!(v1.isObject || v2.isObject || v3.isObject || v4.isObject || v5.isObject || v6.isObject || v7.isObject || v8.isObject || v9.isObject || v10.isObject || v11.isObject || v12.isObject || v13.isObject || v14.isObject || v15.isObject || v16.isObject || v17.isObject)) {
+    if (v1.isNative || v2.isNative || v3.isNative || v4.isNative || v5.isNative || v6.isNative || v7.isNative || v8.isNative || v9.isNative || v10.isNative || v11.isNative || v12.isNative || v13.isNative || v14.isNative || v15.isNative || v16.isNative || v17.isNative) {
       return Ext.tuple17(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17)
     }
-    var map: State.Store = HashSMap.empty
-    map = map + "_1" ~> state.alloc(v1)
-    map = map + "_2" ~> state.alloc(v2)
-    map = map + "_3" ~> state.alloc(v3)
-    map = map + "_4" ~> state.alloc(v4)
-    map = map + "_5" ~> state.alloc(v5)
-    map = map + "_6" ~> state.alloc(v6)
-    map = map + "_7" ~> state.alloc(v7)
-    map = map + "_8" ~> state.alloc(v8)
-    map = map + "_9" ~> state.alloc(v9)
-    map = map + "_10" ~> state.alloc(v10)
-    map = map + "_11" ~> state.alloc(v11)
-    map = map + "_12" ~> state.alloc(v12)
-    map = map + "_13" ~> state.alloc(v13)
-    map = map + "_14" ~> state.alloc(v14)
-    map = map + "_15" ~> state.alloc(v15)
-    map = map + "_16" ~> state.alloc(v16)
-    map = map + "_17" ~> state.alloc(v17)
-    return State.Value.Object(State.Type.Tuple17, 0, map)
+    val isImmutable: B = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable && v12.tipe.isImmutable && v13.tipe.isImmutable && v14.tipe.isImmutable && v15.tipe.isImmutable && v16.tipe.isImmutable && v17.tipe.isImmutable
+    return State.Value.Tuple(isImmutable, 0, ISZ(state.alloc(v1), state.alloc(v2), state.alloc(v3), state.alloc(v4), state.alloc(v5), state.alloc(v6), state.alloc(v7), state.alloc(v8), state.alloc(v9), state.alloc(v10), state.alloc(v11), state.alloc(v12), state.alloc(v13), state.alloc(v14), state.alloc(v15), state.alloc(v16), state.alloc(v17)))
   }
 
   def tuple18(state: State, v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value, v16: State.Value, v17: State.Value, v18: State.Value): State.Value = {
-    if (!(v1.isObject || v2.isObject || v3.isObject || v4.isObject || v5.isObject || v6.isObject || v7.isObject || v8.isObject || v9.isObject || v10.isObject || v11.isObject || v12.isObject || v13.isObject || v14.isObject || v15.isObject || v16.isObject || v17.isObject || v18.isObject)) {
+    if (v1.isNative || v2.isNative || v3.isNative || v4.isNative || v5.isNative || v6.isNative || v7.isNative || v8.isNative || v9.isNative || v10.isNative || v11.isNative || v12.isNative || v13.isNative || v14.isNative || v15.isNative || v16.isNative || v17.isNative || v18.isNative) {
       return Ext.tuple18(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18)
     }
-    var map: State.Store = HashSMap.empty
-    map = map + "_1" ~> state.alloc(v1)
-    map = map + "_2" ~> state.alloc(v2)
-    map = map + "_3" ~> state.alloc(v3)
-    map = map + "_4" ~> state.alloc(v4)
-    map = map + "_5" ~> state.alloc(v5)
-    map = map + "_6" ~> state.alloc(v6)
-    map = map + "_7" ~> state.alloc(v7)
-    map = map + "_8" ~> state.alloc(v8)
-    map = map + "_9" ~> state.alloc(v9)
-    map = map + "_10" ~> state.alloc(v10)
-    map = map + "_11" ~> state.alloc(v11)
-    map = map + "_12" ~> state.alloc(v12)
-    map = map + "_13" ~> state.alloc(v13)
-    map = map + "_14" ~> state.alloc(v14)
-    map = map + "_15" ~> state.alloc(v15)
-    map = map + "_16" ~> state.alloc(v16)
-    map = map + "_17" ~> state.alloc(v17)
-    map = map + "_18" ~> state.alloc(v18)
-    return State.Value.Object(State.Type.Tuple18, 0, map)
+    val isImmutable: B = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable && v12.tipe.isImmutable && v13.tipe.isImmutable && v14.tipe.isImmutable && v15.tipe.isImmutable && v16.tipe.isImmutable && v17.tipe.isImmutable && v18.tipe.isImmutable
+    return State.Value.Tuple(isImmutable, 0, ISZ(state.alloc(v1), state.alloc(v2), state.alloc(v3), state.alloc(v4), state.alloc(v5), state.alloc(v6), state.alloc(v7), state.alloc(v8), state.alloc(v9), state.alloc(v10), state.alloc(v11), state.alloc(v12), state.alloc(v13), state.alloc(v14), state.alloc(v15), state.alloc(v16), state.alloc(v17), state.alloc(v18)))
   }
 
   def tuple19(state: State, v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value, v16: State.Value, v17: State.Value, v18: State.Value, v19: State.Value): State.Value = {
-    if (!(v1.isObject || v2.isObject || v3.isObject || v4.isObject || v5.isObject || v6.isObject || v7.isObject || v8.isObject || v9.isObject || v10.isObject || v11.isObject || v12.isObject || v13.isObject || v14.isObject || v15.isObject || v16.isObject || v17.isObject || v18.isObject || v19.isObject)) {
+    if (v1.isNative || v2.isNative || v3.isNative || v4.isNative || v5.isNative || v6.isNative || v7.isNative || v8.isNative || v9.isNative || v10.isNative || v11.isNative || v12.isNative || v13.isNative || v14.isNative || v15.isNative || v16.isNative || v17.isNative || v18.isNative || v19.isNative) {
       return Ext.tuple19(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19)
     }
-    var map: State.Store = HashSMap.empty
-    map = map + "_1" ~> state.alloc(v1)
-    map = map + "_2" ~> state.alloc(v2)
-    map = map + "_3" ~> state.alloc(v3)
-    map = map + "_4" ~> state.alloc(v4)
-    map = map + "_5" ~> state.alloc(v5)
-    map = map + "_6" ~> state.alloc(v6)
-    map = map + "_7" ~> state.alloc(v7)
-    map = map + "_8" ~> state.alloc(v8)
-    map = map + "_9" ~> state.alloc(v9)
-    map = map + "_10" ~> state.alloc(v10)
-    map = map + "_11" ~> state.alloc(v11)
-    map = map + "_12" ~> state.alloc(v12)
-    map = map + "_13" ~> state.alloc(v13)
-    map = map + "_14" ~> state.alloc(v14)
-    map = map + "_15" ~> state.alloc(v15)
-    map = map + "_16" ~> state.alloc(v16)
-    map = map + "_17" ~> state.alloc(v17)
-    map = map + "_18" ~> state.alloc(v18)
-    map = map + "_19" ~> state.alloc(v19)
-    return State.Value.Object(State.Type.Tuple19, 0, map)
+    val isImmutable: B = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable && v12.tipe.isImmutable && v13.tipe.isImmutable && v14.tipe.isImmutable && v15.tipe.isImmutable && v16.tipe.isImmutable && v17.tipe.isImmutable && v18.tipe.isImmutable && v19.tipe.isImmutable
+    return State.Value.Tuple(isImmutable, 0, ISZ(state.alloc(v1), state.alloc(v2), state.alloc(v3), state.alloc(v4), state.alloc(v5), state.alloc(v6), state.alloc(v7), state.alloc(v8), state.alloc(v9), state.alloc(v10), state.alloc(v11), state.alloc(v12), state.alloc(v13), state.alloc(v14), state.alloc(v15), state.alloc(v16), state.alloc(v17), state.alloc(v18), state.alloc(v19)))
   }
 
   def tuple20(state: State, v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value, v16: State.Value, v17: State.Value, v18: State.Value, v19: State.Value, v20: State.Value): State.Value = {
-    if (!(v1.isObject || v2.isObject || v3.isObject || v4.isObject || v5.isObject || v6.isObject || v7.isObject || v8.isObject || v9.isObject || v10.isObject || v11.isObject || v12.isObject || v13.isObject || v14.isObject || v15.isObject || v16.isObject || v17.isObject || v18.isObject || v19.isObject || v20.isObject)) {
+    if (v1.isNative || v2.isNative || v3.isNative || v4.isNative || v5.isNative || v6.isNative || v7.isNative || v8.isNative || v9.isNative || v10.isNative || v11.isNative || v12.isNative || v13.isNative || v14.isNative || v15.isNative || v16.isNative || v17.isNative || v18.isNative || v19.isNative || v20.isNative) {
       return Ext.tuple20(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20)
     }
-    var map: State.Store = HashSMap.empty
-    map = map + "_1" ~> state.alloc(v1)
-    map = map + "_2" ~> state.alloc(v2)
-    map = map + "_3" ~> state.alloc(v3)
-    map = map + "_4" ~> state.alloc(v4)
-    map = map + "_5" ~> state.alloc(v5)
-    map = map + "_6" ~> state.alloc(v6)
-    map = map + "_7" ~> state.alloc(v7)
-    map = map + "_8" ~> state.alloc(v8)
-    map = map + "_9" ~> state.alloc(v9)
-    map = map + "_10" ~> state.alloc(v10)
-    map = map + "_11" ~> state.alloc(v11)
-    map = map + "_12" ~> state.alloc(v12)
-    map = map + "_13" ~> state.alloc(v13)
-    map = map + "_14" ~> state.alloc(v14)
-    map = map + "_15" ~> state.alloc(v15)
-    map = map + "_16" ~> state.alloc(v16)
-    map = map + "_17" ~> state.alloc(v17)
-    map = map + "_18" ~> state.alloc(v18)
-    map = map + "_19" ~> state.alloc(v19)
-    map = map + "_20" ~> state.alloc(v20)
-    return State.Value.Object(State.Type.Tuple20, 0, map)
+    val isImmutable: B = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable && v12.tipe.isImmutable && v13.tipe.isImmutable && v14.tipe.isImmutable && v15.tipe.isImmutable && v16.tipe.isImmutable && v17.tipe.isImmutable && v18.tipe.isImmutable && v19.tipe.isImmutable && v20.tipe.isImmutable
+    return State.Value.Tuple(isImmutable, 0, ISZ(state.alloc(v1), state.alloc(v2), state.alloc(v3), state.alloc(v4), state.alloc(v5), state.alloc(v6), state.alloc(v7), state.alloc(v8), state.alloc(v9), state.alloc(v10), state.alloc(v11), state.alloc(v12), state.alloc(v13), state.alloc(v14), state.alloc(v15), state.alloc(v16), state.alloc(v17), state.alloc(v18), state.alloc(v19), state.alloc(v20)))
   }
 
   def tuple21(state: State, v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value, v16: State.Value, v17: State.Value, v18: State.Value, v19: State.Value, v20: State.Value, v21: State.Value): State.Value = {
-    if (!(v1.isObject || v2.isObject || v3.isObject || v4.isObject || v5.isObject || v6.isObject || v7.isObject || v8.isObject || v9.isObject || v10.isObject || v11.isObject || v12.isObject || v13.isObject || v14.isObject || v15.isObject || v16.isObject || v17.isObject || v18.isObject || v19.isObject || v20.isObject || v21.isObject)) {
+    if (v1.isNative || v2.isNative || v3.isNative || v4.isNative || v5.isNative || v6.isNative || v7.isNative || v8.isNative || v9.isNative || v10.isNative || v11.isNative || v12.isNative || v13.isNative || v14.isNative || v15.isNative || v16.isNative || v17.isNative || v18.isNative || v19.isNative || v20.isNative || v21.isNative) {
       return Ext.tuple21(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21)
     }
-    var map: State.Store = HashSMap.empty
-    map = map + "_1" ~> state.alloc(v1)
-    map = map + "_2" ~> state.alloc(v2)
-    map = map + "_3" ~> state.alloc(v3)
-    map = map + "_4" ~> state.alloc(v4)
-    map = map + "_5" ~> state.alloc(v5)
-    map = map + "_6" ~> state.alloc(v6)
-    map = map + "_7" ~> state.alloc(v7)
-    map = map + "_8" ~> state.alloc(v8)
-    map = map + "_9" ~> state.alloc(v9)
-    map = map + "_10" ~> state.alloc(v10)
-    map = map + "_11" ~> state.alloc(v11)
-    map = map + "_12" ~> state.alloc(v12)
-    map = map + "_13" ~> state.alloc(v13)
-    map = map + "_14" ~> state.alloc(v14)
-    map = map + "_15" ~> state.alloc(v15)
-    map = map + "_16" ~> state.alloc(v16)
-    map = map + "_17" ~> state.alloc(v17)
-    map = map + "_18" ~> state.alloc(v18)
-    map = map + "_19" ~> state.alloc(v19)
-    map = map + "_20" ~> state.alloc(v20)
-    map = map + "_21" ~> state.alloc(v21)
-    return State.Value.Object(State.Type.Tuple21, 0, map)
+    val isImmutable: B = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable && v12.tipe.isImmutable && v13.tipe.isImmutable && v14.tipe.isImmutable && v15.tipe.isImmutable && v16.tipe.isImmutable && v17.tipe.isImmutable && v18.tipe.isImmutable && v19.tipe.isImmutable && v20.tipe.isImmutable && v21.tipe.isImmutable
+    return State.Value.Tuple(isImmutable, 0, ISZ(state.alloc(v1), state.alloc(v2), state.alloc(v3), state.alloc(v4), state.alloc(v5), state.alloc(v6), state.alloc(v7), state.alloc(v8), state.alloc(v9), state.alloc(v10), state.alloc(v11), state.alloc(v12), state.alloc(v13), state.alloc(v14), state.alloc(v15), state.alloc(v16), state.alloc(v17), state.alloc(v18), state.alloc(v19), state.alloc(v20), state.alloc(v21)))
   }
 
   def tuple22(state: State, v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value, v16: State.Value, v17: State.Value, v18: State.Value, v19: State.Value, v20: State.Value, v21: State.Value, v22: State.Value): State.Value = {
-    if (!(v1.isObject || v2.isObject || v3.isObject || v4.isObject || v5.isObject || v6.isObject || v7.isObject || v8.isObject || v9.isObject || v10.isObject || v11.isObject || v12.isObject || v13.isObject || v14.isObject || v15.isObject || v16.isObject || v17.isObject || v18.isObject || v19.isObject || v20.isObject || v21.isObject || v22.isObject)) {
+    if (v1.isNative || v2.isNative || v3.isNative || v4.isNative || v5.isNative || v6.isNative || v7.isNative || v8.isNative || v9.isNative || v10.isNative || v11.isNative || v12.isNative || v13.isNative || v14.isNative || v15.isNative || v16.isNative || v17.isNative || v18.isNative || v19.isNative || v20.isNative || v21.isNative || v22.isNative) {
       return Ext.tuple22(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22)
     }
-    var map: State.Store = HashSMap.empty
-    map = map + "_1" ~> state.alloc(v1)
-    map = map + "_2" ~> state.alloc(v2)
-    map = map + "_3" ~> state.alloc(v3)
-    map = map + "_4" ~> state.alloc(v4)
-    map = map + "_5" ~> state.alloc(v5)
-    map = map + "_6" ~> state.alloc(v6)
-    map = map + "_7" ~> state.alloc(v7)
-    map = map + "_8" ~> state.alloc(v8)
-    map = map + "_9" ~> state.alloc(v9)
-    map = map + "_10" ~> state.alloc(v10)
-    map = map + "_11" ~> state.alloc(v11)
-    map = map + "_12" ~> state.alloc(v12)
-    map = map + "_13" ~> state.alloc(v13)
-    map = map + "_14" ~> state.alloc(v14)
-    map = map + "_15" ~> state.alloc(v15)
-    map = map + "_16" ~> state.alloc(v16)
-    map = map + "_17" ~> state.alloc(v17)
-    map = map + "_18" ~> state.alloc(v18)
-    map = map + "_19" ~> state.alloc(v19)
-    map = map + "_20" ~> state.alloc(v20)
-    map = map + "_21" ~> state.alloc(v21)
-    map = map + "_22" ~> state.alloc(v22)
-    return State.Value.Object(State.Type.Tuple22, 0, map)
+    val isImmutable: B = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable && v12.tipe.isImmutable && v13.tipe.isImmutable && v14.tipe.isImmutable && v15.tipe.isImmutable && v16.tipe.isImmutable && v17.tipe.isImmutable && v18.tipe.isImmutable && v19.tipe.isImmutable && v20.tipe.isImmutable && v21.tipe.isImmutable && v22.tipe.isImmutable
+    return State.Value.Tuple(isImmutable, 0, ISZ(state.alloc(v1), state.alloc(v2), state.alloc(v3), state.alloc(v4), state.alloc(v5), state.alloc(v6), state.alloc(v7), state.alloc(v8), state.alloc(v9), state.alloc(v10), state.alloc(v11), state.alloc(v12), state.alloc(v13), state.alloc(v14), state.alloc(v15), state.alloc(v16), state.alloc(v17), state.alloc(v18), state.alloc(v19), state.alloc(v20), state.alloc(v21), state.alloc(v22)))
   }
+
 
   @strictpure def isSeq(e: AST.CoreExp): B = e.tipe match {
     case t: AST.Typed.Name => t.ids == AST.Typed.isName || t.ids == AST.Typed.msName

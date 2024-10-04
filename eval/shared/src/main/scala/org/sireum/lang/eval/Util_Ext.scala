@@ -33,64 +33,111 @@ object Util_Ext {
   @pure def dropRight[T](s: ISZ[T]): ISZ[T] = new IS(s.companion, s.data, s.length - 1, s.boxer)
   @pure def deepClone(v: State.Value): State.Value = State.Value.Native[MutableMarker](v.tipe, 0,
     v.asInstanceOf[State.Value.Native[_]].value.asInstanceOf[MutableMarker].$clone)
-  @pure def append(s: State.Value, e: State.Value): State.Value =
+  @pure def append(s: State.Value, e: State.Value): State.Value = {
+    assert(s.isNative && e.isNative)
     if (s.tipe.asInstanceOf[State.Type.Seq].isImmutable)
-      State.Value.Native(s.tipe, 0, extractValue[IS[ZLike[_], Any]](s) :+ (if (e.isObject) e else extractValue[Any](e)))
+      State.Value.Native(s.tipe, 0, extractValue[IS[ZLike[_], Any]](s) :+ extractValue[Any](e))
     else
-      State.Value.Native(s.tipe, 0, extractValue[MS[ZLike[_], Any]](s) :+ (if (e.isObject) e else extractValue[Any](e)))
-
-  @pure def prepend(e: State.Value, s: State.Value): State.Value =
+      State.Value.Native(s.tipe, 0, extractValue[MS[ZLike[_], Any]](s) :+ extractValue[Any](e))
+  }
+  @pure def prepend(e: State.Value, s: State.Value): State.Value = {
+    assert(e.isNative && s.isNative)
     if (s.tipe.asInstanceOf[State.Type.Seq].isImmutable)
-      State.Value.Native(s.tipe, 0, (if (e.isObject) e else extractValue[Any](e)) +: extractValue[IS[ZLike[_], Any]](s))
+      State.Value.Native(s.tipe, 0, extractValue[Any](e) +: extractValue[IS[ZLike[_], Any]](s))
     else
-      State.Value.Native(s.tipe, 0, (if (e.isObject) e else extractValue[Any](e)) +: extractValue[MS[ZLike[_], Any]](s))
-  @pure def appendAll(s1: State.Value, s2: State.Value): State.Value =
+      State.Value.Native(s.tipe, 0, extractValue[Any](e) +: extractValue[MS[ZLike[_], Any]](s))
+  }
+  @pure def appendAll(s1: State.Value, s2: State.Value): State.Value = {
+    assert(s1.isNative && s2.isNative)
     if (s1.tipe.asInstanceOf[State.Type.Seq].isImmutable)
-      State.Value.Native(s1.tipe, 0, extractValue[IS[ZLike[_], Any]](s1) :+ extractValue[IS[ZLike[_], Any]](s2))
+      State.Value.Native(s1.tipe, 0, extractValue[IS[ZLike[_], Any]](s1) ++ extractValue[IS[ZLike[_], Any]](s2))
     else
-      State.Value.Native(s1.tipe, 0, extractValue[MS[ZLike[_], Any]](s1) :+ extractValue[MS[ZLike[_], Any]](s2))
-  @pure def tuple2(v1: State.Value, v2: State.Value): State.Value =
-    State.Value.Native(State.Type.Tuple2, 0, (extractValue(v1), extractValue(v2)))
-  @pure def tuple3(v1: State.Value, v2: State.Value, v3: State.Value): State.Value =
-    State.Value.Native(State.Type.Tuple3, 0, (extractValue(v1), extractValue(v2), extractValue(v3)))
-  @pure def tuple4(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value): State.Value =
-    State.Value.Native(State.Type.Tuple4, 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4)))
-  @pure def tuple5(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value): State.Value =
-    State.Value.Native(State.Type.Tuple5, 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5)))
-  @pure def tuple6(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value): State.Value =
-    State.Value.Native(State.Type.Tuple6, 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6)))
-  @pure def tuple7(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value): State.Value =
-    State.Value.Native(State.Type.Tuple7, 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7)))
-  @pure def tuple8(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value): State.Value =
-    State.Value.Native(State.Type.Tuple8, 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8)))
-  @pure def tuple9(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value): State.Value =
-    State.Value.Native(State.Type.Tuple9, 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9)))
-  @pure def tuple10(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value): State.Value =
-    State.Value.Native(State.Type.Tuple10, 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10)))
-  @pure def tuple11(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value): State.Value =
-    State.Value.Native(State.Type.Tuple11, 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11)))
-  @pure def tuple12(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value): State.Value =
-    State.Value.Native(State.Type.Tuple12, 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11), extractValue(v12)))
-  @pure def tuple13(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value): State.Value =
-    State.Value.Native(State.Type.Tuple13, 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11), extractValue(v12), extractValue(v13)))
-  @pure def tuple14(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value): State.Value =
-    State.Value.Native(State.Type.Tuple14, 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11), extractValue(v12), extractValue(v13), extractValue(v14)))
-  @pure def tuple15(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value): State.Value =
-    State.Value.Native(State.Type.Tuple15, 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11), extractValue(v12), extractValue(v13), extractValue(v14), extractValue(v15)))
-  @pure def tuple16(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value, v16: State.Value): State.Value =
-    State.Value.Native(State.Type.Tuple16, 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11), extractValue(v12), extractValue(v13), extractValue(v14), extractValue(v15), extractValue(v16)))
-  @pure def tuple17(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value, v16: State.Value, v17: State.Value): State.Value =
-    State.Value.Native(State.Type.Tuple17, 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11), extractValue(v12), extractValue(v13), extractValue(v14), extractValue(v15), extractValue(v16), extractValue(v17)))
-  @pure def tuple18(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value, v16: State.Value, v17: State.Value, v18: State.Value): State.Value =
-    State.Value.Native(State.Type.Tuple18, 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11), extractValue(v12), extractValue(v13), extractValue(v14), extractValue(v15), extractValue(v16), extractValue(v17), extractValue(v18)))
-  @pure def tuple19(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value, v16: State.Value, v17: State.Value, v18: State.Value, v19: State.Value): State.Value =
-    State.Value.Native(State.Type.Tuple19, 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11), extractValue(v12), extractValue(v13), extractValue(v14), extractValue(v15), extractValue(v16), extractValue(v17), extractValue(v18), extractValue(v19)))
-  @pure def tuple20(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value, v16: State.Value, v17: State.Value, v18: State.Value, v19: State.Value, v20: State.Value): State.Value =
-    State.Value.Native(State.Type.Tuple20, 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11), extractValue(v12), extractValue(v13), extractValue(v14), extractValue(v15), extractValue(v16), extractValue(v17), extractValue(v18), extractValue(v19), extractValue(v20)))
-  @pure def tuple21(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value, v16: State.Value, v17: State.Value, v18: State.Value, v19: State.Value, v20: State.Value, v21: State.Value): State.Value =
-    State.Value.Native(State.Type.Tuple21, 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11), extractValue(v12), extractValue(v13), extractValue(v14), extractValue(v15), extractValue(v16), extractValue(v17), extractValue(v18), extractValue(v19), extractValue(v20), extractValue(v21)))
-  @pure def tuple22(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value, v16: State.Value, v17: State.Value, v18: State.Value, v19: State.Value, v20: State.Value, v21: State.Value, v22: State.Value): State.Value =
-    State.Value.Native(State.Type.Tuple22, 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11), extractValue(v12), extractValue(v13), extractValue(v14), extractValue(v15), extractValue(v16), extractValue(v17), extractValue(v18), extractValue(v19), extractValue(v20), extractValue(v21), extractValue(v22)))
+      State.Value.Native(s1.tipe, 0, extractValue[MS[ZLike[_], Any]](s1) ++ extractValue[MS[ZLike[_], Any]](s2))
+  }
+  def tuple2(v1: State.Value, v2: State.Value): State.Value = {
+    val isImmutable = v1.tipe.isImmutable && v2.tipe.isImmutable
+    State.Value.Native(State.Type.Tuple(isImmutable, 2), 0, (extractValue(v1), extractValue(v2)))
+  }
+  def tuple3(v1: State.Value, v2: State.Value, v3: State.Value): State.Value = {
+    val isImmutable = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable
+    State.Value.Native(State.Type.Tuple(isImmutable, 3), 0, (extractValue(v1), extractValue(v2), extractValue(v3)))
+  }
+  def tuple4(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value): State.Value = {
+    val isImmutable = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable
+    State.Value.Native(State.Type.Tuple(isImmutable, 4), 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4)))
+  }
+  def tuple5(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value): State.Value = {
+    val isImmutable = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable
+    State.Value.Native(State.Type.Tuple(isImmutable, 5), 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5)))
+  }
+  def tuple6(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value): State.Value = {
+    val isImmutable = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable
+    State.Value.Native(State.Type.Tuple(isImmutable, 6), 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6)))
+  }
+  def tuple7(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value): State.Value = {
+    val isImmutable = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable
+    State.Value.Native(State.Type.Tuple(isImmutable, 7), 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7)))
+  }
+  def tuple8(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value): State.Value = {
+    val isImmutable = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable
+    State.Value.Native(State.Type.Tuple(isImmutable, 8), 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8)))
+  }
+  def tuple9(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value): State.Value = {
+    val isImmutable = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable
+    State.Value.Native(State.Type.Tuple(isImmutable, 9), 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9)))
+  }
+  def tuple10(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value): State.Value = {
+    val isImmutable = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable
+    State.Value.Native(State.Type.Tuple(isImmutable, 10), 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10)))
+  }
+  def tuple11(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value): State.Value = {
+    val isImmutable = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable
+    State.Value.Native(State.Type.Tuple(isImmutable, 11), 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11)))
+  }
+  def tuple12(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value): State.Value = {
+    val isImmutable = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable && v12.tipe.isImmutable
+    State.Value.Native(State.Type.Tuple(isImmutable, 12), 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11), extractValue(v12)))
+  }
+  def tuple13(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value): State.Value = {
+    val isImmutable = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable && v12.tipe.isImmutable && v13.tipe.isImmutable
+    State.Value.Native(State.Type.Tuple(isImmutable, 13), 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11), extractValue(v12), extractValue(v13)))
+  }
+  def tuple14(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value): State.Value = {
+    val isImmutable = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable && v12.tipe.isImmutable && v13.tipe.isImmutable && v14.tipe.isImmutable
+    State.Value.Native(State.Type.Tuple(isImmutable, 14), 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11), extractValue(v12), extractValue(v13), extractValue(v14)))
+  }
+  def tuple15(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value): State.Value = {
+    val isImmutable = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable && v12.tipe.isImmutable && v13.tipe.isImmutable && v14.tipe.isImmutable && v15.tipe.isImmutable
+    State.Value.Native(State.Type.Tuple(isImmutable, 15), 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11), extractValue(v12), extractValue(v13), extractValue(v14), extractValue(v15)))
+  }
+  def tuple16(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value, v16: State.Value): State.Value = {
+    val isImmutable = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable && v12.tipe.isImmutable && v13.tipe.isImmutable && v14.tipe.isImmutable && v15.tipe.isImmutable && v16.tipe.isImmutable
+    State.Value.Native(State.Type.Tuple(isImmutable, 16), 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11), extractValue(v12), extractValue(v13), extractValue(v14), extractValue(v15), extractValue(v16)))
+  }
+  def tuple17(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value, v16: State.Value, v17: State.Value): State.Value = {
+    val isImmutable = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable && v12.tipe.isImmutable && v13.tipe.isImmutable && v14.tipe.isImmutable && v15.tipe.isImmutable && v16.tipe.isImmutable && v17.tipe.isImmutable
+    State.Value.Native(State.Type.Tuple(isImmutable, 17), 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11), extractValue(v12), extractValue(v13), extractValue(v14), extractValue(v15), extractValue(v16), extractValue(v17)))
+  }
+  def tuple18(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value, v16: State.Value, v17: State.Value, v18: State.Value): State.Value = {
+    val isImmutable = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable && v12.tipe.isImmutable && v13.tipe.isImmutable && v14.tipe.isImmutable && v15.tipe.isImmutable && v16.tipe.isImmutable && v17.tipe.isImmutable && v18.tipe.isImmutable
+    State.Value.Native(State.Type.Tuple(isImmutable, 18), 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11), extractValue(v12), extractValue(v13), extractValue(v14), extractValue(v15), extractValue(v16), extractValue(v17), extractValue(v18)))
+  }
+  def tuple19(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value, v16: State.Value, v17: State.Value, v18: State.Value, v19: State.Value): State.Value = {
+    val isImmutable = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable && v12.tipe.isImmutable && v13.tipe.isImmutable && v14.tipe.isImmutable && v15.tipe.isImmutable && v16.tipe.isImmutable && v17.tipe.isImmutable && v18.tipe.isImmutable && v19.tipe.isImmutable
+    State.Value.Native(State.Type.Tuple(isImmutable, 19), 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11), extractValue(v12), extractValue(v13), extractValue(v14), extractValue(v15), extractValue(v16), extractValue(v17), extractValue(v18), extractValue(v19)))
+  }
+  def tuple20(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value, v16: State.Value, v17: State.Value, v18: State.Value, v19: State.Value, v20: State.Value): State.Value = {
+    val isImmutable = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable && v12.tipe.isImmutable && v13.tipe.isImmutable && v14.tipe.isImmutable && v15.tipe.isImmutable && v16.tipe.isImmutable && v17.tipe.isImmutable && v18.tipe.isImmutable && v19.tipe.isImmutable && v20.tipe.isImmutable
+    State.Value.Native(State.Type.Tuple(isImmutable, 20), 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11), extractValue(v12), extractValue(v13), extractValue(v14), extractValue(v15), extractValue(v16), extractValue(v17), extractValue(v18), extractValue(v19), extractValue(v20)))
+  }
+  def tuple21(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value, v16: State.Value, v17: State.Value, v18: State.Value, v19: State.Value, v20: State.Value, v21: State.Value): State.Value = {
+    val isImmutable = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable && v12.tipe.isImmutable && v13.tipe.isImmutable && v14.tipe.isImmutable && v15.tipe.isImmutable && v16.tipe.isImmutable && v17.tipe.isImmutable && v18.tipe.isImmutable && v19.tipe.isImmutable && v20.tipe.isImmutable && v21.tipe.isImmutable
+    State.Value.Native(State.Type.Tuple(isImmutable, 21), 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11), extractValue(v12), extractValue(v13), extractValue(v14), extractValue(v15), extractValue(v16), extractValue(v17), extractValue(v18), extractValue(v19), extractValue(v20), extractValue(v21)))
+  }
+  def tuple22(v1: State.Value, v2: State.Value, v3: State.Value, v4: State.Value, v5: State.Value, v6: State.Value, v7: State.Value, v8: State.Value, v9: State.Value, v10: State.Value, v11: State.Value, v12: State.Value, v13: State.Value, v14: State.Value, v15: State.Value, v16: State.Value, v17: State.Value, v18: State.Value, v19: State.Value, v20: State.Value, v21: State.Value, v22: State.Value): State.Value = {
+    val isImmutable = v1.tipe.isImmutable && v2.tipe.isImmutable && v3.tipe.isImmutable && v4.tipe.isImmutable && v5.tipe.isImmutable && v6.tipe.isImmutable && v7.tipe.isImmutable && v8.tipe.isImmutable && v9.tipe.isImmutable && v10.tipe.isImmutable && v11.tipe.isImmutable && v12.tipe.isImmutable && v13.tipe.isImmutable && v14.tipe.isImmutable && v15.tipe.isImmutable && v16.tipe.isImmutable && v17.tipe.isImmutable && v18.tipe.isImmutable && v19.tipe.isImmutable && v20.tipe.isImmutable && v21.tipe.isImmutable && v22.tipe.isImmutable
+    State.Value.Native(State.Type.Tuple(isImmutable, 22), 0, (extractValue(v1), extractValue(v2), extractValue(v3), extractValue(v4), extractValue(v5), extractValue(v6), extractValue(v7), extractValue(v8), extractValue(v9), extractValue(v10), extractValue(v11), extractValue(v12), extractValue(v13), extractValue(v14), extractValue(v15), extractValue(v16), extractValue(v17), extractValue(v18), extractValue(v19), extractValue(v20), extractValue(v21), extractValue(v22)))
+  }
   def invoke0(reflection: Reflection, tipe: State.Type, owner: String, name: String, receiver: State.Value): State.Value = Util.toValue(tipe, reflection.invoke0(owner, name, extractValue(receiver)))
   def invoke1(reflection: Reflection, tipe: State.Type, owner: String, name: String, receiver: State.Value, o1: State.Value): State.Value = Util.toValue(tipe, reflection.invoke1(owner, name, extractValue(receiver), extractValue(o1)))
   def invoke2(reflection: Reflection, tipe: State.Type, owner: String, name: String, receiver: State.Value, o1: State.Value, o2: State.Value): State.Value = Util.toValue(tipe, reflection.invoke2(owner, name, extractValue(receiver), extractValue(o1), extractValue(o2)))

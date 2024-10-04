@@ -34,10 +34,7 @@ import Util._
 
 object Evaluator {
   val kind: String = "Slang Evaluator"
-  
 }
-
-import Evaluator._
 
 @record class Evaluator(val th: TypeHierarchy, val state: State, val reflections: ISZ[Reflection]) {
 
@@ -110,12 +107,12 @@ import Evaluator._
   }
 
   def evalEnum(exp: AST.CoreExp.LitEnum): State.Ptr = {
-    val t = State.Type.Class(T, exp.owner :+ "Type")
+    val t = State.Type.Enum(exp.owner :+ "Type")
     Reflection.find(reflections, exp.owner) match {
       case Some(r) =>
         return state.alloc(Util.Ext.invokeStatic0(r, t, st"${(exp.owner, ".")}".render, exp.id))
       case _ =>
-        return state.alloc(State.Value.Object(t, 0, HashSMap.empty))
+        return state.alloc(State.Value.Enum(t, 0, exp.id, exp.ordinal))
     }
   }
 
@@ -163,13 +160,17 @@ import Evaluator._
   }
 
   def objectToString(o: State.Value): String = {
-    if (o.isObject) {
-      val map = o.objectMap
-      val t = o.tipe.asInstanceOf[State.Type.Class]
-      val r = st"""${t.name(t.name.size - 1)}(${(for (i <- map.values) yield objectToString(state.lookupHeap(i)), ",\n")})"""
-      return r.render
+    if (o.isNative) {
+      return o.nativeValueString
     }
-    return o.nativeValueString
+    o.tipe match {
+      case t: State.Type.Tuple =>
+      case _ =>
+    }
+    val map = o.objectMap
+    val t = o.tipe.asInstanceOf[State.Type.Class]
+    val r = st"""${t.name(t.name.size - 1)}(${(for (i <- map.values) yield objectToString(state.lookupHeap(i)), ",\n")})"""
+    return r.render
   }
 
   def xprintf(stmt: AST.Stmt.Expr, f: String => Unit, i: Z): Unit = {

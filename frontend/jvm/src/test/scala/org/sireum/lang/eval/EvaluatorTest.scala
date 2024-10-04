@@ -45,11 +45,15 @@ class EvaluatorTest extends TestSuite {
 
         * - passingWorksheet(
           """import org.sireum._
-            |println(Os.Kind.Mac)""".stripMargin)
+            |println(Os.Kind.Mac)""".stripMargin, "Mac")
 
         * - passingWorksheet(
           """import org.sireum._
-            |println("Hello World! ", 7 * 6)""".stripMargin)
+            |println(1 ~> 2)""".stripMargin, "(1,2)")
+
+        * - passingWorksheet(
+          """import org.sireum._
+            |println("Hello World! ", 7 * 6)""".stripMargin, "Hello World! 42")
 
       }
     }
@@ -69,10 +73,13 @@ class EvaluatorTest extends TestSuite {
   def passingWorksheet(input: Predef.String): Unit =
     assert(testWorksheet(input, isPassing = true))
 
-  def failingWorksheet(input: Predef.String, msg: Predef.String): Unit =
-    assert(testWorksheet(input, isPassing = false, msg))
+  def passingWorksheet(input: Predef.String, passingOut: String): Unit =
+    assert(testWorksheet(input, isPassing = true, Some(passingOut)))
 
-  def testWorksheet(input: Predef.String, isPassing: Boolean, msg: Predef.String = ""): Boolean = {
+  def failingWorksheet(input: Predef.String, msg: Predef.String): Unit =
+    assert(testWorksheet(input, isPassing = false, None(), msg))
+
+  def testWorksheet(input: Predef.String, isPassing: Boolean, passingOut: Option[String] = None(), msg: Predef.String = ""): Boolean = {
     val reporter = Reporter.create
     def end(): Boolean = {
       if (reporter.hasIssue) {
@@ -100,10 +107,20 @@ class EvaluatorTest extends TestSuite {
     System.setProperty("org.sireum.silenthalt", "true")
 
     val ev = Evaluator(th, State.empty(1024), ISZ(LibJvmUtil.Ext.create))
+    val baos = new java.io.ByteArrayOutputStream()
+    val out = System.out
     try {
+      System.setOut(new java.io.PrintStream(baos))
       ev.evalWorksheet(unit)
     } catch {
-      case t: Throwable => reporter.error(None(), Evaluator.kind, t.getMessage)
+      case t: Throwable =>
+        if (isPassing) t.printStackTrace()
+        reporter.error(None(), Evaluator.kind, t.getMessage)
+    } finally {
+      System.setOut(out)
+      val s = baos.toString("UTF-8")
+      print(s)
+      passingOut.foreach(out => out.value.contains(s))
     }
     end()
   }

@@ -39,25 +39,15 @@ object State {
 
   object Type {
 
-    @datatype class Class(val isImmutable: B, val name: ISZ[String]) extends Type {
-      @memoize def tupleNumOfArgsOpt: Option[Z] = {
-        if (name.size != 3 || name(0) != "org" || name(1) != "sireum") {
-          return None()
-        }
-        val tuplePrefix: String = "Tuple"
-        val mTuplePrefix: String = "MTuple"
-        val nameOps = ops.StringOps(name(2))
-        if (nameOps.startsWith(tuplePrefix)) {
-          return org.sireum.Z(nameOps.substring(tuplePrefix.size, nameOps.size))
-        }
-        if (nameOps.startsWith(mTuplePrefix)) {
-          return org.sireum.Z(nameOps.substring(mTuplePrefix.size, nameOps.size))
-        }
-        return None()
-      }
-    }
+    @datatype class Class(val isImmutable: B, val name: ISZ[String]) extends Type
+
+    @datatype class Tuple(val isImmutable: B, val numOfArgs: Z) extends Type
 
     @datatype class Seq(val isImmutable: B) extends Type
+
+    @datatype class Enum(val name: ISZ[String]) extends Type {
+      @strictpure override def isImmutable: B = T
+    }
 
     @datatype class Primitive(val name: ISZ[String]) extends Type {
       @strictpure override def isImmutable: B = T
@@ -85,61 +75,40 @@ object State {
     val F64: Primitive = Primitive(AST.Typed.f64Name)
     val R: Primitive = Primitive(AST.Typed.rName)
     val ST: Primitive = Primitive(AST.Typed.stName)
-    val Tuple2: Class = Class(T, AST.Typed.sireumName :+ "Tuple2")
-    val Tuple3: Class = Class(T, AST.Typed.sireumName :+ "Tuple3")
-    val Tuple4: Class = Class(T, AST.Typed.sireumName :+ "Tuple4")
-    val Tuple5: Class = Class(T, AST.Typed.sireumName :+ "Tuple5")
-    val Tuple6: Class = Class(T, AST.Typed.sireumName :+ "Tuple6")
-    val Tuple7: Class = Class(T, AST.Typed.sireumName :+ "Tuple7")
-    val Tuple8: Class = Class(T, AST.Typed.sireumName :+ "Tuple8")
-    val Tuple9: Class = Class(T, AST.Typed.sireumName :+ "Tuple9")
-    val Tuple10: Class = Class(T, AST.Typed.sireumName :+ "Tuple10")
-    val Tuple11: Class = Class(T, AST.Typed.sireumName :+ "Tuple11")
-    val Tuple12: Class = Class(T, AST.Typed.sireumName :+ "Tuple12")
-    val Tuple13: Class = Class(T, AST.Typed.sireumName :+ "Tuple13")
-    val Tuple14: Class = Class(T, AST.Typed.sireumName :+ "Tuple14")
-    val Tuple15: Class = Class(T, AST.Typed.sireumName :+ "Tuple15")
-    val Tuple16: Class = Class(T, AST.Typed.sireumName :+ "Tuple16")
-    val Tuple17: Class = Class(T, AST.Typed.sireumName :+ "Tuple17")
-    val Tuple18: Class = Class(T, AST.Typed.sireumName :+ "Tuple18")
-    val Tuple19: Class = Class(T, AST.Typed.sireumName :+ "Tuple19")
-    val Tuple20: Class = Class(T, AST.Typed.sireumName :+ "Tuple20")
-    val Tuple21: Class = Class(T, AST.Typed.sireumName :+ "Tuple21")
-    val Tuple22: Class = Class(T, AST.Typed.sireumName :+ "Tuple22")
-    val MTuple2: Class = Class(F, AST.Typed.sireumName :+ "MTuple2")
-    val MTuple3: Class = Class(F, AST.Typed.sireumName :+ "MTuple3")
-    val MTuple4: Class = Class(F, AST.Typed.sireumName :+ "MTuple4")
-    val MTuple5: Class = Class(F, AST.Typed.sireumName :+ "MTuple5")
-    val MTuple6: Class = Class(F, AST.Typed.sireumName :+ "MTuple6")
-    val MTuple7: Class = Class(F, AST.Typed.sireumName :+ "MTuple7")
-    val MTuple8: Class = Class(F, AST.Typed.sireumName :+ "MTuple8")
-    val MTuple9: Class = Class(F, AST.Typed.sireumName :+ "MTuple9")
-    val MTuple10: Class = Class(F, AST.Typed.sireumName :+ "MTuple10")
-    val MTuple11: Class = Class(F, AST.Typed.sireumName :+ "MTuple11")
-    val MTuple12: Class = Class(F, AST.Typed.sireumName :+ "MTuple12")
-    val MTuple13: Class = Class(F, AST.Typed.sireumName :+ "MTuple13")
-    val MTuple14: Class = Class(F, AST.Typed.sireumName :+ "MTuple14")
-    val MTuple15: Class = Class(F, AST.Typed.sireumName :+ "MTuple15")
-    val MTuple16: Class = Class(F, AST.Typed.sireumName :+ "MTuple16")
-    val MTuple17: Class = Class(F, AST.Typed.sireumName :+ "MTuple17")
-    val MTuple18: Class = Class(F, AST.Typed.sireumName :+ "MTuple18")
-    val MTuple19: Class = Class(F, AST.Typed.sireumName :+ "MTuple19")
-    val MTuple20: Class = Class(F, AST.Typed.sireumName :+ "MTuple20")
-    val MTuple21: Class = Class(F, AST.Typed.sireumName :+ "MTuple21")
-    val MTuple22: Class = Class(F, AST.Typed.sireumName :+ "MTuple22")
   }
 
   @record trait Value {
     @pure def tipe: Type
+
     @pure def counter: Z
+
     @pure def inc(): Value
+
     @pure def dec(): Value
-    @pure def isObject: B
-    @pure def isBox: B
-    @pure def objectMap: Store
-    @pure def boxedValue: Ptr
-    @pure def updateBoxedValue(newValue: Ptr): Value.Box
-    @pure def nativeValueString: String
+
+    def clone(state: State): Value
+
+    def gc(state: State): Unit
+
+    @strictpure def isNative: B = F
+
+    @strictpure def isBox: B = F
+
+    @pure def objectMap: Store = {
+      halt("Infeasible")
+    }
+
+    @pure def boxedValue: Ptr = {
+      halt("Infeasible")
+    }
+
+    def updateBoxedValue(newValue: Ptr): Value.Box = {
+      halt("Infeasible")
+    }
+
+    def nativeValueString: String = {
+      halt("Infeasible")
+    }
   }
 
   object Value {
@@ -147,96 +116,164 @@ object State {
       @strictpure def tipe: Type = {
         halt("Infeasible")
       }
+
       @strictpure def counter: Z = {
         halt("Infeasible")
       }
+
       @pure def inc(): Value = {
         halt("Infeasible")
       }
+
       @pure def dec(): Value = {
         halt("Infeasible")
       }
-      @pure def isObject: B = {
+
+      def clone(state: State): Value = {
         halt("Infeasible")
       }
-      @pure def isBox: B = {
-        halt("Infeasible")
-      }
-      @pure def objectMap: Store = {
-        halt("Infeasible")
-      }
-      @pure def boxedValue: Ptr = {
-        halt("Infeasible")
-      }
-      @pure def updateBoxedValue(newValue: Ptr): Value.Box = {
-        halt("Infeasible")
-      }
-      @pure def nativeValueString: String = {
+
+      def gc(state: State): Unit = {
         halt("Infeasible")
       }
     }
-    @record class Box(val tipe: Type, val counter: Z, val isObject: B, val boxedValue: Ptr) extends Value {
+
+    @record class Box(val tipe: Type, val counter: Z, val value: Ptr) extends Value {
+      @strictpure override def boxedValue: Ptr = value
+
       @pure def inc(): Value = {
         val thiz = this
         return thiz(counter = counter + 1)
       }
+
       @pure def dec(): Value = {
         val thiz = this
         return thiz(counter = counter - 1)
       }
-      @strictpure def isBox: B = T
-      @pure def objectMap: Store = {
+
+      def clone(state: State): Value = {
         halt("Infeasible")
       }
-      @strictpure def updateBoxedValue(newValue: Ptr): Value.Box = this(boxedValue = newValue)
-      @pure def nativeValueString: String = {
-        halt("Infeasible")
+
+      override def gc(state: State): Unit = {
+        state.heap(value) = state.heap(value).dec()
+        state.gc(value)
       }
+
+      @strictpure override def updateBoxedValue(newValue: Ptr): Value.Box = Box(tipe, counter, newValue)
     }
+
     @record class Native[@mut T](val tipe: Type, val counter: Z, val value: T) extends Value {
       @pure def inc(): Value = {
         val thiz = this
         return thiz(counter = counter + 1)
       }
+
       @pure def dec(): Value = {
         val thiz = this
         return thiz(counter = counter - 1)
       }
-      @strictpure def isObject: B = F
-      @strictpure def isBox: B = F
-      @pure def objectMap: Store = {
-        halt("Infeasible")
+
+      def clone(state: State): Value = {
+        if (tipe.isImmutable) {
+          return this
+        }
+        return Native(tipe, 0, value)
       }
-      @pure def boxedValue: Ptr = {
-        halt("Infeasible")
+
+      def gc(state: State): Unit = {
       }
-      @pure def updateBoxedValue(newValue: Ptr): Value.Box = {
-        halt("Infeasible")
-      }
-      @pure def nativeValueString: String = {
+
+      @strictpure override def isNative: B = T
+
+      override def nativeValueString: String = {
         return value.string
       }
     }
-    @record class Object(val tipe: Type.Class, val counter: Z, val objectMap: Store) extends Value {
+
+    @record class Enum(val tipe: Type.Enum, val counter: Z, val id: String, val ordinal: Z) extends Value {
       @pure def inc(): Value = {
         val thiz = this
         return thiz(counter = counter + 1)
       }
+
       @pure def dec(): Value = {
         val thiz = this
         return thiz(counter = counter - 1)
       }
-      @strictpure def isObject: B = T
-      @strictpure def isBox: B = F
-      @pure def boxedValue: Ptr = {
-        halt("Infeasible")
+
+      def clone(state: State): Value = {
+        return this
       }
-      @pure def updateBoxedValue(newValue: Ptr): Value.Box = {
-        halt("Infeasible")
+
+      def gc(state: State): Unit = {
       }
-      @pure def nativeValueString: String = {
-        halt("Infeasible")
+    }
+
+    @record class Object(val tipe: Type.Class, val counter: Z, val map: Store) extends Value {
+      @pure def inc(): Value = {
+        val thiz = this
+        return thiz(counter = counter + 1)
       }
+
+      @pure def dec(): Value = {
+        val thiz = this
+        return thiz(counter = counter - 1)
+      }
+
+      def clone(state: State): Value = {
+        if (this.tipe.isImmutable) {
+          return this
+        }
+        var newMap: Store = HashSMap.empty
+        for (p <- map.entries) {
+          newMap = newMap + p._1 ~> state.clone(p._2)
+        }
+        return Object(tipe, 0, newMap)
+      }
+
+      def gc(state: State): Unit = {
+        for (ptr <- map.values) {
+          state.heap(ptr) = state.heap(ptr).dec()
+          state.gc(ptr)
+        }
+      }
+
+      @strictpure override def objectMap: Store = map
+    }
+
+    @record class Tuple(val isImmutable: B, val counter: Z, val ptrs: ISZ[State.Ptr]) extends Value {
+      @pure def inc(): Value = {
+        val thiz = this
+        return thiz(counter = counter + 1)
+      }
+
+      @pure def dec(): Value = {
+        val thiz = this
+        return thiz(counter = counter - 1)
+      }
+
+      def clone(state: State): Value = {
+        if (isImmutable) {
+          return this
+        }
+        val newPtrs = MSZ.create(ptrs.size, 0)
+        for (i <- ptrs.indices) {
+          state.heap(ptrs(i)) = state.heap(ptrs(i)).dec()
+          val o = state.heap(ptrs(i))
+          newPtrs(i) = state.alloc(o.clone(state))
+        }
+        return Tuple(isImmutable, 0, newPtrs.toISZ)
+      }
+
+      def gc(state: State): Unit = {
+        for (ptr <- ptrs) {
+          state.heap(ptr) = state.heap(ptr).dec()
+          state.gc(ptr)
+        }
+      }
+
+      @strictpure override def tipe: State.Type = State.Type.Tuple(isImmutable, ptrs.size)
     }
   }
 
@@ -272,12 +309,7 @@ object State {
     if (heap(index).counter > 0) {
       return
     }
-    if (heap(index).isObject) {
-      for (i <- heap(index).objectMap.values) {
-        heap(i) = heap(i).dec()
-        gc(i)
-      }
-    }
+    heap(index).gc(this)
     heap(index) = State.Value.Empty()
     free = free :+ index
   }
@@ -285,7 +317,7 @@ object State {
   def declare(isVar: B, x: String, ptr: State.Ptr): Unit = {
     val newPtr = clone(ptr)
     heap(newPtr) = heap(newPtr).inc()
-    store = store + x ~> (if (isVar) alloc(State.Value.Box(heap(newPtr).tipe, 1, heap(ptr).isObject, newPtr)) else newPtr)
+    store = store + x ~> (if (isVar) alloc(State.Value.Box(heap(newPtr).tipe, 1, newPtr)) else newPtr)
   }
 
   def clone(ptr: State.Ptr): State.Ptr = {
@@ -293,14 +325,10 @@ object State {
     if (heap(ptr).tipe.isImmutable) {
       return ptr
     }
-    if (!heap(ptr).isObject) {
+    if (heap(ptr).isNative) {
       return alloc(Util.Ext.deepClone(heap(ptr)))
     }
-    var map: State.Store = HashSMap.empty
-    for (p <- heap(ptr).objectMap.entries) {
-      map = map + p._1 ~> clone(p._2)
-    }
-    return alloc(State.Value.Object(heap(ptr).tipe.asInstanceOf[State.Type.Class], 0, map))
+    return alloc(heap(ptr).clone(this))
   }
 
   def assign(x: String, ptr: State.Ptr): Unit = {
