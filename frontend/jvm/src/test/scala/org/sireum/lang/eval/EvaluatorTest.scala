@@ -45,6 +45,10 @@ class EvaluatorTest extends TestSuite {
 
         * - passingWorksheet(
           """import org.sireum._
+            |println(Os.Kind.Mac)""".stripMargin)
+
+        * - passingWorksheet(
+          """import org.sireum._
             |println("Hello World! ", 7 * 6)""".stripMargin)
 
       }

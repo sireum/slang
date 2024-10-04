@@ -109,15 +109,14 @@ import Evaluator._
     }
   }
 
-  def evalEnum(pos: message.Position, exp: AST.CoreExp.LitEnum): State.Ptr = {
+  def evalEnum(exp: AST.CoreExp.LitEnum): State.Ptr = {
     val t = State.Type.Class(T, exp.owner :+ "Type")
     Reflection.find(reflections, exp.owner) match {
       case Some(r) =>
-        //return state.alloc(toValue(t, r.invokeStatic0(st"${(exp.owner, ".")}".render, exp.id)))
+        return state.alloc(Util.Ext.invokeStatic0(r, t, st"${(exp.owner, ".")}".render, exp.id))
       case _ =>
         return state.alloc(State.Value.Object(t, 0, HashSMap.empty))
     }
-    halt("TODO")
   }
 
   def evalCoreExp(pos: message.Position, exp: AST.CoreExp.Base,
@@ -132,7 +131,7 @@ import Evaluator._
       case exp: AST.CoreExp.LitString => return state.alloc(toValue(State.Type.String, exp.value))
       case exp: AST.CoreExp.LitBits => return state.alloc(toValue(State.Type.Bits(exp.tipe.asInstanceOf[AST.Typed.Name].ids), exp.value))
       case exp: AST.CoreExp.LitRange => return state.alloc(toValue(State.Type.Range(exp.tipe.asInstanceOf[AST.Typed.Name].ids), exp.value))
-      case exp: AST.CoreExp.LitEnum => halt(s"TODO: $exp") // TODO
+      case exp: AST.CoreExp.LitEnum => return evalEnum(exp)
       case exp: AST.CoreExp.StringInterpolate => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Binary => return evalBinary(pos, exp, funStack, localMap)
       case exp: AST.CoreExp.Unary => halt(s"TODO: $exp") // TODO
