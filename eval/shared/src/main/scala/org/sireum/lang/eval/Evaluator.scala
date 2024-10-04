@@ -44,8 +44,8 @@ import Evaluator._
   val printf: String => Unit = (s: String) => print(s)
   val eprintf: String => Unit = (s: String) => eprint(s)
 
-  def evalBinary[T1, T2](pos: Position, exp: AST.CoreExp.Binary, l: State.Ptr, r: () => State.Ptr,
-                         f: (Position, T1, String, () => T2) => State.Value @pure): State.Ptr = {
+  def evalBinaryH[T1, T2](pos: Position, exp: AST.CoreExp.Binary, l: State.Ptr, r: () => State.Ptr,
+                          f: (Position, T1, String, () => T2) => State.Value @pure): State.Ptr = {
     def evalRight(): T2 = {
       val rPtr = r()
       val right = Ext.extractValue[T2](state.lookupHeap(rPtr))
@@ -55,6 +55,69 @@ import Evaluator._
     val left = Ext.extractValue[T1](state.lookupHeap(l))
     state.gc(l)
     return state.alloc(f(pos, left, exp.op, evalRight _))
+  }
+
+  def evalBinary(pos: Position, exp: AST.CoreExp.Binary,
+                 funStack: CoreExpTranslator.FunStack, localMap: CoreExpTranslator.LocalMap): State.Ptr = {
+    val l = evalCoreExp(pos, exp.left, funStack, localMap)
+    def evalRight(): State.Ptr = {
+      return evalCoreExp(pos, exp.right, funStack, localMap)
+    }
+    exp.op match {
+      case AST.Exp.BinaryOp.MapsTo =>
+        val r = evalRight()
+        val left = state.lookupHeap(l)
+        val right = state.lookupHeap(r)
+        state.gc(l)
+        state.gc(r)
+        return state.alloc(tuple2(state, left, right))
+      case AST.Exp.BinaryOp.Append if isSeq(exp.left) =>
+        val r = evalRight()
+        val left = state.lookupHeap(l)
+        val right = state.lookupHeap(r)
+        state.gc(l)
+        state.gc(r)
+        return state.alloc(Ext.append(left, right))
+      case AST.Exp.BinaryOp.AppendAll if isSeq(exp.left) && isSeq(exp.right) =>
+        val r = evalRight()
+        val left = state.lookupHeap(l)
+        val right = state.lookupHeap(r)
+        state.gc(l)
+        state.gc(r)
+        return state.alloc(Ext.appendAll(left, right))
+      case AST.Exp.BinaryOp.Prepend if isSeq(exp.right) =>
+        val r = evalRight()
+        val left = state.lookupHeap(l)
+        val right = state.lookupHeap(r)
+        state.gc(l)
+        state.gc(r)
+        return state.alloc(Ext.prepend(left, right))
+      case _ =>
+    }
+
+    state.tipe(l) match {
+      case State.Type.B => return evalBinaryH(pos, exp, l, evalRight _, binaryB _)
+      case State.Type.C => return evalBinaryH(pos, exp, l, evalRight _, binaryC _)
+      case State.Type.Z => return evalBinaryH(pos, exp, l, evalRight _, binaryZ _)
+      case State.Type.F32 => return evalBinaryH(pos, exp, l, evalRight _, binaryF32 _)
+      case State.Type.F64 => return evalBinaryH(pos, exp, l, evalRight _, binaryF64 _)
+      case State.Type.R => return evalBinaryH(pos, exp, l, evalRight _, binaryR _)
+      case State.Type.String => return evalBinaryH(pos, exp, l, evalRight _, binaryR _)
+      case t: State.Type.Bits => halt(s"TODO: $t") // TODO
+      case t: State.Type.Range => halt(s"TODO: $t") // TODO
+      case t => halt(s"TODO: $t")
+    }
+  }
+
+  def evalEnum(pos: message.Position, exp: AST.CoreExp.LitEnum): State.Ptr = {
+    val t = State.Type.Class(T, exp.owner :+ "Type")
+    Reflection.find(reflections, exp.owner) match {
+      case Some(r) =>
+        //return state.alloc(toValue(t, r.invokeStatic0(st"${(exp.owner, ".")}".render, exp.id)))
+      case _ =>
+        return state.alloc(State.Value.Object(t, 0, HashSMap.empty))
+    }
+    halt("TODO")
   }
 
   def evalCoreExp(pos: message.Position, exp: AST.CoreExp.Base,
@@ -71,55 +134,7 @@ import Evaluator._
       case exp: AST.CoreExp.LitRange => return state.alloc(toValue(State.Type.Range(exp.tipe.asInstanceOf[AST.Typed.Name].ids), exp.value))
       case exp: AST.CoreExp.LitEnum => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.StringInterpolate => halt(s"TODO: $exp") // TODO
-      case exp: AST.CoreExp.Binary =>
-        val l = evalCoreExp(pos, exp.left, funStack, localMap)
-        def evalRight(): State.Ptr = {
-          return evalCoreExp(pos, exp.right, funStack, localMap)
-        }
-        exp.op match {
-          case AST.Exp.BinaryOp.MapsTo =>
-            val r = evalRight()
-            val left = state.lookupHeap(l)
-            val right = state.lookupHeap(r)
-            state.gc(l)
-            state.gc(r)
-            return state.alloc(tuple2(state, left, right))
-          case AST.Exp.BinaryOp.Append if isSeq(exp.left) =>
-            val r = evalRight()
-            val left = state.lookupHeap(l)
-            val right = state.lookupHeap(r)
-            state.gc(l)
-            state.gc(r)
-            return state.alloc(Ext.append(left, right))
-          case AST.Exp.BinaryOp.AppendAll if isSeq(exp.left) && isSeq(exp.right) =>
-            val r = evalRight()
-            val left = state.lookupHeap(l)
-            val right = state.lookupHeap(r)
-            state.gc(l)
-            state.gc(r)
-            return state.alloc(Ext.appendAll(left, right))
-          case AST.Exp.BinaryOp.Prepend if isSeq(exp.right) =>
-            val r = evalRight()
-            val left = state.lookupHeap(l)
-            val right = state.lookupHeap(r)
-            state.gc(l)
-            state.gc(r)
-            return state.alloc(Ext.prepend(left, right))
-          case _ =>
-        }
-
-        state.tipe(l) match {
-          case State.Type.B => return evalBinary(pos, exp, l, evalRight _, binaryB _)
-          case State.Type.C => return evalBinary(pos, exp, l, evalRight _, binaryC _)
-          case State.Type.Z => return evalBinary(pos, exp, l, evalRight _, binaryZ _)
-          case State.Type.F32 => return evalBinary(pos, exp, l, evalRight _, binaryF32 _)
-          case State.Type.F64 => return evalBinary(pos, exp, l, evalRight _, binaryF64 _)
-          case State.Type.R => return evalBinary(pos, exp, l, evalRight _, binaryR _)
-          case State.Type.String => return evalBinary(pos, exp, l, evalRight _, binaryR _)
-          case t: State.Type.Bits => halt(s"TODO: $t") // TODO
-          case t: State.Type.Range => halt(s"TODO: $t") // TODO
-          case t => halt(s"TODO: $t")
-        }
+      case exp: AST.CoreExp.Binary => return evalBinary(pos, exp, funStack, localMap)
       case exp: AST.CoreExp.Unary => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Constructor => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Apply => halt(s"TODO: $exp") // TODO
