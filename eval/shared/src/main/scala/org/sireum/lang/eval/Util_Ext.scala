@@ -35,21 +35,21 @@ object Util_Ext {
     v.asInstanceOf[State.Value.Native[_]].value.asInstanceOf[MutableMarker].$clone)
   @pure def append(s: State.Value, e: State.Value): State.Value = {
     assert(s.isNative && e.isNative)
-    if (s.tipe.asInstanceOf[State.Type.Seq].isImmutable)
+    if (s.tipe.isImmutable)
       State.Value.Native(s.tipe, 0, extractValue[IS[ZLike[_], Any]](s) :+ extractValue[Any](e))
     else
       State.Value.Native(s.tipe, 0, extractValue[MS[ZLike[_], Any]](s) :+ extractValue[Any](e))
   }
   @pure def prepend(e: State.Value, s: State.Value): State.Value = {
     assert(e.isNative && s.isNative)
-    if (s.tipe.asInstanceOf[State.Type.Seq].isImmutable)
+    if (s.tipe.isImmutable)
       State.Value.Native(s.tipe, 0, extractValue[Any](e) +: extractValue[IS[ZLike[_], Any]](s))
     else
       State.Value.Native(s.tipe, 0, extractValue[Any](e) +: extractValue[MS[ZLike[_], Any]](s))
   }
   @pure def appendAll(s1: State.Value, s2: State.Value): State.Value = {
     assert(s1.isNative && s2.isNative)
-    if (s1.tipe.asInstanceOf[State.Type.Seq].isImmutable)
+    if (s1.tipe.isImmutable)
       State.Value.Native(s1.tipe, 0, extractValue[IS[ZLike[_], Any]](s1) ++ extractValue[IS[ZLike[_], Any]](s2))
     else
       State.Value.Native(s1.tipe, 0, extractValue[MS[ZLike[_], Any]](s1) ++ extractValue[MS[ZLike[_], Any]](s2))

@@ -39,42 +39,48 @@ object State {
 
   object Type {
 
-    @datatype class Class(val isImmutable: B, val name: ISZ[String]) extends Type
+    @enum object Kind {
+      "Immutable"
+      "Mutable"
+      "IS"
+      "MS"
+      "Enum"
+      "Primitive"
+      "Bits"
+      "Range"
+    }
+
+    @datatype class Class(val kind: Kind.Type, val name: ISZ[String]) extends Type {
+      @strictpure def isImmutable: B = kind match {
+        case Kind.Mutable => F
+        case Kind.MS => F
+        case _ => T
+      }
+      @strictpure def isSeq: B = kind match {
+        case Kind.MS => T
+        case Kind.IS => T
+        case _ => F
+      }
+    }
 
     @datatype class Tuple(val isImmutable: B, val numOfArgs: Z) extends Type
-
-    @datatype class Seq(val isImmutable: B) extends Type
-
-    @datatype class Enum(val name: ISZ[String]) extends Type {
-      @strictpure override def isImmutable: B = T
-    }
-
-    @datatype class Primitive(val name: ISZ[String]) extends Type {
-      @strictpure override def isImmutable: B = T
-    }
-
-    @datatype class Bits(val name: ISZ[String]) extends Type {
-      @strictpure override def isImmutable: B = T
-    }
-
-    @datatype class Range(val name: ISZ[String]) extends Type {
-      @strictpure override def isImmutable: B = T
-    }
 
     @datatype class Fun(val isByName: B, val numOfArgs: Z) extends Type {
       @strictpure override def isImmutable: B = T
     }
 
-    val Nothing: Class = Class(T, AST.Typed.nothing.ids)
-    val Unit: Class = Class(T, AST.Typed.unit.ids)
-    val B: Primitive = Primitive(AST.Typed.bName)
-    val Z: Primitive = Primitive(AST.Typed.zName)
-    val C: Primitive = Primitive(AST.Typed.cName)
-    val String: Primitive = Primitive(AST.Typed.stringName)
-    val F32: Primitive = Primitive(AST.Typed.f32Name)
-    val F64: Primitive = Primitive(AST.Typed.f64Name)
-    val R: Primitive = Primitive(AST.Typed.rName)
-    val ST: Primitive = Primitive(AST.Typed.stName)
+    val Nothing: Class = Class(Kind.Immutable, AST.Typed.nothing.ids)
+    val Unit: Class = Class(Kind.Immutable, AST.Typed.unit.ids)
+    val B: Class = Class(Kind.Primitive, AST.Typed.bName)
+    val Z: Class = Class(Kind.Primitive, AST.Typed.zName)
+    val C: Class = Class(Kind.Primitive, AST.Typed.cName)
+    val String: Class = Class(Kind.Primitive, AST.Typed.stringName)
+    val F32: Class = Class(Kind.Primitive, AST.Typed.f32Name)
+    val F64: Class = Class(Kind.Primitive, AST.Typed.f64Name)
+    val R: Class = Class(Kind.Primitive, AST.Typed.rName)
+    val ST: Class = Class(Kind.Primitive, AST.Typed.stName)
+    val IS: Class = Class(Kind.MS, AST.Typed.isName)
+    val MS: Class = Class(Kind.MS, AST.Typed.msName)
   }
 
   @record trait Value {
@@ -191,7 +197,7 @@ object State {
       }
     }
 
-    @record class Enum(val tipe: Type.Enum, val counter: Z, val id: String, val ordinal: Z) extends Value {
+    @record class Enum(val tipe: Type.Class, val counter: Z, val id: String, val ordinal: Z) extends Value {
       @pure def inc(): Value = {
         val thiz = this
         return thiz(counter = counter + 1)

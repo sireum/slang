@@ -100,14 +100,14 @@ object Evaluator {
       case State.Type.F64 => return evalBinaryH(pos, exp, l, evalRight _, binaryF64 _)
       case State.Type.R => return evalBinaryH(pos, exp, l, evalRight _, binaryR _)
       case State.Type.String => return evalBinaryH(pos, exp, l, evalRight _, binaryR _)
-      case t: State.Type.Bits => halt(s"TODO: $t") // TODO
-      case t: State.Type.Range => halt(s"TODO: $t") // TODO
+      case State.Type.Class(State.Type.Kind.Bits, name) => halt(s"TODO: $name") // TODO
+      case State.Type.Class(State.Type.Kind.Range, name) => halt(s"TODO: $name") // TODO
       case t => halt(s"TODO: $t")
     }
   }
 
   def evalEnum(exp: AST.CoreExp.LitEnum): State.Ptr = {
-    val t = State.Type.Enum(exp.owner :+ "Type")
+    val t = State.Type.Class(State.Type.Kind.Enum, exp.owner :+ "Type")
     Reflection.find(reflections, exp.owner) match {
       case Some(r) =>
         return state.alloc(Util.Ext.invokeStatic0(r, t, st"${(exp.owner, ".")}".render, exp.id))
@@ -126,8 +126,8 @@ object Evaluator {
       case exp: AST.CoreExp.LitF64 => return state.alloc(toValue(State.Type.F64, exp.value))
       case exp: AST.CoreExp.LitR => return state.alloc(toValue(State.Type.R, exp.value))
       case exp: AST.CoreExp.LitString => return state.alloc(toValue(State.Type.String, exp.value))
-      case exp: AST.CoreExp.LitBits => return state.alloc(toValue(State.Type.Bits(exp.tipe.asInstanceOf[AST.Typed.Name].ids), exp.value))
-      case exp: AST.CoreExp.LitRange => return state.alloc(toValue(State.Type.Range(exp.tipe.asInstanceOf[AST.Typed.Name].ids), exp.value))
+      case exp: AST.CoreExp.LitBits => return state.alloc(toValue(State.Type.Class(State.Type.Kind.Bits, exp.tipe.asInstanceOf[AST.Typed.Name].ids), exp.value))
+      case exp: AST.CoreExp.LitRange => return state.alloc(toValue(State.Type.Class(State.Type.Kind.Range, exp.tipe.asInstanceOf[AST.Typed.Name].ids), exp.value))
       case exp: AST.CoreExp.LitEnum => return evalEnum(exp)
       case exp: AST.CoreExp.StringInterpolate => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Binary => return evalBinary(pos, exp, funStack, localMap)
