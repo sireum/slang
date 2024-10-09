@@ -68,17 +68,20 @@ object TypeChecker {
   }
 
   @record class StrictPureChecker(val isMethod: B,
+                                  val isAbs: B,
                                   val messageKind: String,
                                   val th: TypeHierarchy,
                                   val reporter: Reporter) extends AST.MTransformer {
-    val messagePrefix: String = if (isMethod) "@strictpure methods" else "Strict-pure blocks"
+    val mod: String = if (isAbs) "@abs" else "@strictpure"
+
+    val messagePrefix: String = if (isMethod) s"$mod methods" else "Strict-pure blocks"
 
     def errVars(posOpt: Option[Position]): Unit = {
-      reporter.error(posOpt, TypeChecker.typeCheckerKind, "@strictpure methods cannot refer to vars")
+      reporter.error(posOpt, TypeChecker.typeCheckerKind, s"$mod methods cannot refer to vars")
     }
     def checkType(t: AST.Typed, posOpt: Option[Position]): Unit = {
       if (th.isMutable(t)) {
-        reporter.error(posOpt, TypeChecker.typeCheckerKind, "@strictpure methods cannot refer to outer vals of mutable type")
+        reporter.error(posOpt, TypeChecker.typeCheckerKind, s"$mod methods cannot refer to outer vals of mutable type")
       }
     }
 
@@ -184,7 +187,7 @@ object TypeChecker {
                 }
               }
             case res: AST.ResolvedInfo.LocalVar if res.scope == AST.ResolvedInfo.LocalVar.Scope.Closure && res.context.isEmpty =>
-              reporter.error(o.posOpt, TypeChecker.typeCheckerKind, "Worksheet @strictpure methods cannot refer to top-level vars/vals")
+              reporter.error(o.posOpt, TypeChecker.typeCheckerKind, s"Worksheet $mod methods cannot refer to top-level vars/vals")
             case _ =>
           }
         case _ =>
@@ -3341,7 +3344,7 @@ import TypeChecker._
       if (reporter.hasError) {
         return (AST.Exp.StrictPureBlock(newBlock.asInstanceOf[AST.Stmt.Block], spBlock.attr), None())
       }
-      val spc = StrictPureChecker(F, typeCheckerKind, typeHierarchy, Reporter.create)
+      val spc = StrictPureChecker(F, F, typeCheckerKind, typeHierarchy, Reporter.create)
       spc.transformAssignExp(newBlock)
       reporter.reports(spc.reporter.messages)
       val tOpt: Option[AST.Typed] = if (typedOpt.nonEmpty) {
@@ -5307,7 +5310,7 @@ import TypeChecker._
     }
     val r = checkMethodH()
     if (!reporter.hasError) {
-      if (r.purity != AST.Purity.StrictPure) {
+      if (r.purity != AST.Purity.StrictPure && r.purity != AST.Purity.Abs) {
         if (r.sig.returnType.typedOpt.get != AST.Typed.unit) {
           r.bodyOpt match {
             case Some(body) =>
@@ -5337,7 +5340,7 @@ import TypeChecker._
       } else {
         r.bodyOpt match {
           case Some(body) if !reporter.hasError =>
-            val spc = TypeChecker.StrictPureChecker(T, TypeChecker.typeCheckerKind, typeHierarchy, Reporter.create)
+            val spc = TypeChecker.StrictPureChecker(T, r.purity == AST.Purity.Abs, TypeChecker.typeCheckerKind, typeHierarchy, Reporter.create)
             body.stmts match {
               case ISZ(stmt: AST.Stmt.Var, _: AST.Stmt.Return) => spc.transformAssignExp(stmt.initOpt.get)
               case ISZ(stmt: AST.Stmt.Return) => stmt.expOpt match {

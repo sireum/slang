@@ -1153,7 +1153,7 @@ class SlangParser(
       }
 
       exp match {
-        case exp: Term.Block if purity != AST.Purity.StrictPure =>
+        case exp: Term.Block if purity != AST.Purity.StrictPure && purity != AST.Purity.Abs =>
           val (mc, bodyOpt) = exp.stats.headOption match {
             case scala.Some(c@q"Contract(..$exprs)") =>
               (
