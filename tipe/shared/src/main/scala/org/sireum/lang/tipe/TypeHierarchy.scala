@@ -136,6 +136,14 @@ object TypeHierarchy {
           else None())
       }
 
+      override def postExpInvoke(ctx: Z, o: AST.Exp.Invoke): AST.Transformer.TPostResult[Z, AST.Exp] = {
+        if (o.receiverOpt.nonEmpty && o.targs.isEmpty && o.args.size == 1) {
+          return AST.Transformer.TPostResult(ctx, Some(AST.Exp.Binary(o.receiverOpt.get, o.ident.id.value, o.args(0),
+            o.attr, o.ident.posOpt)))
+        }
+        return AST.Transformer.TPostResult(ctx, None())
+      }
+
       override def preExpInvokeNamed(ctx: Z, o: AST.Exp.InvokeNamed): AST.Transformer.PreResult[Z, AST.Exp] = {
         val en = ExpNormalizer.create(th)
         var newArgs = ISZ[AST.NamedArg]()
