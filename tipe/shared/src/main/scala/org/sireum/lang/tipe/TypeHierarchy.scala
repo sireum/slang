@@ -137,7 +137,7 @@ object TypeHierarchy {
       }
 
       override def postExpInvoke(ctx: Z, o: AST.Exp.Invoke): AST.Transformer.TPostResult[Z, AST.Exp] = {
-        if (o.receiverOpt.nonEmpty && o.targs.isEmpty && o.args.size == 1) {
+        if (o.receiverOpt.nonEmpty && o.targs.isEmpty && o.args.size == 1 && ops.StringOps(o.ident.id.value).isScalaOp) {
           return AST.Transformer.TPostResult(ctx, Some(AST.Exp.Binary(o.receiverOpt.get, o.ident.id.value, o.args(0),
             o.attr, o.ident.posOpt)))
         }

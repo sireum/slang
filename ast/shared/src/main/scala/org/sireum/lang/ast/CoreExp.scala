@@ -256,10 +256,12 @@ object CoreExp {
     @pure def prettySTH(leftST: ST, rightST: ST): ST = {
       val leftOpOpt: Option[String] = left match {
         case left: Binary => Some(left.op)
+        case Apply(Select(_, op, _), ISZ(_), _) if ops.StringOps(op).isScalaOp => Some(op)
         case _ => None()
       }
       val rightOpOpt: Option[String] = right match {
         case right: Binary => Some(right.op)
+        case Apply(Select(_, op, _), ISZ(_), _) if ops.StringOps(op).isScalaOp => Some(op)
         case _ => None()
       }
       return Exp.Binary.prettyST(op, ops.StringOps(op).endsWith(":"), leftST, leftOpOpt,
@@ -520,9 +522,23 @@ object CoreExp {
 
   @datatype class Apply(val exp: Base, val args: ISZ[Base], val rawType: Typed) extends Base {
     @pure override def prettyST: ST = {
+      if (args.size == 1) {
+        exp match {
+          case exp: Select if ops.StringOps(exp.id).isScalaOp =>
+            return Binary(exp.exp, exp.id, args(0), rawType).prettyST
+          case _ =>
+        }
+      }
       return st"${exp.prettyST}(${(for (arg <- args) yield arg.prettyST, ", ")})"
     }
     @pure override def prettyPatternST: ST = {
+      if (args.size == 1) {
+        exp match {
+          case exp: Select if ops.StringOps(exp.id).isScalaOp =>
+            return Binary(exp.exp, exp.id, args(0), rawType).prettyPatternST
+          case _ =>
+        }
+      }
       return st"${exp.prettyPatternST}(${(for (arg <- args) yield arg.prettyPatternST, ", ")})"
     }
     @pure override def subst(sm: HashMap[String, Typed]): Apply = {
