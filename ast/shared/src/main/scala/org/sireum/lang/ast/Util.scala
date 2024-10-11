@@ -259,6 +259,20 @@ object Util {
               for (step2 <- step.steps) {
                 maxColumnH(step2)
               }
+            case step: ProofAst.Step.Assert =>
+              val pos = step.claim.posOpt.get
+              var i = pos.offset + pos.length
+              i = ops.StringOps.stringIndexOfFrom(content, ProofReformatter.subproof, i) + ProofReformatter.subproof.size
+              while (content(i) != '(') {
+                i = i + 1
+              }
+              val column = (docInfo.lineColumn(conversions.Z.toU64(i) << u64"32" | u64"1") & u64"0xFFFFFFFF").toZ + 1
+              if (column > r) {
+                r = column
+              }
+              for (step2 <- step.steps) {
+                maxColumnH(step2)
+              }
             case _ =>
               val pos = step.attr.posOpt.get
               val justLine: Z = step match {
@@ -426,7 +440,10 @@ object Util {
         patchBeginning(step)
         step match {
           case step: ProofAst.Step.Regular => patchEnd(maxColumn, step)
-          case step: ProofAst.Step.Assert => patchEndClaim(step.attr.posOpt.get, step.claim.fullPosOpt.get)
+          case step: ProofAst.Step.Assert =>
+            for (step2 <- step.steps) {
+              rec(step2)
+            }
           case step: ProofAst.Step.Assume => patchEndClaim(step.attr.posOpt.get, step.claim.fullPosOpt.get)
           case step: ProofAst.Step.SubProof =>
             for (step2 <- step.steps) {
@@ -451,6 +468,7 @@ object Util {
     val imply: ISZ[C] = ISZ[C]('_', '_', '>', ':')
     val simply: ISZ[C] = ISZ[C]('_', '_', '_', '>', ':')
     val by: ISZ[C] = ISZ[C]('b', 'y')
+    val subproof: ISZ[C] = ISZ[C]('S', 'u', 'b', 'P', 'r', 'o', 'o', 'f')
   }
 
   @record class ProofStepInserter(val docInfo: DocInfo,
