@@ -31,6 +31,47 @@ import org.sireum.cli.CliOpt._
 
 object cli {
 
+  val slangTemplate: Tool = Tool(
+    name = "slangTemplate",
+    command = "template",
+    description = "Insert Slang template",
+    header = "Slang Script Template Inserter",
+    usage = "<option>* <slang-file>",
+    usageDescOpt = None(),
+    opts = ISZ(
+      Opt(name = "feedback", longKey = "feedback", shortKey = None(),
+        tpe = Type.Path(multiple = F, default = None()),
+        description = "Feedback output directory"),
+      Opt(name = "line", longKey = "line", shortKey = Some('l'),
+        tpe = Type.Num(sep = None(), default = 0, min = Some(1), max = None()),
+        description = "Line location"),
+      Opt(name = "mode", longKey = "mode", shortKey = Some('m'),
+        tpe = Type.Choice(name = "mode", sep = None(), elements = ISZ("step", "assume", "assert", "subproof",
+          "subproofFresh", "forall", "exists", "forallRange", "existsRange", "forallElements", "existsElements",
+          "forallIndices", "existsIndices")),
+        description = "Refactoring mode")
+    ),
+    groups = ISZ()
+  )
+
+  val slangRefactor: Tool = Tool(
+    name = "slangRefactor",
+    command = "refactor",
+    description = "Refactor script",
+    header = "Slang Script Refactoring",
+    usage = "<option>* <slang-file>",
+    usageDescOpt = None(),
+    opts = ISZ(
+      Opt(name = "feedback", longKey = "feedback", shortKey = None(),
+        tpe = Type.Path(multiple = F, default = None()),
+        description = "Feedback output directory"),
+      Opt(name = "mode", longKey = "mode", shortKey = Some('m'),
+        tpe = Type.Choice(name = "mode", sep = None(), elements = ISZ("enumSymbol", "insertVal", "renumberProof", "reformatProof", "expandInduct")),
+        description = "Refactoring mode")
+    ),
+    groups = ISZ()
+  )
+
   val slangRun: Tool = Tool(
     name = "slangRun",
     command = "run",
@@ -90,7 +131,7 @@ object cli {
         tpe = Type.Path(T, None()),
         description = "Sourcepath of Slang .scala files"),
       strictAliasingOpt,
-      verboseOpt,
+      verboseOpt
     ),
     groups = ISZ(OptGroup(name = "Persistence", opts = ISZ(
       Opt(name = "save", longKey = "save", shortKey = None(), tpe = Type.Path(F, None()),
@@ -107,7 +148,7 @@ object cli {
     description = "Slang tools",
     header = "The Sireum Language (Slang) Tools",
     unlisted = F,
-    subs = ISZ(slangRun, slangTipe)
+    subs = ISZ(slangRefactor, slangRun, slangTemplate, slangTipe)
   )
 
 }
