@@ -45,7 +45,7 @@ object cli {
       Opt(name = "line", longKey = "line", shortKey = Some('l'),
         tpe = Type.Num(sep = None(), default = 0, min = Some(1), max = None()),
         description = "Line location"),
-      Opt(name = "column", longKey = "column", shortKey = Some('l'),
+      Opt(name = "column", longKey = "column", shortKey = Some('c'),
         tpe = Type.Num(sep = None(), default = 0, min = Some(1), max = None()),
         description = "Column location"),
       Opt(name = "mode", longKey = "mode", shortKey = Some('m'),
