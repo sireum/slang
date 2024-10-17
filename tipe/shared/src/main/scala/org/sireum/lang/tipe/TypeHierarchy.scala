@@ -1702,13 +1702,13 @@ object TypeHierarchy {
       return TypeHierarchy.InductResult(isOpen, cases)
     }
 
-    @pure def substMap(pattern: AST.Pattern.Structure, expType: AST.Typed): HashSMap[AST.Exp, AST.Exp] = {
-      var r = HashSMap.empty[AST.Exp, AST.Exp]
+    @pure def substMap(pattern: AST.Pattern.Structure, expType: AST.Typed): ISZ[(AST.Exp, AST.Exp)] = {
+      var r = ISZ[(AST.Exp, AST.Exp)]()
       for (p <- pattern.patterns) {
         val vb = p.asInstanceOf[AST.Pattern.VarBinding]
         val t = vb.attr.typedOpt.get
         if (isSubType(t, expType)) {
-          r = r + exp ~> AST.Exp.Ident(vb.id, AST.ResolvedAttr(
+          r = r :+ exp ~> AST.Exp.Ident(vb.id, AST.ResolvedAttr(
             vb.posOpt,
             Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Closure, F, T, vb.id.value)),
             Some(t)))
@@ -1738,7 +1738,7 @@ object TypeHierarchy {
       val sm = substMap(struct, exp.typedOpt.get)
       if (sm.nonEmpty) {
         var premises = cas.premises
-        for (p <- sm.entries) {
+        for (p <- sm) {
           premises = premises :+ AST.Util.ExpSubstitutor(HashMap ++ ISZ(p._1 ~> p._2)).transformExp(claim).getOrElse(claim)
         }
         cases = cases :+ cas(premises = premises)
