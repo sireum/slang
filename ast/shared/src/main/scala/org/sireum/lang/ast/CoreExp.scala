@@ -235,9 +235,9 @@ object CoreExp {
     }
   }
 
-  @datatype class VarRef(val isInObject: B, val owner: ISZ[String], val id: String, val rawType: Typed) extends Base {
+  @datatype class VarRef(val owner: ISZ[String], val id: String, val rawType: Typed) extends Base {
     @strictpure override def prettyST: ST =
-      if (owner.isEmpty) st"$id" else st"${owner(owner.size - 1)}${if (isInObject) "." else "#"}$id"
+      if (owner.isEmpty) st"$id" else st"${owner(owner.size - 1)}.$id"
     @strictpure override def prettyPatternST: ST = prettyST
     @pure override def subst(sm: HashMap[String, Typed]): VarRef = {
       if (sm.isEmpty) {

@@ -27,8 +27,17 @@ package org.sireum.lang.eval
 
 import org.sireum.$internal.MutableMarker
 import org.sireum._
+import org.sireum.lang.{ast => AST}
 
 object Util_Ext {
+  @pure def unaryBits(op: AST.Exp.UnaryOp.Type, v: State.Value): State.Value =
+    op match {
+      case AST.Exp.UnaryOp.Complement => State.Value.Native(v.tipe, 0, ~extractValue[Z.BV[_]](v))
+      case AST.Exp.UnaryOp.Minus => State.Value.Native(v.tipe, 0, -extractValue[Z.BV[_]](v))
+      case _ => halt(s"Infeasible: $op")
+    }
+  @pure def binaryBits(left: State.Value, op: String, right: State.Value): State.Value =
+    State.Value.Native(left.tipe, 0, UncheckedUtil.binary(extractValue(left), op.value, extractValue(right)))
   @pure def extractValue[O](v: State.Value): O = v.asInstanceOf[State.Value.Native[_]].value.asInstanceOf[O]
   @pure def dropRight[T](s: ISZ[T]): ISZ[T] = new IS(s.companion, s.data, s.length - 1, s.boxer)
   @pure def deepClone(v: State.Value): State.Value = State.Value.Native[MutableMarker](v.tipe, 0,

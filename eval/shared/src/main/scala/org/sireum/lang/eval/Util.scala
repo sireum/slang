@@ -36,6 +36,8 @@ object Util {
     @pure def extractValue[O](v: State.Value): O = $
     @pure def dropRight[T](s: ISZ[T]): ISZ[T] = $
     @pure def deepClone(v: State.Value): State.Value = $
+    @pure def unaryBits(op: AST.Exp.UnaryOp.Type, v: State.Value): State.Value = $
+    @pure def binaryBits(left: State.Value, op: String, right: State.Value): State.Value = $
     @pure def append(s: State.Value, e: State.Value): State.Value = $
     @pure def prepend(e: State.Value, s: State.Value): State.Value = $
     @pure def appendAll(s1: State.Value, s2: State.Value): State.Value = $

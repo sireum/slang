@@ -31,6 +31,7 @@ import org.sireum.lang.tipe.{CoreExpTranslator, TypeHierarchy}
 import org.sireum.lang.{ast => AST}
 import org.sireum.message.Position
 import Util._
+import org.sireum.lang.symbol.TypeInfo
 
 object Evaluator {
   val kind: String = "Slang Evaluator"
@@ -52,6 +53,71 @@ object Evaluator {
     val left = Ext.extractValue[T1](state.lookupHeap(l))
     state.gc(l)
     return state.alloc(f(pos, left, exp.op, evalRight _))
+  }
+
+  def evalUnary(pos: Position, exp: AST.CoreExp.Unary,
+                funStack: CoreExpTranslator.FunStack, localMap: CoreExpTranslator.LocalMap): State.Ptr = {
+    val e = evalCoreExp(pos, exp.exp, funStack, localMap)
+    exp.op match {
+      case AST.Exp.UnaryOp.Plus => return e
+      case AST.Exp.UnaryOp.Not =>
+        val r = toValue(State.Type.B, !Util.Ext.extractValue[B](state.heap(e)))
+        state.gc(e)
+        return state.alloc(r)
+      case AST.Exp.UnaryOp.Complement =>
+        state.tipe(e) match {
+          case State.Type.B =>
+            val r = toValue(State.Type.B, ~Util.Ext.extractValue[B](state.heap(e)))
+            state.gc(e)
+            return state.alloc(r)
+          case State.Type.Class(State.Type.Kind.Bits, name) =>
+            if (name.size == 3 && name(0) == "org" && name(1) == "sireum") {
+              val v = state.heap(e)
+              state.gc(e)
+              return state.alloc(Util.Ext.unaryBits(exp.op, v))
+            }
+            halt(s"TODO: $name")
+          case t => halt(s"Infeasible: $t")
+        }
+      case AST.Exp.UnaryOp.Minus =>
+        state.tipe(e) match {
+          case t@State.Type.Z =>
+            val v = -Util.Ext.extractValue[Z](state.heap(e))
+            state.gc(e)
+            return state.alloc(toValue(t, v))
+          case t@State.Type.F32 =>
+            val v = -Util.Ext.extractValue[F32](state.heap(e))
+            state.gc(e)
+            return state.alloc(toValue(t, v))
+          case t@State.Type.F64 =>
+            val v = -Util.Ext.extractValue[F64](state.heap(e))
+            state.gc(e)
+            return state.alloc(toValue(t, v))
+          case t@State.Type.R =>
+            val v = -Util.Ext.extractValue[R](state.heap(e))
+            state.gc(e)
+            return state.alloc(toValue(t, v))
+          case State.Type.Class(State.Type.Kind.Bits, name) =>
+            if (name.size == 3 && name(0) == "org" && name(1) == "sireum") {
+              val v = state.heap(e)
+              state.gc(e)
+              return state.alloc(Util.Ext.unaryBits(exp.op, v))
+            }
+            halt(s"Infeasible: $name")
+          case t@State.Type.Class(State.Type.Kind.Range, name) =>
+            val v = -Util.Ext.extractValue[Z](state.heap(e))
+            val info = th.typeMap.get(name).get.asInstanceOf[TypeInfo.SubZ]
+            if (info.ast.hasMin && v < info.ast.min) {
+              throw new AssertionError(st"The low range limit is violated for ${(name, ".")}: $v at line ${pos.beginLine} ${pos.uriOpt}".render)
+            }
+            if (info.ast.hasMax && v > info.ast.max) {
+              throw new AssertionError(st"The high range limit is violated for ${(name, ".")} ($v) at line ${pos.beginLine} ${pos.uriOpt}".render)
+            }
+            state.gc(e)
+            return state.alloc(toValue(t, v))
+          case t => halt(s"Infeasible: $t")
+        }
+    }
   }
 
   def evalBinary(pos: Position, exp: AST.CoreExp.Binary,
@@ -100,9 +166,28 @@ object Evaluator {
       case State.Type.F64 => return evalBinaryH(pos, exp, l, evalRight _, binaryF64 _)
       case State.Type.R => return evalBinaryH(pos, exp, l, evalRight _, binaryR _)
       case State.Type.String => return evalBinaryH(pos, exp, l, evalRight _, binaryR _)
-      case State.Type.Class(State.Type.Kind.Bits, name) => halt(s"TODO: $name") // TODO
-      case State.Type.Class(State.Type.Kind.Range, name) => halt(s"TODO: $name") // TODO
-      case t => halt(s"TODO: $t")
+      case State.Type.Class(State.Type.Kind.Bits, name) =>
+        val r = evalRight()
+        val left = state.lookupHeap(l)
+        val right = state.lookupHeap(r)
+        state.gc(l)
+        state.gc(r)
+        if (name.size == 3 && name(0) == "org" && name(1) == "sireum") {
+          return state.alloc(Util.Ext.binaryBits(left, exp.op, right))
+        }
+        halt(s"TODO: $name")
+      case State.Type.Class(State.Type.Kind.Range, name) =>
+        val r = evalBinaryH(pos, exp, l, evalRight _, binaryZ _)
+        val v = Util.Ext.extractValue[Z](state.heap(r))
+        val info = th.typeMap.get(name).get.asInstanceOf[TypeInfo.SubZ]
+        if (info.ast.hasMin && v < info.ast.min) {
+          throw new AssertionError(st"The low range limit is violated for ${(name, ".")}: $v at line ${pos.beginLine} ${pos.uriOpt}".render)
+        }
+        if (info.ast.hasMax && v > info.ast.max) {
+          throw new AssertionError(st"The high range limit is violated for ${(name, ".")} ($v) at line ${pos.beginLine} ${pos.uriOpt}".render)
+        }
+        return r
+      case t => halt(s"Infeasible: $t")
     }
   }
 
@@ -116,6 +201,97 @@ object Evaluator {
     }
   }
 
+  def evalBits(exp: AST.CoreExp.LitBits): State.Ptr = {
+    val c = State.Type.Class(State.Type.Kind.Bits, exp.tipe.asInstanceOf[AST.Typed.Name].ids)
+    if (c.name.size == 3 && c.name(0) == "org" && c.name(1) == "sireum") {
+      c.name(2) match {
+        case string"U64" => return state.alloc(toValue(c, U64(exp.value).get))
+        case string"U32" => return state.alloc(toValue(c, U32(exp.value).get))
+        case string"U16" => return state.alloc(toValue(c, U16(exp.value).get))
+        case string"U8" => return state.alloc(toValue(c, U8(exp.value).get))
+        case string"S64" => return state.alloc(toValue(c, S64(exp.value).get))
+        case string"S32" => return state.alloc(toValue(c, S32(exp.value).get))
+        case string"S16" => return state.alloc(toValue(c, S16(exp.value).get))
+        case string"S8" => return state.alloc(toValue(c, S8(exp.value).get))
+        case string"U1" => return state.alloc(toValue(c, U1(exp.value).get))
+        case string"U2" => return state.alloc(toValue(c, U2(exp.value).get))
+        case string"U3" => return state.alloc(toValue(c, U3(exp.value).get))
+        case string"U4" => return state.alloc(toValue(c, U4(exp.value).get))
+        case string"U5" => return state.alloc(toValue(c, U5(exp.value).get))
+        case string"U6" => return state.alloc(toValue(c, U6(exp.value).get))
+        case string"U7" => return state.alloc(toValue(c, U7(exp.value).get))
+        case string"U9" => return state.alloc(toValue(c, U9(exp.value).get))
+        case string"U10" => return state.alloc(toValue(c, U10(exp.value).get))
+        case string"U11" => return state.alloc(toValue(c, U11(exp.value).get))
+        case string"U12" => return state.alloc(toValue(c, U12(exp.value).get))
+        case string"U13" => return state.alloc(toValue(c, U13(exp.value).get))
+        case string"U14" => return state.alloc(toValue(c, U14(exp.value).get))
+        case string"U15" => return state.alloc(toValue(c, U15(exp.value).get))
+        case string"U17" => return state.alloc(toValue(c, U17(exp.value).get))
+        case string"U18" => return state.alloc(toValue(c, U18(exp.value).get))
+        case string"U19" => return state.alloc(toValue(c, U19(exp.value).get))
+        case string"U20" => return state.alloc(toValue(c, U20(exp.value).get))
+        case string"U21" => return state.alloc(toValue(c, U21(exp.value).get))
+        case string"U22" => return state.alloc(toValue(c, U22(exp.value).get))
+        case string"U23" => return state.alloc(toValue(c, U23(exp.value).get))
+        case string"U24" => return state.alloc(toValue(c, U24(exp.value).get))
+        case string"U25" => return state.alloc(toValue(c, U25(exp.value).get))
+        case string"U26" => return state.alloc(toValue(c, U26(exp.value).get))
+        case string"U27" => return state.alloc(toValue(c, U27(exp.value).get))
+        case string"U28" => return state.alloc(toValue(c, U28(exp.value).get))
+        case string"U29" => return state.alloc(toValue(c, U29(exp.value).get))
+        case string"U30" => return state.alloc(toValue(c, U30(exp.value).get))
+        case string"U31" => return state.alloc(toValue(c, U31(exp.value).get))
+        case string"U33" => return state.alloc(toValue(c, U33(exp.value).get))
+        case string"U34" => return state.alloc(toValue(c, U34(exp.value).get))
+        case string"U35" => return state.alloc(toValue(c, U35(exp.value).get))
+        case string"U36" => return state.alloc(toValue(c, U36(exp.value).get))
+        case string"U37" => return state.alloc(toValue(c, U37(exp.value).get))
+        case string"U38" => return state.alloc(toValue(c, U38(exp.value).get))
+        case string"U39" => return state.alloc(toValue(c, U39(exp.value).get))
+        case string"U40" => return state.alloc(toValue(c, U40(exp.value).get))
+        case string"U41" => return state.alloc(toValue(c, U41(exp.value).get))
+        case string"U42" => return state.alloc(toValue(c, U42(exp.value).get))
+        case string"U43" => return state.alloc(toValue(c, U43(exp.value).get))
+        case string"U44" => return state.alloc(toValue(c, U44(exp.value).get))
+        case string"U45" => return state.alloc(toValue(c, U45(exp.value).get))
+        case string"U46" => return state.alloc(toValue(c, U46(exp.value).get))
+        case string"U47" => return state.alloc(toValue(c, U47(exp.value).get))
+        case string"U48" => return state.alloc(toValue(c, U48(exp.value).get))
+        case string"U49" => return state.alloc(toValue(c, U49(exp.value).get))
+        case string"U50" => return state.alloc(toValue(c, U50(exp.value).get))
+        case string"U51" => return state.alloc(toValue(c, U51(exp.value).get))
+        case string"U52" => return state.alloc(toValue(c, U52(exp.value).get))
+        case string"U53" => return state.alloc(toValue(c, U53(exp.value).get))
+        case string"U54" => return state.alloc(toValue(c, U54(exp.value).get))
+        case string"U55" => return state.alloc(toValue(c, U55(exp.value).get))
+        case string"U56" => return state.alloc(toValue(c, U56(exp.value).get))
+        case string"U57" => return state.alloc(toValue(c, U57(exp.value).get))
+        case string"U58" => return state.alloc(toValue(c, U58(exp.value).get))
+        case string"U59" => return state.alloc(toValue(c, U59(exp.value).get))
+        case string"U60" => return state.alloc(toValue(c, U60(exp.value).get))
+        case string"U61" => return state.alloc(toValue(c, U61(exp.value).get))
+        case string"U62" => return state.alloc(toValue(c, U62(exp.value).get))
+        case string"U63" => return state.alloc(toValue(c, U63(exp.value).get))
+        case _ => halt(s"Infeasible: $c")
+      }
+    }
+    halt(s"TODO: $exp")
+  }
+
+  def evalRange(exp: AST.CoreExp.LitRange): State.Ptr = {
+    val c = State.Type.Class(State.Type.Kind.Range, exp.tipe.asInstanceOf[AST.Typed.Name].ids)
+    return state.alloc(toValue(c, Z(exp.value).get))
+  }
+
+  def evalIfExp(pos: message.Position, exp: AST.CoreExp.If,
+                funStack: CoreExpTranslator.FunStack, localMap: CoreExpTranslator.LocalMap): State.Ptr = {
+    val cond = evalCoreExp(pos, exp.cond, funStack, localMap)
+    val b = Util.Ext.extractValue[B](state.heap(cond))
+    state.gc(cond)
+    return evalCoreExp(pos, if (b) exp.tExp else exp.fExp, funStack, localMap)
+  }
+
   def evalCoreExp(pos: message.Position, exp: AST.CoreExp.Base,
                   funStack: CoreExpTranslator.FunStack, localMap: CoreExpTranslator.LocalMap): State.Ptr = {
     exp match {
@@ -126,25 +302,25 @@ object Evaluator {
       case exp: AST.CoreExp.LitF64 => return state.alloc(toValue(State.Type.F64, exp.value))
       case exp: AST.CoreExp.LitR => return state.alloc(toValue(State.Type.R, exp.value))
       case exp: AST.CoreExp.LitString => return state.alloc(toValue(State.Type.String, exp.value))
-      case exp: AST.CoreExp.LitBits => return state.alloc(toValue(State.Type.Class(State.Type.Kind.Bits, exp.tipe.asInstanceOf[AST.Typed.Name].ids), exp.value))
-      case exp: AST.CoreExp.LitRange => return state.alloc(toValue(State.Type.Class(State.Type.Kind.Range, exp.tipe.asInstanceOf[AST.Typed.Name].ids), exp.value))
+      case exp: AST.CoreExp.LitBits => return evalBits(exp)
+      case exp: AST.CoreExp.LitRange => return evalRange(exp)
       case exp: AST.CoreExp.LitEnum => return evalEnum(exp)
-      case exp: AST.CoreExp.StringInterpolate => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Binary => return evalBinary(pos, exp, funStack, localMap)
-      case exp: AST.CoreExp.Unary => halt(s"TODO: $exp") // TODO
+      case exp: AST.CoreExp.Unary => return evalUnary(pos, exp, funStack, localMap)
+      case exp: AST.CoreExp.If => return evalIfExp(pos, exp, funStack, localMap)
+      case exp: AST.CoreExp.LocalVarRef => return state.lookup(exp.id)
+      case exp: AST.CoreExp.ParamVarRef => return state.lookup(exp.id)
+      case exp: AST.CoreExp.VarRef => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Constructor => halt(s"TODO: $exp") // TODO
+      case exp: AST.CoreExp.StringInterpolate => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Apply => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Halt => halt(s"TODO: $exp") // TODO
-      case exp: AST.CoreExp.If => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Select => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Fun => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Indexing => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.IndexingUpdate => halt(s"TODO: $exp") // TODO
-      case exp: AST.CoreExp.LocalVarRef => halt(s"TODO: $exp") // TODO
-      case exp: AST.CoreExp.ParamVarRef => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Quant => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Update => halt(s"TODO: $exp") // TODO
-      case exp: AST.CoreExp.VarRef => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Labeled => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Extended.StrictPureBlock => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.InstanceOfExp => halt(s"TODO: $exp") // TODO
