@@ -80,20 +80,21 @@ object Evaluator {
           case t => halt(s"Infeasible: $t")
         }
       case AST.Exp.UnaryOp.Minus =>
+        val t = state.tipe(e)
         state.tipe(e) match {
-          case t@State.Type.Z =>
+          case State.Type.Z =>
             val v = -Util.Ext.extractValue[Z](state.heap(e))
             state.gc(e)
             return state.alloc(toValue(t, v))
-          case t@State.Type.F32 =>
+          case State.Type.F32 =>
             val v = -Util.Ext.extractValue[F32](state.heap(e))
             state.gc(e)
             return state.alloc(toValue(t, v))
-          case t@State.Type.F64 =>
+          case State.Type.F64 =>
             val v = -Util.Ext.extractValue[F64](state.heap(e))
             state.gc(e)
             return state.alloc(toValue(t, v))
-          case t@State.Type.R =>
+          case State.Type.R =>
             val v = -Util.Ext.extractValue[R](state.heap(e))
             state.gc(e)
             return state.alloc(toValue(t, v))
@@ -104,14 +105,14 @@ object Evaluator {
               return state.alloc(Util.Ext.unaryBits(exp.op, v))
             }
             halt(s"Infeasible: $name")
-          case t@State.Type.Class(State.Type.Kind.Range, name) =>
+          case State.Type.Class(State.Type.Kind.Range, name) =>
             val v = -Util.Ext.extractValue[Z](state.heap(e))
             val info = th.typeMap.get(name).get.asInstanceOf[TypeInfo.SubZ]
             if (info.ast.hasMin && v < info.ast.min) {
-              throw new AssertionError(st"The low range limit is violated for ${(name, ".")}: $v at line ${pos.beginLine} ${pos.uriOpt}".render)
+              halt(st"The low range limit is violated for ${(name, ".")}: $v at line ${pos.beginLine} ${pos.uriOpt}".render)
             }
             if (info.ast.hasMax && v > info.ast.max) {
-              throw new AssertionError(st"The high range limit is violated for ${(name, ".")} ($v) at line ${pos.beginLine} ${pos.uriOpt}".render)
+              halt(st"The high range limit is violated for ${(name, ".")} ($v) at line ${pos.beginLine} ${pos.uriOpt}".render)
             }
             state.gc(e)
             return state.alloc(toValue(t, v))
@@ -181,10 +182,10 @@ object Evaluator {
         val v = Util.Ext.extractValue[Z](state.heap(r))
         val info = th.typeMap.get(name).get.asInstanceOf[TypeInfo.SubZ]
         if (info.ast.hasMin && v < info.ast.min) {
-          throw new AssertionError(st"The low range limit is violated for ${(name, ".")}: $v at line ${pos.beginLine} ${pos.uriOpt}".render)
+          halt(st"The low range limit is violated for ${(name, ".")}: $v at line ${pos.beginLine} ${pos.uriOpt}".render)
         }
         if (info.ast.hasMax && v > info.ast.max) {
-          throw new AssertionError(st"The high range limit is violated for ${(name, ".")} ($v) at line ${pos.beginLine} ${pos.uriOpt}".render)
+          halt(st"The high range limit is violated for ${(name, ".")} ($v) at line ${pos.beginLine} ${pos.uriOpt}".render)
         }
         return r
       case t => halt(s"Infeasible: $t")
@@ -281,7 +282,7 @@ object Evaluator {
 
   def evalRange(exp: AST.CoreExp.LitRange): State.Ptr = {
     val c = State.Type.Class(State.Type.Kind.Range, exp.tipe.asInstanceOf[AST.Typed.Name].ids)
-    return state.alloc(toValue(c, Z(exp.value).get))
+    return state.alloc(toValue(c, exp.value))
   }
 
   def evalIfExp(pos: message.Position, exp: AST.CoreExp.If,
