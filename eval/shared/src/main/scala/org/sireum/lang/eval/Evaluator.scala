@@ -31,7 +31,7 @@ import org.sireum.lang.tipe.{CoreExpTranslator, TypeHierarchy}
 import org.sireum.lang.{ast => AST}
 import org.sireum.message.Position
 import Util._
-import org.sireum.lang.symbol.TypeInfo
+import org.sireum.lang.symbol.{Info, TypeInfo}
 
 object Evaluator {
   val kind: String = "Slang Evaluator"
@@ -46,11 +46,11 @@ object Evaluator {
                           f: (Position, T1, String, () => T2) => State.Value @pure): State.Ptr = {
     def evalRight(): T2 = {
       val rPtr = r()
-      val right = Ext.extractValue[T2](state.lookupHeap(rPtr))
+      val right = state.lookupHeapNative[T2](rPtr)
       state.gc(rPtr)
       return right
     }
-    val left = Ext.extractValue[T1](state.lookupHeap(l))
+    val left = state.lookupHeapNative[T1](l)
     state.gc(l)
     return state.alloc(f(pos, left, exp.op, evalRight _))
   }
@@ -61,18 +61,18 @@ object Evaluator {
     exp.op match {
       case AST.Exp.UnaryOp.Plus => return e
       case AST.Exp.UnaryOp.Not =>
-        val r = toValue(State.Type.B, !Util.Ext.extractValue[B](state.heap(e)))
+        val r = toValue(State.Type.B, !state.lookupHeapNative[B](e))
         state.gc(e)
         return state.alloc(r)
       case AST.Exp.UnaryOp.Complement =>
         state.tipe(e) match {
           case State.Type.B =>
-            val r = toValue(State.Type.B, ~Util.Ext.extractValue[B](state.heap(e)))
+            val r = toValue(State.Type.B, ~state.lookupHeapNative[B](e))
             state.gc(e)
             return state.alloc(r)
           case State.Type.Class(State.Type.Kind.Bits, name) =>
             if (name.size == 3 && name(0) == "org" && name(1) == "sireum") {
-              val v = state.heap(e)
+              val v = state.lookupHeap(e)
               state.gc(e)
               return state.alloc(Util.Ext.unaryBits(exp.op, v))
             }
@@ -81,41 +81,34 @@ object Evaluator {
         }
       case AST.Exp.UnaryOp.Minus =>
         val t = state.tipe(e)
-        state.tipe(e) match {
+        t match {
           case State.Type.Z =>
-            val v = -Util.Ext.extractValue[Z](state.heap(e))
+            val v = -state.lookupHeapNative[Z](e)
             state.gc(e)
             return state.alloc(toValue(t, v))
           case State.Type.F32 =>
-            val v = -Util.Ext.extractValue[F32](state.heap(e))
+            val v = -state.lookupHeapNative[F32](e)
             state.gc(e)
             return state.alloc(toValue(t, v))
           case State.Type.F64 =>
-            val v = -Util.Ext.extractValue[F64](state.heap(e))
+            val v = -state.lookupHeapNative[F64](e)
             state.gc(e)
             return state.alloc(toValue(t, v))
           case State.Type.R =>
-            val v = -Util.Ext.extractValue[R](state.heap(e))
+            val v = -state.lookupHeapNative[R](e)
             state.gc(e)
             return state.alloc(toValue(t, v))
           case State.Type.Class(State.Type.Kind.Bits, name) =>
             if (name.size == 3 && name(0) == "org" && name(1) == "sireum") {
-              val v = state.heap(e)
+              val v = state.lookupHeap(e)
               state.gc(e)
               return state.alloc(Util.Ext.unaryBits(exp.op, v))
             }
             halt(s"Infeasible: $name")
-          case State.Type.Class(State.Type.Kind.Range, name) =>
-            val v = -Util.Ext.extractValue[Z](state.heap(e))
-            val info = th.typeMap.get(name).get.asInstanceOf[TypeInfo.SubZ]
-            if (info.ast.hasMin && v < info.ast.min) {
-              halt(st"The low range limit is violated for ${(name, ".")}: $v at line ${pos.beginLine} ${pos.uriOpt}".render)
-            }
-            if (info.ast.hasMax && v > info.ast.max) {
-              halt(st"The high range limit is violated for ${(name, ".")} ($v) at line ${pos.beginLine} ${pos.uriOpt}".render)
-            }
+          case t@State.Type.Class(State.Type.Kind.Range, _) =>
+            val v = toRangeValue(t, -state.lookupHeapNative[Z](e))
             state.gc(e)
-            return state.alloc(toValue(t, v))
+            return state.alloc(v)
           case t => halt(s"Infeasible: $t")
         }
     }
@@ -177,17 +170,11 @@ object Evaluator {
           return state.alloc(Util.Ext.binaryBits(left, exp.op, right))
         }
         halt(s"TODO: $name")
-      case State.Type.Class(State.Type.Kind.Range, name) =>
+      case t@State.Type.Class(State.Type.Kind.Range, _) =>
         val r = evalBinaryH(pos, exp, l, evalRight _, binaryZ _)
-        val v = Util.Ext.extractValue[Z](state.heap(r))
-        val info = th.typeMap.get(name).get.asInstanceOf[TypeInfo.SubZ]
-        if (info.ast.hasMin && v < info.ast.min) {
-          halt(st"The low range limit is violated for ${(name, ".")}: $v at line ${pos.beginLine} ${pos.uriOpt}".render)
-        }
-        if (info.ast.hasMax && v > info.ast.max) {
-          halt(st"The high range limit is violated for ${(name, ".")} ($v) at line ${pos.beginLine} ${pos.uriOpt}".render)
-        }
-        return r
+        val v = toRangeValue(t, state.lookupHeapNative[Z](r))
+        state.gc(r)
+        return state.alloc(v)
       case t => halt(s"Infeasible: $t")
     }
   }
@@ -280,6 +267,19 @@ object Evaluator {
     halt(s"TODO: $exp")
   }
 
+  def toRangeValue(tipe: State.Type.Class, v: Z): State.Value = {
+    val info = th.typeMap.get(tipe.name).get.asInstanceOf[TypeInfo.SubZ]
+    if (info.ast.hasMin && v < info.ast.min) {
+      state.printStackTrace(T, st"The low range limit is violated for ${(tipe.name, ".")}: $v")
+      halt("Execution aborted")
+    }
+    if (info.ast.hasMax && v > info.ast.max) {
+      state.printStackTrace(T, st"The high range limit is violated for ${(tipe.name, ".")}: $v")
+      halt("Execution aborted")
+    }
+    return toValue(tipe, v)
+  }
+
   def evalRange(exp: AST.CoreExp.LitRange): State.Ptr = {
     val c = State.Type.Class(State.Type.Kind.Range, exp.tipe.asInstanceOf[AST.Typed.Name].ids)
     return state.alloc(toValue(c, exp.value))
@@ -288,13 +288,35 @@ object Evaluator {
   def evalIfExp(pos: message.Position, exp: AST.CoreExp.If,
                 funStack: CoreExpTranslator.FunStack, localMap: CoreExpTranslator.LocalMap): State.Ptr = {
     val cond = evalCoreExp(pos, exp.cond, funStack, localMap)
-    val b = Util.Ext.extractValue[B](state.heap(cond))
+    val b = state.lookupHeapNative[B](cond)
     state.gc(cond)
     return evalCoreExp(pos, if (b) exp.tExp else exp.fExp, funStack, localMap)
   }
 
+  def evalInstanceOf(pos: message.Position, exp: AST.CoreExp.InstanceOfExp,
+                     funStack: CoreExpTranslator.FunStack, localMap: CoreExpTranslator.LocalMap): State.Ptr = {
+    val o = evalCoreExp(pos, exp.exp, funStack, localMap)
+    val tName = exp.tipe.asInstanceOf[AST.Typed.Name].ids
+    val name = state.lookupHeap(o).tipe.asInstanceOf[State.Type.Class].name
+    state.gc(o)
+    return state.alloc(toValue(State.Type.B, th.poset.ancestorsOf(name).contains(tName)))
+  }
+
+  def evalIndexing(pos: message.Position, exp: AST.CoreExp.Indexing,
+                   funStack: CoreExpTranslator.FunStack, localMap: CoreExpTranslator.LocalMap): State.Ptr = {
+    val o = evalCoreExp(pos, exp.exp, funStack, localMap)
+    val i = evalCoreExp(pos, exp.index, funStack, localMap)
+    val oValue = state.lookupHeap(o)
+    if (oValue.isNative) {
+      val t = exp.tipe.asInstanceOf[AST.Typed.Name].args(1)
+      return state.alloc(Util.Ext.lookupIndex(oValue, state.lookupHeap(i)))
+    }
+    halt("TODO")
+  }
+
   def evalCoreExp(pos: message.Position, exp: AST.CoreExp.Base,
                   funStack: CoreExpTranslator.FunStack, localMap: CoreExpTranslator.LocalMap): State.Ptr = {
+    state.line = pos.beginLine
     exp match {
       case exp: AST.CoreExp.LitB => return state.alloc(toValue(State.Type.B, exp.value))
       case exp: AST.CoreExp.LitZ => return state.alloc(toValue(State.Type.Z, exp.value))
@@ -306,25 +328,27 @@ object Evaluator {
       case exp: AST.CoreExp.LitBits => return evalBits(exp)
       case exp: AST.CoreExp.LitRange => return evalRange(exp)
       case exp: AST.CoreExp.LitEnum => return evalEnum(exp)
+      case exp: AST.CoreExp.LocalVarRef => return state.lookup(exp.id)
+      case exp: AST.CoreExp.ParamVarRef => return state.lookup(exp.id)
+      case exp: AST.CoreExp.ObjectVarRef =>
+        initObject(exp.owner)
+        return state.lookupGlobal(exp.owner :+ exp.id)
+      case exp: AST.CoreExp.Labeled => return evalCoreExp(pos, exp.exp, funStack, localMap)
       case exp: AST.CoreExp.Binary => return evalBinary(pos, exp, funStack, localMap)
       case exp: AST.CoreExp.Unary => return evalUnary(pos, exp, funStack, localMap)
       case exp: AST.CoreExp.If => return evalIfExp(pos, exp, funStack, localMap)
-      case exp: AST.CoreExp.LocalVarRef => return state.lookup(exp.id)
-      case exp: AST.CoreExp.ParamVarRef => return state.lookup(exp.id)
-      case exp: AST.CoreExp.ObjectVarRef => halt(s"TODO: $exp") // TODO
+      case exp: AST.CoreExp.InstanceOfExp => return evalInstanceOf(pos, exp, funStack, localMap)
+      case exp: AST.CoreExp.Indexing => halt(s"TODO: $exp") // TODO
+      case exp: AST.CoreExp.Select => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Constructor => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.StringInterpolate => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Apply => halt(s"TODO: $exp") // TODO
-      case exp: AST.CoreExp.Halt => halt(s"TODO: $exp") // TODO
-      case exp: AST.CoreExp.Select => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Fun => halt(s"TODO: $exp") // TODO
-      case exp: AST.CoreExp.Indexing => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.IndexingUpdate => halt(s"TODO: $exp") // TODO
-      case exp: AST.CoreExp.Quant => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Update => halt(s"TODO: $exp") // TODO
-      case exp: AST.CoreExp.Labeled => halt(s"TODO: $exp") // TODO
+      case exp: AST.CoreExp.Quant => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Extended.StrictPureBlock => halt(s"TODO: $exp") // TODO
-      case exp: AST.CoreExp.InstanceOfExp => halt(s"TODO: $exp") // TODO
+      case exp: AST.CoreExp.Halt => halt(s"Infeasible: $exp")
     }
   }
 
@@ -374,12 +398,12 @@ object Evaluator {
         eprintln()
       case AST.Stmt.Expr.Kind.Cprint =>
         val ptr = evalExp(args(0))
-        val isErr = Ext.extractValue[B](state.lookupHeap(ptr))
+        val isErr = state.lookupHeapNative[B](ptr)
         state.gc(ptr)
         xprintf(stmt, if (isErr) eprintf else printf, 1)
       case AST.Stmt.Expr.Kind.Cprintln =>
         val ptr = evalExp(args(0))
-        val isErr = Ext.extractValue[B](state.lookupHeap(ptr))
+        val isErr = state.lookupHeapNative[B](ptr)
         state.gc(ptr)
         if (isErr) {
           xprintf(stmt, eprintf, 1)
@@ -390,35 +414,35 @@ object Evaluator {
         }
       case AST.Stmt.Expr.Kind.Assert =>
         val ptr = evalExp(args(0))
-        val claim = Ext.extractValue[B](state.lookupHeap(ptr))
+        val claim = state.lookupHeapNative[B](ptr)
         state.gc(ptr)
         if (!claim) {
           err(args(0).posOpt.get, "Assertion violation")
         }
       case AST.Stmt.Expr.Kind.AssertMsg =>
         var ptr = evalExp(args(0))
-        val claim = Ext.extractValue[B](state.lookupHeap(ptr))
+        val claim = state.lookupHeapNative[B](ptr)
         state.gc(ptr)
         if (!claim) {
           ptr = evalExp(args(1))
-          val msg = Ext.extractValue[String](state.lookupHeap(ptr))
+          val msg = state.lookupHeapNative[String](ptr)
           state.gc(ptr)
           err(args(0).posOpt.get, s"Assertion violation: $msg")
         }
       case AST.Stmt.Expr.Kind.Assume =>
         val ptr = evalExp(args(0))
-        val claim = Ext.extractValue[B](state.lookupHeap(ptr))
+        val claim = state.lookupHeapNative[B](ptr)
         state.gc(ptr)
         if (!claim) {
           err(args(0).posOpt.get, "Assumption violation")
         }
       case AST.Stmt.Expr.Kind.AssumeMsg =>
         var ptr = evalExp(args(0))
-        val claim = Ext.extractValue[B](state.lookupHeap(ptr))
+        val claim = state.lookupHeapNative[B](ptr)
         state.gc(ptr)
         if (!claim) {
           ptr = evalExp(args(1))
-          val msg = Ext.extractValue[String](state.lookupHeap(ptr))
+          val msg = state.lookupHeapNative[String](ptr)
           state.gc(ptr)
           err(args(0).posOpt.get, s"Assumption violation: $msg")
         }
@@ -427,24 +451,176 @@ object Evaluator {
     }
   }
 
-  def evalStmt(stmt: AST.Stmt): Unit = {
-    stmt match {
-      case stmt: AST.Stmt.Expr =>
-        if (stmt.kind == AST.Stmt.Expr.Kind.General) {
-          state.gc(evalExp(stmt.exp))
-        } else {
-          evalBuiltInStmt(stmt)
+  def evalExprStmt(stmt: AST.Stmt.Expr): State.Ptr = {
+    if (stmt.kind == AST.Stmt.Expr.Kind.General) {
+      return evalExp(stmt.exp)
+    } else {
+      evalBuiltInStmt(stmt)
+      return state.alloc(Util.Ext.unitValue)
+    }
+  }
+
+  def evalBody(body: AST.Body): State.Ptr = {
+    for (i <- 0 until body.stmts.size - 2) {
+      evalStmt(body.stmts(i))
+    }
+    body.stmts(body.stmts.size - 1) match {
+      case stmt: AST.AssignExp =>
+        val r = evalAssignExp(stmt)
+        for (info <- body.undecls) {
+          state.undeclare(info.id)
         }
-      case _: AST.Stmt.Assign => halt(s"TODO: $stmt") // TODO
-      case _: AST.Stmt.Block => halt(s"TODO: $stmt") // TODO
+        return r
+      case stmt =>
+        evalStmt(stmt)
+        for (info <- body.undecls) {
+          state.undeclare(info.id)
+        }
+        return state.alloc(Util.Ext.unitValue)
+    }
+  }
+
+  def evalIfStmt(stmt: AST.Stmt.If): State.Ptr = {
+    val cond = evalExp(stmt.cond)
+    val b = state.lookupHeapNative[B](cond)
+    state.gc(cond)
+    return if (b) evalBody(stmt.thenBody) else evalBody(stmt.elseBody)
+  }
+
+  def evalAssignExp(ae: AST.AssignExp): State.Ptr = {
+    ae match {
+      case ae: AST.Stmt.Expr => return evalExprStmt(ae)
+      case ae: AST.Stmt.Block => return evalBody(ae.body)
+      case ae: AST.Stmt.If => return evalIfStmt(ae)
+      case ae: AST.Stmt.Match => halt("TODO")
+      case ae: AST.Stmt.Return => halt("TODO")
+    }
+  }
+
+  @memoize def findReflection(name: ISZ[String]): Option[Reflection] = {
+    return Reflection.find(reflections, name)
+  }
+
+  @strictpure def isReflected(name: ISZ[String]): B = findReflection(name).nonEmpty
+
+  def initObject(name: ISZ[String]): Unit = {
+    if (state.objectInits.contains(name)) {
+      return
+    }
+
+    state.objectInits = state.objectInits + name
+
+    if (isReflected(name)) {
+      return
+    }
+
+    th.nameMap.get(name) match {
+      case Some(info: Info.Object) =>
+        for (stmt <- info.ast.stmts) {
+          stmt match {
+            case stmt: AST.Stmt.Var => evalVar(stmt)
+            case _ =>
+          }
+        }
+      case _ =>
+    }
+  }
+
+  def evalAssign(stmt: AST.Stmt.Assign): Unit = {
+    th.translateToBaseCoreExp(stmt.lhs, F) match {
+      case lhs: AST.CoreExp.LocalVarRef =>
+        state.assignLocal(lhs.id, evalAssignExp(stmt.rhs))
+      case lhs: AST.CoreExp.ObjectVarRef =>
+        initObject(lhs.owner)
+        val rhs = evalAssignExp(stmt.rhs)
+        findReflection(lhs.owner) match {
+          case Some(r) =>
+            Util.Ext.invokeStatic1(r, state.lookupHeap(rhs).tipe, st"${(lhs.owner, ".")}".render, s"${lhs.id}_=",
+              state.lookupHeap(rhs))
+            state.gc(rhs)
+          case _ => state.assignGlobal(lhs.owner :+ lhs.id, rhs)
+        }
+      case lhs: AST.CoreExp.Select =>
+        val o = evalCoreExp(stmt.lhs.posOpt.get, lhs.exp, Stack.empty, HashSMap.empty)
+        val rhs = evalAssignExp(stmt.rhs)
+        val name = state.heap(o).tipe.asInstanceOf[State.Type.Class].name
+        findReflection(name) match {
+          case Some(r) =>
+            Util.Ext.invoke1(r, state.lookupHeap(rhs).tipe, st"${(name, ".")}".render, s"${lhs.id}_=",
+              state.lookupHeap(o), state.lookupHeap(rhs))
+            state.gc(rhs)
+          case _ => state.assignField(o, lhs.id, rhs)
+        }
+      case lhs: AST.CoreExp.Indexing =>
+        val pos = stmt.lhs.posOpt.get
+        val o = evalCoreExp(pos, lhs.exp, Stack.empty, HashSMap.empty)
+        val i = evalCoreExp(pos, lhs.index, Stack.empty, HashSMap.empty)
+        val rhs = evalAssignExp(stmt.rhs)
+        val oValue = state.lookupHeap(o)
+        if (oValue.isNative) {
+          Util.Ext.updateIndex(state.lookupHeap(o), state.lookupHeap(i), state.lookupHeap(rhs))
+          state.gc(rhs)
+          return
+        }
+        state.assignIndex(o, i, rhs)
+      case lhs => halt(s"Infeasible: $lhs")
+    }
+  }
+
+  def evalWhile(stmt: AST.Stmt.While): Unit = {
+    var cond = evalExp(stmt.cond)
+    var b = state.lookupHeapNative[B](cond)
+    state.gc(cond)
+    while (b) {
+      evalBody(stmt.body)
+      cond = evalExp(stmt.cond)
+      b = state.lookupHeapNative[B](cond)
+      state.gc(cond)
+    }
+  }
+
+  def evalVar(stmt: AST.Stmt.Var): Unit = {
+    val rhs = evalAssignExp(stmt.initOpt.get)
+    stmt.attr.resOpt.get match {
+      case res: AST.ResolvedInfo.LocalVar =>
+        state.declare(!stmt.isVal, res.id, rhs)
+      case res: AST.ResolvedInfo.Var =>
+        if (res.isInObject) {
+          initObject(res.owner)
+          findReflection(res.owner) match {
+            case Some(r) =>
+              Util.Ext.invokeStatic1(r, state.lookupHeap(rhs).tipe, st"${(res.owner, ".")}".render, s"${res.id}_=",
+                state.lookupHeap(rhs))
+              state.gc(rhs)
+            case _ => state.assignGlobal(res.owner :+ res.id, rhs)
+          }
+          return
+        }
+        findReflection(res.owner) match {
+          case Some(r) =>
+            Util.Ext.invoke1(r, state.lookupHeap(rhs).tipe, st"${(res.owner, ".")}".render, s"${res.id}_=",
+              state.lookupHeap(state.lookup("this")), state.lookupHeap(rhs))
+            state.gc(rhs)
+          case _ => state.assignField(state.lookup("this"), res.id, rhs)
+        }
+      case res => halt(s"Infeasible: $res")
+    }
+  }
+
+  def evalStmt(stmt: AST.Stmt): Unit = {
+    state.line = stmt.posOpt.get.beginLine
+    stmt match {
+      case stmt: AST.Stmt.Expr => state.gc(evalExprStmt(stmt))
+      case stmt: AST.Stmt.Assign => evalAssign(stmt)
+      case stmt: AST.Stmt.Block => evalBody(stmt.body)
+      case stmt: AST.Stmt.If => state.gc(evalIfStmt(stmt))
+      case stmt: AST.Stmt.While => evalWhile(stmt)
+      case stmt: AST.Stmt.Var => evalVar(stmt)
+      case _: AST.Stmt.VarPattern => halt(s"TODO: $stmt") // TODO
       case _: AST.Stmt.DoWhile => halt(s"TODO: $stmt") // TODO
       case _: AST.Stmt.For => halt(s"TODO: $stmt") // TODO
-      case _: AST.Stmt.If => halt(s"TODO: $stmt") // TODO
       case _: AST.Stmt.Match => halt(s"TODO: $stmt") // TODO
       case _: AST.Stmt.Return => halt(s"TODO: $stmt") // TODO
-      case _: AST.Stmt.Var => halt(s"TODO: $stmt") // TODO
-      case _: AST.Stmt.VarPattern => halt(s"TODO: $stmt") // TODO
-      case _: AST.Stmt.While => halt(s"TODO: $stmt") // TODO
       case _: AST.Stmt.Import => // skip
       case _: AST.Stmt.Method => // skip
       case _: AST.Stmt.Object => // skip
@@ -465,6 +641,15 @@ object Evaluator {
   }
 
   def evalWorksheet(p: AST.TopUnit.Program): Unit = {
+    state.methodContext = ISZ()
+    state.isInstance = F
+    p.fileUriOpt match {
+      case Some(fileUri) =>
+        val fileUriOps = ops.StringOps(fileUri)
+        val i = fileUriOps.lastIndexOf('/')
+        state.filename = ops.StringOps(fileUri).substring(i + 1, fileUri.size)
+      case _ =>
+    }
     evalStmts(p.body.stmts)
   }
 }

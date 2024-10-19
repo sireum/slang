@@ -30,6 +30,70 @@ import org.sireum._
 import org.sireum.lang.{ast => AST}
 
 object Util_Ext {
+
+  def getType(o: Any): State.Type = {
+    o match {
+      case o: Product =>
+        var isImmutable = T
+        for (i <- 1 to o.productArity if isImmutable) {
+          if (o.productElement(i - 1).isInstanceOf[MutableMarker]) {
+            isImmutable = F
+          }
+        }
+        return State.Type.Tuple(isImmutable, o.productArity)
+      case _: B | _: Boolean => return State.Type.B
+      case _: Z => return State.Type.Z
+      case _: C | _: Int => return State.Type.C
+      case _: F32 | _: Float => return State.Type.F32
+      case _: F64 | _: Double => return State.Type.F64
+      case _: R => return State.Type.R
+      case _: String | _: Predef.String => return State.Type.String
+      case _: ST => return State.Type.ST
+      case _: Unit => return State.Type.Unit
+      case _: IS[_, _] => return State.Type.IS
+      case _: MS[_, _] => return State.Type.MS
+      case _ =>
+    }
+    halt("TODO")
+  }
+
+  @pure def lookupIndex(s: State.Value, i: State.Value): State.Value = {
+    val index = extractValue[ZLike[_]](i)
+    val o = extractValue[Any](s)
+    o match {
+      case o: MS[_, _] =>
+        if (o.companion.isZeroIndex) {
+          val r = o.asInstanceOf[MS[Any, Any]].apply(index)
+          return State.Value.Native(getType(r), 0, r)
+        } else {
+          halt("TODO")
+        }
+      case o: IS[_, _] =>
+        if (o.companion.isZeroIndex) {
+          val r = o.asInstanceOf[IS[Any, Any]].apply(index)
+          return State.Value.Native(getType(r), 0, r)
+        } else {
+          halt("TODO")
+        }
+      case _ => halt(s"Infeasible: $o")
+    }
+  }
+  def updateIndex(o: State.Value, i: State.Value, v: State.Value): Unit = {
+    val ms = extractValue[MS[Any, Any]](o)
+    val index = extractValue[ZLike[_]](i)
+    if (ms.companion.isZeroIndex) {
+      ms.update(index, extractValue(v))
+    } else {
+      halt("TODO")
+    }
+  }
+  @pure def tupleAccess(o: State.Value, field: String): State.Value = {
+    val n = ops.StringOps(field).substring(1, field.size).value.toInt
+    val p = extractValue[Product](o)
+    val r = p.productElement(n)
+    State.Value.Native(getType(r), 0, r)
+  }
+  @pure def unitValue: State.Value = State.Value.Native(State.Type.Unit, 0, ())
   @pure def unaryBits(op: AST.Exp.UnaryOp.Type, v: State.Value): State.Value =
     op match {
       case AST.Exp.UnaryOp.Complement => State.Value.Native(v.tipe, 0, ~extractValue[Z.BV[_]](v))

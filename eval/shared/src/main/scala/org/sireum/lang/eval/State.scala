@@ -33,6 +33,8 @@ object State {
   type Ptr = Z
   type Store = HashSMap[String, Ptr]
 
+  @datatype class CallFrame(val methodContext: ISZ[String], val isInstance: B, val filename: String, val line: Z, val store: Store)
+
   @datatype trait Type {
     @strictpure def isImmutable: B
   }
@@ -284,12 +286,18 @@ object State {
   }
 
   @strictpure def empty(initialCapacity: Z): State =
-    State(HashSMap.empty, Stack.empty, for (i <- initialCapacity - 1 to 0 by -1) yield i,
-      MSZ.create(initialCapacity, State.Value.Empty()))
+    State(HashSSet.empty, HashSMap.empty, ISZ(), F, "", 0, HashSMap.empty, Stack.empty,
+      for (i <- initialCapacity - 1 to 0 by -1) yield i, MSZ.create(initialCapacity, State.Value.Empty()))
 }
 
-@record class State(var store: State.Store,
-                    var stack: Stack[State.Store],
+@record class State(var objectInits: HashSSet[ISZ[String]],
+                    var globalStore: HashSMap[ISZ[String], State.Ptr],
+                    var methodContext: ISZ[String],
+                    var isInstance: B,
+                    var filename: String,
+                    var line: Z,
+                    var store: State.Store,
+                    var stack: Stack[State.CallFrame],
                     var free: ISZ[State.Ptr],
                     var heap: MSZ[State.Value]) {
 
@@ -337,7 +345,7 @@ object State {
     return alloc(heap(ptr).clone(this))
   }
 
-  def assign(x: String, ptr: State.Ptr): Unit = {
+  def assignLocal(x: String, ptr: State.Ptr): Unit = {
     assert(heap(store.get(x).get).isInstanceOf[State.Value.Box])
     val boxIndex = store.get(x).get
     val oldPtr = heap(boxIndex).boxedValue
@@ -348,21 +356,45 @@ object State {
     heap(boxIndex) = heap(boxIndex).updateBoxedValue(newPtr)
   }
 
+  def assignGlobal(x: ISZ[String], ptr: State.Ptr): Unit = {
+    val oldPtr = globalStore.get(x).get
+    heap(oldPtr) = heap(oldPtr).dec()
+    gc(oldPtr)
+    val newPtr = clone(ptr)
+    heap(newPtr) = heap(newPtr).inc()
+  }
+
+  def assignField(o: State.Ptr, x: String, ptr: State.Ptr): Unit = {
+    halt("TODO")
+  }
+
+  def assignIndex(o: State.Ptr, i: State.Ptr, ptr: State.Ptr): Unit = {
+    halt("TODO")
+  }
+
   def undeclare(x: String): Unit = {
     val index = store.get(x).get
     heap(index) = heap(index).dec()
     gc(index)
   }
 
-  def push(): Unit = {
-    stack = stack.push(store)
+  def push(newMethodContext: ISZ[String], newIsInstance: B, newFilename: String, newLine: Z): Unit = {
+    stack = stack.push(State.CallFrame(methodContext, isInstance, newFilename, line, store))
+    methodContext = newMethodContext
+    isInstance = newIsInstance
+    line = newLine
     store = HashSMap.empty
   }
 
   def pop(): Unit = {
     val p = stack.pop.get
     stack = p._2
-    store = p._1
+    val cf = p._1
+    methodContext = cf.methodContext
+    isInstance = cf.isInstance
+    filename = cf.filename
+    line = cf.line
+    store = cf.store
   }
 
   def lookup(x: String): State.Ptr = {
@@ -379,7 +411,24 @@ object State {
     return heap(ptr)
   }
 
+  def lookupHeapNative[T](ptr: State.Ptr): T = {
+    assert(!heap(ptr).isInstanceOf[State.Value.Empty])
+    return Util.Ext.extractValue[T](heap(ptr))
+  }
+
+  def lookupGlobal(x: ISZ[String]): State.Ptr = {
+    return globalStore.get(x).get
+  }
+
   def tipe(ptr: State.Ptr): State.Type = {
     return heap(ptr).tipe
+  }
+
+  def printStackTrace(isErr: B, msg: ST): Unit = {
+    val cfs = State.CallFrame(methodContext, isInstance, filename, line, store) +: stack.elements
+    val r =
+      st"""$msg
+          |  ${(for (cf <- cfs) yield st"at ${(cf.methodContext, ".")}(${cf.filename}:${cf.line})", "\n")}"""
+    cprintln(isErr, r.render)
   }
 }
