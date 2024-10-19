@@ -311,7 +311,7 @@ object Evaluator {
       case exp: AST.CoreExp.If => return evalIfExp(pos, exp, funStack, localMap)
       case exp: AST.CoreExp.LocalVarRef => return state.lookup(exp.id)
       case exp: AST.CoreExp.ParamVarRef => return state.lookup(exp.id)
-      case exp: AST.CoreExp.VarRef => halt(s"TODO: $exp") // TODO
+      case exp: AST.CoreExp.ObjectVarRef => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Constructor => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.StringInterpolate => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Apply => halt(s"TODO: $exp") // TODO

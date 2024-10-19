@@ -235,18 +235,18 @@ object CoreExp {
     }
   }
 
-  @datatype class VarRef(val owner: ISZ[String], val id: String, val rawType: Typed) extends Base {
+  @datatype class ObjectVarRef(val owner: ISZ[String], val id: String, val rawType: Typed) extends Base {
     @strictpure override def prettyST: ST =
       if (owner.isEmpty) st"$id" else st"${owner(owner.size - 1)}.$id"
     @strictpure override def prettyPatternST: ST = prettyST
-    @pure override def subst(sm: HashMap[String, Typed]): VarRef = {
+    @pure override def subst(sm: HashMap[String, Typed]): ObjectVarRef = {
       if (sm.isEmpty) {
         return this
       }
       val thiz = this
       return thiz(rawType = rawType.subst(sm))
     }
-    @strictpure def incDeBruijn(threshold: Z): VarRef = this
+    @strictpure def incDeBruijn(threshold: Z): ObjectVarRef = this
     override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
       return this
     }
@@ -298,7 +298,7 @@ object CoreExp {
       val paren: B = exp match {
         case _: CoreExp.LocalVarRef => F
         case _: CoreExp.ParamVarRef => F
-        case _: CoreExp.VarRef => F
+        case _: CoreExp.ObjectVarRef => F
         case exp: CoreExp.LitZ if exp.value >= 0 => F
         case exp: CoreExp.LitF32 if exp.value >= 0f => F
         case exp: CoreExp.LitF64 if exp.value >= 0d => F

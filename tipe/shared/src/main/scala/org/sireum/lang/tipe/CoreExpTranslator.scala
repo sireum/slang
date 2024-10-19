@@ -134,7 +134,7 @@ import CoreExpTranslator._
             if (res.isInObject) {
               val ids = pattern.name.ids
               val owner: ISZ[String] = for (i <- 0 until pattern.name.ids.size - 1) yield ids(i).value
-              AST.CoreExp.VarRef(owner, ids(ids.size - 1).value, pattern.typedOpt.get)
+              AST.CoreExp.ObjectVarRef(owner, ids(ids.size - 1).value, pattern.typedOpt.get)
             } else {
               AST.CoreExp.Select(
                 AST.CoreExp.LocalVarRef(F, pattern.idContext, "this", pattern.receiverTipeOpt.get),
@@ -269,9 +269,9 @@ import CoreExpTranslator._
                 case _ =>
               }
             }
-            return AST.CoreExp.VarRef(res.owner, res.id, e.typedOpt.get)
+            return AST.CoreExp.ObjectVarRef(res.owner, res.id, e.typedOpt.get)
           case res: AST.ResolvedInfo.Method if res.isInObject =>
-            return AST.CoreExp.VarRef(res.owner, res.id, e.typedOpt.get)
+            return AST.CoreExp.ObjectVarRef(res.owner, res.id, e.typedOpt.get)
           case _ =>
             halt(s"Infeasible: $e")
         }
@@ -307,7 +307,7 @@ import CoreExpTranslator._
       case e: AST.Exp.Select =>
         e.resOpt.get match {
           case res: AST.ResolvedInfo.EnumElement => return AST.CoreExp.LitEnum(res.owner, res.name, res.ordinal)
-          case res: AST.ResolvedInfo.Method if res.isInObject => return AST.CoreExp.VarRef(res.owner, res.id, e.typedOpt.get)
+          case res: AST.ResolvedInfo.Method if res.isInObject => return AST.CoreExp.ObjectVarRef(res.owner, res.id, e.typedOpt.get)
           case _ =>
         }
         e.receiverOpt match {

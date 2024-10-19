@@ -153,9 +153,9 @@ object MCoreExpTransformer {
 
   val PostResultCoreExpLocalVarRef: MOption[CoreExp.Base] = MNone()
 
-  val PreResultCoreExpVarRef: PreResult[CoreExp.Base] = PreResult(T, MNone())
+  val PreResultCoreExpObjectVarRef: PreResult[CoreExp.Base] = PreResult(T, MNone())
 
-  val PostResultCoreExpVarRef: MOption[CoreExp.Base] = MNone()
+  val PostResultCoreExpObjectVarRef: MOption[CoreExp.Base] = MNone()
 
   val PreResultCoreExpBinary: PreResult[CoreExp.Base] = PreResult(T, MNone())
 
@@ -389,8 +389,8 @@ import MCoreExpTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
-      case o: CoreExp.VarRef =>
-        val r: PreResult[CoreExp] = preCoreExpVarRef(o) match {
+      case o: CoreExp.ObjectVarRef =>
+        val r: PreResult[CoreExp] = preCoreExpObjectVarRef(o) match {
          case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
          case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
@@ -580,7 +580,7 @@ import MCoreExpTransformer._
       case o: CoreExp.StringInterpolate => return preCoreExpStringInterpolate(o)
       case o: CoreExp.ParamVarRef => return preCoreExpParamVarRef(o)
       case o: CoreExp.LocalVarRef => return preCoreExpLocalVarRef(o)
-      case o: CoreExp.VarRef => return preCoreExpVarRef(o)
+      case o: CoreExp.ObjectVarRef => return preCoreExpObjectVarRef(o)
       case o: CoreExp.Binary => return preCoreExpBinary(o)
       case o: CoreExp.Unary => return preCoreExpUnary(o)
       case o: CoreExp.Constructor => return preCoreExpConstructor(o)
@@ -672,8 +672,8 @@ import MCoreExpTransformer._
     return PreResultCoreExpLocalVarRef
   }
 
-  def preCoreExpVarRef(o: CoreExp.VarRef): PreResult[CoreExp.Base] = {
-    return PreResultCoreExpVarRef
+  def preCoreExpObjectVarRef(o: CoreExp.ObjectVarRef): PreResult[CoreExp.Base] = {
+    return PreResultCoreExpObjectVarRef
   }
 
   def preCoreExpBinary(o: CoreExp.Binary): PreResult[CoreExp.Base] = {
@@ -908,8 +908,8 @@ import MCoreExpTransformer._
          case _ => MNone[CoreExp]()
         }
         return r
-      case o: CoreExp.VarRef =>
-        val r: MOption[CoreExp] = postCoreExpVarRef(o) match {
+      case o: CoreExp.ObjectVarRef =>
+        val r: MOption[CoreExp] = postCoreExpObjectVarRef(o) match {
          case MSome(result: CoreExp) => MSome[CoreExp](result)
          case MSome(_) => halt("Can only produce object of type CoreExp")
          case _ => MNone[CoreExp]()
@@ -1099,7 +1099,7 @@ import MCoreExpTransformer._
       case o: CoreExp.StringInterpolate => return postCoreExpStringInterpolate(o)
       case o: CoreExp.ParamVarRef => return postCoreExpParamVarRef(o)
       case o: CoreExp.LocalVarRef => return postCoreExpLocalVarRef(o)
-      case o: CoreExp.VarRef => return postCoreExpVarRef(o)
+      case o: CoreExp.ObjectVarRef => return postCoreExpObjectVarRef(o)
       case o: CoreExp.Binary => return postCoreExpBinary(o)
       case o: CoreExp.Unary => return postCoreExpUnary(o)
       case o: CoreExp.Constructor => return postCoreExpConstructor(o)
@@ -1191,8 +1191,8 @@ import MCoreExpTransformer._
     return PostResultCoreExpLocalVarRef
   }
 
-  def postCoreExpVarRef(o: CoreExp.VarRef): MOption[CoreExp.Base] = {
-    return PostResultCoreExpVarRef
+  def postCoreExpObjectVarRef(o: CoreExp.ObjectVarRef): MOption[CoreExp.Base] = {
+    return PostResultCoreExpObjectVarRef
   }
 
   def postCoreExpBinary(o: CoreExp.Binary): MOption[CoreExp.Base] = {
@@ -1437,7 +1437,7 @@ import MCoreExpTransformer._
             MSome(o2(rawType = r0.getOrElse(o2.rawType)))
           else
             MNone()
-        case o2: CoreExp.VarRef =>
+        case o2: CoreExp.ObjectVarRef =>
           val r0: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty)
             MSome(o2(rawType = r0.getOrElse(o2.rawType)))
@@ -1653,7 +1653,7 @@ import MCoreExpTransformer._
             MSome(o2(rawType = r0.getOrElse(o2.rawType)))
           else
             MNone()
-        case o2: CoreExp.VarRef =>
+        case o2: CoreExp.ObjectVarRef =>
           val r0: MOption[Typed] = transformTyped(o2.rawType)
           if (hasChanged || r0.nonEmpty)
             MSome(o2(rawType = r0.getOrElse(o2.rawType)))
