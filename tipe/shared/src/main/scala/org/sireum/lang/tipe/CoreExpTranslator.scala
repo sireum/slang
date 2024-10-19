@@ -401,8 +401,8 @@ import CoreExpTranslator._
         }
         e.receiverOpt match {
           case Some(receiver) if !inObject =>
-            return AST.CoreExp.Apply(translateExp(e.ident, funStack, localMap),
-              translateExp(receiver, funStack, localMap) +: args, e.typedOpt.get)
+            return AST.CoreExp.Apply(AST.CoreExp.Select(translateExp(receiver, funStack, localMap), e.ident.id.value,
+              e.ident.typedOpt.get), args, e.typedOpt.get)
           case _ =>
             return AST.CoreExp.Apply(translateExp(e.ident, funStack, localMap),
               args, e.typedOpt.get)
