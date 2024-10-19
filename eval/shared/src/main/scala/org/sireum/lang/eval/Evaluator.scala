@@ -346,7 +346,7 @@ object Evaluator {
       case exp: AST.CoreExp.IndexingUpdate => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Update => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Quant => halt(s"TODO: $exp") // TODO
-      case exp: AST.CoreExp.Extended.StrictPureBlock => halt(s"TODO: $exp") // TODO
+      case exp: AST.CoreExp.Extended.AssignExp => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Halt => halt(s"Infeasible: $exp")
     }
   }

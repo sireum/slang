@@ -48,7 +48,10 @@ import CoreExpTranslator._
 @datatype class CoreExpTranslator(val th: TypeHierarchy, val mode: Mode.Type) {
   val isPattern: B = mode == Mode.BasePattern
 
-  @pure def translateBody(body: AST.Body, funStack: FunStack, localMap: LocalMap): AST.CoreExp.Base = {
+  @pure def translateBody(body: AST.Body, posOpt: Option[message.Position], funStack: FunStack, localMap: LocalMap): AST.CoreExp.Base = {
+    if (mode == Mode.Extended) {
+      return AST.CoreExp.Extended.AssignExp(AST.Stmt.Block(body, AST.Attr(posOpt)), funStack, localMap)
+    }
     val stmts = body.stmts
     var m = localMap
     for (i <- 0 until stmts.size - 1) {
@@ -154,7 +157,11 @@ import CoreExpTranslator._
   }
   @pure def translateLocalInfo(res: AST.ResolvedInfo.LocalVar, t: AST.Typed, funStack: FunStack, localMap: LocalMap): AST.CoreExp.Base = {
     localMap.get((res.context, res.id)) match {
-      case Some(r) => return r
+      case Some(r) =>
+        if (mode == Mode.Extended) {
+          return AST.CoreExp.LocalVarRef(F, res.context, res.id, t)
+        }
+        return r
       case _ =>
     }
     val id = res.id
@@ -176,11 +183,11 @@ import CoreExpTranslator._
         return (None(), localMap + (res.context, res.id) ~>
           translateAssignExp(stmt.initOpt.get, funStack, localMap))
       case stmt: AST.Stmt.Block =>
-        return (Some(translateBody(stmt.body, funStack, localMap)), localMap)
+        return (Some(translateBody(stmt.body, stmt.attr.posOpt, funStack, localMap)), localMap)
       case stmt: AST.Stmt.If =>
         val condExp = translateExp(stmt.cond, funStack, localMap)
-        val tExp = translateBody(stmt.thenBody, funStack, localMap)
-        val fExp = translateBody(stmt.elseBody, funStack, localMap)
+        val tExp = translateBody(stmt.thenBody, stmt.attr.posOpt, funStack, localMap)
+        val fExp = translateBody(stmt.elseBody, stmt.attr.posOpt, funStack, localMap)
         return (Some(AST.CoreExp.If(condExp, tExp, fExp, stmt.attr.typedOpt.get)), localMap)
       case stmt: AST.Stmt.VarPattern =>
         val exp = translateAssignExp(stmt.init, funStack, localMap)
@@ -192,6 +199,9 @@ import CoreExpTranslator._
         }
         return (None(), lMap2)
       case stmt: AST.Stmt.Match =>
+        if (mode == Mode.Extended) {
+          return (Some(AST.CoreExp.Extended.AssignExp(stmt, funStack, localMap)), localMap)
+        }
         val exp = translateExp(stmt.exp, funStack, localMap)
         var condBodyPairs = ISZ[(AST.CoreExp.Base, AST.CoreExp.Base)]()
         for (cas <- stmt.cases) {
@@ -200,7 +210,7 @@ import CoreExpTranslator._
             case Some(cond) => conds :+ translateExp(cond, funStack, lMap)
             case _ => conds
           }
-          val body = translateBody(cas.body, funStack, lMap)
+          val body = translateBody(cas.body, stmt.posOpt, funStack, lMap)
           condBodyPairs = condBodyPairs :+ (AST.CoreExp.bigAnd(conds2), body)
         }
         val t = stmt.typedOpt.get
@@ -222,13 +232,18 @@ import CoreExpTranslator._
   }
   @pure def translateAssignExp(ae: AST.AssignExp, funStack: FunStack, localMap: LocalMap): AST.CoreExp.Base = {
     if (mode == Mode.Extended) {
-      return AST.CoreExp.Extended.StrictPureBlock(ae, funStack, localMap)
+      return AST.CoreExp.Extended.AssignExp(ae, funStack, localMap)
     } else {
       val (Some(r), _) = translateStmt(ae.asStmt, funStack, localMap)
       return r
     }
   }
   @pure def translateExp(e: AST.Exp, funStack: FunStack, localMap: LocalMap): AST.CoreExp.Base = {
+    @strictpure def asAssignExp: AST.CoreExp.Base = {
+      assert(mode == Mode.Extended)
+      AST.CoreExp.Extended.AssignExp(AST.Stmt.Expr(e, AST.TypedAttr(e.posOpt, e.typedOpt)), funStack, localMap)
+    }
+
     e match {
       case e: AST.Exp.LitB => return AST.CoreExp.LitB(e.value)
       case e: AST.Exp.LitZ => return AST.CoreExp.LitZ(e.value)
@@ -383,9 +398,9 @@ import CoreExpTranslator._
                   case _ => return AST.CoreExp.IndexingUpdate(translateExp(e.ident, funStack, localMap),
                     index, value, e.typedOpt.get)
                 }
-              case AST.MethodMode.Extractor => halt("TODO")
               case AST.MethodMode.Ext => halt("TODO")
-              case AST.MethodMode.ObjectConstructor => halt("TODO")
+              case AST.MethodMode.Extractor => halt("Infeasible")
+              case AST.MethodMode.ObjectConstructor => halt("Infeasible")
               case AST.MethodMode.Just => halt("Infeasible")
               case AST.MethodMode.Copy => halt("Infeasible")
             }
@@ -394,9 +409,9 @@ import CoreExpTranslator._
           case _ =>
         }
         val inObject: B = e.ident.resOpt.get match {
-          case res: AST.ResolvedInfo.Method if res.isInObject => T
-          case res: AST.ResolvedInfo.Var if res.isInObject => T
-          case res: AST.ResolvedInfo.Enum => T
+          case res: AST.ResolvedInfo.Method => res.isInObject
+          case res: AST.ResolvedInfo.Var => res.isInObject
+          case _: AST.ResolvedInfo.Enum => T
           case _ => F
         }
         e.receiverOpt match {
@@ -433,18 +448,24 @@ import CoreExpTranslator._
                 }
                 return r
               case AST.MethodMode.Ext => halt("TODO")
-              case AST.MethodMode.Extractor => halt("TODO")
-              case AST.MethodMode.ObjectConstructor => halt("TODO")
+              case AST.MethodMode.Extractor => halt("Infeasible")
+              case AST.MethodMode.ObjectConstructor => halt("Infeasible")
               case AST.MethodMode.Just => halt("Infeasible")
               case AST.MethodMode.Select => halt("Infeasible")
               case AST.MethodMode.Store => halt("Infeasible")
             }
           case _ =>
         }
+        val inObject: B = e.ident.resOpt.get match {
+          case res: AST.ResolvedInfo.Method => res.isInObject
+          case res: AST.ResolvedInfo.Var => res.isInObject
+          case _: AST.ResolvedInfo.Enum => T
+          case _ => F
+        }
         e.receiverOpt match {
-          case Some(receiver) =>
-            return AST.CoreExp.Apply(translateExp(e.ident, funStack, localMap),
-              translateExp(receiver, funStack, localMap) +: getArgs, e.typedOpt.get)
+          case Some(receiver) if !inObject =>
+            return AST.CoreExp.Apply(AST.CoreExp.Select(translateExp(receiver, funStack, localMap), e.ident.id.value,
+              e.ident.typedOpt.get), getArgs, e.typedOpt.get)
           case _ => return AST.CoreExp.Apply(translateExp(e.ident, funStack, localMap),
             getArgs, e.typedOpt.get)
         }
@@ -454,7 +475,23 @@ import CoreExpTranslator._
           case _ => None()
         }
         return AST.CoreExp.Labeled(numOpt, translateExp(e.exp, funStack, localMap))
-      case e => halt(s"TODO: $e")
+      case _: AST.Exp.ForYield => return asAssignExp
+      case _: AST.Exp.Eta => return asAssignExp
+      case _: AST.Exp.At => return asAssignExp
+      case _: AST.Exp.Old => return asAssignExp
+      case _: AST.Exp.Result => return asAssignExp
+      case _: AST.Exp.Super => return asAssignExp
+      case _: AST.Exp.TypeCond => return asAssignExp
+      case _: AST.Exp.Input => return asAssignExp
+      case _: AST.Exp.LoopIndex => halt(s"Infeasible: $e")
+      case _: AST.Exp.InfoFlowInvariant => halt(s"Infeasible: $e")
+      case _: AST.Exp.AssertAgree => halt(s"Infeasible: $e")
+      case _: AST.Exp.AssumeAgree => halt(s"Infeasible: $e")
+      case _: AST.Exp.StateSeq => halt(s"Infeasible: $e")
+      case _: AST.Exp.Sym => halt(s"Infeasible: $e")
+      case _: AST.Exp.RS => halt(s"Infeasible: $e")
+      case _: AST.ProofAst.StepId.Num => halt(s"Infeasible: $e")
+      case _: AST.ProofAst.StepId.Str => halt(s"Infeasible: $e")
     }
   }
 }

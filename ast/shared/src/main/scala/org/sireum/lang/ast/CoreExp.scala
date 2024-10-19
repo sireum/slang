@@ -762,9 +762,9 @@ object CoreExp {
 
   object Extended {
 
-    @datatype class StrictPureBlock(val value: lang.ast.AssignExp,
-                                    val funStack: Stack[(String, Typed)],
-                                    val localStack: HashSMap[(ISZ[String], String), CoreExp.Base]) extends Extended {
+    @datatype class AssignExp(val value: lang.ast.AssignExp,
+                              val funStack: Stack[(String, Typed)],
+                              val localStack: HashSMap[(ISZ[String], String), CoreExp.Base]) extends Extended {
       @spec def valueNotReturn = Invariant(!value.isInstanceOf[lang.ast.Stmt.Return])
       @strictpure override def rawType: Typed = value.typedOpt.get
       @strictpure override def pos: message.Position = value.asStmt.posOpt.get

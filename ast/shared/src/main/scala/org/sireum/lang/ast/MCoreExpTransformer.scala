@@ -221,9 +221,9 @@ object MCoreExpTransformer {
 
   val PostResultCoreExpLabeled: MOption[CoreExp.Base] = MNone()
 
-  val PreResultCoreExpExtendedStrictPureBlock: PreResult[CoreExp.Extended] = PreResult(T, MNone())
+  val PreResultCoreExpExtendedAssignExp: PreResult[CoreExp.Extended] = PreResult(T, MNone())
 
-  val PostResultCoreExpExtendedStrictPureBlock: MOption[CoreExp.Extended] = MNone()
+  val PostResultCoreExpExtendedAssignExp: MOption[CoreExp.Extended] = MNone()
 
 }
 
@@ -495,8 +495,8 @@ import MCoreExpTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
-      case o: CoreExp.Extended.StrictPureBlock =>
-        val r: PreResult[CoreExp] = preCoreExpExtendedStrictPureBlock(o) match {
+      case o: CoreExp.Extended.AssignExp =>
+        val r: PreResult[CoreExp] = preCoreExpExtendedAssignExp(o) match {
          case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
          case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
@@ -595,8 +595,8 @@ import MCoreExpTransformer._
       case o: CoreExp.InstanceOfExp => return preCoreExpInstanceOfExp(o)
       case o: CoreExp.Halt => return preCoreExpHalt(o)
       case o: CoreExp.Labeled => return preCoreExpLabeled(o)
-      case o: CoreExp.Extended.StrictPureBlock =>
-        val r: PreResult[CoreExp.Base] = preCoreExpExtendedStrictPureBlock(o) match {
+      case o: CoreExp.Extended.AssignExp =>
+        val r: PreResult[CoreExp.Base] = preCoreExpExtendedAssignExp(o) match {
          case PreResult(continu, MSome(r: CoreExp.Base)) => PreResult(continu, MSome[CoreExp.Base](r))
          case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp.Base")
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp.Base]())
@@ -742,12 +742,12 @@ import MCoreExpTransformer._
 
   def preCoreExpExtended(o: CoreExp.Extended): PreResult[CoreExp.Extended] = {
     o match {
-      case o: CoreExp.Extended.StrictPureBlock => return preCoreExpExtendedStrictPureBlock(o)
+      case o: CoreExp.Extended.AssignExp => return preCoreExpExtendedAssignExp(o)
     }
   }
 
-  def preCoreExpExtendedStrictPureBlock(o: CoreExp.Extended.StrictPureBlock): PreResult[CoreExp.Extended] = {
-    return PreResultCoreExpExtendedStrictPureBlock
+  def preCoreExpExtendedAssignExp(o: CoreExp.Extended.AssignExp): PreResult[CoreExp.Extended] = {
+    return PreResultCoreExpExtendedAssignExp
   }
 
   def postTyped(o: Typed): MOption[Typed] = {
@@ -1014,8 +1014,8 @@ import MCoreExpTransformer._
          case _ => MNone[CoreExp]()
         }
         return r
-      case o: CoreExp.Extended.StrictPureBlock =>
-        val r: MOption[CoreExp] = postCoreExpExtendedStrictPureBlock(o) match {
+      case o: CoreExp.Extended.AssignExp =>
+        val r: MOption[CoreExp] = postCoreExpExtendedAssignExp(o) match {
          case MSome(result: CoreExp) => MSome[CoreExp](result)
          case MSome(_) => halt("Can only produce object of type CoreExp")
          case _ => MNone[CoreExp]()
@@ -1114,8 +1114,8 @@ import MCoreExpTransformer._
       case o: CoreExp.InstanceOfExp => return postCoreExpInstanceOfExp(o)
       case o: CoreExp.Halt => return postCoreExpHalt(o)
       case o: CoreExp.Labeled => return postCoreExpLabeled(o)
-      case o: CoreExp.Extended.StrictPureBlock =>
-        val r: MOption[CoreExp.Base] = postCoreExpExtendedStrictPureBlock(o) match {
+      case o: CoreExp.Extended.AssignExp =>
+        val r: MOption[CoreExp.Base] = postCoreExpExtendedAssignExp(o) match {
          case MSome(result: CoreExp.Base) => MSome[CoreExp.Base](result)
          case MSome(_) => halt("Can only produce object of type CoreExp.Base")
          case _ => MNone[CoreExp.Base]()
@@ -1261,12 +1261,12 @@ import MCoreExpTransformer._
 
   def postCoreExpExtended(o: CoreExp.Extended): MOption[CoreExp.Extended] = {
     o match {
-      case o: CoreExp.Extended.StrictPureBlock => return postCoreExpExtendedStrictPureBlock(o)
+      case o: CoreExp.Extended.AssignExp => return postCoreExpExtendedAssignExp(o)
     }
   }
 
-  def postCoreExpExtendedStrictPureBlock(o: CoreExp.Extended.StrictPureBlock): MOption[CoreExp.Extended] = {
-    return PostResultCoreExpExtendedStrictPureBlock
+  def postCoreExpExtendedAssignExp(o: CoreExp.Extended.AssignExp): MOption[CoreExp.Extended] = {
+    return PostResultCoreExpExtendedAssignExp
   }
 
   def transformTyped(o: Typed): MOption[Typed] = {
@@ -1552,7 +1552,7 @@ import MCoreExpTransformer._
             MSome(o2(exp = r0.getOrElse(o2.exp)))
           else
             MNone()
-        case o2: CoreExp.Extended.StrictPureBlock =>
+        case o2: CoreExp.Extended.AssignExp =>
           if (hasChanged)
             MSome(o2)
           else
@@ -1761,7 +1761,7 @@ import MCoreExpTransformer._
             MSome(o2(exp = r0.getOrElse(o2.exp)))
           else
             MNone()
-        case o2: CoreExp.Extended.StrictPureBlock =>
+        case o2: CoreExp.Extended.AssignExp =>
           if (hasChanged)
             MSome(o2)
           else
@@ -1895,7 +1895,7 @@ import MCoreExpTransformer._
       val o2: CoreExp.Extended = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val rOpt: MOption[CoreExp.Extended] = o2 match {
-        case o2: CoreExp.Extended.StrictPureBlock =>
+        case o2: CoreExp.Extended.AssignExp =>
           if (hasChanged)
             MSome(o2)
           else
