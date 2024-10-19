@@ -25,22 +25,14 @@
 
 package org.sireum.lang.eval
 
-import org.sireum.$internal.MutableMarker
+import org.sireum.$internal.{ImmutableMarker, MutableMarker}
 import org.sireum._
 import org.sireum.lang.{ast => AST}
 
 object Util_Ext {
 
-  def getType(o: Any): State.Type = {
+  def getType(rs: ISZ[Reflection], o: Any): State.Type = {
     o match {
-      case o: Product =>
-        var isImmutable = T
-        for (i <- 1 to o.productArity if isImmutable) {
-          if (o.productElement(i - 1).isInstanceOf[MutableMarker]) {
-            isImmutable = F
-          }
-        }
-        return State.Type.Tuple(isImmutable, o.productArity)
       case _: B | _: Boolean => return State.Type.B
       case _: Z => return State.Type.Z
       case _: C | _: Int => return State.Type.C
@@ -52,26 +44,119 @@ object Util_Ext {
       case _: Unit => return State.Type.Unit
       case _: IS[_, _] => return State.Type.IS
       case _: MS[_, _] => return State.Type.MS
+      case _: org.sireum.U1 => return State.Type.U1
+      case _: org.sireum.U2 => return State.Type.U2
+      case _: org.sireum.U3 => return State.Type.U3
+      case _: org.sireum.U4 => return State.Type.U4
+      case _: org.sireum.U5 => return State.Type.U5
+      case _: org.sireum.U6 => return State.Type.U6
+      case _: org.sireum.U7 => return State.Type.U7
+      case _: org.sireum.U8 => return State.Type.U8
+      case _: org.sireum.U9 => return State.Type.U9
+      case _: org.sireum.U10 => return State.Type.U10
+      case _: org.sireum.U11 => return State.Type.U11
+      case _: org.sireum.U12 => return State.Type.U12
+      case _: org.sireum.U13 => return State.Type.U13
+      case _: org.sireum.U14 => return State.Type.U14
+      case _: org.sireum.U15 => return State.Type.U15
+      case _: org.sireum.U16 => return State.Type.U16
+      case _: org.sireum.U17 => return State.Type.U17
+      case _: org.sireum.U18 => return State.Type.U18
+      case _: org.sireum.U19 => return State.Type.U19
+      case _: org.sireum.U20 => return State.Type.U20
+      case _: org.sireum.U21 => return State.Type.U21
+      case _: org.sireum.U22 => return State.Type.U22
+      case _: org.sireum.U23 => return State.Type.U23
+      case _: org.sireum.U24 => return State.Type.U24
+      case _: org.sireum.U25 => return State.Type.U25
+      case _: org.sireum.U26 => return State.Type.U26
+      case _: org.sireum.U27 => return State.Type.U27
+      case _: org.sireum.U28 => return State.Type.U28
+      case _: org.sireum.U29 => return State.Type.U29
+      case _: org.sireum.U30 => return State.Type.U30
+      case _: org.sireum.U31 => return State.Type.U31
+      case _: org.sireum.U32 => return State.Type.U32
+      case _: org.sireum.U33 => return State.Type.U33
+      case _: org.sireum.U34 => return State.Type.U34
+      case _: org.sireum.U35 => return State.Type.U35
+      case _: org.sireum.U36 => return State.Type.U36
+      case _: org.sireum.U37 => return State.Type.U37
+      case _: org.sireum.U38 => return State.Type.U38
+      case _: org.sireum.U39 => return State.Type.U39
+      case _: org.sireum.U40 => return State.Type.U40
+      case _: org.sireum.U41 => return State.Type.U41
+      case _: org.sireum.U42 => return State.Type.U42
+      case _: org.sireum.U43 => return State.Type.U43
+      case _: org.sireum.U44 => return State.Type.U44
+      case _: org.sireum.U45 => return State.Type.U45
+      case _: org.sireum.U46 => return State.Type.U46
+      case _: org.sireum.U47 => return State.Type.U47
+      case _: org.sireum.U48 => return State.Type.U48
+      case _: org.sireum.U49 => return State.Type.U49
+      case _: org.sireum.U50 => return State.Type.U50
+      case _: org.sireum.U51 => return State.Type.U51
+      case _: org.sireum.U52 => return State.Type.U52
+      case _: org.sireum.U53 => return State.Type.U53
+      case _: org.sireum.U54 => return State.Type.U54
+      case _: org.sireum.U55 => return State.Type.U55
+      case _: org.sireum.U56 => return State.Type.U56
+      case _: org.sireum.U57 => return State.Type.U57
+      case _: org.sireum.U58 => return State.Type.U58
+      case _: org.sireum.U59 => return State.Type.U59
+      case _: org.sireum.U60 => return State.Type.U60
+      case _: org.sireum.U61 => return State.Type.U61
+      case _: org.sireum.U62 => return State.Type.U62
+      case _: org.sireum.U63 => return State.Type.U63
+      case _: org.sireum.U64 => return State.Type.U64
+      case _: org.sireum.S8 => return State.Type.S8
+      case _: org.sireum.S16 => return State.Type.S16
+      case _: org.sireum.S32 => return State.Type.S32
+      case _: org.sireum.S64 => return State.Type.S64
+      case _: org.sireum.Z8 => return State.Type.Z8
+      case _: org.sireum.Z16 => return State.Type.Z16
+      case _: org.sireum.Z32 => return State.Type.Z32
+      case _: org.sireum.Z64 => return State.Type.Z64
+      case _: org.sireum.N8 => return State.Type.N8
+      case _: org.sireum.N16 => return State.Type.N16
+      case _: org.sireum.N32 => return State.Type.N32
+      case _: org.sireum.N64 => return State.Type.N64
+      case o: Product if !o.isInstanceOf[MutableMarker] && !o.isInstanceOf[ImmutableMarker] =>
+        var isImmutable = T
+        for (i <- 1 to o.productArity if isImmutable) {
+          if (o.productElement(i - 1).isInstanceOf[MutableMarker]) {
+            isImmutable = F
+          }
+        }
+        return State.Type.Tuple(isImmutable, o.productArity)
       case _ =>
+        for (r <- rs) {
+          r.classNameOf(o) match {
+            case Some(name) =>
+              return State.Type.Class(
+                if (o.isInstanceOf[MutableMarker]) State.Type.Kind.Mutable
+                else State.Type.Kind.Immutable, ISZ(name.value.split('.').toSeq.map(org.sireum.String(_)): _*))
+            case _ =>
+          }
+        }
+        halt(s"Infeasible: $o")
     }
-    halt("TODO")
   }
 
-  @pure def lookupIndex(s: State.Value, i: State.Value): State.Value = {
+  @pure def lookupIndex(rs: ISZ[Reflection], s: State.Value, i: State.Value): State.Value = {
     val index = extractValue[ZLike[_]](i)
     val o = extractValue[Any](s)
     o match {
       case o: MS[_, _] =>
         if (o.companion.isZeroIndex) {
           val r = o.asInstanceOf[MS[Any, Any]].apply(index)
-          return State.Value.Native(getType(r), 0, r)
+          return State.Value.Native(getType(rs, r), 0, r)
         } else {
           halt("TODO")
         }
       case o: IS[_, _] =>
         if (o.companion.isZeroIndex) {
           val r = o.asInstanceOf[IS[Any, Any]].apply(index)
-          return State.Value.Native(getType(r), 0, r)
+          return State.Value.Native(getType(rs, r), 0, r)
         } else {
           halt("TODO")
         }
@@ -87,11 +172,11 @@ object Util_Ext {
       halt("TODO")
     }
   }
-  @pure def tupleAccess(o: State.Value, field: String): State.Value = {
+  @pure def tupleAccess(rs: ISZ[Reflection], o: State.Value, field: String): State.Value = {
     val n = ops.StringOps(field).substring(1, field.size).value.toInt
     val p = extractValue[Product](o)
     val r = p.productElement(n)
-    State.Value.Native(getType(r), 0, r)
+    State.Value.Native(getType(rs, r), 0, r)
   }
   @pure def unitValue: State.Value = State.Value.Native(State.Type.Unit, 0, ())
   @pure def unaryBits(op: AST.Exp.UnaryOp.Type, v: State.Value): State.Value =

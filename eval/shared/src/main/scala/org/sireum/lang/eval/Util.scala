@@ -37,8 +37,8 @@ object Util {
     @pure def extractValue[O](v: State.Value): O = $
     @pure def dropRight[T](s: ISZ[T]): ISZ[T] = $
     @pure def deepClone(v: State.Value): State.Value = $
-    @pure def tupleAccess(o: State.Value, field: String): State.Value = $
-    @pure def lookupIndex(o: State.Value, i: State.Value): State.Value = $
+    @pure def tupleAccess(rs: ISZ[Reflection], o: State.Value, field: String): State.Value = $
+    @pure def lookupIndex(rs: ISZ[Reflection], o: State.Value, i: State.Value): State.Value = $
     def updateIndex(o: State.Value, i: State.Value, v: State.Value): Unit = $
     @pure def unaryBits(op: AST.Exp.UnaryOp.Type, v: State.Value): State.Value = $
     @pure def binaryBits(left: State.Value, op: String, right: State.Value): State.Value = $

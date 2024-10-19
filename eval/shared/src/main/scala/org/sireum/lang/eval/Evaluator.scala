@@ -308,8 +308,7 @@ object Evaluator {
     val i = evalCoreExp(pos, exp.index, funStack, localMap)
     val oValue = state.lookupHeap(o)
     if (oValue.isNative) {
-      val t = exp.tipe.asInstanceOf[AST.Typed.Name].args(1)
-      return state.alloc(Util.Ext.lookupIndex(oValue, state.lookupHeap(i)))
+      return state.alloc(Util.Ext.lookupIndex(reflections, oValue, state.lookupHeap(i)))
     }
     halt("TODO")
   }
