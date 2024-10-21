@@ -16,19 +16,19 @@ jobs:
           wget -q https://raw.githubusercontent.com/sireum/kekinian/master/versions.properties
       - name: Cache Java
         id: cache-java
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: bin/linux/java
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-java
       - name: Cache Scala
         id: cache-scala
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: bin/scala
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-scala
       - name: Cache Coursier
         id: cache-coursier
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: cache/coursier
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-coursier
@@ -50,19 +50,19 @@ jobs:
           curl -JLOs https://raw.githubusercontent.com/sireum/kekinian/master/versions.properties
       - name: Cache Java
         id: cache-java
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: bin/mac/java
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-java
       - name: Cache Scala
         id: cache-scala
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: bin/scala
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-scala
       - name: Cache Coursier
         id: cache-coursier
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: cache/coursier
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-coursier
@@ -84,19 +84,19 @@ jobs:
           Invoke-WebRequest -Uri "https://raw.githubusercontent.com/sireum/kekinian/master/versions.properties" -OutFile "versions.properties"
       - name: Cache Java
         id: cache-java
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: bin\win\java
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-java
       - name: Cache Scala
         id: cache-scala
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: bin\scala
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-scala
       - name: Cache Coursier
         id: cache-coursier
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: cache\coursier
           key: ${{ runner.os }}-${{ hashFiles('versions.properties') }}-coursier
