@@ -5132,7 +5132,8 @@ import TypeChecker._
           }
           declId(p.id, typedOpt)
         }
-        return step(params = newParams, steps = for (s <- step.steps) yield checkStep(sc, s, reporter))
+        return step(params = newParams, steps = for (s <- step.steps) yield checkStep(sc, s, reporter),
+          context = context)
       case step: AST.ProofAst.Step.Assume =>
         return step(claim = checkExp(bExpectedOpt, scope, step.claim, reporter)._1)
       case step: AST.ProofAst.Step.Assert =>

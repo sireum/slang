@@ -3853,22 +3853,22 @@ class SlangParser(
         AST.ProofAst.Step.SubProof(stepNo, subClaims, attr(proofStep.pos))
       case Term.ApplyInfix.After_4_6_0(no, Term.Name("#>"), Type.ArgClause(Nil), Term.ArgClause(List(Term.Apply.After_4_6_0(Term.Name("SubProof"), Term.ArgClause(List(Term.Function.After_4_6_0(Term.ParamClause(params, scala.None), term)), scala.None))), scala.None)) if isStepId(no) =>
         AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(term),
-          attr(proofStep.pos))
+          ISZ(), attr(proofStep.pos))
       case Term.ApplyInfix.After_4_6_0(no, Term.Name("#>"), Type.ArgClause(Nil), Term.ArgClause(List(Term.Apply.After_4_6_0(Term.Name("SubProof"), Term.ArgClause(List(Term.Function.After_4_6_0(Term.ParamClause(params, scala.None), term)), scala.None))), scala.None)) if isStepId(no) =>
         AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(term),
-          attr(proofStep.pos))
+          ISZ(), attr(proofStep.pos))
       case Term.ApplyInfix.After_4_6_0(no, Term.Name("SubProof"), Type.ArgClause(Nil), Term.ArgClause(List(Term.Function.After_4_6_0(Term.ParamClause(params, scala.None), term)), scala.None)) =>
         AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(term),
-          attr(proofStep.pos))
+          ISZ(), attr(proofStep.pos))
       case Term.ApplyInfix.After_4_6_0(no, Term.Name("SubProof"), Type.ArgClause(Nil), Term.ArgClause(List(Term.Block(List(Term.Function.After_4_6_0(Term.ParamClause(params, scala.None), term)))), scala.None)) if isStepId(no) =>
         AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(term),
-          attr(proofStep.pos))
+          ISZ(), attr(proofStep.pos))
       case q"$no #> Let ((..$params) => SubProof(..$claims))" if isStepId(no) =>
         AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims),
-          attr(proofStep.pos))
+          ISZ(), attr(proofStep.pos))
       case q"$no #> Let {(..$params) => SubProof(..$claims)}" if isStepId(no) =>
         AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims),
-          attr(proofStep.pos))
+          ISZ(), attr(proofStep.pos))
       case q"$no ($claim) by ${just: Term} and (..$witnesses)" if isStepId(no) =>
         just match {
           case just: Term.Eta => justApplyEta(Left(no), claim, just, hasWitness = true, witnesses, proofStep.pos)
@@ -3954,10 +3954,10 @@ class SlangParser(
         AST.ProofAst.Step.SubProof(stepNo, subClaims, attr(proofStep.pos))
       case q"$no Let ((..$params) => SubProof(..$claims))" if isStepId(no) =>
         AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims),
-          attr(proofStep.pos))
+          ISZ(), attr(proofStep.pos))
       case q"$no Let {(..$params) => SubProof(..$claims)}" if isStepId(no) =>
         AST.ProofAst.Step.Let(toStepId(no), ISZ(params.map(translateLetParam): _*), translateAssumeSubClaims(claims),
-          attr(proofStep.pos))
+          ISZ(), attr(proofStep.pos))
       case _ => err()
     }
     r.id match {

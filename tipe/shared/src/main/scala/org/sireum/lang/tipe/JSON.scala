@@ -1053,6 +1053,7 @@ object JSON {
         ("id", print_astProofAstStepId(o.id)),
         ("params", printISZ(F, o.params, print_astProofAstStepLetParam _)),
         ("steps", printISZ(F, o.steps, print_astProofAstStep _)),
+        ("context", printISZ(T, o.context, printString _)),
         ("attr", print_astAttr(o.attr))
       ))
     }
@@ -4484,10 +4485,13 @@ object JSON {
       parser.parseObjectKey("steps")
       val steps = parser.parseISZ(parse_astProofAstStep _)
       parser.parseObjectNext()
+      parser.parseObjectKey("context")
+      val context = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ProofAst.Step.Let(id, params, steps, attr)
+      return org.sireum.lang.ast.ProofAst.Step.Let(id, params, steps, context, attr)
     }
 
     def parse_astProofAstStepLetParam(): org.sireum.lang.ast.ProofAst.Step.Let.Param = {

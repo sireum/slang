@@ -1059,7 +1059,8 @@ object ProofAst {
       }
     }
 
-    @datatype class Let(val id: StepId, val params: ISZ[Let.Param], val steps: ISZ[Step], @hidden val attr: Attr) extends Step {
+    @datatype class Let(val id: StepId, val params: ISZ[Let.Param], val steps: ISZ[Step], val context: ISZ[String],
+                        @hidden val attr: Attr) extends Step {
       @pure override def prettyST: ST = {
         return st"""${id.prettyST}  SubProof {(${(for (p <- params) yield p.prettyST, ", ")}) => (
                    |  ${(for (step <- steps) yield step.prettyST, ", ")}
