@@ -327,32 +327,25 @@ object FrontEnd {
     return (reporter, t._2, nameMap, typeMap)
   }
 
-  def libraryReporter: (TypeChecker, Reporter) = {
-    return libraryReporterPar(Ext.par)
-  }
+  @memoize def checkedLibraryReporter: (TypeChecker, Reporter) = {
+    def libraryReporterPar(par: Z): (TypeChecker, Reporter) = {
+      val (initNameMap, initTypeMap) =
+        Resolver.addBuiltIns(HashSMap.empty, HashSMap.empty)
+      val (reporter, _, nameMap, typeMap) =
+        parseProgramAndGloballyResolve(par, for (f <- Library.files) yield Input(f._2, f._1), initNameMap, initTypeMap)
+      val th =
+        TypeHierarchy.build(F, TypeHierarchy(nameMap, typeMap, Poset.empty, HashSMap.empty), reporter)
+      val thOutlined = TypeOutliner.checkOutline(par, T, th, reporter)
+      val tc = TypeChecker(thOutlined, ISZ(), F, TypeChecker.ModeContext.Code, T)
+      val r = (tc, reporter)
+      return r
+    }
 
-  def libraryReporterPar(par: Z): (TypeChecker, Reporter) = {
-    val (initNameMap, initTypeMap) =
-      Resolver.addBuiltIns(HashSMap.empty, HashSMap.empty)
-    val (reporter, _, nameMap, typeMap) =
-      parseProgramAndGloballyResolve(par, for (f <- Library.files) yield Input(f._2, f._1), initNameMap, initTypeMap)
-    val th =
-      TypeHierarchy.build(F, TypeHierarchy(nameMap, typeMap, Poset.empty, HashSMap.empty), reporter)
-    val thOutlined = TypeOutliner.checkOutline(par, T, th, reporter)
-    val tc = TypeChecker(thOutlined, ISZ(), F, TypeChecker.ModeContext.Code, T)
-    val r = (tc, reporter)
-    return r
-  }
-
-  def checkedLibraryReporterPar(par: Z): (TypeChecker, Reporter) = {
+    val par = Ext.par
     val (tc, reporter) = libraryReporterPar(par)
     val th = tc.typeHierarchy
     val th2 = TypeChecker.checkComponents(par, T, th, th.nameMap, th.typeMap, reporter)
     return (TypeChecker(th2, ISZ(), F, TypeChecker.ModeContext.Code, T), reporter)
-  }
-
-  @memoize def checkedLibraryReporter: (TypeChecker, Reporter) = {
-    return checkedLibraryReporterPar(Ext.par)
   }
 
   @memoize def checkedSharedMaps: (NameMap, TypeMap) = {
@@ -417,7 +410,7 @@ object FrontEnd {
     val th: TypeHierarchy = thOpt match {
       case Some(thi) => thi
       case _ =>
-        val (tc, rep) = libraryReporter
+        val (tc, rep) = checkedLibraryReporter
         if (rep.hasIssue) {
           reporter.reports(rep.messages)
           return (tc.typeHierarchy, program)
