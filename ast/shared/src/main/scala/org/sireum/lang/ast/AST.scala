@@ -82,6 +82,7 @@ object TopUnit {
     return hasReturn
   }
   @strictpure def hasReturn: B
+  @pure def compNum: Z
 }
 
 @sig trait HasModifies {
@@ -168,6 +169,7 @@ object Stmt {
     @strictpure override def prettyST: ST = st"import ${(for (i <- importers) yield i.prettyST, ", ")}"
     @strictpure override def isInstruction: B = F
     @strictpure override def hasReturn: B = F
+    @strictpure def compNum: Z = 0
   }
 
   object Import {
@@ -211,6 +213,10 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = initOpt.nonEmpty
     @strictpure override def hasReturn: B = if (initOpt.nonEmpty) initOpt.get.hasReturn else F
+    @strictpure def compNum: Z = initOpt match {
+      case Some(init) => 1 + init.asStmt.compNum
+      case _ => 1
+    }
   }
 
   @datatype class VarPattern(val isSpec: B,
@@ -228,6 +234,7 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = T
     @strictpure override def hasReturn: B = init.hasReturn
+    @strictpure def compNum: Z = 1 + init.asStmt.compNum
   }
 
   @datatype class SpecVar(val isVal: B,
@@ -241,6 +248,7 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = F
     @strictpure override def hasReturn: B = F
+    @strictpure def compNum: Z = 0
   }
 
   @datatype class RsVal(val id: Id,
@@ -252,6 +260,7 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = F
     @strictpure override def hasReturn: B = F
+    @strictpure def compNum: Z = 0
   }
 
   @datatype class Method(val typeChecked: B,
@@ -337,6 +346,12 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = F
     @strictpure override def hasReturn: B = T
+    @pure def compNum: Z = {
+      bodyOpt match {
+        case Some(body) => return body.compNum
+        case _ => return 0
+      }
+    }
   }
 
   @datatype class ExtMethod(val isPure: B,
@@ -352,6 +367,7 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = F
     @strictpure override def hasReturn: B = F
+    @strictpure def compNum: Z = 0
   }
 
   @datatype class JustMethod(val etaOpt: Option[Exp.LitString],
@@ -364,6 +380,7 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = F
     @strictpure override def hasReturn: B = F
+    @strictpure def compNum: Z = 0
   }
 
   @datatype class SpecMethod(val sig: MethodSig, @hidden val attr: ResolvedAttr) extends Spec {
@@ -371,6 +388,7 @@ object Stmt {
     @strictpure override def prettyST: ST = st"@spec def ${sig.prettyST}"
     @strictpure override def isInstruction: B = F
     @strictpure override def hasReturn: B = F
+    @strictpure def compNum: Z = 0
   }
 
   @datatype class Enum(val id: Id, val elements: ISZ[Id], @hidden val attr: Attr) extends Stmt {
@@ -381,6 +399,7 @@ object Stmt {
           |}"""
     @strictpure override def isInstruction: B = F
     @strictpure override def hasReturn: B = F
+    @strictpure def compNum: Z = 0
   }
 
   @datatype class SubZ(val id: Id,
@@ -417,6 +436,7 @@ object Stmt {
     } else {
       None()
     }
+    @strictpure def compNum: Z = 0
   }
 
   @datatype class Object(val isApp: B,
@@ -434,6 +454,7 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = F
     @strictpure override def hasReturn: B = F
+    @strictpure def compNum: Z = 0
   }
 
   @datatype class Sig(val isImmutable: B,
@@ -457,6 +478,7 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = F
     @strictpure override def hasReturn: B = F
+    @strictpure def compNum: Z = 0
   }
 
   @datatype class Adt(val isRoot: B,
@@ -480,6 +502,7 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = F
     @strictpure override def hasReturn: B = F
+    @strictpure def compNum: Z = 0
   }
 
   @datatype class TypeAlias(val id: Id, val typeParams: ISZ[TypeParam], val tipe: Type, @hidden val attr: Attr) extends Stmt {
@@ -487,6 +510,7 @@ object Stmt {
     @strictpure override def prettyST: ST = st"type ${id.prettyST}${TypeParam.stOpt(typeParams)} = ${tipe.prettyST}"
     @strictpure override def isInstruction: B = F
     @strictpure override def hasReturn: B = F
+    @strictpure def compNum: Z = 0
   }
 
   @datatype class Assign(val lhs: Exp, val rhs: AssignExp, @hidden val attr: Attr) extends Stmt {
@@ -496,6 +520,7 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = T
     @strictpure override def hasReturn: B = rhs.hasReturn
+    @strictpure def compNum: Z = 1 + rhs.asStmt.compNum
   }
 
   @datatype class Block(val body: Body, @hidden val attr: Attr) extends Stmt with AssignExp {
@@ -513,6 +538,9 @@ object Stmt {
     @strictpure override def typedOpt: Option[Typed] = body.stmts(body.stmts.size - 1) match {
       case ae: AssignExp => ae.typedOpt
       case _ => Typed.unitOpt
+    }
+    @pure def compNum: Z = {
+      return body.compNum
     }
   }
 
@@ -540,6 +568,9 @@ object Stmt {
     @strictpure override def isInstruction: B = T
     @strictpure override def hasReturn: B = thenBody.hasReturn || elseBody.hasReturn
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
+    @pure def compNum: Z = {
+      return 1 + thenBody.compNum + elseBody.compNum
+    }
   }
 
   @datatype class Induct(val exp: Exp, val context: ISZ[String], val locals: ISZ[String], @hidden val attr: Attr) extends Spec {
@@ -549,6 +580,7 @@ object Stmt {
     @pure override def prettyST: ST = {
       return if (Exp.shouldParenthesize(exp)) st"((${exp.prettyST}): @induct)" else st"(${exp.prettyST}: @induct)"
     }
+    @strictpure def compNum: Z = 1
   }
 
   @datatype class Match(val isInduct: B, val exp: Exp, val cases: ISZ[Case], @hidden val attr: TypedAttr) extends Stmt with AssignExp {
@@ -569,6 +601,13 @@ object Stmt {
     @strictpure override def isInstruction: B = T
     @strictpure override def hasReturn: B = ops.ISZOps(cases).exists((c: Case) => c.body.hasReturn)
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
+    @pure def compNum: Z = {
+      var r: Z = 1
+      for (cas <- cases) {
+        r = r + cas.compNum
+      }
+      return r
+    }
   }
 
   @datatype class While(val context: ISZ[String],
@@ -587,6 +626,9 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = T
     @strictpure override def hasReturn: B = body.hasReturn
+    @pure def compNum: Z = {
+      return 1 + body.compNum + contract.invariants.size + contract.modifies.size
+    }
   }
 
   @datatype class DoWhile(val context: ISZ[String],
@@ -605,6 +647,9 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = T
     @strictpure override def hasReturn: B = body.hasReturn
+    @pure def compNum: Z = {
+      return 1 + body.compNum + contract.invariants.size + contract.modifies.size
+    }
   }
 
   @datatype class For(val context: ISZ[String],
@@ -629,6 +674,13 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = T
     @strictpure override def hasReturn: B = body.hasReturn
+    @pure def compNum: Z = {
+      var r = 1 + body.compNum
+      for (enumGen <- enumGens) {
+        r = r + 1 + enumGen.contract.invariants.size + enumGen.contract.modifies.size
+      }
+      return r
+    }
   }
 
   @datatype class Return(val expOpt: Option[Exp], @hidden val attr: TypedAttr) extends Stmt with AssignExp {
@@ -641,6 +693,7 @@ object Stmt {
     @strictpure override def isInstruction: B = T
     @strictpure override def hasReturn: B = T
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
+    @strictpure def compNum: Z = 1
   }
 
   @datatype class Expr(val exp: Exp, @hidden val attr: TypedAttr) extends Stmt with AssignExp {
@@ -675,6 +728,7 @@ object Stmt {
         }
       case _ => halt("This method can only be used on resolved/type checked AST")
     }
+    @strictpure def compNum: Z = 1
   }
 
   object Expr {
@@ -710,6 +764,7 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = F
     @strictpure override def hasReturn: B = F
+    @strictpure def compNum: Z = 0
   }
 
   @datatype class Inv(val id: Id,
@@ -723,6 +778,7 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = F
     @strictpure override def hasReturn: B = F
+    @strictpure def compNum: Z = 0
   }
 
   @datatype class Theorem(val isLemma: B,
@@ -741,6 +797,7 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = F
     @strictpure override def hasReturn: B = F
+    @strictpure def compNum: Z = 0
   }
 
   @datatype class DataRefinement(val rep: Exp.Ref,
@@ -753,6 +810,7 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = F
     @strictpure override def hasReturn: B = F
+    @strictpure def compNum: Z = 0
   }
 
   @datatype class SpecLabel(val id: Id) extends Spec {
@@ -760,6 +818,7 @@ object Stmt {
     @strictpure override def prettyST: ST = st"""Spec("${id.prettyST}")"""
     @strictpure override def isInstruction: B = T
     @strictpure override def hasReturn: B = F
+    @strictpure def compNum: Z = 0
   }
 
   @datatype class SpecBlock(val block: Block) extends Spec {
@@ -769,6 +828,9 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = T
     @strictpure override def hasReturn: B = F
+    @pure def compNum: Z = {
+      return block.compNum
+    }
   }
 
   @datatype class DeduceSequent(val justOpt: Option[Exp.LitString], val sequents: ISZ[Sequent], @hidden val attr: Attr) extends Spec {
@@ -780,6 +842,13 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = T
     @strictpure override def hasReturn: B = F
+    @pure def compNum: Z = {
+      var r: Z = 0
+      for (sequent <- sequents) {
+        r = r + sequent.compNum
+      }
+      return r
+    }
   }
 
   @datatype class DeduceSteps(val steps: ISZ[ProofAst.Step], @hidden val attr: Attr) extends Spec {
@@ -791,6 +860,13 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = T
     @strictpure override def hasReturn: B = F
+    @pure def compNum: Z = {
+      var r: Z = 0
+      for (step <- steps) {
+        r = r + step.compNum
+      }
+      return r
+    }
   }
 
   @datatype class Havoc(val args: ISZ[Exp.Ref], @hidden val attr: Attr) extends Spec {
@@ -800,6 +876,7 @@ object Stmt {
     }
     @strictpure override def isInstruction: B = T
     @strictpure override def hasReturn: B = F
+    @strictpure def compNum: Z = 0
   }
 
 }
@@ -980,6 +1057,13 @@ object MethodContract {
                |  ${(for (step <- steps) yield step.prettyST, ", \n")}
                |)"""
   }
+  @pure def compNum: Z = {
+    var r = premises.size + 1
+    for (step <- steps) {
+      r = r + step.compNum
+    }
+    return r
+  }
 }
 
 @datatype class ProofAst(val steps: ISZ[ProofAst.Step], @hidden val attr: Attr) extends {
@@ -996,6 +1080,7 @@ object ProofAst {
     @strictpure def id: StepId
     @pure def prettyST: ST
     @pure def attr: Attr
+    @pure def compNum: Z
   }
 
   @datatype trait StepId extends Lit {
@@ -1035,12 +1120,14 @@ object ProofAst {
         else
           st"${id.prettyST}  (${claim.prettyST}) by ${just.prettyST}"
       }
+      @strictpure def compNum: Z = 1
     }
 
     @datatype class Assume(val id: StepId, val claim: Exp, @hidden val attr: Attr) extends Step {
       @pure override def prettyST: ST = {
         return st"${id.prettyST}  Assume(${claim.prettyST})"
       }
+      @strictpure def compNum: Z = 1
     }
 
     @datatype class Assert(val id: StepId, val claim: Exp, val steps: ISZ[Step], @hidden val attr: Attr) extends Step {
@@ -1048,6 +1135,13 @@ object ProofAst {
         return st"""${id.prettyST}  Assert(${claim.prettyST}, SubProof(
                    |  ${(for (step <- steps) yield step.prettyST, ", ")}
                    |))"""
+      }
+      @pure def compNum: Z = {
+        var r: Z = 1
+        for (step <- steps) {
+          r = r + step.compNum
+        }
+        return r
       }
     }
 
@@ -1057,6 +1151,13 @@ object ProofAst {
                    |  ${(for (step <- steps) yield step.prettyST, ", ")}
                    |)"""
       }
+      @pure def compNum: Z = {
+        var r: Z = 0
+        for (step <- steps) {
+          r = r + step.compNum
+        }
+        return r
+      }
     }
 
     @datatype class Let(val id: StepId, val params: ISZ[Let.Param], val steps: ISZ[Step], val context: ISZ[String],
@@ -1065,6 +1166,13 @@ object ProofAst {
         return st"""${id.prettyST}  SubProof {(${(for (p <- params) yield p.prettyST, ", ")}) => (
                    |  ${(for (step <- steps) yield step.prettyST, ", ")}
                    |)}"""
+      }
+      @pure def compNum: Z = {
+        var r: Z = params.size
+        for (step <- steps) {
+          r = r + step.compNum
+        }
+        return r
       }
     }
 
@@ -1204,6 +1312,9 @@ object ProofAst {
   @pure def prettyST: ST = {
     return st"""case ${pattern.prettyST}${if (condOpt.nonEmpty) st" if ${condOpt.get.prettyST}" else st""} =>
                |  ${(body.prettySTs, "\n")}"""
+  }
+  @pure def compNum: Z = {
+    return 1 + body.compNum
   }
 }
 
@@ -2199,6 +2310,13 @@ object Exp {
     return for (stmt <- stmts) yield if (stmt.isInstanceOf[Stmt.Block]) st";${stmt.prettyST}" else stmt.prettyST
   }
   @strictpure def hasReturn: B = ops.ISZOps(stmts).exists((stmt: Stmt) => stmt.hasReturnMemoized)
+  @pure def compNum: Z = {
+    var r: Z = 0
+    for (stmt <- stmts) {
+      r = r + stmt.compNum
+    }
+    return r
+  }
 }
 
 @datatype class AdtParam(val isHidden: B, val isVal: B, val id: Id, val tipe: Type) {
