@@ -69,16 +69,62 @@ object IR {
       @strictpure def prettyST: ST = st"$id"
     }
 
-    @datatype class Apply(val isInObject: B, val owner: ISZ[String], val id: String, val args: ISZ[Exp], val pos: Position) extends Exp {
-      @pure def prettyST: ST = {
-        if (ops.StringOps(id).isScalaOp && args.size == 2) {
-          return st"(${args(0).prettyST} $id ${args(1).prettyST})"
-        } else if (isInObject) {
-          return st"${(owner, ".")}.$id(${(for (arg <- args) yield arg.prettyST, ", ")})"
-        } else {
-          return st"${args(0).prettyST}.$id(${(for (i <- 1 until args.size) yield args(i).prettyST)})"
+    @datatype class Unary(val op: lang.ast.Exp.UnaryOp.Type, val exp: Exp, val pos: Position) extends Exp {
+      @strictpure def prettyST: ST = {
+        val opString: String = op match {
+          case lang.ast.Exp.UnaryOp.Not => "!"
+          case lang.ast.Exp.UnaryOp.Plus => "+"
+          case lang.ast.Exp.UnaryOp.Minus => "-"
+          case lang.ast.Exp.UnaryOp.Complement => "~"
         }
+        st"$opString(${exp.prettyST})"
       }
+    }
+
+    @datatype class Binary(val left: Exp, val op: ResolvedInfo.BuiltIn.Kind.Type, val right: Exp, val pos: Position) extends Exp {
+      @strictpure def prettyST: ST = {
+        val opString: String = op match {
+          case ResolvedInfo.BuiltIn.Kind.BinaryAdd => "+"
+          case ResolvedInfo.BuiltIn.Kind.BinarySub => "-"
+          case ResolvedInfo.BuiltIn.Kind.BinaryMul => "*"
+          case ResolvedInfo.BuiltIn.Kind.BinaryDiv => "/"
+          case ResolvedInfo.BuiltIn.Kind.BinaryRem => "%"
+          case ResolvedInfo.BuiltIn.Kind.BinaryAnd => "&"
+          case ResolvedInfo.BuiltIn.Kind.BinaryOr => "|"
+          case ResolvedInfo.BuiltIn.Kind.BinaryImply => "__>:"
+          case ResolvedInfo.BuiltIn.Kind.BinaryXor => "|^"
+          case ResolvedInfo.BuiltIn.Kind.BinaryCondAnd => "&&"
+          case ResolvedInfo.BuiltIn.Kind.BinaryCondOr => "||"
+          case ResolvedInfo.BuiltIn.Kind.BinaryCondImply => "___>:"
+          case ResolvedInfo.BuiltIn.Kind.BinaryEquiv => "≡"
+          case ResolvedInfo.BuiltIn.Kind.BinaryInequiv => "≢"
+          case ResolvedInfo.BuiltIn.Kind.BinaryFpEq => "~="
+          case ResolvedInfo.BuiltIn.Kind.BinaryFpNe => "!~"
+          case ResolvedInfo.BuiltIn.Kind.BinaryGe => ">="
+          case ResolvedInfo.BuiltIn.Kind.BinaryGt => ">"
+          case ResolvedInfo.BuiltIn.Kind.BinaryLe => "<="
+          case ResolvedInfo.BuiltIn.Kind.BinaryLt => "<"
+          case ResolvedInfo.BuiltIn.Kind.BinaryShr => ">>"
+          case ResolvedInfo.BuiltIn.Kind.BinaryUshr => ">>>"
+          case ResolvedInfo.BuiltIn.Kind.BinaryShl => "<<"
+        }
+        st"(${left.prettyST} $opString ${right.prettyST})"
+      }
+    }
+
+    @datatype class If(val cond: Exp, val thenExp: Exp, val elseExp: Exp, val pos: Position) extends Exp {
+      @strictpure def prettyST: ST = st"if (${cond.prettyST}) ${thenExp.prettyST} else ${elseExp.prettyST}"
+    }
+
+    @datatype class Construct(val tipe: Typed, val args: ISZ[Exp], val pos: Position) extends Exp {
+      @strictpure def prettyST: ST = st"$tipe(${(for (i <- 1 until args.size) yield args(i).prettyST, ", ")})"
+    }
+
+    @datatype class Apply(val isInObject: B, val owner: ISZ[String], val id: String, val args: ISZ[Exp], val pos: Position) extends Exp {
+      @strictpure def prettyST: ST =
+        if (!isInObject && ops.StringOps(id).isScalaOp && args.size == 2) st"(${args(0).prettyST} $id ${args(1).prettyST})"
+        else if (isInObject) st"${(owner, ".")}.$id(${(for (arg <- args) yield arg.prettyST, ", ")})"
+        else st"${args(0).prettyST}.$id(${(for (i <- 1 until args.size) yield args(i).prettyST)})"
     }
 
     @datatype class Select(val exp: Exp, val id: String, val pos: Position) extends Exp {
@@ -129,27 +175,21 @@ object IR {
 
     }
 
-    @datatype class If(val condBodies: ISZ[IfCondBody], val elseBody: Body, val pos: Position) extends Stmt {
-      @strictpure def prettyST: ST = st"if (${condBodies(0).cond.prettyST}) ${condBodies(0).body.prettyST} ${(for (i <- 1 until condBodies.size) yield st" else if (${condBodies(i).cond.prettyST}) ${condBodies(i).body.prettyST} else ${elseBody.prettyST}", " ")}"
+    @datatype class If(val condBodies: ISZ[IfCondBlock], val elseBlock: Block, val pos: Position) extends Stmt {
+      @strictpure def prettyST: ST = st"if (${condBodies(0).cond.prettyST}) ${condBodies(0).block.prettyST} ${(for (i <- 1 until condBodies.size) yield st" else if (${condBodies(i).cond.prettyST}) ${condBodies(i).block.prettyST} else ${elseBlock.prettyST}", " ")}"
     }
 
-    @datatype class IfCondBody(val cond: Exp, val body: Body, val pos: Position)
+    @datatype class IfCondBlock(val cond: Exp, val block: Block, val pos: Position)
 
-    @datatype class Body(val decls: ISZ[Decl], val stmts: ISZ[Stmt], val pos: Position) extends Stmt {
-      @strictpure def prettyST: ST = if (decls.isEmpty)
+    @datatype class Block(val stmts: ISZ[Stmt], val pos: Position) extends Stmt {
+      @strictpure def prettyST: ST =
         st"""{
-            |  ${(for (stmt <- stmts) yield stmt.prettyST, "\n")}
-            |}"""
-      else
-        st"""{
-            |  ${(for (decl <- decls) yield decl.prettyST, "\n")}
-            |
             |  ${(for (stmt <- stmts) yield stmt.prettyST, "\n")}
             |}"""
     }
 
-    @datatype class While(val cond: Exp, val body: Body, val pos: Position) extends Stmt {
-      @strictpure def prettyST: ST = st"while (${cond.prettyST}) ${body.prettyST}"
+    @datatype class While(val cond: Exp, val block: Block, val pos: Position) extends Stmt {
+      @strictpure def prettyST: ST = st"while (${cond.prettyST}) ${block.prettyST}"
     }
 
     @datatype class Return(val expOpt: Option[Exp], val pos: Position) extends Stmt {
@@ -159,30 +199,18 @@ object IR {
       }
     }
 
-    @datatype class Block(val label: Z, val stmts: ISZ[Stmt], jump: Jump, val pos: Position) extends Stmt {
-      @strictpure def prettyST: ST =
-        st""".$label:
-            |  ${(for (stmt <- stmts) yield stmt.prettyST, "\n")}
-            |  ${jump.prettyST}"""
-    }
+    @datatype trait Decl extends Stmt
 
-  }
+    object Decl {
 
-  @datatype trait Decl {
-    @pure def prettyST: ST
-    @pure override def string: String = {
-      return prettyST.render
-    }
-  }
+      @datatype class Local(val tipe: Typed, val id: String, val pos: Position) extends Decl {
+        @strictpure def prettyST: ST = st"$id : $tipe"
+      }
 
-  object Decl {
+      @datatype class Register(val tipe: Typed, val n: Z, val pos: Position) extends Decl {
+        @strictpure def prettyST: ST = st"$$$n : $tipe"
+      }
 
-    @datatype class Local(val tipe: Typed, val id: String, val pos: Position) extends Decl {
-      @strictpure def prettyST: ST = st"$id : $tipe"
-    }
-
-    @datatype class Register(val tipe: Typed, val n: Z, val pos: Position) extends Decl {
-      @strictpure def prettyST: ST = st"$$$n : $tipe"
     }
 
   }
@@ -212,13 +240,39 @@ object IR {
     }
   }
 
+  @datatype class BasicBlock(val label: Z, val assigns: ISZ[Stmt.Assign], jump: Jump, val pos: Position) {
+    @strictpure def prettyST: ST =
+      st""".$label:
+          |  ${(for (assign <- assigns) yield assign.prettyST, "\n")}
+          |  ${jump.prettyST}"""
+  }
+
+  @datatype trait Body {
+    @pure def prettyST: ST
+    @pure override def string: String = {
+      return prettyST.render
+    }
+  }
+
+  object Body {
+
+    @datatype class Block(val block: Stmt.Block) extends Body {
+      @strictpure def prettyST: ST = block.prettyST
+    }
+
+    @datatype class Basic(val blocks: ISZ[BasicBlock]) extends Body {
+      @strictpure def prettyST: ST = st"${(for (bb <- blocks) yield bb.prettyST, "\n\n")}"
+    }
+
+  }
+
   @datatype class Procedure(val isInObject: B,
                             val typeParams: ISZ[String],
                             val owner: ISZ[String],
                             val id: String,
                             val paramNames: ISZ[String],
                             val tipe: Typed.Fun,
-                            val body: Stmt.Body,
+                            val body: Body,
                             val pos: Position) {
     @strictpure def prettyST: ST = {
       val pt: ST = if (typeParams.isEmpty) st"" else st"[${(typeParams, ", ")}]"
