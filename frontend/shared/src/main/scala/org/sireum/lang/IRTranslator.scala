@@ -28,7 +28,6 @@ package org.sireum.lang
 
 import org.sireum._
 import org.sireum.lang.ast.IR
-import org.sireum.lang.ast.IR.Exp.Register
 import org.sireum.lang.symbol.TypeInfo
 import org.sireum.lang.tipe.TypeHierarchy
 import org.sireum.lang.{ast => AST}
@@ -158,7 +157,28 @@ object IRTranslator {
         val bPos = bodyPos(stmt.body, pos)
         stmts = oldStmts :+ IR.Stmt.Block(condStmts :+
           IR.Stmt.While(cond, IR.Stmt.Block(stmts, bPos), pos), pos)
-      case _ => halt(s"TODO: $stmt")
+      case stmt: AST.Stmt.Expr =>
+        translateExp(stmt.exp)
+      case stmt: AST.Stmt.Return =>
+        stmt.expOpt match {
+          case Some(exp) => stmts = stmts :+ IR.Stmt.Return(Some(translateExp(exp)), pos)
+          case _ => stmts = stmts :+ IR.Stmt.Return(None(), pos)
+        }
+      case stmt: AST.Stmt.Block => translateBody(stmt.body, None())
+      case stmt: AST.Stmt.Match => halt(s"TODO: $stmt")
+      case stmt: AST.Stmt.For => halt(s"TODO: $stmt")
+      case stmt: AST.Stmt.VarPattern => halt(s"TODO: $stmt")
+      case stmt: AST.Stmt.DoWhile => halt(s"TODO: $stmt")
+      case _: AST.Stmt.SubZ => // skip
+      case _: AST.Stmt.Method => // skip
+      case _: AST.Stmt.ExtMethod => // skip
+      case _: AST.Stmt.Enum => // skip
+      case _: AST.Stmt.Sig => // skip
+      case _: AST.Stmt.Adt => // skip
+      case _: AST.Stmt.Object => // skip
+      case _: AST.Stmt.Import => // skip
+      case _: AST.Stmt.TypeAlias => // skip
+      case _: AST.Stmt.Spec => // skip
     }
 
   }

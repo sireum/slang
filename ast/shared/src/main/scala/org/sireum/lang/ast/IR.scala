@@ -305,11 +305,13 @@ object IR {
     }
   }
 
-  @datatype class Program(val globals: ISZ[Global], val procedures: ISZ[Procedure]) {
+  @datatype class Program(val globals: ISZ[Global], val procedures: ISZ[Procedure], val stmts: ISZ[Stmt]) {
     @strictpure def prettyST: ST =
       st"""${(for (g <- globals) yield g.prettyST, "\n")}
           |
-          |${(for (p <- procedures) yield p.prettyST, "\n\n")}"""
+          |${(for (p <- procedures) yield p.prettyST, "\n\n")}
+          |
+          |${(for (stmt <- stmts) yield stmt.prettyST, "\n")}"""
     @pure override def string: String = {
       return prettyST.render
     }
