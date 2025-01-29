@@ -55,6 +55,7 @@ object IRTranslator {
       case stmt: AST.Stmt.Assign =>
       case stmt: AST.Stmt.If =>
       case stmt: AST.Stmt.While =>
+      case _ =>
     }
     halt(s"TODO: $stmt")
   }
@@ -122,6 +123,12 @@ object IRTranslator {
         kind match {
           case AST.ResolvedInfo.BuiltIn.Kind.BinaryEq => kind = AST.ResolvedInfo.BuiltIn.Kind.BinaryEquiv
           case AST.ResolvedInfo.BuiltIn.Kind.BinaryNe => kind = AST.ResolvedInfo.BuiltIn.Kind.BinaryInequiv
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondAnd if threeAddressCode =>
+            return translateExp(AST.Exp.If(exp.left, exp.right, AST.Exp.LitB(T, AST.Attr(exp.posOpt)), AST.TypedAttr(exp.posOpt, AST.Typed.bOpt)))
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondOr if threeAddressCode =>
+            return translateExp(AST.Exp.If(exp.left, AST.Exp.LitB(T, AST.Attr(exp.posOpt)), exp.right, AST.TypedAttr(exp.posOpt, AST.Typed.bOpt)))
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondImply if threeAddressCode =>
+            return translateExp(AST.Exp.If(exp.left, exp.right, AST.Exp.LitB(F, AST.Attr(exp.posOpt)), AST.TypedAttr(exp.posOpt, AST.Typed.bOpt)))
           case _ =>
         }
         val e = IR.Exp.Binary(t, translateExp(exp.left), kind, translateExp(exp.right), pos)
