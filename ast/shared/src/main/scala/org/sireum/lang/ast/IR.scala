@@ -69,7 +69,7 @@ object IR {
       @strictpure def prettyST: ST = st"$$$n"
     }
 
-    @datatype class LocalVarRef(val id: String, val pos: Position) extends Exp {
+    @datatype class LocalVarRef(val id: org.sireum.String, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"$id"
     }
 
@@ -174,12 +174,12 @@ object IR {
         @strictpure def prettyST: ST = st"$lhs = ${rhs.prettyST}"
       }
 
-      @datatype class Field(val copy: B, val register: Z, val id: String, val rhs: Exp, val pos: Position) extends Assign {
-        @strictpure def prettyST: ST = st"$$$register.$id ${if (copy) ":=" else "="} ${rhs.prettyST}"
+      @datatype class Field(val copy: B, val receiver: Exp, val id: String, val rhs: Exp, val pos: Position) extends Assign {
+        @strictpure def prettyST: ST = st"${receiver.prettyST}.$id ${if (copy) ":=" else "="} ${rhs.prettyST}"
       }
 
-      @datatype class Index(val copy: B, val register: Z, val index: Exp, val rhs: Exp, val pos: Position) extends Assign {
-        @strictpure def prettyST: ST = st"$$$register(${index.prettyST}) ${if (copy) ":=" else "="} ${rhs.prettyST}"
+      @datatype class Index(val copy: B, val receiver: Exp, val index: Exp, val rhs: Exp, val pos: Position) extends Assign {
+        @strictpure def prettyST: ST = st"${receiver.prettyST}(${index.prettyST}) ${if (copy) ":=" else "="} ${rhs.prettyST}"
       }
 
     }
@@ -188,7 +188,7 @@ object IR {
       @strictpure def prettyST: ST = st"if (${condBodies(0).cond.prettyST}) ${condBodies(0).block.prettyST} ${(for (i <- 1 until condBodies.size) yield st" else if (${condBodies(i).cond.prettyST}) ${condBodies(i).block.prettyST} else ${elseBlock.prettyST}", " ")}"
     }
 
-    @datatype class IfCondBlock(val cond: Exp, val block: Block, val pos: Position)
+    @datatype class IfCondBlock(val cond: Exp, val block: Block)
 
     @datatype class Block(val stmts: ISZ[Stmt], val pos: Position) extends Stmt {
       @strictpure def prettyST: ST =

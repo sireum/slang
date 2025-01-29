@@ -28,6 +28,7 @@ package org.sireum.lang
 
 import org.sireum._
 import org.sireum.lang.ast.IR
+import org.sireum.lang.ast.IR.Exp.Register
 import org.sireum.lang.symbol.TypeInfo
 import org.sireum.lang.tipe.TypeHierarchy
 import org.sireum.lang.{ast => AST}
@@ -49,7 +50,7 @@ object IRTranslator {
     halt(s"TODO: $method")
   }
 
-  def translateStmt(stmt: AST.Stmt): ISZ[IR.Stmt] = {
+  def translateStmt(stmt: AST.Stmt, registerOpt: Option[Z]): Unit = {
     val pos = stmt.posOpt.get
     stmt match {
       case stmt: AST.Stmt.Var =>
@@ -57,42 +58,132 @@ object IRTranslator {
         var oldStmts = stmts
         stmts = ISZ()
         val t = stmt.attr.typedOpt.get
-        val rhs = translateAssignExp(init)
-        stmts = stmts :+ IR.Stmt.Assign.Local(shouldCopy(t), stmt.id.value, rhs, pos)
+        val varRhs: IR.Exp = init match {
+          case init: AST.Stmt.Expr =>
+            translateExp(init.exp)
+          case _ =>
+            val n = freshRegister()
+            translateAssignExp(init, n)
+            IR.Exp.Register(n, init.asStmt.posOpt.get)
+        }
+        stmts = stmts :+ IR.Stmt.Assign.Local(shouldCopy(t), stmt.id.value, varRhs, pos)
         oldStmts = oldStmts :+ IR.Stmt.Decl.Local(stmt.isVal, t, stmt.id.value, pos)
         stmts = oldStmts :+ IR.Stmt.Block(stmts, pos)
       case stmt: AST.Stmt.Assign =>
+        val copy = shouldCopy(stmt.rhs.typedOpt.get)
         val oldStmts = stmts
         stmts = ISZ()
-        val rhs = translateAssignExp(stmt.rhs)
+        val identRhs: IR.Exp = stmt.rhs match {
+          case rhs: AST.Stmt.Expr => translateExp(rhs.exp)
+          case _ =>
+            val n = freshRegister()
+            translateAssignExp(stmt.rhs, n)
+            IR.Exp.Register(n, stmt.rhs.asStmt.posOpt.get)
+        }
         stmt.lhs match {
           case lhs: AST.Exp.Ident =>
             lhs.resOpt.get match {
               case _: AST.ResolvedInfo.LocalVar =>
-                stmts = stmts :+ IR.Stmt.Assign.Local(shouldCopy(stmt.rhs.typedOpt.get), lhs.id.value, rhs, pos)
-              case _ =>
+                stmts = stmts :+ IR.Stmt.Assign.Local(copy, lhs.id.value, identRhs, pos)
+              case res: AST.ResolvedInfo.Var =>
+                if (res.isInObject) {
+                  stmts = stmts :+ IR.Stmt.Assign.Global(copy, res.owner :+ res.id, identRhs, pos)
+                }
+                val receiverPos = lhs.posOpt.get
+                val receiver: IR.Exp = if (threeAddressCode) {
+                  val n = freshRegister()
+                  stmts = stmts :+ IR.Stmt.Assign.Register(n, identRhs, receiverPos)
+                  IR.Exp.Register(n, receiverPos)
+                } else {
+                  IR.Exp.LocalVarRef("this", receiverPos)
+                }
+                stmts = stmts :+ IR.Stmt.Assign.Field(copy, receiver, lhs.id.value, identRhs, pos)
+              case res => halt(s"Infeasible: $res")
             }
-          case lhs: AST.Exp.Select => halt(s"TODO: $lhs")
-          case lhs: AST.Exp.Invoke => halt(s"TODO: $lhs")
+          case lhs: AST.Exp.Select =>
+            def selectRhs(): IR.Exp = {
+              stmt.rhs match {
+                case rhs: AST.Stmt.Expr => return translateExp(rhs.exp)
+                case _ =>
+                  val n = freshRegister()
+                  translateAssignExp(stmt.rhs, n)
+                  return IR.Exp.Register(n, stmt.rhs.asStmt.posOpt.get)
+              }
+            }
+            lhs.resOpt.get match {
+              case res: AST.ResolvedInfo.Var if res.isInObject =>
+                stmts = stmts :+ IR.Stmt.Assign.Global(copy, res.owner :+ res.id, selectRhs(), pos)
+              case _ =>
+                val receiver = translateExp(lhs.receiverOpt.get)
+                stmts = stmts :+ IR.Stmt.Assign.Field(copy, receiver, lhs.id.value, selectRhs(), pos)
+            }
+          case lhs: AST.Exp.Invoke =>
+            val receiver = translateExp(lhs.receiverOpt.get)
+            val index = translateExp(lhs.args(0))
+            val invokeRhs: IR.Exp = stmt.rhs match {
+              case rhs: AST.Stmt.Expr => translateExp(rhs.exp)
+              case _ =>
+                val n = freshRegister()
+                translateAssignExp(stmt.rhs, n)
+                IR.Exp.Register(n, stmt.rhs.asStmt.posOpt.get)
+            }
+            stmts = stmts :+ IR.Stmt.Assign.Index(copy, receiver, index, invokeRhs, pos)
           case _ => halt("Infeasible")
         }
         stmts = oldStmts :+ IR.Stmt.Block(stmts, pos)
       case stmt: AST.Stmt.If =>
+        val oldStmts = stmts
+        stmts = ISZ()
+        val cond = translateExp(stmt.cond)
+        val condStmts = stmts
+        stmts = ISZ()
+        translateBody(stmt.thenBody, registerOpt)
+        val thenPos = bodyPos(stmt.thenBody, pos)
+        val thenStmts = stmts
+        stmts = ISZ()
+        translateBody(stmt.elseBody, registerOpt)
+        val elsePos = bodyPos(stmt.elseBody, pos)
+        val elseStmts = stmts
+        stmts = oldStmts :+ IR.Stmt.Block(condStmts :+
+          IR.Stmt.If(
+            ISZ(IR.Stmt.IfCondBlock(cond, IR.Stmt.Block(thenStmts, thenPos))),
+            IR.Stmt.Block(elseStmts, elsePos), pos), pos)
       case stmt: AST.Stmt.While =>
-      case _ =>
+        val oldStmts = stmts
+        stmts = ISZ()
+        val cond = translateExp(stmt.cond)
+        val condStmts = stmts
+        stmts = ISZ()
+        translateBody(stmt.body, None())
+        val bPos = bodyPos(stmt.body, pos)
+        stmts = oldStmts :+ IR.Stmt.Block(condStmts :+
+          IR.Stmt.While(cond, IR.Stmt.Block(stmts, bPos), pos), pos)
+      case _ => halt(s"TODO: $stmt")
     }
-    halt(s"TODO: $stmt")
+
   }
 
-  def translateAssignExp(stmt: AST.AssignExp): IR.Exp = {
-    stmt match {
-      case stmt: AST.Stmt.Expr => return translateExp(stmt.exp)
-      case stmt: AST.Stmt.Block =>
-      case stmt: AST.Stmt.If =>
-      case stmt: AST.Stmt.Match =>
-      case stmt: AST.Stmt.Return =>
+  @pure def bodyPos(body: AST.Body, default: message.Position): message.Position = {
+    if (body.stmts.isEmpty) {
+      return default
     }
-    halt(s"TODO: $stmt")
+    return body.stmts(0).posOpt.get.to(body.stmts(body.stmts.size - 1).posOpt.get)
+  }
+
+  def translateBody(body: AST.Body, registerOpt: Option[Z]): Unit = {
+    for (stmt <- body.stmts) {
+      translateStmt(stmt, registerOpt)
+    }
+  }
+
+  def translateAssignExp(stmt: AST.AssignExp, register: Z): Unit = {
+    val pos = stmt.asStmt.posOpt.get
+    stmt match {
+      case stmt: AST.Stmt.Expr =>
+        val exp = translateExp(stmt.exp)
+        stmts = stmts :+ IR.Stmt.Assign.Register(register, exp, pos)
+      case _ => translateStmt(stmt.asStmt, Some(register))
+    }
   }
 
   @memoize def isSubZ(t: AST.Typed): B = {
@@ -212,7 +303,7 @@ object IRTranslator {
         stmts = oldStmts
         stmts = stmts :+ IR.Stmt.If(ISZ(
           IR.Stmt.IfCondBlock(cond,
-            IR.Stmt.Block(thenStmts :+ IR.Stmt.Assign.Register(n, thenExp, thenPos), thenPos), thenPos)),
+            IR.Stmt.Block(thenStmts :+ IR.Stmt.Assign.Register(n, thenExp, thenPos), thenPos))),
             IR.Stmt.Block(elseStmts :+ IR.Stmt.Assign.Register(n, elseExp, elsePos), elsePos), pos)
         return IR.Exp.Register(n, pos)
       case _ =>
