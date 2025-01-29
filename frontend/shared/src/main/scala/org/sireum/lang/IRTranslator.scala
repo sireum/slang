@@ -40,7 +40,7 @@ object IRTranslator {
 
 }
 
-@record class IRMethodTranslator(val threeAddressCode: B, val th: TypeHierarchy) {
+@record class IRTranslator(val threeAddressCode: B, val th: TypeHierarchy) {
 
   var _freshRegister: Z = 0
   var stmts: ISZ[IR.Stmt] = ISZ()
@@ -50,12 +50,47 @@ object IRTranslator {
   }
 
   def translateStmt(stmt: AST.Stmt): ISZ[IR.Stmt] = {
+    val pos = stmt.posOpt.get
     stmt match {
       case stmt: AST.Stmt.Var =>
+        val init = stmt.initOpt.get
+        var oldStmts = stmts
+        stmts = ISZ()
+        val t = stmt.attr.typedOpt.get
+        val rhs = translateAssignExp(init)
+        stmts = stmts :+ IR.Stmt.Assign.Local(shouldCopy(t), stmt.id.value, rhs, pos)
+        oldStmts = oldStmts :+ IR.Stmt.Decl.Local(stmt.isVal, t, stmt.id.value, pos)
+        stmts = oldStmts :+ IR.Stmt.Block(stmts, pos)
       case stmt: AST.Stmt.Assign =>
+        val oldStmts = stmts
+        stmts = ISZ()
+        val rhs = translateAssignExp(stmt.rhs)
+        stmt.lhs match {
+          case lhs: AST.Exp.Ident =>
+            lhs.resOpt.get match {
+              case _: AST.ResolvedInfo.LocalVar =>
+                stmts = stmts :+ IR.Stmt.Assign.Local(shouldCopy(stmt.rhs.typedOpt.get), lhs.id.value, rhs, pos)
+              case _ =>
+            }
+          case lhs: AST.Exp.Select => halt(s"TODO: $lhs")
+          case lhs: AST.Exp.Invoke => halt(s"TODO: $lhs")
+          case _ => halt("Infeasible")
+        }
+        stmts = oldStmts :+ IR.Stmt.Block(stmts, pos)
       case stmt: AST.Stmt.If =>
       case stmt: AST.Stmt.While =>
       case _ =>
+    }
+    halt(s"TODO: $stmt")
+  }
+
+  def translateAssignExp(stmt: AST.AssignExp): IR.Exp = {
+    stmt match {
+      case stmt: AST.Stmt.Expr => return translateExp(stmt.exp)
+      case stmt: AST.Stmt.Block =>
+      case stmt: AST.Stmt.If =>
+      case stmt: AST.Stmt.Match =>
+      case stmt: AST.Stmt.Return =>
     }
     halt(s"TODO: $stmt")
   }
@@ -83,6 +118,24 @@ object IRTranslator {
       case _ => return isSubZ(t)
     }
     return T
+  }
+
+  @memoize def shouldCopy(t: AST.Typed): B = {
+    t match {
+      case t: AST.Typed.Name =>
+        t.ids match {
+          case AST.Typed.msName => return T
+          case AST.Typed.isName =>
+          case _ =>
+        }
+        th.typeMap.get(t.ids) match {
+          case Some(info: TypeInfo.Adt) => return !info.ast.isDatatype
+          case Some(info: TypeInfo.Sig) => return !info.ast.isImmutable
+          case _ =>
+        }
+      case _ =>
+    }
+    return F
   }
 
   def freshRegister(): Z = {

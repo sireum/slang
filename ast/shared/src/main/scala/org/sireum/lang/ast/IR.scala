@@ -212,7 +212,7 @@ object IR {
 
     object Decl {
 
-      @datatype class Local(val tipe: Typed, val id: String, val pos: Position) extends Decl {
+      @datatype class Local(val isVal: B, val tipe: Typed, val id: String, val pos: Position) extends Decl {
         @strictpure def prettyST: ST = st"$id : $tipe"
       }
 
