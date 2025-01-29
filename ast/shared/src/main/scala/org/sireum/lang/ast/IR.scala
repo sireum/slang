@@ -69,7 +69,7 @@ object IR {
       @strictpure def prettyST: ST = st"$id"
     }
 
-    @datatype class Unary(val op: lang.ast.Exp.UnaryOp.Type, val exp: Exp, val pos: Position) extends Exp {
+    @datatype class Unary(val tipe: Typed, val op: lang.ast.Exp.UnaryOp.Type, val exp: Exp, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = {
         val opString: String = op match {
           case lang.ast.Exp.UnaryOp.Not => "!"
@@ -81,7 +81,7 @@ object IR {
       }
     }
 
-    @datatype class Binary(val left: Exp, val op: ResolvedInfo.BuiltIn.Kind.Type, val right: Exp, val pos: Position) extends Exp {
+    @datatype class Binary(val tipe: Typed, val left: Exp, val op: ResolvedInfo.BuiltIn.Kind.Type, val right: Exp, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = {
         val opString: String = op match {
           case ResolvedInfo.BuiltIn.Kind.BinaryAdd => "+"
@@ -107,6 +107,7 @@ object IR {
           case ResolvedInfo.BuiltIn.Kind.BinaryShr => ">>"
           case ResolvedInfo.BuiltIn.Kind.BinaryUshr => ">>>"
           case ResolvedInfo.BuiltIn.Kind.BinaryShl => "<<"
+          case _ => halt(s"Infeasible: $op")
         }
         st"(${left.prettyST} $opString ${right.prettyST})"
       }
@@ -133,6 +134,10 @@ object IR {
 
     @datatype class Indexing(val exp: Exp, val index: Exp, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"${exp.prettyST}(${index.prettyST})"
+    }
+
+    @datatype class Type(val test: B, val exp: Exp, tipe: Typed, val pos: Position) extends Exp {
+      @strictpure def prettyST: ST = st"(${exp.prettyST} ${if (test) "is" else "as"} $tipe)"
     }
 
   }
@@ -260,8 +265,14 @@ object IR {
       @strictpure def prettyST: ST = block.prettyST
     }
 
-    @datatype class Basic(val blocks: ISZ[BasicBlock]) extends Body {
-      @strictpure def prettyST: ST = st"${(for (bb <- blocks) yield bb.prettyST, "\n\n")}"
+    @datatype class Basic(val decls: ISZ[Stmt.Decl], val blocks: ISZ[BasicBlock]) extends Body {
+      @strictpure def prettyST: ST =
+        st"""{
+            |  ${(for (decl <- decls) yield decl.prettyST, "\n")}
+            |
+            |  ${(for (bb <- blocks) yield bb.prettyST, "\n\n")}
+            |}"""
+
     }
 
   }
