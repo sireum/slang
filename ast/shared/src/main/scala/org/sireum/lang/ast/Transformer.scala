@@ -113,7 +113,6 @@ object Transformer {
           return r
         case o: Stmt.Match => return preStmtMatch(ctx, o)
         case o: Stmt.While => return preStmtWhile(ctx, o)
-        case o: Stmt.DoWhile => return preStmtDoWhile(ctx, o)
         case o: Stmt.For => return preStmtFor(ctx, o)
         case o: Stmt.Return => return preStmtReturn(ctx, o)
         case o: Stmt.Expr => return preStmtExpr(ctx, o)
@@ -317,10 +316,6 @@ object Transformer {
     }
 
     @pure def preStmtWhile(ctx: Context, o: Stmt.While): PreResult[Context, Stmt] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preStmtDoWhile(ctx: Context, o: Stmt.DoWhile): PreResult[Context, Stmt] = {
       return PreResult(ctx, T, None())
     }
 
@@ -1257,7 +1252,6 @@ object Transformer {
           return r
         case o: Stmt.Match => return postStmtMatch(ctx, o)
         case o: Stmt.While => return postStmtWhile(ctx, o)
-        case o: Stmt.DoWhile => return postStmtDoWhile(ctx, o)
         case o: Stmt.For => return postStmtFor(ctx, o)
         case o: Stmt.Return => return postStmtReturn(ctx, o)
         case o: Stmt.Expr => return postStmtExpr(ctx, o)
@@ -1461,10 +1455,6 @@ object Transformer {
     }
 
     @pure def postStmtWhile(ctx: Context, o: Stmt.While): TPostResult[Context, Stmt] = {
-      return TPostResult(ctx, None())
-    }
-
-    @pure def postStmtDoWhile(ctx: Context, o: Stmt.DoWhile): TPostResult[Context, Stmt] = {
       return TPostResult(ctx, None())
     }
 
@@ -2584,15 +2574,6 @@ import Transformer._
           else
             TPostResult(r2.ctx, None())
         case o2: Stmt.While =>
-          val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.cond)
-          val r1: TPostResult[Context, LoopContract] = transformLoopContract(r0.ctx, o2.contract)
-          val r2: TPostResult[Context, Body] = transformBody(r1.ctx, o2.body)
-          val r3: TPostResult[Context, Attr] = transformAttr(r2.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
-            TPostResult(r3.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), contract = r1.resultOpt.getOrElse(o2.contract), body = r2.resultOpt.getOrElse(o2.body), attr = r3.resultOpt.getOrElse(o2.attr))))
-          else
-            TPostResult(r3.ctx, None())
-        case o2: Stmt.DoWhile =>
           val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.cond)
           val r1: TPostResult[Context, LoopContract] = transformLoopContract(r0.ctx, o2.contract)
           val r2: TPostResult[Context, Body] = transformBody(r1.ctx, o2.body)

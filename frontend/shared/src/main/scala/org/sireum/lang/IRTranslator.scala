@@ -144,9 +144,7 @@ object IRTranslator {
         val elsePos = bodyPos(stmt.elseBody, pos)
         val elseStmts = stmts
         stmts = oldStmts :+ IR.Stmt.Block(condStmts :+
-          IR.Stmt.If(
-            ISZ(IR.Stmt.IfCondBlock(cond, IR.Stmt.Block(thenStmts, thenPos))),
-            IR.Stmt.Block(elseStmts, elsePos), pos), pos)
+          IR.Stmt.If(cond, IR.Stmt.Block(thenStmts, thenPos), IR.Stmt.Block(elseStmts, elsePos), pos), pos)
       case stmt: AST.Stmt.While =>
         val oldStmts = stmts
         stmts = ISZ()
@@ -164,11 +162,10 @@ object IRTranslator {
           case Some(exp) => stmts = stmts :+ IR.Stmt.Return(Some(translateExp(exp)), pos)
           case _ => stmts = stmts :+ IR.Stmt.Return(None(), pos)
         }
-      case stmt: AST.Stmt.Block => translateBody(stmt.body, None())
+      case stmt: AST.Stmt.Block => translateBody(stmt.body, registerOpt)
       case stmt: AST.Stmt.Match => halt(s"TODO: $stmt")
       case stmt: AST.Stmt.For => halt(s"TODO: $stmt")
       case stmt: AST.Stmt.VarPattern => halt(s"TODO: $stmt")
-      case stmt: AST.Stmt.DoWhile => halt(s"TODO: $stmt")
       case _: AST.Stmt.SubZ => // skip
       case _: AST.Stmt.Method => // skip
       case _: AST.Stmt.ExtMethod => // skip
@@ -321,10 +318,9 @@ object IRTranslator {
         val elseStmts = stmts
         val elsePos = exp.elseExp.posOpt.get
         stmts = oldStmts
-        stmts = stmts :+ IR.Stmt.If(ISZ(
-          IR.Stmt.IfCondBlock(cond,
-            IR.Stmt.Block(thenStmts :+ IR.Stmt.Assign.Register(n, thenExp, thenPos), thenPos))),
-            IR.Stmt.Block(elseStmts :+ IR.Stmt.Assign.Register(n, elseExp, elsePos), elsePos), pos)
+        stmts = stmts :+ IR.Stmt.If(cond,
+          IR.Stmt.Block(thenStmts :+ IR.Stmt.Assign.Register(n, thenExp, thenPos), thenPos),
+          IR.Stmt.Block(elseStmts :+ IR.Stmt.Assign.Register(n, elseExp, elsePos), elsePos), pos)
         return IR.Exp.Register(n, pos)
       case _ =>
     }

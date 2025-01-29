@@ -4843,16 +4843,6 @@ import TypeChecker._
       }
     }
 
-    def checkDoWhile(doWhileStmt: AST.Stmt.DoWhile): AST.Stmt = {
-      val thisL = this
-      val (newInvs, newMods) = thisL(mode = ModeContext.Spec).
-        checkLoopInv(scope, doWhileStmt.contract.invariants, doWhileStmt.contract.modifies, reporter)
-      val (_, newBody) = checkBody(F, F, None(), createNewScope(scope), doWhileStmt.body, reporter)
-      val (newCond, _) = checkExp(AST.Typed.bOpt, scope, doWhileStmt.cond, reporter)
-      return doWhileStmt(context = context, cond = newCond,
-        contract = doWhileStmt.contract(invariants = newInvs, modifies = newMods), body = newBody)
-    }
-
     def checkWhile(whileStmt: AST.Stmt.While): AST.Stmt = {
       val (newCond, _) = checkExp(AST.Typed.bOpt, scope, whileStmt.cond, reporter)
       val thisL = this
@@ -4903,8 +4893,6 @@ import TypeChecker._
       case stmt: AST.Stmt.Assign => return checkAssign(stmt)
 
       case stmt: AST.Stmt.Block => return checkBlock(F, None(), scope, stmt, reporter)
-
-      case stmt: AST.Stmt.DoWhile => return checkDoWhile(stmt)
 
       case stmt: AST.Stmt.Enum => return stmt
 

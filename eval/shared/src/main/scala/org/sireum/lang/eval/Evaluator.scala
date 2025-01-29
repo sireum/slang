@@ -616,7 +616,6 @@ object Evaluator {
       case stmt: AST.Stmt.While => evalWhile(stmt)
       case stmt: AST.Stmt.Var => evalVar(stmt)
       case _: AST.Stmt.VarPattern => halt(s"TODO: $stmt") // TODO
-      case _: AST.Stmt.DoWhile => halt(s"TODO: $stmt") // TODO
       case _: AST.Stmt.For => halt(s"TODO: $stmt") // TODO
       case _: AST.Stmt.Match => halt(s"TODO: $stmt") // TODO
       case _: AST.Stmt.Return => halt(s"TODO: $stmt") // TODO

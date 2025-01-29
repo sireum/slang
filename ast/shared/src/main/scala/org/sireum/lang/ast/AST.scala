@@ -631,27 +631,6 @@ object Stmt {
     }
   }
 
-  @datatype class DoWhile(val context: ISZ[String],
-                          val cond: Exp,
-                          val contract: LoopContract,
-                          val body: Body,
-                          @hidden val attr: Attr) extends Stmt {
-    @strictpure override def posOpt: Option[Position] = attr.posOpt
-    @strictpure def invariants: ISZ[Exp] = contract.invariants
-    @strictpure def modifies: ISZ[Exp.Ref] = contract.modifies
-    @pure override def prettyST: ST = {
-      return st"""do {
-                 |  ${contract.prettySTOpt}
-                 |  ${(body.prettySTs, "\n")}
-                 |} while(${cond.prettyST})"""
-    }
-    @strictpure override def isInstruction: B = T
-    @strictpure override def hasReturn: B = body.hasReturn
-    @pure def compNum: Z = {
-      return 1 + body.compNum + contract.invariants.size + contract.modifies.size
-    }
-  }
-
   @datatype class For(val context: ISZ[String],
                       val enumGens: ISZ[EnumGen.For],
                       val body: Body,

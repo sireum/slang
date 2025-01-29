@@ -184,11 +184,9 @@ object IR {
 
     }
 
-    @datatype class If(val condBodies: ISZ[IfCondBlock], val elseBlock: Block, val pos: Position) extends Stmt {
-      @strictpure def prettyST: ST = st"if (${condBodies(0).cond.prettyST}) ${condBodies(0).block.prettyST} ${(for (i <- 1 until condBodies.size) yield st" else if (${condBodies(i).cond.prettyST}) ${condBodies(i).block.prettyST} else ${elseBlock.prettyST}", " ")}"
+    @datatype class If(val cond: Exp, val thenBlock: Block, val elseBlock: Block, val pos: Position) extends Stmt {
+      @strictpure def prettyST: ST = st"if (${cond.prettyST}) ${thenBlock.prettyST} else ${elseBlock.prettyST}"
     }
-
-    @datatype class IfCondBlock(val cond: Exp, val block: Block)
 
     @datatype class Block(val stmts: ISZ[Stmt], val pos: Position) extends Stmt {
       @strictpure def prettyST: ST =

@@ -405,7 +405,6 @@ object JSON {
         case o: org.sireum.lang.ast.Stmt.Induct => return print_astStmtInduct(o)
         case o: org.sireum.lang.ast.Stmt.Match => return print_astStmtMatch(o)
         case o: org.sireum.lang.ast.Stmt.While => return print_astStmtWhile(o)
-        case o: org.sireum.lang.ast.Stmt.DoWhile => return print_astStmtDoWhile(o)
         case o: org.sireum.lang.ast.Stmt.For => return print_astStmtFor(o)
         case o: org.sireum.lang.ast.Stmt.Return => return print_astStmtReturn(o)
         case o: org.sireum.lang.ast.Stmt.Expr => return print_astStmtExpr(o)
@@ -691,17 +690,6 @@ object JSON {
     @pure def print_astStmtWhile(o: org.sireum.lang.ast.Stmt.While): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Stmt.While""""),
-        ("context", printISZ(T, o.context, printString _)),
-        ("cond", print_astExp(o.cond)),
-        ("contract", print_astLoopContract(o.contract)),
-        ("body", print_astBody(o.body)),
-        ("attr", print_astAttr(o.attr))
-      ))
-    }
-
-    @pure def print_astStmtDoWhile(o: org.sireum.lang.ast.Stmt.DoWhile): ST = {
-      return printObject(ISZ(
-        ("type", st""""org.sireum.lang.ast.Stmt.DoWhile""""),
         ("context", printISZ(T, o.context, printString _)),
         ("cond", print_astExp(o.cond)),
         ("contract", print_astLoopContract(o.contract)),
@@ -3045,7 +3033,7 @@ object JSON {
     }
 
     def parse_astStmt(): org.sireum.lang.ast.Stmt = {
-      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Stmt.Import", "org.sireum.lang.ast.Stmt.Var", "org.sireum.lang.ast.Stmt.VarPattern", "org.sireum.lang.ast.Stmt.SpecVar", "org.sireum.lang.ast.Stmt.RsVal", "org.sireum.lang.ast.Stmt.Method", "org.sireum.lang.ast.Stmt.ExtMethod", "org.sireum.lang.ast.Stmt.JustMethod", "org.sireum.lang.ast.Stmt.SpecMethod", "org.sireum.lang.ast.Stmt.Enum", "org.sireum.lang.ast.Stmt.SubZ", "org.sireum.lang.ast.Stmt.Object", "org.sireum.lang.ast.Stmt.Sig", "org.sireum.lang.ast.Stmt.Adt", "org.sireum.lang.ast.Stmt.TypeAlias", "org.sireum.lang.ast.Stmt.Assign", "org.sireum.lang.ast.Stmt.Block", "org.sireum.lang.ast.Stmt.If", "org.sireum.lang.ast.Stmt.Induct", "org.sireum.lang.ast.Stmt.Match", "org.sireum.lang.ast.Stmt.While", "org.sireum.lang.ast.Stmt.DoWhile", "org.sireum.lang.ast.Stmt.For", "org.sireum.lang.ast.Stmt.Return", "org.sireum.lang.ast.Stmt.Expr", "org.sireum.lang.ast.Stmt.Fact", "org.sireum.lang.ast.Stmt.Inv", "org.sireum.lang.ast.Stmt.Theorem", "org.sireum.lang.ast.Stmt.DataRefinement", "org.sireum.lang.ast.Stmt.SpecLabel", "org.sireum.lang.ast.Stmt.SpecBlock", "org.sireum.lang.ast.Stmt.DeduceSequent", "org.sireum.lang.ast.Stmt.DeduceSteps", "org.sireum.lang.ast.Stmt.Havoc"))
+      val t = parser.parseObjectTypes(ISZ("org.sireum.lang.ast.Stmt.Import", "org.sireum.lang.ast.Stmt.Var", "org.sireum.lang.ast.Stmt.VarPattern", "org.sireum.lang.ast.Stmt.SpecVar", "org.sireum.lang.ast.Stmt.RsVal", "org.sireum.lang.ast.Stmt.Method", "org.sireum.lang.ast.Stmt.ExtMethod", "org.sireum.lang.ast.Stmt.JustMethod", "org.sireum.lang.ast.Stmt.SpecMethod", "org.sireum.lang.ast.Stmt.Enum", "org.sireum.lang.ast.Stmt.SubZ", "org.sireum.lang.ast.Stmt.Object", "org.sireum.lang.ast.Stmt.Sig", "org.sireum.lang.ast.Stmt.Adt", "org.sireum.lang.ast.Stmt.TypeAlias", "org.sireum.lang.ast.Stmt.Assign", "org.sireum.lang.ast.Stmt.Block", "org.sireum.lang.ast.Stmt.If", "org.sireum.lang.ast.Stmt.Induct", "org.sireum.lang.ast.Stmt.Match", "org.sireum.lang.ast.Stmt.While", "org.sireum.lang.ast.Stmt.For", "org.sireum.lang.ast.Stmt.Return", "org.sireum.lang.ast.Stmt.Expr", "org.sireum.lang.ast.Stmt.Fact", "org.sireum.lang.ast.Stmt.Inv", "org.sireum.lang.ast.Stmt.Theorem", "org.sireum.lang.ast.Stmt.DataRefinement", "org.sireum.lang.ast.Stmt.SpecLabel", "org.sireum.lang.ast.Stmt.SpecBlock", "org.sireum.lang.ast.Stmt.DeduceSequent", "org.sireum.lang.ast.Stmt.DeduceSteps", "org.sireum.lang.ast.Stmt.Havoc"))
       t.native match {
         case "org.sireum.lang.ast.Stmt.Import" => val r = parse_astStmtImportT(T); return r
         case "org.sireum.lang.ast.Stmt.Var" => val r = parse_astStmtVarT(T); return r
@@ -3068,7 +3056,6 @@ object JSON {
         case "org.sireum.lang.ast.Stmt.Induct" => val r = parse_astStmtInductT(T); return r
         case "org.sireum.lang.ast.Stmt.Match" => val r = parse_astStmtMatchT(T); return r
         case "org.sireum.lang.ast.Stmt.While" => val r = parse_astStmtWhileT(T); return r
-        case "org.sireum.lang.ast.Stmt.DoWhile" => val r = parse_astStmtDoWhileT(T); return r
         case "org.sireum.lang.ast.Stmt.For" => val r = parse_astStmtForT(T); return r
         case "org.sireum.lang.ast.Stmt.Return" => val r = parse_astStmtReturnT(T); return r
         case "org.sireum.lang.ast.Stmt.Expr" => val r = parse_astStmtExprT(T); return r
@@ -3735,33 +3722,6 @@ object JSON {
       val attr = parse_astAttr()
       parser.parseObjectNext()
       return org.sireum.lang.ast.Stmt.While(context, cond, contract, body, attr)
-    }
-
-    def parse_astStmtDoWhile(): org.sireum.lang.ast.Stmt.DoWhile = {
-      val r = parse_astStmtDoWhileT(F)
-      return r
-    }
-
-    def parse_astStmtDoWhileT(typeParsed: B): org.sireum.lang.ast.Stmt.DoWhile = {
-      if (!typeParsed) {
-        parser.parseObjectType("org.sireum.lang.ast.Stmt.DoWhile")
-      }
-      parser.parseObjectKey("context")
-      val context = parser.parseISZ(parser.parseString _)
-      parser.parseObjectNext()
-      parser.parseObjectKey("cond")
-      val cond = parse_astExp()
-      parser.parseObjectNext()
-      parser.parseObjectKey("contract")
-      val contract = parse_astLoopContract()
-      parser.parseObjectNext()
-      parser.parseObjectKey("body")
-      val body = parse_astBody()
-      parser.parseObjectNext()
-      parser.parseObjectKey("attr")
-      val attr = parse_astAttr()
-      parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.DoWhile(context, cond, contract, body, attr)
     }
 
     def parse_astStmtFor(): org.sireum.lang.ast.Stmt.For = {
@@ -7963,24 +7923,6 @@ object JSON {
       return r
     }
     val r = to(s, f_astStmtWhile _)
-    return r
-  }
-
-  def from_astStmtDoWhile(o: org.sireum.lang.ast.Stmt.DoWhile, isCompact: B): String = {
-    val st = Printer.print_astStmtDoWhile(o)
-    if (isCompact) {
-      return st.renderCompact
-    } else {
-      return st.render
-    }
-  }
-
-  def to_astStmtDoWhile(s: String): Either[org.sireum.lang.ast.Stmt.DoWhile, Json.ErrorMsg] = {
-    def f_astStmtDoWhile(parser: Parser): org.sireum.lang.ast.Stmt.DoWhile = {
-      val r = parser.parse_astStmtDoWhile()
-      return r
-    }
-    val r = to(s, f_astStmtDoWhile _)
     return r
   }
 

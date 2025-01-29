@@ -177,10 +177,6 @@ object MTransformer {
 
   val PostResultStmtWhile: MOption[Stmt] = MNone()
 
-  val PreResultStmtDoWhile: PreResult[Stmt] = PreResult(T, MNone())
-
-  val PostResultStmtDoWhile: MOption[Stmt] = MNone()
-
   val PreResultStmtFor: PreResult[Stmt] = PreResult(T, MNone())
 
   val PostResultStmtFor: MOption[Stmt] = MNone()
@@ -779,7 +775,6 @@ import MTransformer._
         return r
       case o: Stmt.Match => return preStmtMatch(o)
       case o: Stmt.While => return preStmtWhile(o)
-      case o: Stmt.DoWhile => return preStmtDoWhile(o)
       case o: Stmt.For => return preStmtFor(o)
       case o: Stmt.Return => return preStmtReturn(o)
       case o: Stmt.Expr => return preStmtExpr(o)
@@ -984,10 +979,6 @@ import MTransformer._
 
   def preStmtWhile(o: Stmt.While): PreResult[Stmt] = {
     return PreResultStmtWhile
-  }
-
-  def preStmtDoWhile(o: Stmt.DoWhile): PreResult[Stmt] = {
-    return PreResultStmtDoWhile
   }
 
   def preStmtFor(o: Stmt.For): PreResult[Stmt] = {
@@ -1923,7 +1914,6 @@ import MTransformer._
         return r
       case o: Stmt.Match => return postStmtMatch(o)
       case o: Stmt.While => return postStmtWhile(o)
-      case o: Stmt.DoWhile => return postStmtDoWhile(o)
       case o: Stmt.For => return postStmtFor(o)
       case o: Stmt.Return => return postStmtReturn(o)
       case o: Stmt.Expr => return postStmtExpr(o)
@@ -2128,10 +2118,6 @@ import MTransformer._
 
   def postStmtWhile(o: Stmt.While): MOption[Stmt] = {
     return PostResultStmtWhile
-  }
-
-  def postStmtDoWhile(o: Stmt.DoWhile): MOption[Stmt] = {
-    return PostResultStmtDoWhile
   }
 
   def postStmtFor(o: Stmt.For): MOption[Stmt] = {
@@ -3212,15 +3198,6 @@ import MTransformer._
           else
             MNone()
         case o2: Stmt.While =>
-          val r0: MOption[Exp] = transformExp(o2.cond)
-          val r1: MOption[LoopContract] = transformLoopContract(o2.contract)
-          val r2: MOption[Body] = transformBody(o2.body)
-          val r3: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-            MSome(o2(cond = r0.getOrElse(o2.cond), contract = r1.getOrElse(o2.contract), body = r2.getOrElse(o2.body), attr = r3.getOrElse(o2.attr)))
-          else
-            MNone()
-        case o2: Stmt.DoWhile =>
           val r0: MOption[Exp] = transformExp(o2.cond)
           val r1: MOption[LoopContract] = transformLoopContract(o2.contract)
           val r2: MOption[Body] = transformBody(o2.body)

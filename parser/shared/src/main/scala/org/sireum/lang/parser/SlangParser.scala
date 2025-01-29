@@ -469,7 +469,6 @@ class SlangParser(
       case stat: Term.If => translateIfStmt(enclosing, stat, isAssignExp = false)
       case stat: Term.Match => translateMatch(enclosing, stat, isAssignExp = false)
       case stat: Term.While => translateWhile(enclosing, stat)
-      case stat: Term.Do => translateDoWhile(enclosing, stat)
       case stat: Term.For => translateFor(enclosing, stat)
       case stat: Term.Return => translateReturn(enclosing, stat)
       case q"Spec(${_: Lit.String})" => translateSpecLabel(enclosing, stat)
@@ -2347,40 +2346,6 @@ class SlangParser(
         ISZ(),
         translateExp(stat.expr),
         AST.LoopContract(invariants, mods, maxItOpt),
-        bodyCheck(ISZ(stats.map(translateStat(Enclosing.Block)): _*), ISZ()),
-        attr(stat.pos)
-      )
-  }
-
-  def translateDoWhile(enclosing: Enclosing.Type, stat: Term.Do): AST.Stmt = {
-    warn(stat.pos, "Do-while-loop is deprecated in Slang and will be removed in the near future")
-    var hasError = stmtCheck(enclosing, stat, "Do-while-statements")
-    var modifies: ISZ[AST.Exp.Ref] = ISZ()
-    var invariants: ISZ[AST.Exp] = ISZ()
-    var maxItOpt: Option[AST.Exp.LitZ] = None()
-    var stats: Seq[Stat] = Seq()
-    stat.body match {
-      case body: Term.Block =>
-        body.stats match {
-          case q"Invariant(..$exprs)" :: rest =>
-            val (is, ms, mio) = translateLoopInvariant(exprs, body.stats.head.pos)
-            modifies = ms
-            invariants = is
-            maxItOpt = mio
-            stats = rest
-          case _ =>
-            stats = body.stats
-        }
-      case _ =>
-        hasError = true
-        errorInSlang(stat.body.pos, "Do-while-loop body should be a code block")
-    }
-    if (hasError) rStmt
-    else
-      AST.Stmt.DoWhile(
-        ISZ(),
-        translateExp(stat.expr),
-        AST.LoopContract(invariants, modifies, maxItOpt),
         bodyCheck(ISZ(stats.map(translateStat(Enclosing.Block)): _*), ISZ()),
         attr(stat.pos)
       )
