@@ -45,12 +45,8 @@ object IR {
       @strictpure def prettyST: ST = if (value) st"true" else st"false"
     }
 
-    @datatype class Int(val tipe: Typed, val value: Z, val pos: Position) extends Exp {
+    @datatype class Int(val tipe: Typed, val bitWidth: Z, val value: Z, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"$value [$tipe]"
-    }
-
-    @datatype class BitVector(val tipe: Typed, val bitWidth: Z, val hexValue: String, val pos: Position) extends Exp {
-      @strictpure def prettyST: ST = st"0x$hexValue [$tipe]"
     }
 
     @datatype class F32(val value: org.sireum.F32, val pos: Position) extends Exp {
@@ -59,6 +55,14 @@ object IR {
 
     @datatype class F64(val value: org.sireum.F64, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"$value [f64]"
+    }
+
+    @datatype class R(val value: org.sireum.R, val pos: Position) extends Exp {
+      @strictpure def prettyST: ST = st"$value [r]"
+    }
+
+    @datatype class String(val value: org.sireum.String, val pos: Position) extends Exp {
+      @strictpure def prettyST: ST = ops.StringOps(value).escapeST
     }
 
     @datatype class Register(val n: Z, val pos: Position) extends Exp {
@@ -71,7 +75,7 @@ object IR {
 
     @datatype class Unary(val tipe: Typed, val op: lang.ast.Exp.UnaryOp.Type, val exp: Exp, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = {
-        val opString: String = op match {
+        val opString: org.sireum.String = op match {
           case lang.ast.Exp.UnaryOp.Not => "!"
           case lang.ast.Exp.UnaryOp.Plus => "+"
           case lang.ast.Exp.UnaryOp.Minus => "-"
@@ -83,7 +87,7 @@ object IR {
 
     @datatype class Binary(val tipe: Typed, val left: Exp, val op: ResolvedInfo.BuiltIn.Kind.Type, val right: Exp, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = {
-        val opString: String = op match {
+        val opString: org.sireum.String = op match {
           case ResolvedInfo.BuiltIn.Kind.BinaryAdd => "+"
           case ResolvedInfo.BuiltIn.Kind.BinarySub => "-"
           case ResolvedInfo.BuiltIn.Kind.BinaryMul => "*"
@@ -121,7 +125,7 @@ object IR {
       @strictpure def prettyST: ST = st"$tipe(${(for (i <- 1 until args.size) yield args(i).prettyST, ", ")})"
     }
 
-    @datatype class Apply(val isInObject: B, val owner: ISZ[String], val id: String, val args: ISZ[Exp], val pos: Position) extends Exp {
+    @datatype class Apply(val isInObject: B, val owner: ISZ[String], val id: org.sireum.String, val args: ISZ[Exp], val pos: Position) extends Exp {
       @strictpure def prettyST: ST =
         if (!isInObject && ops.StringOps(id).isScalaOp && args.size == 2) st"(${args(0).prettyST} $id ${args(1).prettyST})"
         else if (isInObject) st"${(owner, ".")}.$id(${(for (arg <- args) yield arg.prettyST, ", ")})"
