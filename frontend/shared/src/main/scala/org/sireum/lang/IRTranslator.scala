@@ -32,19 +32,29 @@ import org.sireum.lang.symbol.TypeInfo
 import org.sireum.lang.tipe.TypeHierarchy
 import org.sireum.lang.{ast => AST}
 
+object IRTranslator {
+}
+
 @record class IRTranslator(val threeAddressCode: B, val th: TypeHierarchy) {
 
+  var methodContext: IR.MethodContext = IR.MethodContext.empty
   var _freshRegister: Z = 0
   var stmts: ISZ[IR.Stmt] = ISZ()
 
   def translateMethod(receiverTypeOpt: Option[AST.Typed],
                       owner: ISZ[String],
-                      method: AST.Stmt.Method,
-                      t: AST.Typed.Fun): IR.Procedure = {
-    val pos = method.sig.id.attr.posOpt.get
+                      method: AST.Stmt.Method): IR.Procedure = {
+    val id = method.sig.id.value
     val isInObject = receiverTypeOpt.isEmpty
+    var t: AST.Typed.Fun = method.sig.funType
+    var paramNames: ISZ[String] = for (p <- method.sig.params) yield p.id.value
+    if (isInObject) {
+      paramNames = "this" +: paramNames
+      t = t(args = receiverTypeOpt.get +: t.args)
+    }
+    methodContext = IR.MethodContext(isInObject, owner, id, t)
+    val pos = method.sig.id.attr.posOpt.get
     val typeParams: ISZ[String] = for (tp <- method.sig.typeParams) yield tp.id.value
-    val paramNames: ISZ[String] = for (p <- method.sig.params) yield p.id.value
     val body: IR.Body = method.bodyOpt match {
       case Some(body) =>
         val oldStmts = stmts
@@ -55,7 +65,6 @@ import org.sireum.lang.{ast => AST}
         b
       case _ => IR.Body.Block(IR.Stmt.Block(ISZ(), pos))
     }
-    val id = method.sig.id.value
     return IR.Procedure(isInObject, typeParams, owner, id, paramNames, t, body, pos)
   }
 
@@ -163,7 +172,7 @@ import org.sireum.lang.{ast => AST}
             translateAssignExp(init, n)
             IR.Exp.Register(n, init.asStmt.posOpt.get)
         }
-        stmts = stmts :+ IR.Stmt.Assign.Local(shouldCopy(t), stmt.id.value, varRhs, pos)
+        stmts = stmts :+ IR.Stmt.Assign.Local(shouldCopy(t), methodContext, stmt.id.value, varRhs, pos)
         oldStmts = oldStmts :+ IR.Stmt.Decl.Local(stmt.isVal, t, stmt.id.value, pos)
         stmts = oldStmts :+ IR.Stmt.Block(stmts, pos)
       case stmt: AST.Stmt.Assign =>
@@ -181,20 +190,21 @@ import org.sireum.lang.{ast => AST}
           case lhs: AST.Exp.Ident =>
             lhs.resOpt.get match {
               case _: AST.ResolvedInfo.LocalVar =>
-                stmts = stmts :+ IR.Stmt.Assign.Local(copy, lhs.id.value, identRhs, pos)
+                stmts = stmts :+ IR.Stmt.Assign.Local(copy, methodContext, lhs.id.value, identRhs, pos)
               case res: AST.ResolvedInfo.Var =>
                 if (res.isInObject) {
                   stmts = stmts :+ IR.Stmt.Assign.Global(copy, res.owner :+ res.id, identRhs, pos)
                 }
                 val receiverPos = lhs.posOpt.get
-                val receiver: IR.Exp = if (threeAddressCode) {
+                val thiz = IR.Exp.LocalVarRef(methodContext, "this", receiverPos)
+                val (receiver, receiverType): (IR.Exp, AST.Typed.Name) = if (threeAddressCode) {
                   val n = freshRegister()
-                  stmts = stmts :+ IR.Stmt.Assign.Register(n, identRhs, receiverPos)
-                  IR.Exp.Register(n, receiverPos)
+                  stmts = stmts :+ IR.Stmt.Assign.Register(n, thiz, receiverPos)
+                  (IR.Exp.Register(n, receiverPos), methodContext.receiverType.asInstanceOf[AST.Typed.Name])
                 } else {
-                  IR.Exp.LocalVarRef("this", receiverPos)
+                  (thiz, methodContext.receiverType.asInstanceOf[AST.Typed.Name])
                 }
-                stmts = stmts :+ IR.Stmt.Assign.Field(copy, receiver, lhs.id.value, identRhs, pos)
+                stmts = stmts :+ IR.Stmt.Assign.Field(copy, receiver, receiverType, lhs.id.value, identRhs, pos)
               case res => halt(s"Infeasible: $res")
             }
           case lhs: AST.Exp.Select =>
@@ -211,11 +221,15 @@ import org.sireum.lang.{ast => AST}
               case res: AST.ResolvedInfo.Var if res.isInObject =>
                 stmts = stmts :+ IR.Stmt.Assign.Global(copy, res.owner :+ res.id, selectRhs(), pos)
               case _ =>
-                val receiver = translateExp(lhs.receiverOpt.get)
-                stmts = stmts :+ IR.Stmt.Assign.Field(copy, receiver, lhs.id.value, selectRhs(), pos)
+                val rcv = lhs.receiverOpt.get
+                val receiver = translateExp(rcv)
+                stmts = stmts :+ IR.Stmt.Assign.Field(copy, receiver, rcv.typedOpt.get.asInstanceOf[AST.Typed.Name],
+                  lhs.id.value, selectRhs(), pos)
             }
           case lhs: AST.Exp.Invoke =>
-            val receiver = translateExp(lhs.receiverOpt.get)
+            val rcv = lhs.receiverOpt.get
+            val receiverType = rcv.typedOpt.get.asInstanceOf[AST.Typed.Name]
+            val receiver = translateExp(rcv)
             val index = translateExp(lhs.args(0))
             val invokeRhs: IR.Exp = stmt.rhs match {
               case rhs: AST.Stmt.Expr => translateExp(rhs.exp)
@@ -224,7 +238,7 @@ import org.sireum.lang.{ast => AST}
                 translateAssignExp(stmt.rhs, n)
                 IR.Exp.Register(n, stmt.rhs.asStmt.posOpt.get)
             }
-            stmts = stmts :+ IR.Stmt.Assign.Index(copy, receiver, index, invokeRhs, pos)
+            stmts = stmts :+ IR.Stmt.Assign.Index(copy, receiver, receiverType, index, invokeRhs, pos)
           case _ => halt("Infeasible")
         }
         stmts = oldStmts :+ IR.Stmt.Block(stmts, pos)
@@ -358,45 +372,79 @@ import org.sireum.lang.{ast => AST}
       case exp: AST.Exp.LitF64 => return IR.Exp.F64(exp.value, pos)
       case exp: AST.Exp.LitR => return IR.Exp.R(exp.value, pos)
       case exp: AST.Exp.LitString => return IR.Exp.String(exp.value, pos)
-      case exp: AST.Exp.StringInterpolate if isScalar(exp.typedOpt.get) =>
-        val t = exp.typedOpt.get.asInstanceOf[AST.Typed.Name]
-        val info = th.typeMap.get(t.ids).get.asInstanceOf[TypeInfo.SubZ]
-        val value = Z(exp.lits(0).value).get
-        return IR.Exp.Int(t, if (info.ast.isBitVector) info.ast.bitWidth else 0, value, pos)
-      case exp: AST.Exp.Unary if isScalar(exp.typedOpt.get) =>
-        val t = exp.typedOpt.get
-        val e = IR.Exp.Unary(t, exp.op, translateExp(exp.exp), pos)
-        if (!threeAddressCode) {
-          return e
+      case exp: AST.Exp.StringInterpolate =>
+        if (isScalar(exp.typedOpt.get)) {
+          val t = exp.typedOpt.get.asInstanceOf[AST.Typed.Name]
+          val info = th.typeMap.get(t.ids).get.asInstanceOf[TypeInfo.SubZ]
+          val value = Z(exp.lits(0).value).get
+          return IR.Exp.Int(t, if (info.ast.isBitVector) info.ast.bitWidth else 0, value, pos)
+        } else {
+          halt(s"TODO: $exp")
         }
-        val n = freshRegister()
-        stmts = stmts :+ IR.Stmt.Decl.Register(t, n, pos)
-        stmts = stmts :+ IR.Stmt.Assign.Register(n, e, pos)
-        return IR.Exp.Register(n, pos)
-      case exp: AST.Exp.Ident => halt(s"TODO: $exp")
-      case exp: AST.Exp.Select => halt(s"TODO: $exp")
-      case exp: AST.Exp.Binary if isScalar(exp.typedOpt.get) =>
-        val t = exp.typedOpt.get
-        var kind = exp.attr.resOpt.get.asInstanceOf[AST.ResolvedInfo.BuiltIn].kind
-        kind match {
-          case AST.ResolvedInfo.BuiltIn.Kind.BinaryEq => kind = AST.ResolvedInfo.BuiltIn.Kind.BinaryEquiv
-          case AST.ResolvedInfo.BuiltIn.Kind.BinaryNe => kind = AST.ResolvedInfo.BuiltIn.Kind.BinaryInequiv
-          case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondAnd if threeAddressCode =>
-            return translateExp(AST.Exp.If(exp.left, exp.right, AST.Exp.LitB(T, AST.Attr(exp.posOpt)), AST.TypedAttr(exp.posOpt, AST.Typed.bOpt)))
-          case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondOr if threeAddressCode =>
-            return translateExp(AST.Exp.If(exp.left, AST.Exp.LitB(T, AST.Attr(exp.posOpt)), exp.right, AST.TypedAttr(exp.posOpt, AST.Typed.bOpt)))
-          case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondImply if threeAddressCode =>
-            return translateExp(AST.Exp.If(exp.left, exp.right, AST.Exp.LitB(F, AST.Attr(exp.posOpt)), AST.TypedAttr(exp.posOpt, AST.Typed.bOpt)))
-          case _ =>
+      case exp: AST.Exp.Ident =>
+        exp.resOpt.get match {
+          case res: AST.ResolvedInfo.LocalVar => return IR.Exp.LocalVarRef(methodContext, res.id, pos)
+          case res: AST.ResolvedInfo.Var =>
+            if (res.isInObject) {
+              return IR.Exp.GlobalVarRef(res.owner :+ res.id, pos)
+            } else {
+              return IR.Exp.FieldVarRef(methodContext.receiverType, IR.Exp.LocalVarRef(methodContext, "this", pos), res.id, pos)
+            }
+          case res: AST.ResolvedInfo.EnumElement => return IR.Exp.EnumElementRef(res.owner, res.name, res.ordinal, pos)
+          case _ => halt(s"Infeasible: $exp")
         }
-        val e = IR.Exp.Binary(t, translateExp(exp.left), kind, translateExp(exp.right), pos)
-        if (!threeAddressCode) {
-          return e
+      case exp: AST.Exp.Select =>
+        exp.resOpt.get match {
+          case res: AST.ResolvedInfo.Var =>
+            if (res.isInObject) {
+              return IR.Exp.GlobalVarRef(res.owner :+ res.id, pos)
+            } else {
+              val receiver = exp.receiverOpt.get
+              return IR.Exp.FieldVarRef(receiver.typedOpt.get, translateExp(receiver), res.id, pos)
+            }
+          case res: AST.ResolvedInfo.EnumElement => return IR.Exp.EnumElementRef(res.owner, res.name, res.ordinal, pos)
+          case _ => halt(s"TODO: $exp")
         }
-        val n = freshRegister()
-        stmts = stmts :+ IR.Stmt.Decl.Register(t, n, pos)
-        stmts = stmts :+ IR.Stmt.Assign.Register(n, e, pos)
-        return IR.Exp.Register(n, pos)
+      case exp: AST.Exp.Unary =>
+        if (isScalar(exp.typedOpt.get)) {
+          val t = exp.typedOpt.get
+          val e = IR.Exp.Unary(t, exp.op, translateExp(exp.exp), pos)
+          if (!threeAddressCode) {
+            return e
+          }
+          val n = freshRegister()
+          stmts = stmts :+ IR.Stmt.Decl.Register(t, n, pos)
+          stmts = stmts :+ IR.Stmt.Assign.Register(n, e, pos)
+          return IR.Exp.Register(n, pos)
+        } else {
+          halt(s"TODO: $exp")
+        }
+      case exp: AST.Exp.Binary =>
+        if (isScalar(exp.typedOpt.get)) {
+          val t = exp.typedOpt.get
+          var kind = exp.attr.resOpt.get.asInstanceOf[AST.ResolvedInfo.BuiltIn].kind
+          kind match {
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryEq => kind = AST.ResolvedInfo.BuiltIn.Kind.BinaryEquiv
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryNe => kind = AST.ResolvedInfo.BuiltIn.Kind.BinaryInequiv
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondAnd if threeAddressCode =>
+              return translateExp(AST.Exp.If(exp.left, exp.right, AST.Exp.LitB(T, AST.Attr(exp.posOpt)), AST.TypedAttr(exp.posOpt, AST.Typed.bOpt)))
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondOr if threeAddressCode =>
+              return translateExp(AST.Exp.If(exp.left, AST.Exp.LitB(T, AST.Attr(exp.posOpt)), exp.right, AST.TypedAttr(exp.posOpt, AST.Typed.bOpt)))
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondImply if threeAddressCode =>
+              return translateExp(AST.Exp.If(exp.left, exp.right, AST.Exp.LitB(F, AST.Attr(exp.posOpt)), AST.TypedAttr(exp.posOpt, AST.Typed.bOpt)))
+            case _ =>
+          }
+          val e = IR.Exp.Binary(t, translateExp(exp.left), kind, translateExp(exp.right), pos)
+          if (!threeAddressCode) {
+            return e
+          }
+          val n = freshRegister()
+          stmts = stmts :+ IR.Stmt.Decl.Register(t, n, pos)
+          stmts = stmts :+ IR.Stmt.Assign.Register(n, e, pos)
+          return IR.Exp.Register(n, pos)
+        } else {
+          halt(s"TODO: $exp")
+        }
       case exp: AST.Exp.If =>
         val t = exp.typedOpt.get
         val n = freshRegister()
@@ -419,12 +467,34 @@ import org.sireum.lang.{ast => AST}
           IR.Stmt.Block(thenStmts :+ IR.Stmt.Assign.Register(n, thenExp, thenPos), thenPos),
           IR.Stmt.Block(elseStmts :+ IR.Stmt.Assign.Register(n, elseExp, elsePos), elsePos), pos)
         return IR.Exp.Register(n, pos)
-      case exp: AST.Exp.Unary => halt(s"TODO: $exp")
-      case exp: AST.Exp.Binary => halt(s"TODO: $exp")
-      case exp: AST.Exp.Tuple => halt(s"TODO: $exp")
-      case exp: AST.Exp.Invoke => halt(s"TODO: $exp")
+      case exp: AST.Exp.Invoke =>
+        exp.attr.resOpt.get match {
+          case res: AST.ResolvedInfo.Method if res.mode == AST.MethodMode.Select =>
+            val rcv: IR.Exp = exp.receiverOpt match {
+              case Some(receiver) =>
+                if (exp.ident.id.value == "apply") {
+                  translateExp(receiver)
+                } else {
+                  translateExp(AST.Exp.Select(Some(receiver), exp.ident.id, exp.targs, exp.ident.attr))
+                }
+              case _ =>
+                translateExp(exp.ident)
+            }
+            val index = translateExp(exp.args(0))
+            val indexing = IR.Exp.Indexing(rcv, index, pos)
+            if (threeAddressCode) {
+              val n = freshRegister()
+              stmts = stmts :+ IR.Stmt.Decl.Register(exp.typedOpt.get, n, pos)
+              stmts = stmts :+ IR.Stmt.Assign.Register(n, indexing, pos)
+              return IR.Exp.Register(n, pos)
+            } else {
+              return indexing
+            }
+          case _ => halt(s"TODO: $exp")
+        }
+      case exp: AST.Exp.This => return IR.Exp.LocalVarRef(methodContext, "this", pos)
       case exp: AST.Exp.InvokeNamed => halt(s"TODO: $exp")
-      case exp: AST.Exp.StringInterpolate => halt(s"TODO: $exp")
+      case exp: AST.Exp.Tuple => halt(s"TODO: $exp")
       case exp: AST.Exp.ForYield => halt(s"TODO: $exp")
       case exp: AST.Exp.Eta => halt(s"TODO: $exp")
       case exp: AST.Exp.Fun => halt(s"TODO: $exp")
@@ -432,7 +502,6 @@ import org.sireum.lang.{ast => AST}
       case exp: AST.Exp.QuantRange => halt(s"TODO: $exp")
       case exp: AST.Exp.StrictPureBlock => halt(s"TODO: $exp")
       case exp: AST.Exp.Super => halt(s"TODO: $exp")
-      case exp: AST.Exp.This => halt(s"TODO: $exp")
       case exp: AST.Exp.Labeled => return translateExp(exp.exp)
       case exp: AST.Exp.QuantType => halt(s"Infeasible: $exp")
       case exp: AST.Exp.AssertAgree => halt(s"Infeasible: $exp")

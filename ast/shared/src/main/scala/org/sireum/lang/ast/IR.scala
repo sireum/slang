@@ -31,6 +31,17 @@ import org.sireum.message._
 
 object IR {
 
+  @datatype class MethodContext(val isInObject: B, val owner: ISZ[String], val id: String, val t: Typed.Fun) {
+    @pure def receiverType: Typed = {
+      assert(!isInObject)
+      return t.args(0)
+    }
+  }
+
+  object MethodContext {
+    @strictpure def empty: MethodContext = MethodContext(F, ISZ(), "", Typed.Fun(Purity.Impure, F, ISZ(), Typed.nothing))
+  }
+
   @datatype trait Exp  {
     @strictpure def pos: Position
     @pure def prettyST: ST
@@ -69,8 +80,20 @@ object IR {
       @strictpure def prettyST: ST = st"$$$n"
     }
 
-    @datatype class LocalVarRef(val id: org.sireum.String, val pos: Position) extends Exp {
+    @datatype class LocalVarRef(val context: MethodContext, val id: org.sireum.String, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"$id"
+    }
+
+    @datatype class GlobalVarRef(val name: ISZ[org.sireum.String], val pos: Position) extends Exp {
+      @strictpure def prettyST: ST = st"${(name, ".")}"
+    }
+
+    @datatype class EnumElementRef(val name: ISZ[org.sireum.String], val id: org.sireum.String, val ordinal: Z, val pos: Position) extends Exp {
+      @strictpure def prettyST: ST = st"${(name, ".")}.$id"
+    }
+
+    @datatype class FieldVarRef(val owner: Typed, val receiver: Exp, val id: org.sireum.String, val pos: Position) extends Exp {
+      @strictpure def prettyST: ST = st"$owner.$id"
     }
 
     @datatype class Unary(val tipe: Typed, val op: lang.ast.Exp.UnaryOp.Type, val exp: Exp, val pos: Position) extends Exp {
@@ -162,7 +185,7 @@ object IR {
 
     object Assign {
 
-      @datatype class Local(val copy: B, val lhs: String, val rhs: Exp, val pos: Position) extends Assign {
+      @datatype class Local(val copy: B, val context: MethodContext, val lhs: String, val rhs: Exp, val pos: Position) extends Assign {
         @strictpure def prettyST: ST = st"$lhs ${if (copy) ":=" else "="} ${rhs.prettyST}"
       }
 
@@ -174,11 +197,11 @@ object IR {
         @strictpure def prettyST: ST = st"$lhs = ${rhs.prettyST}"
       }
 
-      @datatype class Field(val copy: B, val receiver: Exp, val id: String, val rhs: Exp, val pos: Position) extends Assign {
+      @datatype class Field(val copy: B, val receiver: Exp, val receiverType: Typed.Name, val id: String, val rhs: Exp, val pos: Position) extends Assign {
         @strictpure def prettyST: ST = st"${receiver.prettyST}.$id ${if (copy) ":=" else "="} ${rhs.prettyST}"
       }
 
-      @datatype class Index(val copy: B, val receiver: Exp, val index: Exp, val rhs: Exp, val pos: Position) extends Assign {
+      @datatype class Index(val copy: B, val receiver: Exp, val receiverType: Typed.Name, val index: Exp, val rhs: Exp, val pos: Position) extends Assign {
         @strictpure def prettyST: ST = st"${receiver.prettyST}(${index.prettyST}) ${if (copy) ":=" else "="} ${rhs.prettyST}"
       }
 
