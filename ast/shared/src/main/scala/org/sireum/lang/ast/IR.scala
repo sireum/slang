@@ -195,7 +195,7 @@ object IR {
             |}"""
     }
 
-    @datatype class While(val cond: Exp, val block: Block, val pos: Position) extends Stmt {
+    @datatype class While(val condBlock: Block, val cond: Exp, val block: Block, val pos: Position) extends Stmt {
       @strictpure def prettyST: ST = st"while (${cond.prettyST}) ${block.prettyST}"
     }
 
@@ -247,7 +247,7 @@ object IR {
     }
   }
 
-  @datatype class BasicBlock(val label: Z, val assigns: ISZ[Stmt.Assign], jump: Jump, val pos: Position) {
+  @datatype class BasicBlock(val label: Z, val assigns: ISZ[Stmt.Assign], jump: Jump) {
     @strictpure def prettyST: ST =
       st""".$label:
           |  ${(for (assign <- assigns) yield assign.prettyST, "\n")}

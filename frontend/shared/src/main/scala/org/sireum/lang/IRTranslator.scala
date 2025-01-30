@@ -32,21 +32,119 @@ import org.sireum.lang.symbol.TypeInfo
 import org.sireum.lang.tipe.TypeHierarchy
 import org.sireum.lang.{ast => AST}
 
-object IRTranslator {
-
-  def translateWorksheet(threeAddressCode: B, th: TypeHierarchy, worksheet: AST.TopUnit.Program): IR.Program = {
-    halt("TODO")
-  }
-
-}
-
 @record class IRTranslator(val threeAddressCode: B, val th: TypeHierarchy) {
 
   var _freshRegister: Z = 0
   var stmts: ISZ[IR.Stmt] = ISZ()
 
-  def translateMethod(method: AST.Stmt.Method): IR.Program = {
-    halt(s"TODO: $method")
+  def translateMethod(receiverTypeOpt: Option[AST.Typed],
+                      owner: ISZ[String],
+                      method: AST.Stmt.Method,
+                      t: AST.Typed.Fun): IR.Procedure = {
+    val pos = method.sig.id.attr.posOpt.get
+    val isInObject = receiverTypeOpt.isEmpty
+    val typeParams: ISZ[String] = for (tp <- method.sig.typeParams) yield tp.id.value
+    val paramNames: ISZ[String] = for (p <- method.sig.params) yield p.id.value
+    val body: IR.Body = method.bodyOpt match {
+      case Some(body) =>
+        val oldStmts = stmts
+        stmts = ISZ()
+        translateBody(body, None())
+        val b = IR.Body.Block(IR.Stmt.Block(stmts, bodyPos(body, pos)))
+        stmts = oldStmts
+        b
+      case _ => IR.Body.Block(IR.Stmt.Block(ISZ(), pos))
+    }
+    val id = method.sig.id.value
+    return IR.Procedure(isInObject, typeParams, owner, id, paramNames, t, body, pos)
+  }
+
+  def toBasic(body: IR.Body.Block, pos: message.Position): IR.Body.Basic = {
+    var _freshLabel = 1
+    def freshLabel(): Z = {
+      val r = _freshLabel
+      _freshLabel = _freshLabel + 1
+      return r
+    }
+
+    var decls = ISZ[IR.Stmt.Decl]()
+    var blocks = ISZ[IR.BasicBlock]()
+    var assigns = ISZ[IR.Stmt.Assign]()
+
+    def stmtToBasic(label: Z, stmt: IR.Stmt): Option[Z] = {
+      stmt match {
+        case stmt: IR.Stmt.Block =>
+          return blockToBasic(label, stmt)
+        case stmt: IR.Stmt.Assign =>
+          assigns = assigns :+ stmt
+          return Some(label)
+        case stmt: IR.Stmt.Return =>
+          blocks = blocks :+ IR.BasicBlock(label, assigns, IR.Jump.Return(stmt.expOpt, stmt.pos))
+          assigns = ISZ()
+          return None()
+        case stmt: IR.Stmt.If =>
+          val t = freshLabel()
+          val f = freshLabel()
+          val e = freshLabel()
+          blocks = blocks :+ IR.BasicBlock(label, assigns, IR.Jump.If(stmt.cond, t, f, stmt.pos))
+          assigns = ISZ()
+          var allReturn = T
+          blockToBasic(t, stmt.thenBlock) match {
+            case Some(l) =>
+              blocks = blocks :+ IR.BasicBlock(l, assigns, IR.Jump.Goto(e, stmt.pos))
+              allReturn = F
+            case _ =>
+          }
+          assigns = ISZ()
+          blockToBasic(f, stmt.elseBlock) match {
+            case Some(l) =>
+              blocks = blocks :+ IR.BasicBlock(l, assigns, IR.Jump.Goto(e, stmt.pos))
+              allReturn = F
+            case _ =>
+          }
+          assigns = ISZ()
+          return if (allReturn) Some(e) else None()
+        case stmt: IR.Stmt.While =>
+          val n = freshLabel()
+          blocks = blocks :+ IR.BasicBlock(label, assigns, IR.Jump.Goto(n, stmt.pos))
+          assigns = ISZ()
+          blockToBasic(n, stmt.condBlock) match {
+            case Some(l) =>
+              val t = freshLabel()
+              val e = freshLabel()
+              blocks = blocks :+ IR.BasicBlock(l, assigns, IR.Jump.If(stmt.cond, t, e, stmt.pos))
+              assigns = ISZ()
+              blockToBasic(t, stmt.block) match {
+                case Some(l) => blocks = blocks :+ IR.BasicBlock(l, assigns, IR.Jump.Goto(n, stmt.pos))
+                case _ =>
+              }
+              assigns = ISZ()
+              return Some(e)
+            case _ =>
+              return None()
+          }
+        case stmt: IR.Stmt.Decl =>
+          decls = decls :+ stmt
+          return Some(label)
+      }
+    }
+
+    def blockToBasic(label: Z, block: IR.Stmt.Block): Option[Z] = {
+      var l = label
+      for (stmt <- block.stmts) {
+        stmtToBasic(l, stmt) match {
+          case Some(next) => l = next
+          case _ => return None()
+        }
+      }
+      return Some(l)
+    }
+
+    blockToBasic(0, body.block) match {
+      case Some(l) => blocks = blocks :+ IR.BasicBlock(l, assigns, IR.Jump.Return(None(), pos))
+      case _ =>
+    }
+    return IR.Body.Basic(decls, blocks)
   }
 
   def translateStmt(stmt: AST.Stmt, registerOpt: Option[Z]): Unit = {
@@ -153,10 +251,8 @@ object IRTranslator {
         stmts = ISZ()
         translateBody(stmt.body, None())
         val bPos = bodyPos(stmt.body, pos)
-        stmts = oldStmts :+ IR.Stmt.Block(condStmts :+
-          IR.Stmt.While(cond, IR.Stmt.Block(stmts, bPos), pos), pos)
-      case stmt: AST.Stmt.Expr =>
-        translateExp(stmt.exp)
+        stmts = oldStmts :+ IR.Stmt.While(IR.Stmt.Block(condStmts, cond.pos), cond, IR.Stmt.Block(stmts, bPos), pos)
+      case stmt: AST.Stmt.Expr => translateExp(stmt.exp)
       case stmt: AST.Stmt.Return =>
         stmt.expOpt match {
           case Some(exp) => stmts = stmts :+ IR.Stmt.Return(Some(translateExp(exp)), pos)
