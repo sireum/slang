@@ -358,7 +358,6 @@ import org.sireum.lang.{ast => AST}
       case exp: AST.Exp.LitF64 => return IR.Exp.F64(exp.value, pos)
       case exp: AST.Exp.LitR => return IR.Exp.R(exp.value, pos)
       case exp: AST.Exp.LitString => return IR.Exp.String(exp.value, pos)
-      case exp: AST.Exp.StringInterpolate if isSubZ(exp.typedOpt.get) =>
       case exp: AST.Exp.StringInterpolate if isScalar(exp.typedOpt.get) =>
         val t = exp.typedOpt.get.asInstanceOf[AST.Typed.Name]
         val info = th.typeMap.get(t.ids).get.asInstanceOf[TypeInfo.SubZ]
@@ -374,6 +373,8 @@ import org.sireum.lang.{ast => AST}
         stmts = stmts :+ IR.Stmt.Decl.Register(t, n, pos)
         stmts = stmts :+ IR.Stmt.Assign.Register(n, e, pos)
         return IR.Exp.Register(n, pos)
+      case exp: AST.Exp.Ident => halt(s"TODO: $exp")
+      case exp: AST.Exp.Select => halt(s"TODO: $exp")
       case exp: AST.Exp.Binary if isScalar(exp.typedOpt.get) =>
         val t = exp.typedOpt.get
         var kind = exp.attr.resOpt.get.asInstanceOf[AST.ResolvedInfo.BuiltIn].kind
@@ -418,8 +419,35 @@ import org.sireum.lang.{ast => AST}
           IR.Stmt.Block(thenStmts :+ IR.Stmt.Assign.Register(n, thenExp, thenPos), thenPos),
           IR.Stmt.Block(elseStmts :+ IR.Stmt.Assign.Register(n, elseExp, elsePos), elsePos), pos)
         return IR.Exp.Register(n, pos)
-      case _ =>
+      case exp: AST.Exp.Unary => halt(s"TODO: $exp")
+      case exp: AST.Exp.Binary => halt(s"TODO: $exp")
+      case exp: AST.Exp.Tuple => halt(s"TODO: $exp")
+      case exp: AST.Exp.Invoke => halt(s"TODO: $exp")
+      case exp: AST.Exp.InvokeNamed => halt(s"TODO: $exp")
+      case exp: AST.Exp.StringInterpolate => halt(s"TODO: $exp")
+      case exp: AST.Exp.ForYield => halt(s"TODO: $exp")
+      case exp: AST.Exp.Eta => halt(s"TODO: $exp")
+      case exp: AST.Exp.Fun => halt(s"TODO: $exp")
+      case exp: AST.Exp.QuantEach => halt(s"TODO: $exp")
+      case exp: AST.Exp.QuantRange => halt(s"TODO: $exp")
+      case exp: AST.Exp.StrictPureBlock => halt(s"TODO: $exp")
+      case exp: AST.Exp.Super => halt(s"TODO: $exp")
+      case exp: AST.Exp.This => halt(s"TODO: $exp")
+      case exp: AST.Exp.Labeled => return translateExp(exp.exp)
+      case exp: AST.Exp.QuantType => halt(s"Infeasible: $exp")
+      case exp: AST.Exp.AssertAgree => halt(s"Infeasible: $exp")
+      case exp: AST.Exp.AssumeAgree => halt(s"Infeasible: $exp")
+      case exp: AST.Exp.At => halt(s"Infeasible: $exp")
+      case exp: AST.Exp.InfoFlowInvariant => halt(s"Infeasible: $exp")
+      case exp: AST.Exp.Input => halt(s"Infeasible: $exp")
+      case exp: AST.Exp.LoopIndex => halt(s"Infeasible: $exp")
+      case exp: AST.Exp.Old => halt(s"Infeasible: $exp")
+      case exp: AST.Exp.RS => halt(s"Infeasible: $exp")
+      case exp: AST.Exp.Result => halt(s"Infeasible: $exp")
+      case exp: AST.Exp.StateSeq => halt(s"Infeasible: $exp")
+      case exp: AST.Exp.Sym => halt(s"Infeasible: $exp")
+      case exp: AST.Exp.TypeCond => halt(s"Infeasible: $exp")
+      case exp: AST.ProofAst.StepId => halt(s"Infeasible: $exp")
     }
-    halt(s"TODO: $exp")
   }
 }
