@@ -43,6 +43,7 @@ object IR {
   }
 
   @datatype trait Exp  {
+    @pure def tipe: Typed
     @strictpure def pos: Position
     @pure def prettyST: ST
     @pure override def string: String = {
@@ -53,6 +54,7 @@ object IR {
   object Exp {
 
     @datatype class Bool(val value: B, val pos: Position) extends Exp {
+      @strictpure def tipe: Typed = Typed.b
       @strictpure def prettyST: ST = if (value) st"true" else st"false"
     }
 
@@ -61,38 +63,43 @@ object IR {
     }
 
     @datatype class F32(val value: org.sireum.F32, val pos: Position) extends Exp {
+      @strictpure def tipe: Typed = Typed.f32
       @strictpure def prettyST: ST = st"$value [f32]"
     }
 
     @datatype class F64(val value: org.sireum.F64, val pos: Position) extends Exp {
+      @strictpure def tipe: Typed = Typed.f64
       @strictpure def prettyST: ST = st"$value [f64]"
     }
 
     @datatype class R(val value: org.sireum.R, val pos: Position) extends Exp {
+      @strictpure def tipe: Typed = Typed.r
       @strictpure def prettyST: ST = st"$value [r]"
     }
 
     @datatype class String(val value: org.sireum.String, val pos: Position) extends Exp {
+      @strictpure def tipe: Typed = Typed.string
       @strictpure def prettyST: ST = ops.StringOps(value).escapeST
     }
 
-    @datatype class Register(val n: Z, val pos: Position) extends Exp {
+    @datatype class Register(val n: Z, val tipe: Typed, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"$$$n"
     }
 
-    @datatype class LocalVarRef(val context: MethodContext, val id: org.sireum.String, val pos: Position) extends Exp {
+    @datatype class LocalVarRef(val context: MethodContext, val id: org.sireum.String, val tipe: Typed, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"$id"
     }
 
-    @datatype class GlobalVarRef(val name: ISZ[org.sireum.String], val pos: Position) extends Exp {
+    @datatype class GlobalVarRef(val name: ISZ[org.sireum.String], val tipe: Typed, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"${(name, ".")}"
     }
 
-    @datatype class EnumElementRef(val name: ISZ[org.sireum.String], val id: org.sireum.String, val ordinal: Z, val pos: Position) extends Exp {
-      @strictpure def prettyST: ST = st"${(name, ".")}.$id"
+    @datatype class EnumElementRef(val owner: ISZ[org.sireum.String], val id: org.sireum.String, val ordinal: Z, val pos: Position) extends Exp {
+      @strictpure def tipe: Typed = Typed.Enum(owner :+ "Type")
+      @strictpure def prettyST: ST = st"${(owner, ".")}.$id"
     }
 
-    @datatype class FieldVarRef(val owner: Typed, val receiver: Exp, val id: org.sireum.String, val pos: Position) extends Exp {
+    @datatype class FieldVarRef(val owner: Typed, val receiver: Exp, val id: org.sireum.String, val tipe: Typed, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"$owner.$id"
     }
 
@@ -140,7 +147,7 @@ object IR {
       }
     }
 
-    @datatype class If(val cond: Exp, val thenExp: Exp, val elseExp: Exp, val pos: Position) extends Exp {
+    @datatype class If(val cond: Exp, val thenExp: Exp, val elseExp: Exp, val tipe: Typed, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"if (${cond.prettyST}) ${thenExp.prettyST} else ${elseExp.prettyST}"
     }
 
@@ -148,23 +155,25 @@ object IR {
       @strictpure def prettyST: ST = st"$tipe(${(for (i <- 1 until args.size) yield args(i).prettyST, ", ")})"
     }
 
-    @datatype class Apply(val isInObject: B, val owner: ISZ[String], val id: org.sireum.String, val args: ISZ[Exp], val pos: Position) extends Exp {
+    @datatype class Apply(val isInObject: B, val owner: ISZ[String], val id: org.sireum.String, val args: ISZ[Exp],
+                          val tipe: Typed, val pos: Position) extends Exp {
       @strictpure def prettyST: ST =
         if (!isInObject && ops.StringOps(id).isScalaOp && args.size == 2) st"(${args(0).prettyST} $id ${args(1).prettyST})"
         else if (isInObject) st"${(owner, ".")}.$id(${(for (arg <- args) yield arg.prettyST, ", ")})"
         else st"${args(0).prettyST}.$id(${(for (i <- 1 until args.size) yield args(i).prettyST)})"
     }
 
-    @datatype class Select(val exp: Exp, val id: String, val pos: Position) extends Exp {
+    @datatype class Select(val exp: Exp, val id: String, val tipe: Typed, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"${exp.prettyST}.$id"
     }
 
-    @datatype class Indexing(val exp: Exp, val index: Exp, val pos: Position) extends Exp {
+    @datatype class Indexing(val exp: Exp, val tipe: Typed, val index: Exp, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"${exp.prettyST}(${index.prettyST})"
     }
 
-    @datatype class Type(val test: B, val exp: Exp, tipe: Typed, val pos: Position) extends Exp {
-      @strictpure def prettyST: ST = st"(${exp.prettyST} ${if (test) "is" else "as"} $tipe)"
+    @datatype class Type(val test: B, val exp: Exp, val t: Typed, val pos: Position) extends Exp {
+      @strictpure def tipe: Typed = if (test) Typed.b else t
+      @strictpure def prettyST: ST = st"(${exp.prettyST} ${if (test) "is" else "as"} $t)"
     }
 
   }
@@ -251,6 +260,15 @@ object IR {
           thiz(undecl = T)
         }
         @strictpure def prettyST: ST = st"${if (undecl) "de" else ""}register $$$n: $tipe"
+      }
+
+      @datatype class Multiple(val undecl: B, val decls: ISZ[Decl]) extends Decl {
+        @strictpure def pos: Position = decls(0).pos.to(decls(decls.size - 1).pos)
+        @strictpure def undeclare: Decl = {
+          val thiz = this
+          thiz(undecl = T, decls = for (d <- decls) yield d.undeclare)
+        }
+        @strictpure def prettyST: ST = st"${(for (d <- decls) yield d.prettyST, "\n")}"
       }
 
     }
