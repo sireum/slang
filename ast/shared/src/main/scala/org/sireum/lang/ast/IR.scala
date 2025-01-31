@@ -179,7 +179,9 @@ object IR {
 
   object Stmt {
 
-    @datatype trait Assign extends Stmt {
+    @datatype trait Ground extends Stmt
+
+    @datatype trait Assign extends Ground {
       @strictpure def rhs: Exp
     }
 
@@ -229,16 +231,26 @@ object IR {
       }
     }
 
-    @datatype trait Decl extends Stmt
+    @datatype trait Decl extends Ground {
+      @pure def undeclare: Decl
+    }
 
     object Decl {
 
-      @datatype class Local(val isVal: B, val tipe: Typed, val id: String, val pos: Position) extends Decl {
-        @strictpure def prettyST: ST = st"$id : $tipe"
+      @datatype class Local(val undecl: B, val isVal: B, val tipe: Typed, val id: String, val pos: Position) extends Decl {
+        @strictpure def undeclare: Decl = {
+          val thiz = this
+          thiz(undecl = T)
+        }
+        @strictpure def prettyST: ST = st"${if (undecl) "de" else ""}local $id : $tipe"
       }
 
-      @datatype class Register(val tipe: Typed, val n: Z, val pos: Position) extends Decl {
-        @strictpure def prettyST: ST = st"$$$n : $tipe"
+      @datatype class Register(val undecl: B, val tipe: Typed, val n: Z, val pos: Position) extends Decl {
+        @strictpure def undeclare: Decl = {
+          val thiz = this
+          thiz(undecl = T)
+        }
+        @strictpure def prettyST: ST = st"${if (undecl) "de" else ""}register $$$n : $tipe"
       }
 
     }
@@ -270,10 +282,10 @@ object IR {
     }
   }
 
-  @datatype class BasicBlock(val label: Z, val assigns: ISZ[Stmt.Assign], jump: Jump) {
+  @datatype class BasicBlock(val label: Z, val grounds: ISZ[Stmt.Ground], jump: Jump) {
     @strictpure def prettyST: ST =
       st""".$label:
-          |  ${(for (assign <- assigns) yield assign.prettyST, "\n")}
+          |  ${(for (ground <- grounds) yield ground.prettyST, "\n")}
           |  ${jump.prettyST}"""
   }
 
@@ -290,11 +302,9 @@ object IR {
       @strictpure def prettyST: ST = block.prettyST
     }
 
-    @datatype class Basic(val decls: ISZ[Stmt.Decl], val blocks: ISZ[BasicBlock]) extends Body {
+    @datatype class Basic(val blocks: ISZ[BasicBlock]) extends Body {
       @strictpure def prettyST: ST =
         st"""{
-            |  ${(for (decl <- decls) yield decl.prettyST, "\n")}
-            |
             |  ${(for (bb <- blocks) yield bb.prettyST, "\n\n")}
             |}"""
 

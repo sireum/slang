@@ -76,64 +76,71 @@ object IRTranslator {
       return r
     }
 
-    var decls = ISZ[IR.Stmt.Decl]()
     var blocks = ISZ[IR.BasicBlock]()
-    var assigns = ISZ[IR.Stmt.Assign]()
+    var grounds = ISZ[IR.Stmt.Ground]()
+    var decls = ISZ[IR.Stmt.Decl]()
 
     def stmtToBasic(label: Z, stmt: IR.Stmt): Option[Z] = {
       stmt match {
         case stmt: IR.Stmt.Block =>
-          return blockToBasic(label, stmt)
+          val oldDecls = decls
+          decls = ISZ()
+          val r = blockToBasic(label, stmt)
+          for (d <- decls) {
+            grounds = grounds :+ d.undeclare
+          }
+          decls = oldDecls
+          return r
         case stmt: IR.Stmt.Assign =>
-          assigns = assigns :+ stmt
+          grounds = grounds :+ stmt
           return Some(label)
         case stmt: IR.Stmt.Return =>
-          blocks = blocks :+ IR.BasicBlock(label, assigns, IR.Jump.Return(stmt.expOpt, stmt.pos))
-          assigns = ISZ()
+          blocks = blocks :+ IR.BasicBlock(label, grounds, IR.Jump.Return(stmt.expOpt, stmt.pos))
+          grounds = ISZ()
           return None()
         case stmt: IR.Stmt.If =>
           val t = freshLabel()
           val f = freshLabel()
           val e = freshLabel()
-          blocks = blocks :+ IR.BasicBlock(label, assigns, IR.Jump.If(stmt.cond, t, f, stmt.pos))
-          assigns = ISZ()
+          blocks = blocks :+ IR.BasicBlock(label, grounds, IR.Jump.If(stmt.cond, t, f, stmt.pos))
+          grounds = ISZ()
           var allReturn = T
           blockToBasic(t, stmt.thenBlock) match {
             case Some(l) =>
-              blocks = blocks :+ IR.BasicBlock(l, assigns, IR.Jump.Goto(e, stmt.pos))
+              blocks = blocks :+ IR.BasicBlock(l, grounds, IR.Jump.Goto(e, stmt.pos))
               allReturn = F
             case _ =>
           }
-          assigns = ISZ()
+          grounds = ISZ()
           blockToBasic(f, stmt.elseBlock) match {
             case Some(l) =>
-              blocks = blocks :+ IR.BasicBlock(l, assigns, IR.Jump.Goto(e, stmt.pos))
+              blocks = blocks :+ IR.BasicBlock(l, grounds, IR.Jump.Goto(e, stmt.pos))
               allReturn = F
             case _ =>
           }
-          assigns = ISZ()
+          grounds = ISZ()
           return if (allReturn) Some(e) else None()
         case stmt: IR.Stmt.While =>
           val n = freshLabel()
-          blocks = blocks :+ IR.BasicBlock(label, assigns, IR.Jump.Goto(n, stmt.pos))
-          assigns = ISZ()
+          blocks = blocks :+ IR.BasicBlock(label, grounds, IR.Jump.Goto(n, stmt.pos))
+          grounds = ISZ()
           blockToBasic(n, stmt.condBlock) match {
             case Some(l) =>
               val t = freshLabel()
               val e = freshLabel()
-              blocks = blocks :+ IR.BasicBlock(l, assigns, IR.Jump.If(stmt.cond, t, e, stmt.pos))
-              assigns = ISZ()
+              blocks = blocks :+ IR.BasicBlock(l, grounds, IR.Jump.If(stmt.cond, t, e, stmt.pos))
+              grounds = ISZ()
               blockToBasic(t, stmt.block) match {
-                case Some(l) => blocks = blocks :+ IR.BasicBlock(l, assigns, IR.Jump.Goto(n, stmt.pos))
+                case Some(l) => blocks = blocks :+ IR.BasicBlock(l, grounds, IR.Jump.Goto(n, stmt.pos))
                 case _ =>
               }
-              assigns = ISZ()
+              grounds = ISZ()
               return Some(e)
             case _ =>
               return None()
           }
         case stmt: IR.Stmt.Decl =>
-          decls = decls :+ stmt
+          grounds = grounds :+ stmt
           return Some(label)
       }
     }
@@ -150,10 +157,10 @@ object IRTranslator {
     }
 
     blockToBasic(0, body.block) match {
-      case Some(l) => blocks = blocks :+ IR.BasicBlock(l, assigns, IR.Jump.Return(None(), pos))
+      case Some(l) => blocks = blocks :+ IR.BasicBlock(l, grounds, IR.Jump.Return(None(), pos))
       case _ =>
     }
-    return IR.Body.Basic(decls, blocks)
+    return IR.Body.Basic(blocks)
   }
 
   def translateStmt(stmt: AST.Stmt, registerOpt: Option[Z]): Unit = {
@@ -173,7 +180,7 @@ object IRTranslator {
             IR.Exp.Register(n, init.asStmt.posOpt.get)
         }
         stmts = stmts :+ IR.Stmt.Assign.Local(shouldCopy(t), methodContext, stmt.id.value, varRhs, pos)
-        oldStmts = oldStmts :+ IR.Stmt.Decl.Local(stmt.isVal, t, stmt.id.value, pos)
+        oldStmts = oldStmts :+ IR.Stmt.Decl.Local(F, stmt.isVal, t, stmt.id.value, pos)
         stmts = oldStmts :+ IR.Stmt.Block(stmts, pos)
       case stmt: AST.Stmt.Assign =>
         val copy = shouldCopy(stmt.rhs.typedOpt.get)
@@ -413,7 +420,7 @@ object IRTranslator {
             return e
           }
           val n = freshRegister()
-          stmts = stmts :+ IR.Stmt.Decl.Register(t, n, pos)
+          stmts = stmts :+ IR.Stmt.Decl.Register(F, t, n, pos)
           stmts = stmts :+ IR.Stmt.Assign.Register(n, e, pos)
           return IR.Exp.Register(n, pos)
         } else {
@@ -439,7 +446,7 @@ object IRTranslator {
             return e
           }
           val n = freshRegister()
-          stmts = stmts :+ IR.Stmt.Decl.Register(t, n, pos)
+          stmts = stmts :+ IR.Stmt.Decl.Register(F, t, n, pos)
           stmts = stmts :+ IR.Stmt.Assign.Register(n, e, pos)
           return IR.Exp.Register(n, pos)
         } else {
@@ -452,7 +459,7 @@ object IRTranslator {
         if (!threeAddressCode) {
           return IR.Exp.If(cond, translateExp(exp.thenExp), translateExp(exp.elseExp), pos)
         }
-        stmts = stmts :+ IR.Stmt.Decl.Register(t, n, pos)
+        stmts = stmts :+ IR.Stmt.Decl.Register(F, t, n, pos)
         val oldStmts = stmts
         stmts = ISZ()
         val thenExp = translateExp(exp.thenExp)
@@ -484,7 +491,7 @@ object IRTranslator {
             val indexing = IR.Exp.Indexing(rcv, index, pos)
             if (threeAddressCode) {
               val n = freshRegister()
-              stmts = stmts :+ IR.Stmt.Decl.Register(exp.typedOpt.get, n, pos)
+              stmts = stmts :+ IR.Stmt.Decl.Register(F, exp.typedOpt.get, n, pos)
               stmts = stmts :+ IR.Stmt.Assign.Register(n, indexing, pos)
               return IR.Exp.Register(n, pos)
             } else {
