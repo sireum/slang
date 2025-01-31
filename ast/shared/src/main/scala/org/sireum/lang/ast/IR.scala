@@ -196,7 +196,7 @@ object IR {
       }
 
       @datatype class Register(val lhs: Z, val rhs: Exp, val pos: Position) extends Assign {
-        @strictpure def prettyST: ST = st"$lhs = ${rhs.prettyST}"
+        @strictpure def prettyST: ST = st"$$$lhs = ${rhs.prettyST}"
       }
 
       @datatype class Field(val copy: B, val receiver: Exp, val receiverType: Typed.Name, val id: String, val rhs: Exp, val pos: Position) extends Assign {
@@ -242,7 +242,7 @@ object IR {
           val thiz = this
           thiz(undecl = T)
         }
-        @strictpure def prettyST: ST = st"${if (undecl) "de" else ""}local $id : $tipe"
+        @strictpure def prettyST: ST = st"${if (undecl) "de" else ""}local $id: $tipe"
       }
 
       @datatype class Register(val undecl: B, val tipe: Typed, val n: Z, val pos: Position) extends Decl {
@@ -250,7 +250,7 @@ object IR {
           val thiz = this
           thiz(undecl = T)
         }
-        @strictpure def prettyST: ST = st"${if (undecl) "de" else ""}register $$$n : $tipe"
+        @strictpure def prettyST: ST = st"${if (undecl) "de" else ""}register $$$n: $tipe"
       }
 
     }

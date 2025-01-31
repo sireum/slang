@@ -27,12 +27,26 @@
 package org.sireum.lang
 
 import org.sireum._
-import org.sireum.lang.ast.IR
+import org.sireum.lang.ast.IR.Stmt
+import org.sireum.lang.ast.{IR, MIRTransformer}
 import org.sireum.lang.symbol.TypeInfo
 import org.sireum.lang.tipe.TypeHierarchy
 import org.sireum.lang.{ast => AST}
 
 object IRTranslator {
+  @record class BlockDeclPreamble extends MIRTransformer {
+    override def postIRStmtBlock(o: Stmt.Block): MOption[IR.Stmt] = {
+      var decls = ISZ[IR.Stmt]()
+      var nonDecls = ISZ[IR.Stmt]()
+      for (stmt <- o.stmts) {
+        stmt match {
+          case stmt: IR.Stmt.Decl => decls = decls :+ stmt
+          case _ => nonDecls = nonDecls :+ stmt
+        }
+      }
+      return if (decls.nonEmpty) MSome(o(stmts = decls ++ nonDecls)) else MNone()
+    }
+  }
 }
 
 @record class IRTranslator(val threeAddressCode: B, val th: TypeHierarchy) {
@@ -48,7 +62,7 @@ object IRTranslator {
     val isInObject = receiverTypeOpt.isEmpty
     var t: AST.Typed.Fun = method.sig.funType
     var paramNames: ISZ[String] = for (p <- method.sig.params) yield p.id.value
-    if (isInObject) {
+    if (!isInObject) {
       paramNames = "this" +: paramNames
       t = t(args = receiverTypeOpt.get +: t.args)
     }
@@ -83,18 +97,14 @@ object IRTranslator {
     def stmtToBasic(label: Z, stmt: IR.Stmt): Option[Z] = {
       stmt match {
         case stmt: IR.Stmt.Block =>
-          val oldDecls = decls
-          decls = ISZ()
-          val r = blockToBasic(label, stmt)
-          for (d <- decls) {
-            grounds = grounds :+ d.undeclare
-          }
-          decls = oldDecls
-          return r
+          return blockToBasic(label, stmt)
         case stmt: IR.Stmt.Assign =>
           grounds = grounds :+ stmt
           return Some(label)
         case stmt: IR.Stmt.Return =>
+          for (d <- decls) {
+            grounds = grounds :+ d.undeclare
+          }
           blocks = blocks :+ IR.BasicBlock(label, grounds, IR.Jump.Return(stmt.expOpt, stmt.pos))
           grounds = ISZ()
           return None()
@@ -141,11 +151,14 @@ object IRTranslator {
           }
         case stmt: IR.Stmt.Decl =>
           grounds = grounds :+ stmt
+          decls = decls :+ stmt
           return Some(label)
       }
     }
 
     def blockToBasic(label: Z, block: IR.Stmt.Block): Option[Z] = {
+      val oldDecls = decls
+      decls = ISZ()
       var l = label
       for (stmt <- block.stmts) {
         stmtToBasic(l, stmt) match {
@@ -153,6 +166,10 @@ object IRTranslator {
           case _ => return None()
         }
       }
+      for (d <- decls) {
+        grounds = grounds :+ d.undeclare
+      }
+      decls = oldDecls
       return Some(l)
     }
 
@@ -276,8 +293,11 @@ object IRTranslator {
       case stmt: AST.Stmt.Expr => translateExp(stmt.exp)
       case stmt: AST.Stmt.Return =>
         stmt.expOpt match {
-          case Some(exp) => stmts = stmts :+ IR.Stmt.Return(Some(translateExp(exp)), pos)
-          case _ => stmts = stmts :+ IR.Stmt.Return(None(), pos)
+          case Some(exp) =>
+            val r = translateExp(exp)
+            stmts = stmts :+ IR.Stmt.Return(Some(r), pos)
+          case _ =>
+            stmts = stmts :+ IR.Stmt.Return(None(), pos)
         }
       case stmt: AST.Stmt.Block => translateBody(stmt.body, registerOpt)
       case stmt: AST.Stmt.Match => halt(s"TODO: $stmt")
