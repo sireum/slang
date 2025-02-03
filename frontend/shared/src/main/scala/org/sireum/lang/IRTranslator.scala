@@ -223,7 +223,7 @@ object IRTranslator {
                   stmts = stmts :+ IR.Stmt.Assign.Global(copy, res.owner :+ res.id, identRhs, pos)
                 }
                 val receiverPos = lhs.posOpt.get
-                val thiz = IR.Exp.LocalVarRef(methodContext, "this", methodContext.receiverType, receiverPos)
+                val thiz = IR.Exp.LocalVarRef(T, methodContext, "this", methodContext.receiverType, receiverPos)
                 val (receiver, receiverType): (IR.Exp, AST.Typed.Name) = if (threeAddressCode) {
                   val n = freshRegister()
                   stmts = stmts :+ IR.Stmt.Decl.Register(F, methodContext.receiverType, n, receiverPos)
@@ -418,16 +418,16 @@ object IRTranslator {
         } else {
           halt(s"TODO: $exp")
         }
-      case _: AST.Exp.This => return IR.Exp.LocalVarRef(methodContext, "this", methodContext.receiverType, pos)
+      case _: AST.Exp.This => return IR.Exp.LocalVarRef(T, methodContext, "this", methodContext.receiverType, pos)
       case exp: AST.Exp.Ident =>
         val t = exp.typedOpt.get
         exp.resOpt.get match {
-          case res: AST.ResolvedInfo.LocalVar => return IR.Exp.LocalVarRef(methodContext, res.id, t, pos)
+          case res: AST.ResolvedInfo.LocalVar => return IR.Exp.LocalVarRef(res.isVal, methodContext, res.id, t, pos)
           case res: AST.ResolvedInfo.Var =>
             if (res.isInObject) {
               return IR.Exp.GlobalVarRef(res.owner :+ res.id, t, pos)
             } else {
-              return IR.Exp.FieldVarRef(methodContext.receiverType, IR.Exp.LocalVarRef(methodContext, "this",
+              return IR.Exp.FieldVarRef(methodContext.receiverType, IR.Exp.LocalVarRef(T, methodContext, "this",
                 methodContext.receiverType, pos), res.id, t, pos)
             }
           case res: AST.ResolvedInfo.EnumElement => return IR.Exp.EnumElementRef(res.owner, res.name, res.ordinal, pos)

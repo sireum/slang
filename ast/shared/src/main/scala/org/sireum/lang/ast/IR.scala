@@ -86,7 +86,7 @@ object IR {
       @strictpure def prettyST: ST = st"$$$n"
     }
 
-    @datatype class LocalVarRef(val context: MethodContext, val id: org.sireum.String, val tipe: Typed, val pos: Position) extends Exp {
+    @datatype class LocalVarRef(val isVal: B, val context: MethodContext, val id: org.sireum.String, val tipe: Typed, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"$id"
     }
 
