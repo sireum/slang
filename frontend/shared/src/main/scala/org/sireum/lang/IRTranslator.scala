@@ -400,37 +400,51 @@ object IRTranslator {
   }
 
   def translateExp(exp: AST.Exp): IR.Exp = {
+    def norm3AC(e: IR.Exp): IR.Exp = {
+      if (threeAddressCode) {
+        val n = freshRegister()
+        stmts = stmts :+ IR.Stmt.Decl.Register(F, e.tipe, n, e.pos)
+        stmts = stmts :+ IR.Stmt.Assign.Register(n, e, e.pos)
+        return IR.Exp.Register(n, e.tipe, e.pos)
+      } else {
+        return e
+      }
+    }
+    def thiz(pos: message.Position): IR.Exp = {
+      return norm3AC(IR.Exp.LocalVarRef(T, methodContext, "this", methodContext.receiverType, pos))
+    }
     val pos = exp.posOpt.get
     exp match {
-      case exp: AST.Exp.LitB => return IR.Exp.Bool(exp.value, pos)
-      case exp: AST.Exp.LitC => return IR.Exp.Int(AST.Typed.c, 32, exp.value.toZ, pos)
-      case exp: AST.Exp.LitZ => return IR.Exp.Int(AST.Typed.z, 0, exp.value, pos)
-      case exp: AST.Exp.LitF32 => return IR.Exp.F32(exp.value, pos)
-      case exp: AST.Exp.LitF64 => return IR.Exp.F64(exp.value, pos)
-      case exp: AST.Exp.LitR => return IR.Exp.R(exp.value, pos)
-      case exp: AST.Exp.LitString => return IR.Exp.String(exp.value, pos)
+      case exp: AST.Exp.LitB => return norm3AC(IR.Exp.Bool(exp.value, pos))
+      case exp: AST.Exp.LitC => return norm3AC(IR.Exp.Int(AST.Typed.c, 32, exp.value.toZ, pos))
+      case exp: AST.Exp.LitZ => return norm3AC(IR.Exp.Int(AST.Typed.z, 0, exp.value, pos))
+      case exp: AST.Exp.LitF32 => return norm3AC(IR.Exp.F32(exp.value, pos))
+      case exp: AST.Exp.LitF64 => return norm3AC(IR.Exp.F64(exp.value, pos))
+      case exp: AST.Exp.LitR => return norm3AC(IR.Exp.R(exp.value, pos))
+      case exp: AST.Exp.LitString => return norm3AC(IR.Exp.String(exp.value, pos))
       case exp: AST.Exp.StringInterpolate =>
         if (isScalar(exp.typedOpt.get)) {
           val t = exp.typedOpt.get.asInstanceOf[AST.Typed.Name]
           val info = th.typeMap.get(t.ids).get.asInstanceOf[TypeInfo.SubZ]
           val value = Z(exp.lits(0).value).get
-          return IR.Exp.Int(t, if (info.ast.isBitVector) info.ast.bitWidth else 0, value, pos)
+          return norm3AC(IR.Exp.Int(t, if (info.ast.isBitVector) info.ast.bitWidth else 0, value, pos))
         } else {
           halt(s"TODO: $exp")
         }
-      case _: AST.Exp.This => return IR.Exp.LocalVarRef(T, methodContext, "this", methodContext.receiverType, pos)
+      case _: AST.Exp.This => return thiz(pos)
       case exp: AST.Exp.Ident =>
         val t = exp.typedOpt.get
         exp.resOpt.get match {
-          case res: AST.ResolvedInfo.LocalVar => return IR.Exp.LocalVarRef(res.isVal, methodContext, res.id, t, pos)
+          case res: AST.ResolvedInfo.LocalVar =>
+            return norm3AC(IR.Exp.LocalVarRef(res.isVal, methodContext, res.id, t, pos))
           case res: AST.ResolvedInfo.Var =>
             if (res.isInObject) {
-              return IR.Exp.GlobalVarRef(res.owner :+ res.id, t, pos)
+              return norm3AC(IR.Exp.GlobalVarRef(res.owner :+ res.id, t, pos))
             } else {
-              return IR.Exp.FieldVarRef(methodContext.receiverType, IR.Exp.LocalVarRef(T, methodContext, "this",
-                methodContext.receiverType, pos), res.id, t, pos)
+              return norm3AC(IR.Exp.FieldVarRef(methodContext.receiverType, thiz(pos), res.id, t, pos))
             }
-          case res: AST.ResolvedInfo.EnumElement => return IR.Exp.EnumElementRef(res.owner, res.name, res.ordinal, pos)
+          case res: AST.ResolvedInfo.EnumElement =>
+            return norm3AC(IR.Exp.EnumElementRef(res.owner, res.name, res.ordinal, pos))
           case _ => halt(s"Infeasible: $exp")
         }
       case exp: AST.Exp.Select =>
@@ -438,25 +452,21 @@ object IRTranslator {
         exp.resOpt.get match {
           case res: AST.ResolvedInfo.Var =>
             if (res.isInObject) {
-              return IR.Exp.GlobalVarRef(res.owner :+ res.id, t, pos)
+              return norm3AC(IR.Exp.GlobalVarRef(res.owner :+ res.id, t, pos))
             } else {
               val receiver = exp.receiverOpt.get
-              return IR.Exp.FieldVarRef(receiver.typedOpt.get, translateExp(receiver), res.id, t, pos)
+              val rcv = translateExp(receiver)
+              return norm3AC(IR.Exp.FieldVarRef(receiver.typedOpt.get, rcv, res.id, t, pos))
             }
-          case res: AST.ResolvedInfo.EnumElement => return IR.Exp.EnumElementRef(res.owner, res.name, res.ordinal, pos)
+          case res: AST.ResolvedInfo.EnumElement =>
+            return norm3AC(IR.Exp.EnumElementRef(res.owner, res.name, res.ordinal, pos))
           case _ => halt(s"TODO: $exp")
         }
       case exp: AST.Exp.Unary =>
         val t = exp.typedOpt.get
         if (isScalar(t)) {
-          val e = IR.Exp.Unary(t, exp.op, translateExp(exp.exp), pos)
-          if (!threeAddressCode) {
-            return e
-          }
-          val n = freshRegister()
-          stmts = stmts :+ IR.Stmt.Decl.Register(F, t, n, pos)
-          stmts = stmts :+ IR.Stmt.Assign.Register(n, e, pos)
-          return IR.Exp.Register(n, t, pos)
+          val e = translateExp(exp.exp)
+          return norm3AC(IR.Exp.Unary(t, exp.op, e, pos))
         } else {
           halt(s"TODO: $exp")
         }
@@ -475,14 +485,9 @@ object IRTranslator {
               return translateExp(AST.Exp.If(exp.left, exp.right, AST.Exp.LitB(F, AST.Attr(exp.posOpt)), AST.TypedAttr(exp.posOpt, AST.Typed.bOpt)))
             case _ =>
           }
-          val e = IR.Exp.Binary(t, translateExp(exp.left), kind, translateExp(exp.right), pos)
-          if (!threeAddressCode) {
-            return e
-          }
-          val n = freshRegister()
-          stmts = stmts :+ IR.Stmt.Decl.Register(F, t, n, pos)
-          stmts = stmts :+ IR.Stmt.Assign.Register(n, e, pos)
-          return IR.Exp.Register(n, t, pos)
+          val left = translateExp(exp.left)
+          val right = translateExp(exp.right)
+          return norm3AC(IR.Exp.Binary(t, left, kind, right, pos))
         } else {
           halt(s"TODO: $exp")
         }
@@ -490,7 +495,9 @@ object IRTranslator {
         val t = exp.typedOpt.get
         val cond = translateExp(exp.cond)
         if (!threeAddressCode) {
-          return IR.Exp.If(cond, translateExp(exp.thenExp), translateExp(exp.elseExp), t, pos)
+          val thenExp = translateExp(exp.thenExp)
+          val elseExp = translateExp(exp.elseExp)
+          return IR.Exp.If(cond, thenExp, elseExp, t, pos)
         }
         val n = freshRegister()
         stmts = stmts :+ IR.Stmt.Decl.Register(F, t, n, pos)
@@ -514,24 +521,15 @@ object IRTranslator {
             val (rcv, rcvType): (IR.Exp, AST.Typed.Name) = exp.receiverOpt match {
               case Some(receiver) =>
                 if (exp.ident.id.value == "apply") {
-                  (translateExp(receiver), receiver.typedOpt.get.asInstanceOf[AST.Typed.Name])
+                  (norm3AC(translateExp(receiver)), receiver.typedOpt.get.asInstanceOf[AST.Typed.Name])
                 } else {
                   val e = AST.Exp.Select(Some(receiver), exp.ident.id, exp.targs, exp.ident.attr)
-                  (translateExp(e), e.typedOpt.get.asInstanceOf[AST.Typed.Name])
+                  (norm3AC(translateExp(e)), e.typedOpt.get.asInstanceOf[AST.Typed.Name])
                 }
-              case _ => (translateExp(exp.ident), exp.ident.typedOpt.get.asInstanceOf[AST.Typed.Name])
+              case _ => (norm3AC(translateExp(exp.ident)), exp.ident.typedOpt.get.asInstanceOf[AST.Typed.Name])
             }
-            val index = translateExp(exp.args(0))
-            val indexing = IR.Exp.Indexing(rcv, rcvType, index, pos)
-            if (threeAddressCode) {
-              val n = freshRegister()
-              val t = exp.typedOpt.get
-              stmts = stmts :+ IR.Stmt.Decl.Register(F, t, n, pos)
-              stmts = stmts :+ IR.Stmt.Assign.Register(n, indexing, pos)
-              return IR.Exp.Register(n, t, pos)
-            } else {
-              return indexing
-            }
+            val index = norm3AC(translateExp(exp.args(0)))
+            return norm3AC(IR.Exp.Indexing(rcv, rcvType, index, pos))
           case _ => halt(s"TODO: $exp")
         }
       case exp: AST.Exp.InvokeNamed => halt(s"TODO: $exp")
