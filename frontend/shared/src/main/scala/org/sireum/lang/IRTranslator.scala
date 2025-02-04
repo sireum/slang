@@ -52,7 +52,7 @@ object IRTranslator {
 @record class IRTranslator(val threeAddressCode: B, val th: TypeHierarchy) {
 
   var methodContext: IR.MethodContext = IR.MethodContext.empty
-  var _freshRegister: Z = 0
+  var _freshTemp: Z = 0
   var stmts: ISZ[IR.Stmt] = ISZ()
 
   def translateMethod(receiverTypeOpt: Option[AST.Typed],
@@ -229,10 +229,10 @@ object IRTranslator {
           case init: AST.Stmt.Expr =>
             translateExp(init.exp)
           case _ =>
-            val n = freshRegister()
-            stmts = stmts :+ IR.Stmt.Decl.Register(F, t, n, pos)
+            val n = freshTemp()
+            stmts = stmts :+ IR.Stmt.Decl.Temp(F, t, n, pos)
             translateAssignExp(init, n)
-            IR.Exp.Register(n, t, init.asStmt.posOpt.get)
+            IR.Exp.Temp(n, t, init.asStmt.posOpt.get)
         }
         stmts = stmts :+ IR.Stmt.Assign.Local(shouldCopy(t), methodContext, stmt.id.value, varRhs, pos)
         oldStmts = oldStmts :+ IR.Stmt.Decl.Local(F, stmt.isVal, t, stmt.id.value, pos)
@@ -244,11 +244,11 @@ object IRTranslator {
         val identRhs: IR.Exp = stmt.rhs match {
           case rhs: AST.Stmt.Expr => translateExp(rhs.exp)
           case _ =>
-            val n = freshRegister()
+            val n = freshTemp()
             val t = stmt.rhs.typedOpt.get
-            stmts = stmts :+ IR.Stmt.Decl.Register(F, t, n, stmt.rhs.asStmt.posOpt.get)
+            stmts = stmts :+ IR.Stmt.Decl.Temp(F, t, n, stmt.rhs.asStmt.posOpt.get)
             translateAssignExp(stmt.rhs, n)
-            IR.Exp.Register(n, t, stmt.rhs.asStmt.posOpt.get)
+            IR.Exp.Temp(n, t, stmt.rhs.asStmt.posOpt.get)
         }
         stmt.lhs match {
           case lhs: AST.Exp.Ident =>
@@ -262,10 +262,10 @@ object IRTranslator {
                 val receiverPos = lhs.posOpt.get
                 val thiz = IR.Exp.LocalVarRef(T, methodContext, "this", methodContext.receiverType, receiverPos)
                 val (receiver, receiverType): (IR.Exp, AST.Typed.Name) = if (threeAddressCode) {
-                  val n = freshRegister()
-                  stmts = stmts :+ IR.Stmt.Decl.Register(F, methodContext.receiverType, n, receiverPos)
-                  stmts = stmts :+ IR.Stmt.Assign.Register(n, thiz, receiverPos)
-                  (IR.Exp.Register(n, methodContext.receiverType, receiverPos), methodContext.receiverType.asInstanceOf[AST.Typed.Name])
+                  val n = freshTemp()
+                  stmts = stmts :+ IR.Stmt.Decl.Temp(F, methodContext.receiverType, n, receiverPos)
+                  stmts = stmts :+ IR.Stmt.Assign.Temp(n, thiz, receiverPos)
+                  (IR.Exp.Temp(n, methodContext.receiverType, receiverPos), methodContext.receiverType.asInstanceOf[AST.Typed.Name])
                 } else {
                   (thiz, methodContext.receiverType.asInstanceOf[AST.Typed.Name])
                 }
@@ -277,12 +277,12 @@ object IRTranslator {
               stmt.rhs match {
                 case rhs: AST.Stmt.Expr => return translateExp(rhs.exp)
                 case _ =>
-                  val n = freshRegister()
+                  val n = freshTemp()
                   val t = stmt.rhs.typedOpt.get
                   val rhsPos = stmt.rhs.asStmt.posOpt.get
-                  stmts = stmts :+ IR.Stmt.Decl.Register(F, t, n, rhsPos)
+                  stmts = stmts :+ IR.Stmt.Decl.Temp(F, t, n, rhsPos)
                   translateAssignExp(stmt.rhs, n)
-                  return IR.Exp.Register(n, t, rhsPos)
+                  return IR.Exp.Temp(n, t, rhsPos)
               }
             }
 
@@ -303,12 +303,12 @@ object IRTranslator {
             val invokeRhs: IR.Exp = stmt.rhs match {
               case rhs: AST.Stmt.Expr => translateExp(rhs.exp)
               case _ =>
-                val n = freshRegister()
+                val n = freshTemp()
                 val rhsPos = stmt.rhs.asStmt.posOpt.get
                 val t = stmt.rhs.typedOpt.get
-                stmts = stmts :+ IR.Stmt.Decl.Register(F, t, n, rhsPos)
+                stmts = stmts :+ IR.Stmt.Decl.Temp(F, t, n, rhsPos)
                 translateAssignExp(stmt.rhs, n)
-                IR.Exp.Register(n, t, rhsPos)
+                IR.Exp.Temp(n, t, rhsPos)
             }
             stmts = stmts :+ IR.Stmt.Assign.Index(copy, receiver, receiverType, index, invokeRhs, pos)
           case _ => halt("Infeasible")
@@ -339,7 +339,7 @@ object IRTranslator {
           var i = stmts.size - 1
           while (i >= 0) {
             stmts(i) match {
-              case stmt: IR.Stmt.Decl.Register if decls.isEmpty => decls = ISZ(stmt)
+              case stmt: IR.Stmt.Decl.Temp if decls.isEmpty => decls = ISZ(stmt)
               case stmt => condStmts = condStmts :+ stmt
             }
             i = i - 1
@@ -395,7 +395,7 @@ object IRTranslator {
     stmt match {
       case stmt: AST.Stmt.Expr =>
         val exp = translateExp(stmt.exp)
-        stmts = stmts :+ IR.Stmt.Assign.Register(register, exp, pos)
+        stmts = stmts :+ IR.Stmt.Assign.Temp(register, exp, pos)
       case _ => translateStmt(stmt.asStmt, Some(register))
     }
   }
@@ -451,19 +451,19 @@ object IRTranslator {
     return F
   }
 
-  def freshRegister(): Z = {
-    val r = _freshRegister
-    _freshRegister = _freshRegister + 1
+  def freshTemp(): Z = {
+    val r = _freshTemp
+    _freshTemp = _freshTemp + 1
     return r
   }
 
   def translateExp(exp: AST.Exp): IR.Exp = {
     def norm3AC(e: IR.Exp): IR.Exp = {
       if (threeAddressCode) {
-        val n = freshRegister()
-        stmts = stmts :+ IR.Stmt.Decl.Register(F, e.tipe, n, e.pos)
-        stmts = stmts :+ IR.Stmt.Assign.Register(n, e, e.pos)
-        return IR.Exp.Register(n, e.tipe, e.pos)
+        val n = freshTemp()
+        stmts = stmts :+ IR.Stmt.Decl.Temp(F, e.tipe, n, e.pos)
+        stmts = stmts :+ IR.Stmt.Assign.Temp(n, e, e.pos)
+        return IR.Exp.Temp(n, e.tipe, e.pos)
       } else {
         return e
       }
@@ -604,8 +604,8 @@ object IRTranslator {
           val elseExp = translateExp(exp.elseExp)
           return IR.Exp.If(cond, thenExp, elseExp, t, pos)
         }
-        val n = freshRegister()
-        stmts = stmts :+ IR.Stmt.Decl.Register(F, t, n, pos)
+        val n = freshTemp()
+        stmts = stmts :+ IR.Stmt.Decl.Temp(F, t, n, pos)
         val oldStmts = stmts
         stmts = ISZ()
         val thenExp = translateExp(exp.thenExp)
@@ -617,9 +617,9 @@ object IRTranslator {
         val elsePos = exp.elseExp.posOpt.get
         stmts = oldStmts
         stmts = stmts :+ IR.Stmt.If(cond,
-          IR.Stmt.Block(thenStmts :+ IR.Stmt.Assign.Register(n, thenExp, thenPos), thenPos),
-          IR.Stmt.Block(elseStmts :+ IR.Stmt.Assign.Register(n, elseExp, elsePos), elsePos), pos)
-        return IR.Exp.Register(n, t, pos)
+          IR.Stmt.Block(thenStmts :+ IR.Stmt.Assign.Temp(n, thenExp, thenPos), thenPos),
+          IR.Stmt.Block(elseStmts :+ IR.Stmt.Assign.Temp(n, elseExp, elsePos), elsePos), pos)
+        return IR.Exp.Temp(n, t, pos)
       case exp: AST.Exp.Invoke =>
         exp.attr.resOpt.get match {
           case res: AST.ResolvedInfo.Method if res.mode == AST.MethodMode.Select =>

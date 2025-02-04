@@ -57,7 +57,7 @@ object IRTransformer {
         case o: IR.Exp.F64 => return preIRExpF64(ctx, o)
         case o: IR.Exp.R => return preIRExpR(ctx, o)
         case o: IR.Exp.String => return preIRExpString(ctx, o)
-        case o: IR.Exp.Register => return preIRExpRegister(ctx, o)
+        case o: IR.Exp.Temp => return preIRExpTemp(ctx, o)
         case o: IR.Exp.LocalVarRef => return preIRExpLocalVarRef(ctx, o)
         case o: IR.Exp.GlobalVarRef => return preIRExpGlobalVarRef(ctx, o)
         case o: IR.Exp.EnumElementRef => return preIRExpEnumElementRef(ctx, o)
@@ -97,7 +97,7 @@ object IRTransformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preIRExpRegister(ctx: Context, o: IR.Exp.Register): PreResult[Context, IR.Exp] = {
+    @pure def preIRExpTemp(ctx: Context, o: IR.Exp.Temp): PreResult[Context, IR.Exp] = {
       return PreResult(ctx, T, None())
     }
 
@@ -165,8 +165,8 @@ object IRTransformer {
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt]())
           }
           return r
-        case o: IR.Stmt.Assign.Register =>
-          val r: PreResult[Context, IR.Stmt] = preIRStmtAssignRegister(ctx, o) match {
+        case o: IR.Stmt.Assign.Temp =>
+          val r: PreResult[Context, IR.Stmt] = preIRStmtAssignTemp(ctx, o) match {
            case PreResult(preCtx, continu, Some(r: IR.Stmt)) => PreResult(preCtx, continu, Some[IR.Stmt](r))
            case PreResult(_, _, Some(_)) => halt("Can only produce object of type IR.Stmt")
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt]())
@@ -197,8 +197,8 @@ object IRTransformer {
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt]())
           }
           return r
-        case o: IR.Stmt.Decl.Register =>
-          val r: PreResult[Context, IR.Stmt] = preIRStmtDeclRegister(ctx, o) match {
+        case o: IR.Stmt.Decl.Temp =>
+          val r: PreResult[Context, IR.Stmt] = preIRStmtDeclTemp(ctx, o) match {
            case PreResult(preCtx, continu, Some(r: IR.Stmt)) => PreResult(preCtx, continu, Some[IR.Stmt](r))
            case PreResult(_, _, Some(_)) => halt("Can only produce object of type IR.Stmt")
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt]())
@@ -230,8 +230,8 @@ object IRTransformer {
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt.Ground]())
           }
           return r
-        case o: IR.Stmt.Assign.Register =>
-          val r: PreResult[Context, IR.Stmt.Ground] = preIRStmtAssignRegister(ctx, o) match {
+        case o: IR.Stmt.Assign.Temp =>
+          val r: PreResult[Context, IR.Stmt.Ground] = preIRStmtAssignTemp(ctx, o) match {
            case PreResult(preCtx, continu, Some(r: IR.Stmt.Ground)) => PreResult(preCtx, continu, Some[IR.Stmt.Ground](r))
            case PreResult(_, _, Some(_)) => halt("Can only produce object of type IR.Stmt.Ground")
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt.Ground]())
@@ -258,8 +258,8 @@ object IRTransformer {
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt.Ground]())
           }
           return r
-        case o: IR.Stmt.Decl.Register =>
-          val r: PreResult[Context, IR.Stmt.Ground] = preIRStmtDeclRegister(ctx, o) match {
+        case o: IR.Stmt.Decl.Temp =>
+          val r: PreResult[Context, IR.Stmt.Ground] = preIRStmtDeclTemp(ctx, o) match {
            case PreResult(preCtx, continu, Some(r: IR.Stmt.Ground)) => PreResult(preCtx, continu, Some[IR.Stmt.Ground](r))
            case PreResult(_, _, Some(_)) => halt("Can only produce object of type IR.Stmt.Ground")
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt.Ground]())
@@ -279,7 +279,7 @@ object IRTransformer {
       o match {
         case o: IR.Stmt.Assign.Local => return preIRStmtAssignLocal(ctx, o)
         case o: IR.Stmt.Assign.Global => return preIRStmtAssignGlobal(ctx, o)
-        case o: IR.Stmt.Assign.Register => return preIRStmtAssignRegister(ctx, o)
+        case o: IR.Stmt.Assign.Temp => return preIRStmtAssignTemp(ctx, o)
         case o: IR.Stmt.Assign.Field => return preIRStmtAssignField(ctx, o)
         case o: IR.Stmt.Assign.Index => return preIRStmtAssignIndex(ctx, o)
       }
@@ -293,7 +293,7 @@ object IRTransformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preIRStmtAssignRegister(ctx: Context, o: IR.Stmt.Assign.Register): PreResult[Context, IR.Stmt.Assign] = {
+    @pure def preIRStmtAssignTemp(ctx: Context, o: IR.Stmt.Assign.Temp): PreResult[Context, IR.Stmt.Assign] = {
       return PreResult(ctx, T, None())
     }
 
@@ -330,8 +330,8 @@ object IRTransformer {
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt.Decl]())
           }
           return r
-        case o: IR.Stmt.Decl.Register =>
-          val r: PreResult[Context, IR.Stmt.Decl] = preIRStmtDeclRegister(ctx, o) match {
+        case o: IR.Stmt.Decl.Temp =>
+          val r: PreResult[Context, IR.Stmt.Decl] = preIRStmtDeclTemp(ctx, o) match {
            case PreResult(preCtx, continu, Some(r: IR.Stmt.Decl)) => PreResult(preCtx, continu, Some[IR.Stmt.Decl](r))
            case PreResult(_, _, Some(_)) => halt("Can only produce object of type IR.Stmt.Decl")
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt.Decl]())
@@ -344,7 +344,7 @@ object IRTransformer {
     @pure def preIRStmtDeclGround(ctx: Context, o: IR.Stmt.Decl.Ground): PreResult[Context, IR.Stmt.Decl.Ground] = {
       o match {
         case o: IR.Stmt.Decl.Local => return preIRStmtDeclLocal(ctx, o)
-        case o: IR.Stmt.Decl.Register => return preIRStmtDeclRegister(ctx, o)
+        case o: IR.Stmt.Decl.Temp => return preIRStmtDeclTemp(ctx, o)
       }
     }
 
@@ -352,7 +352,7 @@ object IRTransformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preIRStmtDeclRegister(ctx: Context, o: IR.Stmt.Decl.Register): PreResult[Context, IR.Stmt.Decl.Ground] = {
+    @pure def preIRStmtDeclTemp(ctx: Context, o: IR.Stmt.Decl.Temp): PreResult[Context, IR.Stmt.Decl.Ground] = {
       return PreResult(ctx, T, None())
     }
 
@@ -488,7 +488,7 @@ object IRTransformer {
         case o: IR.Exp.F64 => return postIRExpF64(ctx, o)
         case o: IR.Exp.R => return postIRExpR(ctx, o)
         case o: IR.Exp.String => return postIRExpString(ctx, o)
-        case o: IR.Exp.Register => return postIRExpRegister(ctx, o)
+        case o: IR.Exp.Temp => return postIRExpTemp(ctx, o)
         case o: IR.Exp.LocalVarRef => return postIRExpLocalVarRef(ctx, o)
         case o: IR.Exp.GlobalVarRef => return postIRExpGlobalVarRef(ctx, o)
         case o: IR.Exp.EnumElementRef => return postIRExpEnumElementRef(ctx, o)
@@ -528,7 +528,7 @@ object IRTransformer {
       return TPostResult(ctx, None())
     }
 
-    @pure def postIRExpRegister(ctx: Context, o: IR.Exp.Register): TPostResult[Context, IR.Exp] = {
+    @pure def postIRExpTemp(ctx: Context, o: IR.Exp.Temp): TPostResult[Context, IR.Exp] = {
       return TPostResult(ctx, None())
     }
 
@@ -596,8 +596,8 @@ object IRTransformer {
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt]())
           }
           return r
-        case o: IR.Stmt.Assign.Register =>
-          val r: TPostResult[Context, IR.Stmt] = postIRStmtAssignRegister(ctx, o) match {
+        case o: IR.Stmt.Assign.Temp =>
+          val r: TPostResult[Context, IR.Stmt] = postIRStmtAssignTemp(ctx, o) match {
            case TPostResult(postCtx, Some(result: IR.Stmt)) => TPostResult(postCtx, Some[IR.Stmt](result))
            case TPostResult(_, Some(_)) => halt("Can only produce object of type IR.Stmt")
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt]())
@@ -628,8 +628,8 @@ object IRTransformer {
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt]())
           }
           return r
-        case o: IR.Stmt.Decl.Register =>
-          val r: TPostResult[Context, IR.Stmt] = postIRStmtDeclRegister(ctx, o) match {
+        case o: IR.Stmt.Decl.Temp =>
+          val r: TPostResult[Context, IR.Stmt] = postIRStmtDeclTemp(ctx, o) match {
            case TPostResult(postCtx, Some(result: IR.Stmt)) => TPostResult(postCtx, Some[IR.Stmt](result))
            case TPostResult(_, Some(_)) => halt("Can only produce object of type IR.Stmt")
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt]())
@@ -661,8 +661,8 @@ object IRTransformer {
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt.Ground]())
           }
           return r
-        case o: IR.Stmt.Assign.Register =>
-          val r: TPostResult[Context, IR.Stmt.Ground] = postIRStmtAssignRegister(ctx, o) match {
+        case o: IR.Stmt.Assign.Temp =>
+          val r: TPostResult[Context, IR.Stmt.Ground] = postIRStmtAssignTemp(ctx, o) match {
            case TPostResult(postCtx, Some(result: IR.Stmt.Ground)) => TPostResult(postCtx, Some[IR.Stmt.Ground](result))
            case TPostResult(_, Some(_)) => halt("Can only produce object of type IR.Stmt.Ground")
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt.Ground]())
@@ -689,8 +689,8 @@ object IRTransformer {
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt.Ground]())
           }
           return r
-        case o: IR.Stmt.Decl.Register =>
-          val r: TPostResult[Context, IR.Stmt.Ground] = postIRStmtDeclRegister(ctx, o) match {
+        case o: IR.Stmt.Decl.Temp =>
+          val r: TPostResult[Context, IR.Stmt.Ground] = postIRStmtDeclTemp(ctx, o) match {
            case TPostResult(postCtx, Some(result: IR.Stmt.Ground)) => TPostResult(postCtx, Some[IR.Stmt.Ground](result))
            case TPostResult(_, Some(_)) => halt("Can only produce object of type IR.Stmt.Ground")
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt.Ground]())
@@ -710,7 +710,7 @@ object IRTransformer {
       o match {
         case o: IR.Stmt.Assign.Local => return postIRStmtAssignLocal(ctx, o)
         case o: IR.Stmt.Assign.Global => return postIRStmtAssignGlobal(ctx, o)
-        case o: IR.Stmt.Assign.Register => return postIRStmtAssignRegister(ctx, o)
+        case o: IR.Stmt.Assign.Temp => return postIRStmtAssignTemp(ctx, o)
         case o: IR.Stmt.Assign.Field => return postIRStmtAssignField(ctx, o)
         case o: IR.Stmt.Assign.Index => return postIRStmtAssignIndex(ctx, o)
       }
@@ -724,7 +724,7 @@ object IRTransformer {
       return TPostResult(ctx, None())
     }
 
-    @pure def postIRStmtAssignRegister(ctx: Context, o: IR.Stmt.Assign.Register): TPostResult[Context, IR.Stmt.Assign] = {
+    @pure def postIRStmtAssignTemp(ctx: Context, o: IR.Stmt.Assign.Temp): TPostResult[Context, IR.Stmt.Assign] = {
       return TPostResult(ctx, None())
     }
 
@@ -761,8 +761,8 @@ object IRTransformer {
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt.Decl]())
           }
           return r
-        case o: IR.Stmt.Decl.Register =>
-          val r: TPostResult[Context, IR.Stmt.Decl] = postIRStmtDeclRegister(ctx, o) match {
+        case o: IR.Stmt.Decl.Temp =>
+          val r: TPostResult[Context, IR.Stmt.Decl] = postIRStmtDeclTemp(ctx, o) match {
            case TPostResult(postCtx, Some(result: IR.Stmt.Decl)) => TPostResult(postCtx, Some[IR.Stmt.Decl](result))
            case TPostResult(_, Some(_)) => halt("Can only produce object of type IR.Stmt.Decl")
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt.Decl]())
@@ -775,7 +775,7 @@ object IRTransformer {
     @pure def postIRStmtDeclGround(ctx: Context, o: IR.Stmt.Decl.Ground): TPostResult[Context, IR.Stmt.Decl.Ground] = {
       o match {
         case o: IR.Stmt.Decl.Local => return postIRStmtDeclLocal(ctx, o)
-        case o: IR.Stmt.Decl.Register => return postIRStmtDeclRegister(ctx, o)
+        case o: IR.Stmt.Decl.Temp => return postIRStmtDeclTemp(ctx, o)
       }
     }
 
@@ -783,7 +783,7 @@ object IRTransformer {
       return TPostResult(ctx, None())
     }
 
-    @pure def postIRStmtDeclRegister(ctx: Context, o: IR.Stmt.Decl.Register): TPostResult[Context, IR.Stmt.Decl.Ground] = {
+    @pure def postIRStmtDeclTemp(ctx: Context, o: IR.Stmt.Decl.Temp): TPostResult[Context, IR.Stmt.Decl.Ground] = {
       return TPostResult(ctx, None())
     }
 
@@ -1009,7 +1009,7 @@ import IRTransformer._
             TPostResult(preR.ctx, Some(o2))
           else
             TPostResult(preR.ctx, None())
-        case o2: IR.Exp.Register =>
+        case o2: IR.Exp.Temp =>
           val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
           if (hasChanged || r0.resultOpt.nonEmpty)
             TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
@@ -1139,7 +1139,7 @@ import IRTransformer._
             TPostResult(r0.ctx, Some(o2(rhs = r0.resultOpt.getOrElse(o2.rhs))))
           else
             TPostResult(r0.ctx, None())
-        case o2: IR.Stmt.Assign.Register =>
+        case o2: IR.Stmt.Assign.Temp =>
           val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.rhs)
           if (hasChanged || r0.resultOpt.nonEmpty)
             TPostResult(r0.ctx, Some(o2(rhs = r0.resultOpt.getOrElse(o2.rhs))))
@@ -1196,7 +1196,7 @@ import IRTransformer._
             TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
           else
             TPostResult(r0.ctx, None())
-        case o2: IR.Stmt.Decl.Register =>
+        case o2: IR.Stmt.Decl.Temp =>
           val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
           if (hasChanged || r0.resultOpt.nonEmpty)
             TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
@@ -1246,7 +1246,7 @@ import IRTransformer._
             TPostResult(r0.ctx, Some(o2(rhs = r0.resultOpt.getOrElse(o2.rhs))))
           else
             TPostResult(r0.ctx, None())
-        case o2: IR.Stmt.Assign.Register =>
+        case o2: IR.Stmt.Assign.Temp =>
           val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.rhs)
           if (hasChanged || r0.resultOpt.nonEmpty)
             TPostResult(r0.ctx, Some(o2(rhs = r0.resultOpt.getOrElse(o2.rhs))))
@@ -1275,7 +1275,7 @@ import IRTransformer._
             TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
           else
             TPostResult(r0.ctx, None())
-        case o2: IR.Stmt.Decl.Register =>
+        case o2: IR.Stmt.Decl.Temp =>
           val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
           if (hasChanged || r0.resultOpt.nonEmpty)
             TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
@@ -1325,7 +1325,7 @@ import IRTransformer._
             TPostResult(r0.ctx, Some(o2(rhs = r0.resultOpt.getOrElse(o2.rhs))))
           else
             TPostResult(r0.ctx, None())
-        case o2: IR.Stmt.Assign.Register =>
+        case o2: IR.Stmt.Assign.Temp =>
           val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.rhs)
           if (hasChanged || r0.resultOpt.nonEmpty)
             TPostResult(r0.ctx, Some(o2(rhs = r0.resultOpt.getOrElse(o2.rhs))))
@@ -1379,7 +1379,7 @@ import IRTransformer._
             TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
           else
             TPostResult(r0.ctx, None())
-        case o2: IR.Stmt.Decl.Register =>
+        case o2: IR.Stmt.Decl.Temp =>
           val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
           if (hasChanged || r0.resultOpt.nonEmpty)
             TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
@@ -1422,7 +1422,7 @@ import IRTransformer._
             TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
           else
             TPostResult(r0.ctx, None())
-        case o2: IR.Stmt.Decl.Register =>
+        case o2: IR.Stmt.Decl.Temp =>
           val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
           if (hasChanged || r0.resultOpt.nonEmpty)
             TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))

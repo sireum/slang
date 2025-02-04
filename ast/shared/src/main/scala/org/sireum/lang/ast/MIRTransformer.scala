@@ -81,9 +81,9 @@ object MIRTransformer {
 
   val PostResultIRExpString: MOption[IR.Exp] = MNone()
 
-  val PreResultIRExpRegister: PreResult[IR.Exp] = PreResult(T, MNone())
+  val PreResultIRExpTemp: PreResult[IR.Exp] = PreResult(T, MNone())
 
-  val PostResultIRExpRegister: MOption[IR.Exp] = MNone()
+  val PostResultIRExpTemp: MOption[IR.Exp] = MNone()
 
   val PreResultIRExpLocalVarRef: PreResult[IR.Exp] = PreResult(T, MNone())
 
@@ -153,9 +153,9 @@ object MIRTransformer {
 
   val PostResultIRStmtAssignGlobal: MOption[IR.Stmt.Assign] = MNone()
 
-  val PreResultIRStmtAssignRegister: PreResult[IR.Stmt.Assign] = PreResult(T, MNone())
+  val PreResultIRStmtAssignTemp: PreResult[IR.Stmt.Assign] = PreResult(T, MNone())
 
-  val PostResultIRStmtAssignRegister: MOption[IR.Stmt.Assign] = MNone()
+  val PostResultIRStmtAssignTemp: MOption[IR.Stmt.Assign] = MNone()
 
   val PreResultIRStmtAssignField: PreResult[IR.Stmt.Assign] = PreResult(T, MNone())
 
@@ -185,9 +185,9 @@ object MIRTransformer {
 
   val PostResultIRStmtDeclLocal: MOption[IR.Stmt.Decl.Ground] = MNone()
 
-  val PreResultIRStmtDeclRegister: PreResult[IR.Stmt.Decl.Ground] = PreResult(T, MNone())
+  val PreResultIRStmtDeclTemp: PreResult[IR.Stmt.Decl.Ground] = PreResult(T, MNone())
 
-  val PostResultIRStmtDeclRegister: MOption[IR.Stmt.Decl.Ground] = MNone()
+  val PostResultIRStmtDeclTemp: MOption[IR.Stmt.Decl.Ground] = MNone()
 
   val PreResultIRStmtDeclMultiple: PreResult[IR.Stmt.Decl] = PreResult(T, MNone())
 
@@ -295,7 +295,7 @@ import MIRTransformer._
       case o: IR.Exp.F64 => return preIRExpF64(o)
       case o: IR.Exp.R => return preIRExpR(o)
       case o: IR.Exp.String => return preIRExpString(o)
-      case o: IR.Exp.Register => return preIRExpRegister(o)
+      case o: IR.Exp.Temp => return preIRExpTemp(o)
       case o: IR.Exp.LocalVarRef => return preIRExpLocalVarRef(o)
       case o: IR.Exp.GlobalVarRef => return preIRExpGlobalVarRef(o)
       case o: IR.Exp.EnumElementRef => return preIRExpEnumElementRef(o)
@@ -335,8 +335,8 @@ import MIRTransformer._
     return PreResultIRExpString
   }
 
-  def preIRExpRegister(o: IR.Exp.Register): PreResult[IR.Exp] = {
-    return PreResultIRExpRegister
+  def preIRExpTemp(o: IR.Exp.Temp): PreResult[IR.Exp] = {
+    return PreResultIRExpTemp
   }
 
   def preIRExpLocalVarRef(o: IR.Exp.LocalVarRef): PreResult[IR.Exp] = {
@@ -403,8 +403,8 @@ import MIRTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt]())
         }
         return r
-      case o: IR.Stmt.Assign.Register =>
-        val r: PreResult[IR.Stmt] = preIRStmtAssignRegister(o) match {
+      case o: IR.Stmt.Assign.Temp =>
+        val r: PreResult[IR.Stmt] = preIRStmtAssignTemp(o) match {
          case PreResult(continu, MSome(r: IR.Stmt)) => PreResult(continu, MSome[IR.Stmt](r))
          case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Stmt")
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt]())
@@ -435,8 +435,8 @@ import MIRTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt]())
         }
         return r
-      case o: IR.Stmt.Decl.Register =>
-        val r: PreResult[IR.Stmt] = preIRStmtDeclRegister(o) match {
+      case o: IR.Stmt.Decl.Temp =>
+        val r: PreResult[IR.Stmt] = preIRStmtDeclTemp(o) match {
          case PreResult(continu, MSome(r: IR.Stmt)) => PreResult(continu, MSome[IR.Stmt](r))
          case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Stmt")
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt]())
@@ -468,8 +468,8 @@ import MIRTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt.Ground]())
         }
         return r
-      case o: IR.Stmt.Assign.Register =>
-        val r: PreResult[IR.Stmt.Ground] = preIRStmtAssignRegister(o) match {
+      case o: IR.Stmt.Assign.Temp =>
+        val r: PreResult[IR.Stmt.Ground] = preIRStmtAssignTemp(o) match {
          case PreResult(continu, MSome(r: IR.Stmt.Ground)) => PreResult(continu, MSome[IR.Stmt.Ground](r))
          case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Stmt.Ground")
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt.Ground]())
@@ -496,8 +496,8 @@ import MIRTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt.Ground]())
         }
         return r
-      case o: IR.Stmt.Decl.Register =>
-        val r: PreResult[IR.Stmt.Ground] = preIRStmtDeclRegister(o) match {
+      case o: IR.Stmt.Decl.Temp =>
+        val r: PreResult[IR.Stmt.Ground] = preIRStmtDeclTemp(o) match {
          case PreResult(continu, MSome(r: IR.Stmt.Ground)) => PreResult(continu, MSome[IR.Stmt.Ground](r))
          case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Stmt.Ground")
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt.Ground]())
@@ -517,7 +517,7 @@ import MIRTransformer._
     o match {
       case o: IR.Stmt.Assign.Local => return preIRStmtAssignLocal(o)
       case o: IR.Stmt.Assign.Global => return preIRStmtAssignGlobal(o)
-      case o: IR.Stmt.Assign.Register => return preIRStmtAssignRegister(o)
+      case o: IR.Stmt.Assign.Temp => return preIRStmtAssignTemp(o)
       case o: IR.Stmt.Assign.Field => return preIRStmtAssignField(o)
       case o: IR.Stmt.Assign.Index => return preIRStmtAssignIndex(o)
     }
@@ -531,8 +531,8 @@ import MIRTransformer._
     return PreResultIRStmtAssignGlobal
   }
 
-  def preIRStmtAssignRegister(o: IR.Stmt.Assign.Register): PreResult[IR.Stmt.Assign] = {
-    return PreResultIRStmtAssignRegister
+  def preIRStmtAssignTemp(o: IR.Stmt.Assign.Temp): PreResult[IR.Stmt.Assign] = {
+    return PreResultIRStmtAssignTemp
   }
 
   def preIRStmtAssignField(o: IR.Stmt.Assign.Field): PreResult[IR.Stmt.Assign] = {
@@ -568,8 +568,8 @@ import MIRTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt.Decl]())
         }
         return r
-      case o: IR.Stmt.Decl.Register =>
-        val r: PreResult[IR.Stmt.Decl] = preIRStmtDeclRegister(o) match {
+      case o: IR.Stmt.Decl.Temp =>
+        val r: PreResult[IR.Stmt.Decl] = preIRStmtDeclTemp(o) match {
          case PreResult(continu, MSome(r: IR.Stmt.Decl)) => PreResult(continu, MSome[IR.Stmt.Decl](r))
          case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Stmt.Decl")
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt.Decl]())
@@ -582,7 +582,7 @@ import MIRTransformer._
   def preIRStmtDeclGround(o: IR.Stmt.Decl.Ground): PreResult[IR.Stmt.Decl.Ground] = {
     o match {
       case o: IR.Stmt.Decl.Local => return preIRStmtDeclLocal(o)
-      case o: IR.Stmt.Decl.Register => return preIRStmtDeclRegister(o)
+      case o: IR.Stmt.Decl.Temp => return preIRStmtDeclTemp(o)
     }
   }
 
@@ -590,8 +590,8 @@ import MIRTransformer._
     return PreResultIRStmtDeclLocal
   }
 
-  def preIRStmtDeclRegister(o: IR.Stmt.Decl.Register): PreResult[IR.Stmt.Decl.Ground] = {
-    return PreResultIRStmtDeclRegister
+  def preIRStmtDeclTemp(o: IR.Stmt.Decl.Temp): PreResult[IR.Stmt.Decl.Ground] = {
+    return PreResultIRStmtDeclTemp
   }
 
   def preIRStmtDeclMultiple(o: IR.Stmt.Decl.Multiple): PreResult[IR.Stmt.Decl] = {
@@ -726,7 +726,7 @@ import MIRTransformer._
       case o: IR.Exp.F64 => return postIRExpF64(o)
       case o: IR.Exp.R => return postIRExpR(o)
       case o: IR.Exp.String => return postIRExpString(o)
-      case o: IR.Exp.Register => return postIRExpRegister(o)
+      case o: IR.Exp.Temp => return postIRExpTemp(o)
       case o: IR.Exp.LocalVarRef => return postIRExpLocalVarRef(o)
       case o: IR.Exp.GlobalVarRef => return postIRExpGlobalVarRef(o)
       case o: IR.Exp.EnumElementRef => return postIRExpEnumElementRef(o)
@@ -766,8 +766,8 @@ import MIRTransformer._
     return PostResultIRExpString
   }
 
-  def postIRExpRegister(o: IR.Exp.Register): MOption[IR.Exp] = {
-    return PostResultIRExpRegister
+  def postIRExpTemp(o: IR.Exp.Temp): MOption[IR.Exp] = {
+    return PostResultIRExpTemp
   }
 
   def postIRExpLocalVarRef(o: IR.Exp.LocalVarRef): MOption[IR.Exp] = {
@@ -834,8 +834,8 @@ import MIRTransformer._
          case _ => MNone[IR.Stmt]()
         }
         return r
-      case o: IR.Stmt.Assign.Register =>
-        val r: MOption[IR.Stmt] = postIRStmtAssignRegister(o) match {
+      case o: IR.Stmt.Assign.Temp =>
+        val r: MOption[IR.Stmt] = postIRStmtAssignTemp(o) match {
          case MSome(result: IR.Stmt) => MSome[IR.Stmt](result)
          case MSome(_) => halt("Can only produce object of type IR.Stmt")
          case _ => MNone[IR.Stmt]()
@@ -866,8 +866,8 @@ import MIRTransformer._
          case _ => MNone[IR.Stmt]()
         }
         return r
-      case o: IR.Stmt.Decl.Register =>
-        val r: MOption[IR.Stmt] = postIRStmtDeclRegister(o) match {
+      case o: IR.Stmt.Decl.Temp =>
+        val r: MOption[IR.Stmt] = postIRStmtDeclTemp(o) match {
          case MSome(result: IR.Stmt) => MSome[IR.Stmt](result)
          case MSome(_) => halt("Can only produce object of type IR.Stmt")
          case _ => MNone[IR.Stmt]()
@@ -899,8 +899,8 @@ import MIRTransformer._
          case _ => MNone[IR.Stmt.Ground]()
         }
         return r
-      case o: IR.Stmt.Assign.Register =>
-        val r: MOption[IR.Stmt.Ground] = postIRStmtAssignRegister(o) match {
+      case o: IR.Stmt.Assign.Temp =>
+        val r: MOption[IR.Stmt.Ground] = postIRStmtAssignTemp(o) match {
          case MSome(result: IR.Stmt.Ground) => MSome[IR.Stmt.Ground](result)
          case MSome(_) => halt("Can only produce object of type IR.Stmt.Ground")
          case _ => MNone[IR.Stmt.Ground]()
@@ -927,8 +927,8 @@ import MIRTransformer._
          case _ => MNone[IR.Stmt.Ground]()
         }
         return r
-      case o: IR.Stmt.Decl.Register =>
-        val r: MOption[IR.Stmt.Ground] = postIRStmtDeclRegister(o) match {
+      case o: IR.Stmt.Decl.Temp =>
+        val r: MOption[IR.Stmt.Ground] = postIRStmtDeclTemp(o) match {
          case MSome(result: IR.Stmt.Ground) => MSome[IR.Stmt.Ground](result)
          case MSome(_) => halt("Can only produce object of type IR.Stmt.Ground")
          case _ => MNone[IR.Stmt.Ground]()
@@ -948,7 +948,7 @@ import MIRTransformer._
     o match {
       case o: IR.Stmt.Assign.Local => return postIRStmtAssignLocal(o)
       case o: IR.Stmt.Assign.Global => return postIRStmtAssignGlobal(o)
-      case o: IR.Stmt.Assign.Register => return postIRStmtAssignRegister(o)
+      case o: IR.Stmt.Assign.Temp => return postIRStmtAssignTemp(o)
       case o: IR.Stmt.Assign.Field => return postIRStmtAssignField(o)
       case o: IR.Stmt.Assign.Index => return postIRStmtAssignIndex(o)
     }
@@ -962,8 +962,8 @@ import MIRTransformer._
     return PostResultIRStmtAssignGlobal
   }
 
-  def postIRStmtAssignRegister(o: IR.Stmt.Assign.Register): MOption[IR.Stmt.Assign] = {
-    return PostResultIRStmtAssignRegister
+  def postIRStmtAssignTemp(o: IR.Stmt.Assign.Temp): MOption[IR.Stmt.Assign] = {
+    return PostResultIRStmtAssignTemp
   }
 
   def postIRStmtAssignField(o: IR.Stmt.Assign.Field): MOption[IR.Stmt.Assign] = {
@@ -999,8 +999,8 @@ import MIRTransformer._
          case _ => MNone[IR.Stmt.Decl]()
         }
         return r
-      case o: IR.Stmt.Decl.Register =>
-        val r: MOption[IR.Stmt.Decl] = postIRStmtDeclRegister(o) match {
+      case o: IR.Stmt.Decl.Temp =>
+        val r: MOption[IR.Stmt.Decl] = postIRStmtDeclTemp(o) match {
          case MSome(result: IR.Stmt.Decl) => MSome[IR.Stmt.Decl](result)
          case MSome(_) => halt("Can only produce object of type IR.Stmt.Decl")
          case _ => MNone[IR.Stmt.Decl]()
@@ -1013,7 +1013,7 @@ import MIRTransformer._
   def postIRStmtDeclGround(o: IR.Stmt.Decl.Ground): MOption[IR.Stmt.Decl.Ground] = {
     o match {
       case o: IR.Stmt.Decl.Local => return postIRStmtDeclLocal(o)
-      case o: IR.Stmt.Decl.Register => return postIRStmtDeclRegister(o)
+      case o: IR.Stmt.Decl.Temp => return postIRStmtDeclTemp(o)
     }
   }
 
@@ -1021,8 +1021,8 @@ import MIRTransformer._
     return PostResultIRStmtDeclLocal
   }
 
-  def postIRStmtDeclRegister(o: IR.Stmt.Decl.Register): MOption[IR.Stmt.Decl.Ground] = {
-    return PostResultIRStmtDeclRegister
+  def postIRStmtDeclTemp(o: IR.Stmt.Decl.Temp): MOption[IR.Stmt.Decl.Ground] = {
+    return PostResultIRStmtDeclTemp
   }
 
   def postIRStmtDeclMultiple(o: IR.Stmt.Decl.Multiple): MOption[IR.Stmt.Decl] = {
@@ -1209,7 +1209,7 @@ import MIRTransformer._
             MSome(o2)
           else
             MNone()
-        case o2: IR.Exp.Register =>
+        case o2: IR.Exp.Temp =>
           val r0: MOption[Typed] = transformTyped(o2.tipe)
           if (hasChanged || r0.nonEmpty)
             MSome(o2(tipe = r0.getOrElse(o2.tipe)))
@@ -1339,7 +1339,7 @@ import MIRTransformer._
             MSome(o2(rhs = r0.getOrElse(o2.rhs)))
           else
             MNone()
-        case o2: IR.Stmt.Assign.Register =>
+        case o2: IR.Stmt.Assign.Temp =>
           val r0: MOption[IR.Exp] = transformIRExp(o2.rhs)
           if (hasChanged || r0.nonEmpty)
             MSome(o2(rhs = r0.getOrElse(o2.rhs)))
@@ -1396,7 +1396,7 @@ import MIRTransformer._
             MSome(o2(tipe = r0.getOrElse(o2.tipe)))
           else
             MNone()
-        case o2: IR.Stmt.Decl.Register =>
+        case o2: IR.Stmt.Decl.Temp =>
           val r0: MOption[Typed] = transformTyped(o2.tipe)
           if (hasChanged || r0.nonEmpty)
             MSome(o2(tipe = r0.getOrElse(o2.tipe)))
@@ -1446,7 +1446,7 @@ import MIRTransformer._
             MSome(o2(rhs = r0.getOrElse(o2.rhs)))
           else
             MNone()
-        case o2: IR.Stmt.Assign.Register =>
+        case o2: IR.Stmt.Assign.Temp =>
           val r0: MOption[IR.Exp] = transformIRExp(o2.rhs)
           if (hasChanged || r0.nonEmpty)
             MSome(o2(rhs = r0.getOrElse(o2.rhs)))
@@ -1475,7 +1475,7 @@ import MIRTransformer._
             MSome(o2(tipe = r0.getOrElse(o2.tipe)))
           else
             MNone()
-        case o2: IR.Stmt.Decl.Register =>
+        case o2: IR.Stmt.Decl.Temp =>
           val r0: MOption[Typed] = transformTyped(o2.tipe)
           if (hasChanged || r0.nonEmpty)
             MSome(o2(tipe = r0.getOrElse(o2.tipe)))
@@ -1525,7 +1525,7 @@ import MIRTransformer._
             MSome(o2(rhs = r0.getOrElse(o2.rhs)))
           else
             MNone()
-        case o2: IR.Stmt.Assign.Register =>
+        case o2: IR.Stmt.Assign.Temp =>
           val r0: MOption[IR.Exp] = transformIRExp(o2.rhs)
           if (hasChanged || r0.nonEmpty)
             MSome(o2(rhs = r0.getOrElse(o2.rhs)))
@@ -1579,7 +1579,7 @@ import MIRTransformer._
             MSome(o2(tipe = r0.getOrElse(o2.tipe)))
           else
             MNone()
-        case o2: IR.Stmt.Decl.Register =>
+        case o2: IR.Stmt.Decl.Temp =>
           val r0: MOption[Typed] = transformTyped(o2.tipe)
           if (hasChanged || r0.nonEmpty)
             MSome(o2(tipe = r0.getOrElse(o2.tipe)))
@@ -1622,7 +1622,7 @@ import MIRTransformer._
             MSome(o2(tipe = r0.getOrElse(o2.tipe)))
           else
             MNone()
-        case o2: IR.Stmt.Decl.Register =>
+        case o2: IR.Stmt.Decl.Temp =>
           val r0: MOption[Typed] = transformTyped(o2.tipe)
           if (hasChanged || r0.nonEmpty)
             MSome(o2(tipe = r0.getOrElse(o2.tipe)))

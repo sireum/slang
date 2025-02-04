@@ -82,7 +82,7 @@ object IR {
       @strictpure def prettyST: ST = ops.StringOps(value).escapeST
     }
 
-    @datatype class Register(val n: Z, val tipe: Typed, val pos: Position) extends Exp {
+    @datatype class Temp(val n: Z, val tipe: Typed, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"$$$n"
     }
 
@@ -237,7 +237,7 @@ object IR {
         @strictpure def prettyST: ST = st"${(name, ".")} ${if (copy) ":=" else "="} ${rhs.prettyST}"
       }
 
-      @datatype class Register(val lhs: Z, val rhs: Exp, val pos: Position) extends Assign {
+      @datatype class Temp(val lhs: Z, val rhs: Exp, val pos: Position) extends Assign {
         @strictpure def prettyST: ST = st"$$$lhs = ${rhs.prettyST}"
       }
 
@@ -291,7 +291,7 @@ object IR {
         @strictpure def prettyST: ST = st"${if (undecl) "de" else ""}local $id: $tipe"
       }
 
-      @datatype class Register(val undecl: B, val tipe: Typed, val n: Z, val pos: Position) extends Ground {
+      @datatype class Temp(val undecl: B, val tipe: Typed, val n: Z, val pos: Position) extends Ground {
         @strictpure def undeclare: Ground = {
           val thiz = this
           thiz(undecl = T)
@@ -310,7 +310,7 @@ object IR {
           for (d <- decls) {
             d match {
               case d: Local => ds = ds :+ (if (undecl) st"${d.id}" else st"${d.id}: ${d.tipe}")
-              case d: Register => ds = ds :+ (if (undecl) st"$$${d.n}" else st"$$${d.n}: ${d.tipe}")
+              case d: Temp => ds = ds :+ (if (undecl) st"$$${d.n}" else st"$$${d.n}: ${d.tipe}")
             }
           }
           val r = st"${if (undecl) "un" else ""}decls ${(ds, ", ")}"
