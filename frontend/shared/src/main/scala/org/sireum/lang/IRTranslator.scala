@@ -84,6 +84,7 @@ object IRTranslator {
 
   def toBasic(body: IR.Body.Block, pos: message.Position): IR.Body.Basic = {
     var _freshLabel = 1
+
     def freshLabel(): Z = {
       val r = _freshLabel
       _freshLabel = _freshLabel + 1
@@ -248,6 +249,7 @@ object IRTranslator {
                   return IR.Exp.Register(n, t, rhsPos)
               }
             }
+
             lhs.resOpt.get match {
               case res: AST.ResolvedInfo.Var if res.isInObject =>
                 stmts = stmts :+ IR.Stmt.Assign.Global(copy, res.owner :+ res.id, selectRhs(), pos)
@@ -375,6 +377,14 @@ object IRTranslator {
     return T
   }
 
+  @memoize def isSeq(t: AST.Typed): B = {
+    t match {
+      case t: AST.Typed.Name => return t.ids == AST.Typed.isName || t.ids == AST.Typed.msName
+      case _ =>
+    }
+    return F
+  }
+
   @memoize def shouldCopy(t: AST.Typed): B = {
     t match {
       case t: AST.Typed.Name =>
@@ -410,9 +420,11 @@ object IRTranslator {
         return e
       }
     }
+
     def thiz(pos: message.Position): IR.Exp = {
       return norm3AC(IR.Exp.LocalVarRef(T, methodContext, "this", methodContext.receiverType, pos))
     }
+
     val pos = exp.posOpt.get
     exp match {
       case exp: AST.Exp.LitB => return norm3AC(IR.Exp.Bool(exp.value, pos))
@@ -473,24 +485,69 @@ object IRTranslator {
       case exp: AST.Exp.Binary =>
         val t = exp.typedOpt.get
         if (isScalar(t)) {
-          var kind = exp.attr.resOpt.get.asInstanceOf[AST.ResolvedInfo.BuiltIn].kind
-          kind match {
-            case AST.ResolvedInfo.BuiltIn.Kind.BinaryEq => kind = AST.ResolvedInfo.BuiltIn.Kind.BinaryEquiv
-            case AST.ResolvedInfo.BuiltIn.Kind.BinaryNe => kind = AST.ResolvedInfo.BuiltIn.Kind.BinaryInequiv
-            case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondAnd if threeAddressCode =>
-              return translateExp(AST.Exp.If(exp.left, exp.right, AST.Exp.LitB(T, AST.Attr(exp.posOpt)), AST.TypedAttr(exp.posOpt, AST.Typed.bOpt)))
-            case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondOr if threeAddressCode =>
-              return translateExp(AST.Exp.If(exp.left, AST.Exp.LitB(T, AST.Attr(exp.posOpt)), exp.right, AST.TypedAttr(exp.posOpt, AST.Typed.bOpt)))
-            case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondImply if threeAddressCode =>
-              return translateExp(AST.Exp.If(exp.left, exp.right, AST.Exp.LitB(F, AST.Attr(exp.posOpt)), AST.TypedAttr(exp.posOpt, AST.Typed.bOpt)))
-            case _ =>
+          val kind: IR.Exp.Binary.Op.Type = exp.attr.resOpt.get.asInstanceOf[AST.ResolvedInfo.BuiltIn].kind match {
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryAdd => IR.Exp.Binary.Op.Add
+            case AST.ResolvedInfo.BuiltIn.Kind.BinarySub => IR.Exp.Binary.Op.Sub
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryMul => IR.Exp.Binary.Op.Mul
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryDiv => IR.Exp.Binary.Op.Div
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryRem => IR.Exp.Binary.Op.Rem
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryAnd => IR.Exp.Binary.Op.And
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryOr => IR.Exp.Binary.Op.Or
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryImply => IR.Exp.Binary.Op.Imply
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryXor => IR.Exp.Binary.Op.Xor
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryEq => IR.Exp.Binary.Op.Eq
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryNe => IR.Exp.Binary.Op.Ne
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryEquiv => IR.Exp.Binary.Op.Eq
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryInequiv => IR.Exp.Binary.Op.Ne
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryFpEq => IR.Exp.Binary.Op.FpEq
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryFpNe => IR.Exp.Binary.Op.FpNe
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryGe => IR.Exp.Binary.Op.Ge
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryGt => IR.Exp.Binary.Op.Gt
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryLe => IR.Exp.Binary.Op.Le
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryLt => IR.Exp.Binary.Op.Lt
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryShr => IR.Exp.Binary.Op.Shr
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryUshr => IR.Exp.Binary.Op.Ushr
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryShl => IR.Exp.Binary.Op.Shl
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondAnd =>
+              if (threeAddressCode) {
+                return translateExp(AST.Exp.If(exp.left, exp.right, AST.Exp.LitB(T, AST.Attr(exp.posOpt)),
+                  AST.TypedAttr(exp.posOpt, AST.Typed.bOpt)))
+              }
+              IR.Exp.Binary.Op.CondAnd
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondOr =>
+              if (threeAddressCode) {
+                return translateExp(AST.Exp.If(exp.left, AST.Exp.LitB(T, AST.Attr(exp.posOpt)), exp.right,
+                  AST.TypedAttr(exp.posOpt, AST.Typed.bOpt)))
+              }
+              IR.Exp.Binary.Op.CondOr
+            case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondImply =>
+              if (threeAddressCode) {
+                return translateExp(AST.Exp.If(exp.left, exp.right, AST.Exp.LitB(F, AST.Attr(exp.posOpt)),
+                  AST.TypedAttr(exp.posOpt, AST.Typed.bOpt)))
+              }
+              IR.Exp.Binary.Op.CondImply
+            case _ => halt(s"Infeasible: ${exp.attr.resOpt.get}")
           }
           val left = translateExp(exp.left)
           val right = translateExp(exp.right)
           return norm3AC(IR.Exp.Binary(t, left, kind, right, pos))
-        } else {
-          halt(s"TODO: $exp")
         }
+        if (isSeq(t)) {
+          val kindOpt: Option[IR.Exp.Binary.Op.Type] = exp.op match {
+            case AST.Exp.BinaryOp.Append => Some(IR.Exp.Binary.Op.Append)
+            case AST.Exp.BinaryOp.Prepend => Some(IR.Exp.Binary.Op.Prepend)
+            case AST.Exp.BinaryOp.AppendAll => Some(IR.Exp.Binary.Op.AppendAll)
+            case _ => None()
+          }
+          kindOpt match {
+            case Some(kind) =>
+              val left = translateExp(exp.left)
+              val right = translateExp(exp.right)
+              return norm3AC(IR.Exp.Binary(t, left, kind, right, pos))
+            case _ =>
+          }
+        }
+        halt(s"TODO: $exp")
       case exp: AST.Exp.If =>
         val t = exp.typedOpt.get
         val cond = translateExp(exp.cond)
