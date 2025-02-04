@@ -279,29 +279,43 @@ object IR {
 
     object Decl {
 
-      @datatype class Local(val undecl: B, val isVal: B, val tipe: Typed, val id: String, val pos: Position) extends Decl {
-        @strictpure def undeclare: Decl = {
+      @datatype trait Ground extends Decl {
+        @strictpure def undeclare: Ground
+      }
+
+      @datatype class Local(val undecl: B, val isVal: B, val tipe: Typed, val id: String, val pos: Position) extends Ground {
+        @strictpure def undeclare: Ground = {
           val thiz = this
           thiz(undecl = T)
         }
         @strictpure def prettyST: ST = st"${if (undecl) "de" else ""}local $id: $tipe"
       }
 
-      @datatype class Register(val undecl: B, val tipe: Typed, val n: Z, val pos: Position) extends Decl {
-        @strictpure def undeclare: Decl = {
+      @datatype class Register(val undecl: B, val tipe: Typed, val n: Z, val pos: Position) extends Ground {
+        @strictpure def undeclare: Ground = {
           val thiz = this
           thiz(undecl = T)
         }
         @strictpure def prettyST: ST = st"${if (undecl) "de" else ""}register $$$n: $tipe"
       }
 
-      @datatype class Multiple(val undecl: B, val decls: ISZ[Decl]) extends Decl {
+      @datatype class Multiple(val undecl: B, val decls: ISZ[Ground]) extends Decl {
         @strictpure def pos: Position = decls(0).pos.to(decls(decls.size - 1).pos)
         @strictpure def undeclare: Decl = {
           val thiz = this
           thiz(undecl = T, decls = for (d <- decls) yield d.undeclare)
         }
-        @strictpure def prettyST: ST = st"${(for (d <- decls) yield d.prettyST, "\n")}"
+        @pure def prettyST: ST = {
+          var ds = ISZ[ST]()
+          for (d <- decls) {
+            d match {
+              case d: Local => ds = ds :+ (if (undecl) st"${d.id}" else st"${d.id}: ${d.tipe}")
+              case d: Register => ds = ds :+ (if (undecl) st"$$${d.n}" else st"$$${d.n}: ${d.tipe}")
+            }
+          }
+          val r = st"${if (undecl) "un" else ""}decls ${(ds, ", ")}"
+          return r
+        }
       }
 
     }
