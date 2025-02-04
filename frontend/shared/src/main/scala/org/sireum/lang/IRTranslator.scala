@@ -36,11 +36,11 @@ import org.sireum.lang.{ast => AST}
 object IRTranslator {
   @record class BlockDeclPreamble extends MIRTransformer {
     override def postIRStmtBlock(o: Stmt.Block): MOption[IR.Stmt] = {
-      var decls = ISZ[IR.Stmt.Decl.Ground]()
+      var decls = ISZ[IR.Stmt.Decl.Single]()
       var nonDecls = ISZ[IR.Stmt]()
       for (stmt <- o.stmts) {
         stmt match {
-          case stmt: IR.Stmt.Decl.Ground => decls = decls :+ stmt
+          case stmt: IR.Stmt.Decl.Single => decls = decls :+ stmt
           case _ => nonDecls = nonDecls :+ stmt
         }
       }
@@ -49,7 +49,7 @@ object IRTranslator {
   }
 }
 
-@record class IRTranslator(val threeAddressCode: B, val th: TypeHierarchy) {
+@record class IRTranslator(val threeAddressCode: B, val undeclare: B, val mergeDecls: B, val th: TypeHierarchy) {
 
   var methodContext: IR.MethodContext = IR.MethodContext.empty
   var _freshTemp: Z = 0
@@ -95,14 +95,14 @@ object IRTranslator {
     var grounds = ISZ[IR.Stmt.Ground]()
     var decls = ISZ[IR.Stmt.Decl]()
 
-    def mergeDecls(stmts: ISZ[IR.Stmt.Ground]): ISZ[IR.Stmt.Ground] = {
+    def mergeMultipleDecls(stmts: ISZ[IR.Stmt.Ground]): ISZ[IR.Stmt.Ground] = {
       var r = ISZ[IR.Stmt.Ground]()
       var i = 0
       while (i < stmts.size) {
         stmts(i) match {
           case stmt: IR.Stmt.Decl.Multiple =>
             var j = i
-            var mdecls = ISZ[IR.Stmt.Decl.Ground]()
+            var mdecls = ISZ[IR.Stmt.Decl.Single]()
             while (j < stmts.size && stmts(j).isInstanceOf[IR.Stmt.Decl.Multiple] && stmts(j).asInstanceOf[IR.Stmt.Decl.Multiple].undecl == stmt.undecl) {
               mdecls = mdecls ++ stmts(j).asInstanceOf[IR.Stmt.Decl.Multiple].decls
               j = j + 1
@@ -118,7 +118,7 @@ object IRTranslator {
     }
 
     @pure def basicBlock(label:Z, stmts: ISZ[IR.Stmt.Ground], jump: IR.Jump): IR.BasicBlock = {
-      return IR.BasicBlock(label, mergeDecls(stmts), jump)
+      return if (this.mergeDecls) IR.BasicBlock(label, stmts, jump) else IR.BasicBlock(label, stmts, jump)
     }
 
     def stmtToBasic(label: Z, stmt: IR.Stmt): Option[Z] = {
@@ -135,8 +135,10 @@ object IRTranslator {
               Some(IR.Exp.LocalVarRef(F, methodContext, "Res", exp.tipe, exp.pos))
             case _ => None()
           }
-          for (d <- decls) {
-            grounds = grounds :+ d.undeclare
+          if (undeclare) {
+            for (d <- decls) {
+              grounds = grounds :+ d.undeclare
+            }
           }
           blocks = blocks :+ basicBlock(label, grounds, IR.Jump.Return(expOpt, stmt.pos))
           grounds = ISZ()
@@ -199,8 +201,10 @@ object IRTranslator {
           case _ => return None()
         }
       }
-      for (d <- decls) {
-        grounds = grounds :+ d.undeclare
+      if (undeclare) {
+        for (d <- decls) {
+          grounds = grounds :+ d.undeclare
+        }
       }
       decls = oldDecls
       return Some(l)
@@ -211,7 +215,7 @@ object IRTranslator {
       case _ =>
     }
     if (methodContext.t.ret != AST.Typed.unit) {
-      blocks = blocks(0 ~> blocks(0)(grounds = mergeDecls(
+      blocks = blocks(0 ~> blocks(0)(grounds = mergeMultipleDecls(
         IR.Stmt.Decl.Multiple(F, ISZ(IR.Stmt.Decl.Local(F, F, methodContext.t.ret, "Res", pos))) +: blocks(0).grounds)))
     }
     return IR.Body.Basic(blocks)

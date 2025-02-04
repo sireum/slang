@@ -279,27 +279,27 @@ object IR {
 
     object Decl {
 
-      @datatype trait Ground extends Decl {
-        @strictpure def undeclare: Ground
+      @datatype trait Single extends Decl {
+        @strictpure def undeclare: Single
       }
 
-      @datatype class Local(val undecl: B, val isVal: B, val tipe: Typed, val id: String, val pos: Position) extends Ground {
-        @strictpure def undeclare: Ground = {
+      @datatype class Local(val undecl: B, val isVal: B, val tipe: Typed, val id: String, val pos: Position) extends Single {
+        @strictpure def undeclare: Single = {
           val thiz = this
           thiz(undecl = T)
         }
         @strictpure def prettyST: ST = st"${if (undecl) "de" else ""}local $id: $tipe"
       }
 
-      @datatype class Temp(val undecl: B, val tipe: Typed, val n: Z, val pos: Position) extends Ground {
-        @strictpure def undeclare: Ground = {
+      @datatype class Temp(val undecl: B, val tipe: Typed, val n: Z, val pos: Position) extends Single {
+        @strictpure def undeclare: Single = {
           val thiz = this
           thiz(undecl = T)
         }
-        @strictpure def prettyST: ST = st"${if (undecl) "de" else ""}register $$$n: $tipe"
+        @strictpure def prettyST: ST = st"${if (undecl) "un" else ""}decl $$$n: $tipe"
       }
 
-      @datatype class Multiple(val undecl: B, val decls: ISZ[Ground]) extends Decl {
+      @datatype class Multiple(val undecl: B, val decls: ISZ[Single]) extends Decl {
         @strictpure def pos: Position = decls(0).pos.to(decls(decls.size - 1).pos)
         @strictpure def undeclare: Decl = {
           val thiz = this
@@ -387,7 +387,8 @@ object IR {
                             val pos: Position) {
     @strictpure def prettyST: ST = {
       val pt: ST = if (typeParams.isEmpty) st"" else st"[${(typeParams, ", ")}]"
-      st"procedure ${(owner, ".")}${if (isInObject) "." else "#"}$id$pt(${(for (p <- ops.ISZOps(paramNames).zip(tipe.args)) yield st"${p._1}: ${p._2}", ", ")}): ${tipe.ret} ${body.prettyST}"
+      val ownerOpt: Option[ST] = if (owner.isEmpty)  None() else  Some(st"${(owner, ".")}${if (isInObject) "." else "#"}")
+      st"procedure $ownerOpt$id$pt(${(for (p <- ops.ISZOps(paramNames).zip(tipe.args)) yield st"${p._1}: ${p._2}", ", ")}): ${tipe.ret} ${body.prettyST}"
     }
     @pure override def string: String = {
       return prettyST.render
