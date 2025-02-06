@@ -188,11 +188,11 @@ object IR {
       @strictpure def prettyST: ST = st"$tipe(${(for (i <- 1 until args.size) yield args(i).prettyST, ", ")})"
     }
 
-    @datatype class Apply(val isInObject: B, val owner: ISZ[String], val id: org.sireum.String, val args: ISZ[Exp],
-                          val tipe: Typed, val pos: Position) extends Exp {
+    @datatype class Apply(val isInObject: B, val owner: ISZ[org.sireum.String], val id: org.sireum.String, val args: ISZ[Exp],
+                          val methodType: Typed.Fun, val tipe: Typed, val pos: Position) extends Exp {
       @strictpure def prettyST: ST =
         if (!isInObject && ops.StringOps(id).isScalaOp && args.size == 2) st"(${args(0).prettyST} $id ${args(1).prettyST})"
-        else if (isInObject) st"${(owner, ".")}.$id(${(for (arg <- args) yield arg.prettyST, ", ")})"
+        else if (isInObject) st"${if (owner.nonEmpty) st"${(owner, ".")}." else st""}$id(${(for (arg <- args) yield arg.prettyST, ", ")})"
         else st"${args(0).prettyST}.$id(${(for (i <- 1 until args.size) yield args(i).prettyST)})"
     }
 

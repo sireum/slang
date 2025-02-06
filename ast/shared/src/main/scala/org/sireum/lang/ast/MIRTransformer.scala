@@ -1274,9 +1274,10 @@ import MIRTransformer._
             MNone()
         case o2: IR.Exp.Apply =>
           val r0: MOption[IS[Z, IR.Exp]] = transformISZ(o2.args, transformIRExp _)
-          val r1: MOption[Typed] = transformTyped(o2.tipe)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(args = r0.getOrElse(o2.args), tipe = r1.getOrElse(o2.tipe)))
+          val r1: MOption[Typed.Fun] = transformTypedFun(o2.methodType)
+          val r2: MOption[Typed] = transformTyped(o2.tipe)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(args = r0.getOrElse(o2.args), methodType = r1.getOrElse(o2.methodType), tipe = r2.getOrElse(o2.tipe)))
           else
             MNone()
         case o2: IR.Exp.Select =>

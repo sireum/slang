@@ -164,7 +164,7 @@ object IRTranslator {
             case _ =>
           }
           grounds = ISZ()
-          return if (allReturn) Some(e) else None()
+          return if (allReturn) None() else Some(e)
         case stmt: IR.Stmt.While =>
           val n = freshLabel()
           blocks = blocks :+ basicBlock(label, grounds, IR.Jump.Goto(n, stmt.pos))
@@ -524,7 +524,11 @@ object IRTranslator {
             }
           case res: AST.ResolvedInfo.EnumElement =>
             return norm3AC(IR.Exp.EnumElementRef(res.owner, res.name, res.ordinal, pos))
-          case _ => halt(s"TODO: $exp")
+          case res: AST.ResolvedInfo.Method if res.tpeOpt.get.isByName =>
+            val receiver = exp.receiverOpt.get
+            val rcv = translateExp(receiver)
+            return norm3AC(IR.Exp.FieldVarRef(receiver.typedOpt.get, rcv, res.id, t, pos))
+          case res => halt(s"TODO: $res")
         }
       case exp: AST.Exp.Unary =>
         val t = exp.typedOpt.get
@@ -626,19 +630,36 @@ object IRTranslator {
         return IR.Exp.Temp(n, t, pos)
       case exp: AST.Exp.Invoke =>
         exp.attr.resOpt.get match {
-          case res: AST.ResolvedInfo.Method if res.mode == AST.MethodMode.Select =>
-            val (rcv, rcvType): (IR.Exp, AST.Typed.Name) = exp.receiverOpt match {
-              case Some(receiver) =>
-                if (exp.ident.id.value == "apply") {
-                  (translateExp(receiver), receiver.typedOpt.get.asInstanceOf[AST.Typed.Name])
-                } else {
-                  val e = AST.Exp.Select(Some(receiver), exp.ident.id, exp.targs, exp.ident.attr)
-                  (translateExp(e), e.typedOpt.get.asInstanceOf[AST.Typed.Name])
+          case res: AST.ResolvedInfo.Method =>
+            res.mode match {
+              case AST.MethodMode.Method =>
+                var args = ISZ[IR.Exp]()
+                var methodType = res.tpeOpt.get
+                exp.receiverOpt match {
+                  case Some(receiver) =>
+                    args = args :+ translateExp(receiver)
+                    methodType = methodType(args = receiver.typedOpt.get +: methodType.args)
+                  case _ =>
                 }
-              case _ => (translateExp(exp.ident), exp.ident.typedOpt.get.asInstanceOf[AST.Typed.Name])
+                for (arg <- exp.args) {
+                  args = args :+ translateExp(arg)
+                }
+                return norm3AC(IR.Exp.Apply(res.isInObject, res.owner, res.id, args, methodType, exp.typedOpt.get, pos))
+              case AST.MethodMode.Select =>
+                val (rcv, rcvType): (IR.Exp, AST.Typed.Name) = exp.receiverOpt match {
+                  case Some(receiver) =>
+                    if (exp.ident.id.value == "apply") {
+                      (translateExp(receiver), receiver.typedOpt.get.asInstanceOf[AST.Typed.Name])
+                    } else {
+                      val e = AST.Exp.Select(Some(receiver), exp.ident.id, exp.targs, exp.ident.attr)
+                      (translateExp(e), e.typedOpt.get.asInstanceOf[AST.Typed.Name])
+                    }
+                  case _ => (translateExp(exp.ident), exp.ident.typedOpt.get.asInstanceOf[AST.Typed.Name])
+                }
+                val index = translateExp(exp.args(0))
+                return norm3AC(IR.Exp.Indexing(rcv, rcvType, index, pos))
+              case _ => halt(s"TODO: $exp")
             }
-            val index = translateExp(exp.args(0))
-            return norm3AC(IR.Exp.Indexing(rcv, rcvType, index, pos))
           case _ => halt(s"TODO: $exp")
         }
       case exp: AST.Exp.InvokeNamed => halt(s"TODO: $exp")
