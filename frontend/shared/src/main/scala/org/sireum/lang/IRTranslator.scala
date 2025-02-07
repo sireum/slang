@@ -41,21 +41,24 @@ object IRTranslator {
   var _freshTemp: Z = 0
   var stmts: ISZ[IR.Stmt] = ISZ()
 
-  def translateMethod(receiverTypeOpt: Option[AST.Typed],
-                      owner: ISZ[String],
-                      method: AST.Stmt.Method): IR.Procedure = {
-    val id = method.sig.id.value
+  def translateMethodH(isBasic: B,
+                       receiverTypeOpt: Option[AST.Typed],
+                       owner: ISZ[String],
+                       id: String,
+                       typeParams: ISZ[String],
+                       params: ISZ[String],
+                       funType: AST.Typed.Fun,
+                       pos: message.Position,
+                       bodyOpt: Option[AST.Body]): IR.Procedure = {
     val isInObject = receiverTypeOpt.isEmpty
-    var t: AST.Typed.Fun = method.sig.funType
-    var paramNames: ISZ[String] = for (p <- method.sig.params) yield p.id.value
+    var t: AST.Typed.Fun = funType
+    var paramNames = params
     if (!isInObject) {
       paramNames = "this" +: paramNames
       t = t(args = receiverTypeOpt.get +: t.args)
     }
     methodContext = IR.MethodContext(isInObject, owner, id, t)
-    val pos = method.sig.id.attr.posOpt.get
-    val typeParams: ISZ[String] = for (tp <- method.sig.typeParams) yield tp.id.value
-    val body: IR.Body = method.bodyOpt match {
+    var body: IR.Body = bodyOpt match {
       case Some(body) =>
         val oldStmts = stmts
         stmts = ISZ()
@@ -65,7 +68,20 @@ object IRTranslator {
         b
       case _ => IR.Body.Block(IR.Stmt.Block(ISZ(), pos))
     }
+    if (isBasic) {
+      body = toBasic(body.asInstanceOf[IR.Body.Block], pos)
+    }
     return IR.Procedure(isInObject, typeParams, owner, id, paramNames, t, body, pos)
+  }
+
+  def translateMethod(isBasic: B,
+                      receiverTypeOpt: Option[AST.Typed],
+                      owner: ISZ[String],
+                      method: AST.Stmt.Method): IR.Procedure = {
+    val typeParams: ISZ[String] = for (tp <- method.sig.typeParams) yield tp.id.value
+    val paramNames: ISZ[String] = for (p <- method.sig.params) yield p.id.value
+    return translateMethodH(isBasic, receiverTypeOpt, owner, method.sig.id.value,
+      typeParams, paramNames, method.sig.funType, method.sig.id.attr.posOpt.get, method.bodyOpt)
   }
 
   def toBasic(body: IR.Body.Block, pos: message.Position): IR.Body.Basic = {
@@ -81,7 +97,7 @@ object IRTranslator {
     var grounds = ISZ[IR.Stmt.Ground]()
     var decls = ISZ[IR.Stmt.Decl]()
 
-    @pure def basicBlock(label:Z, stmts: ISZ[IR.Stmt.Ground], jump: IR.Jump): IR.BasicBlock = {
+    @pure def basicBlock(label: Z, stmts: ISZ[IR.Stmt.Ground], jump: IR.Jump): IR.BasicBlock = {
       return IR.BasicBlock(label, stmts, jump)
     }
 
