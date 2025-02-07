@@ -108,8 +108,8 @@ object IRTranslator {
           return None()
         case stmt: IR.Stmt.If =>
           val t = freshLabel()
-          val f = freshLabel()
           val e = freshLabel()
+          val f: Z = if (stmt.elseBlock.stmts.isEmpty) e else freshLabel()
           blocks = blocks :+ basicBlock(label, grounds, IR.Jump.If(stmt.cond, t, f, stmt.pos))
           grounds = ISZ()
           var allReturn = T
@@ -119,12 +119,16 @@ object IRTranslator {
               allReturn = F
             case _ =>
           }
-          grounds = ISZ()
-          blockToBasic(f, stmt.elseBlock) match {
-            case Some(l) =>
-              blocks = blocks :+ basicBlock(l, grounds, IR.Jump.Goto(e, stmt.pos))
-              allReturn = F
-            case _ =>
+          if (stmt.elseBlock.stmts.nonEmpty) {
+            grounds = ISZ()
+            blockToBasic(f, stmt.elseBlock) match {
+              case Some(l) =>
+                blocks = blocks :+ basicBlock(l, grounds, IR.Jump.Goto(e, stmt.pos))
+                allReturn = F
+              case _ =>
+            }
+          } else {
+            allReturn = F
           }
           grounds = ISZ()
           return if (allReturn) None() else Some(e)
