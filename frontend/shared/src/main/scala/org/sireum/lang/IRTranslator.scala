@@ -34,22 +34,9 @@ import org.sireum.lang.tipe.TypeHierarchy
 import org.sireum.lang.{ast => AST}
 
 object IRTranslator {
-  @record class BlockDeclPreamble extends MIRTransformer {
-    override def postIRStmtBlock(o: Stmt.Block): MOption[IR.Stmt] = {
-      var decls = ISZ[IR.Stmt.Decl.Single]()
-      var nonDecls = ISZ[IR.Stmt]()
-      for (stmt <- o.stmts) {
-        stmt match {
-          case stmt: IR.Stmt.Decl.Single => decls = decls :+ stmt
-          case _ => nonDecls = nonDecls :+ stmt
-        }
-      }
-      return if (decls.nonEmpty) MSome(o(stmts = IR.Stmt.Decl.Multiple(F, decls) +: nonDecls)) else MNone()
-    }
-  }
 }
 
-@record class IRTranslator(val threeAddressCode: B, val undeclare: B, val mergeDecls: B, val th: TypeHierarchy) {
+@record class IRTranslator(val threeAddressCode: B, val mergeDecls: B, val th: TypeHierarchy) {
 
   var methodContext: IR.MethodContext = IR.MethodContext.empty
   var _freshTemp: Z = 0
@@ -95,36 +82,17 @@ object IRTranslator {
     var grounds = ISZ[IR.Stmt.Ground]()
     var decls = ISZ[IR.Stmt.Decl]()
 
-    def mergeMultipleDecls(stmts: ISZ[IR.Stmt.Ground]): ISZ[IR.Stmt.Ground] = {
-      var r = ISZ[IR.Stmt.Ground]()
-      var i = 0
-      while (i < stmts.size) {
-        stmts(i) match {
-          case stmt: IR.Stmt.Decl.Multiple =>
-            var j = i
-            var mdecls = ISZ[IR.Stmt.Decl.Single]()
-            while (j < stmts.size && stmts(j).isInstanceOf[IR.Stmt.Decl.Multiple] && stmts(j).asInstanceOf[IR.Stmt.Decl.Multiple].undecl == stmt.undecl) {
-              mdecls = mdecls ++ stmts(j).asInstanceOf[IR.Stmt.Decl.Multiple].decls
-              j = j + 1
-            }
-            r = r :+ IR.Stmt.Decl.Multiple(stmt.undecl, mdecls)
-            i = j
-          case stmt =>
-            r = r :+ stmt
-            i = i + 1
-        }
-      }
-      return r
-    }
-
     @pure def basicBlock(label:Z, stmts: ISZ[IR.Stmt.Ground], jump: IR.Jump): IR.BasicBlock = {
-      return if (this.mergeDecls) IR.BasicBlock(label, stmts, jump) else IR.BasicBlock(label, stmts, jump)
+      return IR.BasicBlock(label, stmts, jump)
     }
 
     def stmtToBasic(label: Z, stmt: IR.Stmt): Option[Z] = {
       stmt match {
         case stmt: IR.Stmt.Block =>
           return blockToBasic(label, stmt)
+        case stmt: IR.Stmt.Expr =>
+          grounds = grounds :+ stmt
+          return Some(label)
         case stmt: IR.Stmt.Assign =>
           grounds = grounds :+ stmt
           return Some(label)
@@ -134,11 +102,6 @@ object IRTranslator {
               grounds = grounds :+ IR.Stmt.Assign.Local(shouldCopy(exp.tipe), methodContext, "Res", exp, exp.pos)
               Some(IR.Exp.LocalVarRef(F, methodContext, "Res", exp.tipe, exp.pos))
             case _ => None()
-          }
-          if (undeclare) {
-            for (d <- decls) {
-              grounds = grounds :+ d.undeclare
-            }
           }
           blocks = blocks :+ basicBlock(label, grounds, IR.Jump.Return(expOpt, stmt.pos))
           grounds = ISZ()
@@ -196,14 +159,29 @@ object IRTranslator {
       decls = ISZ()
       var l = label
       for (stmt <- block.stmts) {
+        var shouldSplit = F
+        if (threeAddressCode) {
+          stmt match {
+            case _: IR.Stmt.Expr => shouldSplit = T
+            case stmt: IR.Stmt.Assign if stmt.rhs.isInstanceOf[IR.Exp.Apply] => shouldSplit = T
+            case _ =>
+          }
+          if (shouldSplit) {
+            val next = freshLabel()
+            blocks = blocks :+ IR.BasicBlock(l, grounds, IR.Jump.Goto(next, stmt.pos))
+            grounds = ISZ()
+            l = next
+          }
+        }
         stmtToBasic(l, stmt) match {
           case Some(next) => l = next
           case _ => return None()
         }
-      }
-      if (undeclare) {
-        for (d <- decls) {
-          grounds = grounds :+ d.undeclare
+        if (shouldSplit) {
+          val next = freshLabel()
+          blocks = blocks :+ IR.BasicBlock(l, grounds, IR.Jump.Goto(next, stmt.pos))
+          grounds = ISZ()
+          l = next
         }
       }
       decls = oldDecls
@@ -215,8 +193,8 @@ object IRTranslator {
       case _ =>
     }
     if (methodContext.t.ret != AST.Typed.unit) {
-      blocks = blocks(0 ~> blocks(0)(grounds = mergeMultipleDecls(
-        IR.Stmt.Decl.Multiple(F, ISZ(IR.Stmt.Decl.Local(F, F, methodContext.t.ret, "Res", pos))) +: blocks(0).grounds)))
+      blocks = blocks(0 ~> blocks(0)(grounds =
+        IR.Stmt.Decl.Local(F, F, methodContext.t.ret, "Res", pos) +: blocks(0).grounds))
     }
     return IR.Body.Basic(blocks)
   }
@@ -354,7 +332,11 @@ object IRTranslator {
         val bPos = bodyPos(stmt.body, pos)
         stmts = oldStmts :+ IR.Stmt.Block(decls :+
           IR.Stmt.While(IR.Stmt.Block(condStmts, cond.pos), cond, IR.Stmt.Block(stmts, bPos), pos), pos)
-      case stmt: AST.Stmt.Expr => translateExp(stmt.exp)
+      case stmt: AST.Stmt.Expr =>
+        val e = translateExp(stmt.exp)
+        if (e.tipe == AST.Typed.unit || e.tipe == AST.Typed.nothing) {
+          stmts = stmts :+ IR.Stmt.Expr(e.asInstanceOf[IR.Exp.Apply])
+        }
       case stmt: AST.Stmt.Return =>
         stmt.expOpt match {
           case Some(exp) =>
@@ -463,7 +445,7 @@ object IRTranslator {
 
   def translateExp(exp: AST.Exp): IR.Exp = {
     def norm3AC(e: IR.Exp): IR.Exp = {
-      if (threeAddressCode) {
+      if (threeAddressCode && e.tipe != AST.Typed.unit && e.tipe != AST.Typed.nothing) {
         val n = freshTemp()
         stmts = stmts :+ IR.Stmt.Decl.Temp(F, e.tipe, n, e.pos)
         stmts = stmts :+ IR.Stmt.Assign.Temp(n, e, e.pos)

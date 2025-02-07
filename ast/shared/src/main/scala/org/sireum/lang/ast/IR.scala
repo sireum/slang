@@ -223,6 +223,11 @@ object IR {
 
     @datatype trait Ground extends Stmt
 
+    @datatype class Expr(val exp: Exp.Apply) extends Ground {
+      @strictpure def pos: Position = exp.pos
+      @strictpure def prettyST: ST = exp.prettyST
+    }
+
     @datatype trait Assign extends Ground {
       @strictpure def rhs: Exp
     }
@@ -299,25 +304,6 @@ object IR {
           thiz(undecl = T)
         }
         @strictpure def prettyST: ST = st"${if (undecl) "un" else ""}decl $$$n: $tipe"
-      }
-
-      @datatype class Multiple(val undecl: B, val decls: ISZ[Single]) extends Decl {
-        @strictpure def pos: Position = decls(0).pos.to(decls(decls.size - 1).pos)
-        @strictpure def undeclare: Decl = {
-          val thiz = this
-          thiz(undecl = T, decls = for (d <- decls) yield d.undeclare)
-        }
-        @pure def prettyST: ST = {
-          var ds = ISZ[ST]()
-          for (d <- decls) {
-            d match {
-              case d: Local => ds = ds :+ (if (undecl) st"${d.id}" else st"${d.id}: ${d.tipe}")
-              case d: Temp => ds = ds :+ (if (undecl) st"$$${d.n}" else st"$$${d.n}: ${d.tipe}")
-            }
-          }
-          val r = st"${if (undecl) "un" else ""}decls ${(ds, ", ")}"
-          return r
-        }
       }
 
     }
@@ -404,13 +390,13 @@ object IR {
     }
   }
 
-  @datatype class Program(val globals: ISZ[Global], val procedures: ISZ[Procedure], val stmts: ISZ[Stmt]) {
+  @datatype class Program(val threeAddressCode: B,
+                          val globals: ISZ[Global],
+                          val procedures: ISZ[Procedure]) {
     @strictpure def prettyST: ST =
       st"""${(for (g <- globals) yield g.prettyST, "\n")}
           |
-          |${(for (p <- procedures) yield p.prettyST, "\n\n")}
-          |
-          |${(for (stmt <- stmts) yield stmt.prettyST, "\n")}"""
+          |${(for (p <- procedures) yield p.prettyST, "\n\n")}"""
     @pure override def string: String = {
       return prettyST.render
     }
