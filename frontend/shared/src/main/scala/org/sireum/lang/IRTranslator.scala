@@ -27,8 +27,7 @@
 package org.sireum.lang
 
 import org.sireum._
-import org.sireum.lang.ast.IR.Stmt
-import org.sireum.lang.ast.{IR, MIRTransformer}
+import org.sireum.lang.ast.IR
 import org.sireum.lang.symbol.TypeInfo
 import org.sireum.lang.tipe.TypeHierarchy
 import org.sireum.lang.{ast => AST}
@@ -36,7 +35,7 @@ import org.sireum.lang.{ast => AST}
 object IRTranslator {
 }
 
-@record class IRTranslator(val threeAddressCode: B, val mergeDecls: B, val th: TypeHierarchy) {
+@record class IRTranslator(val threeAddressCode: B, val th: TypeHierarchy) {
 
   var methodContext: IR.MethodContext = IR.MethodContext.empty
   var _freshTemp: Z = 0
@@ -70,7 +69,7 @@ object IRTranslator {
   }
 
   def toBasic(body: IR.Body.Block, pos: message.Position): IR.Body.Basic = {
-    var _freshLabel = 1
+    var _freshLabel = 2
 
     def freshLabel(): Z = {
       val r = _freshLabel
@@ -97,13 +96,13 @@ object IRTranslator {
           grounds = grounds :+ stmt
           return Some(label)
         case stmt: IR.Stmt.Return =>
-          val expOpt: Option[IR.Exp] = stmt.expOpt match {
+          stmt.expOpt match {
             case Some(exp) =>
               grounds = grounds :+ IR.Stmt.Assign.Local(shouldCopy(exp.tipe), methodContext, "Res", exp, exp.pos)
               Some(IR.Exp.LocalVarRef(F, methodContext, "Res", exp.tipe, exp.pos))
-            case _ => None()
+            case _ =>
           }
-          blocks = blocks :+ basicBlock(label, grounds, IR.Jump.Return(expOpt, stmt.pos))
+          blocks = blocks :+ basicBlock(label, grounds, IR.Jump.Goto(0, stmt.pos))
           grounds = ISZ()
           return None()
         case stmt: IR.Stmt.If =>
@@ -188,17 +187,22 @@ object IRTranslator {
           l = next
         }
       }
+      for (d <- decls) {
+        grounds = grounds :+ d.undeclare
+      }
       decls = oldDecls
       return Some(l)
     }
 
-    blockToBasic(0, body.block) match {
-      case Some(l) => blocks = blocks :+ basicBlock(l, grounds, IR.Jump.Return(None(), pos))
+    blockToBasic(1, body.block) match {
+      case Some(l) => blocks = blocks :+ basicBlock(l, grounds, IR.Jump.Goto(0, pos))
       case _ =>
     }
     if (methodContext.t.ret != AST.Typed.unit) {
-      blocks = blocks(0 ~> blocks(0)(grounds =
-        IR.Stmt.Decl.Local(F, F, methodContext.t.ret, "Res", pos) +: blocks(0).grounds))
+      blocks = blocks(0 ~> blocks(0)(grounds = IR.Stmt.Decl(F, F, methodContext.t.ret, "Res", pos) +: blocks(0).grounds))
+      blocks = blocks :+ basicBlock(0, ISZ(), IR.Jump.Return(Some(IR.Exp.LocalVarRef(F, methodContext, "Res", methodContext.t.ret, pos)), pos))
+    } else {
+      blocks = blocks :+ basicBlock(0, ISZ(), IR.Jump.Return(None(), pos))
     }
     return IR.Body.Basic(blocks)
   }
@@ -216,12 +220,11 @@ object IRTranslator {
             translateExp(init.exp)
           case _ =>
             val n = freshTemp()
-            stmts = stmts :+ IR.Stmt.Decl.Temp(F, t, n, pos)
             translateAssignExp(init, n)
             IR.Exp.Temp(n, t, init.asStmt.posOpt.get)
         }
         stmts = stmts :+ IR.Stmt.Assign.Local(shouldCopy(t), methodContext, stmt.id.value, varRhs, pos)
-        oldStmts = oldStmts :+ IR.Stmt.Decl.Local(F, stmt.isVal, t, stmt.id.value, pos)
+        oldStmts = oldStmts :+ IR.Stmt.Decl(F, stmt.isVal, t, stmt.id.value, pos)
         stmts = oldStmts :+ IR.Stmt.Block(stmts, pos)
       case stmt: AST.Stmt.Assign =>
         val copy = shouldCopy(stmt.rhs.typedOpt.get)
@@ -232,7 +235,6 @@ object IRTranslator {
           case _ =>
             val n = freshTemp()
             val t = stmt.rhs.typedOpt.get
-            stmts = stmts :+ IR.Stmt.Decl.Temp(F, t, n, stmt.rhs.asStmt.posOpt.get)
             translateAssignExp(stmt.rhs, n)
             IR.Exp.Temp(n, t, stmt.rhs.asStmt.posOpt.get)
         }
@@ -249,7 +251,6 @@ object IRTranslator {
                 val thiz = IR.Exp.LocalVarRef(T, methodContext, "this", methodContext.receiverType, receiverPos)
                 val (receiver, receiverType): (IR.Exp, AST.Typed.Name) = if (threeAddressCode) {
                   val n = freshTemp()
-                  stmts = stmts :+ IR.Stmt.Decl.Temp(F, methodContext.receiverType, n, receiverPos)
                   stmts = stmts :+ IR.Stmt.Assign.Temp(n, thiz, receiverPos)
                   (IR.Exp.Temp(n, methodContext.receiverType, receiverPos), methodContext.receiverType.asInstanceOf[AST.Typed.Name])
                 } else {
@@ -266,7 +267,6 @@ object IRTranslator {
                   val n = freshTemp()
                   val t = stmt.rhs.typedOpt.get
                   val rhsPos = stmt.rhs.asStmt.posOpt.get
-                  stmts = stmts :+ IR.Stmt.Decl.Temp(F, t, n, rhsPos)
                   translateAssignExp(stmt.rhs, n)
                   return IR.Exp.Temp(n, t, rhsPos)
               }
@@ -292,7 +292,6 @@ object IRTranslator {
                 val n = freshTemp()
                 val rhsPos = stmt.rhs.asStmt.posOpt.get
                 val t = stmt.rhs.typedOpt.get
-                stmts = stmts :+ IR.Stmt.Decl.Temp(F, t, n, rhsPos)
                 translateAssignExp(stmt.rhs, n)
                 IR.Exp.Temp(n, t, rhsPos)
             }
@@ -319,23 +318,12 @@ object IRTranslator {
         val oldStmts = stmts
         stmts = ISZ()
         val cond = translateExp(stmt.cond)
-        var decls = ISZ[IR.Stmt]()
-        var condStmts = ISZ[IR.Stmt]();
-        {
-          var i = stmts.size - 1
-          while (i >= 0) {
-            stmts(i) match {
-              case stmt: IR.Stmt.Decl.Temp if decls.isEmpty => decls = ISZ(stmt)
-              case stmt => condStmts = stmt +: condStmts
-            }
-            i = i - 1
-          }
-        }
+        val condStmts = stmts
         stmts = ISZ()
         translateBody(stmt.body, None())
         val bPos = bodyPos(stmt.body, pos)
-        stmts = oldStmts :+ IR.Stmt.Block(decls :+
-          IR.Stmt.While(IR.Stmt.Block(condStmts, cond.pos), cond, IR.Stmt.Block(stmts, bPos), pos), pos)
+        stmts = oldStmts :+ IR.Stmt.Block(ISZ(
+          IR.Stmt.While(IR.Stmt.Block(condStmts, cond.pos), cond, IR.Stmt.Block(stmts, bPos), pos)), pos)
       case stmt: AST.Stmt.Expr =>
         val e = translateExp(stmt.exp)
         if (e.tipe == AST.Typed.unit || e.tipe == AST.Typed.nothing) {
@@ -451,7 +439,6 @@ object IRTranslator {
     def norm3AC(e: IR.Exp): IR.Exp = {
       if (threeAddressCode && e.tipe != AST.Typed.unit && e.tipe != AST.Typed.nothing) {
         val n = freshTemp()
-        stmts = stmts :+ IR.Stmt.Decl.Temp(F, e.tipe, n, e.pos)
         stmts = stmts :+ IR.Stmt.Assign.Temp(n, e, e.pos)
         return IR.Exp.Temp(n, e.tipe, e.pos)
       } else {
@@ -599,7 +586,6 @@ object IRTranslator {
           return IR.Exp.If(cond, thenExp, elseExp, t, pos)
         }
         val n = freshTemp()
-        stmts = stmts :+ IR.Stmt.Decl.Temp(F, t, n, pos)
         val oldStmts = stmts
         stmts = ISZ()
         val thenExp = translateExp(exp.thenExp)

@@ -197,15 +197,8 @@ object IRTransformer {
         case o: IR.Stmt.Block => return preIRStmtBlock(ctx, o)
         case o: IR.Stmt.While => return preIRStmtWhile(ctx, o)
         case o: IR.Stmt.Return => return preIRStmtReturn(ctx, o)
-        case o: IR.Stmt.Decl.Local =>
-          val r: PreResult[Context, IR.Stmt] = preIRStmtDeclLocal(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: IR.Stmt)) => PreResult(preCtx, continu, Some[IR.Stmt](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type IR.Stmt")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt]())
-          }
-          return r
-        case o: IR.Stmt.Decl.Temp =>
-          val r: PreResult[Context, IR.Stmt] = preIRStmtDeclTemp(ctx, o) match {
+        case o: IR.Stmt.Decl =>
+          val r: PreResult[Context, IR.Stmt] = preIRStmtDecl(ctx, o) match {
            case PreResult(preCtx, continu, Some(r: IR.Stmt)) => PreResult(preCtx, continu, Some[IR.Stmt](r))
            case PreResult(_, _, Some(_)) => halt("Can only produce object of type IR.Stmt")
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt]())
@@ -252,20 +245,7 @@ object IRTransformer {
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt.Ground]())
           }
           return r
-        case o: IR.Stmt.Decl.Local =>
-          val r: PreResult[Context, IR.Stmt.Ground] = preIRStmtDeclLocal(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: IR.Stmt.Ground)) => PreResult(preCtx, continu, Some[IR.Stmt.Ground](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type IR.Stmt.Ground")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt.Ground]())
-          }
-          return r
-        case o: IR.Stmt.Decl.Temp =>
-          val r: PreResult[Context, IR.Stmt.Ground] = preIRStmtDeclTemp(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: IR.Stmt.Ground)) => PreResult(preCtx, continu, Some[IR.Stmt.Ground](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type IR.Stmt.Ground")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt.Ground]())
-          }
-          return r
+        case o: IR.Stmt.Decl => return preIRStmtDecl(ctx, o)
       }
     }
 
@@ -319,37 +299,7 @@ object IRTransformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preIRStmtDecl(ctx: Context, o: IR.Stmt.Decl): PreResult[Context, IR.Stmt.Decl] = {
-      o match {
-        case o: IR.Stmt.Decl.Local =>
-          val r: PreResult[Context, IR.Stmt.Decl] = preIRStmtDeclLocal(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: IR.Stmt.Decl)) => PreResult(preCtx, continu, Some[IR.Stmt.Decl](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type IR.Stmt.Decl")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt.Decl]())
-          }
-          return r
-        case o: IR.Stmt.Decl.Temp =>
-          val r: PreResult[Context, IR.Stmt.Decl] = preIRStmtDeclTemp(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: IR.Stmt.Decl)) => PreResult(preCtx, continu, Some[IR.Stmt.Decl](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type IR.Stmt.Decl")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt.Decl]())
-          }
-          return r
-      }
-    }
-
-    @pure def preIRStmtDeclSingle(ctx: Context, o: IR.Stmt.Decl.Single): PreResult[Context, IR.Stmt.Decl.Single] = {
-      o match {
-        case o: IR.Stmt.Decl.Local => return preIRStmtDeclLocal(ctx, o)
-        case o: IR.Stmt.Decl.Temp => return preIRStmtDeclTemp(ctx, o)
-      }
-    }
-
-    @pure def preIRStmtDeclLocal(ctx: Context, o: IR.Stmt.Decl.Local): PreResult[Context, IR.Stmt.Decl.Single] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preIRStmtDeclTemp(ctx: Context, o: IR.Stmt.Decl.Temp): PreResult[Context, IR.Stmt.Decl.Single] = {
+    @pure def preIRStmtDecl(ctx: Context, o: IR.Stmt.Decl): PreResult[Context, IR.Stmt.Ground] = {
       return PreResult(ctx, T, None())
     }
 
@@ -621,15 +571,8 @@ object IRTransformer {
         case o: IR.Stmt.Block => return postIRStmtBlock(ctx, o)
         case o: IR.Stmt.While => return postIRStmtWhile(ctx, o)
         case o: IR.Stmt.Return => return postIRStmtReturn(ctx, o)
-        case o: IR.Stmt.Decl.Local =>
-          val r: TPostResult[Context, IR.Stmt] = postIRStmtDeclLocal(ctx, o) match {
-           case TPostResult(postCtx, Some(result: IR.Stmt)) => TPostResult(postCtx, Some[IR.Stmt](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type IR.Stmt")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt]())
-          }
-          return r
-        case o: IR.Stmt.Decl.Temp =>
-          val r: TPostResult[Context, IR.Stmt] = postIRStmtDeclTemp(ctx, o) match {
+        case o: IR.Stmt.Decl =>
+          val r: TPostResult[Context, IR.Stmt] = postIRStmtDecl(ctx, o) match {
            case TPostResult(postCtx, Some(result: IR.Stmt)) => TPostResult(postCtx, Some[IR.Stmt](result))
            case TPostResult(_, Some(_)) => halt("Can only produce object of type IR.Stmt")
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt]())
@@ -676,20 +619,7 @@ object IRTransformer {
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt.Ground]())
           }
           return r
-        case o: IR.Stmt.Decl.Local =>
-          val r: TPostResult[Context, IR.Stmt.Ground] = postIRStmtDeclLocal(ctx, o) match {
-           case TPostResult(postCtx, Some(result: IR.Stmt.Ground)) => TPostResult(postCtx, Some[IR.Stmt.Ground](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type IR.Stmt.Ground")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt.Ground]())
-          }
-          return r
-        case o: IR.Stmt.Decl.Temp =>
-          val r: TPostResult[Context, IR.Stmt.Ground] = postIRStmtDeclTemp(ctx, o) match {
-           case TPostResult(postCtx, Some(result: IR.Stmt.Ground)) => TPostResult(postCtx, Some[IR.Stmt.Ground](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type IR.Stmt.Ground")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt.Ground]())
-          }
-          return r
+        case o: IR.Stmt.Decl => return postIRStmtDecl(ctx, o)
       }
     }
 
@@ -743,37 +673,7 @@ object IRTransformer {
       return TPostResult(ctx, None())
     }
 
-    @pure def postIRStmtDecl(ctx: Context, o: IR.Stmt.Decl): TPostResult[Context, IR.Stmt.Decl] = {
-      o match {
-        case o: IR.Stmt.Decl.Local =>
-          val r: TPostResult[Context, IR.Stmt.Decl] = postIRStmtDeclLocal(ctx, o) match {
-           case TPostResult(postCtx, Some(result: IR.Stmt.Decl)) => TPostResult(postCtx, Some[IR.Stmt.Decl](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type IR.Stmt.Decl")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt.Decl]())
-          }
-          return r
-        case o: IR.Stmt.Decl.Temp =>
-          val r: TPostResult[Context, IR.Stmt.Decl] = postIRStmtDeclTemp(ctx, o) match {
-           case TPostResult(postCtx, Some(result: IR.Stmt.Decl)) => TPostResult(postCtx, Some[IR.Stmt.Decl](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type IR.Stmt.Decl")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt.Decl]())
-          }
-          return r
-      }
-    }
-
-    @pure def postIRStmtDeclSingle(ctx: Context, o: IR.Stmt.Decl.Single): TPostResult[Context, IR.Stmt.Decl.Single] = {
-      o match {
-        case o: IR.Stmt.Decl.Local => return postIRStmtDeclLocal(ctx, o)
-        case o: IR.Stmt.Decl.Temp => return postIRStmtDeclTemp(ctx, o)
-      }
-    }
-
-    @pure def postIRStmtDeclLocal(ctx: Context, o: IR.Stmt.Decl.Local): TPostResult[Context, IR.Stmt.Decl.Single] = {
-      return TPostResult(ctx, None())
-    }
-
-    @pure def postIRStmtDeclTemp(ctx: Context, o: IR.Stmt.Decl.Temp): TPostResult[Context, IR.Stmt.Decl.Single] = {
+    @pure def postIRStmtDecl(ctx: Context, o: IR.Stmt.Decl): TPostResult[Context, IR.Stmt.Ground] = {
       return TPostResult(ctx, None())
     }
 
@@ -1183,13 +1083,7 @@ import IRTransformer._
             TPostResult(r0.ctx, Some(o2(expOpt = r0.resultOpt.getOrElse(o2.expOpt))))
           else
             TPostResult(r0.ctx, None())
-        case o2: IR.Stmt.Decl.Local =>
-          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
-          else
-            TPostResult(r0.ctx, None())
-        case o2: IR.Stmt.Decl.Temp =>
+        case o2: IR.Stmt.Decl =>
           val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
           if (hasChanged || r0.resultOpt.nonEmpty)
             TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
@@ -1262,13 +1156,7 @@ import IRTransformer._
             TPostResult(r3.ctx, Some(o2(receiver = r0.resultOpt.getOrElse(o2.receiver), receiverType = r1.resultOpt.getOrElse(o2.receiverType), index = r2.resultOpt.getOrElse(o2.index), rhs = r3.resultOpt.getOrElse(o2.rhs))))
           else
             TPostResult(r3.ctx, None())
-        case o2: IR.Stmt.Decl.Local =>
-          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
-          else
-            TPostResult(r0.ctx, None())
-        case o2: IR.Stmt.Decl.Temp =>
+        case o2: IR.Stmt.Decl =>
           val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
           if (hasChanged || r0.resultOpt.nonEmpty)
             TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
@@ -1345,80 +1233,6 @@ import IRTransformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: IR.Stmt.Assign = r.resultOpt.getOrElse(o)
     val postR: TPostResult[Context, IR.Stmt.Assign] = pp.postIRStmtAssign(r.ctx, o2)
-    if (postR.resultOpt.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return TPostResult(postR.ctx, Some(o2))
-    } else {
-      return TPostResult(postR.ctx, None())
-    }
-  }
-
-  @pure def transformIRStmtDecl(ctx: Context, o: IR.Stmt.Decl): TPostResult[Context, IR.Stmt.Decl] = {
-    val preR: PreResult[Context, IR.Stmt.Decl] = pp.preIRStmtDecl(ctx, o)
-    val r: TPostResult[Context, IR.Stmt.Decl] = if (preR.continu) {
-      val o2: IR.Stmt.Decl = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val rOpt: TPostResult[Context, IR.Stmt.Decl] = o2 match {
-        case o2: IR.Stmt.Decl.Local =>
-          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
-          else
-            TPostResult(r0.ctx, None())
-        case o2: IR.Stmt.Decl.Temp =>
-          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
-          else
-            TPostResult(r0.ctx, None())
-      }
-      rOpt
-    } else if (preR.resultOpt.nonEmpty) {
-      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
-    } else {
-      TPostResult(preR.ctx, None())
-    }
-    val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: IR.Stmt.Decl = r.resultOpt.getOrElse(o)
-    val postR: TPostResult[Context, IR.Stmt.Decl] = pp.postIRStmtDecl(r.ctx, o2)
-    if (postR.resultOpt.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return TPostResult(postR.ctx, Some(o2))
-    } else {
-      return TPostResult(postR.ctx, None())
-    }
-  }
-
-  @pure def transformIRStmtDeclSingle(ctx: Context, o: IR.Stmt.Decl.Single): TPostResult[Context, IR.Stmt.Decl.Single] = {
-    val preR: PreResult[Context, IR.Stmt.Decl.Single] = pp.preIRStmtDeclSingle(ctx, o)
-    val r: TPostResult[Context, IR.Stmt.Decl.Single] = if (preR.continu) {
-      val o2: IR.Stmt.Decl.Single = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val rOpt: TPostResult[Context, IR.Stmt.Decl.Single] = o2 match {
-        case o2: IR.Stmt.Decl.Local =>
-          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
-          else
-            TPostResult(r0.ctx, None())
-        case o2: IR.Stmt.Decl.Temp =>
-          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
-          else
-            TPostResult(r0.ctx, None())
-      }
-      rOpt
-    } else if (preR.resultOpt.nonEmpty) {
-      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
-    } else {
-      TPostResult(preR.ctx, None())
-    }
-    val hasChanged: B = r.resultOpt.nonEmpty
-    val o2: IR.Stmt.Decl.Single = r.resultOpt.getOrElse(o)
-    val postR: TPostResult[Context, IR.Stmt.Decl.Single] = pp.postIRStmtDeclSingle(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {

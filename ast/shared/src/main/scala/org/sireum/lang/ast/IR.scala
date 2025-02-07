@@ -280,32 +280,12 @@ object IR {
       }
     }
 
-    @datatype trait Decl extends Ground {
-      @pure def undeclare: Decl
-    }
-
-    object Decl {
-
-      @datatype trait Single extends Decl {
-        @strictpure def undeclare: Single
+    @datatype class Decl(val undecl: B, val isVal: B, val tipe: Typed, val id: String, val pos: Position) extends Ground {
+      @strictpure def undeclare: Decl = {
+        val thiz = this
+        thiz(undecl = T)
       }
-
-      @datatype class Local(val undecl: B, val isVal: B, val tipe: Typed, val id: String, val pos: Position) extends Single {
-        @strictpure def undeclare: Single = {
-          val thiz = this
-          thiz(undecl = T)
-        }
-        @strictpure def prettyST: ST = st"${if (undecl) "de" else ""}local $id: $tipe"
-      }
-
-      @datatype class Temp(val undecl: B, val tipe: Typed, val n: Z, val pos: Position) extends Single {
-        @strictpure def undeclare: Single = {
-          val thiz = this
-          thiz(undecl = T)
-        }
-        @strictpure def prettyST: ST = st"${if (undecl) "un" else ""}decl $$$n: $tipe"
-      }
-
+      @strictpure def prettyST: ST = st"${if (undecl) "un" else ""}decl $id: $tipe"
     }
 
   }
