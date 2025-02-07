@@ -344,7 +344,7 @@ object IRTranslator {
           while (i >= 0) {
             stmts(i) match {
               case stmt: IR.Stmt.Decl.Temp if decls.isEmpty => decls = ISZ(stmt)
-              case stmt => condStmts = condStmts :+ stmt
+              case stmt => condStmts = stmt +: condStmts
             }
             i = i - 1
           }
@@ -527,7 +527,7 @@ object IRTranslator {
           case res: AST.ResolvedInfo.Method if res.tpeOpt.get.isByName =>
             val receiver = exp.receiverOpt.get
             val rcv = translateExp(receiver)
-            return norm3AC(IR.Exp.FieldVarRef(receiver.typedOpt.get, rcv, res.id, t, pos))
+            return norm3AC(IR.Exp.FieldVarRef(receiver.typedOpt.get, rcv, res.id, res.tpeOpt.get.ret, pos))
           case res => halt(s"TODO: $res")
         }
       case exp: AST.Exp.Unary =>

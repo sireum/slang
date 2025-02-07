@@ -263,7 +263,9 @@ object IR {
     }
 
     @datatype class While(val condBlock: Block, val cond: Exp, val block: Block, val pos: Position) extends Stmt {
-      @strictpure def prettyST: ST = st"while (${cond.prettyST}) ${block.prettyST}"
+      @strictpure def prettyST: ST =
+        st"""$condBlock
+            |while (${cond.prettyST}) ${block.prettyST}"""
     }
 
     @datatype class Return(val expOpt: Option[Exp], val pos: Position) extends Stmt {
