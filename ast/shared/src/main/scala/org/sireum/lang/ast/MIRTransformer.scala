@@ -193,6 +193,10 @@ object MIRTransformer {
 
   val PostResultIRJumpGoto: MOption[IR.Jump] = MNone()
 
+  val PreResultIRJumpGotoLocal: PreResult[IR.Jump] = PreResult(T, MNone())
+
+  val PostResultIRJumpGotoLocal: MOption[IR.Jump] = MNone()
+
   val PreResultIRJumpIf: PreResult[IR.Jump] = PreResult(T, MNone())
 
   val PostResultIRJumpIf: MOption[IR.Jump] = MNone()
@@ -540,6 +544,7 @@ import MIRTransformer._
   def preIRJump(o: IR.Jump): PreResult[IR.Jump] = {
     o match {
       case o: IR.Jump.Goto => return preIRJumpGoto(o)
+      case o: IR.Jump.GotoLocal => return preIRJumpGotoLocal(o)
       case o: IR.Jump.If => return preIRJumpIf(o)
       case o: IR.Jump.Return => return preIRJumpReturn(o)
     }
@@ -547,6 +552,10 @@ import MIRTransformer._
 
   def preIRJumpGoto(o: IR.Jump.Goto): PreResult[IR.Jump] = {
     return PreResultIRJumpGoto
+  }
+
+  def preIRJumpGotoLocal(o: IR.Jump.GotoLocal): PreResult[IR.Jump] = {
+    return PreResultIRJumpGotoLocal
   }
 
   def preIRJumpIf(o: IR.Jump.If): PreResult[IR.Jump] = {
@@ -914,6 +923,7 @@ import MIRTransformer._
   def postIRJump(o: IR.Jump): MOption[IR.Jump] = {
     o match {
       case o: IR.Jump.Goto => return postIRJumpGoto(o)
+      case o: IR.Jump.GotoLocal => return postIRJumpGotoLocal(o)
       case o: IR.Jump.If => return postIRJumpIf(o)
       case o: IR.Jump.Return => return postIRJumpReturn(o)
     }
@@ -921,6 +931,10 @@ import MIRTransformer._
 
   def postIRJumpGoto(o: IR.Jump.Goto): MOption[IR.Jump] = {
     return PostResultIRJumpGoto
+  }
+
+  def postIRJumpGotoLocal(o: IR.Jump.GotoLocal): MOption[IR.Jump] = {
+    return PostResultIRJumpGotoLocal
   }
 
   def postIRJumpIf(o: IR.Jump.If): MOption[IR.Jump] = {
@@ -1447,6 +1461,12 @@ import MIRTransformer._
         case o2: IR.Jump.Goto =>
           if (hasChanged)
             MSome(o2)
+          else
+            MNone()
+        case o2: IR.Jump.GotoLocal =>
+          val r0: MOption[IR.MethodContext] = transformIRMethodContext(o2.context)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(context = r0.getOrElse(o2.context)))
           else
             MNone()
         case o2: IR.Jump.If =>

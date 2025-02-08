@@ -38,8 +38,21 @@ object IRTranslator {
 @record class IRTranslator(val threeAddressCode: B, val th: TypeHierarchy) {
 
   var methodContext: IR.MethodContext = IR.MethodContext.empty
-  var _freshTemp: Z = 0
   var stmts: ISZ[IR.Stmt] = ISZ()
+  var _freshTemp: Z = 0
+  var _freshLabel: Z = 0
+
+  def freshTemp(): Z = {
+    val r = _freshTemp
+    _freshTemp = _freshTemp + 1
+    return r
+  }
+
+  def freshLabel(): Z = {
+    val r = _freshLabel
+    _freshLabel = _freshLabel + 1
+    return r
+  }
 
   def translateMethodH(isBasic: B,
                        receiverTypeOpt: Option[AST.Typed],
@@ -85,17 +98,13 @@ object IRTranslator {
   }
 
   def toBasic(body: IR.Body.Block, pos: message.Position): IR.Body.Basic = {
-    var _freshLabel = 2
-
-    def freshLabel(): Z = {
-      val r = _freshLabel
-      _freshLabel = _freshLabel + 1
-      return r
-    }
 
     var blocks = ISZ[IR.BasicBlock]()
     var grounds = ISZ[IR.Stmt.Ground]()
     var decls = ISZ[IR.Stmt.Decl]()
+
+    val retLabel = freshLabel()
+    val initLabel = freshLabel()
 
     @pure def basicBlock(label: Z, stmts: ISZ[IR.Stmt.Ground], jump: IR.Jump): IR.BasicBlock = {
       return IR.BasicBlock(label, stmts, jump)
@@ -118,7 +127,7 @@ object IRTranslator {
               Some(IR.Exp.LocalVarRef(F, methodContext, "Res", exp.tipe, exp.pos))
             case _ =>
           }
-          blocks = blocks :+ basicBlock(label, grounds, IR.Jump.Goto(0, stmt.pos))
+          blocks = blocks :+ basicBlock(label, grounds, IR.Jump.Goto(retLabel, stmt.pos))
           grounds = ISZ()
           return None()
         case stmt: IR.Stmt.If =>
@@ -210,15 +219,15 @@ object IRTranslator {
       return Some(l)
     }
 
-    blockToBasic(1, body.block) match {
-      case Some(l) => blocks = blocks :+ basicBlock(l, grounds, IR.Jump.Goto(0, pos))
+    blockToBasic(initLabel, body.block) match {
+      case Some(l) => blocks = blocks :+ basicBlock(l, grounds, IR.Jump.Goto(retLabel, pos))
       case _ =>
     }
     if (methodContext.t.ret != AST.Typed.unit) {
       blocks = blocks(0 ~> blocks(0)(grounds = IR.Stmt.Decl(F, F, methodContext.t.ret, "Res", pos) +: blocks(0).grounds))
-      blocks = blocks :+ basicBlock(0, ISZ(), IR.Jump.Return(Some(IR.Exp.LocalVarRef(F, methodContext, "Res", methodContext.t.ret, pos)), pos))
+      blocks = blocks :+ basicBlock(retLabel, ISZ(), IR.Jump.Return(Some(IR.Exp.LocalVarRef(F, methodContext, "Res", methodContext.t.ret, pos)), pos))
     } else {
-      blocks = blocks :+ basicBlock(0, ISZ(), IR.Jump.Return(None(), pos))
+      blocks = blocks :+ basicBlock(retLabel, ISZ(), IR.Jump.Return(None(), pos))
     }
     return IR.Body.Basic(blocks)
   }
@@ -443,12 +452,6 @@ object IRTranslator {
       case _ =>
     }
     return F
-  }
-
-  def freshTemp(): Z = {
-    val r = _freshTemp
-    _freshTemp = _freshTemp + 1
-    return r
   }
 
   def translateExp(exp: AST.Exp): IR.Exp = {

@@ -306,12 +306,17 @@ object IRTransformer {
     @pure def preIRJump(ctx: Context, o: IR.Jump): PreResult[Context, IR.Jump] = {
       o match {
         case o: IR.Jump.Goto => return preIRJumpGoto(ctx, o)
+        case o: IR.Jump.GotoLocal => return preIRJumpGotoLocal(ctx, o)
         case o: IR.Jump.If => return preIRJumpIf(ctx, o)
         case o: IR.Jump.Return => return preIRJumpReturn(ctx, o)
       }
     }
 
     @pure def preIRJumpGoto(ctx: Context, o: IR.Jump.Goto): PreResult[Context, IR.Jump] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRJumpGotoLocal(ctx: Context, o: IR.Jump.GotoLocal): PreResult[Context, IR.Jump] = {
       return PreResult(ctx, T, None())
     }
 
@@ -680,12 +685,17 @@ object IRTransformer {
     @pure def postIRJump(ctx: Context, o: IR.Jump): TPostResult[Context, IR.Jump] = {
       o match {
         case o: IR.Jump.Goto => return postIRJumpGoto(ctx, o)
+        case o: IR.Jump.GotoLocal => return postIRJumpGotoLocal(ctx, o)
         case o: IR.Jump.If => return postIRJumpIf(ctx, o)
         case o: IR.Jump.Return => return postIRJumpReturn(ctx, o)
       }
     }
 
     @pure def postIRJumpGoto(ctx: Context, o: IR.Jump.Goto): TPostResult[Context, IR.Jump] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRJumpGotoLocal(ctx: Context, o: IR.Jump.GotoLocal): TPostResult[Context, IR.Jump] = {
       return TPostResult(ctx, None())
     }
 
@@ -1253,6 +1263,12 @@ import IRTransformer._
             TPostResult(preR.ctx, Some(o2))
           else
             TPostResult(preR.ctx, None())
+        case o2: IR.Jump.GotoLocal =>
+          val r0: TPostResult[Context, IR.MethodContext] = transformIRMethodContext(preR.ctx, o2.context)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(context = r0.resultOpt.getOrElse(o2.context))))
+          else
+            TPostResult(r0.ctx, None())
         case o2: IR.Jump.If =>
           val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.cond)
           if (hasChanged || r0.resultOpt.nonEmpty)

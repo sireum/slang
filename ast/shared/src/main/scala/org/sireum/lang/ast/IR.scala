@@ -100,7 +100,7 @@ object IR {
     }
 
     @datatype class FieldVarRef(val owner: Typed, val receiver: Exp, val id: org.sireum.String, val tipe: Typed, val pos: Position) extends Exp {
-      @strictpure def prettyST: ST = st"$owner.$id"
+      @strictpure def prettyST: ST = st"$receiver.$id"
     }
 
     @datatype class Unary(val tipe: Typed, val op: lang.ast.Exp.UnaryOp.Type, val exp: Exp, val pos: Position) extends Exp {
@@ -303,6 +303,10 @@ object IR {
       @strictpure def prettyST: ST = st"goto .$label"
     }
 
+    @datatype class GotoLocal(val context: MethodContext, val id: String, val pos: Position) extends Jump {
+      @strictpure def prettyST: ST = st"goto $id"
+    }
+
     @datatype class If(val cond: Exp, thenLabel: Z, elseLabel: Z, val pos: Position) extends Jump {
       @strictpure def prettyST: ST = st"if ${cond.prettyST} goto .$thenLabel else goto .$elseLabel"
     }
@@ -353,6 +357,9 @@ object IR {
                             val tipe: Typed.Fun,
                             val body: Body,
                             val pos: Position) {
+    @memoize def context: MethodContext = {
+      return MethodContext(isInObject, owner, id, tipe)
+    }
     @strictpure def prettyST: ST = {
       val pt: ST = if (typeParams.isEmpty) st"" else st"[${(typeParams, ", ")}]"
       val ownerOpt: Option[ST] = if (owner.isEmpty)  None() else  Some(st"${(owner, ".")}${if (isInObject) "." else "#"}")
