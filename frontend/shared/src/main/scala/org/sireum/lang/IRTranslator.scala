@@ -255,33 +255,39 @@ object IRTranslator {
         val copy = shouldCopy(stmt.rhs.typedOpt.get)
         val oldStmts = stmts
         stmts = ISZ()
-        val identRhs: IR.Exp = stmt.rhs match {
-          case rhs: AST.Stmt.Expr => translateExp(rhs.exp)
-          case _ =>
-            val n = freshTemp()
-            val t = stmt.rhs.typedOpt.get
-            translateAssignExp(stmt.rhs, n)
-            IR.Exp.Temp(n, t, stmt.rhs.asStmt.posOpt.get)
+        def assignRhs(): IR.Exp = {
+          stmt.rhs match {
+            case rhs: AST.Stmt.Expr => return translateExp(rhs.exp)
+            case _ =>
+              val n = freshTemp()
+              val t = stmt.rhs.typedOpt.get
+              translateAssignExp(stmt.rhs, n)
+              return IR.Exp.Temp(n, t, stmt.rhs.asStmt.posOpt.get)
+          }
         }
         stmt.lhs match {
           case lhs: AST.Exp.Ident =>
             lhs.resOpt.get match {
               case _: AST.ResolvedInfo.LocalVar =>
-                stmts = stmts :+ IR.Stmt.Assign.Local(copy, methodContext, lhs.id.value, identRhs, pos)
+                val rhs = assignRhs()
+                stmts = stmts :+ IR.Stmt.Assign.Local(copy, methodContext, lhs.id.value, rhs, pos)
               case res: AST.ResolvedInfo.Var =>
                 if (res.isInObject) {
-                  stmts = stmts :+ IR.Stmt.Assign.Global(copy, res.owner :+ res.id, identRhs, pos)
-                }
-                val receiverPos = lhs.posOpt.get
-                val thiz = IR.Exp.LocalVarRef(T, methodContext, "this", methodContext.receiverType, receiverPos)
-                val (receiver, receiverType): (IR.Exp, AST.Typed.Name) = if (threeAddressCode) {
-                  val n = freshTemp()
-                  stmts = stmts :+ IR.Stmt.Assign.Temp(n, thiz, receiverPos)
-                  (IR.Exp.Temp(n, methodContext.receiverType, receiverPos), methodContext.receiverType.asInstanceOf[AST.Typed.Name])
+                  val rhs = assignRhs()
+                  stmts = stmts :+ IR.Stmt.Assign.Global(copy, res.owner :+ res.id, rhs, pos)
                 } else {
-                  (thiz, methodContext.receiverType.asInstanceOf[AST.Typed.Name])
+                  val receiverPos = lhs.posOpt.get
+                  val thiz = IR.Exp.LocalVarRef(T, methodContext, "this", methodContext.receiverType, receiverPos)
+                  val (receiver, receiverType): (IR.Exp, AST.Typed.Name) = if (threeAddressCode) {
+                    val n = freshTemp()
+                    stmts = stmts :+ IR.Stmt.Assign.Temp(n, thiz, receiverPos)
+                    (IR.Exp.Temp(n, methodContext.receiverType, receiverPos), methodContext.receiverType.asInstanceOf[AST.Typed.Name])
+                  } else {
+                    (thiz, methodContext.receiverType.asInstanceOf[AST.Typed.Name])
+                  }
+                  val rhs = assignRhs()
+                  stmts = stmts :+ IR.Stmt.Assign.Field(copy, receiver, receiverType, lhs.id.value, rhs, pos)
                 }
-                stmts = stmts :+ IR.Stmt.Assign.Field(copy, receiver, receiverType, lhs.id.value, identRhs, pos)
               case res => halt(s"Infeasible: $res")
             }
           case lhs: AST.Exp.Select =>
