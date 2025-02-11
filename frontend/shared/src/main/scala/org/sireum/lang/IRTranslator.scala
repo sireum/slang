@@ -41,7 +41,7 @@ object IRTranslator {
   }
 
   @ext("IRTranslatorFreshAtomic") object Ext {
-    def createFresh: Fresh = $
+    @pure def createFresh: Fresh = $
   }
 
   @strictpure def createFresh: Fresh = Ext.createFresh
