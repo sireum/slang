@@ -60,7 +60,7 @@ object IR {
       @strictpure def numOfTemps: Z = 0
     }
 
-    @datatype class Int(val tipe: Typed, val bitWidth: Z, val value: Z, val pos: Position) extends Exp {
+    @datatype class Int(val tipe: Typed, val value: Z, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"$value [$tipe]"
       @strictpure def numOfTemps: Z = 0
     }

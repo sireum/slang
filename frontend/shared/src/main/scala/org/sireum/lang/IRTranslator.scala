@@ -40,7 +40,7 @@ object IRTranslator {
   var methodContext: IR.MethodContext = IR.MethodContext.empty
   var stmts: ISZ[IR.Stmt] = ISZ()
   var _freshTemp: Z = 0
-  var _freshLabel: Z = 0
+  var _freshLabel: Z = 1
 
   def freshTemp(): Z = {
     val r = _freshTemp
@@ -103,7 +103,10 @@ object IRTranslator {
     var grounds = ISZ[IR.Stmt.Ground]()
     var decls = ISZ[IR.Stmt.Decl]()
 
-    val retLabel = freshLabel()
+    def addGround(g: IR.Stmt.Ground): Unit = {
+      grounds = grounds :+ g
+    }
+
     val initLabel = freshLabel()
 
     @pure def basicBlock(label: Z, stmts: ISZ[IR.Stmt.Ground], jump: IR.Jump): IR.BasicBlock = {
@@ -115,19 +118,13 @@ object IRTranslator {
         case stmt: IR.Stmt.Block =>
           return blockToBasic(label, stmt)
         case stmt: IR.Stmt.Expr =>
-          grounds = grounds :+ stmt
+          addGround(stmt)
           return Some(label)
         case stmt: IR.Stmt.Assign =>
-          grounds = grounds :+ stmt
+          addGround(stmt)
           return Some(label)
         case stmt: IR.Stmt.Return =>
-          stmt.expOpt match {
-            case Some(exp) =>
-              grounds = grounds :+ IR.Stmt.Assign.Local(shouldCopy(exp.tipe), methodContext, "Res", exp, exp.pos)
-              Some(IR.Exp.LocalVarRef(F, methodContext, "Res", exp.tipe, exp.pos))
-            case _ =>
-          }
-          blocks = blocks :+ basicBlock(label, grounds, IR.Jump.Goto(retLabel, stmt.pos))
+          blocks = blocks :+ basicBlock(label, grounds, IR.Jump.Return(stmt.expOpt, pos))
           grounds = ISZ()
           return None()
         case stmt: IR.Stmt.If =>
@@ -176,11 +173,11 @@ object IRTranslator {
               return None()
           }
         case stmt: IR.Stmt.Decl =>
-          grounds = grounds :+ stmt
+          addGround(stmt)
           decls = decls :+ stmt
           return Some(label)
         case stmt: IR.Stmt.Intrinsic =>
-          grounds = grounds :+ stmt
+          addGround(stmt)
           return Some(label)
       }
     }
@@ -216,21 +213,15 @@ object IRTranslator {
         }
       }
       for (d <- decls) {
-        grounds = grounds :+ d.undeclare
+        addGround(d.undeclare)
       }
       decls = oldDecls
       return Some(l)
     }
 
     blockToBasic(initLabel, body.block) match {
-      case Some(l) => blocks = blocks :+ basicBlock(l, grounds, IR.Jump.Goto(retLabel, pos))
+      case Some(l) => blocks = blocks :+ basicBlock(l, grounds, IR.Jump.Return(None(), pos))
       case _ =>
-    }
-    if (methodContext.t.ret != AST.Typed.unit) {
-      blocks = blocks(0 ~> blocks(0)(grounds = IR.Stmt.Decl(F, F, methodContext, ISZ(IR.Stmt.Decl.Local("Res", methodContext.t.ret)), pos) +: blocks(0).grounds))
-      blocks = blocks :+ basicBlock(retLabel, ISZ(), IR.Jump.Return(Some(IR.Exp.LocalVarRef(F, methodContext, "Res", methodContext.t.ret, pos)), pos))
-    } else {
-      blocks = blocks :+ basicBlock(retLabel, ISZ(), IR.Jump.Return(None(), pos))
     }
     return IR.Body.Basic(blocks)
   }
@@ -484,8 +475,8 @@ object IRTranslator {
     val pos = exp.posOpt.get
     exp match {
       case exp: AST.Exp.LitB => return norm3AC(IR.Exp.Bool(exp.value, pos))
-      case exp: AST.Exp.LitC => return norm3AC(IR.Exp.Int(AST.Typed.c, 32, exp.value.toZ, pos))
-      case exp: AST.Exp.LitZ => return norm3AC(IR.Exp.Int(AST.Typed.z, 0, exp.value, pos))
+      case exp: AST.Exp.LitC => return norm3AC(IR.Exp.Int(AST.Typed.c, exp.value.toZ, pos))
+      case exp: AST.Exp.LitZ => return norm3AC(IR.Exp.Int(AST.Typed.z, exp.value, pos))
       case exp: AST.Exp.LitF32 => return norm3AC(IR.Exp.F32(exp.value, pos))
       case exp: AST.Exp.LitF64 => return norm3AC(IR.Exp.F64(exp.value, pos))
       case exp: AST.Exp.LitR => return norm3AC(IR.Exp.R(exp.value, pos))
@@ -495,7 +486,7 @@ object IRTranslator {
           val t = exp.typedOpt.get.asInstanceOf[AST.Typed.Name]
           val info = th.typeMap.get(t.ids).get.asInstanceOf[TypeInfo.SubZ]
           val value = Z(exp.lits(0).value).get
-          return norm3AC(IR.Exp.Int(t, if (info.ast.isBitVector) info.ast.bitWidth else 0, value, pos))
+          return norm3AC(IR.Exp.Int(t, value, pos))
         } else {
           halt(s"TODO: $exp")
         }
