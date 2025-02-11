@@ -240,6 +240,25 @@ object IR {
       @strictpure def prettyST: ST = st"(${exp.prettyST} ${if (test) "is" else "as"} $t)"
       @strictpure def numOfTemps: Z = exp.numOfTemps
     }
+
+    @datatype class Intrinsic(val intrinsic: Intrinsic.Type) extends Exp {
+      @strictpure def tipe: Typed = intrinsic.tipe
+      @strictpure def prettyST: ST = intrinsic.prettyST
+      @strictpure def numOfTemps: Z = intrinsic.numOfTemps
+      @strictpure def pos: Position = intrinsic.pos
+    }
+
+    object Intrinsic {
+      @sig trait Type {
+        @pure def tipe: Typed
+        @pure def pos: Position
+        @pure def prettyST: ST
+        @pure def numOfTemps: Z
+        @pure override def string: org.sireum.String = {
+          return prettyST.render
+        }
+      }
+    }
   }
 
   @datatype trait Stmt {
@@ -322,15 +341,38 @@ object IR {
       @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = halt("This API can only be used for 3-address code")
     }
 
-    @datatype class Decl(val undecl: B, val isVal: B, val tipe: Typed, val id: String, val pos: Position) extends Ground {
+    @datatype class Decl(val undecl: B, val isVal: B, val context: MethodContext, val locals: ISZ[Decl.Local], val pos: Position) extends Ground {
       @strictpure def undeclare: Decl = {
         val thiz = this
         thiz(undecl = T)
       }
-      @strictpure def prettyST: ST = st"${if (undecl) "un" else ""}decl $id: $tipe"
-      @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals - (if (undecl) 1 else -1), temps)
+      @strictpure def prettyST: ST = st"${if (undecl) "un" else ""}decl ${(for (l <- locals) yield l.prettyST, ", ")}"
+      @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) =
+        (locals - (if (undecl) this.locals.size else -this.locals.size), temps)
     }
 
+    object Decl {
+      @datatype class Local(val id: String, val tipe: Typed) {
+        @strictpure def prettyST: ST = st"$id: $tipe"
+      }
+    }
+
+    @datatype class Intrinsic(val intrinsic: Intrinsic.Type) extends Ground {
+      @strictpure def prettyST: ST = intrinsic.prettyST
+      @strictpure def pos: Position = intrinsic.pos
+      @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = intrinsic.computeLocalsTemps(locals, temps)
+    }
+
+    object Intrinsic {
+      @sig trait Type {
+        @pure def pos: Position
+        @pure def prettyST: ST
+        @pure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z)
+        @pure override def string: org.sireum.String = {
+          return prettyST.render
+        }
+      }
+    }
   }
 
   @datatype trait Jump {
@@ -350,12 +392,6 @@ object IR {
       @strictpure def targets: ISZ[Z] = ISZ(label)
     }
 
-    @datatype class GotoLocal(val context: MethodContext, val id: String, val pos: Position) extends Jump {
-      @strictpure def prettyST: ST = st"goto $id"
-      @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps)
-      @strictpure def targets: ISZ[Z] = ISZ()
-    }
-
     @datatype class If(val cond: Exp, thenLabel: Z, elseLabel: Z, val pos: Position) extends Jump {
       @strictpure def prettyST: ST = st"if ${cond.prettyST} goto .$thenLabel else goto .$elseLabel"
       @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps - cond.numOfTemps)
@@ -372,6 +408,25 @@ object IR {
         case _ => (locals, temps)
       }
       @strictpure def targets: ISZ[Z] = ISZ()
+    }
+
+    @datatype class Intrinsic(val intrinsic: Intrinsic.Type) extends Jump {
+      @strictpure def prettyST: ST = intrinsic.prettyST
+      @strictpure def pos: Position = intrinsic.pos
+      @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = intrinsic.computeLocalsTemps(locals, temps)
+      @strictpure def targets: ISZ[Z] = intrinsic.targets
+    }
+
+    object Intrinsic {
+      @sig trait Type {
+        @pure def pos: Position
+        @pure def prettyST: ST
+        @pure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z)
+        @pure def targets: ISZ[Z]
+        @pure override def string: org.sireum.String = {
+          return prettyST.render
+        }
+      }
     }
   }
 
@@ -419,11 +474,7 @@ object IR {
     @strictpure def prettyST: ST = {
       val pt: ST = if (typeParams.isEmpty) st"" else st"[${(typeParams, ", ")}]"
       val ownerOpt: Option[ST] = if (owner.isEmpty)  None() else  Some(st"${(owner, ".")}${if (isInObject) "." else "#"}")
-      val maxLocalsAndTempsOpt: Option[ST] = {
-        val (l, t) = maxLocalsAndTemps
-        if (l == 0 && t == 0) None() else Some(st"/* maxLocals = $l , maxTemps = $t */ ")
-      }
-      st"procedure $ownerOpt$id$pt(${(for (p <- ops.ISZOps(paramNames).zip(tipe.args)) yield st"${p._1}: ${p._2}", ", ")}): ${tipe.ret} $maxLocalsAndTempsOpt${body.prettyST}"
+      st"procedure $ownerOpt$id$pt(${(for (p <- ops.ISZOps(paramNames).zip(tipe.args)) yield st"${p._1}: ${p._2}", ", ")}): ${tipe.ret} ${body.prettyST}"
     }
     @pure override def string: String = {
       return prettyST.render
@@ -460,7 +511,6 @@ object IR {
           updateLocalsTemps(b.jump.computeLocalsTemps(locals, temps))
           b.jump match {
             case _: IR.Jump.Return => assert(temps == 0, s"${b.label}: end temps = $temps")
-            case _: IR.Jump.GotoLocal => assert(temps == 0, s"${b.label}: end temps = $temps")
             case _ =>
           }
           for (target <- b.jump.targets) {
@@ -490,9 +540,7 @@ object IR {
                           val globals: ISZ[Global],
                           val procedures: ISZ[Procedure]) {
     @strictpure def prettyST: ST =
-      st"""// maxLocals = ${maxLocalsTemps._1}, maxTemps = ${maxLocalsTemps._2}
-          |
-          |${(for (g <- globals) yield g.prettyST, "\n")}
+      st"""${(for (g <- globals) yield g.prettyST, "\n")}
           |
           |${(for (p <- procedures) yield p.prettyST, "\n\n")}"""
     @pure override def string: String = {

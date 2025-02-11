@@ -179,6 +179,9 @@ object IRTranslator {
           grounds = grounds :+ stmt
           decls = decls :+ stmt
           return Some(label)
+        case stmt: IR.Stmt.Intrinsic =>
+          grounds = grounds :+ stmt
+          return Some(label)
       }
     }
 
@@ -224,7 +227,7 @@ object IRTranslator {
       case _ =>
     }
     if (methodContext.t.ret != AST.Typed.unit) {
-      blocks = blocks(0 ~> blocks(0)(grounds = IR.Stmt.Decl(F, F, methodContext.t.ret, "Res", pos) +: blocks(0).grounds))
+      blocks = blocks(0 ~> blocks(0)(grounds = IR.Stmt.Decl(F, F, methodContext, ISZ(IR.Stmt.Decl.Local("Res", methodContext.t.ret)), pos) +: blocks(0).grounds))
       blocks = blocks :+ basicBlock(retLabel, ISZ(), IR.Jump.Return(Some(IR.Exp.LocalVarRef(F, methodContext, "Res", methodContext.t.ret, pos)), pos))
     } else {
       blocks = blocks :+ basicBlock(retLabel, ISZ(), IR.Jump.Return(None(), pos))
@@ -249,7 +252,7 @@ object IRTranslator {
             IR.Exp.Temp(n, t, init.asStmt.posOpt.get)
         }
         stmts = stmts :+ IR.Stmt.Assign.Local(shouldCopy(t), methodContext, stmt.id.value, varRhs, pos)
-        oldStmts = oldStmts :+ IR.Stmt.Decl(F, stmt.isVal, t, stmt.id.value, pos)
+        oldStmts = oldStmts :+ IR.Stmt.Decl(F, stmt.isVal, methodContext, ISZ(IR.Stmt.Decl.Local(stmt.id.value, t)), pos)
         stmts = oldStmts :+ IR.Stmt.Block(stmts, pos)
       case stmt: AST.Stmt.Assign =>
         val copy = shouldCopy(stmt.rhs.typedOpt.get)
@@ -443,6 +446,9 @@ object IRTranslator {
   }
 
   @memoize def shouldCopy(t: AST.Typed): B = {
+    if (isScalar(t)) {
+      return F
+    }
     t match {
       case t: AST.Typed.Name =>
         t.ids match {

@@ -70,6 +70,7 @@ object IRTransformer {
         case o: IR.Exp.Select => return preIRExpSelect(ctx, o)
         case o: IR.Exp.Indexing => return preIRExpIndexing(ctx, o)
         case o: IR.Exp.Type => return preIRExpType(ctx, o)
+        case o: IR.Exp.Intrinsic => return preIRExpIntrinsic(ctx, o)
       }
     }
 
@@ -149,6 +150,14 @@ object IRTransformer {
       return PreResult(ctx, T, None())
     }
 
+    @pure def preIRExpIntrinsic(ctx: Context, o: IR.Exp.Intrinsic): PreResult[Context, IR.Exp] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRExpIntrinsicType(ctx: Context, o: IR.Exp.Intrinsic.Type): PreResult[Context, IR.Exp.Intrinsic.Type] = {
+      return PreResult(ctx, T, None())
+    }
+
     @pure def preIRStmt(ctx: Context, o: IR.Stmt): PreResult[Context, IR.Stmt] = {
       o match {
         case o: IR.Stmt.Expr =>
@@ -204,6 +213,13 @@ object IRTransformer {
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt]())
           }
           return r
+        case o: IR.Stmt.Intrinsic =>
+          val r: PreResult[Context, IR.Stmt] = preIRStmtIntrinsic(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: IR.Stmt)) => PreResult(preCtx, continu, Some[IR.Stmt](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type IR.Stmt")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt]())
+          }
+          return r
       }
     }
 
@@ -246,6 +262,7 @@ object IRTransformer {
           }
           return r
         case o: IR.Stmt.Decl => return preIRStmtDecl(ctx, o)
+        case o: IR.Stmt.Intrinsic => return preIRStmtIntrinsic(ctx, o)
       }
     }
 
@@ -303,20 +320,28 @@ object IRTransformer {
       return PreResult(ctx, T, None())
     }
 
+    @pure def preIRStmtDeclLocal(ctx: Context, o: IR.Stmt.Decl.Local): PreResult[Context, IR.Stmt.Decl.Local] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRStmtIntrinsic(ctx: Context, o: IR.Stmt.Intrinsic): PreResult[Context, IR.Stmt.Ground] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRStmtIntrinsicType(ctx: Context, o: IR.Stmt.Intrinsic.Type): PreResult[Context, IR.Stmt.Intrinsic.Type] = {
+      return PreResult(ctx, T, None())
+    }
+
     @pure def preIRJump(ctx: Context, o: IR.Jump): PreResult[Context, IR.Jump] = {
       o match {
         case o: IR.Jump.Goto => return preIRJumpGoto(ctx, o)
-        case o: IR.Jump.GotoLocal => return preIRJumpGotoLocal(ctx, o)
         case o: IR.Jump.If => return preIRJumpIf(ctx, o)
         case o: IR.Jump.Return => return preIRJumpReturn(ctx, o)
+        case o: IR.Jump.Intrinsic => return preIRJumpIntrinsic(ctx, o)
       }
     }
 
     @pure def preIRJumpGoto(ctx: Context, o: IR.Jump.Goto): PreResult[Context, IR.Jump] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preIRJumpGotoLocal(ctx: Context, o: IR.Jump.GotoLocal): PreResult[Context, IR.Jump] = {
       return PreResult(ctx, T, None())
     }
 
@@ -325,6 +350,14 @@ object IRTransformer {
     }
 
     @pure def preIRJumpReturn(ctx: Context, o: IR.Jump.Return): PreResult[Context, IR.Jump] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRJumpIntrinsic(ctx: Context, o: IR.Jump.Intrinsic): PreResult[Context, IR.Jump] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRJumpIntrinsicType(ctx: Context, o: IR.Jump.Intrinsic.Type): PreResult[Context, IR.Jump.Intrinsic.Type] = {
       return PreResult(ctx, T, None())
     }
 
@@ -449,6 +482,7 @@ object IRTransformer {
         case o: IR.Exp.Select => return postIRExpSelect(ctx, o)
         case o: IR.Exp.Indexing => return postIRExpIndexing(ctx, o)
         case o: IR.Exp.Type => return postIRExpType(ctx, o)
+        case o: IR.Exp.Intrinsic => return postIRExpIntrinsic(ctx, o)
       }
     }
 
@@ -528,6 +562,14 @@ object IRTransformer {
       return TPostResult(ctx, None())
     }
 
+    @pure def postIRExpIntrinsic(ctx: Context, o: IR.Exp.Intrinsic): TPostResult[Context, IR.Exp] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRExpIntrinsicType(ctx: Context, o: IR.Exp.Intrinsic.Type): TPostResult[Context, IR.Exp.Intrinsic.Type] = {
+      return TPostResult(ctx, None())
+    }
+
     @pure def postIRStmt(ctx: Context, o: IR.Stmt): TPostResult[Context, IR.Stmt] = {
       o match {
         case o: IR.Stmt.Expr =>
@@ -583,6 +625,13 @@ object IRTransformer {
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt]())
           }
           return r
+        case o: IR.Stmt.Intrinsic =>
+          val r: TPostResult[Context, IR.Stmt] = postIRStmtIntrinsic(ctx, o) match {
+           case TPostResult(postCtx, Some(result: IR.Stmt)) => TPostResult(postCtx, Some[IR.Stmt](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type IR.Stmt")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt]())
+          }
+          return r
       }
     }
 
@@ -625,6 +674,7 @@ object IRTransformer {
           }
           return r
         case o: IR.Stmt.Decl => return postIRStmtDecl(ctx, o)
+        case o: IR.Stmt.Intrinsic => return postIRStmtIntrinsic(ctx, o)
       }
     }
 
@@ -682,20 +732,28 @@ object IRTransformer {
       return TPostResult(ctx, None())
     }
 
+    @pure def postIRStmtDeclLocal(ctx: Context, o: IR.Stmt.Decl.Local): TPostResult[Context, IR.Stmt.Decl.Local] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRStmtIntrinsic(ctx: Context, o: IR.Stmt.Intrinsic): TPostResult[Context, IR.Stmt.Ground] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRStmtIntrinsicType(ctx: Context, o: IR.Stmt.Intrinsic.Type): TPostResult[Context, IR.Stmt.Intrinsic.Type] = {
+      return TPostResult(ctx, None())
+    }
+
     @pure def postIRJump(ctx: Context, o: IR.Jump): TPostResult[Context, IR.Jump] = {
       o match {
         case o: IR.Jump.Goto => return postIRJumpGoto(ctx, o)
-        case o: IR.Jump.GotoLocal => return postIRJumpGotoLocal(ctx, o)
         case o: IR.Jump.If => return postIRJumpIf(ctx, o)
         case o: IR.Jump.Return => return postIRJumpReturn(ctx, o)
+        case o: IR.Jump.Intrinsic => return postIRJumpIntrinsic(ctx, o)
       }
     }
 
     @pure def postIRJumpGoto(ctx: Context, o: IR.Jump.Goto): TPostResult[Context, IR.Jump] = {
-      return TPostResult(ctx, None())
-    }
-
-    @pure def postIRJumpGotoLocal(ctx: Context, o: IR.Jump.GotoLocal): TPostResult[Context, IR.Jump] = {
       return TPostResult(ctx, None())
     }
 
@@ -704,6 +762,14 @@ object IRTransformer {
     }
 
     @pure def postIRJumpReturn(ctx: Context, o: IR.Jump.Return): TPostResult[Context, IR.Jump] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRJumpIntrinsic(ctx: Context, o: IR.Jump.Intrinsic): TPostResult[Context, IR.Jump] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRJumpIntrinsicType(ctx: Context, o: IR.Jump.Intrinsic.Type): TPostResult[Context, IR.Jump.Intrinsic.Type] = {
       return TPostResult(ctx, None())
     }
 
@@ -998,6 +1064,12 @@ import IRTransformer._
             TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), t = r1.resultOpt.getOrElse(o2.t))))
           else
             TPostResult(r1.ctx, None())
+        case o2: IR.Exp.Intrinsic =>
+          val r0: TPostResult[Context, IR.Exp.Intrinsic.Type] = transformIRExpIntrinsicType(preR.ctx, o2.intrinsic)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(intrinsic = r0.resultOpt.getOrElse(o2.intrinsic))))
+          else
+            TPostResult(r0.ctx, None())
       }
       rOpt
     } else if (preR.resultOpt.nonEmpty) {
@@ -1008,6 +1080,30 @@ import IRTransformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: IR.Exp = r.resultOpt.getOrElse(o)
     val postR: TPostResult[Context, IR.Exp] = pp.postIRExp(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformIRExpIntrinsicType(ctx: Context, o: IR.Exp.Intrinsic.Type): TPostResult[Context, IR.Exp.Intrinsic.Type] = {
+    val preR: PreResult[Context, IR.Exp.Intrinsic.Type] = pp.preIRExpIntrinsicType(ctx, o)
+    val r: TPostResult[Context, IR.Exp.Intrinsic.Type] = if (preR.continu) {
+      val o2: IR.Exp.Intrinsic.Type = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: TPostResult[Context, IR.Exp.Intrinsic.Type] = TPostResult(ctx, None())
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: IR.Exp.Intrinsic.Type = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, IR.Exp.Intrinsic.Type] = pp.postIRExpIntrinsicType(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -1094,9 +1190,16 @@ import IRTransformer._
           else
             TPostResult(r0.ctx, None())
         case o2: IR.Stmt.Decl =>
-          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          val r0: TPostResult[Context, IR.MethodContext] = transformIRMethodContext(preR.ctx, o2.context)
+          val r1: TPostResult[Context, IS[Z, IR.Stmt.Decl.Local]] = transformISZ(r0.ctx, o2.locals, transformIRStmtDeclLocal _)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(context = r0.resultOpt.getOrElse(o2.context), locals = r1.resultOpt.getOrElse(o2.locals))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: IR.Stmt.Intrinsic =>
+          val r0: TPostResult[Context, IR.Stmt.Intrinsic.Type] = transformIRStmtIntrinsicType(preR.ctx, o2.intrinsic)
           if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r0.ctx, Some(o2(intrinsic = r0.resultOpt.getOrElse(o2.intrinsic))))
           else
             TPostResult(r0.ctx, None())
       }
@@ -1167,9 +1270,16 @@ import IRTransformer._
           else
             TPostResult(r3.ctx, None())
         case o2: IR.Stmt.Decl =>
-          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          val r0: TPostResult[Context, IR.MethodContext] = transformIRMethodContext(preR.ctx, o2.context)
+          val r1: TPostResult[Context, IS[Z, IR.Stmt.Decl.Local]] = transformISZ(r0.ctx, o2.locals, transformIRStmtDeclLocal _)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(context = r0.resultOpt.getOrElse(o2.context), locals = r1.resultOpt.getOrElse(o2.locals))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: IR.Stmt.Intrinsic =>
+          val r0: TPostResult[Context, IR.Stmt.Intrinsic.Type] = transformIRStmtIntrinsicType(preR.ctx, o2.intrinsic)
           if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+            TPostResult(r0.ctx, Some(o2(intrinsic = r0.resultOpt.getOrElse(o2.intrinsic))))
           else
             TPostResult(r0.ctx, None())
       }
@@ -1252,6 +1362,57 @@ import IRTransformer._
     }
   }
 
+  @pure def transformIRStmtDeclLocal(ctx: Context, o: IR.Stmt.Decl.Local): TPostResult[Context, IR.Stmt.Decl.Local] = {
+    val preR: PreResult[Context, IR.Stmt.Decl.Local] = pp.preIRStmtDeclLocal(ctx, o)
+    val r: TPostResult[Context, IR.Stmt.Decl.Local] = if (preR.continu) {
+      val o2: IR.Stmt.Decl.Local = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+      if (hasChanged || r0.resultOpt.nonEmpty)
+        TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+      else
+        TPostResult(r0.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: IR.Stmt.Decl.Local = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, IR.Stmt.Decl.Local] = pp.postIRStmtDeclLocal(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformIRStmtIntrinsicType(ctx: Context, o: IR.Stmt.Intrinsic.Type): TPostResult[Context, IR.Stmt.Intrinsic.Type] = {
+    val preR: PreResult[Context, IR.Stmt.Intrinsic.Type] = pp.preIRStmtIntrinsicType(ctx, o)
+    val r: TPostResult[Context, IR.Stmt.Intrinsic.Type] = if (preR.continu) {
+      val o2: IR.Stmt.Intrinsic.Type = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: TPostResult[Context, IR.Stmt.Intrinsic.Type] = TPostResult(ctx, None())
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: IR.Stmt.Intrinsic.Type = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, IR.Stmt.Intrinsic.Type] = pp.postIRStmtIntrinsicType(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
   @pure def transformIRJump(ctx: Context, o: IR.Jump): TPostResult[Context, IR.Jump] = {
     val preR: PreResult[Context, IR.Jump] = pp.preIRJump(ctx, o)
     val r: TPostResult[Context, IR.Jump] = if (preR.continu) {
@@ -1263,12 +1424,6 @@ import IRTransformer._
             TPostResult(preR.ctx, Some(o2))
           else
             TPostResult(preR.ctx, None())
-        case o2: IR.Jump.GotoLocal =>
-          val r0: TPostResult[Context, IR.MethodContext] = transformIRMethodContext(preR.ctx, o2.context)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(context = r0.resultOpt.getOrElse(o2.context))))
-          else
-            TPostResult(r0.ctx, None())
         case o2: IR.Jump.If =>
           val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.cond)
           if (hasChanged || r0.resultOpt.nonEmpty)
@@ -1281,6 +1436,12 @@ import IRTransformer._
             TPostResult(r0.ctx, Some(o2(expOpt = r0.resultOpt.getOrElse(o2.expOpt))))
           else
             TPostResult(r0.ctx, None())
+        case o2: IR.Jump.Intrinsic =>
+          val r0: TPostResult[Context, IR.Jump.Intrinsic.Type] = transformIRJumpIntrinsicType(preR.ctx, o2.intrinsic)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(intrinsic = r0.resultOpt.getOrElse(o2.intrinsic))))
+          else
+            TPostResult(r0.ctx, None())
       }
       rOpt
     } else if (preR.resultOpt.nonEmpty) {
@@ -1291,6 +1452,30 @@ import IRTransformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: IR.Jump = r.resultOpt.getOrElse(o)
     val postR: TPostResult[Context, IR.Jump] = pp.postIRJump(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformIRJumpIntrinsicType(ctx: Context, o: IR.Jump.Intrinsic.Type): TPostResult[Context, IR.Jump.Intrinsic.Type] = {
+    val preR: PreResult[Context, IR.Jump.Intrinsic.Type] = pp.preIRJumpIntrinsicType(ctx, o)
+    val r: TPostResult[Context, IR.Jump.Intrinsic.Type] = if (preR.continu) {
+      val o2: IR.Jump.Intrinsic.Type = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: TPostResult[Context, IR.Jump.Intrinsic.Type] = TPostResult(ctx, None())
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: IR.Jump.Intrinsic.Type = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, IR.Jump.Intrinsic.Type] = pp.postIRJumpIntrinsicType(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {
