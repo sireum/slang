@@ -33,25 +33,27 @@ import org.sireum.lang.tipe.TypeHierarchy
 import org.sireum.lang.{ast => AST}
 
 object IRTranslator {
-}
-
-@record class IRTranslator(val threeAddressCode: B, val th: TypeHierarchy) {
-
-  var methodContext: IR.MethodContext = IR.MethodContext.empty
-  var stmts: ISZ[IR.Stmt] = ISZ()
-  var _freshTemp: Z = 0
-  var _freshLabel: Z = 1
-
-  def freshTemp(): Z = {
-    val r = _freshTemp
-    _freshTemp = _freshTemp + 1
-    return r
+  @msig trait Fresh {
+    def setLabel(n: Z): Unit
+    def setTemp(n: Z): Unit
+    def label(): Z
+    def temp(): Z
   }
 
-  def freshLabel(): Z = {
-    val r = _freshLabel
-    _freshLabel = _freshLabel + 1
-    return r
+  @ext("IRTranslatorFreshAtomic") object Ext {
+    def createFresh: Fresh = $
+  }
+
+  @strictpure def createFresh: Fresh = Ext.createFresh
+}
+
+@record class IRTranslator(val threeAddressCode: B, val th: TypeHierarchy, val fresh: IRTranslator.Fresh) {
+
+  var methodContext: IR.MethodContext = IR.MethodContext.empty
+  var stmts: ISZ[IR.Stmt] = {
+    fresh.setTemp(0)
+    fresh.setLabel(1)
+    ISZ()
   }
 
   def translateMethodH(isBasic: B,
@@ -107,7 +109,7 @@ object IRTranslator {
       grounds = grounds :+ g
     }
 
-    val initLabel = freshLabel()
+    val initLabel = fresh.label()
 
     @pure def basicBlock(label: Z, stmts: ISZ[IR.Stmt.Ground], jump: IR.Jump): IR.BasicBlock = {
       return IR.BasicBlock(label, stmts, jump)
@@ -128,9 +130,9 @@ object IRTranslator {
           grounds = ISZ()
           return None()
         case stmt: IR.Stmt.If =>
-          val t = freshLabel()
-          val e = freshLabel()
-          val f: Z = if (stmt.elseBlock.stmts.isEmpty) e else freshLabel()
+          val t = fresh.label()
+          val e = fresh.label()
+          val f: Z = if (stmt.elseBlock.stmts.isEmpty) e else fresh.label()
           blocks = blocks :+ basicBlock(label, grounds, IR.Jump.If(stmt.cond, t, f, stmt.pos))
           grounds = ISZ()
           var allReturn = T
@@ -154,13 +156,13 @@ object IRTranslator {
           grounds = ISZ()
           return if (allReturn) None() else Some(e)
         case stmt: IR.Stmt.While =>
-          val n = freshLabel()
+          val n = fresh.label()
           blocks = blocks :+ basicBlock(label, grounds, IR.Jump.Goto(n, stmt.pos))
           grounds = ISZ()
           blockToBasic(n, stmt.condBlock) match {
             case Some(l) =>
-              val t = freshLabel()
-              val e = freshLabel()
+              val t = fresh.label()
+              val e = fresh.label()
               blocks = blocks :+ basicBlock(l, grounds, IR.Jump.If(stmt.cond, t, e, stmt.pos))
               grounds = ISZ()
               blockToBasic(t, stmt.block) match {
@@ -195,7 +197,7 @@ object IRTranslator {
             case _ =>
           }
           if (shouldSplit) {
-            val next = freshLabel()
+            val next = fresh.label()
             blocks = blocks :+ IR.BasicBlock(l, grounds, IR.Jump.Goto(next, stmt.pos))
             grounds = ISZ()
             l = next
@@ -206,7 +208,7 @@ object IRTranslator {
           case _ => return None()
         }
         if (shouldSplit) {
-          val next = freshLabel()
+          val next = fresh.label()
           blocks = blocks :+ IR.BasicBlock(l, grounds, IR.Jump.Goto(next, stmt.pos))
           grounds = ISZ()
           l = next
@@ -238,7 +240,7 @@ object IRTranslator {
           case init: AST.Stmt.Expr =>
             translateExp(init.exp)
           case _ =>
-            val n = freshTemp()
+            val n = fresh.temp()
             translateAssignExp(init, n)
             IR.Exp.Temp(n, t, init.asStmt.posOpt.get)
         }
@@ -253,7 +255,7 @@ object IRTranslator {
           stmt.rhs match {
             case rhs: AST.Stmt.Expr => return translateExp(rhs.exp)
             case _ =>
-              val n = freshTemp()
+              val n = fresh.temp()
               val t = stmt.rhs.typedOpt.get
               translateAssignExp(stmt.rhs, n)
               return IR.Exp.Temp(n, t, stmt.rhs.asStmt.posOpt.get)
@@ -273,7 +275,7 @@ object IRTranslator {
                   val receiverPos = lhs.posOpt.get
                   val thiz = IR.Exp.LocalVarRef(T, methodContext, "this", methodContext.receiverType, receiverPos)
                   val (receiver, receiverType): (IR.Exp, AST.Typed.Name) = if (threeAddressCode) {
-                    val n = freshTemp()
+                    val n = fresh.temp()
                     stmts = stmts :+ IR.Stmt.Assign.Temp(n, thiz, receiverPos)
                     (IR.Exp.Temp(n, methodContext.receiverType, receiverPos), methodContext.receiverType.asInstanceOf[AST.Typed.Name])
                   } else {
@@ -289,7 +291,7 @@ object IRTranslator {
               stmt.rhs match {
                 case rhs: AST.Stmt.Expr => return translateExp(rhs.exp)
                 case _ =>
-                  val n = freshTemp()
+                  val n = fresh.temp()
                   val t = stmt.rhs.typedOpt.get
                   val rhsPos = stmt.rhs.asStmt.posOpt.get
                   translateAssignExp(stmt.rhs, n)
@@ -314,7 +316,7 @@ object IRTranslator {
             val invokeRhs: IR.Exp = stmt.rhs match {
               case rhs: AST.Stmt.Expr => translateExp(rhs.exp)
               case _ =>
-                val n = freshTemp()
+                val n = fresh.temp()
                 val rhsPos = stmt.rhs.asStmt.posOpt.get
                 val t = stmt.rhs.typedOpt.get
                 translateAssignExp(stmt.rhs, n)
@@ -460,7 +462,7 @@ object IRTranslator {
   def translateExp(exp: AST.Exp): IR.Exp = {
     def norm3AC(e: IR.Exp): IR.Exp = {
       if (threeAddressCode && e.tipe != AST.Typed.unit && e.tipe != AST.Typed.nothing) {
-        val n = freshTemp()
+        val n = fresh.temp()
         stmts = stmts :+ IR.Stmt.Assign.Temp(n, e, e.pos)
         return IR.Exp.Temp(n, e.tipe, e.pos)
       } else {
@@ -607,7 +609,7 @@ object IRTranslator {
           val elseExp = translateExp(exp.elseExp)
           return IR.Exp.If(cond, thenExp, elseExp, t, pos)
         }
-        val n = freshTemp()
+        val n = fresh.temp()
         val oldStmts = stmts
         stmts = ISZ()
         val thenExp = translateExp(exp.thenExp)
