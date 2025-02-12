@@ -121,10 +121,6 @@ object MIRTransformer {
 
   val PostResultIRExpApply: MOption[IR.Exp] = MNone()
 
-  val PreResultIRExpSelect: PreResult[IR.Exp] = PreResult(T, MNone())
-
-  val PostResultIRExpSelect: MOption[IR.Exp] = MNone()
-
   val PreResultIRExpIndexing: PreResult[IR.Exp] = PreResult(T, MNone())
 
   val PostResultIRExpIndexing: MOption[IR.Exp] = MNone()
@@ -317,7 +313,6 @@ import MIRTransformer._
       case o: IR.Exp.If => return preIRExpIf(o)
       case o: IR.Exp.Construct => return preIRExpConstruct(o)
       case o: IR.Exp.Apply => return preIRExpApply(o)
-      case o: IR.Exp.Select => return preIRExpSelect(o)
       case o: IR.Exp.Indexing => return preIRExpIndexing(o)
       case o: IR.Exp.Type => return preIRExpType(o)
       case o: IR.Exp.Intrinsic => return preIRExpIntrinsic(o)
@@ -386,10 +381,6 @@ import MIRTransformer._
 
   def preIRExpApply(o: IR.Exp.Apply): PreResult[IR.Exp] = {
     return PreResultIRExpApply
-  }
-
-  def preIRExpSelect(o: IR.Exp.Select): PreResult[IR.Exp] = {
-    return PreResultIRExpSelect
   }
 
   def preIRExpIndexing(o: IR.Exp.Indexing): PreResult[IR.Exp] = {
@@ -729,7 +720,6 @@ import MIRTransformer._
       case o: IR.Exp.If => return postIRExpIf(o)
       case o: IR.Exp.Construct => return postIRExpConstruct(o)
       case o: IR.Exp.Apply => return postIRExpApply(o)
-      case o: IR.Exp.Select => return postIRExpSelect(o)
       case o: IR.Exp.Indexing => return postIRExpIndexing(o)
       case o: IR.Exp.Type => return postIRExpType(o)
       case o: IR.Exp.Intrinsic => return postIRExpIntrinsic(o)
@@ -798,10 +788,6 @@ import MIRTransformer._
 
   def postIRExpApply(o: IR.Exp.Apply): MOption[IR.Exp] = {
     return PostResultIRExpApply
-  }
-
-  def postIRExpSelect(o: IR.Exp.Select): MOption[IR.Exp] = {
-    return PostResultIRExpSelect
   }
 
   def postIRExpIndexing(o: IR.Exp.Indexing): MOption[IR.Exp] = {
@@ -1254,13 +1240,6 @@ import MIRTransformer._
             MSome(o2(args = r0.getOrElse(o2.args), methodType = r1.getOrElse(o2.methodType), tipe = r2.getOrElse(o2.tipe)))
           else
             MNone()
-        case o2: IR.Exp.Select =>
-          val r0: MOption[IR.Exp] = transformIRExp(o2.exp)
-          val r1: MOption[Typed] = transformTyped(o2.tipe)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(exp = r0.getOrElse(o2.exp), tipe = r1.getOrElse(o2.tipe)))
-          else
-            MNone()
         case o2: IR.Exp.Indexing =>
           val r0: MOption[IR.Exp] = transformIRExp(o2.exp)
           val r1: MOption[Typed] = transformTyped(o2.tipe)
@@ -1360,20 +1339,18 @@ import MIRTransformer._
             MNone()
         case o2: IR.Stmt.Assign.Field =>
           val r0: MOption[IR.Exp] = transformIRExp(o2.receiver)
-          val r1: MOption[Typed.Name] = transformTypedName(o2.receiverType)
-          val r2: MOption[Typed] = transformTyped(o2.tipe)
-          val r3: MOption[IR.Exp] = transformIRExp(o2.rhs)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-            MSome(o2(receiver = r0.getOrElse(o2.receiver), receiverType = r1.getOrElse(o2.receiverType), tipe = r2.getOrElse(o2.tipe), rhs = r3.getOrElse(o2.rhs)))
+          val r1: MOption[Typed] = transformTyped(o2.tipe)
+          val r2: MOption[IR.Exp] = transformIRExp(o2.rhs)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(receiver = r0.getOrElse(o2.receiver), tipe = r1.getOrElse(o2.tipe), rhs = r2.getOrElse(o2.rhs)))
           else
             MNone()
         case o2: IR.Stmt.Assign.Index =>
           val r0: MOption[IR.Exp] = transformIRExp(o2.receiver)
-          val r1: MOption[Typed.Name] = transformTypedName(o2.receiverType)
-          val r2: MOption[IR.Exp] = transformIRExp(o2.index)
-          val r3: MOption[IR.Exp] = transformIRExp(o2.rhs)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-            MSome(o2(receiver = r0.getOrElse(o2.receiver), receiverType = r1.getOrElse(o2.receiverType), index = r2.getOrElse(o2.index), rhs = r3.getOrElse(o2.rhs)))
+          val r1: MOption[IR.Exp] = transformIRExp(o2.index)
+          val r2: MOption[IR.Exp] = transformIRExp(o2.rhs)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(receiver = r0.getOrElse(o2.receiver), index = r1.getOrElse(o2.index), rhs = r2.getOrElse(o2.rhs)))
           else
             MNone()
         case o2: IR.Stmt.If =>
@@ -1471,20 +1448,18 @@ import MIRTransformer._
             MNone()
         case o2: IR.Stmt.Assign.Field =>
           val r0: MOption[IR.Exp] = transformIRExp(o2.receiver)
-          val r1: MOption[Typed.Name] = transformTypedName(o2.receiverType)
-          val r2: MOption[Typed] = transformTyped(o2.tipe)
-          val r3: MOption[IR.Exp] = transformIRExp(o2.rhs)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-            MSome(o2(receiver = r0.getOrElse(o2.receiver), receiverType = r1.getOrElse(o2.receiverType), tipe = r2.getOrElse(o2.tipe), rhs = r3.getOrElse(o2.rhs)))
+          val r1: MOption[Typed] = transformTyped(o2.tipe)
+          val r2: MOption[IR.Exp] = transformIRExp(o2.rhs)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(receiver = r0.getOrElse(o2.receiver), tipe = r1.getOrElse(o2.tipe), rhs = r2.getOrElse(o2.rhs)))
           else
             MNone()
         case o2: IR.Stmt.Assign.Index =>
           val r0: MOption[IR.Exp] = transformIRExp(o2.receiver)
-          val r1: MOption[Typed.Name] = transformTypedName(o2.receiverType)
-          val r2: MOption[IR.Exp] = transformIRExp(o2.index)
-          val r3: MOption[IR.Exp] = transformIRExp(o2.rhs)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-            MSome(o2(receiver = r0.getOrElse(o2.receiver), receiverType = r1.getOrElse(o2.receiverType), index = r2.getOrElse(o2.index), rhs = r3.getOrElse(o2.rhs)))
+          val r1: MOption[IR.Exp] = transformIRExp(o2.index)
+          val r2: MOption[IR.Exp] = transformIRExp(o2.rhs)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(receiver = r0.getOrElse(o2.receiver), index = r1.getOrElse(o2.index), rhs = r2.getOrElse(o2.rhs)))
           else
             MNone()
         case o2: IR.Stmt.Decl =>
@@ -1548,20 +1523,18 @@ import MIRTransformer._
             MNone()
         case o2: IR.Stmt.Assign.Field =>
           val r0: MOption[IR.Exp] = transformIRExp(o2.receiver)
-          val r1: MOption[Typed.Name] = transformTypedName(o2.receiverType)
-          val r2: MOption[Typed] = transformTyped(o2.tipe)
-          val r3: MOption[IR.Exp] = transformIRExp(o2.rhs)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-            MSome(o2(receiver = r0.getOrElse(o2.receiver), receiverType = r1.getOrElse(o2.receiverType), tipe = r2.getOrElse(o2.tipe), rhs = r3.getOrElse(o2.rhs)))
+          val r1: MOption[Typed] = transformTyped(o2.tipe)
+          val r2: MOption[IR.Exp] = transformIRExp(o2.rhs)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(receiver = r0.getOrElse(o2.receiver), tipe = r1.getOrElse(o2.tipe), rhs = r2.getOrElse(o2.rhs)))
           else
             MNone()
         case o2: IR.Stmt.Assign.Index =>
           val r0: MOption[IR.Exp] = transformIRExp(o2.receiver)
-          val r1: MOption[Typed.Name] = transformTypedName(o2.receiverType)
-          val r2: MOption[IR.Exp] = transformIRExp(o2.index)
-          val r3: MOption[IR.Exp] = transformIRExp(o2.rhs)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-            MSome(o2(receiver = r0.getOrElse(o2.receiver), receiverType = r1.getOrElse(o2.receiverType), index = r2.getOrElse(o2.index), rhs = r3.getOrElse(o2.rhs)))
+          val r1: MOption[IR.Exp] = transformIRExp(o2.index)
+          val r2: MOption[IR.Exp] = transformIRExp(o2.rhs)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(receiver = r0.getOrElse(o2.receiver), index = r1.getOrElse(o2.index), rhs = r2.getOrElse(o2.rhs)))
           else
             MNone()
       }
@@ -2008,41 +1981,6 @@ import MIRTransformer._
      case MSome(result: IR.Exp.Apply) => MSome[IR.Exp.Apply](result)
      case MSome(_) => halt("Can only produce object of type IR.Exp.Apply")
      case _ => MNone[IR.Exp.Apply]()
-    }
-    if (postR.nonEmpty) {
-      return postR
-    } else if (hasChanged) {
-      return MSome(o2)
-    } else {
-      return MNone()
-    }
-  }
-
-  def transformTypedName(o: Typed.Name): MOption[Typed.Name] = {
-    val preR: PreResult[Typed.Name] = preTypedName(o) match {
-     case PreResult(continu, MSome(r: Typed.Name)) => PreResult(continu, MSome[Typed.Name](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Typed.Name")
-     case PreResult(continu, _) => PreResult(continu, MNone[Typed.Name]())
-    }
-    val r: MOption[Typed.Name] = if (preR.continu) {
-      val o2: Typed.Name = preR.resultOpt.getOrElse(o)
-      val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[IS[Z, Typed]] = transformISZ(o2.args, transformTyped _)
-      if (hasChanged || r0.nonEmpty)
-        MSome(o2(args = r0.getOrElse(o2.args)))
-      else
-        MNone()
-    } else if (preR.resultOpt.nonEmpty) {
-      MSome(preR.resultOpt.getOrElse(o))
-    } else {
-      MNone()
-    }
-    val hasChanged: B = r.nonEmpty
-    val o2: Typed.Name = r.getOrElse(o)
-    val postR: MOption[Typed.Name] = postTypedName(o2) match {
-     case MSome(result: Typed.Name) => MSome[Typed.Name](result)
-     case MSome(_) => halt("Can only produce object of type Typed.Name")
-     case _ => MNone[Typed.Name]()
     }
     if (postR.nonEmpty) {
       return postR

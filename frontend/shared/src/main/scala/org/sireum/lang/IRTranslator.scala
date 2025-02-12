@@ -274,15 +274,15 @@ object IRTranslator {
                 } else {
                   val receiverPos = lhs.posOpt.get
                   val thiz = IR.Exp.LocalVarRef(T, methodContext, "this", methodContext.receiverType, receiverPos)
-                  val (receiver, receiverType): (IR.Exp, AST.Typed.Name) = if (threeAddressCode) {
+                  val receiver: IR.Exp = if (threeAddressCode) {
                     val n = fresh.temp()
                     stmts = stmts :+ IR.Stmt.Assign.Temp(n, thiz, receiverPos)
-                    (IR.Exp.Temp(n, methodContext.receiverType, receiverPos), methodContext.receiverType.asInstanceOf[AST.Typed.Name])
+                    IR.Exp.Temp(n, methodContext.receiverType, receiverPos)
                   } else {
-                    (thiz, methodContext.receiverType.asInstanceOf[AST.Typed.Name])
+                    thiz
                   }
                   val rhs = assignRhs()
-                  stmts = stmts :+ IR.Stmt.Assign.Field(copy, receiver, receiverType, lhs.id.value, lhs.typedOpt.get, rhs, pos)
+                  stmts = stmts :+ IR.Stmt.Assign.Field(copy, receiver, lhs.id.value, lhs.typedOpt.get, rhs, pos)
                 }
               case res => halt(s"Infeasible: $res")
             }
@@ -305,12 +305,10 @@ object IRTranslator {
               case _ =>
                 val rcv = lhs.receiverOpt.get
                 val receiver = translateExp(rcv)
-                stmts = stmts :+ IR.Stmt.Assign.Field(copy, receiver, rcv.typedOpt.get.asInstanceOf[AST.Typed.Name],
-                  lhs.id.value, lhs.typedOpt.get, selectRhs(), pos)
+                stmts = stmts :+ IR.Stmt.Assign.Field(copy, receiver, lhs.id.value, lhs.typedOpt.get, selectRhs(), pos)
             }
           case lhs: AST.Exp.Invoke =>
             val rcv = lhs.receiverOpt.get
-            val receiverType = rcv.typedOpt.get.asInstanceOf[AST.Typed.Name]
             val receiver = translateExp(rcv)
             val index = translateExp(lhs.args(0))
             val invokeRhs: IR.Exp = stmt.rhs match {
@@ -322,7 +320,7 @@ object IRTranslator {
                 translateAssignExp(stmt.rhs, n)
                 IR.Exp.Temp(n, t, rhsPos)
             }
-            stmts = stmts :+ IR.Stmt.Assign.Index(copy, receiver, receiverType, index, invokeRhs, pos)
+            stmts = stmts :+ IR.Stmt.Assign.Index(copy, receiver, index, invokeRhs, pos)
           case _ => halt("Infeasible")
         }
         stmts = oldStmts ++ stmts

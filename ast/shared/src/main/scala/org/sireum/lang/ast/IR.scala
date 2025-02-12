@@ -225,11 +225,6 @@ object IR {
       }
     }
 
-    @datatype class Select(val exp: Exp, val id: String, val tipe: Typed, val pos: Position) extends Exp {
-      @strictpure def prettyST: ST = st"${exp.prettyST}.$id"
-      @strictpure def numOfTemps: Z = exp.numOfTemps
-    }
-
     @datatype class Indexing(val exp: Exp, val tipe: Typed, val index: Exp, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"${exp.prettyST}(${index.prettyST})"
       @strictpure def numOfTemps: Z = exp.numOfTemps + index.numOfTemps
@@ -301,16 +296,15 @@ object IR {
         @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps - rhs.numOfTemps + 1)
       }
 
-      @datatype class Field(val copy: B, val receiver: Exp, val receiverType: Typed.Name, val id: String, val tipe: Typed, val rhs: Exp, val pos: Position) extends Assign {
+      @datatype class Field(val copy: B, val receiver: Exp, val id: String, val tipe: Typed, val rhs: Exp, val pos: Position) extends Assign {
         @strictpure def prettyST: ST = st"${receiver.prettyST}.$id ${if (copy) ":=" else "="} ${rhs.prettyST}"
         @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps - receiver.numOfTemps - rhs.numOfTemps)
       }
 
-      @datatype class Index(val copy: B, val receiver: Exp, val receiverType: Typed.Name, val index: Exp, val rhs: Exp, val pos: Position) extends Assign {
+      @datatype class Index(val copy: B, val receiver: Exp, val index: Exp, val rhs: Exp, val pos: Position) extends Assign {
         @strictpure def prettyST: ST = st"${receiver.prettyST}(${index.prettyST}) ${if (copy) ":=" else "="} ${rhs.prettyST}"
         @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps - receiver.numOfTemps - index.numOfTemps - rhs.numOfTemps)
       }
-
     }
 
     @datatype class If(val cond: Exp, val thenBlock: Block, val elseBlock: Block, val pos: Position) extends Stmt {
