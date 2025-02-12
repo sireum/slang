@@ -520,10 +520,13 @@ object IRTranslator {
             }
           case res: AST.ResolvedInfo.EnumElement =>
             return norm3AC(IR.Exp.EnumElementRef(res.owner, res.name, res.ordinal, pos))
-          case res: AST.ResolvedInfo.Method if res.tpeOpt.get.isByName =>
-            val receiver = exp.receiverOpt.get
-            val rcv = translateExp(receiver)
-            return norm3AC(IR.Exp.FieldVarRef(receiver.typedOpt.get, rcv, res.id, res.tpeOpt.get.ret, pos))
+          case res: AST.ResolvedInfo.Method =>
+            if (isSeq(exp.receiverOpt.get.typedOpt.get)) {
+              val receiver = exp.receiverOpt.get
+              val rcv = translateExp(receiver)
+              return norm3AC(IR.Exp.FieldVarRef(receiver.typedOpt.get, rcv, res.id, res.tpeOpt.get.ret, pos))
+            }
+            halt(s"TODO: $res")
           case res => halt(s"TODO: $res")
         }
       case exp: AST.Exp.Unary =>
