@@ -244,9 +244,9 @@ object IRTranslator {
             translateAssignExp(init, n)
             IR.Exp.Temp(n, t, init.asStmt.posOpt.get)
         }
-        stmts = stmts :+ IR.Stmt.Assign.Local(shouldCopy(t), methodContext, stmt.id.value, varRhs, pos)
+        stmts = stmts :+ IR.Stmt.Assign.Local(shouldCopy(t), methodContext, stmt.id.value, t, varRhs, pos)
         oldStmts = oldStmts :+ IR.Stmt.Decl(F, stmt.isVal, methodContext, ISZ(IR.Stmt.Decl.Local(stmt.id.value, t)), pos)
-        stmts = oldStmts :+ IR.Stmt.Block(stmts, pos)
+        stmts = oldStmts ++ stmts
       case stmt: AST.Stmt.Assign =>
         val copy = shouldCopy(stmt.rhs.typedOpt.get)
         val oldStmts = stmts
@@ -266,11 +266,11 @@ object IRTranslator {
             lhs.resOpt.get match {
               case _: AST.ResolvedInfo.LocalVar =>
                 val rhs = assignRhs()
-                stmts = stmts :+ IR.Stmt.Assign.Local(copy, methodContext, lhs.id.value, rhs, pos)
+                stmts = stmts :+ IR.Stmt.Assign.Local(copy, methodContext, lhs.id.value, lhs.typedOpt.get, rhs, pos)
               case res: AST.ResolvedInfo.Var =>
                 if (res.isInObject) {
                   val rhs = assignRhs()
-                  stmts = stmts :+ IR.Stmt.Assign.Global(copy, res.owner :+ res.id, rhs, pos)
+                  stmts = stmts :+ IR.Stmt.Assign.Global(copy, res.owner :+ res.id, lhs.typedOpt.get, rhs, pos)
                 } else {
                   val receiverPos = lhs.posOpt.get
                   val thiz = IR.Exp.LocalVarRef(T, methodContext, "this", methodContext.receiverType, receiverPos)
@@ -282,7 +282,7 @@ object IRTranslator {
                     (thiz, methodContext.receiverType.asInstanceOf[AST.Typed.Name])
                   }
                   val rhs = assignRhs()
-                  stmts = stmts :+ IR.Stmt.Assign.Field(copy, receiver, receiverType, lhs.id.value, rhs, pos)
+                  stmts = stmts :+ IR.Stmt.Assign.Field(copy, receiver, receiverType, lhs.id.value, lhs.typedOpt.get, rhs, pos)
                 }
               case res => halt(s"Infeasible: $res")
             }
@@ -301,12 +301,12 @@ object IRTranslator {
 
             lhs.resOpt.get match {
               case res: AST.ResolvedInfo.Var if res.isInObject =>
-                stmts = stmts :+ IR.Stmt.Assign.Global(copy, res.owner :+ res.id, selectRhs(), pos)
+                stmts = stmts :+ IR.Stmt.Assign.Global(copy, res.owner :+ res.id, lhs.typedOpt.get, selectRhs(), pos)
               case _ =>
                 val rcv = lhs.receiverOpt.get
                 val receiver = translateExp(rcv)
                 stmts = stmts :+ IR.Stmt.Assign.Field(copy, receiver, rcv.typedOpt.get.asInstanceOf[AST.Typed.Name],
-                  lhs.id.value, selectRhs(), pos)
+                  lhs.id.value, lhs.typedOpt.get, selectRhs(), pos)
             }
           case lhs: AST.Exp.Invoke =>
             val rcv = lhs.receiverOpt.get
@@ -325,7 +325,7 @@ object IRTranslator {
             stmts = stmts :+ IR.Stmt.Assign.Index(copy, receiver, receiverType, index, invokeRhs, pos)
           case _ => halt("Infeasible")
         }
-        stmts = oldStmts :+ IR.Stmt.Block(stmts, pos)
+        stmts = oldStmts ++ stmts
       case stmt: AST.Stmt.If =>
         val oldStmts = stmts
         stmts = ISZ()
@@ -339,8 +339,8 @@ object IRTranslator {
         translateBody(stmt.elseBody, registerOpt)
         val elsePos = bodyPos(stmt.elseBody, pos)
         val elseStmts = stmts
-        stmts = oldStmts :+ IR.Stmt.Block(condStmts :+
-          IR.Stmt.If(cond, IR.Stmt.Block(thenStmts, thenPos), IR.Stmt.Block(elseStmts, elsePos), pos), pos)
+        stmts = oldStmts ++ condStmts :+
+          IR.Stmt.If(cond, IR.Stmt.Block(thenStmts, thenPos), IR.Stmt.Block(elseStmts, elsePos), pos)
       case stmt: AST.Stmt.While =>
         val oldStmts = stmts
         stmts = ISZ()
@@ -349,8 +349,7 @@ object IRTranslator {
         stmts = ISZ()
         translateBody(stmt.body, None())
         val bPos = bodyPos(stmt.body, pos)
-        stmts = oldStmts :+ IR.Stmt.Block(ISZ(
-          IR.Stmt.While(IR.Stmt.Block(condStmts, cond.pos), cond, IR.Stmt.Block(stmts, bPos), pos)), pos)
+        stmts = oldStmts :+ IR.Stmt.While(IR.Stmt.Block(condStmts, cond.pos), cond, IR.Stmt.Block(stmts, bPos), pos)
       case stmt: AST.Stmt.Expr =>
         val e = translateExp(stmt.exp)
         if (e.tipe == AST.Typed.unit || e.tipe == AST.Typed.nothing) {

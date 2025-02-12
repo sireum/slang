@@ -61,25 +61,25 @@ object IR {
     }
 
     @datatype class Int(val tipe: Typed, val value: Z, val pos: Position) extends Exp {
-      @strictpure def prettyST: ST = st"$value [$tipe]"
+      @strictpure def prettyST: ST = st"$value"
       @strictpure def numOfTemps: Z = 0
     }
 
     @datatype class F32(val value: org.sireum.F32, val pos: Position) extends Exp {
       @strictpure def tipe: Typed = Typed.f32
-      @strictpure def prettyST: ST = st"$value [f32]"
+      @strictpure def prettyST: ST = st"$value"
       @strictpure def numOfTemps: Z = 0
     }
 
     @datatype class F64(val value: org.sireum.F64, val pos: Position) extends Exp {
       @strictpure def tipe: Typed = Typed.f64
-      @strictpure def prettyST: ST = st"$value [f64]"
+      @strictpure def prettyST: ST = st"$value"
       @strictpure def numOfTemps: Z = 0
     }
 
     @datatype class R(val value: org.sireum.R, val pos: Position) extends Exp {
       @strictpure def tipe: Typed = Typed.r
-      @strictpure def prettyST: ST = st"$value [r]"
+      @strictpure def prettyST: ST = st"$value"
       @strictpure def numOfTemps: Z = 0
     }
 
@@ -286,12 +286,12 @@ object IR {
 
     object Assign {
 
-      @datatype class Local(val copy: B, val context: MethodContext, val lhs: String, val rhs: Exp, val pos: Position) extends Assign {
+      @datatype class Local(val copy: B, val context: MethodContext, val lhs: String, val tipe: Typed, val rhs: Exp, val pos: Position) extends Assign {
         @strictpure def prettyST: ST = st"$lhs ${if (copy) ":=" else "="} ${rhs.prettyST}"
         @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps - rhs.numOfTemps)
       }
 
-      @datatype class Global(val copy: B, val name: ISZ[String], val rhs: Exp, val pos: Position) extends Assign {
+      @datatype class Global(val copy: B, val name: ISZ[String], val tipe: Typed, val rhs: Exp, val pos: Position) extends Assign {
         @strictpure def prettyST: ST = st"${(name, ".")} ${if (copy) ":=" else "="} ${rhs.prettyST}"
         @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps - rhs.numOfTemps)
       }
@@ -301,7 +301,7 @@ object IR {
         @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps - rhs.numOfTemps + 1)
       }
 
-      @datatype class Field(val copy: B, val receiver: Exp, val receiverType: Typed.Name, val id: String, val rhs: Exp, val pos: Position) extends Assign {
+      @datatype class Field(val copy: B, val receiver: Exp, val receiverType: Typed.Name, val id: String, val tipe: Typed, val rhs: Exp, val pos: Position) extends Assign {
         @strictpure def prettyST: ST = st"${receiver.prettyST}.$id ${if (copy) ":=" else "="} ${rhs.prettyST}"
         @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps - receiver.numOfTemps - rhs.numOfTemps)
       }

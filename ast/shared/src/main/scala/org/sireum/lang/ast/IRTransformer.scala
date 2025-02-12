@@ -1127,17 +1127,19 @@ import IRTransformer._
             TPostResult(r0.ctx, None())
         case o2: IR.Stmt.Assign.Local =>
           val r0: TPostResult[Context, IR.MethodContext] = transformIRMethodContext(preR.ctx, o2.context)
+          val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.tipe)
+          val r2: TPostResult[Context, IR.Exp] = transformIRExp(r1.ctx, o2.rhs)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(context = r0.resultOpt.getOrElse(o2.context), tipe = r1.resultOpt.getOrElse(o2.tipe), rhs = r2.resultOpt.getOrElse(o2.rhs))))
+          else
+            TPostResult(r2.ctx, None())
+        case o2: IR.Stmt.Assign.Global =>
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
           val r1: TPostResult[Context, IR.Exp] = transformIRExp(r0.ctx, o2.rhs)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(context = r0.resultOpt.getOrElse(o2.context), rhs = r1.resultOpt.getOrElse(o2.rhs))))
+            TPostResult(r1.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe), rhs = r1.resultOpt.getOrElse(o2.rhs))))
           else
             TPostResult(r1.ctx, None())
-        case o2: IR.Stmt.Assign.Global =>
-          val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.rhs)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(rhs = r0.resultOpt.getOrElse(o2.rhs))))
-          else
-            TPostResult(r0.ctx, None())
         case o2: IR.Stmt.Assign.Temp =>
           val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.rhs)
           if (hasChanged || r0.resultOpt.nonEmpty)
@@ -1147,11 +1149,12 @@ import IRTransformer._
         case o2: IR.Stmt.Assign.Field =>
           val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.receiver)
           val r1: TPostResult[Context, Typed.Name] = transformTypedName(r0.ctx, o2.receiverType)
-          val r2: TPostResult[Context, IR.Exp] = transformIRExp(r1.ctx, o2.rhs)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            TPostResult(r2.ctx, Some(o2(receiver = r0.resultOpt.getOrElse(o2.receiver), receiverType = r1.resultOpt.getOrElse(o2.receiverType), rhs = r2.resultOpt.getOrElse(o2.rhs))))
+          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.tipe)
+          val r3: TPostResult[Context, IR.Exp] = transformIRExp(r2.ctx, o2.rhs)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+            TPostResult(r3.ctx, Some(o2(receiver = r0.resultOpt.getOrElse(o2.receiver), receiverType = r1.resultOpt.getOrElse(o2.receiverType), tipe = r2.resultOpt.getOrElse(o2.tipe), rhs = r3.resultOpt.getOrElse(o2.rhs))))
           else
-            TPostResult(r2.ctx, None())
+            TPostResult(r3.ctx, None())
         case o2: IR.Stmt.Assign.Index =>
           val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.receiver)
           val r1: TPostResult[Context, Typed.Name] = transformTypedName(r0.ctx, o2.receiverType)
@@ -1235,17 +1238,19 @@ import IRTransformer._
             TPostResult(r0.ctx, None())
         case o2: IR.Stmt.Assign.Local =>
           val r0: TPostResult[Context, IR.MethodContext] = transformIRMethodContext(preR.ctx, o2.context)
+          val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.tipe)
+          val r2: TPostResult[Context, IR.Exp] = transformIRExp(r1.ctx, o2.rhs)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(context = r0.resultOpt.getOrElse(o2.context), tipe = r1.resultOpt.getOrElse(o2.tipe), rhs = r2.resultOpt.getOrElse(o2.rhs))))
+          else
+            TPostResult(r2.ctx, None())
+        case o2: IR.Stmt.Assign.Global =>
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
           val r1: TPostResult[Context, IR.Exp] = transformIRExp(r0.ctx, o2.rhs)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(context = r0.resultOpt.getOrElse(o2.context), rhs = r1.resultOpt.getOrElse(o2.rhs))))
+            TPostResult(r1.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe), rhs = r1.resultOpt.getOrElse(o2.rhs))))
           else
             TPostResult(r1.ctx, None())
-        case o2: IR.Stmt.Assign.Global =>
-          val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.rhs)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(rhs = r0.resultOpt.getOrElse(o2.rhs))))
-          else
-            TPostResult(r0.ctx, None())
         case o2: IR.Stmt.Assign.Temp =>
           val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.rhs)
           if (hasChanged || r0.resultOpt.nonEmpty)
@@ -1255,11 +1260,12 @@ import IRTransformer._
         case o2: IR.Stmt.Assign.Field =>
           val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.receiver)
           val r1: TPostResult[Context, Typed.Name] = transformTypedName(r0.ctx, o2.receiverType)
-          val r2: TPostResult[Context, IR.Exp] = transformIRExp(r1.ctx, o2.rhs)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            TPostResult(r2.ctx, Some(o2(receiver = r0.resultOpt.getOrElse(o2.receiver), receiverType = r1.resultOpt.getOrElse(o2.receiverType), rhs = r2.resultOpt.getOrElse(o2.rhs))))
+          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.tipe)
+          val r3: TPostResult[Context, IR.Exp] = transformIRExp(r2.ctx, o2.rhs)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+            TPostResult(r3.ctx, Some(o2(receiver = r0.resultOpt.getOrElse(o2.receiver), receiverType = r1.resultOpt.getOrElse(o2.receiverType), tipe = r2.resultOpt.getOrElse(o2.tipe), rhs = r3.resultOpt.getOrElse(o2.rhs))))
           else
-            TPostResult(r2.ctx, None())
+            TPostResult(r3.ctx, None())
         case o2: IR.Stmt.Assign.Index =>
           val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.receiver)
           val r1: TPostResult[Context, Typed.Name] = transformTypedName(r0.ctx, o2.receiverType)
@@ -1309,17 +1315,19 @@ import IRTransformer._
       val rOpt: TPostResult[Context, IR.Stmt.Assign] = o2 match {
         case o2: IR.Stmt.Assign.Local =>
           val r0: TPostResult[Context, IR.MethodContext] = transformIRMethodContext(preR.ctx, o2.context)
+          val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.tipe)
+          val r2: TPostResult[Context, IR.Exp] = transformIRExp(r1.ctx, o2.rhs)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(context = r0.resultOpt.getOrElse(o2.context), tipe = r1.resultOpt.getOrElse(o2.tipe), rhs = r2.resultOpt.getOrElse(o2.rhs))))
+          else
+            TPostResult(r2.ctx, None())
+        case o2: IR.Stmt.Assign.Global =>
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
           val r1: TPostResult[Context, IR.Exp] = transformIRExp(r0.ctx, o2.rhs)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(context = r0.resultOpt.getOrElse(o2.context), rhs = r1.resultOpt.getOrElse(o2.rhs))))
+            TPostResult(r1.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe), rhs = r1.resultOpt.getOrElse(o2.rhs))))
           else
             TPostResult(r1.ctx, None())
-        case o2: IR.Stmt.Assign.Global =>
-          val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.rhs)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(rhs = r0.resultOpt.getOrElse(o2.rhs))))
-          else
-            TPostResult(r0.ctx, None())
         case o2: IR.Stmt.Assign.Temp =>
           val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.rhs)
           if (hasChanged || r0.resultOpt.nonEmpty)
@@ -1329,11 +1337,12 @@ import IRTransformer._
         case o2: IR.Stmt.Assign.Field =>
           val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.receiver)
           val r1: TPostResult[Context, Typed.Name] = transformTypedName(r0.ctx, o2.receiverType)
-          val r2: TPostResult[Context, IR.Exp] = transformIRExp(r1.ctx, o2.rhs)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            TPostResult(r2.ctx, Some(o2(receiver = r0.resultOpt.getOrElse(o2.receiver), receiverType = r1.resultOpt.getOrElse(o2.receiverType), rhs = r2.resultOpt.getOrElse(o2.rhs))))
+          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.tipe)
+          val r3: TPostResult[Context, IR.Exp] = transformIRExp(r2.ctx, o2.rhs)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+            TPostResult(r3.ctx, Some(o2(receiver = r0.resultOpt.getOrElse(o2.receiver), receiverType = r1.resultOpt.getOrElse(o2.receiverType), tipe = r2.resultOpt.getOrElse(o2.tipe), rhs = r3.resultOpt.getOrElse(o2.rhs))))
           else
-            TPostResult(r2.ctx, None())
+            TPostResult(r3.ctx, None())
         case o2: IR.Stmt.Assign.Index =>
           val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.receiver)
           val r1: TPostResult[Context, Typed.Name] = transformTypedName(r0.ctx, o2.receiverType)
