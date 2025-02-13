@@ -190,29 +190,9 @@ object IRTranslator {
       decls = ISZ()
       var l = label
       for (stmt <- block.stmts) {
-        var shouldSplit = F
-        if (threeAddressCode) {
-          stmt match {
-            case _: IR.Stmt.Expr => shouldSplit = T
-            case stmt: IR.Stmt.Assign if stmt.rhs.isInstanceOf[IR.Exp.Apply] => shouldSplit = T
-            case _ =>
-          }
-          if (shouldSplit) {
-            val next = fresh.label()
-            blocks = blocks :+ IR.BasicBlock(l, grounds, IR.Jump.Goto(next, stmt.pos))
-            grounds = ISZ()
-            l = next
-          }
-        }
         stmtToBasic(l, stmt) match {
           case Some(next) => l = next
           case _ => return None()
-        }
-        if (shouldSplit) {
-          val next = fresh.label()
-          blocks = blocks :+ IR.BasicBlock(l, grounds, IR.Jump.Goto(next, stmt.pos))
-          grounds = ISZ()
-          l = next
         }
       }
       for (d <- decls) {
