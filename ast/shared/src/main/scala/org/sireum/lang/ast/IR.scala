@@ -335,12 +335,12 @@ object IR {
       @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = halt("This API can only be used for 3-address code")
     }
 
-    @datatype class Decl(val undecl: B, val isVal: B, val context: MethodContext, val locals: ISZ[Decl.Local], val pos: Position) extends Ground {
+    @datatype class Decl(val undecl: B, val isVal: B, val isAlloc: B, val context: MethodContext, val locals: ISZ[Decl.Local], val pos: Position) extends Ground {
       @strictpure def undeclare: Decl = {
         val thiz = this
         thiz(undecl = T)
       }
-      @strictpure def prettyST: ST = st"${if (undecl) "un" else ""}decl ${(for (l <- locals) yield l.prettyST, ", ")}"
+      @strictpure def prettyST: ST = st"${if (isAlloc) if (undecl) "unalloc" else "alloc" else if (undecl) "undecl" else "decl"} ${(for (l <- locals) yield l.prettyST, ", ")}"
       @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) =
         (locals - (if (undecl) this.locals.size else -this.locals.size), temps)
     }

@@ -222,12 +222,12 @@ object IRTranslator {
           case _ =>
             val aePos = init.asStmt.posOpt.get
             val id = assignExpId(Some(stmt.id.value), aePos)
-            stmts = stmts :+ AST.IR.Stmt.Decl(F, T, methodContext, ISZ(AST.IR.Stmt.Decl.Local(id, t)), aePos)
+            stmts = stmts :+ AST.IR.Stmt.Decl(F, T, F, methodContext, ISZ(AST.IR.Stmt.Decl.Local(id, t)), aePos)
             translateAssignExp(init, (id, t))
             IR.Exp.LocalVarRef(T, methodContext, id, t, aePos)
         }
         stmts = stmts :+ IR.Stmt.Assign.Local(shouldCopy(t), methodContext, stmt.id.value, t, varRhs, pos)
-        oldStmts = oldStmts :+ IR.Stmt.Decl(F, stmt.isVal, methodContext, ISZ(IR.Stmt.Decl.Local(stmt.id.value, t)), pos)
+        oldStmts = oldStmts :+ IR.Stmt.Decl(F, stmt.isVal, F, methodContext, ISZ(IR.Stmt.Decl.Local(stmt.id.value, t)), pos)
         stmts = oldStmts ++ stmts
         fresh.setTemp(0)
       case stmt: AST.Stmt.Assign =>
@@ -241,7 +241,7 @@ object IRTranslator {
               val aePos = stmt.rhs.asStmt.posOpt.get
               val id = assignExpId(None(), aePos)
               val t = stmt.lhs.typedOpt.get
-              stmts = stmts :+ AST.IR.Stmt.Decl(F, T, methodContext, ISZ(AST.IR.Stmt.Decl.Local(id, t)), aePos)
+              stmts = stmts :+ AST.IR.Stmt.Decl(F, T, F, methodContext, ISZ(AST.IR.Stmt.Decl.Local(id, t)), aePos)
               translateAssignExp(stmt.rhs, (id, t))
               return IR.Exp.LocalVarRef(T, methodContext, id, t, aePos)
           }
@@ -279,7 +279,7 @@ object IRTranslator {
                   val aePos = stmt.rhs.asStmt.posOpt.get
                   val id = assignExpId(None(), aePos)
                   val t = stmt.lhs.typedOpt.get
-                  stmts = stmts :+ AST.IR.Stmt.Decl(F, T, methodContext, ISZ(AST.IR.Stmt.Decl.Local(id, t)), aePos)
+                  stmts = stmts :+ AST.IR.Stmt.Decl(F, T, F, methodContext, ISZ(AST.IR.Stmt.Decl.Local(id, t)), aePos)
                   translateAssignExp(stmt.rhs, (id, t))
                   return IR.Exp.LocalVarRef(T, methodContext, id, t, aePos)
               }
@@ -303,7 +303,7 @@ object IRTranslator {
                 val aePos = stmt.rhs.asStmt.posOpt.get
                 val id = assignExpId(None(), aePos)
                 val t = stmt.lhs.typedOpt.get
-                stmts = stmts :+ AST.IR.Stmt.Decl(F, T, methodContext, ISZ(AST.IR.Stmt.Decl.Local(id, t)), aePos)
+                stmts = stmts :+ AST.IR.Stmt.Decl(F, T, F, methodContext, ISZ(AST.IR.Stmt.Decl.Local(id, t)), aePos)
                 translateAssignExp(stmt.rhs, (id, t))
                 IR.Exp.LocalVarRef(T, methodContext, id, t, aePos)
             }
