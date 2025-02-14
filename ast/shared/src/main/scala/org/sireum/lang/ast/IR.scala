@@ -376,6 +376,7 @@ object IR {
     }
     @pure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z)
     @pure def targets: ISZ[Z]
+    @pure def pos: Position
   }
 
   object Jump {
@@ -425,10 +426,26 @@ object IR {
   }
 
   @datatype class BasicBlock(val label: Z, val grounds: ISZ[Stmt.Ground], jump: Jump) {
-    @strictpure def prettyST: ST =
-      st""".$label:
-          |  ${(for (ground <- grounds) yield ground.prettyST, "\n")}
-          |  ${jump.prettyST}"""
+    @pure def prettyST: ST = {
+      var line: Z = 0
+      var sts = ISZ[ST]()
+      def updatePos(pos: Position): Unit = {
+        if (line != pos.beginLine) {
+          line = pos.beginLine
+          val uriOps = ops.StringOps(pos.uriOpt.get)
+          sts = sts :+ st"// ${uriOps.substring(uriOps.lastIndexOf('/') + 1, uriOps.size)}:$line"
+        }
+      }
+      for (g <- grounds) {
+        updatePos(g.pos)
+        sts = sts :+ g.prettyST
+      }
+      sts = sts :+ jump.prettyST
+      val r =
+        st""".$label:
+            |  ${(sts, "\n")}"""
+      return r
+    }
   }
 
   @datatype trait Body {
