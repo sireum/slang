@@ -440,6 +440,9 @@ object IR {
         updatePos(g.pos)
         sts = sts :+ g.prettyST
       }
+      if (grounds.isEmpty) {
+        updatePos(jump.pos)
+      }
       sts = sts :+ jump.prettyST
       val r =
         st""".$label:
