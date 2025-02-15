@@ -50,6 +50,7 @@ object IR {
       return prettyST.render
     }
     @pure def numOfTemps: Z
+    @pure def depth: Z
   }
 
   object Exp {
@@ -58,61 +59,72 @@ object IR {
       @strictpure def tipe: Typed = Typed.b
       @strictpure def prettyST: ST = if (value) st"true" else st"false"
       @strictpure def numOfTemps: Z = 0
+      @strictpure def depth: Z = 1
     }
 
     @datatype class Int(val tipe: Typed, val value: Z, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"$value"
       @strictpure def numOfTemps: Z = 0
+      @strictpure def depth: Z = 1
     }
 
     @datatype class F32(val value: org.sireum.F32, val pos: Position) extends Exp {
       @strictpure def tipe: Typed = Typed.f32
       @strictpure def prettyST: ST = st"$value"
       @strictpure def numOfTemps: Z = 0
+      @strictpure def depth: Z = 1
     }
 
     @datatype class F64(val value: org.sireum.F64, val pos: Position) extends Exp {
       @strictpure def tipe: Typed = Typed.f64
       @strictpure def prettyST: ST = st"$value"
       @strictpure def numOfTemps: Z = 0
+      @strictpure def depth: Z = 1
     }
 
     @datatype class R(val value: org.sireum.R, val pos: Position) extends Exp {
       @strictpure def tipe: Typed = Typed.r
       @strictpure def prettyST: ST = st"$value"
       @strictpure def numOfTemps: Z = 0
+      @strictpure def depth: Z = 1
     }
 
     @datatype class String(val value: org.sireum.String, val pos: Position) extends Exp {
       @strictpure def tipe: Typed = Typed.string
       @strictpure def prettyST: ST = ops.StringOps(value).escapeST
       @strictpure def numOfTemps: Z = 0
+      @strictpure def depth: Z = 1
     }
 
     @datatype class Temp(val n: Z, val tipe: Typed, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"$$$n"
       @strictpure def numOfTemps: Z = 1
+      @strictpure def depth: Z = 1
     }
 
     @datatype class LocalVarRef(val isVal: B, val context: MethodContext, val id: org.sireum.String, val tipe: Typed, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"$id"
       @strictpure def numOfTemps: Z = 0
+      @strictpure def depth: Z = 1
     }
 
     @datatype class GlobalVarRef(val name: ISZ[org.sireum.String], val tipe: Typed, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"${(name, ".")}"
       @strictpure def numOfTemps: Z = 0
+      @strictpure def depth: Z = 1
     }
 
     @datatype class EnumElementRef(val owner: ISZ[org.sireum.String], val id: org.sireum.String, val ordinal: Z, val pos: Position) extends Exp {
       @strictpure def tipe: Typed = Typed.Enum(owner :+ "Type")
       @strictpure def prettyST: ST = st"${(owner, ".")}.$id"
       @strictpure def numOfTemps: Z = 0
+      @strictpure def depth: Z = 1
     }
 
     @datatype class FieldVarRef(val owner: Typed, val receiver: Exp, val id: org.sireum.String, val tipe: Typed, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"$receiver.$id"
       @strictpure def numOfTemps: Z = receiver.numOfTemps
+      @strictpure def depth: Z = 1 + receiver.depth
     }
 
     @datatype class Unary(val tipe: Typed, val op: lang.ast.Exp.UnaryOp.Type, val exp: Exp, val pos: Position) extends Exp {
@@ -126,6 +138,7 @@ object IR {
         st"$opString(${exp.prettyST})"
       }
       @strictpure def numOfTemps: Z = exp.numOfTemps
+      @strictpure def depth: Z = 1 + exp.depth
     }
 
     object Binary {
@@ -192,11 +205,13 @@ object IR {
         st"(${left.prettyST} $opString ${right.prettyST})"
       }
       @strictpure def numOfTemps: Z = left.numOfTemps + right.numOfTemps
+      @strictpure def depth: Z = 1 + max(left.depth, right.depth)
     }
 
     @datatype class If(val cond: Exp, val thenExp: Exp, val elseExp: Exp, val tipe: Typed, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"if (${cond.prettyST}) ${thenExp.prettyST} else ${elseExp.prettyST}"
       @strictpure def numOfTemps: Z = cond.numOfTemps + thenExp.numOfTemps + elseExp.numOfTemps
+      @strictpure def depth: Z = 1 + max(cond.depth, max(thenExp.depth, elseExp.depth))
     }
 
     @datatype class Construct(val tipe: Typed, val args: ISZ[Exp], val pos: Position) extends Exp {
@@ -207,6 +222,13 @@ object IR {
           r = r + arg.numOfTemps
         }
         return r
+      }
+      @pure def depth: Z = {
+        var r: Z = 0
+        for (arg <- args) {
+          r = max(r, arg.depth)
+        }
+        return r + 1
       }
     }
 
@@ -223,17 +245,26 @@ object IR {
         }
         return r
       }
+      @pure def depth: Z = {
+        var r: Z = 0
+        for (arg <- args) {
+          r = max(r, arg.depth)
+        }
+        return r + 1
+      }
     }
 
     @datatype class Indexing(val exp: Exp, val tipe: Typed, val index: Exp, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"${exp.prettyST}(${index.prettyST})"
       @strictpure def numOfTemps: Z = exp.numOfTemps + index.numOfTemps
+      @strictpure def depth: Z = 1 + max(exp.depth, index.depth)
     }
 
     @datatype class Type(val test: B, val exp: Exp, val t: Typed, val pos: Position) extends Exp {
       @strictpure def tipe: Typed = if (test) Typed.b else t
       @strictpure def prettyST: ST = st"(${exp.prettyST} ${if (test) "is" else "as"} $t)"
       @strictpure def numOfTemps: Z = exp.numOfTemps
+      @strictpure def depth: Z = 1 + exp.depth
     }
 
     @datatype class Intrinsic(val intrinsic: Intrinsic.Type) extends Exp {
@@ -241,6 +272,7 @@ object IR {
       @strictpure def prettyST: ST = intrinsic.prettyST
       @strictpure def numOfTemps: Z = intrinsic.numOfTemps
       @strictpure def pos: Position = intrinsic.pos
+      @strictpure def depth: Z = intrinsic.depth
     }
 
     object Intrinsic {
@@ -252,6 +284,7 @@ object IR {
         @pure override def string: org.sireum.String = {
           return prettyST.render
         }
+        @pure def depth: Z
       }
     }
   }
@@ -575,4 +608,6 @@ object IR {
       return (locals, temps)
     }
   }
+
+  @strictpure def max(n: Z, m: Z): Z = if (n < m) m else n
 }
