@@ -231,7 +231,6 @@ object IRTranslator {
         stmts = oldStmts ++ stmts
         fresh.setTemp(0)
       case stmt: AST.Stmt.Assign =>
-        val copy = shouldCopy(stmt.rhs.typedOpt.get)
         val oldStmts = stmts
         stmts = ISZ()
         def assignRhs(): IR.Exp = {
@@ -250,9 +249,11 @@ object IRTranslator {
           case lhs: AST.Exp.Ident =>
             lhs.resOpt.get match {
               case _: AST.ResolvedInfo.LocalVar =>
+                val copy = shouldCopy(stmt.rhs.typedOpt.get)
                 val rhs = assignRhs()
                 stmts = stmts :+ IR.Stmt.Assign.Local(copy, methodContext, lhs.id.value, lhs.typedOpt.get, rhs, pos)
               case res: AST.ResolvedInfo.Var =>
+                val copy = !isScalar(stmt.rhs.typedOpt.get)
                 if (res.isInObject) {
                   val rhs = assignRhs()
                   stmts = stmts :+ IR.Stmt.Assign.Global(copy, res.owner :+ res.id, lhs.typedOpt.get, rhs, pos)
@@ -285,6 +286,7 @@ object IRTranslator {
               }
             }
 
+            val copy = !isScalar(stmt.rhs.typedOpt.get)
             lhs.resOpt.get match {
               case res: AST.ResolvedInfo.Var if res.isInObject =>
                 stmts = stmts :+ IR.Stmt.Assign.Global(copy, res.owner :+ res.id, lhs.typedOpt.get, selectRhs(), pos)
@@ -294,6 +296,7 @@ object IRTranslator {
                 stmts = stmts :+ IR.Stmt.Assign.Field(copy, receiver, lhs.id.value, lhs.typedOpt.get, selectRhs(), pos)
             }
           case lhs: AST.Exp.Invoke =>
+            val copy = !isScalar(stmt.rhs.typedOpt.get)
             val rcv = lhs.receiverOpt.get
             val receiver = translateExp(rcv)
             val index = translateExp(lhs.args(0))
@@ -489,7 +492,6 @@ object IRTranslator {
       case exp: AST.Exp.StringInterpolate =>
         if (isScalar(exp.typedOpt.get)) {
           val t = exp.typedOpt.get.asInstanceOf[AST.Typed.Name]
-          val info = th.typeMap.get(t.ids).get.asInstanceOf[TypeInfo.SubZ]
           val value = Z(exp.lits(0).value).get
           return norm3AC(IR.Exp.Int(t, value, pos))
         } else {
@@ -529,8 +531,10 @@ object IRTranslator {
               val receiver = exp.receiverOpt.get
               val rcv = translateExp(receiver)
               return norm3AC(IR.Exp.FieldVarRef(receiver.typedOpt.get, rcv, res.id, res.tpeOpt.get.ret, pos))
+            } else {
+              return translateExp(AST.Exp.Invoke(exp.receiverOpt, AST.Exp.Ident(exp.id, exp.attr), ISZ(), ISZ(),
+                exp.attr(typedOpt = Some(exp.typedOpt.get.asInstanceOf[AST.Typed.Fun].ret))))
             }
-            halt(s"TODO: $res")
           case res => halt(s"TODO: $res")
         }
       case exp: AST.Exp.Unary =>
