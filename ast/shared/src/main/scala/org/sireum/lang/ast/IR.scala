@@ -314,13 +314,13 @@ object IR {
 
     object Assign {
 
-      @datatype class Local(val copy: B, val context: MethodContext, val lhs: String, val tipe: Typed, val rhs: Exp, val pos: Position) extends Assign {
-        @strictpure def prettyST: ST = st"$lhs ${if (copy) ":=" else "="} ${rhs.prettyST}"
+      @datatype class Local(val context: MethodContext, val lhs: String, val tipe: Typed, val rhs: Exp, val pos: Position) extends Assign {
+        @strictpure def prettyST: ST = st"$lhs = ${rhs.prettyST}"
         @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps - rhs.numOfTemps)
       }
 
-      @datatype class Global(val copy: B, val name: ISZ[String], val tipe: Typed, val rhs: Exp, val pos: Position) extends Assign {
-        @strictpure def prettyST: ST = st"${(name, ".")} ${if (copy) ":=" else "="} ${rhs.prettyST}"
+      @datatype class Global(val name: ISZ[String], val tipe: Typed, val rhs: Exp, val pos: Position) extends Assign {
+        @strictpure def prettyST: ST = st"${(name, ".")} = ${rhs.prettyST}"
         @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps - rhs.numOfTemps)
       }
 
@@ -329,13 +329,13 @@ object IR {
         @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps - rhs.numOfTemps + 1)
       }
 
-      @datatype class Field(val copy: B, val receiver: Exp, val id: String, val tipe: Typed, val rhs: Exp, val pos: Position) extends Assign {
-        @strictpure def prettyST: ST = st"${receiver.prettyST}.$id ${if (copy) ":=" else "="} ${rhs.prettyST}"
+      @datatype class Field(val receiver: Exp, val id: String, val tipe: Typed, val rhs: Exp, val pos: Position) extends Assign {
+        @strictpure def prettyST: ST = st"${receiver.prettyST}.$id = ${rhs.prettyST}"
         @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps - receiver.numOfTemps - rhs.numOfTemps)
       }
 
-      @datatype class Index(val copy: B, val receiver: Exp, val index: Exp, val rhs: Exp, val pos: Position) extends Assign {
-        @strictpure def prettyST: ST = st"${receiver.prettyST}(${index.prettyST}) ${if (copy) ":=" else "="} ${rhs.prettyST}"
+      @datatype class Index(val receiver: Exp, val index: Exp, val rhs: Exp, val pos: Position) extends Assign {
+        @strictpure def prettyST: ST = st"${receiver.prettyST}(${index.prettyST}) = ${rhs.prettyST}"
         @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps - receiver.numOfTemps - index.numOfTemps - rhs.numOfTemps)
       }
     }
@@ -437,6 +437,26 @@ object IR {
       }
       @strictpure def targets: ISZ[Z] = ISZ()
     }
+
+    @datatype class Switch(val exp: Exp, cases: ISZ[Switch.Case], val pos: Position) extends Jump {
+      @strictpure def prettyST: ST =
+        st"""switch (${exp.prettyST})
+            |  ${(for (c <- cases) yield st"${c.value.prettyST}: goto ${c.label}", "\n")}"""
+
+      @pure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = {
+        var rtemps = temps - exp.numOfTemps
+        for (c <- cases) {
+          rtemps = rtemps - c.value.numOfTemps
+        }
+        return (locals, rtemps)
+      }
+      @strictpure def targets: ISZ[Z] = for (c <- cases) yield c.label
+    }
+
+    object Switch {
+      @datatype class Case(val value: Exp, label: Z)
+    }
+
 
     @datatype class Intrinsic(val intrinsic: Intrinsic.Type) extends Jump {
       @strictpure def prettyST: ST = intrinsic.prettyST

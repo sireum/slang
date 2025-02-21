@@ -226,7 +226,7 @@ object IRTranslator {
             translateAssignExp(init, (id, t))
             IR.Exp.LocalVarRef(T, methodContext, id, t, aePos)
         }
-        stmts = stmts :+ IR.Stmt.Assign.Local(shouldCopy(t), methodContext, stmt.id.value, t, varRhs, pos)
+        stmts = stmts :+ IR.Stmt.Assign.Local(methodContext, stmt.id.value, t, varRhs, pos)
         oldStmts = oldStmts :+ IR.Stmt.Decl(F, stmt.isVal, F, methodContext, ISZ(IR.Stmt.Decl.Local(stmt.id.value, t)), pos)
         stmts = oldStmts ++ stmts
         fresh.setTemp(0)
@@ -249,14 +249,12 @@ object IRTranslator {
           case lhs: AST.Exp.Ident =>
             lhs.resOpt.get match {
               case _: AST.ResolvedInfo.LocalVar =>
-                val copy = shouldCopy(stmt.rhs.typedOpt.get)
                 val rhs = assignRhs()
-                stmts = stmts :+ IR.Stmt.Assign.Local(copy, methodContext, lhs.id.value, lhs.typedOpt.get, rhs, pos)
+                stmts = stmts :+ IR.Stmt.Assign.Local(methodContext, lhs.id.value, lhs.typedOpt.get, rhs, pos)
               case res: AST.ResolvedInfo.Var =>
-                val copy = !isScalar(stmt.rhs.typedOpt.get)
                 if (res.isInObject) {
                   val rhs = assignRhs()
-                  stmts = stmts :+ IR.Stmt.Assign.Global(copy, res.owner :+ res.id, lhs.typedOpt.get, rhs, pos)
+                  stmts = stmts :+ IR.Stmt.Assign.Global(res.owner :+ res.id, lhs.typedOpt.get, rhs, pos)
                 } else {
                   val receiverPos = lhs.posOpt.get
                   val thiz = IR.Exp.LocalVarRef(T, methodContext, "this", methodContext.receiverType, receiverPos)
@@ -268,7 +266,7 @@ object IRTranslator {
                     thiz
                   }
                   val rhs = assignRhs()
-                  stmts = stmts :+ IR.Stmt.Assign.Field(copy, receiver, lhs.id.value, lhs.typedOpt.get, rhs, pos)
+                  stmts = stmts :+ IR.Stmt.Assign.Field(receiver, lhs.id.value, lhs.typedOpt.get, rhs, pos)
                 }
               case res => halt(s"Infeasible: $res")
             }
@@ -286,17 +284,15 @@ object IRTranslator {
               }
             }
 
-            val copy = !isScalar(stmt.rhs.typedOpt.get)
             lhs.resOpt.get match {
               case res: AST.ResolvedInfo.Var if res.isInObject =>
-                stmts = stmts :+ IR.Stmt.Assign.Global(copy, res.owner :+ res.id, lhs.typedOpt.get, selectRhs(), pos)
+                stmts = stmts :+ IR.Stmt.Assign.Global(res.owner :+ res.id, lhs.typedOpt.get, selectRhs(), pos)
               case _ =>
                 val rcv = lhs.receiverOpt.get
                 val receiver = translateExp(rcv)
-                stmts = stmts :+ IR.Stmt.Assign.Field(copy, receiver, lhs.id.value, lhs.typedOpt.get, selectRhs(), pos)
+                stmts = stmts :+ IR.Stmt.Assign.Field(receiver, lhs.id.value, lhs.typedOpt.get, selectRhs(), pos)
             }
           case lhs: AST.Exp.Invoke =>
-            val copy = !isScalar(stmt.rhs.typedOpt.get)
             val rcv = lhs.receiverOpt.get
             val receiver = translateExp(rcv)
             val index = translateExp(lhs.args(0))
@@ -310,7 +306,7 @@ object IRTranslator {
                 translateAssignExp(stmt.rhs, (id, t))
                 IR.Exp.LocalVarRef(T, methodContext, id, t, aePos)
             }
-            stmts = stmts :+ IR.Stmt.Assign.Index(copy, receiver, index, invokeRhs, pos)
+            stmts = stmts :+ IR.Stmt.Assign.Index(receiver, index, invokeRhs, pos)
           case _ => halt("Infeasible")
         }
         stmts = oldStmts ++ stmts
@@ -406,7 +402,7 @@ object IRTranslator {
     stmt match {
       case stmt: AST.Stmt.Expr =>
         val exp = translateExp(stmt.exp)
-        stmts = stmts :+ IR.Stmt.Assign.Local(F, methodContext, local._1, local._2, exp, pos)
+        stmts = stmts :+ IR.Stmt.Assign.Local(methodContext, local._1, local._2, exp, pos)
       case _ => translateStmt(stmt.asStmt, Some(local))
     }
   }
@@ -664,6 +660,12 @@ object IRTranslator {
                 }
                 val index = translateExp(exp.args(0))
                 return norm3AC(IR.Exp.Indexing(rcv, rcvType, index, pos))
+              case AST.MethodMode.Constructor =>
+                var args = ISZ[AST.IR.Exp]()
+                for (arg <- exp.args) {
+                  args = args :+ translateExp(arg)
+                }
+                return norm3AC(IR.Exp.Construct(exp.typedOpt.get, args, exp.posOpt.get))
               case _ => halt(s"TODO: $exp")
             }
           case _ => halt(s"TODO: $exp")

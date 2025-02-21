@@ -332,6 +332,7 @@ object IRTransformer {
         case o: IR.Jump.Goto => return preIRJumpGoto(ctx, o)
         case o: IR.Jump.If => return preIRJumpIf(ctx, o)
         case o: IR.Jump.Return => return preIRJumpReturn(ctx, o)
+        case o: IR.Jump.Switch => return preIRJumpSwitch(ctx, o)
         case o: IR.Jump.Intrinsic => return preIRJumpIntrinsic(ctx, o)
       }
     }
@@ -345,6 +346,14 @@ object IRTransformer {
     }
 
     @pure def preIRJumpReturn(ctx: Context, o: IR.Jump.Return): PreResult[Context, IR.Jump] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRJumpSwitch(ctx: Context, o: IR.Jump.Switch): PreResult[Context, IR.Jump] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRJumpSwitchCase(ctx: Context, o: IR.Jump.Switch.Case): PreResult[Context, IR.Jump.Switch.Case] = {
       return PreResult(ctx, T, None())
     }
 
@@ -739,6 +748,7 @@ object IRTransformer {
         case o: IR.Jump.Goto => return postIRJumpGoto(ctx, o)
         case o: IR.Jump.If => return postIRJumpIf(ctx, o)
         case o: IR.Jump.Return => return postIRJumpReturn(ctx, o)
+        case o: IR.Jump.Switch => return postIRJumpSwitch(ctx, o)
         case o: IR.Jump.Intrinsic => return postIRJumpIntrinsic(ctx, o)
       }
     }
@@ -752,6 +762,14 @@ object IRTransformer {
     }
 
     @pure def postIRJumpReturn(ctx: Context, o: IR.Jump.Return): TPostResult[Context, IR.Jump] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRJumpSwitch(ctx: Context, o: IR.Jump.Switch): TPostResult[Context, IR.Jump] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRJumpSwitchCase(ctx: Context, o: IR.Jump.Switch.Case): TPostResult[Context, IR.Jump.Switch.Case] = {
       return TPostResult(ctx, None())
     }
 
@@ -1422,6 +1440,13 @@ import IRTransformer._
             TPostResult(r0.ctx, Some(o2(expOpt = r0.resultOpt.getOrElse(o2.expOpt))))
           else
             TPostResult(r0.ctx, None())
+        case o2: IR.Jump.Switch =>
+          val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.exp)
+          val r1: TPostResult[Context, IS[Z, IR.Jump.Switch.Case]] = transformISZ(r0.ctx, o2.cases, transformIRJumpSwitchCase _)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), cases = r1.resultOpt.getOrElse(o2.cases))))
+          else
+            TPostResult(r1.ctx, None())
         case o2: IR.Jump.Intrinsic =>
           val r0: TPostResult[Context, IR.Jump.Intrinsic.Type] = transformIRJumpIntrinsicType(preR.ctx, o2.intrinsic)
           if (hasChanged || r0.resultOpt.nonEmpty)
@@ -1438,6 +1463,33 @@ import IRTransformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: IR.Jump = r.resultOpt.getOrElse(o)
     val postR: TPostResult[Context, IR.Jump] = pp.postIRJump(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformIRJumpSwitchCase(ctx: Context, o: IR.Jump.Switch.Case): TPostResult[Context, IR.Jump.Switch.Case] = {
+    val preR: PreResult[Context, IR.Jump.Switch.Case] = pp.preIRJumpSwitchCase(ctx, o)
+    val r: TPostResult[Context, IR.Jump.Switch.Case] = if (preR.continu) {
+      val o2: IR.Jump.Switch.Case = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.value)
+      if (hasChanged || r0.resultOpt.nonEmpty)
+        TPostResult(r0.ctx, Some(o2(value = r0.resultOpt.getOrElse(o2.value))))
+      else
+        TPostResult(r0.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: IR.Jump.Switch.Case = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, IR.Jump.Switch.Case] = pp.postIRJumpSwitchCase(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {

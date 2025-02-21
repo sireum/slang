@@ -209,6 +209,14 @@ object MIRTransformer {
 
   val PostResultIRJumpReturn: MOption[IR.Jump] = MNone()
 
+  val PreResultIRJumpSwitch: PreResult[IR.Jump] = PreResult(T, MNone())
+
+  val PostResultIRJumpSwitch: MOption[IR.Jump] = MNone()
+
+  val PreResultIRJumpSwitchCase: PreResult[IR.Jump.Switch.Case] = PreResult(T, MNone())
+
+  val PostResultIRJumpSwitchCase: MOption[IR.Jump.Switch.Case] = MNone()
+
   val PreResultIRJumpIntrinsic: PreResult[IR.Jump] = PreResult(T, MNone())
 
   val PostResultIRJumpIntrinsic: MOption[IR.Jump] = MNone()
@@ -578,6 +586,7 @@ import MIRTransformer._
       case o: IR.Jump.Goto => return preIRJumpGoto(o)
       case o: IR.Jump.If => return preIRJumpIf(o)
       case o: IR.Jump.Return => return preIRJumpReturn(o)
+      case o: IR.Jump.Switch => return preIRJumpSwitch(o)
       case o: IR.Jump.Intrinsic => return preIRJumpIntrinsic(o)
     }
   }
@@ -592,6 +601,14 @@ import MIRTransformer._
 
   def preIRJumpReturn(o: IR.Jump.Return): PreResult[IR.Jump] = {
     return PreResultIRJumpReturn
+  }
+
+  def preIRJumpSwitch(o: IR.Jump.Switch): PreResult[IR.Jump] = {
+    return PreResultIRJumpSwitch
+  }
+
+  def preIRJumpSwitchCase(o: IR.Jump.Switch.Case): PreResult[IR.Jump.Switch.Case] = {
+    return PreResultIRJumpSwitchCase
   }
 
   def preIRJumpIntrinsic(o: IR.Jump.Intrinsic): PreResult[IR.Jump] = {
@@ -985,6 +1002,7 @@ import MIRTransformer._
       case o: IR.Jump.Goto => return postIRJumpGoto(o)
       case o: IR.Jump.If => return postIRJumpIf(o)
       case o: IR.Jump.Return => return postIRJumpReturn(o)
+      case o: IR.Jump.Switch => return postIRJumpSwitch(o)
       case o: IR.Jump.Intrinsic => return postIRJumpIntrinsic(o)
     }
   }
@@ -999,6 +1017,14 @@ import MIRTransformer._
 
   def postIRJumpReturn(o: IR.Jump.Return): MOption[IR.Jump] = {
     return PostResultIRJumpReturn
+  }
+
+  def postIRJumpSwitch(o: IR.Jump.Switch): MOption[IR.Jump] = {
+    return PostResultIRJumpSwitch
+  }
+
+  def postIRJumpSwitchCase(o: IR.Jump.Switch.Case): MOption[IR.Jump.Switch.Case] = {
+    return PostResultIRJumpSwitchCase
   }
 
   def postIRJumpIntrinsic(o: IR.Jump.Intrinsic): MOption[IR.Jump] = {
@@ -1630,6 +1656,13 @@ import MIRTransformer._
             MSome(o2(expOpt = r0.getOrElse(o2.expOpt)))
           else
             MNone()
+        case o2: IR.Jump.Switch =>
+          val r0: MOption[IR.Exp] = transformIRExp(o2.exp)
+          val r1: MOption[IS[Z, IR.Jump.Switch.Case]] = transformISZ(o2.cases, transformIRJumpSwitchCase _)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp), cases = r1.getOrElse(o2.cases)))
+          else
+            MNone()
         case o2: IR.Jump.Intrinsic =>
           val r0: MOption[IR.Jump.Intrinsic.Type] = transformIRJumpIntrinsicType(o2.intrinsic)
           if (hasChanged || r0.nonEmpty)
@@ -1646,6 +1679,33 @@ import MIRTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: IR.Jump = r.getOrElse(o)
     val postR: MOption[IR.Jump] = postIRJump(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformIRJumpSwitchCase(o: IR.Jump.Switch.Case): MOption[IR.Jump.Switch.Case] = {
+    val preR: PreResult[IR.Jump.Switch.Case] = preIRJumpSwitchCase(o)
+    val r: MOption[IR.Jump.Switch.Case] = if (preR.continu) {
+      val o2: IR.Jump.Switch.Case = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[IR.Exp] = transformIRExp(o2.value)
+      if (hasChanged || r0.nonEmpty)
+        MSome(o2(value = r0.getOrElse(o2.value)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: IR.Jump.Switch.Case = r.getOrElse(o)
+    val postR: MOption[IR.Jump.Switch.Case] = postIRJumpSwitchCase(o2)
     if (postR.nonEmpty) {
       return postR
     } else if (hasChanged) {
