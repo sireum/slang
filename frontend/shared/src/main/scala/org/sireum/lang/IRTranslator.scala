@@ -356,7 +356,10 @@ object IRTranslator {
         }
         fresh.setTemp(0)
       case stmt: AST.Stmt.Block =>
+        val oldStmts = stmts
+        stmts = ISZ()
         translateBody(stmt.body, localOpt)
+        stmts = oldStmts :+ AST.IR.Stmt.Block(stmts, stmt.posOpt.get)
         fresh.setTemp(0)
       case stmt: AST.Stmt.Match => halt(s"TODO: $stmt")
       case stmt: AST.Stmt.For => halt(s"TODO: $stmt")
