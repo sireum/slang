@@ -1036,7 +1036,7 @@ import IRTransformer._
           else
             TPostResult(r3.ctx, None())
         case o2: IR.Exp.Construct =>
-          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          val r0: TPostResult[Context, Typed.Name] = transformTypedName(preR.ctx, o2.tipe)
           val r1: TPostResult[Context, IS[Z, IR.Exp]] = transformISZ(r0.ctx, o2.args, transformIRExp _)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
             TPostResult(r1.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe), args = r1.resultOpt.getOrElse(o2.args))))
@@ -1788,6 +1788,41 @@ import IRTransformer._
      case TPostResult(postCtx, Some(result: Typed.Fun)) => TPostResult(postCtx, Some[Typed.Fun](result))
      case TPostResult(_, Some(_)) => halt("Can only produce object of type Typed.Fun")
      case TPostResult(postCtx, _) => TPostResult(postCtx, None[Typed.Fun]())
+    }
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformTypedName(ctx: Context, o: Typed.Name): TPostResult[Context, Typed.Name] = {
+    val preR: PreResult[Context, Typed.Name] = pp.preTypedName(ctx, o) match {
+     case PreResult(preCtx, continu, Some(r: Typed.Name)) => PreResult(preCtx, continu, Some[Typed.Name](r))
+     case PreResult(_, _, Some(_)) => halt("Can only produce object of type Typed.Name")
+     case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[Typed.Name]())
+    }
+    val r: TPostResult[Context, Typed.Name] = if (preR.continu) {
+      val o2: Typed.Name = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: TPostResult[Context, IS[Z, Typed]] = transformISZ(preR.ctx, o2.args, transformTyped _)
+      if (hasChanged || r0.resultOpt.nonEmpty)
+        TPostResult(r0.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args))))
+      else
+        TPostResult(r0.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: Typed.Name = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, Typed.Name] = pp.postTypedName(r.ctx, o2) match {
+     case TPostResult(postCtx, Some(result: Typed.Name)) => TPostResult(postCtx, Some[Typed.Name](result))
+     case TPostResult(_, Some(_)) => halt("Can only produce object of type Typed.Name")
+     case TPostResult(postCtx, _) => TPostResult(postCtx, None[Typed.Name]())
     }
     if (postR.resultOpt.nonEmpty) {
       return postR

@@ -1252,7 +1252,7 @@ import MIRTransformer._
           else
             MNone()
         case o2: IR.Exp.Construct =>
-          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          val r0: MOption[Typed.Name] = transformTypedName(o2.tipe)
           val r1: MOption[IS[Z, IR.Exp]] = transformISZ(o2.args, transformIRExp _)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
             MSome(o2(tipe = r0.getOrElse(o2.tipe), args = r1.getOrElse(o2.args)))
@@ -2004,6 +2004,41 @@ import MIRTransformer._
      case MSome(result: Typed.Fun) => MSome[Typed.Fun](result)
      case MSome(_) => halt("Can only produce object of type Typed.Fun")
      case _ => MNone[Typed.Fun]()
+    }
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformTypedName(o: Typed.Name): MOption[Typed.Name] = {
+    val preR: PreResult[Typed.Name] = preTypedName(o) match {
+     case PreResult(continu, MSome(r: Typed.Name)) => PreResult(continu, MSome[Typed.Name](r))
+     case PreResult(_, MSome(_)) => halt("Can only produce object of type Typed.Name")
+     case PreResult(continu, _) => PreResult(continu, MNone[Typed.Name]())
+    }
+    val r: MOption[Typed.Name] = if (preR.continu) {
+      val o2: Typed.Name = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[IS[Z, Typed]] = transformISZ(o2.args, transformTyped _)
+      if (hasChanged || r0.nonEmpty)
+        MSome(o2(args = r0.getOrElse(o2.args)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Typed.Name = r.getOrElse(o)
+    val postR: MOption[Typed.Name] = postTypedName(o2) match {
+     case MSome(result: Typed.Name) => MSome[Typed.Name](result)
+     case MSome(_) => halt("Can only produce object of type Typed.Name")
+     case _ => MNone[Typed.Name]()
     }
     if (postR.nonEmpty) {
       return postR

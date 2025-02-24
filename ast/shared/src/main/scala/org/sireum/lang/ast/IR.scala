@@ -214,8 +214,8 @@ object IR {
       @strictpure def depth: Z = 1 + max(cond.depth, max(thenExp.depth, elseExp.depth))
     }
 
-    @datatype class Construct(val tipe: Typed, val args: ISZ[Exp], val pos: Position) extends Exp {
-      @strictpure def prettyST: ST = st"$tipe(${(for (i <- 1 until args.size) yield args(i).prettyST, ", ")})"
+    @datatype class Construct(val tipe: Typed.Name, val args: ISZ[Exp], val pos: Position) extends Exp {
+      @strictpure def prettyST: ST = st"$tipe(${(for (arg <- args) yield arg.prettyST, ", ")})"
       @pure def numOfTemps: Z = {
         var r: Z = 0
         for (arg <- args) {

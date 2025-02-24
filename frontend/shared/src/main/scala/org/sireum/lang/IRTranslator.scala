@@ -665,7 +665,7 @@ object IRTranslator {
                 for (arg <- exp.args) {
                   args = args :+ translateExp(arg)
                 }
-                return norm3AC(IR.Exp.Construct(exp.typedOpt.get, args, exp.posOpt.get))
+                return norm3AC(IR.Exp.Construct(exp.typedOpt.get.asInstanceOf[AST.Typed.Name], args, exp.posOpt.get))
               case _ => halt(s"TODO: $exp")
             }
           case _ => halt(s"TODO: $exp")
