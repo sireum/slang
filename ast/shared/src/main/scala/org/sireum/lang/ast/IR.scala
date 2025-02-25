@@ -438,7 +438,7 @@ object IR {
       @strictpure def targets: ISZ[Z] = ISZ()
     }
 
-    @datatype class Switch(val exp: Exp, cases: ISZ[Switch.Case], val pos: Position) extends Jump {
+    @datatype class Switch(val exp: Exp, val cases: ISZ[Switch.Case], val defaulLabelOpt: ISZ[Z], val pos: Position) extends Jump {
       @strictpure def prettyST: ST =
         st"""switch (${exp.prettyST})
             |  ${(for (c <- cases) yield st"${c.value.prettyST}: goto ${c.label}", "\n")}"""
@@ -454,7 +454,7 @@ object IR {
     }
 
     object Switch {
-      @datatype class Case(val value: Exp, label: Z)
+      @datatype class Case(val value: Exp, val label: Z)
     }
 
 
