@@ -91,7 +91,7 @@ object IR {
 
     @datatype class String(val value: org.sireum.String, val pos: Position) extends Exp {
       @strictpure def tipe: Typed = Typed.string
-      @strictpure def prettyST: ST = ops.StringOps(value).escapeST
+      @strictpure def prettyST: ST = st""""${ops.StringOps(value).escapeST}""""
       @strictpure def numOfTemps: Z = 0
       @strictpure def depth: Z = 1
     }
@@ -121,7 +121,7 @@ object IR {
       @strictpure def depth: Z = 1
     }
 
-    @datatype class FieldVarRef(val owner: Typed, val receiver: Exp, val id: org.sireum.String, val tipe: Typed, val pos: Position) extends Exp {
+    @datatype class FieldVarRef(val receiver: Exp, val id: org.sireum.String, val tipe: Typed, val pos: Position) extends Exp {
       @strictpure def prettyST: ST = st"$receiver.$id"
       @strictpure def numOfTemps: Z = receiver.numOfTemps
       @strictpure def depth: Z = 1 + receiver.depth
@@ -260,8 +260,8 @@ object IR {
       @strictpure def depth: Z = 1 + max(exp.depth, index.depth)
     }
 
-    @datatype class Type(val test: B, val exp: Exp, val t: Typed, val pos: Position) extends Exp {
-      @strictpure def tipe: Typed = if (test) Typed.b else t
+    @datatype class Type(val test: B, val exp: Exp, val t: Typed.Name, val pos: Position) extends Exp {
+      @strictpure def tipe: Typed.Name = if (test) Typed.b else t
       @strictpure def prettyST: ST = st"(${exp.prettyST} ${if (test) "is" else "as"} $t)"
       @strictpure def numOfTemps: Z = exp.numOfTemps
       @strictpure def depth: Z = 1 + exp.depth
@@ -368,6 +368,14 @@ object IR {
       @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = halt("This API can only be used for 3-address code")
     }
 
+    @datatype class Halt(val messageOpt: Option[Exp], val pos: Position) extends Ground {
+      @strictpure def prettyST: ST = messageOpt match {
+        case Some(exp) => st"""halt(${exp.prettyST})"""
+        case _ => st"halt()"
+      }
+      @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps)
+    }
+
     @datatype class Decl(val undecl: B, val isVal: B, val isAlloc: B, val context: MethodContext, val locals: ISZ[Decl.Local], val pos: Position) extends Ground {
       @strictpure def undeclare: Decl = {
         val thiz = this
@@ -438,10 +446,16 @@ object IR {
       @strictpure def targets: ISZ[Z] = ISZ()
     }
 
-    @datatype class Switch(val exp: Exp, val cases: ISZ[Switch.Case], val defaulLabelOpt: ISZ[Z], val pos: Position) extends Jump {
-      @strictpure def prettyST: ST =
+    @datatype class Switch(val exp: Exp, val cases: ISZ[Switch.Case], val defaultLabelOpt: Option[Z], val pos: Position) extends Jump {
+      @strictpure def prettyST: ST = {
+        val defaultOpt: Option[ST] = defaultLabelOpt match {
+          case Some(l) => Some(st"default: goto $l")
+          case _ => None()
+        }
         st"""switch (${exp.prettyST})
-            |  ${(for (c <- cases) yield st"${c.value.prettyST}: goto ${c.label}", "\n")}"""
+            |  ${(for (c <- cases) yield st"${c.value.prettyST}: goto ${c.label}", "\n")}
+            |  $defaultOpt"""
+      }
 
       @pure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = {
         var rtemps = temps - exp.numOfTemps
@@ -450,7 +464,14 @@ object IR {
         }
         return (locals, rtemps)
       }
-      @strictpure def targets: ISZ[Z] = for (c <- cases) yield c.label
+      @pure def targets: ISZ[Z] = {
+        var r: ISZ[Z] = for (c <- cases) yield c.label
+        defaultLabelOpt match {
+          case Some(l) => r = r :+ l
+          case _ =>
+        }
+        return r
+      }
     }
 
     object Switch {

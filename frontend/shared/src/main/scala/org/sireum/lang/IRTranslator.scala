@@ -175,6 +175,9 @@ object IRTranslator {
             case _ =>
               return None()
           }
+        case stmt: IR.Stmt.Halt =>
+          addGround(stmt)
+          return Some(label)
         case stmt: IR.Stmt.Decl =>
           addGround(stmt)
           decls = decls :+ stmt
@@ -506,7 +509,7 @@ object IRTranslator {
             if (res.isInObject) {
               return norm3AC(IR.Exp.GlobalVarRef(res.owner :+ res.id, t, pos))
             } else {
-              return norm3AC(IR.Exp.FieldVarRef(methodContext.receiverType, thiz(pos), res.id, t, pos))
+              return norm3AC(IR.Exp.FieldVarRef(thiz(pos), res.id, t, pos))
             }
           case res: AST.ResolvedInfo.EnumElement =>
             return norm3AC(IR.Exp.EnumElementRef(res.owner, res.name, res.ordinal, pos))
@@ -521,7 +524,7 @@ object IRTranslator {
             } else {
               val receiver = exp.receiverOpt.get
               val rcv = translateExp(receiver)
-              return norm3AC(IR.Exp.FieldVarRef(receiver.typedOpt.get, rcv, res.id, t, pos))
+              return norm3AC(IR.Exp.FieldVarRef(rcv, res.id, t, pos))
             }
           case res: AST.ResolvedInfo.EnumElement =>
             return norm3AC(IR.Exp.EnumElementRef(res.owner, res.name, res.ordinal, pos))
@@ -529,11 +532,16 @@ object IRTranslator {
             if (isSeq(exp.receiverOpt.get.typedOpt.get)) {
               val receiver = exp.receiverOpt.get
               val rcv = translateExp(receiver)
-              return norm3AC(IR.Exp.FieldVarRef(receiver.typedOpt.get, rcv, res.id, res.tpeOpt.get.ret, pos))
+              return norm3AC(IR.Exp.FieldVarRef(rcv, res.id, res.tpeOpt.get.ret, pos))
             } else {
               return translateExp(AST.Exp.Invoke(exp.receiverOpt, AST.Exp.Ident(exp.id, exp.attr), ISZ(), ISZ(),
                 exp.attr(typedOpt = Some(exp.typedOpt.get.asInstanceOf[AST.Typed.Fun].ret))))
             }
+          case AST.ResolvedInfo.BuiltIn(kind) if kind == AST.ResolvedInfo.BuiltIn.Kind.AsInstanceOf ||
+          kind == AST.ResolvedInfo.BuiltIn.Kind.IsInstanceOf =>
+            val receiver = translateExp(exp.receiverOpt.get)
+            return norm3AC(AST.IR.Exp.Type(kind == AST.ResolvedInfo.BuiltIn.Kind.IsInstanceOf, receiver,
+              exp.targs(0).typedOpt.get.asInstanceOf[AST.Typed.Name], exp.posOpt.get))
           case res => halt(s"TODO: $res")
         }
       case exp: AST.Exp.Unary =>
