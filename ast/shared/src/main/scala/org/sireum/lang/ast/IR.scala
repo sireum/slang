@@ -48,6 +48,7 @@ object IR {
     @pure def prettyST: ST
     @pure def numOfTemps: Z
     @pure def depth: Z
+    @strictpure override def string: String = prettyST.render
   }
 
   object Exp {
