@@ -51,11 +51,7 @@ object IRTranslator {
 @record class IRTranslator(val threeAddressCode: B, val th: TypeHierarchy, val fresh: IRTranslator.Fresh) {
 
   var methodContext: IR.MethodContext = IR.MethodContext.empty
-  var stmts: ISZ[IR.Stmt] = {
-    fresh.setTemp(0)
-    fresh.setLabel(1)
-    ISZ()
-  }
+  var stmts: ISZ[IR.Stmt] = ISZ()
 
   def translateMethodH(isBasic: B,
                        receiverTypeOpt: Option[AST.Typed],
