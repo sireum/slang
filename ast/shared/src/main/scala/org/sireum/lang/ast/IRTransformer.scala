@@ -197,17 +197,6 @@ object IRTransformer {
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt]())
           }
           return r
-        case o: IR.Stmt.If => return preIRStmtIf(ctx, o)
-        case o: IR.Stmt.Block => return preIRStmtBlock(ctx, o)
-        case o: IR.Stmt.While => return preIRStmtWhile(ctx, o)
-        case o: IR.Stmt.Return => return preIRStmtReturn(ctx, o)
-        case o: IR.Stmt.Halt =>
-          val r: PreResult[Context, IR.Stmt] = preIRStmtHalt(ctx, o) match {
-           case PreResult(preCtx, continu, Some(r: IR.Stmt)) => PreResult(preCtx, continu, Some[IR.Stmt](r))
-           case PreResult(_, _, Some(_)) => halt("Can only produce object of type IR.Stmt")
-           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt]())
-          }
-          return r
         case o: IR.Stmt.Decl =>
           val r: PreResult[Context, IR.Stmt] = preIRStmtDecl(ctx, o) match {
            case PreResult(preCtx, continu, Some(r: IR.Stmt)) => PreResult(preCtx, continu, Some[IR.Stmt](r))
@@ -222,6 +211,13 @@ object IRTransformer {
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt]())
           }
           return r
+        case o: IR.Stmt.Assertume => return preIRStmtAssertume(ctx, o)
+        case o: IR.Stmt.Print => return preIRStmtPrint(ctx, o)
+        case o: IR.Stmt.Match => return preIRStmtMatch(ctx, o)
+        case o: IR.Stmt.If => return preIRStmtIf(ctx, o)
+        case o: IR.Stmt.Block => return preIRStmtBlock(ctx, o)
+        case o: IR.Stmt.While => return preIRStmtWhile(ctx, o)
+        case o: IR.Stmt.Return => return preIRStmtReturn(ctx, o)
       }
     }
 
@@ -263,7 +259,6 @@ object IRTransformer {
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt.Ground]())
           }
           return r
-        case o: IR.Stmt.Halt => return preIRStmtHalt(ctx, o)
         case o: IR.Stmt.Decl => return preIRStmtDecl(ctx, o)
         case o: IR.Stmt.Intrinsic => return preIRStmtIntrinsic(ctx, o)
       }
@@ -303,26 +298,6 @@ object IRTransformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preIRStmtIf(ctx: Context, o: IR.Stmt.If): PreResult[Context, IR.Stmt] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preIRStmtBlock(ctx: Context, o: IR.Stmt.Block): PreResult[Context, IR.Stmt] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preIRStmtWhile(ctx: Context, o: IR.Stmt.While): PreResult[Context, IR.Stmt] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preIRStmtReturn(ctx: Context, o: IR.Stmt.Return): PreResult[Context, IR.Stmt] = {
-      return PreResult(ctx, T, None())
-    }
-
-    @pure def preIRStmtHalt(ctx: Context, o: IR.Stmt.Halt): PreResult[Context, IR.Stmt.Ground] = {
-      return PreResult(ctx, T, None())
-    }
-
     @pure def preIRStmtDecl(ctx: Context, o: IR.Stmt.Decl): PreResult[Context, IR.Stmt.Ground] = {
       return PreResult(ctx, T, None())
     }
@@ -339,12 +314,45 @@ object IRTransformer {
       return PreResult(ctx, T, None())
     }
 
+    @pure def preIRStmtAssertume(ctx: Context, o: IR.Stmt.Assertume): PreResult[Context, IR.Stmt] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRStmtPrint(ctx: Context, o: IR.Stmt.Print): PreResult[Context, IR.Stmt] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRStmtMatch(ctx: Context, o: IR.Stmt.Match): PreResult[Context, IR.Stmt] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRStmtMatchCase(ctx: Context, o: IR.Stmt.Match.Case): PreResult[Context, IR.Stmt.Match.Case] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRStmtIf(ctx: Context, o: IR.Stmt.If): PreResult[Context, IR.Stmt] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRStmtBlock(ctx: Context, o: IR.Stmt.Block): PreResult[Context, IR.Stmt] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRStmtWhile(ctx: Context, o: IR.Stmt.While): PreResult[Context, IR.Stmt] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRStmtReturn(ctx: Context, o: IR.Stmt.Return): PreResult[Context, IR.Stmt] = {
+      return PreResult(ctx, T, None())
+    }
+
     @pure def preIRJump(ctx: Context, o: IR.Jump): PreResult[Context, IR.Jump] = {
       o match {
         case o: IR.Jump.Goto => return preIRJumpGoto(ctx, o)
         case o: IR.Jump.If => return preIRJumpIf(ctx, o)
         case o: IR.Jump.Return => return preIRJumpReturn(ctx, o)
         case o: IR.Jump.Switch => return preIRJumpSwitch(ctx, o)
+        case o: IR.Jump.Halt => return preIRJumpHalt(ctx, o)
         case o: IR.Jump.Intrinsic => return preIRJumpIntrinsic(ctx, o)
       }
     }
@@ -366,6 +374,10 @@ object IRTransformer {
     }
 
     @pure def preIRJumpSwitchCase(ctx: Context, o: IR.Jump.Switch.Case): PreResult[Context, IR.Jump.Switch.Case] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRJumpHalt(ctx: Context, o: IR.Jump.Halt): PreResult[Context, IR.Jump] = {
       return PreResult(ctx, T, None())
     }
 
@@ -625,17 +637,6 @@ object IRTransformer {
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt]())
           }
           return r
-        case o: IR.Stmt.If => return postIRStmtIf(ctx, o)
-        case o: IR.Stmt.Block => return postIRStmtBlock(ctx, o)
-        case o: IR.Stmt.While => return postIRStmtWhile(ctx, o)
-        case o: IR.Stmt.Return => return postIRStmtReturn(ctx, o)
-        case o: IR.Stmt.Halt =>
-          val r: TPostResult[Context, IR.Stmt] = postIRStmtHalt(ctx, o) match {
-           case TPostResult(postCtx, Some(result: IR.Stmt)) => TPostResult(postCtx, Some[IR.Stmt](result))
-           case TPostResult(_, Some(_)) => halt("Can only produce object of type IR.Stmt")
-           case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt]())
-          }
-          return r
         case o: IR.Stmt.Decl =>
           val r: TPostResult[Context, IR.Stmt] = postIRStmtDecl(ctx, o) match {
            case TPostResult(postCtx, Some(result: IR.Stmt)) => TPostResult(postCtx, Some[IR.Stmt](result))
@@ -650,6 +651,13 @@ object IRTransformer {
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt]())
           }
           return r
+        case o: IR.Stmt.Assertume => return postIRStmtAssertume(ctx, o)
+        case o: IR.Stmt.Print => return postIRStmtPrint(ctx, o)
+        case o: IR.Stmt.Match => return postIRStmtMatch(ctx, o)
+        case o: IR.Stmt.If => return postIRStmtIf(ctx, o)
+        case o: IR.Stmt.Block => return postIRStmtBlock(ctx, o)
+        case o: IR.Stmt.While => return postIRStmtWhile(ctx, o)
+        case o: IR.Stmt.Return => return postIRStmtReturn(ctx, o)
       }
     }
 
@@ -691,7 +699,6 @@ object IRTransformer {
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt.Ground]())
           }
           return r
-        case o: IR.Stmt.Halt => return postIRStmtHalt(ctx, o)
         case o: IR.Stmt.Decl => return postIRStmtDecl(ctx, o)
         case o: IR.Stmt.Intrinsic => return postIRStmtIntrinsic(ctx, o)
       }
@@ -731,26 +738,6 @@ object IRTransformer {
       return TPostResult(ctx, None())
     }
 
-    @pure def postIRStmtIf(ctx: Context, o: IR.Stmt.If): TPostResult[Context, IR.Stmt] = {
-      return TPostResult(ctx, None())
-    }
-
-    @pure def postIRStmtBlock(ctx: Context, o: IR.Stmt.Block): TPostResult[Context, IR.Stmt] = {
-      return TPostResult(ctx, None())
-    }
-
-    @pure def postIRStmtWhile(ctx: Context, o: IR.Stmt.While): TPostResult[Context, IR.Stmt] = {
-      return TPostResult(ctx, None())
-    }
-
-    @pure def postIRStmtReturn(ctx: Context, o: IR.Stmt.Return): TPostResult[Context, IR.Stmt] = {
-      return TPostResult(ctx, None())
-    }
-
-    @pure def postIRStmtHalt(ctx: Context, o: IR.Stmt.Halt): TPostResult[Context, IR.Stmt.Ground] = {
-      return TPostResult(ctx, None())
-    }
-
     @pure def postIRStmtDecl(ctx: Context, o: IR.Stmt.Decl): TPostResult[Context, IR.Stmt.Ground] = {
       return TPostResult(ctx, None())
     }
@@ -767,12 +754,45 @@ object IRTransformer {
       return TPostResult(ctx, None())
     }
 
+    @pure def postIRStmtAssertume(ctx: Context, o: IR.Stmt.Assertume): TPostResult[Context, IR.Stmt] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRStmtPrint(ctx: Context, o: IR.Stmt.Print): TPostResult[Context, IR.Stmt] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRStmtMatch(ctx: Context, o: IR.Stmt.Match): TPostResult[Context, IR.Stmt] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRStmtMatchCase(ctx: Context, o: IR.Stmt.Match.Case): TPostResult[Context, IR.Stmt.Match.Case] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRStmtIf(ctx: Context, o: IR.Stmt.If): TPostResult[Context, IR.Stmt] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRStmtBlock(ctx: Context, o: IR.Stmt.Block): TPostResult[Context, IR.Stmt] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRStmtWhile(ctx: Context, o: IR.Stmt.While): TPostResult[Context, IR.Stmt] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRStmtReturn(ctx: Context, o: IR.Stmt.Return): TPostResult[Context, IR.Stmt] = {
+      return TPostResult(ctx, None())
+    }
+
     @pure def postIRJump(ctx: Context, o: IR.Jump): TPostResult[Context, IR.Jump] = {
       o match {
         case o: IR.Jump.Goto => return postIRJumpGoto(ctx, o)
         case o: IR.Jump.If => return postIRJumpIf(ctx, o)
         case o: IR.Jump.Return => return postIRJumpReturn(ctx, o)
         case o: IR.Jump.Switch => return postIRJumpSwitch(ctx, o)
+        case o: IR.Jump.Halt => return postIRJumpHalt(ctx, o)
         case o: IR.Jump.Intrinsic => return postIRJumpIntrinsic(ctx, o)
       }
     }
@@ -794,6 +814,10 @@ object IRTransformer {
     }
 
     @pure def postIRJumpSwitchCase(ctx: Context, o: IR.Jump.Switch.Case): TPostResult[Context, IR.Jump.Switch.Case] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRJumpHalt(ctx: Context, o: IR.Jump.Halt): TPostResult[Context, IR.Jump] = {
       return TPostResult(ctx, None())
     }
 
@@ -1186,6 +1210,39 @@ import IRTransformer._
             TPostResult(r2.ctx, Some(o2(receiver = r0.resultOpt.getOrElse(o2.receiver), index = r1.resultOpt.getOrElse(o2.index), rhs = r2.resultOpt.getOrElse(o2.rhs))))
           else
             TPostResult(r2.ctx, None())
+        case o2: IR.Stmt.Decl =>
+          val r0: TPostResult[Context, IR.MethodContext] = transformIRMethodContext(preR.ctx, o2.context)
+          val r1: TPostResult[Context, IS[Z, IR.Stmt.Decl.Local]] = transformISZ(r0.ctx, o2.locals, transformIRStmtDeclLocal _)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(context = r0.resultOpt.getOrElse(o2.context), locals = r1.resultOpt.getOrElse(o2.locals))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: IR.Stmt.Intrinsic =>
+          val r0: TPostResult[Context, IR.Stmt.Intrinsic.Type] = transformIRStmtIntrinsicType(preR.ctx, o2.intrinsic)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(intrinsic = r0.resultOpt.getOrElse(o2.intrinsic))))
+          else
+            TPostResult(r0.ctx, None())
+        case o2: IR.Stmt.Assertume =>
+          val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.cond)
+          val r1: TPostResult[Context, Option[IR.Exp]] = transformOption(r0.ctx, o2.messageOpt, transformIRExp _)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), messageOpt = r1.resultOpt.getOrElse(o2.messageOpt))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: IR.Stmt.Print =>
+          val r0: TPostResult[Context, IS[Z, IR.Exp]] = transformISZ(preR.ctx, o2.args, transformIRExp _)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args))))
+          else
+            TPostResult(r0.ctx, None())
+        case o2: IR.Stmt.Match =>
+          val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.exp)
+          val r1: TPostResult[Context, IS[Z, IR.Stmt.Match.Case]] = transformISZ(r0.ctx, o2.cases, transformIRStmtMatchCase _)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), cases = r1.resultOpt.getOrElse(o2.cases))))
+          else
+            TPostResult(r1.ctx, None())
         case o2: IR.Stmt.If =>
           val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.cond)
           val r1: TPostResult[Context, IR.Stmt.Block] = transformIRStmtBlock(r0.ctx, o2.thenBlock)
@@ -1212,25 +1269,6 @@ import IRTransformer._
           val r0: TPostResult[Context, Option[IR.Exp]] = transformOption(preR.ctx, o2.expOpt, transformIRExp _)
           if (hasChanged || r0.resultOpt.nonEmpty)
             TPostResult(r0.ctx, Some(o2(expOpt = r0.resultOpt.getOrElse(o2.expOpt))))
-          else
-            TPostResult(r0.ctx, None())
-        case o2: IR.Stmt.Halt =>
-          val r0: TPostResult[Context, Option[IR.Exp]] = transformOption(preR.ctx, o2.messageOpt, transformIRExp _)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(messageOpt = r0.resultOpt.getOrElse(o2.messageOpt))))
-          else
-            TPostResult(r0.ctx, None())
-        case o2: IR.Stmt.Decl =>
-          val r0: TPostResult[Context, IR.MethodContext] = transformIRMethodContext(preR.ctx, o2.context)
-          val r1: TPostResult[Context, IS[Z, IR.Stmt.Decl.Local]] = transformISZ(r0.ctx, o2.locals, transformIRStmtDeclLocal _)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(context = r0.resultOpt.getOrElse(o2.context), locals = r1.resultOpt.getOrElse(o2.locals))))
-          else
-            TPostResult(r1.ctx, None())
-        case o2: IR.Stmt.Intrinsic =>
-          val r0: TPostResult[Context, IR.Stmt.Intrinsic.Type] = transformIRStmtIntrinsicType(preR.ctx, o2.intrinsic)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(intrinsic = r0.resultOpt.getOrElse(o2.intrinsic))))
           else
             TPostResult(r0.ctx, None())
       }
@@ -1301,12 +1339,6 @@ import IRTransformer._
             TPostResult(r2.ctx, Some(o2(receiver = r0.resultOpt.getOrElse(o2.receiver), index = r1.resultOpt.getOrElse(o2.index), rhs = r2.resultOpt.getOrElse(o2.rhs))))
           else
             TPostResult(r2.ctx, None())
-        case o2: IR.Stmt.Halt =>
-          val r0: TPostResult[Context, Option[IR.Exp]] = transformOption(preR.ctx, o2.messageOpt, transformIRExp _)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(messageOpt = r0.resultOpt.getOrElse(o2.messageOpt))))
-          else
-            TPostResult(r0.ctx, None())
         case o2: IR.Stmt.Decl =>
           val r0: TPostResult[Context, IR.MethodContext] = transformIRMethodContext(preR.ctx, o2.context)
           val r1: TPostResult[Context, IS[Z, IR.Stmt.Decl.Local]] = transformISZ(r0.ctx, o2.locals, transformIRStmtDeclLocal _)
@@ -1452,6 +1484,34 @@ import IRTransformer._
     }
   }
 
+  @pure def transformIRStmtMatchCase(ctx: Context, o: IR.Stmt.Match.Case): TPostResult[Context, IR.Stmt.Match.Case] = {
+    val preR: PreResult[Context, IR.Stmt.Match.Case] = pp.preIRStmtMatchCase(ctx, o)
+    val r: TPostResult[Context, IR.Stmt.Match.Case] = if (preR.continu) {
+      val o2: IR.Stmt.Match.Case = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: TPostResult[Context, Option[IR.Exp]] = transformOption(preR.ctx, o2.condOpt, transformIRExp _)
+      val r1: TPostResult[Context, IR.Stmt.Block] = transformIRStmtBlock(r0.ctx, o2.body)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+        TPostResult(r1.ctx, Some(o2(condOpt = r0.resultOpt.getOrElse(o2.condOpt), body = r1.resultOpt.getOrElse(o2.body))))
+      else
+        TPostResult(r1.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: IR.Stmt.Match.Case = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, IR.Stmt.Match.Case] = pp.postIRStmtMatchCase(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
   @pure def transformIRJump(ctx: Context, o: IR.Jump): TPostResult[Context, IR.Jump] = {
     val preR: PreResult[Context, IR.Jump] = pp.preIRJump(ctx, o)
     val r: TPostResult[Context, IR.Jump] = if (preR.continu) {
@@ -1482,6 +1542,12 @@ import IRTransformer._
             TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), cases = r1.resultOpt.getOrElse(o2.cases))))
           else
             TPostResult(r1.ctx, None())
+        case o2: IR.Jump.Halt =>
+          val r0: TPostResult[Context, Option[IR.Exp]] = transformOption(preR.ctx, o2.messageOpt, transformIRExp _)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(messageOpt = r0.resultOpt.getOrElse(o2.messageOpt))))
+          else
+            TPostResult(r0.ctx, None())
         case o2: IR.Jump.Intrinsic =>
           val r0: TPostResult[Context, IR.Jump.Intrinsic.Type] = transformIRJumpIntrinsicType(preR.ctx, o2.intrinsic)
           if (hasChanged || r0.resultOpt.nonEmpty)

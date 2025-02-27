@@ -126,10 +126,13 @@ object IRTranslator {
         case stmt: IR.Stmt.Assign =>
           addGround(stmt)
           return Some(label)
-        case stmt: IR.Stmt.Return =>
-          blocks = blocks :+ basicBlock(label, grounds, IR.Jump.Return(stmt.expOpt, pos))
-          grounds = ISZ()
-          return None()
+        case stmt: IR.Stmt.Decl =>
+          addGround(stmt)
+          decls = decls :+ stmt
+          return Some(label)
+        case stmt: IR.Stmt.Assertume => halt(s"TODO: $stmt")
+        case stmt: IR.Stmt.Print => halt(s"TODO: $stmt")
+        case stmt: IR.Stmt.Match => halt(s"TODO: $stmt")
         case stmt: IR.Stmt.If =>
           val t = fresh.label()
           val e = fresh.label()
@@ -175,13 +178,10 @@ object IRTranslator {
             case _ =>
               return None()
           }
-        case stmt: IR.Stmt.Halt =>
-          addGround(stmt)
-          return Some(label)
-        case stmt: IR.Stmt.Decl =>
-          addGround(stmt)
-          decls = decls :+ stmt
-          return Some(label)
+        case stmt: IR.Stmt.Return =>
+          blocks = blocks :+ basicBlock(label, grounds, IR.Jump.Return(stmt.expOpt, pos))
+          grounds = ISZ()
+          return None()
         case stmt: IR.Stmt.Intrinsic =>
           addGround(stmt)
           return Some(label)

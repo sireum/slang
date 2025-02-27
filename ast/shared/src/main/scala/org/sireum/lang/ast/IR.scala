@@ -46,9 +46,6 @@ object IR {
     @pure def tipe: Typed
     @strictpure def pos: Position
     @pure def prettyST: ST
-    @pure override def string: String = {
-      return prettyST.render
-    }
     @pure def numOfTemps: Z
     @pure def depth: Z
   }
@@ -281,9 +278,6 @@ object IR {
         @pure def pos: Position
         @pure def prettyST: ST
         @pure def numOfTemps: Z
-        @pure override def string: org.sireum.String = {
-          return prettyST.render
-        }
         @pure def depth: Z
       }
     }
@@ -292,10 +286,6 @@ object IR {
   @datatype trait Stmt {
     @strictpure def pos: Position
     @pure def prettyST: ST
-    @pure override def string: String = {
-      return prettyST.render
-    }
-    @pure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z)
   }
 
   object Stmt {
@@ -305,7 +295,6 @@ object IR {
     @datatype class Expr(val exp: Exp.Apply) extends Ground {
       @strictpure def pos: Position = exp.pos
       @strictpure def prettyST: ST = exp.prettyST
-      @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps - exp.numOfTemps)
     }
 
     @datatype trait Assign extends Ground {
@@ -316,64 +305,23 @@ object IR {
 
       @datatype class Local(val context: MethodContext, val lhs: String, val tipe: Typed, val rhs: Exp, val pos: Position) extends Assign {
         @strictpure def prettyST: ST = st"$lhs = ${rhs.prettyST}"
-        @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps - rhs.numOfTemps)
       }
 
       @datatype class Global(val name: ISZ[String], val tipe: Typed, val rhs: Exp, val pos: Position) extends Assign {
         @strictpure def prettyST: ST = st"${(name, ".")} = ${rhs.prettyST}"
-        @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps - rhs.numOfTemps)
       }
 
       @datatype class Temp(val lhs: Z, val rhs: Exp, val pos: Position) extends Assign {
         @strictpure def prettyST: ST = st"$$$lhs = ${rhs.prettyST}"
-        @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps - rhs.numOfTemps + 1)
       }
 
       @datatype class Field(val receiver: Exp, val id: String, val tipe: Typed, val rhs: Exp, val pos: Position) extends Assign {
         @strictpure def prettyST: ST = st"${receiver.prettyST}.$id = ${rhs.prettyST}"
-        @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps - receiver.numOfTemps - rhs.numOfTemps)
       }
 
       @datatype class Index(val receiver: Exp, val index: Exp, val rhs: Exp, val pos: Position) extends Assign {
         @strictpure def prettyST: ST = st"${receiver.prettyST}(${index.prettyST}) = ${rhs.prettyST}"
-        @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps - receiver.numOfTemps - index.numOfTemps - rhs.numOfTemps)
       }
-    }
-
-    @datatype class If(val cond: Exp, val thenBlock: Block, val elseBlock: Block, val pos: Position) extends Stmt {
-      @strictpure def prettyST: ST = st"if (${cond.prettyST}) ${thenBlock.prettyST} else ${elseBlock.prettyST}"
-      @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = halt("This API can only be used for 3-address code")
-    }
-
-    @datatype class Block(val stmts: ISZ[Stmt], val pos: Position) extends Stmt {
-      @strictpure def prettyST: ST =
-        st"""{
-            |  ${(for (stmt <- stmts) yield stmt.prettyST, "\n")}
-            |}"""
-      @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = halt("This API can only be used for 3-address code")
-    }
-
-    @datatype class While(val condBlock: Block, val cond: Exp, val block: Block, val pos: Position) extends Stmt {
-      @strictpure def prettyST: ST =
-        st"""$condBlock
-            |while (${cond.prettyST}) ${block.prettyST}"""
-      @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = halt("This API can only be used for 3-address code")
-    }
-
-    @datatype class Return(val expOpt: Option[Exp], val pos: Position) extends Stmt {
-      @strictpure def prettyST: ST = expOpt match {
-        case Some(exp) => st"return ${exp.prettyST}"
-        case _ => st"return"
-      }
-      @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = halt("This API can only be used for 3-address code")
-    }
-
-    @datatype class Halt(val messageOpt: Option[Exp], val pos: Position) extends Ground {
-      @strictpure def prettyST: ST = messageOpt match {
-        case Some(exp) => st"""halt(${exp.prettyST})"""
-        case _ => st"halt()"
-      }
-      @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps)
     }
 
     @datatype class Decl(val undecl: B, val isVal: B, val isAlloc: B, val context: MethodContext, val locals: ISZ[Decl.Local], val pos: Position) extends Ground {
@@ -382,8 +330,6 @@ object IR {
         thiz(undecl = T)
       }
       @strictpure def prettyST: ST = st"${if (isAlloc) if (undecl) "unalloc" else "alloc" else if (undecl) "undecl" else "decl"} ${(for (l <- locals) yield l.prettyST, ", ")}"
-      @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) =
-        (locals - (if (undecl) this.locals.size else -this.locals.size), temps)
     }
 
     object Decl {
@@ -395,19 +341,92 @@ object IR {
     @datatype class Intrinsic(val intrinsic: Intrinsic.Type) extends Ground {
       @strictpure def prettyST: ST = intrinsic.prettyST
       @strictpure def pos: Position = intrinsic.pos
-      @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = intrinsic.computeLocalsTemps(locals, temps)
     }
 
     object Intrinsic {
       @sig trait Type {
         @pure def pos: Position
         @pure def prettyST: ST
-        @pure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z)
         @pure override def string: org.sireum.String = {
           return prettyST.render
         }
       }
     }
+
+    @datatype class Assertume(val isAssert: B, val cond: Exp, val messageOpt: Option[Exp], val pos: Position) extends Stmt {
+      @strictpure def prettyST: ST = {
+        val mOpt: Option[ST] = messageOpt match {
+          case Some(m) => Some(st", ${m.prettyST}")
+          case _ => None()
+        }
+        st"${if (isAssert) "assert" else "assume"}(${cond.prettyST}$mOpt)"
+      }
+    }
+
+    @datatype class Print(val kind: Print.Kind.Type, val line: B, val args: ISZ[Exp], val pos: Position) extends Stmt {
+      @strictpure def prettyST: ST = {
+        val printKeyword: String = kind match {
+          case Print.Kind.Out => "print"
+          case Print.Kind.Err => "eprint"
+          case Print.Kind.OutErr => "cprint"
+        }
+        val ln: String = if (line) "ln" else ""
+        st"$printKeyword$ln(${(for (arg <- args) yield arg.prettyST, ", ")})"
+      }
+    }
+
+    object Print {
+      @enum object Kind {
+        "Out"
+        "Err"
+        "OutErr"
+      }
+    }
+
+    @datatype class Match(val exp: Exp, val cases: ISZ[Match.Case], val pos: Position) extends Stmt {
+      @strictpure def prettyST: ST =
+        st"""${exp.prettyST} match {
+            |  ${(for (c <- cases) yield c.prettyST, "\n")}
+            |}"""
+    }
+
+    object Match {
+      @datatype class Case(val pattern: Pattern, val condOpt: Option[Exp], val body: Block) {
+        @strictpure def prettyST: ST = {
+          val cOpt: Option[ST] = condOpt match {
+            case Some(cond) => Some(st" if ${cond.prettyST}")
+            case _ => None()
+          }
+          st"""case ${pattern.prettyST}$cOpt =>
+              |  ${(for (stmt <- body.stmts) yield stmt.prettyST, "\n")}"""
+        }
+      }
+    }
+
+    @datatype class If(val cond: Exp, val thenBlock: Block, val elseBlock: Block, val pos: Position) extends Stmt {
+      @strictpure def prettyST: ST = st"if (${cond.prettyST}) ${thenBlock.prettyST} else ${elseBlock.prettyST}"
+    }
+
+    @datatype class Block(val stmts: ISZ[Stmt], val pos: Position) extends Stmt {
+      @strictpure def prettyST: ST =
+        st"""{
+            |  ${(for (stmt <- stmts) yield stmt.prettyST, "\n")}
+            |}"""
+    }
+
+    @datatype class While(val condBlock: Block, val cond: Exp, val block: Block, val pos: Position) extends Stmt {
+      @strictpure def prettyST: ST =
+        st"""$condBlock
+            |while (${cond.prettyST}) ${block.prettyST}"""
+    }
+
+    @datatype class Return(val expOpt: Option[Exp], val pos: Position) extends Stmt {
+      @strictpure def prettyST: ST = expOpt match {
+        case Some(exp) => st"return ${exp.prettyST}"
+        case _ => st"return"
+      }
+    }
+
   }
 
   @datatype trait Jump {
@@ -415,7 +434,6 @@ object IR {
     @pure override def string: String = {
       return prettyST.render
     }
-    @pure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z)
     @pure def targets: ISZ[Z]
     @pure def pos: Position
   }
@@ -424,13 +442,11 @@ object IR {
 
     @datatype class Goto(val label: Z, val pos: Position) extends Jump {
       @strictpure def prettyST: ST = st"goto .$label"
-      @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps)
       @strictpure def targets: ISZ[Z] = ISZ(label)
     }
 
     @datatype class If(val cond: Exp, thenLabel: Z, elseLabel: Z, val pos: Position) extends Jump {
       @strictpure def prettyST: ST = st"if ${cond.prettyST} goto .$thenLabel else goto .$elseLabel"
-      @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = (locals, temps - cond.numOfTemps)
       @strictpure def targets: ISZ[Z] = ISZ(thenLabel, elseLabel)
     }
 
@@ -438,10 +454,6 @@ object IR {
       @strictpure def prettyST: ST = expOpt match {
         case Some(exp) => st"return ${exp.prettyST}"
         case _ => st"return"
-      }
-      @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = expOpt match {
-        case Some(exp) => (locals, temps - exp.numOfTemps)
-        case _ => (locals, temps)
       }
       @strictpure def targets: ISZ[Z] = ISZ()
     }
@@ -457,13 +469,6 @@ object IR {
             |  $defaultOpt"""
       }
 
-      @pure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = {
-        var rtemps = temps - exp.numOfTemps
-        for (c <- cases) {
-          rtemps = rtemps - c.value.numOfTemps
-        }
-        return (locals, rtemps)
-      }
       @pure def targets: ISZ[Z] = {
         var r: ISZ[Z] = for (c <- cases) yield c.label
         defaultLabelOpt match {
@@ -478,11 +483,17 @@ object IR {
       @datatype class Case(val value: Exp, val label: Z)
     }
 
+    @datatype class Halt(val messageOpt: Option[Exp], val pos: Position) extends Jump {
+      @strictpure def prettyST: ST = messageOpt match {
+        case Some(exp) => st"""halt(${exp.prettyST})"""
+        case _ => st"halt()"
+      }
+      @strictpure def targets: ISZ[Z] = ISZ()
+    }
 
     @datatype class Intrinsic(val intrinsic: Intrinsic.Type) extends Jump {
       @strictpure def prettyST: ST = intrinsic.prettyST
       @strictpure def pos: Position = intrinsic.pos
-      @strictpure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z) = intrinsic.computeLocalsTemps(locals, temps)
       @strictpure def targets: ISZ[Z] = intrinsic.targets
     }
 
@@ -490,7 +501,6 @@ object IR {
       @sig trait Type {
         @pure def pos: Position
         @pure def prettyST: ST
-        @pure def computeLocalsTemps(locals: Z, temps: Z): (Z, Z)
         @pure def targets: ISZ[Z]
         @pure override def string: org.sireum.String = {
           return prettyST.render
@@ -567,54 +577,6 @@ object IR {
     @pure override def string: String = {
       return prettyST.render
     }
-    @memoize def maxLocalsAndTemps: (Z, Z) = {
-      val blocks: ISZ[BasicBlock] = body match {
-        case body: Body.Basic if body.blocks.nonEmpty => body.blocks
-        case _ => return (0, 0)
-      }
-      val blockMap: HashMap[Z, BasicBlock] = HashMap ++ (for (b <- blocks) yield (b.label, b))
-      var m = HashMap.empty[Z, (Z, Z)] + blocks(0).label ~> (paramNames.size, 0)
-      var nextBlocks = ISZ(blocks(0).label)
-      var maxLocals: Z = 0
-      var maxTemps: Z = 0
-      while (nextBlocks.nonEmpty) {
-        var ns = ISZ[Z]()
-        for (n <- nextBlocks) {
-          val b = blockMap.get(n).get
-          var (locals, temps) = m.get(n).get
-          def updateLocalsTemps(p: (Z, Z)): Unit = {
-            val (l, t) = p
-            if (maxLocals < l) {
-              maxLocals = l
-            }
-            if (maxTemps < t) {
-              maxTemps = t
-            }
-            locals = l
-            temps = t
-          }
-          for (g <- b.grounds) {
-            updateLocalsTemps(g.computeLocalsTemps(locals, temps))
-          }
-          updateLocalsTemps(b.jump.computeLocalsTemps(locals, temps))
-          b.jump match {
-            case _: IR.Jump.Return => assert(temps == 0, s"${b.label}: end temps = $temps")
-            case _ =>
-          }
-          for (target <- b.jump.targets) {
-            m.get(target) match {
-              case Some((l, t)) => assert(locals == l && temps == t, s"$target: locals = $locals, l = $l, temps = $temps, t = $t, $m")
-              case _ =>
-                m = m + target ~> (locals, temps)
-                ns = ns :+ target
-            }
-          }
-        }
-        nextBlocks = ns
-      }
-      return (maxLocals, maxTemps)
-    }
-
   }
 
   @datatype class Global(val tipe: Typed, val name: ISZ[String], val pos: Position) {
@@ -633,20 +595,6 @@ object IR {
           |${(for (p <- procedures) yield p.prettyST, "\n\n")}"""
     @pure override def string: String = {
       return prettyST.render
-    }
-    @memoize def maxLocalsTemps: (Z, Z) = {
-      var locals: Z = 0
-      var temps: Z = 0
-      for (p <- procedures) {
-        val (l, t) = p.maxLocalsAndTemps
-        if (locals < l) {
-          locals = l
-        }
-        if (temps < t) {
-          temps = t
-        }
-      }
-      return (locals, temps)
     }
   }
 
