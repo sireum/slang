@@ -169,6 +169,10 @@ object MIRTransformer {
 
   val PostResultIRStmtAssignIndex: MOption[IR.Stmt.Assign] = MNone()
 
+  val PreResultIRStmtAssignPattern: PreResult[IR.Stmt] = PreResult(T, MNone())
+
+  val PostResultIRStmtAssignPattern: MOption[IR.Stmt] = MNone()
+
   val PreResultIRStmtDecl: PreResult[IR.Stmt.Ground] = PreResult(T, MNone())
 
   val PostResultIRStmtDecl: MOption[IR.Stmt.Ground] = MNone()
@@ -189,6 +193,14 @@ object MIRTransformer {
 
   val PostResultIRStmtPrint: MOption[IR.Stmt] = MNone()
 
+  val PreResultIRStmtBlock: PreResult[IR.Stmt] = PreResult(T, MNone())
+
+  val PostResultIRStmtBlock: MOption[IR.Stmt] = MNone()
+
+  val PreResultIRStmtIf: PreResult[IR.Stmt] = PreResult(T, MNone())
+
+  val PostResultIRStmtIf: MOption[IR.Stmt] = MNone()
+
   val PreResultIRStmtMatch: PreResult[IR.Stmt] = PreResult(T, MNone())
 
   val PostResultIRStmtMatch: MOption[IR.Stmt] = MNone()
@@ -197,17 +209,21 @@ object MIRTransformer {
 
   val PostResultIRStmtMatchCase: MOption[IR.Stmt.Match.Case] = MNone()
 
-  val PreResultIRStmtIf: PreResult[IR.Stmt] = PreResult(T, MNone())
-
-  val PostResultIRStmtIf: MOption[IR.Stmt] = MNone()
-
-  val PreResultIRStmtBlock: PreResult[IR.Stmt] = PreResult(T, MNone())
-
-  val PostResultIRStmtBlock: MOption[IR.Stmt] = MNone()
-
   val PreResultIRStmtWhile: PreResult[IR.Stmt] = PreResult(T, MNone())
 
   val PostResultIRStmtWhile: MOption[IR.Stmt] = MNone()
+
+  val PreResultIRStmtFor: PreResult[IR.Stmt] = PreResult(T, MNone())
+
+  val PostResultIRStmtFor: MOption[IR.Stmt] = MNone()
+
+  val PreResultIRStmtForRangeExpr: PreResult[IR.Stmt.For.Range] = PreResult(T, MNone())
+
+  val PostResultIRStmtForRangeExpr: MOption[IR.Stmt.For.Range] = MNone()
+
+  val PreResultIRStmtForRangeStep: PreResult[IR.Stmt.For.Range] = PreResult(T, MNone())
+
+  val PostResultIRStmtForRangeStep: MOption[IR.Stmt.For.Range] = MNone()
 
   val PreResultIRStmtReturn: PreResult[IR.Stmt] = PreResult(T, MNone())
 
@@ -471,6 +487,7 @@ import MIRTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt]())
         }
         return r
+      case o: IR.Stmt.Assign.Pattern => return preIRStmtAssignPattern(o)
       case o: IR.Stmt.Decl =>
         val r: PreResult[IR.Stmt] = preIRStmtDecl(o) match {
          case PreResult(continu, MSome(r: IR.Stmt)) => PreResult(continu, MSome[IR.Stmt](r))
@@ -487,10 +504,11 @@ import MIRTransformer._
         return r
       case o: IR.Stmt.Assertume => return preIRStmtAssertume(o)
       case o: IR.Stmt.Print => return preIRStmtPrint(o)
-      case o: IR.Stmt.Match => return preIRStmtMatch(o)
-      case o: IR.Stmt.If => return preIRStmtIf(o)
       case o: IR.Stmt.Block => return preIRStmtBlock(o)
+      case o: IR.Stmt.If => return preIRStmtIf(o)
+      case o: IR.Stmt.Match => return preIRStmtMatch(o)
       case o: IR.Stmt.While => return preIRStmtWhile(o)
+      case o: IR.Stmt.For => return preIRStmtFor(o)
       case o: IR.Stmt.Return => return preIRStmtReturn(o)
     }
   }
@@ -572,6 +590,10 @@ import MIRTransformer._
     return PreResultIRStmtAssignIndex
   }
 
+  def preIRStmtAssignPattern(o: IR.Stmt.Assign.Pattern): PreResult[IR.Stmt] = {
+    return PreResultIRStmtAssignPattern
+  }
+
   def preIRStmtDecl(o: IR.Stmt.Decl): PreResult[IR.Stmt.Ground] = {
     return PreResultIRStmtDecl
   }
@@ -596,6 +618,14 @@ import MIRTransformer._
     return PreResultIRStmtPrint
   }
 
+  def preIRStmtBlock(o: IR.Stmt.Block): PreResult[IR.Stmt] = {
+    return PreResultIRStmtBlock
+  }
+
+  def preIRStmtIf(o: IR.Stmt.If): PreResult[IR.Stmt] = {
+    return PreResultIRStmtIf
+  }
+
   def preIRStmtMatch(o: IR.Stmt.Match): PreResult[IR.Stmt] = {
     return PreResultIRStmtMatch
   }
@@ -604,16 +634,27 @@ import MIRTransformer._
     return PreResultIRStmtMatchCase
   }
 
-  def preIRStmtIf(o: IR.Stmt.If): PreResult[IR.Stmt] = {
-    return PreResultIRStmtIf
-  }
-
-  def preIRStmtBlock(o: IR.Stmt.Block): PreResult[IR.Stmt] = {
-    return PreResultIRStmtBlock
-  }
-
   def preIRStmtWhile(o: IR.Stmt.While): PreResult[IR.Stmt] = {
     return PreResultIRStmtWhile
+  }
+
+  def preIRStmtFor(o: IR.Stmt.For): PreResult[IR.Stmt] = {
+    return PreResultIRStmtFor
+  }
+
+  def preIRStmtForRange(o: IR.Stmt.For.Range): PreResult[IR.Stmt.For.Range] = {
+    o match {
+      case o: IR.Stmt.For.Range.Expr => return preIRStmtForRangeExpr(o)
+      case o: IR.Stmt.For.Range.Step => return preIRStmtForRangeStep(o)
+    }
+  }
+
+  def preIRStmtForRangeExpr(o: IR.Stmt.For.Range.Expr): PreResult[IR.Stmt.For.Range] = {
+    return PreResultIRStmtForRangeExpr
+  }
+
+  def preIRStmtForRangeStep(o: IR.Stmt.For.Range.Step): PreResult[IR.Stmt.For.Range] = {
+    return PreResultIRStmtForRangeStep
   }
 
   def preIRStmtReturn(o: IR.Stmt.Return): PreResult[IR.Stmt] = {
@@ -911,6 +952,7 @@ import MIRTransformer._
          case _ => MNone[IR.Stmt]()
         }
         return r
+      case o: IR.Stmt.Assign.Pattern => return postIRStmtAssignPattern(o)
       case o: IR.Stmt.Decl =>
         val r: MOption[IR.Stmt] = postIRStmtDecl(o) match {
          case MSome(result: IR.Stmt) => MSome[IR.Stmt](result)
@@ -927,10 +969,11 @@ import MIRTransformer._
         return r
       case o: IR.Stmt.Assertume => return postIRStmtAssertume(o)
       case o: IR.Stmt.Print => return postIRStmtPrint(o)
-      case o: IR.Stmt.Match => return postIRStmtMatch(o)
-      case o: IR.Stmt.If => return postIRStmtIf(o)
       case o: IR.Stmt.Block => return postIRStmtBlock(o)
+      case o: IR.Stmt.If => return postIRStmtIf(o)
+      case o: IR.Stmt.Match => return postIRStmtMatch(o)
       case o: IR.Stmt.While => return postIRStmtWhile(o)
+      case o: IR.Stmt.For => return postIRStmtFor(o)
       case o: IR.Stmt.Return => return postIRStmtReturn(o)
     }
   }
@@ -1012,6 +1055,10 @@ import MIRTransformer._
     return PostResultIRStmtAssignIndex
   }
 
+  def postIRStmtAssignPattern(o: IR.Stmt.Assign.Pattern): MOption[IR.Stmt] = {
+    return PostResultIRStmtAssignPattern
+  }
+
   def postIRStmtDecl(o: IR.Stmt.Decl): MOption[IR.Stmt.Ground] = {
     return PostResultIRStmtDecl
   }
@@ -1036,6 +1083,14 @@ import MIRTransformer._
     return PostResultIRStmtPrint
   }
 
+  def postIRStmtBlock(o: IR.Stmt.Block): MOption[IR.Stmt] = {
+    return PostResultIRStmtBlock
+  }
+
+  def postIRStmtIf(o: IR.Stmt.If): MOption[IR.Stmt] = {
+    return PostResultIRStmtIf
+  }
+
   def postIRStmtMatch(o: IR.Stmt.Match): MOption[IR.Stmt] = {
     return PostResultIRStmtMatch
   }
@@ -1044,16 +1099,27 @@ import MIRTransformer._
     return PostResultIRStmtMatchCase
   }
 
-  def postIRStmtIf(o: IR.Stmt.If): MOption[IR.Stmt] = {
-    return PostResultIRStmtIf
-  }
-
-  def postIRStmtBlock(o: IR.Stmt.Block): MOption[IR.Stmt] = {
-    return PostResultIRStmtBlock
-  }
-
   def postIRStmtWhile(o: IR.Stmt.While): MOption[IR.Stmt] = {
     return PostResultIRStmtWhile
+  }
+
+  def postIRStmtFor(o: IR.Stmt.For): MOption[IR.Stmt] = {
+    return PostResultIRStmtFor
+  }
+
+  def postIRStmtForRange(o: IR.Stmt.For.Range): MOption[IR.Stmt.For.Range] = {
+    o match {
+      case o: IR.Stmt.For.Range.Expr => return postIRStmtForRangeExpr(o)
+      case o: IR.Stmt.For.Range.Step => return postIRStmtForRangeStep(o)
+    }
+  }
+
+  def postIRStmtForRangeExpr(o: IR.Stmt.For.Range.Expr): MOption[IR.Stmt.For.Range] = {
+    return PostResultIRStmtForRangeExpr
+  }
+
+  def postIRStmtForRangeStep(o: IR.Stmt.For.Range.Step): MOption[IR.Stmt.For.Range] = {
+    return PostResultIRStmtForRangeStep
   }
 
   def postIRStmtReturn(o: IR.Stmt.Return): MOption[IR.Stmt] = {
@@ -1446,6 +1512,13 @@ import MIRTransformer._
             MSome(o2(receiver = r0.getOrElse(o2.receiver), index = r1.getOrElse(o2.index), rhs = r2.getOrElse(o2.rhs)))
           else
             MNone()
+        case o2: IR.Stmt.Assign.Pattern =>
+          val r0: MOption[IR.MethodContext] = transformIRMethodContext(o2.context)
+          val r1: MOption[IR.Exp] = transformIRExp(o2.rhs)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(context = r0.getOrElse(o2.context), rhs = r1.getOrElse(o2.rhs)))
+          else
+            MNone()
         case o2: IR.Stmt.Decl =>
           val r0: MOption[IR.MethodContext] = transformIRMethodContext(o2.context)
           val r1: MOption[IS[Z, IR.Stmt.Decl.Local]] = transformISZ(o2.locals, transformIRStmtDeclLocal _)
@@ -1472,11 +1545,10 @@ import MIRTransformer._
             MSome(o2(args = r0.getOrElse(o2.args)))
           else
             MNone()
-        case o2: IR.Stmt.Match =>
-          val r0: MOption[IR.Exp] = transformIRExp(o2.exp)
-          val r1: MOption[IS[Z, IR.Stmt.Match.Case]] = transformISZ(o2.cases, transformIRStmtMatchCase _)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(exp = r0.getOrElse(o2.exp), cases = r1.getOrElse(o2.cases)))
+        case o2: IR.Stmt.Block =>
+          val r0: MOption[IS[Z, IR.Stmt]] = transformISZ(o2.stmts, transformIRStmt _)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(stmts = r0.getOrElse(o2.stmts)))
           else
             MNone()
         case o2: IR.Stmt.If =>
@@ -1487,10 +1559,11 @@ import MIRTransformer._
             MSome(o2(cond = r0.getOrElse(o2.cond), thenBlock = r1.getOrElse(o2.thenBlock), elseBlock = r2.getOrElse(o2.elseBlock)))
           else
             MNone()
-        case o2: IR.Stmt.Block =>
-          val r0: MOption[IS[Z, IR.Stmt]] = transformISZ(o2.stmts, transformIRStmt _)
-          if (hasChanged || r0.nonEmpty)
-            MSome(o2(stmts = r0.getOrElse(o2.stmts)))
+        case o2: IR.Stmt.Match =>
+          val r0: MOption[IR.Exp] = transformIRExp(o2.exp)
+          val r1: MOption[IS[Z, IR.Stmt.Match.Case]] = transformISZ(o2.cases, transformIRStmtMatchCase _)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp), cases = r1.getOrElse(o2.cases)))
           else
             MNone()
         case o2: IR.Stmt.While =>
@@ -1499,6 +1572,16 @@ import MIRTransformer._
           val r2: MOption[IR.Stmt.Block] = transformIRStmtBlock(o2.block)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
             MSome(o2(condBlock = r0.getOrElse(o2.condBlock), cond = r1.getOrElse(o2.cond), block = r2.getOrElse(o2.block)))
+          else
+            MNone()
+        case o2: IR.Stmt.For =>
+          val r0: MOption[IR.MethodContext] = transformIRMethodContext(o2.context)
+          val r1: MOption[IR.Stmt.For.Range] = transformIRStmtForRange(o2.range)
+          val r2: MOption[IR.Stmt.Block] = transformIRStmtBlock(o2.condBlock)
+          val r3: MOption[Option[IR.Exp]] = transformOption(o2.condOpt, transformIRExp _)
+          val r4: MOption[IR.Stmt.Block] = transformIRStmtBlock(o2.block)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
+            MSome(o2(context = r0.getOrElse(o2.context), range = r1.getOrElse(o2.range), condBlock = r2.getOrElse(o2.condBlock), condOpt = r3.getOrElse(o2.condOpt), block = r4.getOrElse(o2.block)))
           else
             MNone()
         case o2: IR.Stmt.Return =>
@@ -1725,10 +1808,12 @@ import MIRTransformer._
     val r: MOption[IR.Stmt.Match.Case] = if (preR.continu) {
       val o2: IR.Stmt.Match.Case = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[Option[IR.Exp]] = transformOption(o2.condOpt, transformIRExp _)
-      val r1: MOption[IR.Stmt.Block] = transformIRStmtBlock(o2.body)
-      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-        MSome(o2(condOpt = r0.getOrElse(o2.condOpt), body = r1.getOrElse(o2.body)))
+      val r0: MOption[IR.Stmt.Decl] = transformIRStmtDecl(o2.decl)
+      val r1: MOption[IS[Z, IR.Stmt]] = transformISZ(o2.condStmts, transformIRStmt _)
+      val r2: MOption[Option[IR.Exp]] = transformOption(o2.condOpt, transformIRExp _)
+      val r3: MOption[IR.Stmt.Block] = transformIRStmtBlock(o2.body)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+        MSome(o2(decl = r0.getOrElse(o2.decl), condStmts = r1.getOrElse(o2.condStmts), condOpt = r2.getOrElse(o2.condOpt), body = r3.getOrElse(o2.body)))
       else
         MNone()
     } else if (preR.resultOpt.nonEmpty) {
@@ -1739,6 +1824,46 @@ import MIRTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: IR.Stmt.Match.Case = r.getOrElse(o)
     val postR: MOption[IR.Stmt.Match.Case] = postIRStmtMatchCase(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformIRStmtForRange(o: IR.Stmt.For.Range): MOption[IR.Stmt.For.Range] = {
+    val preR: PreResult[IR.Stmt.For.Range] = preIRStmtForRange(o)
+    val r: MOption[IR.Stmt.For.Range] = if (preR.continu) {
+      val o2: IR.Stmt.For.Range = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: MOption[IR.Stmt.For.Range] = o2 match {
+        case o2: IR.Stmt.For.Range.Expr =>
+          val r0: MOption[IS[Z, IR.Stmt]] = transformISZ(o2.expStmts, transformIRStmt _)
+          val r1: MOption[IR.Exp] = transformIRExp(o2.exp)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(expStmts = r0.getOrElse(o2.expStmts), exp = r1.getOrElse(o2.exp)))
+          else
+            MNone()
+        case o2: IR.Stmt.For.Range.Step =>
+          val r0: MOption[IR.Exp] = transformIRExp(o2.start)
+          val r1: MOption[IR.Exp] = transformIRExp(o2.end)
+          val r2: MOption[Option[IR.Exp]] = transformOption(o2.byOpt, transformIRExp _)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(start = r0.getOrElse(o2.start), end = r1.getOrElse(o2.end), byOpt = r2.getOrElse(o2.byOpt)))
+          else
+            MNone()
+      }
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: IR.Stmt.For.Range = r.getOrElse(o)
+    val postR: MOption[IR.Stmt.For.Range] = postIRStmtForRange(o2)
     if (postR.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -2232,6 +2357,42 @@ import MIRTransformer._
      case MSome(result: IR.Stmt.Block) => MSome[IR.Stmt.Block](result)
      case MSome(_) => halt("Can only produce object of type IR.Stmt.Block")
      case _ => MNone[IR.Stmt.Block]()
+    }
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformIRStmtDecl(o: IR.Stmt.Decl): MOption[IR.Stmt.Decl] = {
+    val preR: PreResult[IR.Stmt.Decl] = preIRStmtDecl(o) match {
+     case PreResult(continu, MSome(r: IR.Stmt.Decl)) => PreResult(continu, MSome[IR.Stmt.Decl](r))
+     case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Stmt.Decl")
+     case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt.Decl]())
+    }
+    val r: MOption[IR.Stmt.Decl] = if (preR.continu) {
+      val o2: IR.Stmt.Decl = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[IR.MethodContext] = transformIRMethodContext(o2.context)
+      val r1: MOption[IS[Z, IR.Stmt.Decl.Local]] = transformISZ(o2.locals, transformIRStmtDeclLocal _)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+        MSome(o2(context = r0.getOrElse(o2.context), locals = r1.getOrElse(o2.locals)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: IR.Stmt.Decl = r.getOrElse(o)
+    val postR: MOption[IR.Stmt.Decl] = postIRStmtDecl(o2) match {
+     case MSome(result: IR.Stmt.Decl) => MSome[IR.Stmt.Decl](result)
+     case MSome(_) => halt("Can only produce object of type IR.Stmt.Decl")
+     case _ => MNone[IR.Stmt.Decl]()
     }
     if (postR.nonEmpty) {
       return postR

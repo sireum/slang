@@ -123,9 +123,6 @@ object IRTranslator {
         case stmt: IR.Stmt.Expr =>
           addGround(stmt)
           return Some(label)
-        case stmt: IR.Stmt.Assign =>
-          addGround(stmt)
-          return Some(label)
         case stmt: IR.Stmt.Decl =>
           addGround(stmt)
           decls = decls :+ stmt
@@ -133,6 +130,11 @@ object IRTranslator {
         case stmt: IR.Stmt.Assertume => halt(s"TODO: $stmt")
         case stmt: IR.Stmt.Print => halt(s"TODO: $stmt")
         case stmt: IR.Stmt.Match => halt(s"TODO: $stmt")
+        case stmt: IR.Stmt.Assign.Pattern => halt(s"TODO: $stmt")
+        case stmt: IR.Stmt.For => halt(s"TODO: $stmt")
+        case stmt: IR.Stmt.Assign =>
+          addGround(stmt)
+          return Some(label)
         case stmt: IR.Stmt.If =>
           val t = fresh.label()
           val e = fresh.label()
@@ -213,6 +215,17 @@ object IRTranslator {
   }
 
   def translateStmt(stmt: AST.Stmt, localOpt: Option[(String, AST.Typed)]): Unit = {
+    def assignRhs(lhsType: AST.Typed, rhs: AST.AssignExp): IR.Exp = {
+      rhs match {
+        case rhs: AST.Stmt.Expr => return translateExp(rhs.exp)
+        case _ =>
+          val aePos = rhs.asStmt.posOpt.get
+          val id = assignExpId(None(), aePos)
+          stmts = stmts :+ AST.IR.Stmt.Decl(F, T, F, methodContext, ISZ(AST.IR.Stmt.Decl.Local(id, lhsType)), aePos)
+          translateAssignExp(rhs, (id, lhsType))
+          return IR.Exp.LocalVarRef(T, methodContext, id, lhsType, aePos)
+      }
+    }
     val pos = stmt.posOpt.get
     stmt match {
       case stmt: AST.Stmt.Var =>
@@ -236,27 +249,15 @@ object IRTranslator {
       case stmt: AST.Stmt.Assign =>
         val oldStmts = stmts
         stmts = ISZ()
-        def assignRhs(): IR.Exp = {
-          stmt.rhs match {
-            case rhs: AST.Stmt.Expr => return translateExp(rhs.exp)
-            case _ =>
-              val aePos = stmt.rhs.asStmt.posOpt.get
-              val id = assignExpId(None(), aePos)
-              val t = stmt.lhs.typedOpt.get
-              stmts = stmts :+ AST.IR.Stmt.Decl(F, T, F, methodContext, ISZ(AST.IR.Stmt.Decl.Local(id, t)), aePos)
-              translateAssignExp(stmt.rhs, (id, t))
-              return IR.Exp.LocalVarRef(T, methodContext, id, t, aePos)
-          }
-        }
         stmt.lhs match {
           case lhs: AST.Exp.Ident =>
             lhs.resOpt.get match {
               case _: AST.ResolvedInfo.LocalVar =>
-                val rhs = assignRhs()
+                val rhs = assignRhs(lhs.typedOpt.get, stmt.rhs)
                 stmts = stmts :+ IR.Stmt.Assign.Local(methodContext, lhs.id.value, lhs.typedOpt.get, rhs, pos)
               case res: AST.ResolvedInfo.Var =>
                 if (res.isInObject) {
-                  val rhs = assignRhs()
+                  val rhs = assignRhs(lhs.typedOpt.get, stmt.rhs)
                   stmts = stmts :+ IR.Stmt.Assign.Global(res.owner :+ res.id, lhs.typedOpt.get, rhs, pos)
                 } else {
                   val receiverPos = lhs.posOpt.get
@@ -268,7 +269,7 @@ object IRTranslator {
                   } else {
                     thiz
                   }
-                  val rhs = assignRhs()
+                  val rhs = assignRhs(lhs.typedOpt.get, stmt.rhs)
                   stmts = stmts :+ IR.Stmt.Assign.Field(receiver, lhs.id.value, lhs.typedOpt.get, rhs, pos)
                 }
               case res => halt(s"Infeasible: $res")
@@ -364,9 +365,40 @@ object IRTranslator {
         translateBody(stmt.body, localOpt)
         stmts = oldStmts :+ AST.IR.Stmt.Block(stmts, stmt.posOpt.get)
         fresh.setTemp(0)
-      case stmt: AST.Stmt.Match => halt(s"TODO: $stmt")
+      case stmt: AST.Stmt.Match =>
+        val exp = translateExp(stmt.exp)
+        fresh.setTemp(0)
+        var cases = ISZ[AST.IR.Stmt.Match.Case]()
+        val oldStmts = stmts
+        for (c <- stmt.cases) {
+          stmts = ISZ()
+          val decl = patternDecl(methodContext, c.pattern)
+          c.condOpt match {
+            case Some(cond) =>
+              val condExp = translateExp(cond)
+              val condStmts = stmts
+              stmts = ISZ()
+              fresh.setTemp(0)
+              translateBody(c.body, localOpt)
+              val block = AST.IR.Stmt.Block(stmts, pos)
+              fresh.setTemp(0)
+              cases = cases :+ AST.IR.Stmt.Match.Case(decl, c.pattern, condStmts, Some(condExp), block)
+            case _ =>
+              translateBody(c.body, localOpt)
+              val block = AST.IR.Stmt.Block(stmts, stmt.posOpt.get)
+              fresh.setTemp(0)
+              cases = cases :+ AST.IR.Stmt.Match.Case(decl, c.pattern, ISZ(), None(), block)
+          }
+        }
+        stmts = oldStmts :+ AST.IR.Stmt.Match(exp, cases, pos)
       case stmt: AST.Stmt.For => halt(s"TODO: $stmt")
-      case stmt: AST.Stmt.VarPattern => halt(s"TODO: $stmt")
+      case stmt: AST.Stmt.VarPattern =>
+        val oldStmts = stmts
+        stmts = ISZ()
+        val init = assignRhs(stmt.pattern.typedOpt.get, stmt.init)
+        stmts = stmts :+ patternDecl(methodContext, stmt.pattern)
+        stmts = stmts :+ AST.IR.Stmt.Assign.Pattern(methodContext, stmt.pattern, init, pos)
+        stmts = oldStmts ++ stmts
       case _: AST.Stmt.SubZ => // skip
       case _: AST.Stmt.Method => // skip
       case _: AST.Stmt.ExtMethod => // skip
@@ -379,6 +411,30 @@ object IRTranslator {
       case _: AST.Stmt.Spec => // skip
     }
 
+  }
+
+  def patternDecl(context: AST.IR.MethodContext, pattern: AST.Pattern): AST.IR.Stmt.Decl = {
+    var r = ISZ[AST.IR.Stmt.Decl.Local]()
+    def rec(p: AST.Pattern): Unit = {
+      p match {
+        case p: AST.Pattern.VarBinding => r = r :+ AST.IR.Stmt.Decl.Local(p.id.value, p.attr.typedOpt.get)
+        case p: AST.Pattern.Structure =>
+          p.idOpt match {
+            case Some(id) => r = r :+ AST.IR.Stmt.Decl.Local(id.value, p.attr.typedOpt.get)
+            case _ =>
+          }
+          for (sub <- p.patterns) {
+            rec(sub)
+          }
+        case _: AST.Pattern.Ref => // skip
+        case _: AST.Pattern.Literal => // skip
+        case _: AST.Pattern.Wildcard => // skip
+        case _: AST.Pattern.LitInterpolate => // skip
+        case _: AST.Pattern.SeqWildcard => // skip
+      }
+    }
+    rec(pattern)
+    return AST.IR.Stmt.Decl(F, T, F, context, r, pattern.posOpt.get)
   }
 
   @pure def bodyPos(body: AST.Body, default: message.Position): message.Position = {

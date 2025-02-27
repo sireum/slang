@@ -322,6 +322,11 @@ object IR {
       @datatype class Index(val receiver: Exp, val index: Exp, val rhs: Exp, val pos: Position) extends Assign {
         @strictpure def prettyST: ST = st"${receiver.prettyST}(${index.prettyST}) = ${rhs.prettyST}"
       }
+
+      @datatype class Pattern(val context: MethodContext, val pattern: lang.ast.Pattern, val rhs: Exp, val pos: Position) extends Stmt {
+        @strictpure def prettyST: ST = st"${pattern.prettyST} = ${rhs.prettyST}"
+      }
+
     }
 
     @datatype class Decl(val undecl: B, val isVal: B, val isAlloc: B, val context: MethodContext, val locals: ISZ[Decl.Local], val pos: Position) extends Ground {
@@ -383,6 +388,17 @@ object IR {
       }
     }
 
+    @datatype class Block(val stmts: ISZ[Stmt], val pos: Position) extends Stmt {
+      @strictpure def prettyST: ST =
+        st"""{
+            |  ${(for (stmt <- stmts) yield stmt.prettyST, "\n")}
+            |}"""
+    }
+
+    @datatype class If(val cond: Exp, val thenBlock: Block, val elseBlock: Block, val pos: Position) extends Stmt {
+      @strictpure def prettyST: ST = st"if (${cond.prettyST}) ${thenBlock.prettyST} else ${elseBlock.prettyST}"
+    }
+
     @datatype class Match(val exp: Exp, val cases: ISZ[Match.Case], val pos: Position) extends Stmt {
       @strictpure def prettyST: ST =
         st"""${exp.prettyST} match {
@@ -391,7 +407,7 @@ object IR {
     }
 
     object Match {
-      @datatype class Case(val pattern: Pattern, val condOpt: Option[Exp], val body: Block) {
+      @datatype class Case(val decl: Stmt.Decl, val pattern: Pattern, val condStmts: ISZ[Stmt], val condOpt: Option[Exp], val body: Block) {
         @strictpure def prettyST: ST = {
           val cOpt: Option[ST] = condOpt match {
             case Some(cond) => Some(st" if ${cond.prettyST}")
@@ -403,21 +419,60 @@ object IR {
       }
     }
 
-    @datatype class If(val cond: Exp, val thenBlock: Block, val elseBlock: Block, val pos: Position) extends Stmt {
-      @strictpure def prettyST: ST = st"if (${cond.prettyST}) ${thenBlock.prettyST} else ${elseBlock.prettyST}"
-    }
-
-    @datatype class Block(val stmts: ISZ[Stmt], val pos: Position) extends Stmt {
-      @strictpure def prettyST: ST =
-        st"""{
-            |  ${(for (stmt <- stmts) yield stmt.prettyST, "\n")}
-            |}"""
-    }
-
     @datatype class While(val condBlock: Block, val cond: Exp, val block: Block, val pos: Position) extends Stmt {
-      @strictpure def prettyST: ST =
-        st"""$condBlock
-            |while (${cond.prettyST}) ${block.prettyST}"""
+      @strictpure def prettyST: ST = if (condBlock.stmts.isEmpty)
+        st"""while (${cond.prettyST}) ${block.prettyST}"""
+      else
+        st"""while (
+            |  ${(for (stmt <- condBlock.stmts) yield stmt.prettyST, "\n")}
+            |  ${cond.prettyST}) ${block.prettyST}"""
+    }
+
+    @datatype class For(val context: MethodContext,
+                        val idOpt: Option[String],
+                        val range: For.Range,
+                        val condBlock: Block,
+                        val condOpt: Option[Exp],
+                        val block: Block,
+                        val pos: Position) extends Stmt {
+      @strictpure def prettyST: ST = {
+        val cOpt: Option[ST] = condOpt match {
+          case Some(cond) => Some(
+            if (condBlock.stmts.isEmpty)
+              st""" if {
+                  |  ${(for (stmt <- condBlock.stmts) yield stmt.prettyST, "\n")}
+                  |  ${cond.prettyST}
+                  |}"""
+            else st" if ${cond.prettyST}"
+          )
+          case _ => None()
+        }
+        st"for (${idOpt.getOrElse("_")} <- ${range.prettyST}$cOpt) ${block.prettyST}"
+      }
+    }
+
+    object For {
+      @datatype trait Range {
+        @pure def prettyST: ST
+      }
+
+      object Range {
+
+        @datatype class Expr(val expStmts: ISZ[Stmt], val exp: Exp, val pos: Position) extends Range {
+          @strictpure override def prettyST: ST = exp.prettyST
+        }
+
+        @datatype class Step(val isInclusive: B, val start: Exp, val end: Exp, val byOpt: Option[Exp], val pos: Position) extends Range {
+          @strictpure override def prettyST: ST = {
+            val bOpt: Option[ST] = byOpt match {
+              case Some(by) => Some(st" by ${by.prettyST}")
+              case _ => None()
+            }
+            st"${start.prettyST} ${if (isInclusive) "to" else "until"} ${end.prettyST}$bOpt"
+          }
+        }
+
+      }
     }
 
     @datatype class Return(val expOpt: Option[Exp], val pos: Position) extends Stmt {
