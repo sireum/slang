@@ -1652,11 +1652,10 @@ import IRTransformer._
           else
             TPostResult(r1.ctx, None())
         case o2: IR.Jump.Halt =>
-          val r0: TPostResult[Context, Option[IR.Exp]] = transformOption(preR.ctx, o2.messageOpt, transformIRExp _)
-          if (hasChanged || r0.resultOpt.nonEmpty)
-            TPostResult(r0.ctx, Some(o2(messageOpt = r0.resultOpt.getOrElse(o2.messageOpt))))
+          if (hasChanged)
+            TPostResult(preR.ctx, Some(o2))
           else
-            TPostResult(r0.ctx, None())
+            TPostResult(preR.ctx, None())
         case o2: IR.Jump.Intrinsic =>
           val r0: TPostResult[Context, IR.Jump.Intrinsic.Type] = transformIRJumpIntrinsicType(preR.ctx, o2.intrinsic)
           if (hasChanged || r0.resultOpt.nonEmpty)

@@ -538,11 +538,8 @@ object IR {
       @datatype class Case(val value: Exp, val label: Z)
     }
 
-    @datatype class Halt(val messageOpt: Option[Exp], val pos: Position) extends Jump {
-      @strictpure def prettyST: ST = messageOpt match {
-        case Some(exp) => st"""halt(${exp.prettyST})"""
-        case _ => st"halt()"
-      }
+    @datatype class Halt(val pos: Position) extends Jump {
+      @strictpure def prettyST: ST = st"halt"
       @strictpure def targets: ISZ[Z] = ISZ()
     }
 

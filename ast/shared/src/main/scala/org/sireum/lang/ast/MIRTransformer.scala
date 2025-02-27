@@ -1904,9 +1904,8 @@ import MIRTransformer._
           else
             MNone()
         case o2: IR.Jump.Halt =>
-          val r0: MOption[Option[IR.Exp]] = transformOption(o2.messageOpt, transformIRExp _)
-          if (hasChanged || r0.nonEmpty)
-            MSome(o2(messageOpt = r0.getOrElse(o2.messageOpt)))
+          if (hasChanged)
+            MSome(o2)
           else
             MNone()
         case o2: IR.Jump.Intrinsic =>

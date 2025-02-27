@@ -130,7 +130,24 @@ object IRTranslator {
         case stmt: IR.Stmt.Assign =>
           addGround(stmt)
           return Some(label)
-        case stmt: IR.Stmt.Assertume => halt(s"TODO: $stmt")
+        case stmt: IR.Stmt.Assertume =>
+          val tLabel = fresh.label()
+          var fLabel = fresh.label()
+          blocks = blocks :+ AST.IR.BasicBlock(label, grounds, AST.IR.Jump.If(stmt.cond, tLabel, fLabel, stmt.pos))
+          grounds = ISZ()
+          var addF = T
+          stmt.messageOpt match {
+            case Some(m) =>
+              stmtToBasic(fLabel, IR.Stmt.Print(AST.IR.Stmt.Print.Kind.Err, T, ISZ(m), m.pos)) match {
+                case Some(l) => fLabel = l
+                case _ => addF = F
+              }
+            case _ =>
+          }
+          if (addF) {
+            blocks = blocks :+ AST.IR.BasicBlock(fLabel, grounds, AST.IR.Jump.Halt(stmt.pos))
+          }
+          return Some(tLabel)
         case stmt: IR.Stmt.Print => halt(s"TODO: $stmt")
         case stmt: IR.Stmt.Match => halt(s"TODO: $stmt")
         case stmt: IR.Stmt.AssignPattern => halt(s"TODO: $stmt")
