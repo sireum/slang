@@ -414,6 +414,10 @@ object IRTransformer {
       return PreResult(ctx, T, None())
     }
 
+    @pure def preIRExpBlock(ctx: Context, o: IR.ExpBlock): PreResult[Context, IR.ExpBlock] = {
+      return PreResult(ctx, T, None())
+    }
+
     @pure def preIRBasicBlock(ctx: Context, o: IR.BasicBlock): PreResult[Context, IR.BasicBlock] = {
       return PreResult(ctx, T, None())
     }
@@ -879,6 +883,10 @@ object IRTransformer {
       return TPostResult(ctx, None())
     }
 
+    @pure def postIRExpBlock(ctx: Context, o: IR.ExpBlock): TPostResult[Context, IR.ExpBlock] = {
+      return TPostResult(ctx, None())
+    }
+
     @pure def postIRBasicBlock(ctx: Context, o: IR.BasicBlock): TPostResult[Context, IR.BasicBlock] = {
       return TPostResult(ctx, None())
     }
@@ -1315,23 +1323,21 @@ import IRTransformer._
           else
             TPostResult(r1.ctx, None())
         case o2: IR.Stmt.While =>
-          val r0: TPostResult[Context, IR.Stmt.Block] = transformIRStmtBlock(preR.ctx, o2.condBlock)
-          val r1: TPostResult[Context, IR.Exp] = transformIRExp(r0.ctx, o2.cond)
-          val r2: TPostResult[Context, IR.Stmt.Block] = transformIRStmtBlock(r1.ctx, o2.block)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            TPostResult(r2.ctx, Some(o2(condBlock = r0.resultOpt.getOrElse(o2.condBlock), cond = r1.resultOpt.getOrElse(o2.cond), block = r2.resultOpt.getOrElse(o2.block))))
+          val r0: TPostResult[Context, IR.ExpBlock] = transformIRExpBlock(preR.ctx, o2.cond)
+          val r1: TPostResult[Context, IR.Stmt.Block] = transformIRStmtBlock(r0.ctx, o2.block)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(cond = r0.resultOpt.getOrElse(o2.cond), block = r1.resultOpt.getOrElse(o2.block))))
           else
-            TPostResult(r2.ctx, None())
+            TPostResult(r1.ctx, None())
         case o2: IR.Stmt.For =>
           val r0: TPostResult[Context, IR.MethodContext] = transformIRMethodContext(preR.ctx, o2.context)
           val r1: TPostResult[Context, IR.Stmt.For.Range] = transformIRStmtForRange(r0.ctx, o2.range)
-          val r2: TPostResult[Context, IR.Stmt.Block] = transformIRStmtBlock(r1.ctx, o2.condBlock)
-          val r3: TPostResult[Context, Option[IR.Exp]] = transformOption(r2.ctx, o2.condOpt, transformIRExp _)
-          val r4: TPostResult[Context, IR.Stmt.Block] = transformIRStmtBlock(r3.ctx, o2.block)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty)
-            TPostResult(r4.ctx, Some(o2(context = r0.resultOpt.getOrElse(o2.context), range = r1.resultOpt.getOrElse(o2.range), condBlock = r2.resultOpt.getOrElse(o2.condBlock), condOpt = r3.resultOpt.getOrElse(o2.condOpt), block = r4.resultOpt.getOrElse(o2.block))))
+          val r2: TPostResult[Context, Option[IR.ExpBlock]] = transformOption(r1.ctx, o2.condOpt, transformIRExpBlock _)
+          val r3: TPostResult[Context, IR.Stmt.Block] = transformIRStmtBlock(r2.ctx, o2.block)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+            TPostResult(r3.ctx, Some(o2(context = r0.resultOpt.getOrElse(o2.context), range = r1.resultOpt.getOrElse(o2.range), condOpt = r2.resultOpt.getOrElse(o2.condOpt), block = r3.resultOpt.getOrElse(o2.block))))
           else
-            TPostResult(r4.ctx, None())
+            TPostResult(r3.ctx, None())
         case o2: IR.Stmt.Return =>
           val r0: TPostResult[Context, Option[IR.Exp]] = transformOption(preR.ctx, o2.expOpt, transformIRExp _)
           if (hasChanged || r0.resultOpt.nonEmpty)
@@ -1557,13 +1563,12 @@ import IRTransformer._
       val o2: IR.Stmt.Match.Case = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: TPostResult[Context, IR.Stmt.Decl] = transformIRStmtDecl(preR.ctx, o2.decl)
-      val r1: TPostResult[Context, IS[Z, IR.Stmt]] = transformISZ(r0.ctx, o2.condStmts, transformIRStmt _)
-      val r2: TPostResult[Context, Option[IR.Exp]] = transformOption(r1.ctx, o2.condOpt, transformIRExp _)
-      val r3: TPostResult[Context, IR.Stmt.Block] = transformIRStmtBlock(r2.ctx, o2.body)
-      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
-        TPostResult(r3.ctx, Some(o2(decl = r0.resultOpt.getOrElse(o2.decl), condStmts = r1.resultOpt.getOrElse(o2.condStmts), condOpt = r2.resultOpt.getOrElse(o2.condOpt), body = r3.resultOpt.getOrElse(o2.body))))
+      val r1: TPostResult[Context, Option[IR.ExpBlock]] = transformOption(r0.ctx, o2.condOpt, transformIRExpBlock _)
+      val r2: TPostResult[Context, IR.Stmt.Block] = transformIRStmtBlock(r1.ctx, o2.body)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+        TPostResult(r2.ctx, Some(o2(decl = r0.resultOpt.getOrElse(o2.decl), condOpt = r1.resultOpt.getOrElse(o2.condOpt), body = r2.resultOpt.getOrElse(o2.body))))
       else
-        TPostResult(r3.ctx, None())
+        TPostResult(r2.ctx, None())
     } else if (preR.resultOpt.nonEmpty) {
       TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
     } else {
@@ -1723,6 +1728,34 @@ import IRTransformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: IR.Jump.Intrinsic.Type = r.resultOpt.getOrElse(o)
     val postR: TPostResult[Context, IR.Jump.Intrinsic.Type] = pp.postIRJumpIntrinsicType(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformIRExpBlock(ctx: Context, o: IR.ExpBlock): TPostResult[Context, IR.ExpBlock] = {
+    val preR: PreResult[Context, IR.ExpBlock] = pp.preIRExpBlock(ctx, o)
+    val r: TPostResult[Context, IR.ExpBlock] = if (preR.continu) {
+      val o2: IR.ExpBlock = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: TPostResult[Context, IS[Z, IR.Stmt]] = transformISZ(preR.ctx, o2.stmts, transformIRStmt _)
+      val r1: TPostResult[Context, IR.Exp] = transformIRExp(r0.ctx, o2.exp)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+        TPostResult(r1.ctx, Some(o2(stmts = r0.resultOpt.getOrElse(o2.stmts), exp = r1.resultOpt.getOrElse(o2.exp))))
+      else
+        TPostResult(r1.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: IR.ExpBlock = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, IR.ExpBlock] = pp.postIRExpBlock(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {

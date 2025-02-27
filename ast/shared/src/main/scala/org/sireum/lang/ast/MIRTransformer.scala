@@ -257,6 +257,10 @@ object MIRTransformer {
 
   val PostResultIRJumpIntrinsic: MOption[IR.Jump] = MNone()
 
+  val PreResultIRExpBlock: PreResult[IR.ExpBlock] = PreResult(T, MNone())
+
+  val PostResultIRExpBlock: MOption[IR.ExpBlock] = MNone()
+
   val PreResultIRBasicBlock: PreResult[IR.BasicBlock] = PreResult(T, MNone())
 
   val PostResultIRBasicBlock: MOption[IR.BasicBlock] = MNone()
@@ -702,6 +706,10 @@ import MIRTransformer._
 
   def preIRJumpIntrinsicType(o: IR.Jump.Intrinsic.Type): PreResult[IR.Jump.Intrinsic.Type] = {
     return PreResult(T, MNone())
+  }
+
+  def preIRExpBlock(o: IR.ExpBlock): PreResult[IR.ExpBlock] = {
+    return PreResultIRExpBlock
   }
 
   def preIRBasicBlock(o: IR.BasicBlock): PreResult[IR.BasicBlock] = {
@@ -1169,6 +1177,10 @@ import MIRTransformer._
     return MNone()
   }
 
+  def postIRExpBlock(o: IR.ExpBlock): MOption[IR.ExpBlock] = {
+    return PostResultIRExpBlock
+  }
+
   def postIRBasicBlock(o: IR.BasicBlock): MOption[IR.BasicBlock] = {
     return PostResultIRBasicBlock
   }
@@ -1567,21 +1579,19 @@ import MIRTransformer._
           else
             MNone()
         case o2: IR.Stmt.While =>
-          val r0: MOption[IR.Stmt.Block] = transformIRStmtBlock(o2.condBlock)
-          val r1: MOption[IR.Exp] = transformIRExp(o2.cond)
-          val r2: MOption[IR.Stmt.Block] = transformIRStmtBlock(o2.block)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(condBlock = r0.getOrElse(o2.condBlock), cond = r1.getOrElse(o2.cond), block = r2.getOrElse(o2.block)))
+          val r0: MOption[IR.ExpBlock] = transformIRExpBlock(o2.cond)
+          val r1: MOption[IR.Stmt.Block] = transformIRStmtBlock(o2.block)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(cond = r0.getOrElse(o2.cond), block = r1.getOrElse(o2.block)))
           else
             MNone()
         case o2: IR.Stmt.For =>
           val r0: MOption[IR.MethodContext] = transformIRMethodContext(o2.context)
           val r1: MOption[IR.Stmt.For.Range] = transformIRStmtForRange(o2.range)
-          val r2: MOption[IR.Stmt.Block] = transformIRStmtBlock(o2.condBlock)
-          val r3: MOption[Option[IR.Exp]] = transformOption(o2.condOpt, transformIRExp _)
-          val r4: MOption[IR.Stmt.Block] = transformIRStmtBlock(o2.block)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
-            MSome(o2(context = r0.getOrElse(o2.context), range = r1.getOrElse(o2.range), condBlock = r2.getOrElse(o2.condBlock), condOpt = r3.getOrElse(o2.condOpt), block = r4.getOrElse(o2.block)))
+          val r2: MOption[Option[IR.ExpBlock]] = transformOption(o2.condOpt, transformIRExpBlock _)
+          val r3: MOption[IR.Stmt.Block] = transformIRStmtBlock(o2.block)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+            MSome(o2(context = r0.getOrElse(o2.context), range = r1.getOrElse(o2.range), condOpt = r2.getOrElse(o2.condOpt), block = r3.getOrElse(o2.block)))
           else
             MNone()
         case o2: IR.Stmt.Return =>
@@ -1809,11 +1819,10 @@ import MIRTransformer._
       val o2: IR.Stmt.Match.Case = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: MOption[IR.Stmt.Decl] = transformIRStmtDecl(o2.decl)
-      val r1: MOption[IS[Z, IR.Stmt]] = transformISZ(o2.condStmts, transformIRStmt _)
-      val r2: MOption[Option[IR.Exp]] = transformOption(o2.condOpt, transformIRExp _)
-      val r3: MOption[IR.Stmt.Block] = transformIRStmtBlock(o2.body)
-      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-        MSome(o2(decl = r0.getOrElse(o2.decl), condStmts = r1.getOrElse(o2.condStmts), condOpt = r2.getOrElse(o2.condOpt), body = r3.getOrElse(o2.body)))
+      val r1: MOption[Option[IR.ExpBlock]] = transformOption(o2.condOpt, transformIRExpBlock _)
+      val r2: MOption[IR.Stmt.Block] = transformIRStmtBlock(o2.body)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+        MSome(o2(decl = r0.getOrElse(o2.decl), condOpt = r1.getOrElse(o2.condOpt), body = r2.getOrElse(o2.body)))
       else
         MNone()
     } else if (preR.resultOpt.nonEmpty) {
@@ -1975,6 +1984,34 @@ import MIRTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: IR.Jump.Intrinsic.Type = r.getOrElse(o)
     val postR: MOption[IR.Jump.Intrinsic.Type] = postIRJumpIntrinsicType(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformIRExpBlock(o: IR.ExpBlock): MOption[IR.ExpBlock] = {
+    val preR: PreResult[IR.ExpBlock] = preIRExpBlock(o)
+    val r: MOption[IR.ExpBlock] = if (preR.continu) {
+      val o2: IR.ExpBlock = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[IS[Z, IR.Stmt]] = transformISZ(o2.stmts, transformIRStmt _)
+      val r1: MOption[IR.Exp] = transformIRExp(o2.exp)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+        MSome(o2(stmts = r0.getOrElse(o2.stmts), exp = r1.getOrElse(o2.exp)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: IR.ExpBlock = r.getOrElse(o)
+    val postR: MOption[IR.ExpBlock] = postIRExpBlock(o2)
     if (postR.nonEmpty) {
       return postR
     } else if (hasChanged) {

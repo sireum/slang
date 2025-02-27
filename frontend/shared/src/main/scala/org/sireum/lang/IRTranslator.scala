@@ -182,11 +182,11 @@ object IRTranslator {
           val n = fresh.label()
           blocks = blocks :+ basicBlock(label, grounds, IR.Jump.Goto(n, stmt.pos))
           grounds = ISZ()
-          blockToBasic(n, stmt.condBlock) match {
+          blockToBasic(n, AST.IR.Stmt.Block(stmt.cond.stmts, stmt.cond.exp.pos)) match {
             case Some(l) =>
               val t = fresh.label()
               val e = fresh.label()
-              blocks = blocks :+ basicBlock(l, grounds, IR.Jump.If(stmt.cond, t, e, stmt.pos))
+              blocks = blocks :+ basicBlock(l, grounds, IR.Jump.If(stmt.cond.exp, t, e, stmt.pos))
               grounds = ISZ()
               blockToBasic(t, stmt.block) match {
                 case Some(l) => blocks = blocks :+ basicBlock(l, grounds, IR.Jump.Goto(n, stmt.pos))
@@ -359,7 +359,7 @@ object IRTranslator {
         fresh.setTemp(0)
         translateBody(stmt.body, None())
         val bPos = bodyPos(stmt.body, pos)
-        stmts = oldStmts :+ IR.Stmt.While(IR.Stmt.Block(condStmts, cond.pos), cond, IR.Stmt.Block(stmts, bPos), pos)
+        stmts = oldStmts :+ IR.Stmt.While(IR.ExpBlock(condStmts, cond), IR.Stmt.Block(stmts, bPos), pos)
         fresh.setTemp(0)
       case stmt: AST.Stmt.Expr =>
         val e = translateExp(stmt.exp)
@@ -399,12 +399,12 @@ object IRTranslator {
               translateBody(c.body, localOpt)
               val block = AST.IR.Stmt.Block(stmts, pos)
               fresh.setTemp(0)
-              cases = cases :+ AST.IR.Stmt.Match.Case(decl, c.pattern, condStmts, Some(condExp), block)
+              cases = cases :+ AST.IR.Stmt.Match.Case(decl, c.pattern, Some(AST.IR.ExpBlock(condStmts, condExp)), block)
             case _ =>
               translateBody(c.body, localOpt)
               val block = AST.IR.Stmt.Block(stmts, stmt.posOpt.get)
               fresh.setTemp(0)
-              cases = cases :+ AST.IR.Stmt.Match.Case(decl, c.pattern, ISZ(), None(), block)
+              cases = cases :+ AST.IR.Stmt.Match.Case(decl, c.pattern, None(), block)
           }
         }
         stmts = oldStmts :+ AST.IR.Stmt.Match(exp, cases, pos)

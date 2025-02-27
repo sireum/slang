@@ -407,10 +407,18 @@ object IR {
     }
 
     object Match {
-      @datatype class Case(val decl: Stmt.Decl, val pattern: Pattern, val condStmts: ISZ[Stmt], val condOpt: Option[Exp], val body: Block) {
+      @datatype class Case(val decl: Stmt.Decl, val pattern: Pattern, val condOpt: Option[ExpBlock], val body: Block) {
         @strictpure def prettyST: ST = {
           val cOpt: Option[ST] = condOpt match {
-            case Some(cond) => Some(st" if ${cond.prettyST}")
+            case Some(cond) =>
+              Some(
+                if (cond.stmts.isEmpty) st" if ${cond.exp.prettyST}"
+                else
+                  st""" if {
+                      |  ${(for (stmt <- cond.stmts) yield stmt.prettyST, "\n")}
+                      |  ${cond.exp.prettyST}
+                      |}"""
+              )
             case _ => None()
           }
           st"""case ${pattern.prettyST}$cOpt =>
@@ -419,31 +427,30 @@ object IR {
       }
     }
 
-    @datatype class While(val condBlock: Block, val cond: Exp, val block: Block, val pos: Position) extends Stmt {
-      @strictpure def prettyST: ST = if (condBlock.stmts.isEmpty)
-        st"""while (${cond.prettyST}) ${block.prettyST}"""
+    @datatype class While(val cond: ExpBlock, val block: Block, val pos: Position) extends Stmt {
+      @strictpure def prettyST: ST = if (cond.stmts.isEmpty)
+        st"""while (${cond.exp.prettyST}) ${block.prettyST}"""
       else
         st"""while (
-            |  ${(for (stmt <- condBlock.stmts) yield stmt.prettyST, "\n")}
-            |  ${cond.prettyST}) ${block.prettyST}"""
+            |  ${(for (stmt <- cond.stmts) yield stmt.prettyST, "\n")}
+            |  ${cond.exp.prettyST}) ${block.prettyST}"""
     }
 
     @datatype class For(val context: MethodContext,
                         val idOpt: Option[String],
                         val range: For.Range,
-                        val condBlock: Block,
-                        val condOpt: Option[Exp],
+                        val condOpt: Option[ExpBlock],
                         val block: Block,
                         val pos: Position) extends Stmt {
       @strictpure def prettyST: ST = {
         val cOpt: Option[ST] = condOpt match {
           case Some(cond) => Some(
-            if (condBlock.stmts.isEmpty)
+            if (cond.stmts.isEmpty)
               st""" if {
-                  |  ${(for (stmt <- condBlock.stmts) yield stmt.prettyST, "\n")}
-                  |  ${cond.prettyST}
+                  |  ${(for (stmt <- cond.stmts) yield stmt.prettyST, "\n")}
+                  |  ${cond.exp.prettyST}
                   |}"""
-            else st" if ${cond.prettyST}"
+            else st" if ${cond.exp.prettyST}"
           )
           case _ => None()
         }
@@ -560,6 +567,8 @@ object IR {
       }
     }
   }
+
+  @datatype class ExpBlock(val stmts: ISZ[Stmt], val exp: Exp)
 
   @datatype class BasicBlock(val label: Z, val grounds: ISZ[Stmt.Ground], jump: Jump) {
     @pure def prettyST: ST = {
