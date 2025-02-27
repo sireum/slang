@@ -323,10 +323,6 @@ object IR {
         @strictpure def prettyST: ST = st"${receiver.prettyST}(${index.prettyST}) = ${rhs.prettyST}"
       }
 
-      @datatype class Pattern(val context: MethodContext, val pattern: lang.ast.Pattern, val rhs: Exp, val pos: Position) extends Stmt {
-        @strictpure def prettyST: ST = st"${pattern.prettyST} = ${rhs.prettyST}"
-      }
-
     }
 
     @datatype class Decl(val undecl: B, val isVal: B, val isAlloc: B, val context: MethodContext, val locals: ISZ[Decl.Local], val pos: Position) extends Ground {
@@ -386,6 +382,10 @@ object IR {
         "Err"
         "OutErr"
       }
+    }
+
+    @datatype class AssignPattern(val context: MethodContext, val pattern: lang.ast.Pattern, val rhs: Exp, val pos: Position) extends Stmt {
+      @strictpure def prettyST: ST = st"${pattern.prettyST} = ${rhs.prettyST}"
     }
 
     @datatype class Block(val stmts: ISZ[Stmt], val pos: Position) extends Stmt {

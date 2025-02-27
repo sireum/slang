@@ -197,7 +197,6 @@ object IRTransformer {
            case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Stmt]())
           }
           return r
-        case o: IR.Stmt.Assign.Pattern => return preIRStmtAssignPattern(ctx, o)
         case o: IR.Stmt.Decl =>
           val r: PreResult[Context, IR.Stmt] = preIRStmtDecl(ctx, o) match {
            case PreResult(preCtx, continu, Some(r: IR.Stmt)) => PreResult(preCtx, continu, Some[IR.Stmt](r))
@@ -214,6 +213,7 @@ object IRTransformer {
           return r
         case o: IR.Stmt.Assertume => return preIRStmtAssertume(ctx, o)
         case o: IR.Stmt.Print => return preIRStmtPrint(ctx, o)
+        case o: IR.Stmt.AssignPattern => return preIRStmtAssignPattern(ctx, o)
         case o: IR.Stmt.Block => return preIRStmtBlock(ctx, o)
         case o: IR.Stmt.If => return preIRStmtIf(ctx, o)
         case o: IR.Stmt.Match => return preIRStmtMatch(ctx, o)
@@ -300,10 +300,6 @@ object IRTransformer {
       return PreResult(ctx, T, None())
     }
 
-    @pure def preIRStmtAssignPattern(ctx: Context, o: IR.Stmt.Assign.Pattern): PreResult[Context, IR.Stmt] = {
-      return PreResult(ctx, T, None())
-    }
-
     @pure def preIRStmtDecl(ctx: Context, o: IR.Stmt.Decl): PreResult[Context, IR.Stmt.Ground] = {
       return PreResult(ctx, T, None())
     }
@@ -325,6 +321,10 @@ object IRTransformer {
     }
 
     @pure def preIRStmtPrint(ctx: Context, o: IR.Stmt.Print): PreResult[Context, IR.Stmt] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRStmtAssignPattern(ctx: Context, o: IR.Stmt.AssignPattern): PreResult[Context, IR.Stmt] = {
       return PreResult(ctx, T, None())
     }
 
@@ -662,7 +662,6 @@ object IRTransformer {
            case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Stmt]())
           }
           return r
-        case o: IR.Stmt.Assign.Pattern => return postIRStmtAssignPattern(ctx, o)
         case o: IR.Stmt.Decl =>
           val r: TPostResult[Context, IR.Stmt] = postIRStmtDecl(ctx, o) match {
            case TPostResult(postCtx, Some(result: IR.Stmt)) => TPostResult(postCtx, Some[IR.Stmt](result))
@@ -679,6 +678,7 @@ object IRTransformer {
           return r
         case o: IR.Stmt.Assertume => return postIRStmtAssertume(ctx, o)
         case o: IR.Stmt.Print => return postIRStmtPrint(ctx, o)
+        case o: IR.Stmt.AssignPattern => return postIRStmtAssignPattern(ctx, o)
         case o: IR.Stmt.Block => return postIRStmtBlock(ctx, o)
         case o: IR.Stmt.If => return postIRStmtIf(ctx, o)
         case o: IR.Stmt.Match => return postIRStmtMatch(ctx, o)
@@ -765,10 +765,6 @@ object IRTransformer {
       return TPostResult(ctx, None())
     }
 
-    @pure def postIRStmtAssignPattern(ctx: Context, o: IR.Stmt.Assign.Pattern): TPostResult[Context, IR.Stmt] = {
-      return TPostResult(ctx, None())
-    }
-
     @pure def postIRStmtDecl(ctx: Context, o: IR.Stmt.Decl): TPostResult[Context, IR.Stmt.Ground] = {
       return TPostResult(ctx, None())
     }
@@ -790,6 +786,10 @@ object IRTransformer {
     }
 
     @pure def postIRStmtPrint(ctx: Context, o: IR.Stmt.Print): TPostResult[Context, IR.Stmt] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRStmtAssignPattern(ctx: Context, o: IR.Stmt.AssignPattern): TPostResult[Context, IR.Stmt] = {
       return TPostResult(ctx, None())
     }
 
@@ -1260,13 +1260,6 @@ import IRTransformer._
             TPostResult(r2.ctx, Some(o2(receiver = r0.resultOpt.getOrElse(o2.receiver), index = r1.resultOpt.getOrElse(o2.index), rhs = r2.resultOpt.getOrElse(o2.rhs))))
           else
             TPostResult(r2.ctx, None())
-        case o2: IR.Stmt.Assign.Pattern =>
-          val r0: TPostResult[Context, IR.MethodContext] = transformIRMethodContext(preR.ctx, o2.context)
-          val r1: TPostResult[Context, IR.Exp] = transformIRExp(r0.ctx, o2.rhs)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(context = r0.resultOpt.getOrElse(o2.context), rhs = r1.resultOpt.getOrElse(o2.rhs))))
-          else
-            TPostResult(r1.ctx, None())
         case o2: IR.Stmt.Decl =>
           val r0: TPostResult[Context, IR.MethodContext] = transformIRMethodContext(preR.ctx, o2.context)
           val r1: TPostResult[Context, IS[Z, IR.Stmt.Decl.Local]] = transformISZ(r0.ctx, o2.locals, transformIRStmtDeclLocal _)
@@ -1293,6 +1286,13 @@ import IRTransformer._
             TPostResult(r0.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args))))
           else
             TPostResult(r0.ctx, None())
+        case o2: IR.Stmt.AssignPattern =>
+          val r0: TPostResult[Context, IR.MethodContext] = transformIRMethodContext(preR.ctx, o2.context)
+          val r1: TPostResult[Context, IR.Exp] = transformIRExp(r0.ctx, o2.rhs)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(context = r0.resultOpt.getOrElse(o2.context), rhs = r1.resultOpt.getOrElse(o2.rhs))))
+          else
+            TPostResult(r1.ctx, None())
         case o2: IR.Stmt.Block =>
           val r0: TPostResult[Context, IS[Z, IR.Stmt]] = transformISZ(preR.ctx, o2.stmts, transformIRStmt _)
           if (hasChanged || r0.resultOpt.nonEmpty)

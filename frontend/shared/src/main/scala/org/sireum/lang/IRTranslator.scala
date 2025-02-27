@@ -127,14 +127,14 @@ object IRTranslator {
           addGround(stmt)
           decls = decls :+ stmt
           return Some(label)
-        case stmt: IR.Stmt.Assertume => halt(s"TODO: $stmt")
-        case stmt: IR.Stmt.Print => halt(s"TODO: $stmt")
-        case stmt: IR.Stmt.Match => halt(s"TODO: $stmt")
-        case stmt: IR.Stmt.Assign.Pattern => halt(s"TODO: $stmt")
-        case stmt: IR.Stmt.For => halt(s"TODO: $stmt")
         case stmt: IR.Stmt.Assign =>
           addGround(stmt)
           return Some(label)
+        case stmt: IR.Stmt.Assertume => halt(s"TODO: $stmt")
+        case stmt: IR.Stmt.Print => halt(s"TODO: $stmt")
+        case stmt: IR.Stmt.Match => halt(s"TODO: $stmt")
+        case stmt: IR.Stmt.AssignPattern => halt(s"TODO: $stmt")
+        case stmt: IR.Stmt.For => halt(s"TODO: $stmt")
         case stmt: IR.Stmt.If =>
           val t = fresh.label()
           val e = fresh.label()
@@ -397,7 +397,7 @@ object IRTranslator {
         stmts = ISZ()
         val init = assignRhs(stmt.pattern.typedOpt.get, stmt.init)
         stmts = stmts :+ patternDecl(methodContext, stmt.pattern)
-        stmts = stmts :+ AST.IR.Stmt.Assign.Pattern(methodContext, stmt.pattern, init, pos)
+        stmts = stmts :+ AST.IR.Stmt.AssignPattern(methodContext, stmt.pattern, init, pos)
         stmts = oldStmts ++ stmts
       case _: AST.Stmt.SubZ => // skip
       case _: AST.Stmt.Method => // skip
