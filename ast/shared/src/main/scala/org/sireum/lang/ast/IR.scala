@@ -48,7 +48,6 @@ object IR {
     @pure def prettyST: ST
     @pure def numOfTemps: Z
     @pure def depth: Z
-    @strictpure override def string: String = prettyST.render
   }
 
   object Exp {
@@ -120,7 +119,7 @@ object IR {
     }
 
     @datatype class FieldVarRef(val receiver: Exp, val id: org.sireum.String, val tipe: Typed, val pos: Position) extends Exp {
-      @strictpure def prettyST: ST = st"$receiver.$id"
+      @strictpure def prettyST: ST = st"${receiver.prettyST}.$id"
       @strictpure def numOfTemps: Z = receiver.numOfTemps
       @strictpure def depth: Z = 1 + receiver.depth
     }
@@ -349,9 +348,6 @@ object IR {
       @sig trait Type {
         @pure def pos: Position
         @pure def prettyST: ST
-        @pure override def string: org.sireum.String = {
-          return prettyST.render
-        }
       }
     }
 
@@ -494,9 +490,6 @@ object IR {
 
   @datatype trait Jump {
     @pure def prettyST: ST
-    @pure override def string: String = {
-      return prettyST.render
-    }
     @pure def targets: ISZ[Z]
     @pure def pos: Position
   }
@@ -562,9 +555,6 @@ object IR {
         @pure def pos: Position
         @pure def prettyST: ST
         @pure def targets: ISZ[Z]
-        @pure override def string: org.sireum.String = {
-          return prettyST.render
-        }
       }
     }
   }
@@ -599,9 +589,6 @@ object IR {
 
   @datatype trait Body {
     @pure def prettyST: ST
-    @pure override def string: String = {
-      return prettyST.render
-    }
   }
 
   object Body {
@@ -636,16 +623,10 @@ object IR {
       val ownerOpt: Option[ST] = if (owner.isEmpty)  None() else  Some(st"${(owner, ".")}${if (isInObject) "." else "#"}")
       st"procedure $ownerOpt$id$pt(${(for (p <- ops.ISZOps(paramNames).zip(tipe.args)) yield st"${p._1}: ${p._2}", ", ")}): ${tipe.ret} ${body.prettyST}"
     }
-    @pure override def string: String = {
-      return prettyST.render
-    }
   }
 
   @datatype class Global(val tipe: Typed, val name: ISZ[String], val pos: Position) {
     @strictpure def prettyST: ST = st"global ${(name, ".")}: $tipe"
-    @pure override def string: String = {
-      return prettyST.render
-    }
   }
 
   @datatype class Program(val threeAddressCode: B,
