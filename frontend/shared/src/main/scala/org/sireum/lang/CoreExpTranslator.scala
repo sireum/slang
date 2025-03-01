@@ -24,11 +24,12 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.sireum.lang.tipe
+package org.sireum.lang
 
 import org.sireum._
 import org.sireum.lang.{ast => AST}
 import org.sireum.lang.symbol.TypeInfo
+import org.sireum.lang.tipe.TypeHierarchy
 
 object CoreExpTranslator {
   type FunStack = Stack[(String, AST.Typed)]
@@ -41,17 +42,17 @@ object CoreExpTranslator {
     "BasePattern"
     "Extended"
   }
+
+  @pure def translateToBaseCoreExp(th: TypeHierarchy, exp: AST.Exp, isPattern: B): AST.CoreExp.Base = {
+    return CoreExpTranslator(th, isPattern).translateExp(exp, Stack.empty, HashSMap.empty)
+  }
 }
 
 import CoreExpTranslator._
 
-@datatype class CoreExpTranslator(val th: TypeHierarchy, val mode: Mode.Type) {
-  val isPattern: B = mode == Mode.BasePattern
+@datatype class CoreExpTranslator(val th: TypeHierarchy, val isPattern: B) {
 
   @pure def translateBody(body: AST.Body, posOpt: Option[message.Position], funStack: FunStack, localMap: LocalMap): AST.CoreExp.Base = {
-    if (mode == Mode.Extended) {
-      return AST.CoreExp.Extended.AssignExp(AST.Stmt.Block(body, AST.Attr(posOpt)), funStack, localMap)
-    }
     val stmts = body.stmts
     var m = localMap
     for (i <- 0 until stmts.size - 1) {
@@ -157,11 +158,7 @@ import CoreExpTranslator._
   }
   @pure def translateLocalInfo(res: AST.ResolvedInfo.LocalVar, t: AST.Typed, funStack: FunStack, localMap: LocalMap): AST.CoreExp.Base = {
     localMap.get((res.context, res.id)) match {
-      case Some(r) =>
-        if (mode == Mode.Extended) {
-          return AST.CoreExp.LocalVarRef(F, res.context, res.id, t)
-        }
-        return r
+      case Some(r) => return r
       case _ =>
     }
     val id = res.id
@@ -199,9 +196,6 @@ import CoreExpTranslator._
         }
         return (None(), lMap2)
       case stmt: AST.Stmt.Match =>
-        if (mode == Mode.Extended) {
-          return (Some(AST.CoreExp.Extended.AssignExp(stmt, funStack, localMap)), localMap)
-        }
         val exp = translateExp(stmt.exp, funStack, localMap)
         var condBodyPairs = ISZ[(AST.CoreExp.Base, AST.CoreExp.Base)]()
         for (cas <- stmt.cases) {
@@ -231,19 +225,10 @@ import CoreExpTranslator._
     }
   }
   @pure def translateAssignExp(ae: AST.AssignExp, funStack: FunStack, localMap: LocalMap): AST.CoreExp.Base = {
-    if (mode == Mode.Extended) {
-      return AST.CoreExp.Extended.AssignExp(ae, funStack, localMap)
-    } else {
-      val (Some(r), _) = translateStmt(ae.asStmt, funStack, localMap)
-      return r
-    }
+    val (Some(r), _) = translateStmt(ae.asStmt, funStack, localMap)
+    return r
   }
   @pure def translateExp(e: AST.Exp, funStack: FunStack, localMap: LocalMap): AST.CoreExp.Base = {
-    @strictpure def asAssignExp: AST.CoreExp.Base = {
-      assert(mode == Mode.Extended)
-      AST.CoreExp.Extended.AssignExp(AST.Stmt.Expr(e, AST.TypedAttr(e.posOpt, e.typedOpt)), funStack, localMap)
-    }
-
     e match {
       case e: AST.Exp.LitB => return AST.CoreExp.LitB(e.value)
       case e: AST.Exp.LitZ => return AST.CoreExp.LitZ(e.value)
@@ -475,14 +460,14 @@ import CoreExpTranslator._
           case _ => None()
         }
         return AST.CoreExp.Labeled(numOpt, translateExp(e.exp, funStack, localMap))
-      case _: AST.Exp.ForYield => return asAssignExp
-      case _: AST.Exp.Eta => return asAssignExp
-      case _: AST.Exp.At => return asAssignExp
-      case _: AST.Exp.Old => return asAssignExp
-      case _: AST.Exp.Result => return asAssignExp
-      case _: AST.Exp.Super => return asAssignExp
-      case _: AST.Exp.TypeCond => return asAssignExp
-      case _: AST.Exp.Input => return asAssignExp
+      case _: AST.Exp.ForYield => halt(s"TODO: $e")
+      case _: AST.Exp.Eta => halt(s"TODO: $e")
+      case _: AST.Exp.At => halt(s"TODO: $e")
+      case _: AST.Exp.Old => halt(s"TODO: $e")
+      case _: AST.Exp.Result => halt(s"TODO: $e")
+      case _: AST.Exp.Super => halt(s"TODO: $e")
+      case _: AST.Exp.TypeCond => halt(s"TODO: $e")
+      case _: AST.Exp.Input => halt(s"TODO: $e")
       case _: AST.Exp.LoopIndex => halt(s"Infeasible: $e")
       case _: AST.Exp.InfoFlowInvariant => halt(s"Infeasible: $e")
       case _: AST.Exp.AssertAgree => halt(s"Infeasible: $e")

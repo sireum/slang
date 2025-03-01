@@ -70,26 +70,11 @@ val tipeShared = moduleSharedPub(
   )
 )
 
-val evalShared = moduleSharedPub(
-  id = s"$slang-$eval",
-  baseDir = homeDir / eval,
-  sharedDeps = ISZ(tipeShared.id),
-  sharedIvyDeps = ISZ(),
-  pubOpt = pub(
-    desc = "Slang Evaluator",
-    url = "github.com/sireum/slang",
-    licenses = bsd2,
-    devs = ISZ(robby)
-  )
-)
-
-val (frontendShared, frontendJvm) = moduleSharedJvmPub(
-  baseId = s"$slang-$frontend",
+val frontendShared = moduleSharedPub(
+  id = s"$slang-$frontend",
   baseDir = homeDir / frontend,
-  sharedDeps = ISZ(parserShared.id, evalShared.id),
+  sharedDeps = ISZ(parserShared.id, tipeShared.id),
   sharedIvyDeps = ISZ(),
-  jvmDeps = ISZ(library),
-  jvmIvyDeps = ISZ(),
   pubOpt = pub(
     desc = "Slang Frontend",
     url = "github.com/sireum/slang",
@@ -98,6 +83,22 @@ val (frontendShared, frontendJvm) = moduleSharedJvmPub(
   )
 )
 
-val project = Project.empty + astShared + parserShared + tipeShared + evalShared + frontendShared + frontendJvm
+val (evalShared, evalJvm) = moduleSharedJvmPub(
+  baseId = s"$slang-$eval",
+  baseDir = homeDir / eval,
+  sharedDeps = ISZ(frontendShared.id),
+  sharedIvyDeps = ISZ(),
+  jvmDeps = ISZ(library),
+  jvmIvyDeps = ISZ(),
+  pubOpt = pub(
+    desc = "Slang Evaluator",
+    url = "github.com/sireum/slang",
+    licenses = bsd2,
+    devs = ISZ(robby)
+  )
+)
+
+
+val project = Project.empty + astShared + parserShared + tipeShared + frontendShared + evalShared + evalJvm
 
 projectCli(Os.cliArgs, project)

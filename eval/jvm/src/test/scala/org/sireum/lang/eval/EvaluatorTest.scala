@@ -26,10 +26,10 @@
 package org.sireum.lang.eval
 
 import org.sireum._
-import org.sireum.lang.{FrontEnd, LibraryTypeCheckingTest}
 import org.sireum.lang.ast._
 import org.sireum.lang.parser.Parser
 import org.sireum.lang.tipe._
+import org.sireum.lang.{FrontEnd, LibraryTypeCheckingTest}
 import org.sireum.message._
 import org.sireum.test._
 

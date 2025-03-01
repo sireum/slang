@@ -744,36 +744,6 @@ object CoreExp {
     @strictpure override def shouldParen: B = T
   }
 
-  @datatype trait Extended extends CoreExp.Base {
-    @pure def pos: message.Position
-    @pure override def subst(sm: HashMap[String, Typed]): Base = {
-      halt("Unsupported operation CoreExp.Extended.subst")
-    }
-    @pure def incDeBruijn(threshold: Z): Base = {
-      halt("Unsupported operation CoreExp.Extended.incDeBruijn")
-    }
-    def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
-      halt("Unsupported operation CoreExp.Extended.numberPattern")
-    }
-    @strictpure override def prettyPatternST: ST = {
-      halt("Unsupported operation CoreExp.Extended.prettyPatternST")
-    }
-  }
-
-  object Extended {
-
-    @datatype class AssignExp(val value: lang.ast.AssignExp,
-                              val funStack: Stack[(String, Typed)],
-                              val localStack: HashSMap[(ISZ[String], String), CoreExp.Base]) extends Extended {
-      @spec def valueNotReturn = Invariant(!value.isInstanceOf[lang.ast.Stmt.Return])
-      @strictpure override def rawType: Typed = value.typedOpt.get
-      @strictpure override def pos: message.Position = value.asStmt.posOpt.get
-      @pure override def prettyST: ST = {
-        return value.prettyST
-      }
-    }
-  }
-
   val Abort: CoreExp.Halt = CoreExp.Halt()
   val True: CoreExp.LitB = CoreExp.LitB(T)
   val False: CoreExp.LitB = CoreExp.LitB(F)

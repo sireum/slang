@@ -27,8 +27,8 @@
 package org.sireum.lang.eval
 
 import org.sireum._
-import org.sireum.lang.tipe.{CoreExpTranslator, TypeHierarchy}
-import org.sireum.lang.{ast => AST}
+import org.sireum.lang.tipe.TypeHierarchy
+import org.sireum.lang.{CoreExpTranslator, ast => AST}
 import org.sireum.message.Position
 import Util._
 import org.sireum.lang.symbol.{Info, TypeInfo}
@@ -346,13 +346,12 @@ object Evaluator {
       case exp: AST.CoreExp.IndexingUpdate => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Update => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Quant => halt(s"TODO: $exp") // TODO
-      case exp: AST.CoreExp.Extended.AssignExp => halt(s"TODO: $exp") // TODO
       case exp: AST.CoreExp.Halt => halt(s"Infeasible: $exp")
     }
   }
 
   @memoize def toCoreExp(exp: AST.Exp): AST.CoreExp.Base = {
-    return th.translateToExtendedCoreExp(exp, Stack.empty, HashSMap.empty)
+    return CoreExpTranslator.translateToBaseCoreExp(th, exp, F)
   }
 
   def evalExp(exp: AST.Exp): State.Ptr = {
@@ -526,7 +525,7 @@ object Evaluator {
   }
 
   def evalAssign(stmt: AST.Stmt.Assign): Unit = {
-    th.translateToBaseCoreExp(stmt.lhs, F) match {
+    CoreExpTranslator.translateToBaseCoreExp(th, stmt.lhs, F) match {
       case lhs: AST.CoreExp.LocalVarRef =>
         state.assignLocal(lhs.id, evalAssignExp(stmt.rhs))
       case lhs: AST.CoreExp.ObjectVarRef =>
