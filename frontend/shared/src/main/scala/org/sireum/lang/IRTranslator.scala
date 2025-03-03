@@ -156,7 +156,28 @@ object IRTranslator {
             case _ =>
           }
           return None()
-        case stmt: AST.IR.Stmt.Print => halt(s"TODO: $stmt")
+        case stmt: AST.IR.Stmt.Print =>
+          var args = ISZ[AST.IR.Exp]()
+          var i: Z = 0
+          val id: String = stmt.kind match {
+            case AST.IR.Stmt.Print.Kind.Out => "print"
+            case AST.IR.Stmt.Print.Kind.Err => "eprint"
+            case AST.IR.Stmt.Print.Kind.OutErr =>
+               args = args :+ stmt.args(0)
+               i = 1
+              "cprint"
+          }
+          for (j <- i until stmt.args.size) {
+            val arg = stmt.args(j)
+            grounds = grounds :+ AST.IR.Stmt.Expr(AST.IR.Exp.Apply(T, AST.Typed.sireumName, id, args :+ stmt.args(j),
+              AST.Typed.Fun(AST.Purity.Impure, F, ISZ(arg.tipe), AST.Typed.unit), AST.Typed.unit, arg.pos))
+          }
+          if (stmt.line) {
+            grounds = grounds :+ AST.IR.Stmt.Expr(AST.IR.Exp.Apply(T, AST.Typed.sireumName, id, args :+
+              AST.IR.Exp.Int(AST.Typed.c, 10, stmt.pos), AST.Typed.Fun(AST.Purity.Impure, F, ISZ(AST.Typed.c),
+              AST.Typed.unit), AST.Typed.unit, stmt.pos))
+          }
+          return Some(label)
         case stmt: AST.IR.Stmt.Match => halt(s"TODO: $stmt")
         case stmt: AST.IR.Stmt.AssignPattern => halt(s"TODO: $stmt")
         case stmt: AST.IR.Stmt.For => halt(s"TODO: $stmt")
