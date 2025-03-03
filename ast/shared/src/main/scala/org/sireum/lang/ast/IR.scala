@@ -351,7 +351,7 @@ object IR {
       }
     }
 
-    @datatype class Assertume(val isAssert: B, val cond: Exp, val messageOpt: Option[Exp], val pos: Position) extends Stmt {
+    @datatype class Assertume(val isAssert: B, val cond: Exp, val messageOpt: Option[ExpBlock], val pos: Position) extends Stmt {
       @strictpure def prettyST: ST = {
         val mOpt: Option[ST] = messageOpt match {
           case Some(m) => Some(st", ${m.prettyST}")
@@ -371,6 +371,10 @@ object IR {
         val ln: String = if (line) "ln" else ""
         st"$printKeyword$ln(${(for (arg <- args) yield arg.prettyST, ", ")})"
       }
+    }
+
+    @datatype class Halt(val message: Exp, val pos: Position) extends Stmt {
+      @strictpure def prettyST: ST = st"halt(${message.prettyST})"
     }
 
     object Print {
@@ -407,15 +411,7 @@ object IR {
       @datatype class Case(val decl: Stmt.Decl, val pattern: Pattern, val condOpt: Option[ExpBlock], val body: Block) {
         @strictpure def prettyST: ST = {
           val cOpt: Option[ST] = condOpt match {
-            case Some(cond) =>
-              Some(
-                if (cond.stmts.isEmpty) st" if ${cond.exp.prettyST}"
-                else
-                  st""" if {
-                      |  ${(for (stmt <- cond.stmts) yield stmt.prettyST, "\n")}
-                      |  ${cond.exp.prettyST}
-                      |}"""
-              )
+            case Some(cond) => Some(st" if ${cond.prettyST}")
             case _ => None()
           }
           st"""case ${pattern.prettyST}$cOpt =>
@@ -425,12 +421,7 @@ object IR {
     }
 
     @datatype class While(val cond: ExpBlock, val block: Block, val pos: Position) extends Stmt {
-      @strictpure def prettyST: ST = if (cond.stmts.isEmpty)
-        st"""while (${cond.exp.prettyST}) ${block.prettyST}"""
-      else
-        st"""while (
-            |  ${(for (stmt <- cond.stmts) yield stmt.prettyST, "\n")}
-            |  ${cond.exp.prettyST}) ${block.prettyST}"""
+      @strictpure def prettyST: ST = st"while (${cond.prettyST}) ${block.prettyST}"
     }
 
     @datatype class For(val context: MethodContext,
@@ -559,7 +550,13 @@ object IR {
     }
   }
 
-  @datatype class ExpBlock(val stmts: ISZ[Stmt], val exp: Exp)
+  @datatype class ExpBlock(val stmts: ISZ[Stmt], val exp: Exp) {
+    @strictpure def prettyST: ST = if (stmts.isEmpty) exp.prettyST else
+      st"""{
+          |  ${(for (stmt <- stmts) yield stmt.prettyST, "\n")}
+          |  ${exp.prettyST}
+          |}"""
+  }
 
   @datatype class BasicBlock(val label: Z, val grounds: ISZ[Stmt.Ground], jump: Jump) {
     @pure def prettyST: ST = {
