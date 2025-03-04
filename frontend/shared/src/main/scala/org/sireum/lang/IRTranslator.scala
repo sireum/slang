@@ -705,7 +705,7 @@ object IRTranslator {
         case _ => r
       }
       if (threeAddressCode && e.tipe != AST.Typed.unit && e.tipe != AST.Typed.nothing) {
-        if (isLit(e) && threeAddressCodeLit) {
+        if (threeAddressCodeLit || !isLit(e)) {
           val n = fresh.temp()
           stmts = stmts :+ AST.IR.Stmt.Assign.Temp(n, e, e.pos)
           return AST.IR.Exp.Temp(n, e.tipe, e.pos)
