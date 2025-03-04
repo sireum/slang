@@ -765,7 +765,8 @@ object IRTranslator {
           case res: AST.ResolvedInfo.EnumElement =>
             return norm3AC(AST.IR.Exp.EnumElementRef(res.owner, res.name, res.ordinal, pos))
           case res: AST.ResolvedInfo.Method =>
-            if (isSeq(exp.receiverOpt.get.typedOpt.get)) {
+            val receiverType = exp.receiverOpt.get.typedOpt.get
+            if (receiverType == AST.Typed.string || isSeq(receiverType)) {
               val receiver = exp.receiverOpt.get
               val rcv = translateExp(receiver)
               return norm3AC(AST.IR.Exp.FieldVarRef(rcv, res.id, res.tpeOpt.get.ret, pos))
