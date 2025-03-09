@@ -222,6 +222,7 @@ object IRTranslator {
                 case _ =>
               }
             }
+            grounds = ISZ()
             return Some(end)
           } else {
             halt(s"TODO: $stmt")
