@@ -483,6 +483,7 @@ object Stmt {
 
   @datatype class Adt(val isRoot: B,
                       val isDatatype: B,
+                      val isUnclonable: B,
                       val id: Id,
                       val typeParams: ISZ[TypeParam],
                       val params: ISZ[AdtParam],
@@ -491,7 +492,7 @@ object Stmt {
                       @hidden val attr: Attr) extends Stmt {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @pure override def prettyST: ST = {
-      val rd: String = if (isDatatype) "@datatype " else "@record "
+      val rd: ST = if (isDatatype) st"@datatype " else st"@record ${if (isUnclonable) "@unclonable " else ""}"
       val root: String = if (isRoot) "trait" else "class"
       val param: Option[ST] = if (params.isEmpty) None() else Some(st"(${(for (p <- params) yield p.prettyST, ", ")})")
       val extend: Option[ST] =
@@ -2306,7 +2307,10 @@ object Exp {
   }
 }
 
+@datatype class Annotation(val name: ISZ[String], val args: ISZ[Lit])
+
 @datatype class MethodSig(val purity: Purity.Type,
+                          val annotations: ISZ[Annotation],
                           val id: Id,
                           val typeParams: ISZ[TypeParam],
                           val hasParams: B,

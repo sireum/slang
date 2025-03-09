@@ -992,6 +992,10 @@ object Transformer {
       return PreResult(ctx, T, None())
     }
 
+    @pure def preAnnotation(ctx: Context, o: Annotation): PreResult[Context, Annotation] = {
+      return PreResult(ctx, T, None())
+    }
+
     @pure def preMethodSig(ctx: Context, o: MethodSig): PreResult[Context, MethodSig] = {
       return PreResult(ctx, T, None())
     }
@@ -2128,6 +2132,10 @@ object Transformer {
     }
 
     @pure def postAdtParam(ctx: Context, o: AdtParam): TPostResult[Context, AdtParam] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postAnnotation(ctx: Context, o: Annotation): TPostResult[Context, Annotation] = {
       return TPostResult(ctx, None())
     }
 
@@ -4427,19 +4435,47 @@ import Transformer._
     }
   }
 
+  @pure def transformAnnotation(ctx: Context, o: Annotation): TPostResult[Context, Annotation] = {
+    val preR: PreResult[Context, Annotation] = pp.preAnnotation(ctx, o)
+    val r: TPostResult[Context, Annotation] = if (preR.continu) {
+      val o2: Annotation = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: TPostResult[Context, IS[Z, Lit]] = transformISZ(preR.ctx, o2.args, transformLit _)
+      if (hasChanged || r0.resultOpt.nonEmpty)
+        TPostResult(r0.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args))))
+      else
+        TPostResult(r0.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: Annotation = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, Annotation] = pp.postAnnotation(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
   @pure def transformMethodSig(ctx: Context, o: MethodSig): TPostResult[Context, MethodSig] = {
     val preR: PreResult[Context, MethodSig] = pp.preMethodSig(ctx, o)
     val r: TPostResult[Context, MethodSig] = if (preR.continu) {
       val o2: MethodSig = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: TPostResult[Context, Id] = transformId(preR.ctx, o2.id)
-      val r1: TPostResult[Context, IS[Z, TypeParam]] = transformISZ(r0.ctx, o2.typeParams, transformTypeParam _)
-      val r2: TPostResult[Context, IS[Z, Param]] = transformISZ(r1.ctx, o2.params, transformParam _)
-      val r3: TPostResult[Context, Type] = transformType(r2.ctx, o2.returnType)
-      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
-        TPostResult(r3.ctx, Some(o2(id = r0.resultOpt.getOrElse(o2.id), typeParams = r1.resultOpt.getOrElse(o2.typeParams), params = r2.resultOpt.getOrElse(o2.params), returnType = r3.resultOpt.getOrElse(o2.returnType))))
+      val r0: TPostResult[Context, IS[Z, Annotation]] = transformISZ(preR.ctx, o2.annotations, transformAnnotation _)
+      val r1: TPostResult[Context, Id] = transformId(r0.ctx, o2.id)
+      val r2: TPostResult[Context, IS[Z, TypeParam]] = transformISZ(r1.ctx, o2.typeParams, transformTypeParam _)
+      val r3: TPostResult[Context, IS[Z, Param]] = transformISZ(r2.ctx, o2.params, transformParam _)
+      val r4: TPostResult[Context, Type] = transformType(r3.ctx, o2.returnType)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty || r4.resultOpt.nonEmpty)
+        TPostResult(r4.ctx, Some(o2(annotations = r0.resultOpt.getOrElse(o2.annotations), id = r1.resultOpt.getOrElse(o2.id), typeParams = r2.resultOpt.getOrElse(o2.typeParams), params = r3.resultOpt.getOrElse(o2.params), returnType = r4.resultOpt.getOrElse(o2.returnType))))
       else
-        TPostResult(r3.ctx, None())
+        TPostResult(r4.ctx, None())
     } else if (preR.resultOpt.nonEmpty) {
       TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
     } else {

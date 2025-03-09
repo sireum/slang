@@ -89,7 +89,7 @@ object Resolver {
     val zType = AST.Type.Named(AST.Name(for (id <- AST.Typed.zName) yield AST.Id(id, emptyAttr), emptyAttr), ISZ(),
       AST.TypedAttr(None(), Some(AST.Typed.z)))
     nm = nm + randomIntName ~> Info.ExtMethod(AST.Typed.sireumName, scope,
-      AST.Stmt.ExtMethod(F, AST.MethodSig(AST.Purity.Impure, AST.Id(randomIntId, emptyAttr), ISZ(), F, ISZ(), zType),
+      AST.Stmt.ExtMethod(F, AST.MethodSig(AST.Purity.Impure, ISZ(), AST.Id(randomIntId, emptyAttr), ISZ(), F, ISZ(), zType),
         AST.MethodContract.Simple.empty,
         AST.ResolvedAttr(None[Position](), Some[AST.ResolvedInfo](AST.ResolvedInfo.Method(
           T, AST.MethodMode.Ext, ISZ(), AST.Typed.sireumName, randomIntId, ISZ(), Some(randomIntTyped), ISZ(), ISZ())),
@@ -104,7 +104,7 @@ object Resolver {
       AST.TypedAttr(None(), Some(AST.Typed.b)))
     nm = nm + seqIndexValidSizeName ~> Info.SpecMethod(AST.Typed.sireumName, T, scope,
       AST.Stmt.SpecMethod(
-        AST.MethodSig(AST.Purity.Pure, AST.Id(seqIndexValidSizeId, emptyAttr), ISZ(
+        AST.MethodSig(AST.Purity.Pure, ISZ(), AST.Id(seqIndexValidSizeId, emptyAttr), ISZ(
           AST.TypeParam(AST.Id(seqIndexValidSizeTypeParamId, emptyAttr), AST.Typed.VarKind.Immutable)), F, ISZ(
           AST.Param(F, AST.Id(seqIndexValidSizeParamId, emptyAttr), zType)), bType),
         AST.ResolvedAttr(None[Position](), Some[AST.ResolvedInfo](AST.ResolvedInfo.Method(T, AST.MethodMode.Spec,
@@ -163,7 +163,7 @@ object Resolver {
       HashSMap.empty,
       ISZ(),
       scope,
-      AST.Stmt.Adt(T, T, AST.Id("Unit", emptyAttr), ISZ(), ISZ(), ISZ(), ISZ(), emptyAttr)
+      AST.Stmt.Adt(T, T, F, AST.Id("Unit", emptyAttr), ISZ(), ISZ(), ISZ(), ISZ(), emptyAttr)
     )
 
     tm = tm + AST.Typed.nothing.ids ~> TypeInfo.Adt(
@@ -185,7 +185,7 @@ object Resolver {
       HashSMap.empty,
       ISZ(),
       scope,
-      AST.Stmt.Adt(T, T, AST.Id("Nothing", emptyAttr), ISZ(), ISZ(), ISZ(), ISZ(), emptyAttr)
+      AST.Stmt.Adt(T, T, F, AST.Id("Nothing", emptyAttr), ISZ(), ISZ(), ISZ(), ISZ(), emptyAttr)
     )
 
     return (nm, tm)

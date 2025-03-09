@@ -330,79 +330,81 @@ object MsgPack {
 
     val _astAdtParam: Z = 114
 
-    val _astMethodSig: Z = 115
+    val _astAnnotation: Z = 115
 
-    val _astParam: Z = 116
+    val _astMethodSig: Z = 116
 
-    val _astTypeParam: Z = 117
+    val _astParam: Z = 117
 
-    val _astAttr: Z = 118
+    val _astTypeParam: Z = 118
 
-    val _astTypedAttr: Z = 119
+    val _astAttr: Z = 119
 
-    val _astResolvedAttr: Z = 120
+    val _astTypedAttr: Z = 120
 
-    val _astResolvedInfoBuiltIn: Z = 121
+    val _astResolvedAttr: Z = 121
 
-    val _astResolvedInfoPackage: Z = 122
+    val _astResolvedInfoBuiltIn: Z = 122
 
-    val _astResolvedInfoEnum: Z = 123
+    val _astResolvedInfoPackage: Z = 123
 
-    val _astResolvedInfoEnumElement: Z = 124
+    val _astResolvedInfoEnum: Z = 124
 
-    val _astResolvedInfoObject: Z = 125
+    val _astResolvedInfoEnumElement: Z = 125
 
-    val _astResolvedInfoVar: Z = 126
+    val _astResolvedInfoObject: Z = 126
 
-    val _astResolvedInfoMethod: Z = 127
+    val _astResolvedInfoVar: Z = 127
 
-    val _astResolvedInfoMethods: Z = 128
+    val _astResolvedInfoMethod: Z = 128
 
-    val _astResolvedInfoTuple: Z = 129
+    val _astResolvedInfoMethods: Z = 129
 
-    val _astResolvedInfoLocalVar: Z = 130
+    val _astResolvedInfoTuple: Z = 130
 
-    val _astResolvedInfoFact: Z = 131
+    val _astResolvedInfoLocalVar: Z = 131
 
-    val _astResolvedInfoTheorem: Z = 132
+    val _astResolvedInfoFact: Z = 132
 
-    val _astResolvedInfoInv: Z = 133
+    val _astResolvedInfoTheorem: Z = 133
 
-    val _astTruthTableRow: Z = 134
+    val _astResolvedInfoInv: Z = 134
 
-    val _astTruthTableAssignment: Z = 135
+    val _astTruthTableRow: Z = 135
 
-    val _astTruthTableConclusionValidity: Z = 136
+    val _astTruthTableAssignment: Z = 136
 
-    val _astTruthTableConclusionTautology: Z = 137
+    val _astTruthTableConclusionValidity: Z = 137
 
-    val _astTruthTableConclusionContradictory: Z = 138
+    val _astTruthTableConclusionTautology: Z = 138
 
-    val _astTruthTableConclusionContingent: Z = 139
+    val _astTruthTableConclusionContradictory: Z = 139
 
-    val _astTypedName: Z = 140
+    val _astTruthTableConclusionContingent: Z = 140
 
-    val _astTypedTuple: Z = 141
+    val _astTypedName: Z = 141
 
-    val _astTypedFun: Z = 142
+    val _astTypedTuple: Z = 142
 
-    val _astTypedTypeVar: Z = 143
+    val _astTypedFun: Z = 143
 
-    val _astTypedPackage: Z = 144
+    val _astTypedTypeVar: Z = 144
 
-    val _astTypedObject: Z = 145
+    val _astTypedPackage: Z = 145
 
-    val _astTypedEnum: Z = 146
+    val _astTypedObject: Z = 146
 
-    val _astTypedMethod: Z = 147
+    val _astTypedEnum: Z = 147
 
-    val _astTypedMethods: Z = 148
+    val _astTypedMethod: Z = 148
 
-    val _astTypedFact: Z = 149
+    val _astTypedMethods: Z = 149
 
-    val _astTypedTheorem: Z = 150
+    val _astTypedFact: Z = 150
 
-    val _astTypedInv: Z = 151
+    val _astTypedTheorem: Z = 151
+
+    val _astTypedInv: Z = 152
 
   }
 
@@ -909,6 +911,7 @@ object MsgPack {
       writer.writeZ(Constants._astStmtAdt)
       writer.writeB(o.isRoot)
       writer.writeB(o.isDatatype)
+      writer.writeB(o.isUnclonable)
       write_astId(o.id)
       writer.writeISZ(o.typeParams, write_astTypeParam _)
       writer.writeISZ(o.params, write_astAdtParam _)
@@ -1813,9 +1816,16 @@ object MsgPack {
       write_astType(o.tipe)
     }
 
+    def write_astAnnotation(o: org.sireum.lang.ast.Annotation): Unit = {
+      writer.writeZ(Constants._astAnnotation)
+      writer.writeISZ(o.name, writer.writeString _)
+      writer.writeISZ(o.args, write_astLit _)
+    }
+
     def write_astMethodSig(o: org.sireum.lang.ast.MethodSig): Unit = {
       writer.writeZ(Constants._astMethodSig)
       write_astPurityType(o.purity)
+      writer.writeISZ(o.annotations, write_astAnnotation _)
       write_astId(o.id)
       writer.writeISZ(o.typeParams, write_astTypeParam _)
       writer.writeB(o.hasParams)
@@ -3039,13 +3049,14 @@ object MsgPack {
       }
       val isRoot = reader.readB()
       val isDatatype = reader.readB()
+      val isUnclonable = reader.readB()
       val id = read_astId()
       val typeParams = reader.readISZ(read_astTypeParam _)
       val params = reader.readISZ(read_astAdtParam _)
       val parents = reader.readISZ(read_astTypeNamed _)
       val stmts = reader.readISZ(read_astStmt _)
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.Adt(isRoot, isDatatype, id, typeParams, params, parents, stmts, attr)
+      return org.sireum.lang.ast.Stmt.Adt(isRoot, isDatatype, isUnclonable, id, typeParams, params, parents, stmts, attr)
     }
 
     def read_astStmtTypeAlias(): org.sireum.lang.ast.Stmt.TypeAlias = {
@@ -4838,6 +4849,20 @@ object MsgPack {
       return org.sireum.lang.ast.AdtParam(isHidden, isVal, id, tipe)
     }
 
+    def read_astAnnotation(): org.sireum.lang.ast.Annotation = {
+      val r = read_astAnnotationT(F)
+      return r
+    }
+
+    def read_astAnnotationT(typeParsed: B): org.sireum.lang.ast.Annotation = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astAnnotation)
+      }
+      val name = reader.readISZ(reader.readString _)
+      val args = reader.readISZ(read_astLit _)
+      return org.sireum.lang.ast.Annotation(name, args)
+    }
+
     def read_astMethodSig(): org.sireum.lang.ast.MethodSig = {
       val r = read_astMethodSigT(F)
       return r
@@ -4848,12 +4873,13 @@ object MsgPack {
         reader.expectZ(Constants._astMethodSig)
       }
       val purity = read_astPurityType()
+      val annotations = reader.readISZ(read_astAnnotation _)
       val id = read_astId()
       val typeParams = reader.readISZ(read_astTypeParam _)
       val hasParams = reader.readB()
       val params = reader.readISZ(read_astParam _)
       val returnType = read_astType()
-      return org.sireum.lang.ast.MethodSig(purity, id, typeParams, hasParams, params, returnType)
+      return org.sireum.lang.ast.MethodSig(purity, annotations, id, typeParams, hasParams, params, returnType)
     }
 
     def read_astParam(): org.sireum.lang.ast.Param = {
@@ -7990,6 +8016,21 @@ object MsgPack {
       return r
     }
     val r = to(data, f_astAdtParam _)
+    return r
+  }
+
+  def from_astAnnotation(o: org.sireum.lang.ast.Annotation, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astAnnotation(o)
+    return w.result
+  }
+
+  def to_astAnnotation(data: ISZ[U8]): Either[org.sireum.lang.ast.Annotation, MessagePack.ErrorMsg] = {
+    def f_astAnnotation(reader: Reader): org.sireum.lang.ast.Annotation = {
+      val r = reader.read_astAnnotation()
+      return r
+    }
+    val r = to(data, f_astAnnotation _)
     return r
   }
 

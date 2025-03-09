@@ -553,6 +553,10 @@ object MTransformer {
 
   val PostResultAdtParam: MOption[AdtParam] = MNone()
 
+  val PreResultAnnotation: PreResult[Annotation] = PreResult(T, MNone())
+
+  val PostResultAnnotation: MOption[Annotation] = MNone()
+
   val PreResultMethodSig: PreResult[MethodSig] = PreResult(T, MNone())
 
   val PostResultMethodSig: MOption[MethodSig] = MNone()
@@ -1652,6 +1656,10 @@ import MTransformer._
 
   def preAdtParam(o: AdtParam): PreResult[AdtParam] = {
     return PreResultAdtParam
+  }
+
+  def preAnnotation(o: Annotation): PreResult[Annotation] = {
+    return PreResultAnnotation
   }
 
   def preMethodSig(o: MethodSig): PreResult[MethodSig] = {
@@ -2791,6 +2799,10 @@ import MTransformer._
 
   def postAdtParam(o: AdtParam): MOption[AdtParam] = {
     return PostResultAdtParam
+  }
+
+  def postAnnotation(o: Annotation): MOption[Annotation] = {
+    return PostResultAnnotation
   }
 
   def postMethodSig(o: MethodSig): MOption[MethodSig] = {
@@ -5051,17 +5063,45 @@ import MTransformer._
     }
   }
 
+  def transformAnnotation(o: Annotation): MOption[Annotation] = {
+    val preR: PreResult[Annotation] = preAnnotation(o)
+    val r: MOption[Annotation] = if (preR.continu) {
+      val o2: Annotation = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[IS[Z, Lit]] = transformISZ(o2.args, transformLit _)
+      if (hasChanged || r0.nonEmpty)
+        MSome(o2(args = r0.getOrElse(o2.args)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: Annotation = r.getOrElse(o)
+    val postR: MOption[Annotation] = postAnnotation(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
   def transformMethodSig(o: MethodSig): MOption[MethodSig] = {
     val preR: PreResult[MethodSig] = preMethodSig(o)
     val r: MOption[MethodSig] = if (preR.continu) {
       val o2: MethodSig = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[Id] = transformId(o2.id)
-      val r1: MOption[IS[Z, TypeParam]] = transformISZ(o2.typeParams, transformTypeParam _)
-      val r2: MOption[IS[Z, Param]] = transformISZ(o2.params, transformParam _)
-      val r3: MOption[Type] = transformType(o2.returnType)
-      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
-        MSome(o2(id = r0.getOrElse(o2.id), typeParams = r1.getOrElse(o2.typeParams), params = r2.getOrElse(o2.params), returnType = r3.getOrElse(o2.returnType)))
+      val r0: MOption[IS[Z, Annotation]] = transformISZ(o2.annotations, transformAnnotation _)
+      val r1: MOption[Id] = transformId(o2.id)
+      val r2: MOption[IS[Z, TypeParam]] = transformISZ(o2.typeParams, transformTypeParam _)
+      val r3: MOption[IS[Z, Param]] = transformISZ(o2.params, transformParam _)
+      val r4: MOption[Type] = transformType(o2.returnType)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty || r4.nonEmpty)
+        MSome(o2(annotations = r0.getOrElse(o2.annotations), id = r1.getOrElse(o2.id), typeParams = r2.getOrElse(o2.typeParams), params = r3.getOrElse(o2.params), returnType = r4.getOrElse(o2.returnType)))
       else
         MNone()
     } else if (preR.resultOpt.nonEmpty) {

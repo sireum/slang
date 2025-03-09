@@ -621,6 +621,7 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.Stmt.Adt""""),
         ("isRoot", printB(o.isRoot)),
         ("isDatatype", printB(o.isDatatype)),
+        ("isUnclonable", printB(o.isUnclonable)),
         ("id", print_astId(o.id)),
         ("typeParams", printISZ(F, o.typeParams, print_astTypeParam _)),
         ("params", printISZ(F, o.params, print_astAdtParam _)),
@@ -1754,10 +1755,19 @@ object JSON {
       ))
     }
 
+    @pure def print_astAnnotation(o: org.sireum.lang.ast.Annotation): ST = {
+      return printObject(ISZ(
+        ("type", st""""org.sireum.lang.ast.Annotation""""),
+        ("name", printISZ(T, o.name, printString _)),
+        ("args", printISZ(F, o.args, print_astLit _))
+      ))
+    }
+
     @pure def print_astMethodSig(o: org.sireum.lang.ast.MethodSig): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.MethodSig""""),
         ("purity", print_astPurityType(o.purity)),
+        ("annotations", printISZ(F, o.annotations, print_astAnnotation _)),
         ("id", print_astId(o.id)),
         ("typeParams", printISZ(F, o.typeParams, print_astTypeParam _)),
         ("hasParams", printB(o.hasParams)),
@@ -3541,6 +3551,9 @@ object JSON {
       parser.parseObjectKey("isDatatype")
       val isDatatype = parser.parseB()
       parser.parseObjectNext()
+      parser.parseObjectKey("isUnclonable")
+      val isUnclonable = parser.parseB()
+      parser.parseObjectNext()
       parser.parseObjectKey("id")
       val id = parse_astId()
       parser.parseObjectNext()
@@ -3559,7 +3572,7 @@ object JSON {
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.Adt(isRoot, isDatatype, id, typeParams, params, parents, stmts, attr)
+      return org.sireum.lang.ast.Stmt.Adt(isRoot, isDatatype, isUnclonable, id, typeParams, params, parents, stmts, attr)
     }
 
     def parse_astStmtTypeAlias(): org.sireum.lang.ast.Stmt.TypeAlias = {
@@ -5954,6 +5967,24 @@ object JSON {
       return org.sireum.lang.ast.AdtParam(isHidden, isVal, id, tipe)
     }
 
+    def parse_astAnnotation(): org.sireum.lang.ast.Annotation = {
+      val r = parse_astAnnotationT(F)
+      return r
+    }
+
+    def parse_astAnnotationT(typeParsed: B): org.sireum.lang.ast.Annotation = {
+      if (!typeParsed) {
+        parser.parseObjectType("org.sireum.lang.ast.Annotation")
+      }
+      parser.parseObjectKey("name")
+      val name = parser.parseISZ(parser.parseString _)
+      parser.parseObjectNext()
+      parser.parseObjectKey("args")
+      val args = parser.parseISZ(parse_astLit _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Annotation(name, args)
+    }
+
     def parse_astMethodSig(): org.sireum.lang.ast.MethodSig = {
       val r = parse_astMethodSigT(F)
       return r
@@ -5965,6 +5996,9 @@ object JSON {
       }
       parser.parseObjectKey("purity")
       val purity = parse_astPurityType()
+      parser.parseObjectNext()
+      parser.parseObjectKey("annotations")
+      val annotations = parser.parseISZ(parse_astAnnotation _)
       parser.parseObjectNext()
       parser.parseObjectKey("id")
       val id = parse_astId()
@@ -5981,7 +6015,7 @@ object JSON {
       parser.parseObjectKey("returnType")
       val returnType = parse_astType()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.MethodSig(purity, id, typeParams, hasParams, params, returnType)
+      return org.sireum.lang.ast.MethodSig(purity, annotations, id, typeParams, hasParams, params, returnType)
     }
 
     def parse_astParam(): org.sireum.lang.ast.Param = {
@@ -9867,6 +9901,24 @@ object JSON {
       return r
     }
     val r = to(s, f_astAdtParam _)
+    return r
+  }
+
+  def from_astAnnotation(o: org.sireum.lang.ast.Annotation, isCompact: B): String = {
+    val st = Printer.print_astAnnotation(o)
+    if (isCompact) {
+      return st.renderCompact
+    } else {
+      return st.render
+    }
+  }
+
+  def to_astAnnotation(s: String): Either[org.sireum.lang.ast.Annotation, Json.ErrorMsg] = {
+    def f_astAnnotation(parser: Parser): org.sireum.lang.ast.Annotation = {
+      val r = parser.parse_astAnnotation()
+      return r
+    }
+    val r = to(s, f_astAnnotation _)
     return r
   }
 

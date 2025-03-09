@@ -27,10 +27,9 @@ package org.sireum.lang.parser
 
 import org.sireum.$internal.MutableMarker
 import org.sireum.lang.ast.MTransformer
-import org.sireum.message
+import org.sireum.{B, HashSMap, ISZ, None, Option, Some, String, Z, message}
 import org.sireum.message.Reporter
 import org.sireum.lang.{ast => AST}
-import org.sireum.{B, ISZ, None, Option, Some, String, Z}
 
 import scala.meta._
 import scala.meta.internal.parsers.ScalametaParser
@@ -865,13 +864,13 @@ class SlangParser(
       case scala.Some(ps) => (true, ISZ[AST.Param](ps.map(translateParam(isMemoize = false)): _*))
       case _ => (false, ISZ[AST.Param]())
     }
-    val (purity, mods, _, _, _) = methodMods(true, enclosing, stat.mods)
-    val sig = AST.MethodSig(purity, cid(name), ISZ(
+    val (purity, mods, _, _, _, anns) = methodMods(true, enclosing, stat.mods)
+    val sig = AST.MethodSig(purity, anns, cid(name), ISZ(
       tparams.map(translateTypeParam(AST.Typed.VarKind.Immutable, true)): _*), hasParams, params, translateType(tpe))
     AST.Stmt.Method(false, purity, mods, sig, emptyContract, None(), resolvedAttr(stat.pos))
   }
 
-  def methodMods(isDecl: Boolean, enclosing: Enclosing.Type, mods: List[Mod]): (AST.Purity.Type, ISZ[String], Option[AST.Exp.LitString], B, B) = {
+  def methodMods(isDecl: Boolean, enclosing: Enclosing.Type, mods: List[Mod]): (AST.Purity.Type, ISZ[String], Option[AST.Exp.LitString], B, B, ISZ[AST.Annotation]) = {
     var isPure = false
     var isStrictPure = false
     var isAbs = false
@@ -884,6 +883,7 @@ class SlangParser(
     var isSpec = false
     var etaOpt: Option[AST.Exp.LitString] = None()
     var hasError = false
+    var anns = HashSMap.empty[ISZ[String], AST.Annotation]
     var r = ISZ[String]()
     for (mod <- mods) {
       r = r :+ mod.syntax
@@ -977,6 +977,20 @@ class SlangParser(
           }
           etaOpt = None()
           isJust = true
+        case mod"@anvil.hls" if !isDecl =>
+          val name = AST.Typed.sireumName :+ "anvil" :+ "hls"
+          if (anns.contains(name)) {
+            hasError = true
+            error(mod.pos, "Redundant @anvil.hls.")
+          }
+          anns = anns + name ~> AST.Annotation(name, ISZ())
+        case mod"@anvil.test" if !isDecl =>
+          val name = AST.Typed.sireumName :+ "anvil" :+ "test"
+          if (anns.contains(name)) {
+            hasError = true
+            error(mod.pos, "Redundant @anvil.test.")
+          }
+          anns = anns + name ~> AST.Annotation(name, ISZ())
         case _ =>
           hasError = true
           if (isDecl) {
@@ -1067,7 +1081,7 @@ class SlangParser(
       else if (isAbs) AST.Purity.Abs
       else if (isStrictPure) AST.Purity.StrictPure
       else AST.Purity.Impure
-    return (purity, r, etaOpt, isJust, isSpec)
+    return (purity, r, etaOpt, isJust, isSpec, anns.values)
   }
 
   val specDefn: Set[Predef.String] = Set(
@@ -1126,7 +1140,7 @@ class SlangParser(
       hasError = true
       errorInSlang(name.pos, "Methods have to be given an explicit return type")
     }
-    val (purity, mods, etaOpt, isJust, isSpec) = methodMods(false, enclosing, tree.mods)
+    val (purity, mods, etaOpt, isJust, isSpec, anns) = methodMods(false, enclosing, tree.mods)
     val isMemoize = purity == AST.Purity.Memoize
     val (hasParams, params) = paramss.headOption match {
       case scala.Some(ps) => (true, ISZ[AST.Param](ps.map(translateParam(isMemoize)): _*))
@@ -1134,6 +1148,7 @@ class SlangParser(
     }
     val sig = AST.MethodSig(
       if (purity == AST.Purity.Impure && org.sireum.ops.ISZOps(mods).contains("@spec")) AST.Purity.Pure else purity,
+      anns,
       cid(name),
       ISZ(tparams.map(translateTypeParam(AST.Typed.VarKind.Immutable, true)): _*),
       hasParams,
@@ -1656,6 +1671,7 @@ class SlangParser(
     AST.Stmt.Adt(
       isRoot = true,
       isDatatype = true,
+      isUnclonable = false,
       cid(tname),
       ISZ(tparams.map(translateTypeParam(AST.Typed.VarKind.Immutable, false)): _*),
       ISZ(),
@@ -1702,6 +1718,7 @@ class SlangParser(
     AST.Stmt.Adt(
       isRoot = false,
       isDatatype = true,
+      isUnclonable = false,
       cid(tname),
       ISZ(tparams.map(translateTypeParam(AST.Typed.VarKind.Immutable, false)): _*),
       params,
@@ -1744,6 +1761,7 @@ class SlangParser(
     AST.Stmt.Adt(
       isRoot = true,
       isDatatype = false,
+      isUnclonable = false,
       cid(tname),
       ISZ(tparams.map(translateTypeParam(AST.Typed.VarKind.Mutable, true)): _*),
       ISZ(),
@@ -1777,12 +1795,18 @@ class SlangParser(
       error(tname.pos, "Slang @record classes have to be of the form '@record class〈ID〉(...) { ... }'.")
     }
     var hasRecord = false
+    var hasUnclonable = false
     for (mod <- mods) mod match {
       case mod"@record" =>
         if (hasRecord) {
           error(mod.pos, "Redundant @record.")
         }
         hasRecord = true
+      case mod"@unclonable" =>
+        if (hasUnclonable) {
+          error(mod.pos, "Redundant @unclonable.")
+        }
+        hasUnclonable = true
       case _ =>
         error(mod.pos, "No modifiers are allowed for Slang @record classes.")
     }
@@ -1790,6 +1814,7 @@ class SlangParser(
     AST.Stmt.Adt(
       isRoot = false,
       isDatatype = false,
+      isUnclonable = hasUnclonable,
       cid(tname),
       ISZ(tparams.map(translateTypeParam(AST.Typed.VarKind.Mutable, true)): _*),
       params,
