@@ -150,6 +150,7 @@ object IRTranslator {
           if (addF) {
             blocks = blocks :+ AST.IR.BasicBlock(fLabel, grounds, AST.IR.Jump.Halt(pos))
           }
+          grounds = ISZ()
           return Some(tLabel)
         case stmt: AST.IR.Stmt.Halt =>
           stmtToBasic(label, AST.IR.Stmt.Print(AST.IR.Stmt.Print.Kind.Err, T, ISZ(stmt.message), pos)) match {
