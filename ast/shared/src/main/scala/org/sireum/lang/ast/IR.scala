@@ -229,8 +229,9 @@ object IR {
       }
     }
 
-    @datatype class Apply(val isInObject: B, val owner: ISZ[org.sireum.String], val id: org.sireum.String, val args: ISZ[Exp],
-                          val methodType: Typed.Fun, val tipe: Typed, val pos: Position) extends Exp {
+    @datatype class Apply(val isInObject: B, val owner: ISZ[org.sireum.String], val id: org.sireum.String,
+                          val args: ISZ[Exp], val methodType: Typed.Fun, val pos: Position) extends Exp {
+      @strictpure def tipe: Typed = methodType.ret
       @strictpure def prettyST: ST =
         if (!isInObject && ops.StringOps(id).isScalaOp && args.size == 2) st"(${args(0).prettyST} $id ${args(1).prettyST})"
         else if (isInObject) st"${if (owner.nonEmpty) st"${(owner, ".")}." else st""}$id(${(for (arg <- args) yield arg.prettyST, ", ")})"
@@ -251,7 +252,8 @@ object IR {
       }
     }
 
-    @datatype class Indexing(val exp: Exp, val tipe: Typed, val index: Exp, val pos: Position) extends Exp {
+    @datatype class Indexing(val exp: Exp, val index: Exp, val pos: Position) extends Exp {
+      @strictpure def tipe: Typed = exp.tipe.asInstanceOf[Typed.Name].args(1)
       @strictpure def prettyST: ST = st"${exp.prettyST}(${index.prettyST})"
       @strictpure def numOfTemps: Z = exp.numOfTemps + index.numOfTemps
       @strictpure def depth: Z = 1 + max(exp.depth, index.depth)

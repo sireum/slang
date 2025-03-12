@@ -1160,19 +1160,17 @@ import IRTransformer._
         case o2: IR.Exp.Apply =>
           val r0: TPostResult[Context, IS[Z, IR.Exp]] = transformISZ(preR.ctx, o2.args, transformIRExp _)
           val r1: TPostResult[Context, Typed.Fun] = transformTypedFun(r0.ctx, o2.methodType)
-          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.tipe)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            TPostResult(r2.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args), methodType = r1.resultOpt.getOrElse(o2.methodType), tipe = r2.resultOpt.getOrElse(o2.tipe))))
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args), methodType = r1.resultOpt.getOrElse(o2.methodType))))
           else
-            TPostResult(r2.ctx, None())
+            TPostResult(r1.ctx, None())
         case o2: IR.Exp.Indexing =>
           val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.exp)
-          val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.tipe)
-          val r2: TPostResult[Context, IR.Exp] = transformIRExp(r1.ctx, o2.index)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-            TPostResult(r2.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), tipe = r1.resultOpt.getOrElse(o2.tipe), index = r2.resultOpt.getOrElse(o2.index))))
+          val r1: TPostResult[Context, IR.Exp] = transformIRExp(r0.ctx, o2.index)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), index = r1.resultOpt.getOrElse(o2.index))))
           else
-            TPostResult(r2.ctx, None())
+            TPostResult(r1.ctx, None())
         case o2: IR.Exp.Type =>
           val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.exp)
           val r1: TPostResult[Context, Typed.Name] = transformTypedName(r0.ctx, o2.t)
@@ -2102,11 +2100,10 @@ import IRTransformer._
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: TPostResult[Context, IS[Z, IR.Exp]] = transformISZ(preR.ctx, o2.args, transformIRExp _)
       val r1: TPostResult[Context, Typed.Fun] = transformTypedFun(r0.ctx, o2.methodType)
-      val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.tipe)
-      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-        TPostResult(r2.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args), methodType = r1.resultOpt.getOrElse(o2.methodType), tipe = r2.resultOpt.getOrElse(o2.tipe))))
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+        TPostResult(r1.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args), methodType = r1.resultOpt.getOrElse(o2.methodType))))
       else
-        TPostResult(r2.ctx, None())
+        TPostResult(r1.ctx, None())
     } else if (preR.resultOpt.nonEmpty) {
       TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
     } else {

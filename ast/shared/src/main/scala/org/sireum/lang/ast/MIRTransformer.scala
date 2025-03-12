@@ -1420,17 +1420,15 @@ import MIRTransformer._
         case o2: IR.Exp.Apply =>
           val r0: MOption[IS[Z, IR.Exp]] = transformISZ(o2.args, transformIRExp _)
           val r1: MOption[Typed.Fun] = transformTypedFun(o2.methodType)
-          val r2: MOption[Typed] = transformTyped(o2.tipe)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(args = r0.getOrElse(o2.args), methodType = r1.getOrElse(o2.methodType), tipe = r2.getOrElse(o2.tipe)))
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(args = r0.getOrElse(o2.args), methodType = r1.getOrElse(o2.methodType)))
           else
             MNone()
         case o2: IR.Exp.Indexing =>
           val r0: MOption[IR.Exp] = transformIRExp(o2.exp)
-          val r1: MOption[Typed] = transformTyped(o2.tipe)
-          val r2: MOption[IR.Exp] = transformIRExp(o2.index)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-            MSome(o2(exp = r0.getOrElse(o2.exp), tipe = r1.getOrElse(o2.tipe), index = r2.getOrElse(o2.index)))
+          val r1: MOption[IR.Exp] = transformIRExp(o2.index)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp), index = r1.getOrElse(o2.index)))
           else
             MNone()
         case o2: IR.Exp.Type =>
@@ -2362,9 +2360,8 @@ import MIRTransformer._
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: MOption[IS[Z, IR.Exp]] = transformISZ(o2.args, transformIRExp _)
       val r1: MOption[Typed.Fun] = transformTypedFun(o2.methodType)
-      val r2: MOption[Typed] = transformTyped(o2.tipe)
-      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-        MSome(o2(args = r0.getOrElse(o2.args), methodType = r1.getOrElse(o2.methodType), tipe = r2.getOrElse(o2.tipe)))
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+        MSome(o2(args = r0.getOrElse(o2.args), methodType = r1.getOrElse(o2.methodType)))
       else
         MNone()
     } else if (preR.resultOpt.nonEmpty) {

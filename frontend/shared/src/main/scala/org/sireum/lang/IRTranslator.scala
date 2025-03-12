@@ -174,12 +174,12 @@ object IRTranslator {
           for (j <- i until stmt.args.size) {
             val arg = stmt.args(j)
             grounds = grounds :+ AST.IR.Stmt.Expr(AST.IR.Exp.Apply(T, AST.Typed.sireumName, id, args :+ stmt.args(j),
-              AST.Typed.Fun(AST.Purity.Impure, F, ISZ(arg.tipe), AST.Typed.unit), AST.Typed.unit, arg.pos))
+              AST.Typed.Fun(AST.Purity.Impure, F, ISZ(arg.tipe), AST.Typed.unit), arg.pos))
           }
           if (stmt.line) {
             grounds = grounds :+ AST.IR.Stmt.Expr(AST.IR.Exp.Apply(T, AST.Typed.sireumName, id, args :+
               AST.IR.Exp.Int(AST.Typed.c, 10, stmt.pos), AST.Typed.Fun(AST.Purity.Impure, F, ISZ(AST.Typed.c),
-              AST.Typed.unit), AST.Typed.unit, stmt.pos))
+              AST.Typed.unit), stmt.pos))
           }
           return Some(label)
         case stmt: AST.IR.Stmt.Match =>
@@ -896,26 +896,26 @@ object IRTranslator {
                 for (arg <- exp.args) {
                   args = args :+ translateExp(arg)
                 }
-                return norm3AC(AST.IR.Exp.Apply(res.isInObject, res.owner, res.id, args, methodType, exp.typedOpt.get, pos))
+                return norm3AC(AST.IR.Exp.Apply(res.isInObject, res.owner, res.id, args, methodType, pos))
               case AST.MethodMode.Ext =>
                 var args = ISZ[AST.IR.Exp]()
                 for (arg <- exp.args) {
                   args = args :+ translateExp(arg)
                 }
-                return norm3AC(AST.IR.Exp.Apply(T, res.owner, res.id, args, res.tpeOpt.get, exp.typedOpt.get, pos))
+                return norm3AC(AST.IR.Exp.Apply(T, res.owner, res.id, args, res.tpeOpt.get, pos))
               case AST.MethodMode.Select =>
-                val (rcv, rcvType): (AST.IR.Exp, AST.Typed.Name) = exp.receiverOpt match {
+                val rcv: AST.IR.Exp = exp.receiverOpt match {
                   case Some(receiver) =>
                     if (exp.ident.id.value == "apply") {
-                      (translateExp(receiver), receiver.typedOpt.get.asInstanceOf[AST.Typed.Name])
+                      translateExp(receiver)
                     } else {
                       val e = AST.Exp.Select(Some(receiver), exp.ident.id, exp.targs, exp.ident.attr)
-                      (translateExp(e), e.typedOpt.get.asInstanceOf[AST.Typed.Name])
+                      translateExp(e)
                     }
-                  case _ => (translateExp(exp.ident), exp.ident.typedOpt.get.asInstanceOf[AST.Typed.Name])
+                  case _ => translateExp(exp.ident)
                 }
                 val index = translateExp(exp.args(0))
-                return norm3AC(AST.IR.Exp.Indexing(rcv, rcvType, index, pos))
+                return norm3AC(AST.IR.Exp.Indexing(rcv, index, pos))
               case AST.MethodMode.Constructor =>
                 var args = ISZ[AST.IR.Exp]()
                 for (arg <- exp.args) {
