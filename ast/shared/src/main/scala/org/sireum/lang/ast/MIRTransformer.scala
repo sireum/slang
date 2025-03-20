@@ -289,6 +289,10 @@ object MIRTransformer {
 
   val PostResultIRProgram: MOption[IR.Program] = MNone()
 
+  val PreResultIRPrinterEmpty: PreResult[IR.Printer.Empty] = PreResult(T, MNone())
+
+  val PostResultIRPrinterEmpty: MOption[IR.Printer.Empty] = MNone()
+
   val PreResultTypedName: PreResult[Typed] = PreResult(T, MNone())
 
   val PostResultTypedName: MOption[Typed] = MNone()
@@ -750,6 +754,22 @@ import MIRTransformer._
 
   def preIRProgram(o: IR.Program): PreResult[IR.Program] = {
     return PreResultIRProgram
+  }
+
+  def preIRPrinter(o: IR.Printer): PreResult[IR.Printer] = {
+    o match {
+      case o: IR.Printer.Empty =>
+        val r: PreResult[IR.Printer] = preIRPrinterEmpty(o) match {
+         case PreResult(continu, MSome(r: IR.Printer)) => PreResult(continu, MSome[IR.Printer](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Printer")
+         case PreResult(continu, _) => PreResult(continu, MNone[IR.Printer]())
+        }
+        return r
+    }
+  }
+
+  def preIRPrinterEmpty(o: IR.Printer.Empty): PreResult[IR.Printer.Empty] = {
+    return PreResultIRPrinterEmpty
   }
 
   def preTyped(o: Typed): PreResult[Typed] = {
@@ -1224,6 +1244,22 @@ import MIRTransformer._
 
   def postIRProgram(o: IR.Program): MOption[IR.Program] = {
     return PostResultIRProgram
+  }
+
+  def postIRPrinter(o: IR.Printer): MOption[IR.Printer] = {
+    o match {
+      case o: IR.Printer.Empty =>
+        val r: MOption[IR.Printer] = postIRPrinterEmpty(o) match {
+         case MSome(result: IR.Printer) => MSome[IR.Printer](result)
+         case MSome(_) => halt("Can only produce object of type IR.Printer")
+         case _ => MNone[IR.Printer]()
+        }
+        return r
+    }
+  }
+
+  def postIRPrinterEmpty(o: IR.Printer.Empty): MOption[IR.Printer.Empty] = {
+    return PostResultIRPrinterEmpty
   }
 
   def postTyped(o: Typed): MOption[Typed] = {
@@ -1867,10 +1903,9 @@ import MIRTransformer._
       val hasChanged: B = preR.resultOpt.nonEmpty
       val rOpt: MOption[IR.Stmt.For.Range] = o2 match {
         case o2: IR.Stmt.For.Range.Expr =>
-          val r0: MOption[IS[Z, IR.Stmt]] = transformISZ(o2.expStmts, transformIRStmt _)
-          val r1: MOption[IR.Exp] = transformIRExp(o2.exp)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(expStmts = r0.getOrElse(o2.expStmts), exp = r1.getOrElse(o2.exp)))
+          val r0: MOption[IR.Exp] = transformIRExp(o2.exp)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp)))
           else
             MNone()
         case o2: IR.Stmt.For.Range.Step =>
@@ -2178,6 +2213,62 @@ import MIRTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: IR.Program = r.getOrElse(o)
     val postR: MOption[IR.Program] = postIRProgram(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformIRPrinter(o: IR.Printer): MOption[IR.Printer] = {
+    val preR: PreResult[IR.Printer] = preIRPrinter(o)
+    val r: MOption[IR.Printer] = if (preR.continu) {
+      val o2: IR.Printer = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: MOption[IR.Printer] = o2 match {
+        case o2: IR.Printer.Empty =>
+          if (hasChanged)
+            MSome(o2)
+          else
+            MNone()
+      }
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: IR.Printer = r.getOrElse(o)
+    val postR: MOption[IR.Printer] = postIRPrinter(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformIRPrinterEmpty(o: IR.Printer.Empty): MOption[IR.Printer.Empty] = {
+    val preR: PreResult[IR.Printer.Empty] = preIRPrinterEmpty(o)
+    val r: MOption[IR.Printer.Empty] = if (preR.continu) {
+      val o2: IR.Printer.Empty = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      if (hasChanged)
+        MSome(o2)
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: IR.Printer.Empty = r.getOrElse(o)
+    val postR: MOption[IR.Printer.Empty] = postIRPrinterEmpty(o2)
     if (postR.nonEmpty) {
       return postR
     } else if (hasChanged) {

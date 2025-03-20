@@ -454,6 +454,22 @@ object IRTransformer {
       return PreResult(ctx, T, None())
     }
 
+    @pure def preIRPrinter(ctx: Context, o: IR.Printer): PreResult[Context, IR.Printer] = {
+      o match {
+        case o: IR.Printer.Empty =>
+          val r: PreResult[Context, IR.Printer] = preIRPrinterEmpty(ctx, o) match {
+           case PreResult(preCtx, continu, Some(r: IR.Printer)) => PreResult(preCtx, continu, Some[IR.Printer](r))
+           case PreResult(_, _, Some(_)) => halt("Can only produce object of type IR.Printer")
+           case PreResult(preCtx, continu, _) => PreResult(preCtx, continu, None[IR.Printer]())
+          }
+          return r
+      }
+    }
+
+    @pure def preIRPrinterEmpty(ctx: Context, o: IR.Printer.Empty): PreResult[Context, IR.Printer.Empty] = {
+      return PreResult(ctx, T, None())
+    }
+
     @pure def preTyped(ctx: Context, o: Typed): PreResult[Context, Typed] = {
       o match {
         case o: Typed.Name => return preTypedName(ctx, o)
@@ -925,6 +941,22 @@ object IRTransformer {
     }
 
     @pure def postIRProgram(ctx: Context, o: IR.Program): TPostResult[Context, IR.Program] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRPrinter(ctx: Context, o: IR.Printer): TPostResult[Context, IR.Printer] = {
+      o match {
+        case o: IR.Printer.Empty =>
+          val r: TPostResult[Context, IR.Printer] = postIRPrinterEmpty(ctx, o) match {
+           case TPostResult(postCtx, Some(result: IR.Printer)) => TPostResult(postCtx, Some[IR.Printer](result))
+           case TPostResult(_, Some(_)) => halt("Can only produce object of type IR.Printer")
+           case TPostResult(postCtx, _) => TPostResult(postCtx, None[IR.Printer]())
+          }
+          return r
+      }
+    }
+
+    @pure def postIRPrinterEmpty(ctx: Context, o: IR.Printer.Empty): TPostResult[Context, IR.Printer.Empty] = {
       return TPostResult(ctx, None())
     }
 
@@ -1607,12 +1639,11 @@ import IRTransformer._
       val hasChanged: B = preR.resultOpt.nonEmpty
       val rOpt: TPostResult[Context, IR.Stmt.For.Range] = o2 match {
         case o2: IR.Stmt.For.Range.Expr =>
-          val r0: TPostResult[Context, IS[Z, IR.Stmt]] = transformISZ(preR.ctx, o2.expStmts, transformIRStmt _)
-          val r1: TPostResult[Context, IR.Exp] = transformIRExp(r0.ctx, o2.exp)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(expStmts = r0.resultOpt.getOrElse(o2.expStmts), exp = r1.resultOpt.getOrElse(o2.exp))))
+          val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.exp)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp))))
           else
-            TPostResult(r1.ctx, None())
+            TPostResult(r0.ctx, None())
         case o2: IR.Stmt.For.Range.Step =>
           val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.start)
           val r1: TPostResult[Context, IR.Exp] = transformIRExp(r0.ctx, o2.end)
@@ -1918,6 +1949,62 @@ import IRTransformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: IR.Program = r.resultOpt.getOrElse(o)
     val postR: TPostResult[Context, IR.Program] = pp.postIRProgram(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformIRPrinter(ctx: Context, o: IR.Printer): TPostResult[Context, IR.Printer] = {
+    val preR: PreResult[Context, IR.Printer] = pp.preIRPrinter(ctx, o)
+    val r: TPostResult[Context, IR.Printer] = if (preR.continu) {
+      val o2: IR.Printer = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: TPostResult[Context, IR.Printer] = o2 match {
+        case o2: IR.Printer.Empty =>
+          if (hasChanged)
+            TPostResult(preR.ctx, Some(o2))
+          else
+            TPostResult(preR.ctx, None())
+      }
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: IR.Printer = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, IR.Printer] = pp.postIRPrinter(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformIRPrinterEmpty(ctx: Context, o: IR.Printer.Empty): TPostResult[Context, IR.Printer.Empty] = {
+    val preR: PreResult[Context, IR.Printer.Empty] = pp.preIRPrinterEmpty(ctx, o)
+    val r: TPostResult[Context, IR.Printer.Empty] = if (preR.continu) {
+      val o2: IR.Printer.Empty = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      if (hasChanged)
+        TPostResult(preR.ctx, Some(o2))
+      else
+        TPostResult(preR.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: IR.Printer.Empty = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, IR.Printer.Empty] = pp.postIRPrinterEmpty(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {
