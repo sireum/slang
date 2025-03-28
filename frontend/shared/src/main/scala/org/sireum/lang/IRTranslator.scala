@@ -48,7 +48,7 @@ object IRTranslator {
 }
 
 @record class IRTranslator(val threeAddressCode: B,
-                           val threeAddressCodeLit: B,
+                           val threeAddressExpF: AST.IR.Exp => B @pure,
                            val th: TypeHierarchy,
                            val fresh: IRTranslator.Fresh) {
 
@@ -689,15 +689,6 @@ object IRTranslator {
   }
 
   def translateExp(exp: AST.Exp): AST.IR.Exp = {
-    @strictpure def isLit(e: AST.IR.Exp): B = e match {
-      case _: AST.IR.Exp.Bool => T
-      case _: AST.IR.Exp.Int => T
-      case _: AST.IR.Exp.F32 => T
-      case _: AST.IR.Exp.F64 => T
-      case _: AST.IR.Exp.R => T
-      case _: AST.IR.Exp.String => T
-      case _ => F
-    }
     def norm3AC(r: AST.IR.Exp): AST.IR.Exp = {
       val e: AST.IR.Exp = r match {
         case r: AST.IR.Exp.GlobalVarRef =>
@@ -707,7 +698,7 @@ object IRTranslator {
         case _ => r
       }
       if (threeAddressCode && e.tipe != AST.Typed.unit && e.tipe != AST.Typed.nothing) {
-        if (threeAddressCodeLit || !isLit(e)) {
+        if (threeAddressExpF(e)) {
           val n = fresh.temp()
           stmts = stmts :+ AST.IR.Stmt.Assign.Temp(n, e, e.pos)
           return AST.IR.Exp.Temp(n, e.tipe, e.pos)
