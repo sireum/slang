@@ -517,12 +517,18 @@ class TypeCheckerTest extends TestSuite {
     "Failing" - {
 
       "Worksheet" - {
+
+        * - failingWorksheet(
+          """import org.sireum._
+            |import org.sireum.U32._
+            |import org.sireum.S32._
+            |assert(u32"0" < s32"0")""".stripMargin, "Incompatible")
+
         * - failingWorksheet(
           """import org.sireum._
             |def foo(lits: ISZ[String], i: Z): Unit = {
             |  ISZ(ops.StringOps(lits(i).value).escapeST)
             |}""".stripMargin, "'value' is not a member")
-
 
         * - failingWorksheet(
           """import org.sireum._

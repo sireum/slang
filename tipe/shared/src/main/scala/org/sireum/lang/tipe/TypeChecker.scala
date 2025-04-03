@@ -2090,6 +2090,9 @@ import TypeChecker._
                   if (leftKind != rightKind) {
                     errIncompat(rightType)
                     (binaryExp.op, None())
+                  } else if ((leftKind == BasicKind.Bits || leftKind == BasicKind.Range) && leftType != rightType) {
+                    errIncompat(rightType)
+                    (binaryExp.op, None())
                   } else if ((leftKind == BasicKind.B && AST.Util.isBoolBinop(binaryExp.op)) ||
                     (AST.Util.isArithBinop(binaryExp.op) && leftKind != BasicKind.B) ||
                     (AST.Util.isBitsBinop(binaryExp.op) && (leftKind == BasicKind.Bits || leftKind == BasicKind.C))) {
