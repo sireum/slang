@@ -1180,7 +1180,7 @@ object TypeHierarchy {
   }
 
   @pure def isCompatible(t1: AST.Typed, t2: AST.Typed): B = {
-    return isSubType(t1, t2) || isSubType(t2, t1)
+    return lub(ISZ(t1, t2)).nonEmpty
   }
 
   @pure def isMutable(t: AST.Typed): B = {
