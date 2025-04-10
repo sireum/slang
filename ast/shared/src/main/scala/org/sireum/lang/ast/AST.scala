@@ -1684,10 +1684,10 @@ object Exp {
         case '+' => return 3
         case '-' => return 3
         case ':' => return 4
-        case '=' => return 5
-        case '!' => return 5
         case '<' => return 6
         case '>' => return 6
+        case '=' => return 5
+        case '!' => return 5
         case '&' => return 7
         case '^' => return 8
         case '|' => return 9
