@@ -45,7 +45,11 @@ object IR {
   @datatype trait Exp  {
     @pure def tipe: Typed
     @strictpure def pos: Position
-    @pure def prettyST(p: Printer): ST
+    @strictpure def prettyST(p: Printer): ST = p.exp(this) match {
+      case Some(r) => r
+      case _ => prettyRawST(p)
+    }
+    @pure def prettyRawST(p: Printer): ST
     @pure def numOfTemps: Z
     @pure def depth: Z
   }
@@ -54,85 +58,85 @@ object IR {
 
     @datatype class Bool(val value: B, val pos: Position) extends Exp {
       @strictpure def tipe: Typed = Typed.b
-      @strictpure def prettyST(p: Printer): ST = p.exp(this).getOrElse(if (value) st"true" else st"false")
+      @strictpure def prettyRawST(p: Printer): ST = if (value) st"true" else st"false"
       @strictpure def numOfTemps: Z = 0
       @strictpure def depth: Z = 1
     }
 
     @datatype class Int(val tipe: Typed, val value: Z, val pos: Position) extends Exp {
-      @strictpure def prettyST(p: Printer): ST = p.exp(this).getOrElse(st"($value: $tipe)")
+      @strictpure def prettyRawST(p: Printer): ST = st"($value: $tipe)"
       @strictpure def numOfTemps: Z = 0
       @strictpure def depth: Z = 1
     }
 
     @datatype class F32(val value: org.sireum.F32, val pos: Position) extends Exp {
       @strictpure def tipe: Typed = Typed.f32
-      @strictpure def prettyST(p: Printer): ST = p.exp(this).getOrElse(st"$value")
+      @strictpure def prettyRawST(p: Printer): ST = st"$value"
       @strictpure def numOfTemps: Z = 0
       @strictpure def depth: Z = 1
     }
 
     @datatype class F64(val value: org.sireum.F64, val pos: Position) extends Exp {
       @strictpure def tipe: Typed = Typed.f64
-      @strictpure def prettyST(p: Printer): ST = p.exp(this).getOrElse(st"$value")
+      @strictpure def prettyRawST(p: Printer): ST = st"$value"
       @strictpure def numOfTemps: Z = 0
       @strictpure def depth: Z = 1
     }
 
     @datatype class R(val value: org.sireum.R, val pos: Position) extends Exp {
       @strictpure def tipe: Typed = Typed.r
-      @strictpure def prettyST(p: Printer): ST = p.exp(this).getOrElse(st"$value")
+      @strictpure def prettyRawST(p: Printer): ST = st"$value"
       @strictpure def numOfTemps: Z = 0
       @strictpure def depth: Z = 1
     }
 
     @datatype class String(val value: org.sireum.String, val pos: Position) extends Exp {
       @strictpure def tipe: Typed = Typed.string
-      @strictpure def prettyST(p: Printer): ST = p.exp(this).getOrElse(st""""${ops.StringOps(value).escapeST}"""")
+      @strictpure def prettyRawST(p: Printer): ST = st""""${ops.StringOps(value).escapeST}""""
       @strictpure def numOfTemps: Z = 0
       @strictpure def depth: Z = 1
     }
 
     @datatype class Temp(val n: Z, val tipe: Typed, val pos: Position) extends Exp {
-      @strictpure def prettyST(p: Printer): ST = p.exp(this).getOrElse(st"($$$n: $tipe)")
+      @strictpure def prettyRawST(p: Printer): ST = st"($$$n: $tipe)"
       @strictpure def numOfTemps: Z = 1
       @strictpure def depth: Z = 1
     }
 
     @datatype class LocalVarRef(val isVal: B, val context: MethodContext, val id: org.sireum.String, val tipe: Typed, val pos: Position) extends Exp {
-      @strictpure def prettyST(p: Printer): ST = p.exp(this).getOrElse(st"$id")
+      @strictpure def prettyRawST(p: Printer): ST = st"$id"
       @strictpure def numOfTemps: Z = 0
       @strictpure def depth: Z = 1
     }
 
     @datatype class GlobalVarRef(val name: ISZ[org.sireum.String], val tipe: Typed, val pos: Position) extends Exp {
-      @strictpure def prettyST(p: Printer): ST = p.exp(this).getOrElse(st"${(name, ".")}")
+      @strictpure def prettyRawST(p: Printer): ST = st"${(name, ".")}"
       @strictpure def numOfTemps: Z = 0
       @strictpure def depth: Z = 1
     }
 
     @datatype class EnumElementRef(val owner: ISZ[org.sireum.String], val id: org.sireum.String, val ordinal: Z, val pos: Position) extends Exp {
       @strictpure def tipe: Typed = Typed.Enum(owner :+ "Type")
-      @strictpure def prettyST(p: Printer): ST = p.exp(this).getOrElse(st"${(owner, ".")}.$id")
+      @strictpure def prettyRawST(p: Printer): ST = st"${(owner, ".")}.$id"
       @strictpure def numOfTemps: Z = 0
       @strictpure def depth: Z = 1
     }
 
     @datatype class FieldVarRef(val receiver: Exp, val id: org.sireum.String, val tipe: Typed, val pos: Position) extends Exp {
-      @strictpure def prettyST(p: Printer): ST = p.exp(this).getOrElse(st"${receiver.prettyST(p)}.$id")
+      @strictpure def prettyRawST(p: Printer): ST = st"${receiver.prettyST(p)}.$id"
       @strictpure def numOfTemps: Z = receiver.numOfTemps
       @strictpure def depth: Z = 1 + receiver.depth
     }
 
     @datatype class Unary(val tipe: Typed, val op: lang.ast.Exp.UnaryOp.Type, val exp: Exp, val pos: Position) extends Exp {
-      @strictpure def prettyST(p: Printer): ST = {
+      @strictpure def prettyRawST(p: Printer): ST = {
         val opString: org.sireum.String = op match {
           case lang.ast.Exp.UnaryOp.Not => "!"
           case lang.ast.Exp.UnaryOp.Plus => "+"
           case lang.ast.Exp.UnaryOp.Minus => "-"
           case lang.ast.Exp.UnaryOp.Complement => "~"
         }
-        p.exp(this).getOrElse(st"$opString(${exp.prettyST(p)})")
+        st"$opString(${exp.prettyST(p)})"
       }
       @strictpure def numOfTemps: Z = exp.numOfTemps
       @strictpure def depth: Z = 1 + exp.depth
@@ -170,7 +174,7 @@ object IR {
     }
 
     @datatype class Binary(val tipe: Typed, val left: Exp, val op: Binary.Op.Type, val right: Exp, val pos: Position) extends Exp {
-      @strictpure def prettyST(p: Printer): ST = {
+      @strictpure def prettyRawST(p: Printer): ST = {
         val opString: org.sireum.String = op match {
           case Binary.Op.Add => "+"
           case Binary.Op.Sub => "-"
@@ -199,20 +203,20 @@ object IR {
           case Binary.Op.Prepend => "+:"
           case Binary.Op.AppendAll => "++"
         }
-        p.exp(this).getOrElse(st"(${left.prettyST(p)} $opString ${right.prettyST(p)})")
+        st"(${left.prettyST(p)} $opString ${right.prettyST(p)})"
       }
       @strictpure def numOfTemps: Z = left.numOfTemps + right.numOfTemps
       @strictpure def depth: Z = 1 + max(left.depth, right.depth)
     }
 
     @datatype class If(val cond: Exp, val thenExp: Exp, val elseExp: Exp, val tipe: Typed, val pos: Position) extends Exp {
-      @strictpure def prettyST(p: Printer): ST = p.exp(this).getOrElse(st"if (${cond.prettyST(p)}) ${thenExp.prettyST(p)} else ${elseExp.prettyST(p)}")
+      @strictpure def prettyRawST(p: Printer): ST = st"if (${cond.prettyST(p)}) ${thenExp.prettyST(p)} else ${elseExp.prettyST(p)}"
       @strictpure def numOfTemps: Z = cond.numOfTemps + thenExp.numOfTemps + elseExp.numOfTemps
       @strictpure def depth: Z = 1 + max(cond.depth, max(thenExp.depth, elseExp.depth))
     }
 
     @datatype class Construct(val tipe: Typed.Name, val args: ISZ[Exp], val pos: Position) extends Exp {
-      @strictpure def prettyST(p: Printer): ST = p.exp(this).getOrElse(st"$tipe(${(for (arg <- args) yield arg.prettyST(p), ", ")})")
+      @strictpure def prettyRawST(p: Printer): ST = st"$tipe(${(for (arg <- args) yield arg.prettyST(p), ", ")})"
       @pure def numOfTemps: Z = {
         var r: Z = 0
         for (arg <- args) {
@@ -232,7 +236,7 @@ object IR {
     @datatype class Apply(val isInObject: B, val owner: ISZ[org.sireum.String], val id: org.sireum.String,
                           val args: ISZ[Exp], val methodType: Typed.Fun, val pos: Position) extends Exp {
       @strictpure def tipe: Typed = methodType.ret
-      @strictpure def prettyST(p: Printer): ST = p.exp(this).getOrElse(
+      @strictpure def prettyRawST(p: Printer): ST = p.exp(this).getOrElse(
         if (!isInObject && ops.StringOps(id).isScalaOp && args.size == 2) st"(${args(0).prettyST(p)} $id ${args(1).prettyST(p)})"
         else if (isInObject) st"${if (owner.nonEmpty) st"${(owner, ".")}." else st""}$id(${(for (arg <- args) yield arg.prettyST(p), ", ")})"
         else st"${args(0).prettyST(p)}.$id(${(for (i <- 1 until args.size) yield args(i).prettyST(p), ", ")})")
@@ -254,21 +258,21 @@ object IR {
 
     @datatype class Indexing(val exp: Exp, val index: Exp, val pos: Position) extends Exp {
       @strictpure def tipe: Typed = exp.tipe.asInstanceOf[Typed.Name].args(1)
-      @strictpure def prettyST(p: Printer): ST = p.exp(this).getOrElse(st"${exp.prettyST(p)}(${index.prettyST(p)})")
+      @strictpure def prettyRawST(p: Printer): ST = st"${exp.prettyST(p)}(${index.prettyST(p)})"
       @strictpure def numOfTemps: Z = exp.numOfTemps + index.numOfTemps
       @strictpure def depth: Z = 1 + max(exp.depth, index.depth)
     }
 
     @datatype class Type(val test: B, val exp: Exp, val t: Typed.Name, val pos: Position) extends Exp {
       @strictpure def tipe: Typed.Name = if (test) Typed.b else t
-      @strictpure def prettyST(p: Printer): ST = p.exp(this).getOrElse(st"(${exp.prettyST(p)} ${if (test) "is" else "as"} $t)")
+      @strictpure def prettyRawST(p: Printer): ST = st"(${exp.prettyST(p)} ${if (test) "is" else "as"} $t)"
       @strictpure def numOfTemps: Z = exp.numOfTemps
       @strictpure def depth: Z = 1 + exp.depth
     }
 
     @datatype class Intrinsic(val intrinsic: Intrinsic.Type) extends Exp {
       @strictpure def tipe: Typed = intrinsic.tipe
-      @strictpure def prettyST(p: Printer): ST = p.exp(this).getOrElse(intrinsic.prettyST(p))
+      @strictpure def prettyRawST(p: Printer): ST = intrinsic.prettyST(p)
       @strictpure def numOfTemps: Z = intrinsic.numOfTemps
       @strictpure def pos: Position = intrinsic.pos
       @strictpure def depth: Z = intrinsic.depth
@@ -287,7 +291,11 @@ object IR {
 
   @datatype trait Stmt {
     @strictpure def pos: Position
-    @pure def prettyST(p: Printer): ST
+    @strictpure def prettyST(p: Printer): ST = p.stmt(this) match {
+      case Some(r) => r
+      case _ => prettyRawST(p)
+    }
+    @pure def prettyRawST(p: Printer): ST
   }
 
   object Stmt {
@@ -296,7 +304,7 @@ object IR {
 
     @datatype class Expr(val exp: Exp.Apply) extends Ground {
       @strictpure def pos: Position = exp.pos
-      @strictpure def prettyST(p: Printer): ST = p.stmt(this).getOrElse(exp.prettyST(p))
+      @strictpure def prettyRawST(p: Printer): ST = exp.prettyST(p)
     }
 
     @datatype trait Assign extends Ground {
@@ -306,23 +314,23 @@ object IR {
     object Assign {
 
       @datatype class Local(val context: MethodContext, val lhs: String, val tipe: Typed, val rhs: Exp, val pos: Position) extends Assign {
-        @strictpure def prettyST(p: Printer): ST = p.stmt(this).getOrElse(st"$lhs = ${rhs.prettyST(p)}")
+        @strictpure def prettyRawST(p: Printer): ST = st"$lhs = ${rhs.prettyST(p)}"
       }
 
       @datatype class Global(val name: ISZ[String], val tipe: Typed, val rhs: Exp, val pos: Position) extends Assign {
-        @strictpure def prettyST(p: Printer): ST = p.stmt(this).getOrElse(st"${(name, ".")} = ${rhs.prettyST(p)}")
+        @strictpure def prettyRawST(p: Printer): ST = st"${(name, ".")} = ${rhs.prettyST(p)}"
       }
 
       @datatype class Temp(val lhs: Z, val rhs: Exp, val pos: Position) extends Assign {
-        @strictpure def prettyST(p: Printer): ST = p.stmt(this).getOrElse(st"$$$lhs = ${rhs.prettyST(p)}")
+        @strictpure def prettyRawST(p: Printer): ST = st"$$$lhs = ${rhs.prettyST(p)}"
       }
 
       @datatype class Field(val receiver: Exp, val id: String, val tipe: Typed, val rhs: Exp, val pos: Position) extends Assign {
-        @strictpure def prettyST(p: Printer): ST = p.stmt(this).getOrElse(st"${receiver.prettyST(p)}.$id = ${rhs.prettyST(p)}")
+        @strictpure def prettyRawST(p: Printer): ST = st"${receiver.prettyST(p)}.$id = ${rhs.prettyST(p)}"
       }
 
       @datatype class Index(val receiver: Exp, val index: Exp, val rhs: Exp, val pos: Position) extends Assign {
-        @strictpure def prettyST(p: Printer): ST = p.stmt(this).getOrElse(st"${receiver.prettyST(p)}(${index.prettyST(p)}) = ${rhs.prettyST(p)}")
+        @strictpure def prettyRawST(p: Printer): ST = st"${receiver.prettyST(p)}(${index.prettyST(p)}) = ${rhs.prettyST(p)}"
       }
 
     }
@@ -332,7 +340,7 @@ object IR {
         val thiz = this
         thiz(undecl = T)
       }
-      @strictpure def prettyST(p: Printer): ST = p.stmt(this).getOrElse(st"${if (isAlloc) if (undecl) "unalloc" else "alloc" else if (undecl) "undecl" else "decl"} ${(for (l <- locals) yield l.prettyST, ", ")}")
+      @strictpure def prettyRawST(p: Printer): ST = st"${if (isAlloc) if (undecl) "unalloc" else "alloc" else if (undecl) "undecl" else "decl"} ${(for (l <- locals) yield l.prettyST, ", ")}"
     }
 
     object Decl {
@@ -342,7 +350,7 @@ object IR {
     }
 
     @datatype class Intrinsic(val intrinsic: Intrinsic.Type) extends Ground {
-      @strictpure def prettyST(p: Printer): ST = p.stmt(this).getOrElse(intrinsic.prettyST(p))
+      @strictpure def prettyRawST(p: Printer): ST =intrinsic.prettyST(p)
       @strictpure def pos: Position = intrinsic.pos
     }
 
@@ -354,29 +362,29 @@ object IR {
     }
 
     @datatype class Assertume(val isAssert: B, val cond: Exp, val messageOpt: Option[ExpBlock], val pos: Position) extends Stmt {
-      @strictpure def prettyST(p: Printer): ST = {
+      @strictpure def prettyRawST(p: Printer): ST = {
         val mOpt: Option[ST] = messageOpt match {
           case Some(m) => Some(st", ${m.prettyST(p)}")
           case _ => None()
         }
-        p.stmt(this).getOrElse(st"${if (isAssert) "assert" else "assume"}(${cond.prettyST(p)}$mOpt)")
+        st"${if (isAssert) "assert" else "assume"}(${cond.prettyST(p)}$mOpt)"
       }
     }
 
     @datatype class Print(val kind: Print.Kind.Type, val line: B, val args: ISZ[Exp], val pos: Position) extends Stmt {
-      @strictpure def prettyST(p: Printer): ST = {
+      @strictpure def prettyRawST(p: Printer): ST = {
         val printKeyword: String = kind match {
           case Print.Kind.Out => "print"
           case Print.Kind.Err => "eprint"
           case Print.Kind.OutErr => "cprint"
         }
         val ln: String = if (line) "ln" else ""
-        p.stmt(this).getOrElse(st"$printKeyword$ln(${(for (arg <- args) yield arg.prettyST(p), ", ")})")
+        st"$printKeyword$ln(${(for (arg <- args) yield arg.prettyST(p), ", ")})"
       }
     }
 
     @datatype class Halt(val message: Exp, val pos: Position) extends Stmt {
-      @strictpure def prettyST(p: Printer): ST = p.stmt(this).getOrElse(st"halt(${message.prettyST(p)})")
+      @strictpure def prettyRawST(p: Printer): ST = st"halt(${message.prettyST(p)})"
     }
 
     object Print {
@@ -388,25 +396,25 @@ object IR {
     }
 
     @datatype class AssignPattern(val context: MethodContext, val pattern: lang.ast.Pattern, val rhs: Exp, val pos: Position) extends Stmt {
-      @strictpure def prettyST(p: Printer): ST = p.stmt(this).getOrElse(st"${pattern.prettyST} = ${rhs.prettyST(p)}")
+      @strictpure def prettyRawST(p: Printer): ST = st"${pattern.prettyST} = ${rhs.prettyST(p)}"
     }
 
     @datatype class Block(val stmts: ISZ[Stmt], val pos: Position) extends Stmt {
-      @strictpure def prettyST(p: Printer): ST = p.stmt(this).getOrElse(
+      @strictpure def prettyRawST(p: Printer): ST =
         st"""{
             |  ${(for (stmt <- stmts) yield stmt.prettyST(p), "\n")}
-            |}""")
+            |}"""
     }
 
     @datatype class If(val cond: Exp, val thenBlock: Block, val elseBlock: Block, val pos: Position) extends Stmt {
-      @strictpure def prettyST(p: Printer): ST = p.stmt(this).getOrElse(st"if (${cond.prettyST(p)}) ${thenBlock.prettyST(p)} else ${elseBlock.prettyST(p)}")
+      @strictpure def prettyRawST(p: Printer): ST = st"if (${cond.prettyST(p)}) ${thenBlock.prettyST(p)} else ${elseBlock.prettyST(p)}"
     }
 
     @datatype class Match(val exp: Exp, val cases: ISZ[Match.Case], val pos: Position) extends Stmt {
-      @strictpure def prettyST(p: Printer): ST = p.stmt(this).getOrElse(
+      @strictpure def prettyRawST(p: Printer): ST =
         st"""${exp.prettyST(p)} match {
             |  ${(for (c <- cases) yield c.prettyST(p), "\n")}
-            |}""")
+            |}"""
     }
 
     object Match {
@@ -423,7 +431,7 @@ object IR {
     }
 
     @datatype class While(val cond: ExpBlock, val block: Block, val pos: Position) extends Stmt {
-      @strictpure def prettyST(p: Printer): ST = p.stmt(this).getOrElse(st"while (${cond.prettyST(p)}) ${block.prettyST(p)}")
+      @strictpure def prettyRawST(p: Printer): ST = st"while (${cond.prettyST(p)}) ${block.prettyST(p)}"
     }
 
     @datatype class For(val context: MethodContext,
@@ -432,7 +440,7 @@ object IR {
                         val condOpt: Option[ExpBlock],
                         val block: Block,
                         val pos: Position) extends Stmt {
-      @strictpure def prettyST(p: Printer): ST = {
+      @strictpure def prettyRawST(p: Printer): ST = {
         val cOpt: Option[ST] = condOpt match {
           case Some(cond) => Some(
             if (cond.stmts.isEmpty)
@@ -444,7 +452,7 @@ object IR {
           )
           case _ => None()
         }
-        p.stmt(this).getOrElse(st"for (${idOpt.getOrElse("_")} <- ${range.prettyST(p)}$cOpt) ${block.prettyST(p)}")
+        st"for (${idOpt.getOrElse("_")} <- ${range.prettyST(p)}$cOpt) ${block.prettyST(p)}"
       }
     }
 
@@ -473,8 +481,8 @@ object IR {
     }
 
     @datatype class Return(val expOpt: Option[Exp], val pos: Position) extends Stmt {
-      @strictpure def prettyST(p: Printer): ST = expOpt match {
-        case Some(exp) => p.stmt(this).getOrElse(st"return ${exp.prettyST(p)}")
+      @strictpure def prettyRawST(p: Printer): ST = expOpt match {
+        case Some(exp) => st"return ${exp.prettyST(p)}"
         case _ => p.stmt(this).getOrElse(st"return")
       }
     }
@@ -482,7 +490,11 @@ object IR {
   }
 
   @datatype trait Jump {
-    @pure def prettyST(p: Printer): ST
+    @strictpure def prettyST(p: Printer): ST = p.jump(this) match {
+      case Some(r) => r
+      case _ => prettyRawST(p)
+    }
+    @pure def prettyRawST(p: Printer): ST
     @pure def targets: ISZ[Z]
     @pure def pos: Position
   }
@@ -490,33 +502,32 @@ object IR {
   object Jump {
 
     @datatype class Goto(val label: Z, val pos: Position) extends Jump {
-      @strictpure def prettyST(p: Printer): ST = p.jump(this).getOrElse(st"goto .$label")
+      @strictpure def prettyRawST(p: Printer): ST = st"goto .$label"
       @strictpure def targets: ISZ[Z] = ISZ(label)
     }
 
     @datatype class If(val cond: Exp, thenLabel: Z, elseLabel: Z, val pos: Position) extends Jump {
-      @strictpure def prettyST(p: Printer): ST = p.jump(this).getOrElse(st"if ${cond.prettyST(p)} goto .$thenLabel else goto .$elseLabel")
+      @strictpure def prettyRawST(p: Printer): ST = st"if ${cond.prettyST(p)} goto .$thenLabel else goto .$elseLabel"
       @strictpure def targets: ISZ[Z] = ISZ(thenLabel, elseLabel)
     }
 
     @datatype class Return(val expOpt: Option[Exp], val pos: Position) extends Jump {
-      @strictpure def prettyST(p: Printer): ST = expOpt match {
-        case Some(exp) => p.jump(this).getOrElse(st"return ${exp.prettyST(p)}")
-        case _ => p.jump(this).getOrElse(st"return")
+      @strictpure def prettyRawST(p: Printer): ST = expOpt match {
+        case Some(exp) => st"return ${exp.prettyST(p)}"
+        case _ => st"return"
       }
       @strictpure def targets: ISZ[Z] = ISZ()
     }
 
     @datatype class Switch(val exp: Exp, val cases: ISZ[Switch.Case], val defaultLabelOpt: Option[Z], val pos: Position) extends Jump {
-      @strictpure def prettyST(p: Printer): ST = {
+      @strictpure def prettyRawST(p: Printer): ST = {
         val defaultOpt: Option[ST] = defaultLabelOpt match {
           case Some(l) => Some(st"default: goto $l")
           case _ => None()
         }
-        p.jump(this).getOrElse(
-          st"""switch (${exp.prettyST(p)})
-              |  ${(for (c <- cases) yield st"${c.value.prettyST(p)}: goto ${c.label}", "\n")}
-              |  $defaultOpt""")
+        st"""switch (${exp.prettyST(p)})
+            |  ${(for (c <- cases) yield st"${c.value.prettyST(p)}: goto ${c.label}", "\n")}
+            |  $defaultOpt"""
       }
 
       @pure def targets: ISZ[Z] = {
@@ -534,12 +545,12 @@ object IR {
     }
 
     @datatype class Halt(val pos: Position) extends Jump {
-      @strictpure def prettyST(p: Printer): ST = p.jump(this).getOrElse(st"halt")
+      @strictpure def prettyRawST(p: Printer): ST = st"halt"
       @strictpure def targets: ISZ[Z] = ISZ()
     }
 
     @datatype class Intrinsic(val intrinsic: Intrinsic.Type) extends Jump {
-      @strictpure def prettyST(p: Printer): ST = p.jump(this).getOrElse(intrinsic.prettyST(p))
+      @strictpure def prettyRawST(p: Printer): ST = intrinsic.prettyST(p)
       @strictpure def pos: Position = intrinsic.pos
       @strictpure def targets: ISZ[Z] = intrinsic.targets
     }
