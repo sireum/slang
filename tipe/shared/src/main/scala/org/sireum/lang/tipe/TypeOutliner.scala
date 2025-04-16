@@ -1163,7 +1163,16 @@ object TypeOutliner {
         case stmt: AST.Stmt.Var =>
           val id = stmt.id.value
           val sInfo = typeHierarchy.nameMap.get(info.name :+ id).get.asInstanceOf[Info.Var]
-          newStmts = newStmts :+ sInfo.ast
+          if (AST.Util.constantInitOpt(stmt.initOpt, stmt.attr.typedOpt).nonEmpty) {
+            val context = info.name :+ id
+            val ae = TypeChecker.checkAssignExp(strictAliasing, typeHierarchy, context, scope, sInfo.ast.initOpt.get,
+              stmt.tipeOpt.get.typedOpt, reporter)
+            val newStmt = sInfo.ast(initOpt = Some(ae))
+            newStmts = newStmts :+ newStmt
+            nameEntries = nameEntries :+ ((sInfo.name, sInfo(ast = newStmt)))
+          } else {
+            newStmts = newStmts :+ sInfo.ast
+          }
         case stmt: AST.Stmt.SpecVar =>
           val id = stmt.id.value
           val sInfo = typeHierarchy.nameMap.get(info.name :+ id).get.asInstanceOf[Info.SpecVar]

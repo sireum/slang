@@ -972,6 +972,20 @@ object TypeChecker {
     }
   }
 
+  def checkExp(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope.Local, exp: AST.Exp,
+               expectedOpt: Option[AST.Typed], reporter: Reporter): AST.Exp = {
+    val tc = TypeChecker(th, context, F, ModeContext.Spec, strictAliasing)
+    val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
+    return tc.checkExp(expectedOpt, scope, exp, reporter)._1
+  }
+
+  def checkAssignExp(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope.Local, ae: AST.AssignExp,
+               expectedOpt: Option[AST.Typed], reporter: Reporter): AST.AssignExp = {
+    val tc = TypeChecker(th, context, F, ModeContext.Spec, strictAliasing)
+    val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
+    return tc.checkAssignExp(expectedOpt, scope, ae, reporter)._1
+  }
+
   def checkInvStmt(strictAliasing: B, th: TypeHierarchy, context: QName, scope: Scope.Local, stmt: AST.Stmt.Inv, reporter: Reporter): AST.Stmt.Inv = {
     val tc = TypeChecker(th, context, F, ModeContext.Spec, strictAliasing)
     val bExpectedOpt: Option[AST.Typed] = Some(AST.Typed.b)
