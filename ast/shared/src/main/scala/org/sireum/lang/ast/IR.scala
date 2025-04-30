@@ -667,4 +667,27 @@ object IR {
   }
 
   @strictpure def max(n: Z, m: Z): Z = if (n < m) m else n
+  @strictpure def ite(cond: Exp, tExp: Exp, fExp: Exp, t: Typed, pos: Position): Exp = (tExp, fExp) match {
+    case (Exp.Bool(T, _), Exp.Bool(T, _)) => tExp
+    case (Exp.Bool(T, _), Exp.Bool(F, _)) => cond
+    case (Exp.Bool(F, _), Exp.Bool(T, _)) => Exp.Unary(cond.tipe, lang.ast.Exp.UnaryOp.Not, cond, pos)
+    case (Exp.Bool(F, _), Exp.Bool(F, _)) => tExp
+    case (_, _) => Exp.If(cond, tExp, fExp, t, pos)
+  }
+  @strictpure def condAnd(left: Exp, right: Exp, pos: Position): Exp =
+    ite(left, right, Exp.Bool(F, pos), Typed.b, pos)
+  @strictpure def condOr(left: Exp, right: Exp, pos: Position): Exp =
+    ite(left, Exp.Bool(T, pos), right, Typed.b, pos)
+  @strictpure def condImply(left: Exp, right: Exp, pos: Position): Exp =
+    ite(left, right, Exp.Bool(T, pos), Typed.b, pos)
+  @pure def bigAnd(conjuncts: ISZ[Exp], pos: Position): Exp = {
+    if (conjuncts.isEmpty) {
+      return Exp.Bool(T, pos)
+    }
+    var r = conjuncts(0)
+    for (i <- 1 until conjuncts.size) {
+      r = Exp.Binary(Typed.b, r, Exp.Binary.Op.And, conjuncts(i), pos)
+    }
+    return r
+  }
 }

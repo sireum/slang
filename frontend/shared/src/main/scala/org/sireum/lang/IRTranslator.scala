@@ -688,28 +688,29 @@ object IRTranslator {
     return F
   }
 
-  def translateExp(exp: AST.Exp): AST.IR.Exp = {
-    def norm3AC(r: AST.IR.Exp): AST.IR.Exp = {
-      val e: AST.IR.Exp = r match {
-        case r: AST.IR.Exp.GlobalVarRef =>
-          if (r.name == AST.Typed.sireumName :+ "T") AST.IR.Exp.Bool(T, r.pos)
-          else if (r.name == AST.Typed.sireumName :+ "F") AST.IR.Exp.Bool(F, r.pos)
-          else r
-        case _ => r
-      }
-      if (threeAddressCode && e.tipe != AST.Typed.unit && e.tipe != AST.Typed.nothing) {
-        if (threeAddressExpF(e)) {
-          val n = fresh.temp()
-          stmts = stmts :+ AST.IR.Stmt.Assign.Temp(n, e, e.pos)
-          return AST.IR.Exp.Temp(n, e.tipe, e.pos)
-        }
-      }
-      return e
-    }
+  def thiz(pos: message.Position): AST.IR.Exp = {
+    return norm3AC(AST.IR.Exp.LocalVarRef(T, methodContext, "this", methodContext.receiverType, pos))
+  }
 
-    def thiz(pos: message.Position): AST.IR.Exp = {
-      return norm3AC(AST.IR.Exp.LocalVarRef(T, methodContext, "this", methodContext.receiverType, pos))
+  def norm3AC(r: AST.IR.Exp): AST.IR.Exp = {
+    val e: AST.IR.Exp = r match {
+      case r: AST.IR.Exp.GlobalVarRef =>
+        if (r.name == AST.Typed.sireumName :+ "T") AST.IR.Exp.Bool(T, r.pos)
+        else if (r.name == AST.Typed.sireumName :+ "F") AST.IR.Exp.Bool(F, r.pos)
+        else r
+      case _ => r
     }
+    if (threeAddressCode && e.tipe != AST.Typed.unit && e.tipe != AST.Typed.nothing) {
+      if (threeAddressExpF(e)) {
+        val n = fresh.temp()
+        stmts = stmts :+ AST.IR.Stmt.Assign.Temp(n, e, e.pos)
+        return AST.IR.Exp.Temp(n, e.tipe, e.pos)
+      }
+    }
+    return e
+  }
+
+  def translateExp(exp: AST.Exp): AST.IR.Exp = {
 
     val pos = exp.posOpt.get
     exp match {
@@ -943,6 +944,123 @@ object IRTranslator {
       case exp: AST.ProofAst.StepId => halt(s"Infeasible: $exp")
     }
   }
+
+  @pure def translatePattern(exp: AST.IR.Exp,
+                             pattern: AST.Pattern,
+                             localMap: HashSMap[(ISZ[String], String), AST.IR.Exp]): (ISZ[AST.IR.Exp], HashSMap[(ISZ[String], String), AST.IR.Exp]) = {
+    var r = ISZ[AST.IR.Exp]()
+    var lMap = localMap
+    val pos = pattern.posOpt.get
+    pattern match {
+      case _: AST.Pattern.Wildcard => // skip
+      case pattern: AST.Pattern.Literal =>
+        r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, translateExp(pattern.lit), pos)
+      case pattern: AST.Pattern.VarBinding =>
+        lMap = lMap + (pattern.idContext, pattern.id.value) ~> exp
+      case pattern: AST.Pattern.Structure =>
+        val t = pattern.typedOpt.get
+        lMap = pattern.idOpt match {
+          case Some(id) => localMap + (pattern.idContext, id.value) ~> exp
+          case _ => localMap
+        }
+        t match {
+          case t: AST.Typed.Tuple =>
+            var i = 0
+            var conds = ISZ[AST.IR.Exp]()
+            for (j <- 0 until t.args.size) {
+              val pat = pattern.patterns(i)
+              val f = AST.IR.Exp.FieldVarRef(exp, s"_${j + 1}", pat.typedOpt.get, pat.posOpt.get)
+              val (pconds, lMap2) = translatePattern(f, pat, lMap)
+              conds = conds ++ pconds
+              lMap = lMap2
+              i = i + 1
+            }
+            r = r :+ AST.IR.bigAnd(conds, pos)
+          case t: AST.Typed.Name =>
+            var conds = ISZ[AST.IR.Exp]()
+            if (t.ids == AST.Typed.isName || t.ids == AST.Typed.msName) {
+              val hasWildcard = pattern.patterns.size > 0 && pattern.patterns(pattern.patterns.size - 1).
+                isInstanceOf[AST.Pattern.SeqWildcard]
+              val (size, op): (Z, AST.IR.Exp.Binary.Op.Type) = if (hasWildcard) (pattern.patterns.size - 1, AST.IR.Exp.Binary.Op.Ge)
+              else (pattern.patterns.size, AST.IR.Exp.Binary.Op.Eq)
+              conds = conds :+ AST.IR.Exp.Binary(AST.Typed.b, AST.IR.Exp.FieldVarRef(exp, "size", AST.Typed.z, pos), op,
+                AST.IR.Exp.Int(AST.Typed.z, size, pos), pos)
+              val indexType = t.args(0)
+              var n: Z = th.typeMap.get(t.args(0).asInstanceOf[AST.Typed.Name].ids).get match {
+                case ti: TypeInfo.SubZ =>
+                  if (ti.ast.isZeroIndex) 0 else ti.ast.index
+                case _ => 0
+              }
+              for (i <- 0 until pattern.patterns.size - (if (hasWildcard) 1 else 0)) {
+                val pat = pattern.patterns(i)
+                val f = AST.IR.Exp.Indexing(exp, AST.IR.Exp.Int(indexType, i, pos), pat.posOpt.get)
+                val (pconds, lMap2) = translatePattern(f, pat, lMap)
+                conds = conds ++ pconds
+                lMap = lMap2
+                n = n + 1
+              }
+            } else {
+              val adt = th.typeMap.get(t.ids).get.asInstanceOf[TypeInfo.Adt]
+              var i = 0
+              for (p <- adt.ast.params if !p.isHidden) {
+                val pat = pattern.patterns(i)
+                val f = AST.IR.Exp.FieldVarRef(exp, p.id.value, pat.typedOpt.get, pat.posOpt.get)
+                val (pconds, lMap2) = translatePattern(f, pat, lMap)
+                conds = conds ++ pconds
+                lMap = lMap2
+                i = i + 1
+              }
+            }
+            r = r :+ AST.IR.condAnd(AST.IR.Exp.Type(T, exp, t, pos), AST.IR.bigAnd(conds, pos), pos)
+          case _ => halt("Infeasible")
+        }
+      case pattern: AST.Pattern.Ref =>
+        val right: AST.IR.Exp = pattern.attr.resOpt.get match {
+          case res: AST.ResolvedInfo.Var =>
+            if (res.isInObject) {
+              val ids = pattern.name.ids
+              val owner: ISZ[String] = for (i <- 0 until pattern.name.ids.size - 1) yield ids(i).value
+              AST.IR.Exp.GlobalVarRef(owner :+ ids(ids.size - 1).value, pattern.typedOpt.get, pos)
+            } else {
+              AST.IR.Exp.FieldVarRef(thiz(pos), res.id, pattern.typedOpt.get, pos)
+            }
+          case res: AST.ResolvedInfo.LocalVar =>
+            AST.IR.Exp.LocalVarRef(res.isVal, methodContext, res.id, pattern.typedOpt.get, pos)
+          case res: AST.ResolvedInfo.EnumElement =>
+            AST.IR.Exp.EnumElementRef(res.owner, res.name, res.ordinal, pos)
+          case _ => halt("Infeasible")
+        }
+        r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, right, pos)
+      case pattern: AST.Pattern.LitInterpolate =>
+        pattern.prefix match {
+          case string"string" =>
+            val right = AST.IR.Exp.String(pattern.value, pos)
+            r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, right, pos)
+          case string"c" =>
+            val right = AST.IR.Exp.Int(AST.Typed.c, conversions.String.toCis(pattern.value)(0).toZ, pos)
+            r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, right, pos)
+          case string"z" =>
+            val right = AST.IR.Exp.Int(AST.Typed.z, Z(pattern.value).get, pos)
+            r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, right, pos)
+          case string"f32" =>
+            val right = AST.IR.Exp.F32(F32(pattern.value).get, pos)
+            r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, right, pos)
+          case string"f64" =>
+            val right = AST.IR.Exp.F64(F64(pattern.value).get, pos)
+            r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, right, pos)
+          case string"r" =>
+            val right = AST.IR.Exp.R(R(pattern.value).get, pos)
+            r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, right, pos)
+          case _ =>
+            val t = pattern.typedOpt.get
+            val right = AST.IR.Exp.Int(t, Z(pattern.value).get, pos)
+            r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, right, pos)
+        }
+      case _: AST.Pattern.SeqWildcard => halt("Infeasible")
+    }
+    return (r, lMap)
+  }
+
 
   @pure def sha3(s: String): U32 = {
     val sha = crypto.SHA3.init512
