@@ -674,12 +674,30 @@ object IR {
     case (Exp.Bool(F, _), Exp.Bool(F, _)) => tExp
     case (_, _) => Exp.If(cond, tExp, fExp, t, pos)
   }
-  @strictpure def condAnd(left: Exp, right: Exp, pos: Position): Exp =
-    ite(left, right, Exp.Bool(F, pos), Typed.b, pos)
-  @strictpure def condOr(left: Exp, right: Exp, pos: Position): Exp =
-    ite(left, Exp.Bool(T, pos), right, Typed.b, pos)
-  @strictpure def condImply(left: Exp, right: Exp, pos: Position): Exp =
-    ite(left, right, Exp.Bool(T, pos), Typed.b, pos)
+  @strictpure def condAnd(left: Exp, right: Exp, pos: Position): Exp = {
+    val r = ite(left, right, Exp.Bool(F, pos), Typed.b, pos)
+    r match {
+      case _: Exp.If => Exp.Binary(Typed.b, left, IR.Exp.Binary.Op.CondAnd, right, pos)
+      case _ => r
+    }
+  }
+
+  @strictpure def condOr(left: Exp, right: Exp, pos: Position): Exp = {
+    val r = ite(left, Exp.Bool(T, pos), right, Typed.b, pos)
+    r match {
+      case _: Exp.If => Exp.Binary(Typed.b, left, IR.Exp.Binary.Op.CondOr, right, pos)
+      case _ => r
+    }
+  }
+
+  @strictpure def condImply(left: Exp, right: Exp, pos: Position): Exp = {
+    val r = ite(left, right, Exp.Bool(T, pos), Typed.b, pos)
+    r match {
+      case _: Exp.If => Exp.Binary(Typed.b, left, IR.Exp.Binary.Op.CondImply, right, pos)
+      case _ => r
+    }
+  }
+
   @pure def bigAnd(conjuncts: ISZ[Exp], pos: Position): Exp = {
     if (conjuncts.isEmpty) {
       return Exp.Bool(T, pos)

@@ -45,6 +45,7 @@ object IRTranslator {
   }
 
   @strictpure def createFresh: Fresh = Ext.createFresh
+
 }
 
 @record class IRTranslator(val threeAddressCode: B,
@@ -96,6 +97,45 @@ object IRTranslator {
     val paramNames: ISZ[String] = for (p <- method.sig.params) yield p.id.value
     return translateMethodH(isBasic, receiverTypeOpt, owner, method.sig.id.value,
       typeParams, paramNames, method.sig.funType, method.sig.id.attr.posOpt.get, method.bodyOpt)
+  }
+
+  @pure def simplifyMatch(stmt: AST.IR.Stmt.Match): AST.IR.Stmt.Block = {
+    val matchCondId = matchExpId(stmt.exp.pos)
+    val pos = stmt.pos
+    var stmts = ISZ[AST.IR.Stmt](
+      AST.IR.Stmt.Decl(F, F, F, methodContext, ISZ(AST.IR.Stmt.Decl.Local(matchCondId, AST.Typed.b)), pos),
+      AST.IR.Stmt.Assign.Local(methodContext, matchCondId, AST.Typed.b, AST.IR.Exp.Bool(F, pos), pos)
+    )
+    var first = T
+    for (cas <- stmt.cases) {
+      val (cs, lMap) = translatePattern(stmt.exp, cas.pattern, HashSMap.empty)
+      val casPos = cas.pattern.posOpt.get
+      var prefixStmts = ISZ[AST.IR.Stmt](AST.IR.Stmt.Assign.Local(methodContext, matchCondId, AST.Typed.b,
+        AST.IR.Exp.Bool(T, casPos), casPos))
+      if (lMap.nonEmpty) {
+        prefixStmts = prefixStmts :+ AST.IR.Stmt.Decl(F, T, F, methodContext,
+          for (e <- lMap.entries) yield AST.IR.Stmt.Decl.Local(e._1._2, e._2.tipe), pos)
+        for (e <- lMap.entries) {
+          prefixStmts = prefixStmts :+ AST.IR.Stmt.Assign.Local(methodContext, e._1._2, e._2.tipe, e._2, e._2.pos)
+        }
+      }
+      val last = cs(cs.size - 1)
+      var r = AST.IR.Stmt.If(last, cas.body(stmts = prefixStmts ++ cas.body.stmts),
+        AST.IR.Stmt.Block(ISZ(), last.pos), last.pos)
+      for (i <- cs.size - 2 to 0 by -1) {
+        val cond = cs(i)
+        r = AST.IR.Stmt.If(cond, AST.IR.Stmt.Block(ISZ(r), r.pos), AST.IR.Stmt.Block(ISZ(), cond.pos), cond.pos)
+      }
+      if (first) {
+        first = F
+      } else {
+        val cond = AST.IR.Exp.Unary(AST.Typed.b, AST.Exp.UnaryOp.Not,
+          AST.IR.Exp.LocalVarRef(F, methodContext, matchCondId, AST.Typed.b, pos), pos)
+        r = AST.IR.Stmt.If(cond, AST.IR.Stmt.Block(ISZ(r), r.pos), AST.IR.Stmt.Block(ISZ(), cond.pos), cond.pos)
+      }
+      stmts = stmts :+ r
+    }
+    return AST.IR.Stmt.Block(stmts, pos)
   }
 
   def toBasic(body: AST.IR.Body.Block, pos: message.Position): AST.IR.Body.Basic = {
@@ -226,7 +266,7 @@ object IRTranslator {
             grounds = ISZ()
             return Some(end)
           } else {
-            halt(s"TODO: $stmt")
+            return stmtToBasic(label, simplifyMatch(stmt))
           }
         case stmt: AST.IR.Stmt.AssignPattern => halt(s"TODO: $stmt")
         case stmt: AST.IR.Stmt.For => halt(s"TODO: $stmt")
@@ -1072,5 +1112,9 @@ object IRTranslator {
 
   @strictpure def assignExpId(idOpt: Option[String], pos: message.Position): String = {
     st"${idOpt.getOrElse("$ae")}.${pos.beginLine}.${pos.beginColumn}.${sha3(pos.string)}".render
+  }
+
+  @strictpure def matchExpId(pos: message.Position): String = {
+    st"$$match.${pos.beginLine}.${pos.beginColumn}.${sha3(pos.string)}".render
   }
 }
