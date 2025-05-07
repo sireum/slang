@@ -421,7 +421,7 @@ object Stmt {
         (if (isBitVector) ISZ(st"signed = ${if (isSigned) "T" else "F"}", st"width = $bitWidth") else ISZ[ST]()) ++
         (if (hasMin) ISZ(st"""min = z"$min"""") else ISZ[ST]()) ++
         (if (hasMax) ISZ(st"""max = z"$max"""") else ISZ[ST]()) ++
-        (if (isIndex) ISZ(st"index = $index") else ISZ[ST]())
+        (if (isIndex) ISZ(st"index = $isIndex") else ISZ[ST]())
       val rb: ST = if (isBitVector) st"@bits(${(args, ", ")})" else st"@range(${(args, ", ")})"
       st"$rb class ${id.prettyST}"
     }
