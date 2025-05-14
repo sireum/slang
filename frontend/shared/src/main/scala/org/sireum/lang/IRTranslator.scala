@@ -48,7 +48,8 @@ object IRTranslator {
 
 }
 
-@record class IRTranslator(val threeAddressCode: B,
+@record class IRTranslator(val spec: B,
+                           val threeAddressCode: B,
                            val threeAddressExpF: AST.IR.Exp => B @pure,
                            val th: TypeHierarchy,
                            val fresh: IRTranslator.Fresh) {
@@ -373,7 +374,11 @@ object IRTranslator {
     }
     val pos = stmt.posOpt.get
     stmt match {
+      case _: AST.Stmt.Spec if !spec => return
       case stmt: AST.Stmt.Var =>
+        if (stmt.isSpec && !spec) {
+          return
+        }
         val init = stmt.initOpt.get
         var oldStmts = stmts
         stmts = ISZ()
@@ -435,11 +440,13 @@ object IRTranslator {
 
             lhs.resOpt.get match {
               case res: AST.ResolvedInfo.Var if res.isInObject =>
-                stmts = stmts :+ AST.IR.Stmt.Assign.Global(res.owner :+ res.id, lhs.typedOpt.get, selectRhs(), pos)
+                val rhs = selectRhs()
+                stmts = stmts :+ AST.IR.Stmt.Assign.Global(res.owner :+ res.id, lhs.typedOpt.get, rhs, pos)
               case _ =>
                 val rcv = lhs.receiverOpt.get
                 val receiver = translateExp(rcv)
-                stmts = stmts :+ AST.IR.Stmt.Assign.Field(receiver, lhs.id.value, lhs.typedOpt.get, selectRhs(), pos)
+                val rhs = selectRhs()
+                stmts = stmts :+ AST.IR.Stmt.Assign.Field(receiver, lhs.id.value, lhs.typedOpt.get, rhs, pos)
             }
           case lhs: AST.Exp.Invoke =>
             val rcv = lhs.receiverOpt.get
@@ -953,12 +960,37 @@ object IRTranslator {
                 for (arg <- exp.args) {
                   args = args :+ translateExp(arg)
                 }
-                return norm3AC(AST.IR.Exp.Construct(exp.typedOpt.get.asInstanceOf[AST.Typed.Name], args, exp.posOpt.get))
+                return norm3AC(AST.IR.Exp.Construct(exp.typedOpt.get.asInstanceOf[AST.Typed.Name], args, pos))
               case _ => halt(s"TODO: $exp")
             }
           case _ => halt(s"TODO: $exp")
         }
-      case exp: AST.Exp.InvokeNamed => halt(s"TODO: $exp")
+      case exp: AST.Exp.InvokeNamed =>
+        exp.attr.resOpt.get match {
+          case res: AST.ResolvedInfo.Method if res.mode == AST.MethodMode.Copy =>
+            val receiver = translateExp(exp.receiverOpt.get)
+            val t = exp.typedOpt.get.asInstanceOf[AST.Typed.Name]
+            var map = HashMap.empty[Z, AST.IR.Exp]
+            for (narg <- exp.args) {
+              map = map + narg.index ~> translateExp(narg.arg)
+            }
+            val adt = th.typeMap.get(t.ids).get.asInstanceOf[TypeInfo.Adt]
+            val sm = tipe.TypeChecker.buildTypeSubstMap(t.ids, exp.posOpt, adt.ast.typeParams, t.args,
+              message.Reporter.create).get
+            var args = ISZ[AST.IR.Exp]()
+            for (i <- adt.ast.params.indices) {
+              map.get(i) match {
+                case Some(arg) => args = args :+ arg
+                case _ =>
+                  val param = adt.ast.params(i)
+                  val pt = param.tipe.typedOpt.get.subst(sm)
+                  args = args :+ norm3AC(AST.IR.Exp.FieldVarRef(receiver, param.id.value, pt, pos))
+              }
+            }
+            return AST.IR.Exp.Construct(t, args, pos)
+          case _ =>
+            halt(s"TODO: $exp")
+        }
       case exp: AST.Exp.Tuple => halt(s"TODO: $exp")
       case exp: AST.Exp.ForYield => halt(s"TODO: $exp")
       case exp: AST.Exp.Eta => halt(s"TODO: $exp")
