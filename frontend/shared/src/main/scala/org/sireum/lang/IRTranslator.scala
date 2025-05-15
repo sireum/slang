@@ -927,7 +927,7 @@ object IRTranslator {
                 var args = ISZ[AST.IR.Exp]()
                 var methodType = res.tpeOpt.get
                 exp.receiverOpt match {
-                  case Some(receiver) =>
+                  case Some(receiver) if !res.isInObject =>
                     args = args :+ translateExp(receiver)
                     methodType = methodType(args = receiver.typedOpt.get +: methodType.args)
                   case _ =>
