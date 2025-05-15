@@ -987,7 +987,7 @@ object IRTranslator {
                   args = args :+ norm3AC(AST.IR.Exp.FieldVarRef(receiver, param.id.value, pt, pos))
               }
             }
-            return AST.IR.Exp.Construct(t, args, pos)
+            return norm3AC(AST.IR.Exp.Construct(t, args, pos))
           case _ =>
             halt(s"TODO: $exp")
         }
