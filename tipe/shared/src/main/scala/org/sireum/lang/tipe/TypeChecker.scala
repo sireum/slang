@@ -3998,16 +3998,6 @@ import TypeChecker._
           val newInfo = info(ast = newStmt)
           nameMap = nameMap + id ~> newInfo
           tcNameMap = tcNameMap + name ~> newInfo
-        case stmt: AST.Stmt.Theorem =>
-          val id = stmt.id.value
-          val name = context :+ id
-          val newStmt = TypeChecker.checkTheoremStmt(strictAliasing, typeHierarchy, name, scope,
-            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Theorem(name)))), reporter)
-          stmts2 = stmts2 :+ newStmt
-          val info = typeHierarchy.nameMap.get(name).get.asInstanceOf[Info.Theorem]
-          val newInfo = info(ast = newStmt)
-          nameMap = nameMap + id ~> newInfo
-          tcNameMap = tcNameMap + name ~> newInfo
         case stmt: AST.Stmt.Inv =>
           val id = stmt.id.value
           val name = context :+ id
@@ -4029,6 +4019,26 @@ import TypeChecker._
             case _ => return (sc, body)
           }
           stmts2 = stmts2 :+ newStmt
+        case _ =>
+          stmts2 = stmts2 :+ stmt
+      }
+    }
+    stmts = stmts2
+    stmts2 = ISZ()
+    val th = typeHierarchy(nameMap = tcNameMap)
+    for (i <- z"0" until stmts.size) {
+      val stmt = stmts(i)
+      stmt match {
+        case stmt: AST.Stmt.Theorem =>
+          val id = stmt.id.value
+          val name = context :+ id
+          val newStmt = TypeChecker.checkTheoremStmt(strictAliasing, th, name, scope,
+            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Theorem(name)))), reporter)
+          stmts2 = stmts2 :+ newStmt
+          val info = typeHierarchy.nameMap.get(name).get.asInstanceOf[Info.Theorem]
+          val newInfo = info(ast = newStmt)
+          nameMap = nameMap + id ~> newInfo
+          tcNameMap = tcNameMap + name ~> newInfo
         case _ =>
           stmts2 = stmts2 :+ stmt
       }
