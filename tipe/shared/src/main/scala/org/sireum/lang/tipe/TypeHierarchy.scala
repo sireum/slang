@@ -1105,18 +1105,18 @@ object TypeHierarchy {
 
   @pure def isRefinement(t1: AST.Typed, t2: AST.Typed): B = {
     (t1, t2) match {
-      case (t1: AST.Typed.Fun, t2: AST.Typed.Fun) =>
-        if (t1.args.size != t2.args.size) {
+      case (f1: AST.Typed.Fun, f2: AST.Typed.Fun) =>
+        if (f1.args.size != f2.args.size) {
           return F
         }
-        for (i <- z"0" until t1.args.size) {
-          if (!isSubType(t2.args(i), t1.args(i))) {
+        for (i <- z"0" until f1.args.size) {
+          if (!isSubType(f2.args(i), f1.args(i))) {
             return F
           }
         }
-        return isSubType(t1.ret, t2.ret)
-      case (t1: AST.Typed.Method, t2: AST.Typed.Method) =>
-        return isRefinement(t1.tpe, t2.tpe)
+        return isSubType(f1.ret, f2.ret)
+      case (m1: AST.Typed.Method, m2: AST.Typed.Method) =>
+        return isRefinement(m1.tpe, m2.tpe)
       case _ => return isSubType(t1, t2)
     }
   }
@@ -1126,27 +1126,27 @@ object TypeHierarchy {
       return T
     }
     (t1, t2) match {
-      case (t1: AST.Typed.Name, t2: AST.Typed.Name) =>
-        if (t2.ids == AST.Typed.stepIdName && (t1.ids == AST.Typed.zName || t1.ids == AST.Typed.stringName)) {
+      case (n1: AST.Typed.Name, n2: AST.Typed.Name) =>
+        if (n2.ids == AST.Typed.stepIdName && (n1.ids == AST.Typed.zName || n1.ids == AST.Typed.stringName)) {
           return T
         }
 
         @pure def buildSm(tps: ISZ[AST.TypeParam]): HashMap[String, AST.Typed] = {
           var i = 0
-          var sm = HashMap.emptyInit[String, AST.Typed](t1.args.size)
+          var sm = HashMap.emptyInit[String, AST.Typed](n1.args.size)
           for (tp <- tps) {
-            sm = sm + tp.id.value ~> t1.args(i)
+            sm = sm + tp.id.value ~> n1.args(i)
             i = i + 1
           }
           return sm
         }
-        if (!poset.ancestorsOf(t1.ids).contains(t2.ids)) {
+        if (!poset.ancestorsOf(n1.ids).contains(n2.ids)) {
           return F
-        } else if (t2.args.isEmpty) {
+        } else if (n2.args.isEmpty) {
           return T
         }
         val (outlined, ancestors, substMap): (B, ISZ[AST.Typed.Name], HashMap[String, AST.Typed]) =
-          typeMap.get(t1.ids) match {
+          typeMap.get(n1.ids) match {
             case Some(info: TypeInfo.Sig) => (info.outlined, info.ancestors, buildSm(info.ast.typeParams))
             case Some(info: TypeInfo.Adt) => (info.outlined, info.ancestors, buildSm(info.ast.typeParams))
             case _ => return F
@@ -1154,21 +1154,21 @@ object TypeHierarchy {
         if (!outlined) {
           return T
         }
-        for (ancestor <- ancestors if ancestor.ids == t2.ids && ancestor.subst(substMap) == t2) {
+        for (ancestor <- ancestors if ancestor.ids == n2.ids && ancestor.subst(substMap) == n2) {
           return T
         }
         return F
-      case (t1: AST.Typed.Fun, t2: AST.Typed.Fun) =>
-        if (t1.args.size != t2.args.size) {
+      case (f1: AST.Typed.Fun, f2: AST.Typed.Fun) =>
+        if (f1.args.size != f2.args.size) {
           return F
         }
-        for (i <- 0 until t1.args.size) {
-          if (!isSubType(t2.args(i), t1.args(i))) {
+        for (i <- 0 until f1.args.size) {
+          if (!isSubType(f2.args(i), f1.args(i))) {
             return F
           }
         }
-        if (t1.isByName == t2.isByName && isSubType(t1.ret, t2.ret)) {
-          (t1.isPureFun, t2.isPureFun) match {
+        if (f1.isByName == f2.isByName && isSubType(f1.ret, f2.ret)) {
+          (f1.isPureFun, f2.isPureFun) match {
             case (F, T) => return F
             case (_, _) => return T
           }

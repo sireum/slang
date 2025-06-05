@@ -181,7 +181,7 @@ object IRTranslator {
                 case Some(l) =>
                   fLabel = l
                   stmtToBasic(fLabel, AST.IR.Stmt.Print(AST.IR.Stmt.Print.Kind.Err, T, ISZ(m.exp), m.exp.pos)) match {
-                    case Some(l) => fLabel = l
+                    case Some(l2) => fLabel = l2
                     case _ => addF = F
                   }
                 case _ => addF = F
@@ -308,7 +308,7 @@ object IRTranslator {
               blocks = blocks :+ basicBlock(l, grounds, AST.IR.Jump.If(stmt.cond.exp, t, e, stmt.pos))
               grounds = ISZ()
               blockToBasic(t, stmt.block) match {
-                case Some(l) => blocks = blocks :+ basicBlock(l, grounds, AST.IR.Jump.Goto(n, stmt.pos))
+                case Some(l2) => blocks = blocks :+ basicBlock(l2, grounds, AST.IR.Jump.Goto(n, stmt.pos))
                 case _ =>
               }
               grounds = ISZ()

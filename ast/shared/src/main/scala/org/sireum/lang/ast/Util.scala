@@ -1333,8 +1333,8 @@ object Util {
 
   @pure def invokeReceiverIdent(receiverOpt: Option[Exp], ident: Exp): (B, Option[Exp], Exp.Ident) = {
     (receiverOpt, ident) match {
-      case (_, ident: Exp.Ident) => return (F, receiverOpt, ident)
-      case (None(), ident: Exp.Select) => return (F, ident.receiverOpt, Exp.Ident(ident.id, ident.attr))
+      case (_, id: Exp.Ident) => return (F, receiverOpt, id)
+      case (None(), id: Exp.Select) => return (F, id.receiverOpt, Exp.Ident(id.id, id.attr))
       case (None(), _) => return (T, Some(ident), Exp.Ident(Id("apply", Attr(ident.posOpt)), ResolvedAttr(
         ident.posOpt, Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.Apply)), ident.typedOpt)))
       case (_, _) => halt(s"Infeasible: $receiverOpt.$ident")
