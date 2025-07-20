@@ -79,7 +79,7 @@ object IRTranslator {
         val oldStmts = stmts
         stmts = ISZ()
         translateBody(body, None())
-        val b = AST.IR.Body.Block(AST.IR.Stmt.Block(stmts, bodyPos(body, pos)))
+        val b = AST.IR.Body.Block(AST.IR.Stmt.Block(stmts, pos))
         stmts = oldStmts
         b
       case _ => AST.IR.Body.Block(AST.IR.Stmt.Block(ISZ(), pos))
@@ -194,11 +194,17 @@ object IRTranslator {
           grounds = ISZ()
           return Some(tLabel)
         case stmt: AST.IR.Stmt.Halt =>
-          stmtToBasic(label, AST.IR.Stmt.Print(AST.IR.Stmt.Print.Kind.Err, T, ISZ(stmt.message), pos)) match {
-            case Some(l) =>
-              blocks = blocks :+ AST.IR.BasicBlock(l, grounds, AST.IR.Jump.Halt(pos))
+          stmt.message match {
+            case m: AST.IR.Exp.String if m.value.size == 0 =>
+              blocks = blocks :+ AST.IR.BasicBlock(label, grounds, AST.IR.Jump.Halt(pos))
               grounds = ISZ()
             case _ =>
+              stmtToBasic(label, AST.IR.Stmt.Print(AST.IR.Stmt.Print.Kind.Err, T, ISZ(stmt.message), pos)) match {
+                case Some(l) =>
+                  blocks = blocks :+ AST.IR.BasicBlock(l, grounds, AST.IR.Jump.Halt(pos))
+                  grounds = ISZ()
+                case _ =>
+              }
           }
           return None()
         case stmt: AST.IR.Stmt.Print =>
