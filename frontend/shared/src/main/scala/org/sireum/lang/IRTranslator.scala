@@ -567,8 +567,10 @@ object IRTranslator {
           case _ =>
         }
         val e = translateExp(stmt.exp)
-        if (e.tipe == AST.Typed.unit || e.tipe == AST.Typed.nothing) {
+        if (e.tipe == AST.Typed.unit || e.tipe == AST.Typed.nothing || norm3AC(e) == e) {
           stmts = stmts :+ AST.IR.Stmt.Expr(e.asInstanceOf[AST.IR.Exp.Apply])
+        } else {
+          halt("Infeasible")
         }
         fresh.setTemp(0)
       case stmt: AST.Stmt.Return =>
