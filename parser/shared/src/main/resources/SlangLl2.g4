@@ -25,17 +25,6 @@
 // Edit using ANTLRWorks from: https://github.com/sireum/antlrworks/releases
 grammar SlangLl2;
 
-options {
-  output = AST;
-  ASTLabelType = Object;
-  k = 2;
-}
-
-@header { package org.sireum.lang.parser.antlrv3; }
-
-@lexer::header { package org.sireum.lang.parser.antlrv3; }
-
-
 file: program EOF ;
 
 expFile: annot? exp EOF ;
@@ -289,10 +278,10 @@ REAL: ( '0' | '-'? '1'..'9' ( DIGIT | '_' )* ) ( '.' DIGIT ( DIGIT | '_' )* EXPO
 
 CHAR: '\'' ( ESC_SEQ | ~('\''|'\\') ) '\'' ;
 
-COMMENT: '//' ~( '\n' | '\r' )* '\r'? '\n'           {$channel=HIDDEN;}
-       | '/*' ( ~'*' | '*' ~'/' )* ( '*/' | '**/' )  {$channel=HIDDEN;} ;
+COMMENT: ( '//' ~( '\n' | '\r' )* '\r'? '\n'
+         | '/*' ( ~'*' | '*' ~'/' )* ( '*/' | '**/' ) )  -> skip ;
 
-WS: ( ' ' | '\t' | '\r' | '\n' )+                    {$channel=HIDDEN;} ;
+WS: ( ' ' | '\t' | '\r' | '\n' )+                    -> skip ;
 
 fragment MSTRF:	~( '\n' | '\r' )* '\r'? '\n' ;
 
@@ -321,7 +310,7 @@ fragment EXPONENT: ( 'e' | 'E' ) ( '+' | '-' )? ( DIGIT | '_' )+ ;
 
 fragment HEX_DIGIT: ( DIGIT | 'a'..'f' | 'A'..'F' ) ;
 
-fragment ESC_SEQ: '\\' ( 'b' | 't' | 'n' | 'f' | 'r' | '\"' | '\'' | '\\' ) | UNICODE_ESC ;
+fragment ESC_SEQ: '\\' ( 'b' | 't' | 'n' | 'f' | 'r' | '"' | '\'' | '\\' ) | UNICODE_ESC ;
 
 fragment UNICODE_ESC: '\\' 'u' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT? ;
 
