@@ -1089,6 +1089,19 @@ class SlangParser(
   )
   val specDefnInv: Set[Predef.String] = specDefn + "Invariant"
 
+  def translateMethodContractBody(hasBody: B, enclosing: Enclosing.Type, isAssignExp: B, block: Term.Block): (AST.MethodContract, Option[AST.Body]) = {
+    val (mc, rest) = block.stats.headOption match {
+      case scala.Some(c@q"Contract(..$exprs)") => (translateMethodContract(exprs, attr(c.pos)), block.stats.tail)
+      case _ => (emptyContract, block.stats)
+    }
+    if (isDiet && !hasBody) {
+      return (mc, None())
+    }
+    return (mc, Some(AST.Body(
+      if (isAssignExp) translateStmtsExp(block.pos, rest)
+      else ISZ(rest.map(translateStat(enclosing)): _*), ISZ())))
+  }
+
   def translateDef(enclosing: Enclosing.Type, tree: Defn.Def): AST.Stmt = {
     val tparams = for (pcg <- tree.paramClauseGroups; tp <- pcg.tparamClause.values) yield tp
     if (tree.paramClauses.size <= 1 && tree.mods.exists({
@@ -1168,20 +1181,7 @@ class SlangParser(
 
       exp match {
         case exp: Term.Block if purity != AST.Purity.StrictPure && purity != AST.Purity.Abs =>
-          val (mc, bodyOpt) = exp.stats.headOption match {
-            case scala.Some(c@q"Contract(..$exprs)") =>
-              (
-                translateMethodContract(exprs, attr(c.pos)),
-                if (isDiet) None[AST.Body]()
-                else Some(bodyCheck(ISZ(exp.stats.tail.map(translateStat(Enclosing.Method)): _*), ISZ()))
-              )
-            case _ =>
-              (
-                emptyContract,
-                if (isDiet) None[AST.Body]()
-                else Some(bodyCheck(ISZ(exp.stats.map(translateStat(Enclosing.Method)): _*), ISZ()))
-              )
-          }
+          val (mc, bodyOpt) = translateMethodContractBody(false, Enclosing.Method, false, exp)
           AST.Stmt.Method(false, purity, mods, sig, mc, bodyOpt, resolvedAttr(tree.pos))
         case q"Contract.Only(..$exprs)" =>
           enclosing match {
@@ -2104,10 +2104,8 @@ class SlangParser(
     enclosing match {
       case Enclosing.Top | Enclosing.Object | Enclosing.DatatypeClass | Enclosing.RecordClass | Enclosing.Method |
           Enclosing.Block =>
-        val stmts =
-          if (isAssignExp) translateStmtsExp(stat.pos, stat.stats)
-          else ISZ(stat.stats.map(translateStat(Enclosing.Block)): _*)
-        AST.Stmt.Block(bodyCheck(stmts, ISZ()), attr(stat.pos))
+        val (mc, Some(body)) = translateMethodContractBody(true, Enclosing.Block, isAssignExp, stat)
+        AST.Stmt.Block(mc, body, attr(stat.pos))
       case _ =>
         if (isWorksheet)
           errorInSlang(
@@ -2119,7 +2117,7 @@ class SlangParser(
             stat.pos,
             "Code-blocks can only appear inside @datatype classes, @record classes, methods or other code blocks"
           )
-        AST.Stmt.Block(bodyCheck(ISZ(), ISZ()), emptyAttr)
+        AST.Stmt.Block(AST.MethodContract.Simple.empty, bodyCheck(ISZ(), ISZ()), emptyAttr)
     }
   }
 

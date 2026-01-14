@@ -3179,10 +3179,11 @@ import MTransformer._
           else
             MNone()
         case o2: Stmt.Block =>
-          val r0: MOption[Body] = transformBody(o2.body)
-          val r1: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(body = r0.getOrElse(o2.body), attr = r1.getOrElse(o2.attr)))
+          val r0: MOption[MethodContract] = transformMethodContract(o2.contract)
+          val r1: MOption[Body] = transformBody(o2.body)
+          val r2: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(contract = r0.getOrElse(o2.contract), body = r1.getOrElse(o2.body), attr = r2.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.If =>
@@ -4098,10 +4099,11 @@ import MTransformer._
       val hasChanged: B = preR.resultOpt.nonEmpty
       val rOpt: MOption[AssignExp] = o2 match {
         case o2: Stmt.Block =>
-          val r0: MOption[Body] = transformBody(o2.body)
-          val r1: MOption[Attr] = transformAttr(o2.attr)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(body = r0.getOrElse(o2.body), attr = r1.getOrElse(o2.attr)))
+          val r0: MOption[MethodContract] = transformMethodContract(o2.contract)
+          val r1: MOption[Body] = transformBody(o2.body)
+          val r2: MOption[Attr] = transformAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(contract = r0.getOrElse(o2.contract), body = r1.getOrElse(o2.body), attr = r2.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Stmt.If =>
@@ -5631,10 +5633,11 @@ import MTransformer._
     val r: MOption[Stmt.Block] = if (preR.continu) {
       val o2: Stmt.Block = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[Body] = transformBody(o2.body)
-      val r1: MOption[Attr] = transformAttr(o2.attr)
-      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-        MSome(o2(body = r0.getOrElse(o2.body), attr = r1.getOrElse(o2.attr)))
+      val r0: MOption[MethodContract] = transformMethodContract(o2.contract)
+      val r1: MOption[Body] = transformBody(o2.body)
+      val r2: MOption[Attr] = transformAttr(o2.attr)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+        MSome(o2(contract = r0.getOrElse(o2.contract), body = r1.getOrElse(o2.body), attr = r2.getOrElse(o2.attr)))
       else
         MNone()
     } else if (preR.resultOpt.nonEmpty) {

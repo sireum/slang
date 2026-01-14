@@ -653,6 +653,7 @@ object JSON {
     @pure def print_astStmtBlock(o: org.sireum.lang.ast.Stmt.Block): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Stmt.Block""""),
+        ("contract", print_astMethodContract(o.contract)),
         ("body", print_astBody(o.body)),
         ("attr", print_astAttr(o.attr))
       ))
@@ -3629,13 +3630,16 @@ object JSON {
       if (!typeParsed) {
         parser.parseObjectType("org.sireum.lang.ast.Stmt.Block")
       }
+      parser.parseObjectKey("contract")
+      val contract = parse_astMethodContract()
+      parser.parseObjectNext()
       parser.parseObjectKey("body")
       val body = parse_astBody()
       parser.parseObjectNext()
       parser.parseObjectKey("attr")
       val attr = parse_astAttr()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Stmt.Block(body, attr)
+      return org.sireum.lang.ast.Stmt.Block(contract, body, attr)
     }
 
     def parse_astStmtIf(): org.sireum.lang.ast.Stmt.If = {

@@ -2551,12 +2551,13 @@ import Transformer._
           else
             TPostResult(r2.ctx, None())
         case o2: Stmt.Block =>
-          val r0: TPostResult[Context, Body] = transformBody(preR.ctx, o2.body)
-          val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(body = r0.resultOpt.getOrElse(o2.body), attr = r1.resultOpt.getOrElse(o2.attr))))
+          val r0: TPostResult[Context, MethodContract] = transformMethodContract(preR.ctx, o2.contract)
+          val r1: TPostResult[Context, Body] = transformBody(r0.ctx, o2.body)
+          val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(contract = r0.resultOpt.getOrElse(o2.contract), body = r1.resultOpt.getOrElse(o2.body), attr = r2.resultOpt.getOrElse(o2.attr))))
           else
-            TPostResult(r1.ctx, None())
+            TPostResult(r2.ctx, None())
         case o2: Stmt.If =>
           val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.cond)
           val r1: TPostResult[Context, Body] = transformBody(r0.ctx, o2.thenBody)
@@ -3470,12 +3471,13 @@ import Transformer._
       val hasChanged: B = preR.resultOpt.nonEmpty
       val rOpt: TPostResult[Context, AssignExp] = o2 match {
         case o2: Stmt.Block =>
-          val r0: TPostResult[Context, Body] = transformBody(preR.ctx, o2.body)
-          val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(body = r0.resultOpt.getOrElse(o2.body), attr = r1.resultOpt.getOrElse(o2.attr))))
+          val r0: TPostResult[Context, MethodContract] = transformMethodContract(preR.ctx, o2.contract)
+          val r1: TPostResult[Context, Body] = transformBody(r0.ctx, o2.body)
+          val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(contract = r0.resultOpt.getOrElse(o2.contract), body = r1.resultOpt.getOrElse(o2.body), attr = r2.resultOpt.getOrElse(o2.attr))))
           else
-            TPostResult(r1.ctx, None())
+            TPostResult(r2.ctx, None())
         case o2: Stmt.If =>
           val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.cond)
           val r1: TPostResult[Context, Body] = transformBody(r0.ctx, o2.thenBody)
@@ -5003,12 +5005,13 @@ import Transformer._
     val r: TPostResult[Context, Stmt.Block] = if (preR.continu) {
       val o2: Stmt.Block = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: TPostResult[Context, Body] = transformBody(preR.ctx, o2.body)
-      val r1: TPostResult[Context, Attr] = transformAttr(r0.ctx, o2.attr)
-      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-        TPostResult(r1.ctx, Some(o2(body = r0.resultOpt.getOrElse(o2.body), attr = r1.resultOpt.getOrElse(o2.attr))))
+      val r0: TPostResult[Context, MethodContract] = transformMethodContract(preR.ctx, o2.contract)
+      val r1: TPostResult[Context, Body] = transformBody(r0.ctx, o2.body)
+      val r2: TPostResult[Context, Attr] = transformAttr(r1.ctx, o2.attr)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+        TPostResult(r2.ctx, Some(o2(contract = r0.resultOpt.getOrElse(o2.contract), body = r1.resultOpt.getOrElse(o2.body), attr = r2.resultOpt.getOrElse(o2.attr))))
       else
-        TPostResult(r1.ctx, None())
+        TPostResult(r2.ctx, None())
     } else if (preR.resultOpt.nonEmpty) {
       TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
     } else {

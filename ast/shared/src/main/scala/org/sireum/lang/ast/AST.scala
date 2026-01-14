@@ -524,7 +524,7 @@ object Stmt {
     @strictpure def compNum: Z = 1 + rhs.asStmt.compNum
   }
 
-  @datatype class Block(val body: Body, @hidden val attr: Attr) extends Stmt with AssignExp {
+  @datatype class Block(val contract: MethodContract, val body: Body, @hidden val attr: Attr) extends Stmt with AssignExp {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure override def asAssignExp: AssignExp = this
     @strictpure override def asStmt: Stmt = this

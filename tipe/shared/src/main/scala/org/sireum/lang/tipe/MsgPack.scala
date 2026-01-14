@@ -937,6 +937,7 @@ object MsgPack {
 
     def write_astStmtBlock(o: org.sireum.lang.ast.Stmt.Block): Unit = {
       writer.writeZ(Constants._astStmtBlock)
+      write_astMethodContract(o.contract)
       write_astBody(o.body)
       write_astAttr(o.attr)
     }
@@ -3099,9 +3100,10 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astStmtBlock)
       }
+      val contract = read_astMethodContract()
       val body = read_astBody()
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.Block(body, attr)
+      return org.sireum.lang.ast.Stmt.Block(contract, body, attr)
     }
 
     def read_astStmtIf(): org.sireum.lang.ast.Stmt.If = {
