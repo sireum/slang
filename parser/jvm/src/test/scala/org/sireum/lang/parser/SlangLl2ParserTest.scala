@@ -57,14 +57,14 @@ class SlangLl2ParserTest extends SireumRcSpec {
           println(ll2)
           SlangLl2ParserUtil.parse(uriOpt, ll2, reporter)
         } catch {
-          case _: Throwable =>
+          case _: Throwable => return false
         }
       case _ =>
     }
     if (reporter.hasIssue) {
       reporter.printMessages()
     }
-    T
+    !reporter.hasError
   }
 
 }

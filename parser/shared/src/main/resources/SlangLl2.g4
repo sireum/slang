@@ -80,7 +80,7 @@ annot: AT LSQUARE args? RSQUARE ;
 
 varDefn: VAR mod* ID COLON type annot? ( ASSIGN annot? rhs )? ;
 
-defDefn: DEF typeParams? mod* defId defParams? COLON type annot? ( ASSIGN annot? rhs )? ;
+defDefn: DEF typeParams? mod* defId defParams? ( COLON type annot? )? ( ASSIGN annot? rhs )? ;
 
 defId: ID | OP | SYMBOL ;
 
@@ -93,7 +93,7 @@ defParamSuffix: COMMA ( TO defParam
 
 stmt: expOrAssignStmt | varPattern | ifStmt | whileStmt | forStmt | deduceStmt | matchStmt | defStmt ;
 
-defStmt: DEF typeParams? mod* defId defParams? COLON type annot? ASSIGN annot? rhs ;
+defStmt: DEF typeParams? mod* defId defParams? ( COLON type annot? )? ( ASSIGN annot? rhs )? ;
 
 expOrAssignStmt: ID ( annot
                     | ASSIGN annot? rhs
@@ -142,7 +142,7 @@ exp3: exp2 infixSuffix* condSuffix? ;
 
 infixSuffix: ( OP | SYMBOL ) exp2 ;
 
-exp2: exp1 access* ;
+exp2: exp1 access* UNDERSCORE? ;
 
 exp1: OP? ( exp0 | paren ) ;
 
@@ -180,7 +180,7 @@ deduceStmt: DEDUCE ( truthTable
 
 expJustOpt: exp just? ;
 
-proofStep: proofId DOT ( exp just | subProof ) ;
+proofStep: proofId DOT ( exp just? | subProof ) ;
 
 subProof: LBRACE freshIds* proofStep+ RBRACE ;
 
@@ -188,7 +188,7 @@ freshIds: ID ( COMMA ID)* ( COLON type )? ;
 
 proofId: INT | STRING ;
 
-just: name ( LPAREN args RPAREN )? ( LSQUARE proofId ( COMMA proofId )* RSQUARE )? ;
+just: name ( ( LSQUARE type (COMMA type)* RSQUARE )? LPAREN args RPAREN )? ( LSQUARE proofId ( COMMA proofId )* RSQUARE )? ;
 
 sequent: ( exp ( COMMA exp )* )? SEQUENT exp ;
 

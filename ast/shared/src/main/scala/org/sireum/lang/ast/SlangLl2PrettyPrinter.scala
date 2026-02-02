@@ -70,7 +70,14 @@ object SlangLl2PrettyPrinter {
         case right: AST.Exp.Binary => Some(right.op)
         case _ => None()
       }
-      AST.Exp.Binary.prettyST(o.op, o.isRightAssoc, printExp(o.left), leftOpOpt, o.left.isInstanceOf[AST.Exp.If],
+      val op: String = o.op match {
+        case string"->:" => "->"
+        case string"-->:" => "-->"
+        case string"__>:" => "->"
+        case string"___>:" => "-->"
+        case _ => o.op
+      }
+      AST.Exp.Binary.prettyST(op, o.isRightAssoc, printExp(o.left), leftOpOpt, o.left.isInstanceOf[AST.Exp.If],
         printExp(o.right), rightOpOpt, o.right.isInstanceOf[AST.Exp.If])
     }
     @strictpure def printExp(o: AST.Exp): ST = o match {
@@ -97,9 +104,9 @@ object SlangLl2PrettyPrinter {
       case o: AST.Exp.LitZ => o.prettyST
       case o: AST.Exp.LoopIndex => halt(s"TODO: $o")
       case o: AST.Exp.Old => st"Old(${printExp(o.exp)})"
-      case o: AST.Exp.QuantEach => halt(s"TODO: $o")
-      case o: AST.Exp.QuantRange => halt(s"TODO: $o")
-      case o: AST.Exp.QuantType => halt(s"TODO: $o")
+      case o: AST.Exp.QuantEach => st"${if (o.isForall) "∀" else "∃"} ${(for (p <- o.fun.params) yield st"${p.idOpt.get.value}: ${printExp(o.seq)}", ", ")} => ${printAssignExp(o.fun.exp)}"
+      case o: AST.Exp.QuantRange => st"${if (o.isForall) "∀" else "∃"} ${(for (p <- o.fun.params) yield st"${p.idOpt.get.value}: ${printExp(o.lo)} ${if (o.hiExact) ".." else "..<"} ${printExp(o.hi)}", ", ")} => ${printAssignExp(o.fun.exp)}"
+      case o: AST.Exp.QuantType => st"${if (o.isForall) "∀" else "∃"} ${(for (p <- o.fun.params) yield st"${p.idOpt.get.value}: ${printType(p.tipeOpt.get)}", ", ")} => ${printAssignExp(o.fun.exp)}"
       case _: AST.Exp.Result => st"Res"
       case o: AST.Exp.RS => halt(s"TODO: $o")
       case o: AST.Exp.Select => st"${if (o.receiverOpt.isEmpty) st"" else st"${printExp(o.receiverOpt.get)}."}${o.id.value}${if (o.targs.isEmpty) st"" else st"[${(for (t <- o.targs) yield printType(t), ", ")}]"}"
@@ -125,7 +132,7 @@ object SlangLl2PrettyPrinter {
       case o: AST.ProofAst.StepId.Str => o.prettyST
     }
     @strictpure def printAssignExp(o: AST.AssignExp): ST = printStmt(T, o.asStmt)
-    @strictpure def printWitneses(o: AST.ProofAst.Step.Justification): ST = if (o.hasWitness) st" [${(for (w <- o.witnesses) yield w.prettyST, ", ")}]" else st""
+    @strictpure def printWitneses(o: AST.ProofAst.Step.Justification): ST = if (o.hasWitness && o.witnesses.nonEmpty) st" [${(for (w <- o.witnesses) yield w.prettyST, ", ")}]" else st""
     @strictpure def printJust(o: AST.ProofAst.Step.Justification): ST = o match {
       case o: AST.ProofAst.Step.Justification.Apply => st"${printExp(o.invoke)}${printWitneses(o)}"
       case o: AST.ProofAst.Step.Justification.ApplyEta => st"${printExp(o.eta)}${printWitneses(o)}"
@@ -161,7 +168,7 @@ object SlangLl2PrettyPrinter {
         case _ =>
           st""" else {
               |  ${(for (stmt <- elseBody.stmts) yield printStmt(F, stmt), lineSep)}
-              }"""
+              |}"""
       }
     }
     @strictpure def printPurity(o: AST.Purity.Type): ST = o match {
@@ -218,7 +225,17 @@ object SlangLl2PrettyPrinter {
       case o: AST.Stmt.Enum => halt(s"TODO: $o")
       case o: AST.Stmt.Expr => if (!isExp && shouldAddDo(o.exp)) st"do ${printExp(o.exp)}" else printExp(o.exp)
       case o: AST.Stmt.ExtMethod => halt(s"TODO: $o")
-      case o: AST.Stmt.Fact => halt(s"TODO: $o")
+      case o: AST.Stmt.Fact =>
+        val tparams: ST = printTypeParams(o.typeParams)
+        val (params, claims): (ST, ISZ[ST]) = if (o.isFun) {
+          val first = o.claims(0).asInstanceOf[AST.Exp.Quant]
+          (st"(${(for (p <- first.fun.params) yield st"${p.idOpt.get.value}: ${printType(p.tipeOpt.get)}", ", ")})", ISZ(printAssignExp(first.fun.exp)))
+        } else {
+          (st"", for (claim <- o.claims) yield printExp(claim))
+        }
+        st"""def ${if (o.typeParams.nonEmpty) st"$tparams " else st""}@fact ${o.id.value}$params = (
+            |  ${(claims, ",\n")}
+            |)"""
       case o: AST.Stmt.For => halt(s"TODO: $o")
       case o: AST.Stmt.Havoc => halt(s"TODO: $o")
       case o: AST.Stmt.If =>
@@ -251,7 +268,10 @@ object SlangLl2PrettyPrinter {
       case o: AST.Stmt.Sig => halt(s"TODO: $o")
       case o: AST.Stmt.SpecBlock => halt(s"TODO: $o")
       case o: AST.Stmt.SpecLabel => halt(s"TODO: $o")
-      case o: AST.Stmt.SpecMethod => halt(s"TODO: $o")
+      case o: AST.Stmt.SpecMethod =>
+        val tparams: ST = printTypeParams(o.sig.typeParams)
+        val params: ST = printParams(o.sig.hasParams, o.sig.params)
+        st"def @spec ${o.sig.id.value}$tparams$params: ${printType(o.sig.returnType)}"
       case o: AST.Stmt.SpecVar => halt(s"TODO: $o")
       case o: AST.Stmt.SubZ => halt(s"TODO: $o")
       case o: AST.Stmt.Theorem => halt(s"TODO: $o")
