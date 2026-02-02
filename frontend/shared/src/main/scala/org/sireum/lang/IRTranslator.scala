@@ -679,10 +679,23 @@ object IRTranslator {
     }
   }
 
+  @strictpure def isHalt(stmt: AST.Stmt.Expr): B = stmt match {
+    case AST.Stmt.Expr(e: AST.Exp.Invoke) =>
+      e.attr.resOpt.get match {
+        case res: AST.ResolvedInfo.BuiltIn if res.kind == AST.ResolvedInfo.BuiltIn.Kind.Halt => T
+        case _ => F
+      }
+    case _ => F
+  }
+
   def translateAssignExp(stmt: AST.AssignExp, local: (String, AST.Typed)): Unit = {
     val pos = stmt.asStmt.posOpt.get
     stmt match {
       case stmt: AST.Stmt.Expr =>
+        if (isHalt(stmt)) {
+          translateStmt(stmt, Some(local))
+          return
+        }
         val exp = translateExp(stmt.exp)
         stmts = stmts :+ AST.IR.Stmt.Assign.Local(methodContext, local._1, local._2, exp, pos)
       case _ => translateStmt(stmt.asStmt, Some(local))
@@ -971,7 +984,7 @@ object IRTranslator {
                 return norm3AC(AST.IR.Exp.Construct(exp.typedOpt.get.asInstanceOf[AST.Typed.Name], args, pos))
               case _ => halt(s"TODO: $exp")
             }
-          case _ => halt(s"TODO: $exp")
+          case res => halt(s"TODO: $exp (res: $res)")
         }
       case exp: AST.Exp.InvokeNamed =>
         exp.attr.resOpt.get match {
