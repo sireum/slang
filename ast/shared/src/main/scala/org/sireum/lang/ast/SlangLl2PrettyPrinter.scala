@@ -132,7 +132,7 @@ object SlangLl2PrettyPrinter {
       case o: AST.ProofAst.StepId.Str => o.prettyST
     }
     @strictpure def printAssignExp(o: AST.AssignExp): ST = printStmt(T, o.asStmt)
-    @strictpure def printWitneses(o: AST.ProofAst.Step.Justification): ST = if (o.hasWitness && o.witnesses.nonEmpty) st" [${(for (w <- o.witnesses) yield w.prettyST, ", ")}]" else st""
+    @strictpure def printWitneses(o: AST.ProofAst.Step.Justification): ST = if (o.hasWitness) st" <${(for (w <- o.witnesses) yield w.prettyST, ", ")}>" else st""
     @strictpure def printJust(o: AST.ProofAst.Step.Justification): ST = o match {
       case o: AST.ProofAst.Step.Justification.Apply => st"${printExp(o.invoke)}${printWitneses(o)}"
       case o: AST.ProofAst.Step.Justification.ApplyEta => st"${printExp(o.eta)}${printWitneses(o)}"
@@ -157,7 +157,12 @@ object SlangLl2PrettyPrinter {
       st"""deduce {
           |  ${(for (step <- o.steps) yield printProofStep(step), lineSep)}
           |}"""
-    @strictpure def shouldAddDo(o: AST.Exp): B = T
+    @strictpure def shouldAddDo(o: AST.Exp): B = o match {
+      case _: AST.Exp.Invoke => F
+      case _: AST.Exp.InvokeNamed => F
+      case _: AST.Exp.Select => F
+      case _ => T
+    }
     @strictpure def printIfElse(elseBody: AST.Body): ST = {
       elseBody.stmts match {
         case ISZ() => st""

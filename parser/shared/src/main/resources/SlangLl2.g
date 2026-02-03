@@ -151,7 +151,7 @@ exp: exp3 | forExp | defAnon | quant ;
 
 exp3: exp2 infixSuffix* condSuffix? ;
 
-infixSuffix: ( OP | SYMBOL ) exp2 ;
+infixSuffix: ( OP | SYMBOL | LANGLE | RANGLE | LRANGLE ) exp2 ;
 
 exp2: exp1 access* UNDERSCORE? ;
 
@@ -199,7 +199,13 @@ freshIds: ID ( COMMA ID)* ( COLON type )? ;
 
 proofId: INT | STRING ;
 
-just: name ( ( LSQUARE type (COMMA type)* RSQUARE )? LPAREN args RPAREN )? ( LSQUARE proofId ( COMMA proofId )* RSQUARE )? ;
+just: name justArgs? justWitnesses? ;
+
+justArgs: justTypeArgs? LPAREN args RPAREN ;
+
+justTypeArgs: LSQUARE type (COMMA type)* RSQUARE ;
+
+justWitnesses: LRANGLE | LANGLE ( proofId ( COMMA proofId )* )? RANGLE ;
 
 sequent: ( exp ( COMMA exp )* )? SEQUENT exp ;
 
@@ -243,7 +249,8 @@ ALL:        '∀'           ; ARROW:      '=>'          ; ASSIGN:     '='       
 COMMA:      ','           ; COLON:      ':'           ; DOT:        '.'           ; UNDERSCORE: '_'           ;
 LBRACE:     '{'           ; LPAREN:     '('           ; LSQUARE:    '['           ; QUESTION:   '?'           ;
 RBRACE:     '}'           ; RPAREN:     ')'           ; RSQUARE:    ']'           ; SEQUENT:    '⊢' | '|-'    ;
-SOME:       '∃'           ; TO:         '..'          ; UNTIL:      '..<'         ;
+SOME:       '∃'           ; TO:         '..'          ; UNTIL:      '..<'         ; LANGLE:     '<'           ;
+RANGLE:     '>'           ; LRANGLE:    '<>'          ;
 
 CASE:       'case'        ; DEDUCE:     'deduce'      ; DEF:        'def'         ; DO:         'do'          ;
 FALSE:      'false'       ; ELSE:       'else'        ; FOR:        'for'         ; TYPE:       'type'        ;

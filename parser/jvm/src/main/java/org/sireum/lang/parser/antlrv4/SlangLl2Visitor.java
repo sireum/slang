@@ -437,6 +437,24 @@ public interface SlangLl2Visitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitJust(SlangLl2Parser.JustContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link SlangLl2Parser#justArgs}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitJustArgs(SlangLl2Parser.JustArgsContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link SlangLl2Parser#justTypeArgs}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitJustTypeArgs(SlangLl2Parser.JustTypeArgsContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link SlangLl2Parser#justWitnesses}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitJustWitnesses(SlangLl2Parser.JustWitnessesContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link SlangLl2Parser#sequent}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
