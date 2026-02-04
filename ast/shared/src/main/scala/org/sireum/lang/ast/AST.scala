@@ -1191,6 +1191,11 @@ object ProofAst {
           case ref: Exp.Select => ref.id
           case _ => halt("Infeasible")
         }
+        @strictpure def typeArgs: ISZ[Type] = ref match {
+          case ref: Exp.Ident => ISZ()
+          case ref: Exp.Select => ref.targs
+          case _ => halt("Infeasible")
+        }
         @strictpure def isOwnedBy(name: ISZ[String]): B = {
           ref match {
             case ref: Exp.Ident => ref.attr.resOpt.get.asInstanceOf[ResolvedInfo.Method].owner == name

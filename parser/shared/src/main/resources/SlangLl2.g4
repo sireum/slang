@@ -64,7 +64,7 @@ args: annot? rhs argSuffix* | namedArg namedArgSuffix* ;
 argSuffix: COMMA annot? rhs ;
 
 namedArgSuffix: COMMA namedArg ;
-    
+
 namedArg: ID ASSIGN annot? rhs ;
 
 name: ID nameSuffix* ;
@@ -161,7 +161,9 @@ forStmt: FOR forRange+ block ;
 
 forRange: ID COLON exp rangeSuffix? annot? ;
 
-rangeSuffix: ( TO |  UNTIL ) exp commaExp? ;
+rangeSuffix: ( TO |  UNTIL ) exp byExp? ;
+
+byExp: BY exp ;
 
 commaExp: COMMA exp ;
 
@@ -193,7 +195,7 @@ exp3: exp2 infixSuffix* condSuffix? ;
 
 infixSuffix: infixOp exp2 ;
 
-infixOp: OP | SYMBOL | LANGLE | RANGLE | LRANGLE ;
+infixOp: OP | SYMBOL | LANGLE | RANGLE | LRANGLE | STAR ;
 
 exp2: exp1 access* eta? ;
 
@@ -203,7 +205,7 @@ exp1: OP? ( exp0 | paren ) ;
 
 exp0: idExp | thisExp | superExp | lit | interp ;
 
-idExp: ID ;
+idExp: ID typeArgs? ;
 
 thisExp: THIS ;
 
@@ -259,9 +261,13 @@ deduceStmt: DEDUCE ( truthTable | proof | sequent | expProof ) ;
 
 proof: LBRACE proofStep* RBRACE ;
 
-sequent: COLON ( exp commaExp* )? SEQUENT exp ( LBRACE proofStep* RBRACE )? ;
+sequent: COLON exps? SEQUENT exp proof? ;
 
-expProof: LPAREN expJustOpt ( COMMA expJustOpt )* RPAREN ;
+exps: exp commaExp* ;
+
+expProof: LPAREN expJustOpt commaExpJustOpt* RPAREN ;
+
+commaExpJustOpt: COMMA expJustOpt ;
 
 expJustOpt: exp just? ;
 
@@ -273,21 +279,19 @@ freshIds: ID commaId* colonType? ;
 
 proofId: INT | STRING ;
 
-just: name justArgs? justWitnesses? ;
+just: BY name justTypeArgs? justArgs? proofId* DOT ;
 
-justArgs: justTypeArgs? LPAREN args RPAREN ;
+justArgs: LPAREN args RPAREN ;
 
 justTypeArgs: LSQUARE type commaType* RSQUARE ;
 
 commaType: COMMA type ;
 
-justWitnesses: LRANGLE | LANGLE proofIds? RANGLE ;
-
 proofIds: proofId commaProofId* ;
 
 commaProofId: COMMA proofId ;
 
-truthTable: OP+                      // OP = *
+truthTable: STAR+
             HLINE
             ID+ colonExp+
             HLINE
@@ -348,13 +352,13 @@ COMMA:      ','           ; COLON:      ':'           ; DOT:        '.'         
 LBRACE:     '{'           ; LPAREN:     '('           ; LSQUARE:    '['           ; QUESTION:   '?'           ;
 RBRACE:     '}'           ; RPAREN:     ')'           ; RSQUARE:    ']'           ; SEQUENT:    '⊢' | '|-'    ;
 SOME:       '∃'           ; TO:         '..'          ; UNTIL:      '..<'         ; LANGLE:     '<'           ;
-RANGLE:     '>'           ; LRANGLE:    '<>'          ;
+RANGLE:     '>'           ; LRANGLE:    '<>'          ; STAR:       '*'           ;
 
 CASE:       'case'        ; DEDUCE:     'deduce'      ; DEF:        'def'         ; DO:         'do'          ;
 FALSE:      'false'       ; ELSE:       'else'        ; FOR:        'for'         ; TYPE:       'type'        ;
 IF:         'if'          ; IMPORT:     'import'      ; MATCH:      'match'       ; PACKAGE:    'package'     ;
 RETURN:     'return'      ; SUPER:      'super'       ; THIS:       'this'        ; TRUE:       'true'        ; 
-WHILE:      'while'       ; YIELD:      'yield'       ; VAR:        'val' | 'var' ;
+WHILE:      'while'       ; YIELD:      'yield'       ; VAR:        'val' | 'var' ; BY:         'by'          ;
 
 SYMBOL: '\\' IDF ;
 

@@ -132,12 +132,47 @@ object SlangLl2PrettyPrinter {
       case o: AST.ProofAst.StepId.Str => o.prettyST
     }
     @strictpure def printAssignExp(o: AST.AssignExp): ST = printStmt(T, o.asStmt)
-    @strictpure def printWitneses(o: AST.ProofAst.Step.Justification): ST = if (o.hasWitness) st" <${(for (w <- o.witnesses) yield w.prettyST, ", ")}>" else st""
+    @strictpure def printWitnesses(o: AST.ProofAst.Step.Justification): ST = if (o.hasWitness) st" ${(for (w <- o.witnesses) yield w.prettyST, " ")}." else st"."
+    @strictpure def isNatDedId(id: String): B = id match {
+      case string"Subst_>" => T
+      case string"Subst_<" => T
+      case string"AndI" => T
+      case string"AndE1" => T
+      case string"AndE2" => T
+      case string"OrI1" => T
+      case string"OrI2" => T
+      case string"OrE" => T
+      case string"ImplyI" => T
+      case string"ImplyE" => T
+      case string"NegI" => T
+      case string"NegE" => T
+      case string"BottomE" => T
+      case string"PbC" => T
+      case string"SAndI" => T
+      case string"SAndE1" => T
+      case string"SAndE2" => T
+      case string"SOrI1" => T
+      case string"SOrI2" => T
+      case string"SOrE" => T
+      case string"SImplyI" => T
+      case string"SImplyE" => T
+      case string"AllI" => T
+      case string"AllE" => T
+      case string"ExistsI" => T
+      case string"ExistsE" => T
+      case _ => F
+    }
+    @strictpure def printTypeArgs(args: ISZ[AST.Type]): ST = if (args.isEmpty) st"" else st"[${(for (t <- args) yield printType(t), ", ")}]"
+    @strictpure def printJustExp(o: AST.Exp): ST = o match {
+      case o: AST.Exp.Invoke if isNatDedId(o.ident.id.value) =>
+        st"${o.ident.id.value}${printTypeArgs(o.targs)} ${(for (arg <- o.args) yield printExp(arg), " ")}"
+      case _ => printExp(o)
+    }
     @strictpure def printJust(o: AST.ProofAst.Step.Justification): ST = o match {
-      case o: AST.ProofAst.Step.Justification.Apply => st"${printExp(o.invoke)}${printWitneses(o)}"
-      case o: AST.ProofAst.Step.Justification.ApplyEta => st"${printExp(o.eta)}${printWitneses(o)}"
-      case o: AST.ProofAst.Step.Justification.ApplyNamed => st"${printExp(o.invoke)}${printWitneses(o)}"
-      case o: AST.ProofAst.Step.Justification.Ref => st"${printExp(o.ref.asExp)}${printWitneses(o)}"
+      case o: AST.ProofAst.Step.Justification.Apply => st"by ${printJustExp(o.invoke)}${printWitnesses(o)}"
+      case o: AST.ProofAst.Step.Justification.ApplyEta => st"by ${printExp(o.eta)}${printWitnesses(o)}"
+      case o: AST.ProofAst.Step.Justification.ApplyNamed => st"by ${printExp(o.invoke)}${printWitnesses(o)}"
+      case o: AST.ProofAst.Step.Justification.Ref => st"by ${printJustExp(o.ref.asExp)}${printWitnesses(o)}"
     }
     @strictpure def printProofStep(o: AST.ProofAst.Step): ST = o match {
       case o: AST.ProofAst.Step.Assert => st"${o.id.prettyST}. assert(${printExp(o.claim)})"
