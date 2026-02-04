@@ -44,11 +44,19 @@ stmtFile: annot? stmt EOF ;
 
 program: annot? imprt* mainMember* pkg* ;
 
-imprt: IMPORT ID ( DOT importSuffix )? ;
+imprt: IMPORT ID importIdSuffix? ;
 
-importSuffix: UNDERSCORE annot?
-            | ID ( annot | DOT importSuffix )?
-            | LBRACE importRename ( COMMA importRename )* RBRACE ;
+importIdSuffix: DOT ( importWildcardSuffix | importQualSuffix | importRenamesSuffix ) ;
+
+importWildcardSuffix: UNDERSCORE annot? ;
+
+importQualSuffix: ID importIdSuffix? ;
+
+importRenamesSuffix: LBRACE importRename importRenameSuffix* RBRACE ;
+
+importIdDotIdSuffix: annot | importIdSuffix ;
+
+importRenameSuffix: COMMA importRename ;
 
 importRename: ID ARROW ID annot? ;
 
@@ -62,36 +70,59 @@ member: varDefn | defDefn | typeDefn | init ;
 
 mod: AT ID ( LSQUARE args RSQUARE )? ;
 
-args: annot? rhs ( COMMA annot? rhs )*
-    | namedArg ( COMMA namedArg )* ;
-    
+args: annot? rhs argSuffix* | namedArg namedArgSuffix* ;
+
+argSuffix: COMMA annot? rhs ;
+
+namedArgSuffix: COMMA namedArg ;
+
 namedArg: ID ASSIGN annot? rhs ;
 
-name: ID ( DOT ID )* ;
+name: ID nameSuffix* ;
 
-typeDefn: TYPE typeParams? mod* ID ( COLON enumMembers
-                                   | ASSIGN type
-                                   | params? supers? annot? ( LBRACE member* RBRACE )? ) ;
+nameSuffix: DOT ID ;
 
-typeParams: LSQUARE typeParam ( COMMA typeParam )* RSQUARE ;
+typeDefn: TYPE typeParams? mod* ID ( typeDefnEnumSuffix | typeDefnAliasSuffix | typeDefnAdtSuffix ) ;
+
+typeDefnEnumSuffix: COLON enumMembers ;
+
+typeDefnAliasSuffix: ASSIGN type ;
+
+typeDefnAdtSuffix: params? supers? annot? typeDefnAdtMembers? ;
+
+typeDefnAdtMembers: LBRACE member* RBRACE ;
+
+typeParams: LSQUARE typeParam typeParamSuffix* RSQUARE ;
+
+typeParamSuffix: COMMA typeParam ;
 
 typeParam: mod* ID ;
 
-enumMembers: LBRACE ID ( COMMA ID )* RBRACE ;
+enumMembers: LBRACE ID commaId* RBRACE ;
 
-params: LPAREN param ( COMMA param )* RPAREN ;
+commaId: COMMA ID ;
+
+params: LPAREN param commaParams* RPAREN ;
+
+commaParams: COMMA param ;
 
 param: VAR? mod* ID COLON ARROW? type ;
 
-supers: COLON supr ( COMMA supr )* ;
+supers: COLON supr commaSuper* ;
+
+commaSuper: COMMA supr ;
 
 supr: annot? name typeArgs? ;
 
 annot: AT LSQUARE args? RSQUARE ;
 
-varDefn: VAR mod* ID COLON type annot? ( ASSIGN annot? rhs )? ;
+varDefn: VAR mod* ID COLON type annot? assignSuffix? ;
 
-defDefn: DEF typeParams? mod* defId defParams? ( COLON type annot? )? ( ASSIGN annot? rhs )? ;
+assignSuffix: ASSIGN annot? rhs ;
+
+defDefn: DEF typeParams? mod* defId defParams? defnTypeSuffix? assignSuffix? ;
+
+defnTypeSuffix: COLON type annot? ;
 
 defId: ID | OP | SYMBOL ;
 
@@ -99,18 +130,25 @@ defParams: LPAREN defParam defParamSuffix? RPAREN ;
 
 defParam: mod* ID COLON type ;
 
-defParamSuffix: COMMA ( TO defParam
-                      | defParam defParamSuffix? ) ;
+defParamSuffix: COMMA ( defParamSuffixVarargs | defParam defParamSuffix? ) ;
+
+defParamSuffixVarargs: TO defParam ;
 
 stmt: expOrAssignStmt | varPattern | ifStmt | whileStmt | forStmt | deduceStmt | matchStmt | defStmt ;
 
-defStmt: DEF typeParams? mod* defId defParams? ( COLON type annot? )? ( ASSIGN annot? rhs )? ;
+defStmt: DEF typeParams? mod* defId defParams? defnTypeSuffix? assignSuffix? ;
 
-expOrAssignStmt: ID ( annot
-                    | ASSIGN annot? rhs
-                    | COLON annot? )?
-               | exp0 access+ annot? ( ASSIGN annot? rhs )?
-               | DO annot? ( exp | mod* block ) ;
+expOrAssignStmt: idStmt | expStmt | doStmt ;
+
+idStmt: ID idStmtSuffix? ;
+
+idStmtSuffix: annot | assignSuffix | labelSuffix ;
+
+labelSuffix: COLON annot? ;
+
+expStmt: exp0 access+ annot? assignSuffix? ;
+
+doStmt: DO annot? ( exp | mod* block ) ;
 
 varPattern: VAR pattern ASSIGN annot? rhs ;
 
@@ -124,70 +162,117 @@ blockContent: stmt* ret? ;
 
 ret: RETURN annot? rhs? ;
 
-els: ELSE ( IF exp annot? block els?
-          | block                    ) ;
+els: ELSE ( elsIf | block ) ;
+
+elsIf: IF exp annot? block els? ;
 
 whileStmt: WHILE exp annot? block ;
 
 forStmt: FOR forRange+ block ;
 
-forRange: ID COLON exp ( ( TO |  UNTIL ) exp ( COMMA exp )? )? annot? ;
+forRange: ID COLON exp rangeSuffix? annot? ;
+
+rangeSuffix: ( TO |  UNTIL ) exp commaExp? ;
+
+commaExp: COMMA exp ;
 
 matchStmt: MATCH exp annot? LBRACE cas+ RBRACE ;
 
-pattern:  annot? ( lit
-                 | patterns
-                 | name patterns?
-                 | ID COLON type1
-                 | ID AT name patterns
-                 | UNDERSCORE ( COLON type1 )? ) ;
+pattern:  annot? ( lit | patterns | name patterns? | idTypePattern | idNamePattern | wildCardPattern ) ;
+
+idTypePattern: ID colonType1 ;
+
+colonType1: COLON type1 ;
+
+idNamePattern: ID AT name patterns ;
+
+wildCardPattern: UNDERSCORE colonType1? ;
 
 patterns: LPAREN patternsArg RPAREN ;
 
-patternsArg: pattern ( COMMA pattern )*
-	         | ID ASSIGN pattern ( COMMA ID ASSIGN pattern )* ;
+patternsArg: pattern commaPattern* | namedPattern commaNamedPattern* ;
+
+namedPattern: ID ASSIGN pattern ;
+
+commaPattern: COMMA pattern ;
+
+commaNamedPattern: COMMA ID ASSIGN pattern ;
 
 exp: exp3 | forExp | defAnon | quant ;
 
 exp3: exp2 infixSuffix* condSuffix? ;
 
-infixSuffix: ( OP | SYMBOL | LANGLE | RANGLE | LRANGLE ) exp2 ;
+infixSuffix: infixOp exp2 ;
 
-exp2: exp1 access* UNDERSCORE? ;
+infixOp: OP | SYMBOL | LANGLE | RANGLE | LRANGLE ;
+
+exp2: exp1 access* eta? ;
+
+eta: UNDERSCORE ;
 
 exp1: OP? ( exp0 | paren ) ;
 
-exp0: ID | THIS | SUPER | lit | interp ;
+exp0: idExp | thisExp | superExp | lit | interp ;
 
-condSuffix: QUESTION ( exp COLON exp
-                     | LBRACE cas+ RBRACE );
+idExp: ID ;
 
-access: DOT ID typeArgs? | LPAREN args? RPAREN fn? ;
+thisExp: THIS ;
 
-fn: LBRACE ARROW annot? ( blockContent | cas+ ) RBRACE ;
+superExp: SUPER ;
+
+condSuffix: QUESTION ( condIteSuffix | condMatchSuffix );
+
+condIteSuffix: exp COLON exp ;
+
+condMatchSuffix: LBRACE cas+ RBRACE ;
+
+access: fieldAccess | applyAccess ;
+
+fieldAccess: DOT ID typeArgs? ;
+
+applyAccess: LPAREN args? RPAREN fn? ;
+
+fn: LBRACE ARROW annot? fnBody RBRACE ;
+
+fnBody: blockContent | cas+ ;
 
 lit: TRUE | FALSE | INT | HEX | BIN | REAL | STRING |  MSTR /* | MSTRING */ ;
 
 paren: LPAREN annot? parenArgs RPAREN ;
 
-parenArgs
-	: exp annot? ( COMMA exp annot? )*
-	| ID ASSIGN exp annot? ( COMMA ID ASSIGN exp annot? )* ;
+parenArgs : exp annot? commaExpAnnot* | namedExpAnnot commaNamedExpAnnot* ;
 
-cas: CASE pattern ( IF exp )?  ARROW annot? blockContent ;
+namedExpAnnot: ID ASSIGN exp annot? ;
+
+commaExpAnnot: COMMA exp annot? ;
+
+commaNamedExpAnnot: COMMA ID ASSIGN exp annot? ;
+
+cas: CASE pattern casIf? ARROW annot? blockContent ;
+
+casIf: IF exp ;
 
 forExp: YIELD annot? forRange+ ARROW annot? rhs ;
 
-defAnon: DEF mod* defParams ( COLON type )? DOT annot? rhs ;
+defAnon: DEF mod* defParams colonType? DOT annot? rhs ;
+
+colonType: COLON type ;
 
 quant: ( ALL | SOME | SYMBOL ) quantRange+ ARROW annot? rhs ;
 
-quantRange: ( ID COMMA )* ID annot? COLON annot? exp ( ( TO |  UNTIL ) annot? exp )? ; // first exp can refer to a type
+quantRange: idComma* ID annot? COLON annot? exp quantRangeSuffix? ; // exp can refer to a type
 
-deduceStmt: DEDUCE ( truthTable
-                   | LBRACE proofStep* RBRACE
-                   | COLON sequent ( LBRACE proofStep* RBRACE )?
-                   | LPAREN expJustOpt ( COMMA expJustOpt )* RPAREN ) ;
+idComma: ID COMMA ;
+
+quantRangeSuffix: ( TO |  UNTIL ) annot? exp ;
+
+deduceStmt: DEDUCE ( truthTable | proof | sequent | expProof ) ;
+
+proof: LBRACE proofStep* RBRACE ;
+
+sequent: COLON ( exp commaExp* )? SEQUENT exp ( LBRACE proofStep* RBRACE )? ;
+
+expProof: LPAREN expJustOpt ( COMMA expJustOpt )* RPAREN ;
 
 expJustOpt: exp just? ;
 
@@ -195,7 +280,7 @@ proofStep: proofId DOT ( exp just? | subProof ) ;
 
 subProof: LBRACE freshIds* proofStep+ RBRACE ;
 
-freshIds: ID ( COMMA ID)* ( COLON type )? ;
+freshIds: ID commaId* colonType? ;
 
 proofId: INT | STRING ;
 
@@ -203,35 +288,58 @@ just: name justArgs? justWitnesses? ;
 
 justArgs: justTypeArgs? LPAREN args RPAREN ;
 
-justTypeArgs: LSQUARE type (COMMA type)* RSQUARE ;
+justTypeArgs: LSQUARE type commaType* RSQUARE ;
 
-justWitnesses: LRANGLE | LANGLE ( proofId ( COMMA proofId )* )? RANGLE ;
+commaType: COMMA type ;
 
-sequent: ( exp ( COMMA exp )* )? SEQUENT exp ;
+justWitnesses: LRANGLE | LANGLE proofIds? RANGLE ;
+
+proofIds: proofId commaProofId* ;
+
+commaProofId: COMMA proofId ;
 
 truthTable: OP+                      // OP = *
             HLINE
-            ID+ ( COLON exp )+
+            ID+ colonExp+
             HLINE
-            ID+ ( COLON ID+ )+       // ID consists only T or F
+            ID+ colonIds+            // ID consists only T or F
             HLINE
             truthTableConclusion? ;
 
-truthTableConclusion: LSQUARE ID RSQUARE ( LBRACE truthTableCase* RBRACE )? ;
+colonExp: COLON exp ;
 
-truthTableCase: CASE ID ARROW ( truthTableAssignment ( COMMA truthTableAssignment )* )? ;
+colonIds: COLON ID+ ;
+
+truthTableConclusion: LSQUARE ID RSQUARE truthTableCases? ;
+
+truthTableCases: LBRACE truthTableCase* RBRACE ;
+
+truthTableCase: CASE ID ARROW truthTableAssignments? ;
+
+truthTableAssignments: truthTableAssignment commaTruthTableAssignment* ;
 
 truthTableAssignment: ID+ ;
 
-type: type1 ( ARROW annot? type1 )* ;
+commaTruthTableAssignment: COMMA truthTableAssignment ;
 
-type1: LPAREN typeParenArgs RPAREN
-     | type0 ( ( OP | SYMBOL ) type0 )* ;
+type: type1 typeSuffix* ;
 
-typeParenArgs
-	:	annot? type ( COMMA annot? type )*
-	| ID ASSIGN annot? type ( COMMA ID ASSIGN annot? type )* ;
-	        
+typeSuffix: ARROW annot? type1 ;
+
+type1: parenType | type0 type0Suffix* ;
+
+parenType: LPAREN typeParenArgs RPAREN ;
+
+type0Suffix: ( OP | SYMBOL ) type0 ;
+
+typeParenArgs: annot? type commaAnnotType* | namedType commaNamedType* ;
+
+commaAnnotType: COMMA annot? type ;
+
+namedType: ID ASSIGN annot? type ;
+
+commaNamedType: COMMA ID ASSIGN annot? type ;
+
 type0: ID typeArgs? ;
 
 typeArgs: LSQUARE typeParenArgs RSQUARE ;
@@ -243,6 +351,7 @@ sinterp: exp ( SPM sinterp | SPE ) ;
 strinterp: exp ( MSTRPM sinterp | MSTRPE ) ;
 
 mstrinterp: exp ( MSTRPM mstrinterp | MSTRPE ) ;
+
 
 // Lexical definitions
 ALL:        '∀'           ; ARROW:      '=>'          ; ASSIGN:     '='           ; AT:         '@'           ;

@@ -55,6 +55,7 @@ class SlangLl2ParserTest extends SireumRcSpec {
         try {
           val ll2 = lang.ast.SlangLl2PrettyPrinter.prettyPrint(program).render
           println(ll2)
+          SlangLl2Parser.parse(uriOpt, ll2, reporter)
           SlangLl2ParserUtil.parse(uriOpt, ll2, reporter)
         } catch {
           case _: Throwable => return false
