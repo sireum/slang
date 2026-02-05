@@ -71,7 +71,7 @@ name: ID nameSuffix* ;
 
 nameSuffix: DOT ID ;
 
-typeDefn: TYPE typeParams? mod* ID ( typeDefnEnumSuffix | typeDefnAliasSuffix | typeDefnAdtSuffix ) ;
+typeDefn: TYPE mod* ID typeParams? ( typeDefnEnumSuffix | typeDefnAliasSuffix | typeDefnAdtSuffix ) ;
 
 typeDefnEnumSuffix: COLON enumMembers ;
 
@@ -109,7 +109,7 @@ varDefn: VAR mod* ID COLON type annot? assignSuffix? ;
 
 assignSuffix: ASSIGN annot? rhs ;
 
-defDefn: DEF typeParams? mod* defId defParams? defnTypeSuffix? assignSuffix? ;
+defDefn: DEF mod* defId typeParams? defParams? defnTypeSuffix? assignSuffix? ;
 
 defnTypeSuffix: COLON type annot? ;
 
@@ -125,7 +125,7 @@ defParamSuffixVarargs: TO defParam ;
 
 stmt: expOrAssignStmt | varPattern | ifStmt | whileStmt | forStmt | deduceStmt | matchStmt | defStmt ;
 
-defStmt: DEF typeParams? mod* defId defParams? defnTypeSuffix? assignSuffix? ;
+defStmt: DEF mod* defId typeParams? defParams? defnTypeSuffix? assignSuffix? ;
 
 expOrAssignStmt: idStmt | expStmt | doStmt ;
 
@@ -139,7 +139,7 @@ expStmt: exp0 access+ annot? assignSuffix? ;
 
 doStmt: DO annot? ( exp | mod* block ) ;
 
-varPattern: VAR pattern ASSIGN annot? rhs ;
+varPattern: VAR pattern0 colonType1? ASSIGN annot? rhs ;
 
 rhs: exp | block | ifStmt | matchStmt ;
 
@@ -167,9 +167,15 @@ byExp: BY exp ;
 
 commaExp: COMMA exp ;
 
-matchStmt: MATCH exp annot? LBRACE cas+ RBRACE ;
+matchStmt: MATCH exp annot? matchCases ;
 
-pattern:  annot? ( lit | patterns | name patterns? | idTypePattern | idNamePattern | wildCardPattern ) ;
+matchCases: LBRACE cas+ RBRACE ;
+
+pattern:  annot? ( idTypePattern | pattern0 | wildCardPattern | wildCardSeqPattern) ;
+
+pattern0: lit | refPattern | patterns | name patterns? | idNamePattern ;
+
+refPattern: DOT name ;
 
 idTypePattern: ID colonType1 ;
 
@@ -178,6 +184,8 @@ colonType1: COLON type1 ;
 idNamePattern: ID AT name patterns ;
 
 wildCardPattern: UNDERSCORE colonType1? ;
+
+wildCardSeqPattern: STAR ;
 
 patterns: LPAREN patternsArg RPAREN ;
 
@@ -211,11 +219,9 @@ thisExp: THIS ;
 
 superExp: SUPER ;
 
-condSuffix: QUESTION ( condIteSuffix | condMatchSuffix );
+condSuffix: QUESTION ( condIteSuffix | matchCases );
 
 condIteSuffix: exp COLON exp ;
-
-condMatchSuffix: LBRACE cas+ RBRACE ;
 
 access: fieldAccess | applyAccess ;
 
@@ -286,8 +292,6 @@ justArgs: LPAREN args RPAREN ;
 justTypeArgs: LSQUARE type commaType* RSQUARE ;
 
 commaType: COMMA type ;
-
-proofIds: proofId commaProofId* ;
 
 commaProofId: COMMA proofId ;
 
@@ -392,7 +396,7 @@ HEX: '0x'  HEX_DIGIT ( '_' | HEX_DIGIT )* ;
 
 BIN: '0b' ( '0' | '1' ) ( '0' | '1' | '_' )* ;
 
-INT: ( '0' | '-'? '1'..'9' ( DIGIT | '_' )* ) ;
+INT: ( '0' | '-'? '1'..'9' ( DIGIT | '_' )* ) ( LETTER ( IDF | IDESC ) )? ;
 
 REAL: ( '0' | '-'? '1'..'9' ( DIGIT | '_' )* ) ( '.' DIGIT ( DIGIT | '_' )* EXPONENT? | EXPONENT ) ( 'f' | 'F' | 'd' | 'D' )? ;
 

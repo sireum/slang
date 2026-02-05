@@ -200,13 +200,13 @@ object SlangLl2PrettyPrinter {
     }
     @strictpure def printIfElse(elseBody: AST.Body): ST = {
       elseBody.stmts match {
-        case ISZ() => st""
+        case ISZ() => st"}"
         case ISZ(ifStmt: AST.Stmt.If) =>
-          st""" else if ${printExp(ifStmt.cond)} {
+          st"""} else if ${printExp(ifStmt.cond)} {
               |  ${(for (stmt <- ifStmt.thenBody.stmts) yield printStmt(F, stmt), lineSep)}
               |}${printIfElse(ifStmt.elseBody)}"""
         case _ =>
-          st""" else {
+          st"""} else {
               |  ${(for (stmt <- elseBody.stmts) yield printStmt(F, stmt), lineSep)}
               |}"""
       }
@@ -252,6 +252,48 @@ object SlangLl2PrettyPrinter {
           return r
       }
     }
+    @strictpure def printLiteral(o: AST.Lit): ST = o.prettyST
+    @strictpure def printPattern(o: AST.Pattern): ST = o match {
+      case o: AST.Pattern.Literal => printLiteral(o.lit)
+      case o: AST.Pattern.LitInterpolate =>
+        val attr = AST.Attr(o.posOpt)
+        o.prefix match {
+          case string"string" => AST.Exp.LitString(o.value, attr).prettyST
+          case string"s" => AST.Exp.LitString(o.value, attr).prettyST
+          case string"z" => AST.Exp.LitZ(Z(o.value).get, attr).prettyST
+          case string"r" => AST.Exp.LitR(R(o.value).get, attr).prettyST
+          case string"c" => AST.Exp.LitC(ops.StringOps(o.value).first, attr).prettyST
+          case prefix => st"${o.value}$prefix"
+        }
+      case o: AST.Pattern.Ref => st".${printName(o.name)}"
+      case _: AST.Pattern.SeqWildcard => st"*"
+      case o: AST.Pattern.Structure =>
+        val id: ST = o.idOpt match {
+          case Some(idAt) => st"$idAt@"
+          case _ => st""
+        }
+        val name: ST = o.nameOpt match {
+          case Some(n) => printName(n)
+          case _ => st""
+        }
+        st"$id$name(${(for (p <- o.patterns) yield printPattern(p), ", ")})"
+      case o: AST.Pattern.VarBinding => o.tipeOpt match {
+        case Some(t) => st"${o.id.value}: ${printType(t)}"
+        case _ => st"${o.id.value}"
+      }
+      case o: AST.Pattern.Wildcard => o.typeOpt match {
+        case Some(t) => st"_: ${printType(t)}"
+        case _ => st"_"
+      }
+    }
+    @strictpure def printCase(isExp: B, cas: AST.Case): ST = {
+      val cond: ST = cas.condOpt match {
+        case Some(cond) => st" if ${printExp(cond)}"
+        case _ => st""
+      }
+      st"""case ${printPattern(cas.pattern)}$cond =>
+          |  ${(for (stmt <- cas.body.stmts) yield printStmt(isExp, stmt), "\n")}"""
+    }
     @strictpure def printStmt(isExp: B, o: AST.Stmt): ST = o match {
       case o: AST.Stmt.Adt => halt(s"TODO: $o")
       case o: AST.Stmt.Assign => st"${printExp(o.lhs)} = ${printAssignExp(o.rhs)}"
@@ -262,18 +304,28 @@ object SlangLl2PrettyPrinter {
       case o: AST.Stmt.DataRefinement => halt(s"TODO: $o")
       case o: AST.Stmt.DeduceSequent => halt(s"TODO: $o")
       case o: AST.Stmt.DeduceSteps => printDeduceSteps(o)
-      case o: AST.Stmt.Enum => halt(s"TODO: $o")
+      case o: AST.Stmt.Enum =>
+        st"""type @enum ${o.id.value}: {
+            |  ${(for (element <- o.elements) yield element.value, "\n")}
+            |}"""
       case o: AST.Stmt.Expr => if (!isExp && shouldAddDo(o.exp)) st"do ${printExp(o.exp)}" else printExp(o.exp)
       case o: AST.Stmt.ExtMethod => halt(s"TODO: $o")
       case o: AST.Stmt.Fact =>
         val tparams: ST = printTypeParams(o.typeParams)
+        val desc: ST = o.descOpt match {
+          case Some(d) =>
+            st""" @[Desc(
+                |  ${d.prettyST}
+                |)]"""
+          case _ => st""
+        }
         val (params, claims): (ST, ISZ[ST]) = if (o.isFun) {
           val first = o.claims(0).asInstanceOf[AST.Exp.Quant]
           (st"(${(for (p <- first.fun.params) yield st"${p.idOpt.get.value}: ${printType(p.tipeOpt.get)}", ", ")})", ISZ(printAssignExp(first.fun.exp)))
         } else {
           (st"", for (claim <- o.claims) yield printExp(claim))
         }
-        st"""def ${if (o.typeParams.nonEmpty) st"$tparams " else st""}@fact ${o.id.value}$params = (
+        st"""def @fact ${o.id.value}$tparams$params$desc = (
             |  ${(claims, ",\n")}
             |)"""
       case o: AST.Stmt.For => halt(s"TODO: $o")
@@ -281,12 +333,22 @@ object SlangLl2PrettyPrinter {
       case o: AST.Stmt.If =>
         st"""if ${printExp(o.cond)} {
             |  ${(for (stmt <- o.thenBody.stmts) yield printStmt(F, stmt), lineSep)}
-            |}${printIfElse(o.elseBody)}"""
+            |${printIfElse(o.elseBody)}"""
       case o: AST.Stmt.Import => printImport(o)
       case o: AST.Stmt.Induct => halt(s"TODO: $o")
       case o: AST.Stmt.Inv => halt(s"TODO: $o")
       case o: AST.Stmt.JustMethod => halt(s"TODO: $o")
-      case o: AST.Stmt.Match => halt(s"TODO: $o")
+      case o: AST.Stmt.Match =>
+        val cases: ISZ[ST] = for (c <- o.cases) yield printCase(isExp, c)
+        if (isExp) {
+          st"""(${printExp(o.exp)}? {
+              |  ${(cases, "\n")}
+              |})"""
+        } else {
+          st"""match ${printExp(o.exp)} {
+              |  ${(cases, "\n")}
+              |}"""
+        }
       case o: AST.Stmt.Method =>
         val tparams: ST = printTypeParams(o.sig.typeParams)
         val params: ST = printParams(o.sig.hasParams, o.sig.params)
@@ -306,7 +368,10 @@ object SlangLl2PrettyPrinter {
       case o: AST.Stmt.Return => st"return${if (o.expOpt.isEmpty) st"" else st" ${printExp(o.expOpt.get)}"}"
       case o: AST.Stmt.RsVal => halt(s"TODO: $o")
       case o: AST.Stmt.Sig => halt(s"TODO: $o")
-      case o: AST.Stmt.SpecBlock => halt(s"TODO: $o")
+      case o: AST.Stmt.SpecBlock =>
+        st"""do @spec {
+            |  ${(for (stmt <- o.block.body.stmts) yield printStmt(F, stmt), "\n")}
+            |}"""
       case o: AST.Stmt.SpecLabel => halt(s"TODO: $o")
       case o: AST.Stmt.SpecMethod =>
         val tparams: ST = printTypeParams(o.sig.typeParams)
@@ -314,10 +379,33 @@ object SlangLl2PrettyPrinter {
         st"def @spec ${o.sig.id.value}$tparams$params: ${printType(o.sig.returnType)}"
       case o: AST.Stmt.SpecVar => halt(s"TODO: $o")
       case o: AST.Stmt.SubZ => halt(s"TODO: $o")
-      case o: AST.Stmt.Theorem => halt(s"TODO: $o")
-      case o: AST.Stmt.TypeAlias => halt(s"TODO: $o")
+      case o: AST.Stmt.Theorem =>
+        val tparams: ST = printTypeParams(o.typeParams)
+        val desc: ST = o.descOpt match {
+          case Some(d) =>
+            st""" @[Desc(
+                |  ${d.prettyST}
+                |)]"""
+          case _ => st""
+        }
+        val (params, claim): (ST, ST) = if (o.isFun) {
+          val first = o.claim.asInstanceOf[AST.Exp.Quant]
+          (st"(${(for (p <- first.fun.params) yield st"${p.idOpt.get.value}: ${printType(p.tipeOpt.get)}", ", ")})", printAssignExp(first.fun.exp))
+        } else {
+          (st"", printExp(o.claim))
+        }
+        st"""def ${if (o.isLemma) "@lemma" else "@theorem"} ${o.id.value}$tparams$params$desc =
+            |  $claim"""
+      case o: AST.Stmt.TypeAlias =>
+        val tparams: ST = printTypeParams(o.typeParams)
+        st"type @alias ${o.id.value}$tparams = ${printType(o.tipe)}"
       case o: AST.Stmt.Var => st"${if (o.isVal) "val" else "var"}${if (o.isSpec) " @spec" else ""} ${o.id.value}${if (o.tipeOpt.isEmpty) st"" else st": ${printType(o.tipeOpt.get)}"}${if (o.initOpt.isEmpty) "" else st" = ${printAssignExp(o.initOpt.get)}"}"
-      case o: AST.Stmt.VarPattern => halt(s"TODO: $o")
+      case o: AST.Stmt.VarPattern =>
+        val tipe: ST = o.tipeOpt match {
+          case Some(t) => st": ${printType(t)}"
+          case _ => st""
+        }
+        st"var ${printPattern(o.pattern)}$tipe = ${printAssignExp(o.init)}"
       case o: AST.Stmt.While =>
         if (o.contract.isEmpty) {
           st"""while ${printExp(o.cond)} {

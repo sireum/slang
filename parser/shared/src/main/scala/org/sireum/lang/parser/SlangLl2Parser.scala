@@ -337,11 +337,15 @@ object SlangLl2Parser {
   val T_byExp: U32 = u32"0x987D502D"
   val T_commaExp: U32 = u32"0x2393742F"
   val T_matchStmt: U32 = u32"0xB29ABF0D"
+  val T_matchCases: U32 = u32"0x932AE827"
   val T_pattern: U32 = u32"0x23DEC431"
+  val T_pattern0: U32 = u32"0xFF4270E2"
+  val T_refPattern: U32 = u32"0xD0388A02"
   val T_idTypePattern: U32 = u32"0x51AD0D88"
   val T_colonType1: U32 = u32"0x4F6B0B02"
   val T_idNamePattern: U32 = u32"0x6AB5150F"
   val T_wildCardPattern: U32 = u32"0xDC465F5F"
+  val T_wildCardSeqPattern: U32 = u32"0xD71972DE"
   val T_patterns: U32 = u32"0xE923061E"
   val T_patternsArg: U32 = u32"0x1DC061F8"
   val T_namedPattern: U32 = u32"0x51B5ECF0"
@@ -360,7 +364,6 @@ object SlangLl2Parser {
   val T_superExp: U32 = u32"0x51E4C72C"
   val T_condSuffix: U32 = u32"0x8109E6E8"
   val T_condIteSuffix: U32 = u32"0xD2169E1F"
-  val T_condMatchSuffix: U32 = u32"0x160336A6"
   val T_access: U32 = u32"0x1037F1F6"
   val T_fieldAccess: U32 = u32"0x0C4BEC0F"
   val T_applyAccess: U32 = u32"0xA72827F7"
@@ -396,7 +399,6 @@ object SlangLl2Parser {
   val T_justArgs: U32 = u32"0x457AC9A1"
   val T_justTypeArgs: U32 = u32"0x712E6404"
   val T_commaType: U32 = u32"0x3180635B"
-  val T_proofIds: U32 = u32"0xAC4880D1"
   val T_commaProofId: U32 = u32"0x274FC0AA"
   val T_truthTable: U32 = u32"0xC179AFB9"
   val T_colonExp: U32 = u32"0xA8874083"
@@ -1752,18 +1754,13 @@ import SlangLl2Parser._
           }
         case state"1" =>
           ctx.found = F
-          val n_typeParams = predictTypeParams(ctx.j)
           val n_mod = predictMod(ctx.j)
-          for (n <- 2 to 1 by -1 if !ctx.found) {
-            if (n_typeParams == n && parseTypeParamsH(ctx, state"2")) {
-              return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_mod == n && parseModH(ctx, state"2")) {
-              return Result.error(ctx.isLexical, ctx.failIndex)
-            }
+          if (n_mod >= 0 && parseModH(ctx, state"1")) {
+            return Result.error(ctx.isLexical, ctx.failIndex)
           }
           if (!ctx.found) {
             token.tipe match {
-              case u32"0x0FA8D2E6" /* ID */ => ctx.updateTerminal(token, state"3")
+              case u32"0x0FA8D2E6" /* ID */ => ctx.updateTerminal(token, state"2")
               case _ =>
             }
           }
@@ -1772,14 +1769,19 @@ import SlangLl2Parser._
           }
         case state"2" =>
           ctx.found = F
-          val n_mod = predictMod(ctx.j)
-          if (n_mod >= 0 && parseModH(ctx, state"2")) {
-            return Result.error(ctx.isLexical, ctx.failIndex)
-          }
-          if (!ctx.found) {
-            token.tipe match {
-              case u32"0x0FA8D2E6" /* ID */ => ctx.updateTerminal(token, state"3")
-              case _ =>
+          val n_typeParams = predictTypeParams(ctx.j)
+          val n_typeDefnEnumSuffix = predictTypeDefnEnumSuffix(ctx.j)
+          val n_typeDefnAliasSuffix = predictTypeDefnAliasSuffix(ctx.j)
+          val n_typeDefnAdtSuffix = predictTypeDefnAdtSuffix(ctx.j)
+          for (n <- 2 to 1 by -1 if !ctx.found) {
+            if (n_typeParams == n && parseTypeParamsH(ctx, state"3")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_typeDefnEnumSuffix == n && parseTypeDefnEnumSuffixH(ctx, state"4")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_typeDefnAliasSuffix == n && parseTypeDefnAliasSuffixH(ctx, state"4")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_typeDefnAdtSuffix == n && parseTypeDefnAdtSuffixH(ctx, state"4")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
             }
           }
           if (!ctx.found) {
@@ -2796,7 +2798,7 @@ import SlangLl2Parser._
   }
 
   @pure def parseDefDefn(i: Z): Result = {
-    val ctx = Context.create("defDefn", u32"0x3CD319B2", ISZ(state"3", state"4", state"5", state"6"), i)
+    val ctx = Context.create("defDefn", u32"0x3CD319B2", ISZ(state"2", state"3", state"4", state"5", state"6"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -2818,15 +2820,12 @@ import SlangLl2Parser._
           }
         case state"1" =>
           ctx.found = F
-          val n_typeParams = predictTypeParams(ctx.j)
           val n_mod = predictMod(ctx.j)
           val n_defId = predictDefId(ctx.j)
           for (n <- 2 to 1 by -1 if !ctx.found) {
-            if (n_typeParams == n && parseTypeParamsH(ctx, state"2")) {
+            if (n_mod == n && parseModH(ctx, state"1")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_mod == n && parseModH(ctx, state"2")) {
-              return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_defId == n && parseDefIdH(ctx, state"3")) {
+            } else if (n_defId == n && parseDefIdH(ctx, state"2")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
             }
           }
@@ -2835,12 +2834,18 @@ import SlangLl2Parser._
           }
         case state"2" =>
           ctx.found = F
-          val n_mod = predictMod(ctx.j)
-          val n_defId = predictDefId(ctx.j)
+          val n_typeParams = predictTypeParams(ctx.j)
+          val n_defParams = predictDefParams(ctx.j)
+          val n_defnTypeSuffix = predictDefnTypeSuffix(ctx.j)
+          val n_assignSuffix = predictAssignSuffix(ctx.j)
           for (n <- 2 to 1 by -1 if !ctx.found) {
-            if (n_mod == n && parseModH(ctx, state"2")) {
+            if (n_typeParams == n && parseTypeParamsH(ctx, state"3")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_defId == n && parseDefIdH(ctx, state"3")) {
+            } else if (n_defParams == n && parseDefParamsH(ctx, state"4")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_defnTypeSuffix == n && parseDefnTypeSuffixH(ctx, state"5")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_assignSuffix == n && parseAssignSuffixH(ctx, state"6")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
             }
           }
@@ -3255,7 +3260,7 @@ import SlangLl2Parser._
   }
 
   @pure def parseDefStmt(i: Z): Result = {
-    val ctx = Context.create("defStmt", u32"0x8EDAF169", ISZ(state"3", state"4", state"5", state"6"), i)
+    val ctx = Context.create("defStmt", u32"0x8EDAF169", ISZ(state"2", state"3", state"4", state"5", state"6"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -3277,15 +3282,12 @@ import SlangLl2Parser._
           }
         case state"1" =>
           ctx.found = F
-          val n_typeParams = predictTypeParams(ctx.j)
           val n_mod = predictMod(ctx.j)
           val n_defId = predictDefId(ctx.j)
           for (n <- 2 to 1 by -1 if !ctx.found) {
-            if (n_typeParams == n && parseTypeParamsH(ctx, state"2")) {
+            if (n_mod == n && parseModH(ctx, state"1")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_mod == n && parseModH(ctx, state"2")) {
-              return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_defId == n && parseDefIdH(ctx, state"3")) {
+            } else if (n_defId == n && parseDefIdH(ctx, state"2")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
             }
           }
@@ -3294,12 +3296,18 @@ import SlangLl2Parser._
           }
         case state"2" =>
           ctx.found = F
-          val n_mod = predictMod(ctx.j)
-          val n_defId = predictDefId(ctx.j)
+          val n_typeParams = predictTypeParams(ctx.j)
+          val n_defParams = predictDefParams(ctx.j)
+          val n_defnTypeSuffix = predictDefnTypeSuffix(ctx.j)
+          val n_assignSuffix = predictAssignSuffix(ctx.j)
           for (n <- 2 to 1 by -1 if !ctx.found) {
-            if (n_mod == n && parseModH(ctx, state"2")) {
+            if (n_typeParams == n && parseTypeParamsH(ctx, state"3")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_defId == n && parseDefIdH(ctx, state"3")) {
+            } else if (n_defParams == n && parseDefParamsH(ctx, state"4")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_defnTypeSuffix == n && parseDefnTypeSuffixH(ctx, state"5")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_assignSuffix == n && parseAssignSuffixH(ctx, state"6")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
             }
           }
@@ -3670,7 +3678,7 @@ import SlangLl2Parser._
   }
 
   @pure def parseVarPattern(i: Z): Result = {
-    val ctx = Context.create("varPattern", u32"0x4A56733D", ISZ(state"5"), i)
+    val ctx = Context.create("varPattern", u32"0x4A56733D", ISZ(state"6"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -3692,8 +3700,8 @@ import SlangLl2Parser._
           }
         case state"1" =>
           ctx.found = F
-          val n_pattern = predictPattern(ctx.j)
-          if (n_pattern >= 0 && parsePatternH(ctx, state"2")) {
+          val n_pattern0 = predictPattern0(ctx.j)
+          if (n_pattern0 >= 0 && parsePattern0H(ctx, state"2")) {
             return Result.error(ctx.isLexical, ctx.failIndex)
           }
           if (!ctx.found) {
@@ -3701,37 +3709,52 @@ import SlangLl2Parser._
           }
         case state"2" =>
           ctx.found = F
-          token.tipe match {
-            case u32"0xF20A2856" /* ASSIGN */ => ctx.updateTerminal(token, state"3")
-            case _ =>
+          val n_colonType1 = predictColonType1(ctx.j)
+          if (n_colonType1 >= 0 && parseColonType1H(ctx, state"3")) {
+            return Result.error(ctx.isLexical, ctx.failIndex)
+          }
+          if (!ctx.found) {
+            token.tipe match {
+              case u32"0xF20A2856" /* ASSIGN */ => ctx.updateTerminal(token, state"4")
+              case _ =>
+            }
           }
           if (!ctx.found) {
             return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
           }
         case state"3" =>
           ctx.found = F
-          val n_annot = predictAnnot(ctx.j)
-          val n_rhs = predictRhs(ctx.j)
-          for (n <- 2 to 1 by -1 if !ctx.found) {
-            if (n_annot == n && parseAnnotH(ctx, state"4")) {
-              return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_rhs == n && parseRhsH(ctx, state"5")) {
-              return Result.error(ctx.isLexical, ctx.failIndex)
-            }
+          token.tipe match {
+            case u32"0xF20A2856" /* ASSIGN */ => ctx.updateTerminal(token, state"4")
+            case _ =>
           }
           if (!ctx.found) {
             return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
           }
         case state"4" =>
           ctx.found = F
+          val n_annot = predictAnnot(ctx.j)
           val n_rhs = predictRhs(ctx.j)
-          if (n_rhs >= 0 && parseRhsH(ctx, state"5")) {
+          for (n <- 2 to 1 by -1 if !ctx.found) {
+            if (n_annot == n && parseAnnotH(ctx, state"5")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_rhs == n && parseRhsH(ctx, state"6")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            }
+          }
+          if (!ctx.found) {
+            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+          }
+        case state"5" =>
+          ctx.found = F
+          val n_rhs = predictRhs(ctx.j)
+          if (n_rhs >= 0 && parseRhsH(ctx, state"6")) {
             return Result.error(ctx.isLexical, ctx.failIndex)
           }
           if (!ctx.found) {
             return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
           }
-        case state"5" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+        case state"6" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
         case _ => halt("Infeasible")
       }
       if (ctx.max < ctx.j) {
@@ -4460,7 +4483,7 @@ import SlangLl2Parser._
   }
 
   @pure def parseMatchStmt(i: Z): Result = {
-    val ctx = Context.create("matchStmt", u32"0xB29ABF0D", ISZ(state"6"), i)
+    val ctx = Context.create("matchStmt", u32"0xB29ABF0D", ISZ(state"4"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -4492,13 +4515,12 @@ import SlangLl2Parser._
         case state"2" =>
           ctx.found = F
           val n_annot = predictAnnot(ctx.j)
-          if (n_annot >= 0 && parseAnnotH(ctx, state"3")) {
-            return Result.error(ctx.isLexical, ctx.failIndex)
-          }
-          if (!ctx.found) {
-            token.tipe match {
-              case u32"0xDC2A8959" /* LBRACE */ => ctx.updateTerminal(token, state"4")
-              case _ =>
+          val n_matchCases = predictMatchCases(ctx.j)
+          for (n <- 2 to 1 by -1 if !ctx.found) {
+            if (n_annot == n && parseAnnotH(ctx, state"3")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_matchCases == n && parseMatchCasesH(ctx, state"4")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
             }
           }
           if (!ctx.found) {
@@ -4506,38 +4528,70 @@ import SlangLl2Parser._
           }
         case state"3" =>
           ctx.found = F
+          val n_matchCases = predictMatchCases(ctx.j)
+          if (n_matchCases >= 0 && parseMatchCasesH(ctx, state"4")) {
+            return Result.error(ctx.isLexical, ctx.failIndex)
+          }
+          if (!ctx.found) {
+            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+          }
+        case state"4" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+        case _ => halt("Infeasible")
+      }
+      if (ctx.max < ctx.j) {
+        ctx.max = ctx.j
+      }
+    }
+
+    return retVal(ctx.j, ctx.resOpt, ctx.initial, T)
+  }
+
+  @pure def parseMatchCases(i: Z): Result = {
+    val ctx = Context.create("matchCases", u32"0x932AE827", ISZ(state"3"), i)
+
+    while (tokens.has(ctx.j)) {
+      val token: ParseTree.Leaf = {
+        val result = tokens.at(ctx.j)
+        if (result.kind != Result.Kind.Normal) {
+          return result
+        }
+        result.leaf
+      }
+      ctx.state match {
+        case state"0" =>
+          ctx.found = F
           token.tipe match {
-            case u32"0xDC2A8959" /* LBRACE */ => ctx.updateTerminal(token, state"4")
+            case u32"0xDC2A8959" /* LBRACE */ => ctx.updateTerminal(token, state"1")
             case _ =>
           }
           if (!ctx.found) {
             return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
           }
-        case state"4" =>
+        case state"1" =>
           ctx.found = F
           val n_cas = predictCas(ctx.j)
-          if (n_cas >= 0 && parseCasH(ctx, state"5")) {
+          if (n_cas >= 0 && parseCasH(ctx, state"2")) {
             return Result.error(ctx.isLexical, ctx.failIndex)
           }
           if (!ctx.found) {
             return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
           }
-        case state"5" =>
+        case state"2" =>
           ctx.found = F
           val n_cas = predictCas(ctx.j)
-          if (n_cas >= 0 && parseCasH(ctx, state"5")) {
+          if (n_cas >= 0 && parseCasH(ctx, state"2")) {
             return Result.error(ctx.isLexical, ctx.failIndex)
           }
           if (!ctx.found) {
             token.tipe match {
-              case u32"0xED041C82" /* RBRACE */ => ctx.updateTerminal(token, state"6")
+              case u32"0xED041C82" /* RBRACE */ => ctx.updateTerminal(token, state"3")
               case _ =>
             }
           }
           if (!ctx.found) {
             return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
           }
-        case state"6" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+        case state"3" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
         case _ => halt("Infeasible")
       }
       if (ctx.max < ctx.j) {
@@ -4549,7 +4603,7 @@ import SlangLl2Parser._
   }
 
   @pure def parsePattern(i: Z): Result = {
-    val ctx = Context.create("pattern", u32"0x23DEC431", ISZ(state"2", state"3"), i)
+    val ctx = Context.create("pattern", u32"0x23DEC431", ISZ(state"2"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -4563,26 +4617,20 @@ import SlangLl2Parser._
         case state"0" =>
           ctx.found = F
           val n_annot = predictAnnot(ctx.j)
-          val n_lit = predictLit(ctx.j)
-          val n_patterns = predictPatterns(ctx.j)
-          val n_name = predictName(ctx.j)
           val n_idTypePattern = predictIdTypePattern(ctx.j)
-          val n_idNamePattern = predictIdNamePattern(ctx.j)
+          val n_pattern0 = predictPattern0(ctx.j)
           val n_wildCardPattern = predictWildCardPattern(ctx.j)
+          val n_wildCardSeqPattern = predictWildCardSeqPattern(ctx.j)
           for (n <- 2 to 1 by -1 if !ctx.found) {
             if (n_annot == n && parseAnnotH(ctx, state"1")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_lit == n && parseLitH(ctx, state"2")) {
-              return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_patterns == n && parsePatternsH(ctx, state"2")) {
-              return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_name == n && parseNameH(ctx, state"3")) {
-              return Result.error(ctx.isLexical, ctx.failIndex)
             } else if (n_idTypePattern == n && parseIdTypePatternH(ctx, state"2")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_idNamePattern == n && parseIdNamePatternH(ctx, state"2")) {
+            } else if (n_pattern0 == n && parsePattern0H(ctx, state"2")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
             } else if (n_wildCardPattern == n && parseWildCardPatternH(ctx, state"2")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_wildCardSeqPattern == n && parseWildCardSeqPatternH(ctx, state"2")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
             }
           }
@@ -4591,24 +4639,18 @@ import SlangLl2Parser._
           }
         case state"1" =>
           ctx.found = F
-          val n_lit = predictLit(ctx.j)
-          val n_patterns = predictPatterns(ctx.j)
-          val n_name = predictName(ctx.j)
           val n_idTypePattern = predictIdTypePattern(ctx.j)
-          val n_idNamePattern = predictIdNamePattern(ctx.j)
+          val n_pattern0 = predictPattern0(ctx.j)
           val n_wildCardPattern = predictWildCardPattern(ctx.j)
+          val n_wildCardSeqPattern = predictWildCardSeqPattern(ctx.j)
           for (n <- 2 to 1 by -1 if !ctx.found) {
-            if (n_lit == n && parseLitH(ctx, state"2")) {
+            if (n_idTypePattern == n && parseIdTypePatternH(ctx, state"2")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_patterns == n && parsePatternsH(ctx, state"2")) {
-              return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_name == n && parseNameH(ctx, state"3")) {
-              return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_idTypePattern == n && parseIdTypePatternH(ctx, state"2")) {
-              return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_idNamePattern == n && parseIdNamePatternH(ctx, state"2")) {
+            } else if (n_pattern0 == n && parsePattern0H(ctx, state"2")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
             } else if (n_wildCardPattern == n && parseWildCardPatternH(ctx, state"2")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_wildCardSeqPattern == n && parseWildCardSeqPatternH(ctx, state"2")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
             }
           }
@@ -4616,15 +4658,102 @@ import SlangLl2Parser._
             return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
           }
         case state"2" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-        case state"3" =>
+        case _ => halt("Infeasible")
+      }
+      if (ctx.max < ctx.j) {
+        ctx.max = ctx.j
+      }
+    }
+
+    return retVal(ctx.j, ctx.resOpt, ctx.initial, T)
+  }
+
+  @pure def parsePattern0(i: Z): Result = {
+    val ctx = Context.create("pattern0", u32"0xFF4270E2", ISZ(state"1", state"2"), i)
+
+    while (tokens.has(ctx.j)) {
+      val token: ParseTree.Leaf = {
+        val result = tokens.at(ctx.j)
+        if (result.kind != Result.Kind.Normal) {
+          return result
+        }
+        result.leaf
+      }
+      ctx.state match {
+        case state"0" =>
+          ctx.found = F
+          val n_lit = predictLit(ctx.j)
+          val n_refPattern = predictRefPattern(ctx.j)
+          val n_patterns = predictPatterns(ctx.j)
+          val n_name = predictName(ctx.j)
+          val n_idNamePattern = predictIdNamePattern(ctx.j)
+          for (n <- 2 to 1 by -1 if !ctx.found) {
+            if (n_lit == n && parseLitH(ctx, state"1")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_refPattern == n && parseRefPatternH(ctx, state"1")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_patterns == n && parsePatternsH(ctx, state"1")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_name == n && parseNameH(ctx, state"2")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_idNamePattern == n && parseIdNamePatternH(ctx, state"1")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            }
+          }
+          if (!ctx.found) {
+            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+          }
+        case state"1" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+        case state"2" =>
           ctx.found = F
           val n_patterns = predictPatterns(ctx.j)
-          if (n_patterns >= 0 && parsePatternsH(ctx, state"2")) {
+          if (n_patterns >= 0 && parsePatternsH(ctx, state"1")) {
             return Result.error(ctx.isLexical, ctx.failIndex)
           }
           if (!ctx.found) {
             return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
           }
+        case _ => halt("Infeasible")
+      }
+      if (ctx.max < ctx.j) {
+        ctx.max = ctx.j
+      }
+    }
+
+    return retVal(ctx.j, ctx.resOpt, ctx.initial, T)
+  }
+
+  @pure def parseRefPattern(i: Z): Result = {
+    val ctx = Context.create("refPattern", u32"0xD0388A02", ISZ(state"2"), i)
+
+    while (tokens.has(ctx.j)) {
+      val token: ParseTree.Leaf = {
+        val result = tokens.at(ctx.j)
+        if (result.kind != Result.Kind.Normal) {
+          return result
+        }
+        result.leaf
+      }
+      ctx.state match {
+        case state"0" =>
+          ctx.found = F
+          token.tipe match {
+            case u32"0x9A468353" /* DOT */ => ctx.updateTerminal(token, state"1")
+            case _ =>
+          }
+          if (!ctx.found) {
+            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+          }
+        case state"1" =>
+          ctx.found = F
+          val n_name = predictName(ctx.j)
+          if (n_name >= 0 && parseNameH(ctx, state"2")) {
+            return Result.error(ctx.isLexical, ctx.failIndex)
+          }
+          if (!ctx.found) {
+            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+          }
+        case state"2" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
         case _ => halt("Infeasible")
       }
       if (ctx.max < ctx.j) {
@@ -4807,6 +4936,38 @@ import SlangLl2Parser._
             return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
           }
         case state"2" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+        case _ => halt("Infeasible")
+      }
+      if (ctx.max < ctx.j) {
+        ctx.max = ctx.j
+      }
+    }
+
+    return retVal(ctx.j, ctx.resOpt, ctx.initial, T)
+  }
+
+  @pure def parseWildCardSeqPattern(i: Z): Result = {
+    val ctx = Context.create("wildCardSeqPattern", u32"0xD71972DE", ISZ(state"1"), i)
+
+    while (tokens.has(ctx.j)) {
+      val token: ParseTree.Leaf = {
+        val result = tokens.at(ctx.j)
+        if (result.kind != Result.Kind.Normal) {
+          return result
+        }
+        result.leaf
+      }
+      ctx.state match {
+        case state"0" =>
+          ctx.found = F
+          token.tipe match {
+            case u32"0x7EF5EC39" /* STAR */ => ctx.updateTerminal(token, state"1")
+            case _ =>
+          }
+          if (!ctx.found) {
+            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+          }
+        case state"1" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
         case _ => halt("Infeasible")
       }
       if (ctx.max < ctx.j) {
@@ -5548,11 +5709,11 @@ import SlangLl2Parser._
         case state"1" =>
           ctx.found = F
           val n_condIteSuffix = predictCondIteSuffix(ctx.j)
-          val n_condMatchSuffix = predictCondMatchSuffix(ctx.j)
+          val n_matchCases = predictMatchCases(ctx.j)
           for (n <- 2 to 1 by -1 if !ctx.found) {
             if (n_condIteSuffix == n && parseCondIteSuffixH(ctx, state"2")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_condMatchSuffix == n && parseCondMatchSuffixH(ctx, state"2")) {
+            } else if (n_matchCases == n && parseMatchCasesH(ctx, state"2")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
             }
           }
@@ -5605,62 +5766,6 @@ import SlangLl2Parser._
           val n_exp = predictExp(ctx.j)
           if (n_exp >= 0 && parseExpH(ctx, state"3")) {
             return Result.error(ctx.isLexical, ctx.failIndex)
-          }
-          if (!ctx.found) {
-            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-          }
-        case state"3" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-        case _ => halt("Infeasible")
-      }
-      if (ctx.max < ctx.j) {
-        ctx.max = ctx.j
-      }
-    }
-
-    return retVal(ctx.j, ctx.resOpt, ctx.initial, T)
-  }
-
-  @pure def parseCondMatchSuffix(i: Z): Result = {
-    val ctx = Context.create("condMatchSuffix", u32"0x160336A6", ISZ(state"3"), i)
-
-    while (tokens.has(ctx.j)) {
-      val token: ParseTree.Leaf = {
-        val result = tokens.at(ctx.j)
-        if (result.kind != Result.Kind.Normal) {
-          return result
-        }
-        result.leaf
-      }
-      ctx.state match {
-        case state"0" =>
-          ctx.found = F
-          token.tipe match {
-            case u32"0xDC2A8959" /* LBRACE */ => ctx.updateTerminal(token, state"1")
-            case _ =>
-          }
-          if (!ctx.found) {
-            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-          }
-        case state"1" =>
-          ctx.found = F
-          val n_cas = predictCas(ctx.j)
-          if (n_cas >= 0 && parseCasH(ctx, state"2")) {
-            return Result.error(ctx.isLexical, ctx.failIndex)
-          }
-          if (!ctx.found) {
-            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-          }
-        case state"2" =>
-          ctx.found = F
-          val n_cas = predictCas(ctx.j)
-          if (n_cas >= 0 && parseCasH(ctx, state"2")) {
-            return Result.error(ctx.isLexical, ctx.failIndex)
-          }
-          if (!ctx.found) {
-            token.tipe match {
-              case u32"0xED041C82" /* RBRACE */ => ctx.updateTerminal(token, state"3")
-              case _ =>
-            }
           }
           if (!ctx.found) {
             return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
@@ -7714,46 +7819,6 @@ import SlangLl2Parser._
             return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
           }
         case state"2" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-        case _ => halt("Infeasible")
-      }
-      if (ctx.max < ctx.j) {
-        ctx.max = ctx.j
-      }
-    }
-
-    return retVal(ctx.j, ctx.resOpt, ctx.initial, T)
-  }
-
-  @pure def parseProofIds(i: Z): Result = {
-    val ctx = Context.create("proofIds", u32"0xAC4880D1", ISZ(state"1"), i)
-
-    while (tokens.has(ctx.j)) {
-      val token: ParseTree.Leaf = {
-        val result = tokens.at(ctx.j)
-        if (result.kind != Result.Kind.Normal) {
-          return result
-        }
-        result.leaf
-      }
-      ctx.state match {
-        case state"0" =>
-          ctx.found = F
-          val n_proofId = predictProofId(ctx.j)
-          if (n_proofId >= 0 && parseProofIdH(ctx, state"1")) {
-            return Result.error(ctx.isLexical, ctx.failIndex)
-          }
-          if (!ctx.found) {
-            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-          }
-        case state"1" =>
-          ctx.found = F
-          val n_commaProofId = predictCommaProofId(ctx.j)
-          if (n_commaProofId >= 0 && parseCommaProofIdH(ctx, state"1")) {
-            return Result.error(ctx.isLexical, ctx.failIndex)
-          }
-          if (!ctx.found) {
-            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-          }
         case _ => halt("Infeasible")
       }
       if (ctx.max < ctx.j) {
@@ -10418,8 +10483,28 @@ import SlangLl2Parser._
     return F
   }
 
-  def parsePatternH(ctx: Context, nextState: State): B = {
-    val r = parsePattern(ctx.j)
+  def parsePattern0H(ctx: Context, nextState: State): B = {
+    val r = parsePattern0(ctx.j)
+    r.kind match {
+      case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
+      case Result.Kind.LexicalError =>
+        ctx.failIndex = r.newIndex
+        ctx.isLexical = T
+        return T
+      case Result.Kind.GrammaticalError =>
+        val index = r.newIndex
+        if (index < 0) {
+          ctx.failIndex = index
+          return T
+        } else if (ctx.max < index) {
+          ctx.max = index
+        }
+    }
+    return F
+  }
+
+  def parseColonType1H(ctx: Context, nextState: State): B = {
+    val r = parseColonType1(ctx.j)
     r.kind match {
       case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
       case Result.Kind.LexicalError =>
@@ -10578,48 +10663,28 @@ import SlangLl2Parser._
     return F
   }
 
+  def parseMatchCasesH(ctx: Context, nextState: State): B = {
+    val r = parseMatchCases(ctx.j)
+    r.kind match {
+      case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
+      case Result.Kind.LexicalError =>
+        ctx.failIndex = r.newIndex
+        ctx.isLexical = T
+        return T
+      case Result.Kind.GrammaticalError =>
+        val index = r.newIndex
+        if (index < 0) {
+          ctx.failIndex = index
+          return T
+        } else if (ctx.max < index) {
+          ctx.max = index
+        }
+    }
+    return F
+  }
+
   def parseCasH(ctx: Context, nextState: State): B = {
     val r = parseCas(ctx.j)
-    r.kind match {
-      case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
-      case Result.Kind.LexicalError =>
-        ctx.failIndex = r.newIndex
-        ctx.isLexical = T
-        return T
-      case Result.Kind.GrammaticalError =>
-        val index = r.newIndex
-        if (index < 0) {
-          ctx.failIndex = index
-          return T
-        } else if (ctx.max < index) {
-          ctx.max = index
-        }
-    }
-    return F
-  }
-
-  def parseLitH(ctx: Context, nextState: State): B = {
-    val r = parseLit(ctx.j)
-    r.kind match {
-      case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
-      case Result.Kind.LexicalError =>
-        ctx.failIndex = r.newIndex
-        ctx.isLexical = T
-        return T
-      case Result.Kind.GrammaticalError =>
-        val index = r.newIndex
-        if (index < 0) {
-          ctx.failIndex = index
-          return T
-        } else if (ctx.max < index) {
-          ctx.max = index
-        }
-    }
-    return F
-  }
-
-  def parsePatternsH(ctx: Context, nextState: State): B = {
-    val r = parsePatterns(ctx.j)
     r.kind match {
       case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
       case Result.Kind.LexicalError =>
@@ -10658,26 +10723,6 @@ import SlangLl2Parser._
     return F
   }
 
-  def parseIdNamePatternH(ctx: Context, nextState: State): B = {
-    val r = parseIdNamePattern(ctx.j)
-    r.kind match {
-      case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
-      case Result.Kind.LexicalError =>
-        ctx.failIndex = r.newIndex
-        ctx.isLexical = T
-        return T
-      case Result.Kind.GrammaticalError =>
-        val index = r.newIndex
-        if (index < 0) {
-          ctx.failIndex = index
-          return T
-        } else if (ctx.max < index) {
-          ctx.max = index
-        }
-    }
-    return F
-  }
-
   def parseWildCardPatternH(ctx: Context, nextState: State): B = {
     val r = parseWildCardPattern(ctx.j)
     r.kind match {
@@ -10698,8 +10743,88 @@ import SlangLl2Parser._
     return F
   }
 
-  def parseColonType1H(ctx: Context, nextState: State): B = {
-    val r = parseColonType1(ctx.j)
+  def parseWildCardSeqPatternH(ctx: Context, nextState: State): B = {
+    val r = parseWildCardSeqPattern(ctx.j)
+    r.kind match {
+      case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
+      case Result.Kind.LexicalError =>
+        ctx.failIndex = r.newIndex
+        ctx.isLexical = T
+        return T
+      case Result.Kind.GrammaticalError =>
+        val index = r.newIndex
+        if (index < 0) {
+          ctx.failIndex = index
+          return T
+        } else if (ctx.max < index) {
+          ctx.max = index
+        }
+    }
+    return F
+  }
+
+  def parseLitH(ctx: Context, nextState: State): B = {
+    val r = parseLit(ctx.j)
+    r.kind match {
+      case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
+      case Result.Kind.LexicalError =>
+        ctx.failIndex = r.newIndex
+        ctx.isLexical = T
+        return T
+      case Result.Kind.GrammaticalError =>
+        val index = r.newIndex
+        if (index < 0) {
+          ctx.failIndex = index
+          return T
+        } else if (ctx.max < index) {
+          ctx.max = index
+        }
+    }
+    return F
+  }
+
+  def parseRefPatternH(ctx: Context, nextState: State): B = {
+    val r = parseRefPattern(ctx.j)
+    r.kind match {
+      case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
+      case Result.Kind.LexicalError =>
+        ctx.failIndex = r.newIndex
+        ctx.isLexical = T
+        return T
+      case Result.Kind.GrammaticalError =>
+        val index = r.newIndex
+        if (index < 0) {
+          ctx.failIndex = index
+          return T
+        } else if (ctx.max < index) {
+          ctx.max = index
+        }
+    }
+    return F
+  }
+
+  def parsePatternsH(ctx: Context, nextState: State): B = {
+    val r = parsePatterns(ctx.j)
+    r.kind match {
+      case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
+      case Result.Kind.LexicalError =>
+        ctx.failIndex = r.newIndex
+        ctx.isLexical = T
+        return T
+      case Result.Kind.GrammaticalError =>
+        val index = r.newIndex
+        if (index < 0) {
+          ctx.failIndex = index
+          return T
+        } else if (ctx.max < index) {
+          ctx.max = index
+        }
+    }
+    return F
+  }
+
+  def parseIdNamePatternH(ctx: Context, nextState: State): B = {
+    val r = parseIdNamePattern(ctx.j)
     r.kind match {
       case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
       case Result.Kind.LexicalError =>
@@ -10740,6 +10865,26 @@ import SlangLl2Parser._
 
   def parsePatternsArgH(ctx: Context, nextState: State): B = {
     val r = parsePatternsArg(ctx.j)
+    r.kind match {
+      case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
+      case Result.Kind.LexicalError =>
+        ctx.failIndex = r.newIndex
+        ctx.isLexical = T
+        return T
+      case Result.Kind.GrammaticalError =>
+        val index = r.newIndex
+        if (index < 0) {
+          ctx.failIndex = index
+          return T
+        } else if (ctx.max < index) {
+          ctx.max = index
+        }
+    }
+    return F
+  }
+
+  def parsePatternH(ctx: Context, nextState: State): B = {
+    val r = parsePattern(ctx.j)
     r.kind match {
       case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
       case Result.Kind.LexicalError =>
@@ -11120,26 +11265,6 @@ import SlangLl2Parser._
 
   def parseCondIteSuffixH(ctx: Context, nextState: State): B = {
     val r = parseCondIteSuffix(ctx.j)
-    r.kind match {
-      case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
-      case Result.Kind.LexicalError =>
-        ctx.failIndex = r.newIndex
-        ctx.isLexical = T
-        return T
-      case Result.Kind.GrammaticalError =>
-        val index = r.newIndex
-        if (index < 0) {
-          ctx.failIndex = index
-          return T
-        } else if (ctx.max < index) {
-          ctx.max = index
-        }
-    }
-    return F
-  }
-
-  def parseCondMatchSuffixH(ctx: Context, nextState: State): B = {
-    val r = parseCondMatchSuffix(ctx.j)
     r.kind match {
       case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
       case Result.Kind.LexicalError =>
@@ -11720,26 +11845,6 @@ import SlangLl2Parser._
 
   def parseCommaTypeH(ctx: Context, nextState: State): B = {
     val r = parseCommaType(ctx.j)
-    r.kind match {
-      case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
-      case Result.Kind.LexicalError =>
-        ctx.failIndex = r.newIndex
-        ctx.isLexical = T
-        return T
-      case Result.Kind.GrammaticalError =>
-        val index = r.newIndex
-        if (index < 0) {
-          ctx.failIndex = index
-          return T
-        } else if (ctx.max < index) {
-          ctx.max = index
-        }
-    }
-    return F
-  }
-
-  def parseCommaProofIdH(ctx: Context, nextState: State): B = {
-    val r = parseCommaProofId(ctx.j)
     r.kind match {
       case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
       case Result.Kind.LexicalError =>
@@ -12521,7 +12626,6 @@ import SlangLl2Parser._
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
-                case u32"0xD735687B" /* AT */ => return 2
                 case u32"0xEE99A672" /* TRUE */ => return 2
                 case u32"0x43340E3B" /* FALSE */ => return 2
                 case u32"0x589C233C" /* INT */ => return 2
@@ -12530,9 +12634,9 @@ import SlangLl2Parser._
                 case u32"0x1F9A2C24" /* REAL */ => return 2
                 case u32"0xA7CF0FE0" /* STRING */ => return 2
                 case u32"0x84A54E6B" /* MSTR */ => return 2
+                case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -12664,7 +12768,6 @@ import SlangLl2Parser._
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
-                case u32"0x951E9CFB" /* LSQUARE */ => return 2
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
                 case u32"0x3D594292" /* OP */ => return 2
@@ -12916,6 +13019,29 @@ import SlangLl2Parser._
                 case u32"0xDC2A8959" /* LBRACE */ => return 2
                 case u32"0x8210408E" /* IF */ => return 2
                 case u32"0x142AC92F" /* MATCH */ => return 2
+                case _ =>
+              }
+            }
+          }
+
+        case _ =>
+      }
+    }
+    return -1
+  }
+
+  @pure def predictRefPattern(j: Z): Z = {
+    val j1 = j + 1
+    val hasJ1 = tokens.has(j1)
+    val tokenJ = tokens.at(j)
+    if (tokenJ.kind == Result.Kind.Normal) {
+      tokenJ.leaf.tipe match {
+        case u32"0x9A468353" /* DOT */ =>
+          if (hasJ1) {
+            val tokenJ1 = tokens.at(j1)
+            if (tokenJ1.kind == Result.Kind.Normal) {
+              tokenJ1.leaf.tipe match {
+                case u32"0x0FA8D2E6" /* ID */ => return 2
                 case _ =>
               }
             }
@@ -15138,6 +15264,7 @@ import SlangLl2Parser._
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
                 case u32"0xD735687B" /* AT */ => return 2
+                case u32"0x0FA8D2E6" /* ID */ => return 2
                 case u32"0xEE99A672" /* TRUE */ => return 2
                 case u32"0x43340E3B" /* FALSE */ => return 2
                 case u32"0x589C233C" /* INT */ => return 2
@@ -15146,9 +15273,10 @@ import SlangLl2Parser._
                 case u32"0x1F9A2C24" /* REAL */ => return 2
                 case u32"0xA7CF0FE0" /* STRING */ => return 2
                 case u32"0x84A54E6B" /* MSTR */ => return 2
+                case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0x0FA8D2E6" /* ID */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
+                case u32"0x7EF5EC39" /* STAR */ => return 2
                 case _ =>
               }
             }
@@ -15417,7 +15545,6 @@ import SlangLl2Parser._
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
-                case u32"0x951E9CFB" /* LSQUARE */ => return 2
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
                 case u32"0x3D594292" /* OP */ => return 2
@@ -15432,7 +15559,6 @@ import SlangLl2Parser._
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
-                case u32"0x951E9CFB" /* LSQUARE */ => return 2
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
                 case _ =>
@@ -16285,6 +16411,20 @@ import SlangLl2Parser._
             }
           }
 
+        case u32"0x0FA8D2E6" /* ID */ =>
+          if (hasJ1) {
+            val tokenJ1 = tokens.at(j1)
+            if (tokenJ1.kind == Result.Kind.Normal) {
+              tokenJ1.leaf.tipe match {
+                case u32"0x54FAE327" /* COLON */ => return 2
+                case u32"0x643EF7CD" /* LPAREN */ => return 2
+                case u32"0x9A468353" /* DOT */ => return 2
+                case u32"0xD735687B" /* AT */ => return 2
+                case _ =>
+              }
+            }
+          }
+          return 1
         case u32"0xEE99A672" /* TRUE */ => return 1
         case u32"0x43340E3B" /* FALSE */ => return 1
         case u32"0x589C233C" /* INT */ => return 1
@@ -16293,12 +16433,24 @@ import SlangLl2Parser._
         case u32"0x1F9A2C24" /* REAL */ => return 1
         case u32"0xA7CF0FE0" /* STRING */ => return 1
         case u32"0x84A54E6B" /* MSTR */ => return 1
+        case u32"0x9A468353" /* DOT */ =>
+          if (hasJ1) {
+            val tokenJ1 = tokens.at(j1)
+            if (tokenJ1.kind == Result.Kind.Normal) {
+              tokenJ1.leaf.tipe match {
+                case u32"0x0FA8D2E6" /* ID */ => return 2
+                case _ =>
+              }
+            }
+          }
+
         case u32"0x643EF7CD" /* LPAREN */ =>
           if (hasJ1) {
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
                 case u32"0xD735687B" /* AT */ => return 2
+                case u32"0x0FA8D2E6" /* ID */ => return 2
                 case u32"0xEE99A672" /* TRUE */ => return 2
                 case u32"0x43340E3B" /* FALSE */ => return 2
                 case u32"0x589C233C" /* INT */ => return 2
@@ -16307,28 +16459,15 @@ import SlangLl2Parser._
                 case u32"0x1F9A2C24" /* REAL */ => return 2
                 case u32"0xA7CF0FE0" /* STRING */ => return 2
                 case u32"0x84A54E6B" /* MSTR */ => return 2
+                case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0x0FA8D2E6" /* ID */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
+                case u32"0x7EF5EC39" /* STAR */ => return 2
                 case _ =>
               }
             }
           }
 
-        case u32"0x0FA8D2E6" /* ID */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x54FAE327" /* COLON */ => return 2
-                case u32"0xD735687B" /* AT */ => return 2
-                case _ =>
-              }
-            }
-          }
-          return 1
         case u32"0xF0D3D2C8" /* UNDERSCORE */ =>
           if (hasJ1) {
             val tokenJ1 = tokens.at(j1)
@@ -16340,6 +16479,7 @@ import SlangLl2Parser._
             }
           }
           return 1
+        case u32"0x7EF5EC39" /* STAR */ => return 1
         case _ =>
       }
     }
@@ -16615,7 +16755,6 @@ import SlangLl2Parser._
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
-                case u32"0xD735687B" /* AT */ => return 2
                 case u32"0xEE99A672" /* TRUE */ => return 2
                 case u32"0x43340E3B" /* FALSE */ => return 2
                 case u32"0x589C233C" /* INT */ => return 2
@@ -16624,9 +16763,9 @@ import SlangLl2Parser._
                 case u32"0x1F9A2C24" /* REAL */ => return 2
                 case u32"0xA7CF0FE0" /* STRING */ => return 2
                 case u32"0x84A54E6B" /* MSTR */ => return 2
+                case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -16758,7 +16897,6 @@ import SlangLl2Parser._
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
-                case u32"0x951E9CFB" /* LSQUARE */ => return 2
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
                 case u32"0x3D594292" /* OP */ => return 2
@@ -17667,7 +17805,6 @@ import SlangLl2Parser._
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
-                case u32"0xD735687B" /* AT */ => return 2
                 case u32"0xEE99A672" /* TRUE */ => return 2
                 case u32"0x43340E3B" /* FALSE */ => return 2
                 case u32"0x589C233C" /* INT */ => return 2
@@ -17676,9 +17813,9 @@ import SlangLl2Parser._
                 case u32"0x1F9A2C24" /* REAL */ => return 2
                 case u32"0xA7CF0FE0" /* STRING */ => return 2
                 case u32"0x84A54E6B" /* MSTR */ => return 2
+                case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -17810,7 +17947,6 @@ import SlangLl2Parser._
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
-                case u32"0x951E9CFB" /* LSQUARE */ => return 2
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
                 case u32"0x3D594292" /* OP */ => return 2
@@ -17862,6 +17998,7 @@ import SlangLl2Parser._
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
                 case u32"0xD735687B" /* AT */ => return 2
+                case u32"0x0FA8D2E6" /* ID */ => return 2
                 case u32"0xEE99A672" /* TRUE */ => return 2
                 case u32"0x43340E3B" /* FALSE */ => return 2
                 case u32"0x589C233C" /* INT */ => return 2
@@ -17870,9 +18007,10 @@ import SlangLl2Parser._
                 case u32"0x1F9A2C24" /* REAL */ => return 2
                 case u32"0xA7CF0FE0" /* STRING */ => return 2
                 case u32"0x84A54E6B" /* MSTR */ => return 2
+                case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0x0FA8D2E6" /* ID */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
+                case u32"0x7EF5EC39" /* STAR */ => return 2
                 case _ =>
               }
             }
@@ -17882,40 +18020,6 @@ import SlangLl2Parser._
       }
     }
     return 0
-  }
-
-  @pure def predictProofIds(j: Z): Z = {
-    val j1 = j + 1
-    val hasJ1 = tokens.has(j1)
-    val tokenJ = tokens.at(j)
-    if (tokenJ.kind == Result.Kind.Normal) {
-      tokenJ.leaf.tipe match {
-        case u32"0x589C233C" /* INT */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x37DDEF83" /* COMMA */ => return 2
-                case _ =>
-              }
-            }
-          }
-          return 1
-        case u32"0xA7CF0FE0" /* STRING */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x37DDEF83" /* COMMA */ => return 2
-                case _ =>
-              }
-            }
-          }
-          return 1
-        case _ =>
-      }
-    }
-    return -1
   }
 
   @pure def predictTypeDefnEnumSuffix(j: Z): Z = {
@@ -18032,7 +18136,6 @@ import SlangLl2Parser._
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
-                case u32"0x951E9CFB" /* LSQUARE */ => return 2
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
                 case _ =>
@@ -18542,6 +18645,17 @@ import SlangLl2Parser._
             }
           }
 
+        case _ =>
+      }
+    }
+    return -1
+  }
+
+  @pure def predictWildCardSeqPattern(j: Z): Z = {
+    val tokenJ = tokens.at(j)
+    if (tokenJ.kind == Result.Kind.Normal) {
+      tokenJ.leaf.tipe match {
+        case u32"0x7EF5EC39" /* STAR */ => return 1
         case _ =>
       }
     }
@@ -19417,7 +19531,6 @@ import SlangLl2Parser._
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
-                case u32"0x951E9CFB" /* LSQUARE */ => return 2
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
                 case u32"0x3D594292" /* OP */ => return 2
@@ -19850,6 +19963,22 @@ import SlangLl2Parser._
             }
           }
 
+        case u32"0x0FA8D2E6" /* ID */ =>
+          if (hasJ1) {
+            val tokenJ1 = tokens.at(j1)
+            if (tokenJ1.kind == Result.Kind.Normal) {
+              tokenJ1.leaf.tipe match {
+                case u32"0x54FAE327" /* COLON */ => return 2
+                case u32"0x37DDEF83" /* COMMA */ => return 2
+                case u32"0x643EF7CD" /* LPAREN */ => return 2
+                case u32"0x9A468353" /* DOT */ => return 2
+                case u32"0xD735687B" /* AT */ => return 2
+                case u32"0xF20A2856" /* ASSIGN */ => return 2
+                case _ =>
+              }
+            }
+          }
+          return 1
         case u32"0xEE99A672" /* TRUE */ =>
           if (hasJ1) {
             val tokenJ1 = tokens.at(j1)
@@ -19938,12 +20067,24 @@ import SlangLl2Parser._
             }
           }
           return 1
+        case u32"0x9A468353" /* DOT */ =>
+          if (hasJ1) {
+            val tokenJ1 = tokens.at(j1)
+            if (tokenJ1.kind == Result.Kind.Normal) {
+              tokenJ1.leaf.tipe match {
+                case u32"0x0FA8D2E6" /* ID */ => return 2
+                case _ =>
+              }
+            }
+          }
+
         case u32"0x643EF7CD" /* LPAREN */ =>
           if (hasJ1) {
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
                 case u32"0xD735687B" /* AT */ => return 2
+                case u32"0x0FA8D2E6" /* ID */ => return 2
                 case u32"0xEE99A672" /* TRUE */ => return 2
                 case u32"0x43340E3B" /* FALSE */ => return 2
                 case u32"0x589C233C" /* INT */ => return 2
@@ -19952,30 +20093,15 @@ import SlangLl2Parser._
                 case u32"0x1F9A2C24" /* REAL */ => return 2
                 case u32"0xA7CF0FE0" /* STRING */ => return 2
                 case u32"0x84A54E6B" /* MSTR */ => return 2
+                case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0x0FA8D2E6" /* ID */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
+                case u32"0x7EF5EC39" /* STAR */ => return 2
                 case _ =>
               }
             }
           }
 
-        case u32"0x0FA8D2E6" /* ID */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x37DDEF83" /* COMMA */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x54FAE327" /* COLON */ => return 2
-                case u32"0xD735687B" /* AT */ => return 2
-                case u32"0xF20A2856" /* ASSIGN */ => return 2
-                case _ =>
-              }
-            }
-          }
-          return 1
         case u32"0xF0D3D2C8" /* UNDERSCORE */ =>
           if (hasJ1) {
             val tokenJ1 = tokens.at(j1)
@@ -19983,6 +20109,17 @@ import SlangLl2Parser._
               tokenJ1.leaf.tipe match {
                 case u32"0x37DDEF83" /* COMMA */ => return 2
                 case u32"0x54FAE327" /* COLON */ => return 2
+                case _ =>
+              }
+            }
+          }
+          return 1
+        case u32"0x7EF5EC39" /* STAR */ =>
+          if (hasJ1) {
+            val tokenJ1 = tokens.at(j1)
+            if (tokenJ1.kind == Result.Kind.Normal) {
+              tokenJ1.leaf.tipe match {
+                case u32"0x37DDEF83" /* COMMA */ => return 2
                 case _ =>
               }
             }
@@ -20954,7 +21091,6 @@ import SlangLl2Parser._
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
-                case u32"0xD735687B" /* AT */ => return 2
                 case u32"0xEE99A672" /* TRUE */ => return 2
                 case u32"0x43340E3B" /* FALSE */ => return 2
                 case u32"0x589C233C" /* INT */ => return 2
@@ -20963,9 +21099,9 @@ import SlangLl2Parser._
                 case u32"0x1F9A2C24" /* REAL */ => return 2
                 case u32"0xA7CF0FE0" /* STRING */ => return 2
                 case u32"0x84A54E6B" /* MSTR */ => return 2
+                case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -21097,7 +21233,6 @@ import SlangLl2Parser._
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
-                case u32"0x951E9CFB" /* LSQUARE */ => return 2
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
                 case u32"0x3D594292" /* OP */ => return 2
@@ -21112,7 +21247,6 @@ import SlangLl2Parser._
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
-                case u32"0x951E9CFB" /* LSQUARE */ => return 2
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
                 case _ =>
@@ -21220,29 +21354,6 @@ import SlangLl2Parser._
     return -1
   }
 
-  @pure def predictCondMatchSuffix(j: Z): Z = {
-    val j1 = j + 1
-    val hasJ1 = tokens.has(j1)
-    val tokenJ = tokens.at(j)
-    if (tokenJ.kind == Result.Kind.Normal) {
-      tokenJ.leaf.tipe match {
-        case u32"0xDC2A8959" /* LBRACE */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x186E11D7" /* CASE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case _ =>
-      }
-    }
-    return -1
-  }
-
   @pure def predictNamedArg(j: Z): Z = {
     val j1 = j + 1
     val hasJ1 = tokens.has(j1)
@@ -21334,7 +21445,6 @@ import SlangLl2Parser._
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
-                case u32"0x951E9CFB" /* LSQUARE */ => return 2
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
                 case u32"0x3D594292" /* OP */ => return 2
@@ -21446,6 +21556,74 @@ import SlangLl2Parser._
     return -1
   }
 
+  @pure def predictPattern0(j: Z): Z = {
+    val j1 = j + 1
+    val hasJ1 = tokens.has(j1)
+    val tokenJ = tokens.at(j)
+    if (tokenJ.kind == Result.Kind.Normal) {
+      tokenJ.leaf.tipe match {
+        case u32"0xEE99A672" /* TRUE */ => return 1
+        case u32"0x43340E3B" /* FALSE */ => return 1
+        case u32"0x589C233C" /* INT */ => return 1
+        case u32"0x5028A536" /* HEX */ => return 1
+        case u32"0x4E33B13F" /* BIN */ => return 1
+        case u32"0x1F9A2C24" /* REAL */ => return 1
+        case u32"0xA7CF0FE0" /* STRING */ => return 1
+        case u32"0x84A54E6B" /* MSTR */ => return 1
+        case u32"0x9A468353" /* DOT */ =>
+          if (hasJ1) {
+            val tokenJ1 = tokens.at(j1)
+            if (tokenJ1.kind == Result.Kind.Normal) {
+              tokenJ1.leaf.tipe match {
+                case u32"0x0FA8D2E6" /* ID */ => return 2
+                case _ =>
+              }
+            }
+          }
+
+        case u32"0x643EF7CD" /* LPAREN */ =>
+          if (hasJ1) {
+            val tokenJ1 = tokens.at(j1)
+            if (tokenJ1.kind == Result.Kind.Normal) {
+              tokenJ1.leaf.tipe match {
+                case u32"0xD735687B" /* AT */ => return 2
+                case u32"0x0FA8D2E6" /* ID */ => return 2
+                case u32"0xEE99A672" /* TRUE */ => return 2
+                case u32"0x43340E3B" /* FALSE */ => return 2
+                case u32"0x589C233C" /* INT */ => return 2
+                case u32"0x5028A536" /* HEX */ => return 2
+                case u32"0x4E33B13F" /* BIN */ => return 2
+                case u32"0x1F9A2C24" /* REAL */ => return 2
+                case u32"0xA7CF0FE0" /* STRING */ => return 2
+                case u32"0x84A54E6B" /* MSTR */ => return 2
+                case u32"0x9A468353" /* DOT */ => return 2
+                case u32"0x643EF7CD" /* LPAREN */ => return 2
+                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
+                case u32"0x7EF5EC39" /* STAR */ => return 2
+                case _ =>
+              }
+            }
+          }
+
+        case u32"0x0FA8D2E6" /* ID */ =>
+          if (hasJ1) {
+            val tokenJ1 = tokens.at(j1)
+            if (tokenJ1.kind == Result.Kind.Normal) {
+              tokenJ1.leaf.tipe match {
+                case u32"0x643EF7CD" /* LPAREN */ => return 2
+                case u32"0x9A468353" /* DOT */ => return 2
+                case u32"0xD735687B" /* AT */ => return 2
+                case _ =>
+              }
+            }
+          }
+          return 1
+        case _ =>
+      }
+    }
+    return -1
+  }
+
   @pure def predictWildCardPattern(j: Z): Z = {
     val j1 = j + 1
     val hasJ1 = tokens.has(j1)
@@ -21528,7 +21706,6 @@ import SlangLl2Parser._
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
-                case u32"0xD735687B" /* AT */ => return 2
                 case u32"0xEE99A672" /* TRUE */ => return 2
                 case u32"0x43340E3B" /* FALSE */ => return 2
                 case u32"0x589C233C" /* INT */ => return 2
@@ -21537,9 +21714,9 @@ import SlangLl2Parser._
                 case u32"0x1F9A2C24" /* REAL */ => return 2
                 case u32"0xA7CF0FE0" /* STRING */ => return 2
                 case u32"0x84A54E6B" /* MSTR */ => return 2
+                case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -22812,7 +22989,6 @@ import SlangLl2Parser._
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
-                case u32"0xD735687B" /* AT */ => return 2
                 case u32"0xEE99A672" /* TRUE */ => return 2
                 case u32"0x43340E3B" /* FALSE */ => return 2
                 case u32"0x589C233C" /* INT */ => return 2
@@ -22821,9 +22997,9 @@ import SlangLl2Parser._
                 case u32"0x1F9A2C24" /* REAL */ => return 2
                 case u32"0xA7CF0FE0" /* STRING */ => return 2
                 case u32"0x84A54E6B" /* MSTR */ => return 2
+                case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -22955,7 +23131,6 @@ import SlangLl2Parser._
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
-                case u32"0x951E9CFB" /* LSQUARE */ => return 2
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
                 case u32"0x3D594292" /* OP */ => return 2
@@ -23987,7 +24162,6 @@ import SlangLl2Parser._
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
-                case u32"0xD735687B" /* AT */ => return 2
                 case u32"0xEE99A672" /* TRUE */ => return 2
                 case u32"0x43340E3B" /* FALSE */ => return 2
                 case u32"0x589C233C" /* INT */ => return 2
@@ -23996,9 +24170,9 @@ import SlangLl2Parser._
                 case u32"0x1F9A2C24" /* REAL */ => return 2
                 case u32"0xA7CF0FE0" /* STRING */ => return 2
                 case u32"0x84A54E6B" /* MSTR */ => return 2
+                case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -24130,7 +24304,6 @@ import SlangLl2Parser._
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
-                case u32"0x951E9CFB" /* LSQUARE */ => return 2
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
                 case u32"0x3D594292" /* OP */ => return 2
@@ -24145,7 +24318,6 @@ import SlangLl2Parser._
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
-                case u32"0x951E9CFB" /* LSQUARE */ => return 2
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
                 case _ =>
@@ -24556,7 +24728,6 @@ import SlangLl2Parser._
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
-                case u32"0xD735687B" /* AT */ => return 2
                 case u32"0xEE99A672" /* TRUE */ => return 2
                 case u32"0x43340E3B" /* FALSE */ => return 2
                 case u32"0x589C233C" /* INT */ => return 2
@@ -24565,9 +24736,9 @@ import SlangLl2Parser._
                 case u32"0x1F9A2C24" /* REAL */ => return 2
                 case u32"0xA7CF0FE0" /* STRING */ => return 2
                 case u32"0x84A54E6B" /* MSTR */ => return 2
+                case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -24699,7 +24870,6 @@ import SlangLl2Parser._
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
-                case u32"0x951E9CFB" /* LSQUARE */ => return 2
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
                 case u32"0x3D594292" /* OP */ => return 2
@@ -24714,9 +24884,31 @@ import SlangLl2Parser._
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
-                case u32"0x951E9CFB" /* LSQUARE */ => return 2
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
+                case _ =>
+              }
+            }
+          }
+
+        case _ =>
+      }
+    }
+    return -1
+  }
+
+  @pure def predictMatchCases(j: Z): Z = {
+    val j1 = j + 1
+    val hasJ1 = tokens.has(j1)
+    val tokenJ = tokens.at(j)
+    if (tokenJ.kind == Result.Kind.Normal) {
+      tokenJ.leaf.tipe match {
+        case u32"0xDC2A8959" /* LBRACE */ =>
+          if (hasJ1) {
+            val tokenJ1 = tokens.at(j1)
+            if (tokenJ1.kind == Result.Kind.Normal) {
+              tokenJ1.leaf.tipe match {
+                case u32"0x186E11D7" /* CASE */ => return 2
                 case _ =>
               }
             }
@@ -25539,6 +25731,7 @@ import SlangLl2Parser._
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
                 case u32"0xD735687B" /* AT */ => return 2
+                case u32"0x0FA8D2E6" /* ID */ => return 2
                 case u32"0xEE99A672" /* TRUE */ => return 2
                 case u32"0x43340E3B" /* FALSE */ => return 2
                 case u32"0x589C233C" /* INT */ => return 2
@@ -25547,9 +25740,10 @@ import SlangLl2Parser._
                 case u32"0x1F9A2C24" /* REAL */ => return 2
                 case u32"0xA7CF0FE0" /* STRING */ => return 2
                 case u32"0x84A54E6B" /* MSTR */ => return 2
+                case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0x0FA8D2E6" /* ID */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
+                case u32"0x7EF5EC39" /* STAR */ => return 2
                 case _ =>
               }
             }
@@ -26224,6 +26418,7 @@ import SlangLl2Parser._
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
                 case u32"0xD735687B" /* AT */ => return 2
+                case u32"0x0FA8D2E6" /* ID */ => return 2
                 case u32"0xEE99A672" /* TRUE */ => return 2
                 case u32"0x43340E3B" /* FALSE */ => return 2
                 case u32"0x589C233C" /* INT */ => return 2
@@ -26232,9 +26427,10 @@ import SlangLl2Parser._
                 case u32"0x1F9A2C24" /* REAL */ => return 2
                 case u32"0xA7CF0FE0" /* STRING */ => return 2
                 case u32"0x84A54E6B" /* MSTR */ => return 2
+                case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0x0FA8D2E6" /* ID */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
+                case u32"0x7EF5EC39" /* STAR */ => return 2
                 case _ =>
               }
             }
@@ -29879,7 +30075,7 @@ import SlangLl2Parser._
   @pure def lex_BIN(index: Z): Option[Result] = { return lexH(index, dfa_BIN(index), """BIN""", u32"0x4E33B13F", F) }
 
   @pure def dfa_INT(i: Z): Z = {
-    val ctx = LContext.create(ISZ(state"2", state"3"), i)
+    val ctx = LContext.create(ISZ(state"2", state"4", state"5", state"6", state"8", state"9"), i)
 
     while (cis.has(ctx.j)) {
       ctx.state match {
@@ -29889,7 +30085,7 @@ import SlangLl2Parser._
           if (c == '-') {
             ctx.update(state"1")
           } else if (c == '0') {
-            ctx.update(state"3")
+            ctx.update(state"9")
           } else if ('1' <= c && c <= '9') {
             ctx.update(state"2")
           }
@@ -29910,11 +30106,87 @@ import SlangLl2Parser._
           ctx.found = F
           if ('0' <= c && c <= '9' || c == '_') {
             ctx.update(state"2")
+          } else if ('A' <= c && c <= 'Z' || 'a' <= c && c <= 'z') {
+            ctx.update(state"3")
           }
           if (!ctx.found) {
             return ctx.afterAcceptIndex
           }
-        case state"3" => return ctx.afterAcceptIndex
+        case state"3" =>
+          val c = cis.at(ctx.j)
+          ctx.found = F
+          if (c == '$' || 'A' <= c && c <= 'Z' || c == '_' || 'a' <= c && c <= 'z') {
+            ctx.update(state"4")
+          } else if (c == '`') {
+            ctx.update(state"7")
+          }
+          if (!ctx.found) {
+            return ctx.afterAcceptIndex
+          }
+        case state"4" =>
+          val c = cis.at(ctx.j)
+          ctx.found = F
+          if (c == '$' || '0' <= c && c <= '9' || 'A' <= c && c <= 'Z' || 'a' <= c && c <= 'z') {
+            ctx.update(state"4")
+          } else if (c == '_') {
+            ctx.update(state"5")
+          }
+          if (!ctx.found) {
+            return ctx.afterAcceptIndex
+          }
+        case state"5" =>
+          val c = cis.at(ctx.j)
+          ctx.found = F
+          if (c == '!' || '%' <= c && c <= '&' || '*' <= c && c <= '+' || c == '-' || c == '/' || c == ':' || '<' <= c && c <= '>' || c == '^' || c == '|' || c == '~' || '\u2200' <= c && c <= '\u22FF' || '\u27C0' <= c && c <= '\u27EF' || '\u2980' <= c && c <= '\u2AFF') {
+            ctx.update(state"6")
+          } else if (c == '$' || '0' <= c && c <= '9' || 'A' <= c && c <= 'Z' || 'a' <= c && c <= 'z') {
+            ctx.update(state"4")
+          } else if (c == '_') {
+            ctx.update(state"5")
+          }
+          if (!ctx.found) {
+            return ctx.afterAcceptIndex
+          }
+        case state"6" =>
+          val c = cis.at(ctx.j)
+          ctx.found = F
+          if (c == '!' || '%' <= c && c <= '&' || '*' <= c && c <= '+' || c == '-' || c == '/' || c == ':' || '<' <= c && c <= '>' || c == '^' || c == '|' || c == '~' || '\u2200' <= c && c <= '\u22FF' || '\u27C0' <= c && c <= '\u27EF' || '\u2980' <= c && c <= '\u2AFF') {
+            ctx.update(state"6")
+          }
+          if (!ctx.found) {
+            return ctx.afterAcceptIndex
+          }
+        case state"7" =>
+          val c = cis.at(ctx.j)
+          ctx.found = F
+          if (minChar <= c && c <= '\u0008' || '\u000B' <= c && c <= '\u000C' || '\u000E' <= c && c <= '_' || 'a' <= c && c <= maxChar) {
+            ctx.update(state"7")
+          } else if (c == '`') {
+            ctx.update(state"8")
+          }
+          if (!ctx.found) {
+            return ctx.afterAcceptIndex
+          }
+        case state"8" =>
+          val c = cis.at(ctx.j)
+          ctx.found = F
+          if (minChar <= c && c <= '\u0008' || '\u000B' <= c && c <= '\u000C' || '\u000E' <= c && c <= '_' || 'a' <= c && c <= maxChar) {
+            ctx.update(state"7")
+          } else if (c == '`') {
+            ctx.update(state"8")
+          }
+          if (!ctx.found) {
+            return ctx.afterAcceptIndex
+          }
+        case state"9" =>
+          val c = cis.at(ctx.j)
+          ctx.found = F
+          if ('A' <= c && c <= 'Z' || 'a' <= c && c <= 'z') {
+            ctx.update(state"3")
+          }
+          if (!ctx.found) {
+            return ctx.afterAcceptIndex
+          }
         case _ => halt("Infeasible")
       }
       ctx.j = ctx.j + 1
