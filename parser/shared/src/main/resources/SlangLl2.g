@@ -54,8 +54,6 @@ importQualSuffix: ID importIdSuffix? ;
 
 importRenamesSuffix: LBRACE importRename importRenameSuffix* RBRACE ;
 
-importIdDotIdSuffix: annot | importIdSuffix ;
-
 importRenameSuffix: COMMA importRename ;
 
 importRename: ID ARROW ID annot? ;
@@ -168,9 +166,11 @@ elsIf: IF exp annot? block els? ;
 
 whileStmt: WHILE exp annot? block ;
 
-forStmt: FOR forRange+ block ;
+forStmt: FOR forRange commaForRange* block ;
 
-forRange: ID COLON exp rangeSuffix? annot? ;
+forRange: ( ID | UNDERSCORE ) COLON exp rangeSuffix? ifExp? annot? ;
+
+commaForRange: COMMA forRange ;
 
 rangeSuffix: ( TO |  UNTIL ) exp byExp? ;
 
@@ -210,7 +210,7 @@ commaNamedPattern: COMMA ID ASSIGN pattern ;
 
 exp: exp3 | forExp | defAnon | quant ;
 
-exp3: exp2 infixSuffix* condSuffix? ;
+exp3: exp2 infixSuffix* ;
 
 infixSuffix: infixOp exp2 ;
 
@@ -229,10 +229,6 @@ idExp: ID typeArgs? ;
 thisExp: THIS ;
 
 superExp: SUPER ;
-
-condSuffix: QUESTION ( condIteSuffix | matchCases );
-
-condIteSuffix: exp COLON exp ;
 
 access: fieldAccess | applyAccess ;
 
@@ -256,11 +252,11 @@ commaExpAnnot: COMMA exp annot? ;
 
 commaNamedExpAnnot: COMMA ID ASSIGN exp annot? ;
 
-cas: CASE pattern casIf? ARROW annot? blockContent ;
+cas: CASE pattern ifExp? ARROW annot? blockContent ;
 
-casIf: IF exp ;
+ifExp: IF exp ;
 
-forExp: YIELD annot? forRange+ ARROW annot? rhs ;
+forExp: YIELD annot? forRange commaForRange* ARROW annot? rhs ;
 
 defAnon: DEF mod* defParams colonType? DOT annot? rhs ;
 
@@ -303,8 +299,6 @@ justArgs: LPAREN args RPAREN ;
 justTypeArgs: LSQUARE type commaType* RSQUARE ;
 
 commaType: COMMA type ;
-
-commaProofId: COMMA proofId ;
 
 truthTable: STAR+
             HLINE
@@ -356,7 +350,7 @@ interp: SP | SPB sinterp | MSTRP | MSTRPB mstrinterp /* | MSP | MSPB minterp */ 
 
 sinterp: exp ( SPM sinterp | SPE ) ;
 
-strinterp: exp ( MSTRPM sinterp | MSTRPE ) ;
+//strinterp: exp ( MSTRPM sinterp | MSTRPE ) ;
 
 mstrinterp: exp ( MSTRPM mstrinterp | MSTRPE ) ;
 

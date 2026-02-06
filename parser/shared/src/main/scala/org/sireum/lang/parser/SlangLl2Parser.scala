@@ -274,7 +274,6 @@ object SlangLl2Parser {
   val T_importWildcardSuffix: U32 = u32"0x11B5CA2D"
   val T_importQualSuffix: U32 = u32"0x04BCDBDF"
   val T_importRenamesSuffix: U32 = u32"0xD10BD008"
-  val T_importIdDotIdSuffix: U32 = u32"0x736D8269"
   val T_importRenameSuffix: U32 = u32"0xEF507477"
   val T_importRename: U32 = u32"0xC049FF97"
   val T_mainMember: U32 = u32"0x25DD728D"
@@ -333,6 +332,7 @@ object SlangLl2Parser {
   val T_whileStmt: U32 = u32"0x5D05CC86"
   val T_forStmt: U32 = u32"0xF5A239EA"
   val T_forRange: U32 = u32"0xF6BB1EA0"
+  val T_commaForRange: U32 = u32"0x4A80BD07"
   val T_rangeSuffix: U32 = u32"0x53B50CBD"
   val T_byExp: U32 = u32"0x987D502D"
   val T_commaExp: U32 = u32"0x2393742F"
@@ -362,8 +362,6 @@ object SlangLl2Parser {
   val T_idExp: U32 = u32"0xFAE4B488"
   val T_thisExp: U32 = u32"0xD728CFA1"
   val T_superExp: U32 = u32"0x51E4C72C"
-  val T_condSuffix: U32 = u32"0x8109E6E8"
-  val T_condIteSuffix: U32 = u32"0xD2169E1F"
   val T_access: U32 = u32"0x1037F1F6"
   val T_fieldAccess: U32 = u32"0x0C4BEC0F"
   val T_applyAccess: U32 = u32"0xA72827F7"
@@ -376,7 +374,7 @@ object SlangLl2Parser {
   val T_commaExpAnnot: U32 = u32"0x884BA8BC"
   val T_commaNamedExpAnnot: U32 = u32"0x619A7F97"
   val T_cas: U32 = u32"0xCD3E833F"
-  val T_casIf: U32 = u32"0x4DC5F3FB"
+  val T_ifExp: U32 = u32"0x57FDC848"
   val T_forExp: U32 = u32"0x67C866A4"
   val T_defAnon: U32 = u32"0x22372D74"
   val T_colonType: U32 = u32"0x7E03BF28"
@@ -399,7 +397,6 @@ object SlangLl2Parser {
   val T_justArgs: U32 = u32"0x457AC9A1"
   val T_justTypeArgs: U32 = u32"0x712E6404"
   val T_commaType: U32 = u32"0x3180635B"
-  val T_commaProofId: U32 = u32"0x274FC0AA"
   val T_truthTable: U32 = u32"0xC179AFB9"
   val T_colonExp: U32 = u32"0xA8874083"
   val T_colonIds: U32 = u32"0xA76DAE7A"
@@ -422,7 +419,6 @@ object SlangLl2Parser {
   val T_typeArgs: U32 = u32"0x5C896FFC"
   val T_interp: U32 = u32"0x99E5082E"
   val T_sinterp: U32 = u32"0x3A86312D"
-  val T_strinterp: U32 = u32"0x364BA78D"
   val T_mstrinterp: U32 = u32"0xC24C785B"
 
   val errorLeaf: ParseTree.Leaf = ParseTree.Leaf("<ERROR>", "<ERROR>", u32"0xE3CDEDDA", F, None())
@@ -950,43 +946,6 @@ import SlangLl2Parser._
             return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
           }
         case state"3" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-        case _ => halt("Infeasible")
-      }
-      if (ctx.max < ctx.j) {
-        ctx.max = ctx.j
-      }
-    }
-
-    return retVal(ctx.j, ctx.resOpt, ctx.initial, T)
-  }
-
-  @pure def parseImportIdDotIdSuffix(i: Z): Result = {
-    val ctx = Context.create("importIdDotIdSuffix", u32"0x736D8269", ISZ(state"1"), i)
-
-    while (tokens.has(ctx.j)) {
-      val token: ParseTree.Leaf = {
-        val result = tokens.at(ctx.j)
-        if (result.kind != Result.Kind.Normal) {
-          return result
-        }
-        result.leaf
-      }
-      ctx.state match {
-        case state"0" =>
-          ctx.found = F
-          val n_annot = predictAnnot(ctx.j)
-          val n_importIdSuffix = predictImportIdSuffix(ctx.j)
-          for (n <- 2 to 1 by -1 if !ctx.found) {
-            if (n_annot == n && parseAnnotH(ctx, state"1")) {
-              return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_importIdSuffix == n && parseImportIdSuffixH(ctx, state"1")) {
-              return Result.error(ctx.isLexical, ctx.failIndex)
-            }
-          }
-          if (!ctx.found) {
-            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-          }
-        case state"1" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
         case _ => halt("Infeasible")
       }
       if (ctx.max < ctx.j) {
@@ -4253,10 +4212,10 @@ import SlangLl2Parser._
           }
         case state"2" =>
           ctx.found = F
-          val n_forRange = predictForRange(ctx.j)
+          val n_commaForRange = predictCommaForRange(ctx.j)
           val n_block = predictBlock(ctx.j)
           for (n <- 2 to 1 by -1 if !ctx.found) {
-            if (n_forRange == n && parseForRangeH(ctx, state"2")) {
+            if (n_commaForRange == n && parseCommaForRangeH(ctx, state"2")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
             } else if (n_block == n && parseBlockH(ctx, state"3")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
@@ -4277,7 +4236,7 @@ import SlangLl2Parser._
   }
 
   @pure def parseForRange(i: Z): Result = {
-    val ctx = Context.create("forRange", u32"0xF6BB1EA0", ISZ(state"3", state"4", state"5"), i)
+    val ctx = Context.create("forRange", u32"0xF6BB1EA0", ISZ(state"3", state"4", state"5", state"6"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -4292,6 +4251,7 @@ import SlangLl2Parser._
           ctx.found = F
           token.tipe match {
             case u32"0x0FA8D2E6" /* ID */ => ctx.updateTerminal(token, state"1")
+            case u32"0xF0D3D2C8" /* UNDERSCORE */ => ctx.updateTerminal(token, state"1")
             case _ =>
           }
           if (!ctx.found) {
@@ -4318,11 +4278,14 @@ import SlangLl2Parser._
         case state"3" =>
           ctx.found = F
           val n_rangeSuffix = predictRangeSuffix(ctx.j)
+          val n_ifExp = predictIfExp(ctx.j)
           val n_annot = predictAnnot(ctx.j)
           for (n <- 2 to 1 by -1 if !ctx.found) {
             if (n_rangeSuffix == n && parseRangeSuffixH(ctx, state"4")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_annot == n && parseAnnotH(ctx, state"5")) {
+            } else if (n_ifExp == n && parseIfExpH(ctx, state"5")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_annot == n && parseAnnotH(ctx, state"6")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
             }
           }
@@ -4331,14 +4294,69 @@ import SlangLl2Parser._
           }
         case state"4" =>
           ctx.found = F
+          val n_ifExp = predictIfExp(ctx.j)
           val n_annot = predictAnnot(ctx.j)
-          if (n_annot >= 0 && parseAnnotH(ctx, state"5")) {
+          for (n <- 2 to 1 by -1 if !ctx.found) {
+            if (n_ifExp == n && parseIfExpH(ctx, state"5")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_annot == n && parseAnnotH(ctx, state"6")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            }
+          }
+          if (!ctx.found) {
+            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+          }
+        case state"5" =>
+          ctx.found = F
+          val n_annot = predictAnnot(ctx.j)
+          if (n_annot >= 0 && parseAnnotH(ctx, state"6")) {
             return Result.error(ctx.isLexical, ctx.failIndex)
           }
           if (!ctx.found) {
             return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
           }
-        case state"5" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+        case state"6" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+        case _ => halt("Infeasible")
+      }
+      if (ctx.max < ctx.j) {
+        ctx.max = ctx.j
+      }
+    }
+
+    return retVal(ctx.j, ctx.resOpt, ctx.initial, T)
+  }
+
+  @pure def parseCommaForRange(i: Z): Result = {
+    val ctx = Context.create("commaForRange", u32"0x4A80BD07", ISZ(state"2"), i)
+
+    while (tokens.has(ctx.j)) {
+      val token: ParseTree.Leaf = {
+        val result = tokens.at(ctx.j)
+        if (result.kind != Result.Kind.Normal) {
+          return result
+        }
+        result.leaf
+      }
+      ctx.state match {
+        case state"0" =>
+          ctx.found = F
+          token.tipe match {
+            case u32"0x37DDEF83" /* COMMA */ => ctx.updateTerminal(token, state"1")
+            case _ =>
+          }
+          if (!ctx.found) {
+            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+          }
+        case state"1" =>
+          ctx.found = F
+          val n_forRange = predictForRange(ctx.j)
+          if (n_forRange >= 0 && parseForRangeH(ctx, state"2")) {
+            return Result.error(ctx.isLexical, ctx.failIndex)
+          }
+          if (!ctx.found) {
+            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+          }
+        case state"2" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
         case _ => halt("Infeasible")
       }
       if (ctx.max < ctx.j) {
@@ -5276,7 +5294,7 @@ import SlangLl2Parser._
   }
 
   @pure def parseExp3(i: Z): Result = {
-    val ctx = Context.create("exp3", u32"0x7690967A", ISZ(state"1", state"2"), i)
+    val ctx = Context.create("exp3", u32"0x7690967A", ISZ(state"1"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -5299,18 +5317,12 @@ import SlangLl2Parser._
         case state"1" =>
           ctx.found = F
           val n_infixSuffix = predictInfixSuffix(ctx.j)
-          val n_condSuffix = predictCondSuffix(ctx.j)
-          for (n <- 2 to 1 by -1 if !ctx.found) {
-            if (n_infixSuffix == n && parseInfixSuffixH(ctx, state"1")) {
-              return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_condSuffix == n && parseCondSuffixH(ctx, state"2")) {
-              return Result.error(ctx.isLexical, ctx.failIndex)
-            }
+          if (n_infixSuffix >= 0 && parseInfixSuffixH(ctx, state"1")) {
+            return Result.error(ctx.isLexical, ctx.failIndex)
           }
           if (!ctx.found) {
             return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
           }
-        case state"2" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
         case _ => halt("Infeasible")
       }
       if (ctx.max < ctx.j) {
@@ -5675,102 +5687,6 @@ import SlangLl2Parser._
             return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
           }
         case state"1" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-        case _ => halt("Infeasible")
-      }
-      if (ctx.max < ctx.j) {
-        ctx.max = ctx.j
-      }
-    }
-
-    return retVal(ctx.j, ctx.resOpt, ctx.initial, T)
-  }
-
-  @pure def parseCondSuffix(i: Z): Result = {
-    val ctx = Context.create("condSuffix", u32"0x8109E6E8", ISZ(state"2"), i)
-
-    while (tokens.has(ctx.j)) {
-      val token: ParseTree.Leaf = {
-        val result = tokens.at(ctx.j)
-        if (result.kind != Result.Kind.Normal) {
-          return result
-        }
-        result.leaf
-      }
-      ctx.state match {
-        case state"0" =>
-          ctx.found = F
-          token.tipe match {
-            case u32"0xA4512A72" /* QUESTION */ => ctx.updateTerminal(token, state"1")
-            case _ =>
-          }
-          if (!ctx.found) {
-            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-          }
-        case state"1" =>
-          ctx.found = F
-          val n_condIteSuffix = predictCondIteSuffix(ctx.j)
-          val n_matchCases = predictMatchCases(ctx.j)
-          for (n <- 2 to 1 by -1 if !ctx.found) {
-            if (n_condIteSuffix == n && parseCondIteSuffixH(ctx, state"2")) {
-              return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_matchCases == n && parseMatchCasesH(ctx, state"2")) {
-              return Result.error(ctx.isLexical, ctx.failIndex)
-            }
-          }
-          if (!ctx.found) {
-            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-          }
-        case state"2" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-        case _ => halt("Infeasible")
-      }
-      if (ctx.max < ctx.j) {
-        ctx.max = ctx.j
-      }
-    }
-
-    return retVal(ctx.j, ctx.resOpt, ctx.initial, T)
-  }
-
-  @pure def parseCondIteSuffix(i: Z): Result = {
-    val ctx = Context.create("condIteSuffix", u32"0xD2169E1F", ISZ(state"3"), i)
-
-    while (tokens.has(ctx.j)) {
-      val token: ParseTree.Leaf = {
-        val result = tokens.at(ctx.j)
-        if (result.kind != Result.Kind.Normal) {
-          return result
-        }
-        result.leaf
-      }
-      ctx.state match {
-        case state"0" =>
-          ctx.found = F
-          val n_exp = predictExp(ctx.j)
-          if (n_exp >= 0 && parseExpH(ctx, state"1")) {
-            return Result.error(ctx.isLexical, ctx.failIndex)
-          }
-          if (!ctx.found) {
-            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-          }
-        case state"1" =>
-          ctx.found = F
-          token.tipe match {
-            case u32"0x54FAE327" /* COLON */ => ctx.updateTerminal(token, state"2")
-            case _ =>
-          }
-          if (!ctx.found) {
-            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-          }
-        case state"2" =>
-          ctx.found = F
-          val n_exp = predictExp(ctx.j)
-          if (n_exp >= 0 && parseExpH(ctx, state"3")) {
-            return Result.error(ctx.isLexical, ctx.failIndex)
-          }
-          if (!ctx.found) {
-            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-          }
-        case state"3" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
         case _ => halt("Infeasible")
       }
       if (ctx.max < ctx.j) {
@@ -6432,8 +6348,8 @@ import SlangLl2Parser._
           }
         case state"2" =>
           ctx.found = F
-          val n_casIf = predictCasIf(ctx.j)
-          if (n_casIf >= 0 && parseCasIfH(ctx, state"3")) {
+          val n_ifExp = predictIfExp(ctx.j)
+          if (n_ifExp >= 0 && parseIfExpH(ctx, state"3")) {
             return Result.error(ctx.isLexical, ctx.failIndex)
           }
           if (!ctx.found) {
@@ -6488,8 +6404,8 @@ import SlangLl2Parser._
     return retVal(ctx.j, ctx.resOpt, ctx.initial, T)
   }
 
-  @pure def parseCasIf(i: Z): Result = {
-    val ctx = Context.create("casIf", u32"0x4DC5F3FB", ISZ(state"2"), i)
+  @pure def parseIfExp(i: Z): Result = {
+    val ctx = Context.create("ifExp", u32"0x57FDC848", ISZ(state"2"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -6575,8 +6491,8 @@ import SlangLl2Parser._
           }
         case state"3" =>
           ctx.found = F
-          val n_forRange = predictForRange(ctx.j)
-          if (n_forRange >= 0 && parseForRangeH(ctx, state"3")) {
+          val n_commaForRange = predictCommaForRange(ctx.j)
+          if (n_commaForRange >= 0 && parseCommaForRangeH(ctx, state"3")) {
             return Result.error(ctx.isLexical, ctx.failIndex)
           }
           if (!ctx.found) {
@@ -7829,47 +7745,6 @@ import SlangLl2Parser._
     return retVal(ctx.j, ctx.resOpt, ctx.initial, T)
   }
 
-  @pure def parseCommaProofId(i: Z): Result = {
-    val ctx = Context.create("commaProofId", u32"0x274FC0AA", ISZ(state"2"), i)
-
-    while (tokens.has(ctx.j)) {
-      val token: ParseTree.Leaf = {
-        val result = tokens.at(ctx.j)
-        if (result.kind != Result.Kind.Normal) {
-          return result
-        }
-        result.leaf
-      }
-      ctx.state match {
-        case state"0" =>
-          ctx.found = F
-          token.tipe match {
-            case u32"0x37DDEF83" /* COMMA */ => ctx.updateTerminal(token, state"1")
-            case _ =>
-          }
-          if (!ctx.found) {
-            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-          }
-        case state"1" =>
-          ctx.found = F
-          val n_proofId = predictProofId(ctx.j)
-          if (n_proofId >= 0 && parseProofIdH(ctx, state"2")) {
-            return Result.error(ctx.isLexical, ctx.failIndex)
-          }
-          if (!ctx.found) {
-            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-          }
-        case state"2" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-        case _ => halt("Infeasible")
-      }
-      if (ctx.max < ctx.j) {
-        ctx.max = ctx.j
-      }
-    }
-
-    return retVal(ctx.j, ctx.resOpt, ctx.initial, T)
-  }
-
   @pure def parseTruthTable(i: Z): Result = {
     val ctx = Context.create("truthTable", u32"0xC179AFB9", ISZ(state"8", state"9"), i)
 
@@ -9036,57 +8911,6 @@ import SlangLl2Parser._
           token.tipe match {
             case u32"0xFBA828F9" /* SPM */ => ctx.updateTerminal(token, state"2")
             case u32"0x744EF85A" /* SPE */ => ctx.updateTerminal(token, state"3")
-            case _ =>
-          }
-          if (!ctx.found) {
-            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-          }
-        case state"2" =>
-          ctx.found = F
-          val n_sinterp = predictSinterp(ctx.j)
-          if (n_sinterp >= 0 && parseSinterpH(ctx, state"3")) {
-            return Result.error(ctx.isLexical, ctx.failIndex)
-          }
-          if (!ctx.found) {
-            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-          }
-        case state"3" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-        case _ => halt("Infeasible")
-      }
-      if (ctx.max < ctx.j) {
-        ctx.max = ctx.j
-      }
-    }
-
-    return retVal(ctx.j, ctx.resOpt, ctx.initial, T)
-  }
-
-  @pure def parseStrinterp(i: Z): Result = {
-    val ctx = Context.create("strinterp", u32"0x364BA78D", ISZ(state"3"), i)
-
-    while (tokens.has(ctx.j)) {
-      val token: ParseTree.Leaf = {
-        val result = tokens.at(ctx.j)
-        if (result.kind != Result.Kind.Normal) {
-          return result
-        }
-        result.leaf
-      }
-      ctx.state match {
-        case state"0" =>
-          ctx.found = F
-          val n_exp = predictExp(ctx.j)
-          if (n_exp >= 0 && parseExpH(ctx, state"1")) {
-            return Result.error(ctx.isLexical, ctx.failIndex)
-          }
-          if (!ctx.found) {
-            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-          }
-        case state"1" =>
-          ctx.found = F
-          token.tipe match {
-            case u32"0x6B6A7ADC" /* MSTRPM */ => ctx.updateTerminal(token, state"2")
-            case u32"0x537B19CD" /* MSTRPE */ => ctx.updateTerminal(token, state"3")
             case _ =>
           }
           if (!ctx.found) {
@@ -10623,8 +10447,48 @@ import SlangLl2Parser._
     return F
   }
 
+  def parseCommaForRangeH(ctx: Context, nextState: State): B = {
+    val r = parseCommaForRange(ctx.j)
+    r.kind match {
+      case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
+      case Result.Kind.LexicalError =>
+        ctx.failIndex = r.newIndex
+        ctx.isLexical = T
+        return T
+      case Result.Kind.GrammaticalError =>
+        val index = r.newIndex
+        if (index < 0) {
+          ctx.failIndex = index
+          return T
+        } else if (ctx.max < index) {
+          ctx.max = index
+        }
+    }
+    return F
+  }
+
   def parseRangeSuffixH(ctx: Context, nextState: State): B = {
     val r = parseRangeSuffix(ctx.j)
+    r.kind match {
+      case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
+      case Result.Kind.LexicalError =>
+        ctx.failIndex = r.newIndex
+        ctx.isLexical = T
+        return T
+      case Result.Kind.GrammaticalError =>
+        val index = r.newIndex
+        if (index < 0) {
+          ctx.failIndex = index
+          return T
+        } else if (ctx.max < index) {
+          ctx.max = index
+        }
+    }
+    return F
+  }
+
+  def parseIfExpH(ctx: Context, nextState: State): B = {
+    val r = parseIfExp(ctx.j)
     r.kind match {
       case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
       case Result.Kind.LexicalError =>
@@ -11083,26 +10947,6 @@ import SlangLl2Parser._
     return F
   }
 
-  def parseCondSuffixH(ctx: Context, nextState: State): B = {
-    val r = parseCondSuffix(ctx.j)
-    r.kind match {
-      case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
-      case Result.Kind.LexicalError =>
-        ctx.failIndex = r.newIndex
-        ctx.isLexical = T
-        return T
-      case Result.Kind.GrammaticalError =>
-        val index = r.newIndex
-        if (index < 0) {
-          ctx.failIndex = index
-          return T
-        } else if (ctx.max < index) {
-          ctx.max = index
-        }
-    }
-    return F
-  }
-
   def parseInfixOpH(ctx: Context, nextState: State): B = {
     val r = parseInfixOp(ctx.j)
     r.kind match {
@@ -11263,26 +11107,6 @@ import SlangLl2Parser._
     return F
   }
 
-  def parseCondIteSuffixH(ctx: Context, nextState: State): B = {
-    val r = parseCondIteSuffix(ctx.j)
-    r.kind match {
-      case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
-      case Result.Kind.LexicalError =>
-        ctx.failIndex = r.newIndex
-        ctx.isLexical = T
-        return T
-      case Result.Kind.GrammaticalError =>
-        val index = r.newIndex
-        if (index < 0) {
-          ctx.failIndex = index
-          return T
-        } else if (ctx.max < index) {
-          ctx.max = index
-        }
-    }
-    return F
-  }
-
   def parseFieldAccessH(ctx: Context, nextState: State): B = {
     val r = parseFieldAccess(ctx.j)
     r.kind match {
@@ -11425,26 +11249,6 @@ import SlangLl2Parser._
 
   def parseCommaNamedExpAnnotH(ctx: Context, nextState: State): B = {
     val r = parseCommaNamedExpAnnot(ctx.j)
-    r.kind match {
-      case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
-      case Result.Kind.LexicalError =>
-        ctx.failIndex = r.newIndex
-        ctx.isLexical = T
-        return T
-      case Result.Kind.GrammaticalError =>
-        val index = r.newIndex
-        if (index < 0) {
-          ctx.failIndex = index
-          return T
-        } else if (ctx.max < index) {
-          ctx.max = index
-        }
-    }
-    return F
-  }
-
-  def parseCasIfH(ctx: Context, nextState: State): B = {
-    val r = parseCasIf(ctx.j)
     r.kind match {
       case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
       case Result.Kind.LexicalError =>
@@ -12712,6 +12516,7 @@ import SlangLl2Parser._
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
                 case u32"0x0FA8D2E6" /* ID */ => return 2
+                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -13868,7 +13673,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -13889,7 +13693,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -13909,7 +13712,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -13929,7 +13731,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -13949,7 +13750,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -13969,7 +13769,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -13989,7 +13788,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -14009,7 +13807,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -14029,7 +13826,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -14049,7 +13845,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -14069,7 +13864,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -14089,7 +13883,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -14141,7 +13934,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -14381,7 +14173,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -14402,7 +14193,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -14422,7 +14212,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -14442,7 +14231,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -14462,7 +14250,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -14482,7 +14269,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -14502,7 +14288,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -14522,7 +14307,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -14542,7 +14326,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -14562,7 +14345,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -14582,7 +14364,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -14602,7 +14383,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -14654,7 +14434,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -14735,6 +14514,7 @@ import SlangLl2Parser._
               tokenJ1.leaf.tipe match {
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
+                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -14854,50 +14634,6 @@ import SlangLl2Parser._
           }
 
         case u32"0x142AC92F" /* MATCH */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0x0FA8D2E6" /* ID */ => return 2
-                case u32"0x93DEEB98" /* THIS */ => return 2
-                case u32"0x136381C3" /* SUPER */ => return 2
-                case u32"0xEE99A672" /* TRUE */ => return 2
-                case u32"0x43340E3B" /* FALSE */ => return 2
-                case u32"0x589C233C" /* INT */ => return 2
-                case u32"0x5028A536" /* HEX */ => return 2
-                case u32"0x4E33B13F" /* BIN */ => return 2
-                case u32"0x1F9A2C24" /* REAL */ => return 2
-                case u32"0xA7CF0FE0" /* STRING */ => return 2
-                case u32"0x84A54E6B" /* MSTR */ => return 2
-                case u32"0x2C97C56A" /* SP */ => return 2
-                case u32"0x50C3B99F" /* SPB */ => return 2
-                case u32"0x7E667FD0" /* MSTRP */ => return 2
-                case u32"0x2427C288" /* MSTRPB */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0x49425B4A" /* YIELD */ => return 2
-                case u32"0xCE1D1E69" /* DEF */ => return 2
-                case u32"0x8F29683F" /* ALL */ => return 2
-                case u32"0xC21A525C" /* SOME */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case _ =>
-      }
-    }
-    return -1
-  }
-
-  @pure def predictCasIf(j: Z): Z = {
-    val j1 = j + 1
-    val hasJ1 = tokens.has(j1)
-    val tokenJ = tokens.at(j)
-    if (tokenJ.kind == Result.Kind.Normal) {
-      tokenJ.leaf.tipe match {
-        case u32"0x8210408E" /* IF */ =>
           if (hasJ1) {
             val tokenJ1 = tokens.at(j1)
             if (tokenJ1.kind == Result.Kind.Normal) {
@@ -15305,6 +15041,17 @@ import SlangLl2Parser._
             }
           }
 
+        case u32"0xF0D3D2C8" /* UNDERSCORE */ =>
+          if (hasJ1) {
+            val tokenJ1 = tokens.at(j1)
+            if (tokenJ1.kind == Result.Kind.Normal) {
+              tokenJ1.leaf.tipe match {
+                case u32"0x54FAE327" /* COLON */ => return 2
+                case _ =>
+              }
+            }
+          }
+
         case _ =>
       }
     }
@@ -15321,42 +15068,6 @@ import SlangLl2Parser._
         case u32"0x01420030" /* RANGLE */ => return 1
         case u32"0x15503F3A" /* LRANGLE */ => return 1
         case u32"0x7EF5EC39" /* STAR */ => return 1
-        case _ =>
-      }
-    }
-    return -1
-  }
-
-  @pure def predictImportIdDotIdSuffix(j: Z): Z = {
-    val j1 = j + 1
-    val hasJ1 = tokens.has(j1)
-    val tokenJ = tokens.at(j)
-    if (tokenJ.kind == Result.Kind.Normal) {
-      tokenJ.leaf.tipe match {
-        case u32"0xD735687B" /* AT */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x951E9CFB" /* LSQUARE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x9A468353" /* DOT */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case u32"0x0FA8D2E6" /* ID */ => return 2
-                case u32"0xDC2A8959" /* LBRACE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
         case _ =>
       }
     }
@@ -15825,7 +15536,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -15847,7 +15557,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -15868,7 +15577,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -15889,7 +15597,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -15910,7 +15617,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -15931,7 +15637,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -15952,7 +15657,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -15973,7 +15677,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -15994,7 +15697,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -16015,7 +15717,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -16036,7 +15737,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -16057,7 +15757,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -16110,7 +15809,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -16191,6 +15889,7 @@ import SlangLl2Parser._
               tokenJ1.leaf.tipe match {
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
+                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -16841,6 +16540,7 @@ import SlangLl2Parser._
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
                 case u32"0x0FA8D2E6" /* ID */ => return 2
+                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -17053,7 +16753,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -17077,7 +16776,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -17099,7 +16797,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -17121,7 +16818,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -17143,7 +16839,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -17165,7 +16860,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -17187,7 +16881,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -17209,7 +16902,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -17231,7 +16923,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -17253,7 +16944,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -17275,7 +16965,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -17297,7 +16986,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -17351,7 +17039,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -17432,6 +17119,7 @@ import SlangLl2Parser._
               tokenJ1.leaf.tipe match {
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
+                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -17891,6 +17579,7 @@ import SlangLl2Parser._
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
                 case u32"0x0FA8D2E6" /* ID */ => return 2
+                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -18057,6 +17746,7 @@ import SlangLl2Parser._
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
                 case u32"0x0FA8D2E6" /* ID */ => return 2
+                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -18217,7 +17907,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -18240,7 +17929,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -18262,7 +17950,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -18284,7 +17971,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -18306,7 +17992,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -18328,7 +18013,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -18350,7 +18034,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -18372,7 +18055,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -18394,7 +18076,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -18416,7 +18097,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -18438,7 +18118,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -18460,7 +18139,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -18514,7 +18192,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -18595,6 +18272,7 @@ import SlangLl2Parser._
               tokenJ1.leaf.tipe match {
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
+                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -18871,7 +18549,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -18893,7 +18570,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -18914,7 +18590,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -18935,7 +18610,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -18956,7 +18630,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -18977,7 +18650,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -18998,7 +18670,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -19019,7 +18690,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -19040,7 +18710,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -19061,7 +18730,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -19082,7 +18750,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -19103,7 +18770,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -19156,7 +18822,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -19237,6 +18902,7 @@ import SlangLl2Parser._
               tokenJ1.leaf.tipe match {
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
+                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -19901,51 +19567,6 @@ import SlangLl2Parser._
     return -1
   }
 
-  @pure def predictCondSuffix(j: Z): Z = {
-    val j1 = j + 1
-    val hasJ1 = tokens.has(j1)
-    val tokenJ = tokens.at(j)
-    if (tokenJ.kind == Result.Kind.Normal) {
-      tokenJ.leaf.tipe match {
-        case u32"0xA4512A72" /* QUESTION */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0x0FA8D2E6" /* ID */ => return 2
-                case u32"0x93DEEB98" /* THIS */ => return 2
-                case u32"0x136381C3" /* SUPER */ => return 2
-                case u32"0xEE99A672" /* TRUE */ => return 2
-                case u32"0x43340E3B" /* FALSE */ => return 2
-                case u32"0x589C233C" /* INT */ => return 2
-                case u32"0x5028A536" /* HEX */ => return 2
-                case u32"0x4E33B13F" /* BIN */ => return 2
-                case u32"0x1F9A2C24" /* REAL */ => return 2
-                case u32"0xA7CF0FE0" /* STRING */ => return 2
-                case u32"0x84A54E6B" /* MSTR */ => return 2
-                case u32"0x2C97C56A" /* SP */ => return 2
-                case u32"0x50C3B99F" /* SPB */ => return 2
-                case u32"0x7E667FD0" /* MSTRP */ => return 2
-                case u32"0x2427C288" /* MSTRPB */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0x49425B4A" /* YIELD */ => return 2
-                case u32"0xCE1D1E69" /* DEF */ => return 2
-                case u32"0x8F29683F" /* ALL */ => return 2
-                case u32"0xC21A525C" /* SOME */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0xDC2A8959" /* LBRACE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case _ =>
-      }
-    }
-    return -1
-  }
-
   @pure def predictPatternsArg(j: Z): Z = {
     val j1 = j + 1
     val hasJ1 = tokens.has(j1)
@@ -20176,7 +19797,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -20199,7 +19819,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -20221,7 +19840,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -20243,7 +19861,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -20265,7 +19882,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -20287,7 +19903,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -20309,7 +19924,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -20331,7 +19945,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -20353,7 +19966,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -20375,7 +19987,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -20397,7 +20008,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -20419,7 +20029,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -20473,7 +20082,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -20554,6 +20162,7 @@ import SlangLl2Parser._
               tokenJ1.leaf.tipe match {
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
+                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -20698,6 +20307,30 @@ import SlangLl2Parser._
             }
           }
           return 1
+        case _ =>
+      }
+    }
+    return -1
+  }
+
+  @pure def predictCommaForRange(j: Z): Z = {
+    val j1 = j + 1
+    val hasJ1 = tokens.has(j1)
+    val tokenJ = tokens.at(j)
+    if (tokenJ.kind == Result.Kind.Normal) {
+      tokenJ.leaf.tipe match {
+        case u32"0x37DDEF83" /* COMMA */ =>
+          if (hasJ1) {
+            val tokenJ1 = tokens.at(j1)
+            if (tokenJ1.kind == Result.Kind.Normal) {
+              tokenJ1.leaf.tipe match {
+                case u32"0x0FA8D2E6" /* ID */ => return 2
+                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
+                case _ =>
+              }
+            }
+          }
+
         case _ =>
       }
     }
@@ -21177,6 +20810,7 @@ import SlangLl2Parser._
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
                 case u32"0x0FA8D2E6" /* ID */ => return 2
+                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -21460,30 +21094,6 @@ import SlangLl2Parser._
     return -1
   }
 
-  @pure def predictCommaProofId(j: Z): Z = {
-    val j1 = j + 1
-    val hasJ1 = tokens.has(j1)
-    val tokenJ = tokens.at(j)
-    if (tokenJ.kind == Result.Kind.Normal) {
-      tokenJ.leaf.tipe match {
-        case u32"0x37DDEF83" /* COMMA */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x589C233C" /* INT */ => return 2
-                case u32"0xA7CF0FE0" /* STRING */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case _ =>
-      }
-    }
-    return -1
-  }
-
   @pure def predictApplyAccess(j: Z): Z = {
     val j1 = j + 1
     val hasJ1 = tokens.has(j1)
@@ -21753,485 +21363,6 @@ import SlangLl2Parser._
     return -1
   }
 
-  @pure def predictStrinterp(j: Z): Z = {
-    val j1 = j + 1
-    val hasJ1 = tokens.has(j1)
-    val tokenJ = tokens.at(j)
-    if (tokenJ.kind == Result.Kind.Normal) {
-      tokenJ.leaf.tipe match {
-        case u32"0x3D594292" /* OP */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x0FA8D2E6" /* ID */ => return 2
-                case u32"0x93DEEB98" /* THIS */ => return 2
-                case u32"0x136381C3" /* SUPER */ => return 2
-                case u32"0xEE99A672" /* TRUE */ => return 2
-                case u32"0x43340E3B" /* FALSE */ => return 2
-                case u32"0x589C233C" /* INT */ => return 2
-                case u32"0x5028A536" /* HEX */ => return 2
-                case u32"0x4E33B13F" /* BIN */ => return 2
-                case u32"0x1F9A2C24" /* REAL */ => return 2
-                case u32"0xA7CF0FE0" /* STRING */ => return 2
-                case u32"0x84A54E6B" /* MSTR */ => return 2
-                case u32"0x2C97C56A" /* SP */ => return 2
-                case u32"0x50C3B99F" /* SPB */ => return 2
-                case u32"0x7E667FD0" /* MSTRP */ => return 2
-                case u32"0x2427C288" /* MSTRPB */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x0FA8D2E6" /* ID */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x6B6A7ADC" /* MSTRPM */ => return 2
-                case u32"0x537B19CD" /* MSTRPE */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case u32"0x951E9CFB" /* LSQUARE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x93DEEB98" /* THIS */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x6B6A7ADC" /* MSTRPM */ => return 2
-                case u32"0x537B19CD" /* MSTRPE */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x136381C3" /* SUPER */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x6B6A7ADC" /* MSTRPM */ => return 2
-                case u32"0x537B19CD" /* MSTRPE */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0xEE99A672" /* TRUE */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x6B6A7ADC" /* MSTRPM */ => return 2
-                case u32"0x537B19CD" /* MSTRPE */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x43340E3B" /* FALSE */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x6B6A7ADC" /* MSTRPM */ => return 2
-                case u32"0x537B19CD" /* MSTRPE */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x589C233C" /* INT */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x6B6A7ADC" /* MSTRPM */ => return 2
-                case u32"0x537B19CD" /* MSTRPE */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x5028A536" /* HEX */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x6B6A7ADC" /* MSTRPM */ => return 2
-                case u32"0x537B19CD" /* MSTRPE */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x4E33B13F" /* BIN */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x6B6A7ADC" /* MSTRPM */ => return 2
-                case u32"0x537B19CD" /* MSTRPE */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x1F9A2C24" /* REAL */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x6B6A7ADC" /* MSTRPM */ => return 2
-                case u32"0x537B19CD" /* MSTRPE */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0xA7CF0FE0" /* STRING */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x6B6A7ADC" /* MSTRPM */ => return 2
-                case u32"0x537B19CD" /* MSTRPE */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x84A54E6B" /* MSTR */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x6B6A7ADC" /* MSTRPM */ => return 2
-                case u32"0x537B19CD" /* MSTRPE */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x2C97C56A" /* SP */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x6B6A7ADC" /* MSTRPM */ => return 2
-                case u32"0x537B19CD" /* MSTRPE */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x50C3B99F" /* SPB */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0x0FA8D2E6" /* ID */ => return 2
-                case u32"0x93DEEB98" /* THIS */ => return 2
-                case u32"0x136381C3" /* SUPER */ => return 2
-                case u32"0xEE99A672" /* TRUE */ => return 2
-                case u32"0x43340E3B" /* FALSE */ => return 2
-                case u32"0x589C233C" /* INT */ => return 2
-                case u32"0x5028A536" /* HEX */ => return 2
-                case u32"0x4E33B13F" /* BIN */ => return 2
-                case u32"0x1F9A2C24" /* REAL */ => return 2
-                case u32"0xA7CF0FE0" /* STRING */ => return 2
-                case u32"0x84A54E6B" /* MSTR */ => return 2
-                case u32"0x2C97C56A" /* SP */ => return 2
-                case u32"0x50C3B99F" /* SPB */ => return 2
-                case u32"0x7E667FD0" /* MSTRP */ => return 2
-                case u32"0x2427C288" /* MSTRPB */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0x49425B4A" /* YIELD */ => return 2
-                case u32"0xCE1D1E69" /* DEF */ => return 2
-                case u32"0x8F29683F" /* ALL */ => return 2
-                case u32"0xC21A525C" /* SOME */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x7E667FD0" /* MSTRP */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x6B6A7ADC" /* MSTRPM */ => return 2
-                case u32"0x537B19CD" /* MSTRPE */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x2427C288" /* MSTRPB */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0x0FA8D2E6" /* ID */ => return 2
-                case u32"0x93DEEB98" /* THIS */ => return 2
-                case u32"0x136381C3" /* SUPER */ => return 2
-                case u32"0xEE99A672" /* TRUE */ => return 2
-                case u32"0x43340E3B" /* FALSE */ => return 2
-                case u32"0x589C233C" /* INT */ => return 2
-                case u32"0x5028A536" /* HEX */ => return 2
-                case u32"0x4E33B13F" /* BIN */ => return 2
-                case u32"0x1F9A2C24" /* REAL */ => return 2
-                case u32"0xA7CF0FE0" /* STRING */ => return 2
-                case u32"0x84A54E6B" /* MSTR */ => return 2
-                case u32"0x2C97C56A" /* SP */ => return 2
-                case u32"0x50C3B99F" /* SPB */ => return 2
-                case u32"0x7E667FD0" /* MSTRP */ => return 2
-                case u32"0x2427C288" /* MSTRPB */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0x49425B4A" /* YIELD */ => return 2
-                case u32"0xCE1D1E69" /* DEF */ => return 2
-                case u32"0x8F29683F" /* ALL */ => return 2
-                case u32"0xC21A525C" /* SOME */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x643EF7CD" /* LPAREN */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0xD735687B" /* AT */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0x0FA8D2E6" /* ID */ => return 2
-                case u32"0x93DEEB98" /* THIS */ => return 2
-                case u32"0x136381C3" /* SUPER */ => return 2
-                case u32"0xEE99A672" /* TRUE */ => return 2
-                case u32"0x43340E3B" /* FALSE */ => return 2
-                case u32"0x589C233C" /* INT */ => return 2
-                case u32"0x5028A536" /* HEX */ => return 2
-                case u32"0x4E33B13F" /* BIN */ => return 2
-                case u32"0x1F9A2C24" /* REAL */ => return 2
-                case u32"0xA7CF0FE0" /* STRING */ => return 2
-                case u32"0x84A54E6B" /* MSTR */ => return 2
-                case u32"0x2C97C56A" /* SP */ => return 2
-                case u32"0x50C3B99F" /* SPB */ => return 2
-                case u32"0x7E667FD0" /* MSTRP */ => return 2
-                case u32"0x2427C288" /* MSTRPB */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0x49425B4A" /* YIELD */ => return 2
-                case u32"0xCE1D1E69" /* DEF */ => return 2
-                case u32"0x8F29683F" /* ALL */ => return 2
-                case u32"0xC21A525C" /* SOME */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x49425B4A" /* YIELD */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0xD735687B" /* AT */ => return 2
-                case u32"0x0FA8D2E6" /* ID */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0xCE1D1E69" /* DEF */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0xD735687B" /* AT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x8F29683F" /* ALL */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x0FA8D2E6" /* ID */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0xC21A525C" /* SOME */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x0FA8D2E6" /* ID */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0xFA31AB98" /* SYMBOL */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x0FA8D2E6" /* ID */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case _ =>
-      }
-    }
-    return -1
-  }
-
   @pure def predictExp(j: Z): Z = {
     val j1 = j + 1
     val hasJ1 = tokens.has(j1)
@@ -22275,7 +21406,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -22296,7 +21426,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -22316,7 +21445,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -22336,7 +21464,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -22356,7 +21483,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -22376,7 +21502,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -22396,7 +21521,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -22416,7 +21540,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -22436,7 +21559,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -22456,7 +21578,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -22476,7 +21597,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -22496,7 +21616,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -22548,7 +21667,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -22629,6 +21747,7 @@ import SlangLl2Parser._
               tokenJ1.leaf.tipe match {
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
+                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -23075,6 +22194,7 @@ import SlangLl2Parser._
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
                 case u32"0x0FA8D2E6" /* ID */ => return 2
+                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -23201,7 +22321,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -23224,7 +22343,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -23245,7 +22363,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -23266,7 +22383,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -23287,7 +22403,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -23308,7 +22423,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -23329,7 +22443,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -23350,7 +22463,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -23371,7 +22483,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -23392,7 +22503,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -23413,7 +22523,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -23434,7 +22543,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -23487,7 +22595,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -23568,6 +22675,7 @@ import SlangLl2Parser._
               tokenJ1.leaf.tipe match {
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
+                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -23762,6 +22870,51 @@ import SlangLl2Parser._
               tokenJ1.leaf.tipe match {
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
+                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
+                case _ =>
+              }
+            }
+          }
+
+        case _ =>
+      }
+    }
+    return -1
+  }
+
+  @pure def predictIfExp(j: Z): Z = {
+    val j1 = j + 1
+    val hasJ1 = tokens.has(j1)
+    val tokenJ = tokens.at(j)
+    if (tokenJ.kind == Result.Kind.Normal) {
+      tokenJ.leaf.tipe match {
+        case u32"0x8210408E" /* IF */ =>
+          if (hasJ1) {
+            val tokenJ1 = tokens.at(j1)
+            if (tokenJ1.kind == Result.Kind.Normal) {
+              tokenJ1.leaf.tipe match {
+                case u32"0x3D594292" /* OP */ => return 2
+                case u32"0x0FA8D2E6" /* ID */ => return 2
+                case u32"0x93DEEB98" /* THIS */ => return 2
+                case u32"0x136381C3" /* SUPER */ => return 2
+                case u32"0xEE99A672" /* TRUE */ => return 2
+                case u32"0x43340E3B" /* FALSE */ => return 2
+                case u32"0x589C233C" /* INT */ => return 2
+                case u32"0x5028A536" /* HEX */ => return 2
+                case u32"0x4E33B13F" /* BIN */ => return 2
+                case u32"0x1F9A2C24" /* REAL */ => return 2
+                case u32"0xA7CF0FE0" /* STRING */ => return 2
+                case u32"0x84A54E6B" /* MSTR */ => return 2
+                case u32"0x2C97C56A" /* SP */ => return 2
+                case u32"0x50C3B99F" /* SPB */ => return 2
+                case u32"0x7E667FD0" /* MSTRP */ => return 2
+                case u32"0x2427C288" /* MSTRPB */ => return 2
+                case u32"0x643EF7CD" /* LPAREN */ => return 2
+                case u32"0x49425B4A" /* YIELD */ => return 2
+                case u32"0xCE1D1E69" /* DEF */ => return 2
+                case u32"0x8F29683F" /* ALL */ => return 2
+                case u32"0xC21A525C" /* SOME */ => return 2
+                case u32"0xFA31AB98" /* SYMBOL */ => return 2
                 case _ =>
               }
             }
@@ -24248,6 +23401,7 @@ import SlangLl2Parser._
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
                 case u32"0x0FA8D2E6" /* ID */ => return 2
+                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -24814,6 +23968,7 @@ import SlangLl2Parser._
             if (tokenJ1.kind == Result.Kind.Normal) {
               tokenJ1.leaf.tipe match {
                 case u32"0x0FA8D2E6" /* ID */ => return 2
+                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -25075,7 +24230,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -25097,7 +24251,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -25118,7 +24271,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -25139,7 +24291,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -25160,7 +24311,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -25181,7 +24331,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -25202,7 +24351,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -25223,7 +24371,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -25244,7 +24391,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -25265,7 +24411,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -25286,7 +24431,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -25307,7 +24451,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -25360,7 +24503,6 @@ import SlangLl2Parser._
                 case u32"0x01420030" /* RANGLE */ => return 2
                 case u32"0x15503F3A" /* LRANGLE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
@@ -25441,6 +24583,7 @@ import SlangLl2Parser._
               tokenJ1.leaf.tipe match {
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
+                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case _ =>
               }
             }
@@ -25744,472 +24887,6 @@ import SlangLl2Parser._
                 case u32"0x643EF7CD" /* LPAREN */ => return 2
                 case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
                 case u32"0x7EF5EC39" /* STAR */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case _ =>
-      }
-    }
-    return -1
-  }
-
-  @pure def predictCondIteSuffix(j: Z): Z = {
-    val j1 = j + 1
-    val hasJ1 = tokens.has(j1)
-    val tokenJ = tokens.at(j)
-    if (tokenJ.kind == Result.Kind.Normal) {
-      tokenJ.leaf.tipe match {
-        case u32"0x3D594292" /* OP */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x0FA8D2E6" /* ID */ => return 2
-                case u32"0x93DEEB98" /* THIS */ => return 2
-                case u32"0x136381C3" /* SUPER */ => return 2
-                case u32"0xEE99A672" /* TRUE */ => return 2
-                case u32"0x43340E3B" /* FALSE */ => return 2
-                case u32"0x589C233C" /* INT */ => return 2
-                case u32"0x5028A536" /* HEX */ => return 2
-                case u32"0x4E33B13F" /* BIN */ => return 2
-                case u32"0x1F9A2C24" /* REAL */ => return 2
-                case u32"0xA7CF0FE0" /* STRING */ => return 2
-                case u32"0x84A54E6B" /* MSTR */ => return 2
-                case u32"0x2C97C56A" /* SP */ => return 2
-                case u32"0x50C3B99F" /* SPB */ => return 2
-                case u32"0x7E667FD0" /* MSTRP */ => return 2
-                case u32"0x2427C288" /* MSTRPB */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x0FA8D2E6" /* ID */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x54FAE327" /* COLON */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case u32"0x951E9CFB" /* LSQUARE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x93DEEB98" /* THIS */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x54FAE327" /* COLON */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x136381C3" /* SUPER */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x54FAE327" /* COLON */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0xEE99A672" /* TRUE */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x54FAE327" /* COLON */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x43340E3B" /* FALSE */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x54FAE327" /* COLON */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x589C233C" /* INT */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x54FAE327" /* COLON */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x5028A536" /* HEX */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x54FAE327" /* COLON */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x4E33B13F" /* BIN */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x54FAE327" /* COLON */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x1F9A2C24" /* REAL */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x54FAE327" /* COLON */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0xA7CF0FE0" /* STRING */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x54FAE327" /* COLON */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x84A54E6B" /* MSTR */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x54FAE327" /* COLON */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x2C97C56A" /* SP */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x54FAE327" /* COLON */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x50C3B99F" /* SPB */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0x0FA8D2E6" /* ID */ => return 2
-                case u32"0x93DEEB98" /* THIS */ => return 2
-                case u32"0x136381C3" /* SUPER */ => return 2
-                case u32"0xEE99A672" /* TRUE */ => return 2
-                case u32"0x43340E3B" /* FALSE */ => return 2
-                case u32"0x589C233C" /* INT */ => return 2
-                case u32"0x5028A536" /* HEX */ => return 2
-                case u32"0x4E33B13F" /* BIN */ => return 2
-                case u32"0x1F9A2C24" /* REAL */ => return 2
-                case u32"0xA7CF0FE0" /* STRING */ => return 2
-                case u32"0x84A54E6B" /* MSTR */ => return 2
-                case u32"0x2C97C56A" /* SP */ => return 2
-                case u32"0x50C3B99F" /* SPB */ => return 2
-                case u32"0x7E667FD0" /* MSTRP */ => return 2
-                case u32"0x2427C288" /* MSTRPB */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0x49425B4A" /* YIELD */ => return 2
-                case u32"0xCE1D1E69" /* DEF */ => return 2
-                case u32"0x8F29683F" /* ALL */ => return 2
-                case u32"0xC21A525C" /* SOME */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x7E667FD0" /* MSTRP */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x54FAE327" /* COLON */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case u32"0x5ADD78B7" /* LANGLE */ => return 2
-                case u32"0x01420030" /* RANGLE */ => return 2
-                case u32"0x15503F3A" /* LRANGLE */ => return 2
-                case u32"0x7EF5EC39" /* STAR */ => return 2
-                case u32"0xA4512A72" /* QUESTION */ => return 2
-                case u32"0x9A468353" /* DOT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0xF0D3D2C8" /* UNDERSCORE */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x2427C288" /* MSTRPB */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0x0FA8D2E6" /* ID */ => return 2
-                case u32"0x93DEEB98" /* THIS */ => return 2
-                case u32"0x136381C3" /* SUPER */ => return 2
-                case u32"0xEE99A672" /* TRUE */ => return 2
-                case u32"0x43340E3B" /* FALSE */ => return 2
-                case u32"0x589C233C" /* INT */ => return 2
-                case u32"0x5028A536" /* HEX */ => return 2
-                case u32"0x4E33B13F" /* BIN */ => return 2
-                case u32"0x1F9A2C24" /* REAL */ => return 2
-                case u32"0xA7CF0FE0" /* STRING */ => return 2
-                case u32"0x84A54E6B" /* MSTR */ => return 2
-                case u32"0x2C97C56A" /* SP */ => return 2
-                case u32"0x50C3B99F" /* SPB */ => return 2
-                case u32"0x7E667FD0" /* MSTRP */ => return 2
-                case u32"0x2427C288" /* MSTRPB */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0x49425B4A" /* YIELD */ => return 2
-                case u32"0xCE1D1E69" /* DEF */ => return 2
-                case u32"0x8F29683F" /* ALL */ => return 2
-                case u32"0xC21A525C" /* SOME */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x643EF7CD" /* LPAREN */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0xD735687B" /* AT */ => return 2
-                case u32"0x3D594292" /* OP */ => return 2
-                case u32"0x0FA8D2E6" /* ID */ => return 2
-                case u32"0x93DEEB98" /* THIS */ => return 2
-                case u32"0x136381C3" /* SUPER */ => return 2
-                case u32"0xEE99A672" /* TRUE */ => return 2
-                case u32"0x43340E3B" /* FALSE */ => return 2
-                case u32"0x589C233C" /* INT */ => return 2
-                case u32"0x5028A536" /* HEX */ => return 2
-                case u32"0x4E33B13F" /* BIN */ => return 2
-                case u32"0x1F9A2C24" /* REAL */ => return 2
-                case u32"0xA7CF0FE0" /* STRING */ => return 2
-                case u32"0x84A54E6B" /* MSTR */ => return 2
-                case u32"0x2C97C56A" /* SP */ => return 2
-                case u32"0x50C3B99F" /* SPB */ => return 2
-                case u32"0x7E667FD0" /* MSTRP */ => return 2
-                case u32"0x2427C288" /* MSTRPB */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case u32"0x49425B4A" /* YIELD */ => return 2
-                case u32"0xCE1D1E69" /* DEF */ => return 2
-                case u32"0x8F29683F" /* ALL */ => return 2
-                case u32"0xC21A525C" /* SOME */ => return 2
-                case u32"0xFA31AB98" /* SYMBOL */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x49425B4A" /* YIELD */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0xD735687B" /* AT */ => return 2
-                case u32"0x0FA8D2E6" /* ID */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0xCE1D1E69" /* DEF */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0xD735687B" /* AT */ => return 2
-                case u32"0x643EF7CD" /* LPAREN */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0x8F29683F" /* ALL */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x0FA8D2E6" /* ID */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0xC21A525C" /* SOME */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x0FA8D2E6" /* ID */ => return 2
-                case _ =>
-              }
-            }
-          }
-
-        case u32"0xFA31AB98" /* SYMBOL */ =>
-          if (hasJ1) {
-            val tokenJ1 = tokens.at(j1)
-            if (tokenJ1.kind == Result.Kind.Normal) {
-              tokenJ1.leaf.tipe match {
-                case u32"0x0FA8D2E6" /* ID */ => return 2
                 case _ =>
               }
             }
