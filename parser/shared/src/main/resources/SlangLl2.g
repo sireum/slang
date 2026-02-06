@@ -60,7 +60,9 @@ importRename: ID ARROW ID annot? ;
 
 mainMember: stmt | typeDefn ;
 
-pkg: PACKAGE mod* name? annot? imprt* member* ;
+pkg: PACKAGE mod* name? annot? imprt* ( member* | pkgSuffix ) ;
+
+pkgSuffix: LBRACE mainMember* RBRACE ;
 
 init: DOT DOT LBRACE annot? stmt* RBRACE ;
 
@@ -80,13 +82,16 @@ name: ID nameSuffix* ;
 
 nameSuffix: DOT ID ;
 
-typeDefn: TYPE mod* ID typeParams? ( typeDefnEnumSuffix | typeDefnAliasSuffix | typeDefnAdtSuffix ) ;
+typeDefn: TYPE mod* ID typeParams? ( typeDefnEnumSuffix | typeDefnAliasSuffix | typeDefnAdtSuffix )? ;
 
 typeDefnEnumSuffix: COLON enumMembers ;
 
 typeDefnAliasSuffix: ASSIGN type ;
 
-typeDefnAdtSuffix: params? supers? annot? typeDefnAdtMembers? ;
+typeDefnAdtSuffix: params supers? annot? typeDefnAdtMembers?
+                 | supers annot? typeDefnAdtMembers?
+                 | annot typeDefnAdtMembers?
+                 | typeDefnAdtMembers ;
 
 typeDefnAdtMembers: LBRACE member* RBRACE ;
 
@@ -114,7 +119,7 @@ supr: annot? name typeArgs? ;
 
 annot: AT LSQUARE args? RSQUARE ;
 
-varDefn: VAR mod* ID COLON type annot? assignSuffix? ;
+varDefn: VAR mod* ID colonType? annot? assignSuffix? ;
 
 assignSuffix: ASSIGN annot? rhs ;
 
@@ -222,7 +227,9 @@ eta: UNDERSCORE ;
 
 exp1: OP? ( exp0 | paren ) ;
 
-exp0: idExp | thisExp | superExp | lit | interp ;
+exp0: idExp | thisExp | superExp | lit | interp | pureBlock ;
+
+pureBlock: AT LBRACE stmt+ RBRACE ;
 
 idExp: ID typeArgs? ;
 
@@ -270,7 +277,7 @@ idComma: ID COMMA ;
 
 quantRangeSuffix: ( TO |  UNTIL ) annot? exp ;
 
-deduceStmt: DEDUCE ( truthTable | proof | sequent | expProof ) ;
+deduceStmt: DEDUCE ( truthTable | proof | sequent+ | expProof ) ;
 
 proof: LBRACE proofStep* RBRACE ;
 
@@ -358,10 +365,10 @@ mstrinterp: exp ( MSTRPM mstrinterp | MSTRPE ) ;
 // Lexical definitions
 ALL:        '∀'           ; ARROW:      '=>'          ; ASSIGN:     '='           ; AT:         '@'           ;
 COMMA:      ','           ; COLON:      ':'           ; DOT:        '.'           ; UNDERSCORE: '_'           ;
-LBRACE:     '{'           ; LPAREN:     '('           ; LSQUARE:    '['           ; QUESTION:   '?'           ;
+LBRACE:     '{'           ; LPAREN:     '('           ; LSQUARE:    '['           ; STAR:       '*'           ;
 RBRACE:     '}'           ; RPAREN:     ')'           ; RSQUARE:    ']'           ; SEQUENT:    '⊢' | '|-'    ;
 SOME:       '∃'           ; TO:         '..'          ; UNTIL:      '..<'         ; LANGLE:     '<'           ;
-RANGLE:     '>'           ; LRANGLE:    '<>'          ; STAR:       '*'           ;
+RANGLE:     '>'           ; LRANGLE:    '<>'          ;
 
 CASE:       'case'        ; DEDUCE:     'deduce'      ; DEF:        'def'         ; DO:         'do'          ;
 FALSE:      'false'       ; ELSE:       'else'        ; FOR:        'for'         ; TYPE:       'type'        ;

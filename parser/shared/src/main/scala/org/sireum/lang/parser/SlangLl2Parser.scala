@@ -212,7 +212,7 @@ object SlangLl2Parser {
   val T_LBRACE: U32 = u32"0xDC2A8959"
   val T_LPAREN: U32 = u32"0x643EF7CD"
   val T_LSQUARE: U32 = u32"0x951E9CFB"
-  val T_QUESTION: U32 = u32"0xA4512A72"
+  val T_STAR: U32 = u32"0x7EF5EC39"
   val T_RBRACE: U32 = u32"0xED041C82"
   val T_RPAREN: U32 = u32"0xA5073992"
   val T_RSQUARE: U32 = u32"0xA97171F1"
@@ -223,7 +223,6 @@ object SlangLl2Parser {
   val T_LANGLE: U32 = u32"0x5ADD78B7"
   val T_RANGLE: U32 = u32"0x01420030"
   val T_LRANGLE: U32 = u32"0x15503F3A"
-  val T_STAR: U32 = u32"0x7EF5EC39"
   val T_CASE: U32 = u32"0x186E11D7"
   val T_DEDUCE: U32 = u32"0x0FBD9BE6"
   val T_DEF: U32 = u32"0xCE1D1E69"
@@ -278,6 +277,7 @@ object SlangLl2Parser {
   val T_importRename: U32 = u32"0xC049FF97"
   val T_mainMember: U32 = u32"0x25DD728D"
   val T_pkg: U32 = u32"0x8580997E"
+  val T_pkgSuffix: U32 = u32"0xBFFA68BC"
   val T_init: U32 = u32"0x1A10A146"
   val T_member: U32 = u32"0xABC12264"
   val T_mod: U32 = u32"0x26F53763"
@@ -1094,7 +1094,7 @@ import SlangLl2Parser._
   }
 
   @pure def parsePkg(i: Z): Result = {
-    val ctx = Context.create("pkg", u32"0x8580997E", ISZ(state"1", state"2", state"3", state"4"), i)
+    val ctx = Context.create("pkg", u32"0x8580997E", ISZ(state"1", state"2", state"3", state"4", state"5"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -1121,6 +1121,7 @@ import SlangLl2Parser._
           val n_annot = predictAnnot(ctx.j)
           val n_imprt = predictImprt(ctx.j)
           val n_member = predictMember(ctx.j)
+          val n_pkgSuffix = predictPkgSuffix(ctx.j)
           for (n <- 2 to 1 by -1 if !ctx.found) {
             if (n_mod == n && parseModH(ctx, state"1")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
@@ -1132,6 +1133,8 @@ import SlangLl2Parser._
               return Result.error(ctx.isLexical, ctx.failIndex)
             } else if (n_member == n && parseMemberH(ctx, state"4")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_pkgSuffix == n && parsePkgSuffixH(ctx, state"5")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
             }
           }
           if (!ctx.found) {
@@ -1142,12 +1145,15 @@ import SlangLl2Parser._
           val n_annot = predictAnnot(ctx.j)
           val n_imprt = predictImprt(ctx.j)
           val n_member = predictMember(ctx.j)
+          val n_pkgSuffix = predictPkgSuffix(ctx.j)
           for (n <- 2 to 1 by -1 if !ctx.found) {
             if (n_annot == n && parseAnnotH(ctx, state"3")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
             } else if (n_imprt == n && parseImprtH(ctx, state"3")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
             } else if (n_member == n && parseMemberH(ctx, state"4")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_pkgSuffix == n && parsePkgSuffixH(ctx, state"5")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
             }
           }
@@ -1158,10 +1164,13 @@ import SlangLl2Parser._
           ctx.found = F
           val n_imprt = predictImprt(ctx.j)
           val n_member = predictMember(ctx.j)
+          val n_pkgSuffix = predictPkgSuffix(ctx.j)
           for (n <- 2 to 1 by -1 if !ctx.found) {
             if (n_imprt == n && parseImprtH(ctx, state"3")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
             } else if (n_member == n && parseMemberH(ctx, state"4")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_pkgSuffix == n && parsePkgSuffixH(ctx, state"5")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
             }
           }
@@ -1177,6 +1186,54 @@ import SlangLl2Parser._
           if (!ctx.found) {
             return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
           }
+        case state"5" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+        case _ => halt("Infeasible")
+      }
+      if (ctx.max < ctx.j) {
+        ctx.max = ctx.j
+      }
+    }
+
+    return retVal(ctx.j, ctx.resOpt, ctx.initial, T)
+  }
+
+  @pure def parsePkgSuffix(i: Z): Result = {
+    val ctx = Context.create("pkgSuffix", u32"0xBFFA68BC", ISZ(state"2"), i)
+
+    while (tokens.has(ctx.j)) {
+      val token: ParseTree.Leaf = {
+        val result = tokens.at(ctx.j)
+        if (result.kind != Result.Kind.Normal) {
+          return result
+        }
+        result.leaf
+      }
+      ctx.state match {
+        case state"0" =>
+          ctx.found = F
+          token.tipe match {
+            case u32"0xDC2A8959" /* LBRACE */ => ctx.updateTerminal(token, state"1")
+            case _ =>
+          }
+          if (!ctx.found) {
+            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+          }
+        case state"1" =>
+          ctx.found = F
+          val n_mainMember = predictMainMember(ctx.j)
+          if (n_mainMember >= 0 && parseMainMemberH(ctx, state"1")) {
+            return Result.error(ctx.isLexical, ctx.failIndex)
+          }
+          if (!ctx.found) {
+            token.tipe match {
+              case u32"0xED041C82" /* RBRACE */ => ctx.updateTerminal(token, state"2")
+              case _ =>
+            }
+          }
+          if (!ctx.found) {
+            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+          }
+        case state"2" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
         case _ => halt("Infeasible")
       }
       if (ctx.max < ctx.j) {
@@ -1691,7 +1748,7 @@ import SlangLl2Parser._
   }
 
   @pure def parseTypeDefn(i: Z): Result = {
-    val ctx = Context.create("typeDefn", u32"0xE2EEB46A", ISZ(state"4"), i)
+    val ctx = Context.create("typeDefn", u32"0xE2EEB46A", ISZ(state"2", state"3", state"4"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -1857,7 +1914,7 @@ import SlangLl2Parser._
   }
 
   @pure def parseTypeDefnAdtSuffix(i: Z): Result = {
-    val ctx = Context.create("typeDefnAdtSuffix", u32"0x1BBC16DC", ISZ(state"0", state"1", state"2", state"3", state"4"), i)
+    val ctx = Context.create("typeDefnAdtSuffix", u32"0x1BBC16DC", ISZ(state"1", state"2", state"3", state"4", state"5", state"6", state"7"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -1877,17 +1934,16 @@ import SlangLl2Parser._
           for (n <- 2 to 1 by -1 if !ctx.found) {
             if (n_params == n && parseParamsH(ctx, state"1")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_supers == n && parseSupersH(ctx, state"2")) {
+            } else if (n_supers == n && parseSupersH(ctx, state"5")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_annot == n && parseAnnotH(ctx, state"3")) {
+            } else if (n_annot == n && parseAnnotH(ctx, state"7")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
             } else if (n_typeDefnAdtMembers == n && parseTypeDefnAdtMembersH(ctx, state"4")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
             }
           }
           if (!ctx.found) {
-            ctx.updateAcceptingEpsilon(state"0")
-            return retVal(ctx.j, ctx.resOpt, ctx.initial, T)
+            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
           }
         case state"1" =>
           ctx.found = F
@@ -1930,6 +1986,38 @@ import SlangLl2Parser._
             return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
           }
         case state"4" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+        case state"5" =>
+          ctx.found = F
+          val n_annot = predictAnnot(ctx.j)
+          val n_typeDefnAdtMembers = predictTypeDefnAdtMembers(ctx.j)
+          for (n <- 2 to 1 by -1 if !ctx.found) {
+            if (n_annot == n && parseAnnotH(ctx, state"6")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_typeDefnAdtMembers == n && parseTypeDefnAdtMembersH(ctx, state"4")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            }
+          }
+          if (!ctx.found) {
+            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+          }
+        case state"6" =>
+          ctx.found = F
+          val n_typeDefnAdtMembers = predictTypeDefnAdtMembers(ctx.j)
+          if (n_typeDefnAdtMembers >= 0 && parseTypeDefnAdtMembersH(ctx, state"4")) {
+            return Result.error(ctx.isLexical, ctx.failIndex)
+          }
+          if (!ctx.found) {
+            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+          }
+        case state"7" =>
+          ctx.found = F
+          val n_typeDefnAdtMembers = predictTypeDefnAdtMembers(ctx.j)
+          if (n_typeDefnAdtMembers >= 0 && parseTypeDefnAdtMembersH(ctx, state"4")) {
+            return Result.error(ctx.isLexical, ctx.failIndex)
+          }
+          if (!ctx.found) {
+            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+          }
         case _ => halt("Infeasible")
       }
       if (ctx.max < ctx.j) {
@@ -2614,7 +2702,7 @@ import SlangLl2Parser._
   }
 
   @pure def parseVarDefn(i: Z): Result = {
-    val ctx = Context.create("varDefn", u32"0xB785E355", ISZ(state"4", state"5", state"6"), i)
+    val ctx = Context.create("varDefn", u32"0xB785E355", ISZ(state"2", state"3", state"4", state"5"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -2651,46 +2739,45 @@ import SlangLl2Parser._
           }
         case state"2" =>
           ctx.found = F
-          token.tipe match {
-            case u32"0x54FAE327" /* COLON */ => ctx.updateTerminal(token, state"3")
-            case _ =>
-          }
-          if (!ctx.found) {
-            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-          }
-        case state"3" =>
-          ctx.found = F
-          val n_type = predictType(ctx.j)
-          if (n_type >= 0 && parseTypeH(ctx, state"4")) {
-            return Result.error(ctx.isLexical, ctx.failIndex)
-          }
-          if (!ctx.found) {
-            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
-          }
-        case state"4" =>
-          ctx.found = F
+          val n_colonType = predictColonType(ctx.j)
           val n_annot = predictAnnot(ctx.j)
           val n_assignSuffix = predictAssignSuffix(ctx.j)
           for (n <- 2 to 1 by -1 if !ctx.found) {
-            if (n_annot == n && parseAnnotH(ctx, state"5")) {
+            if (n_colonType == n && parseColonTypeH(ctx, state"3")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_assignSuffix == n && parseAssignSuffixH(ctx, state"6")) {
+            } else if (n_annot == n && parseAnnotH(ctx, state"4")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_assignSuffix == n && parseAssignSuffixH(ctx, state"5")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
             }
           }
           if (!ctx.found) {
             return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
           }
-        case state"5" =>
+        case state"3" =>
+          ctx.found = F
+          val n_annot = predictAnnot(ctx.j)
+          val n_assignSuffix = predictAssignSuffix(ctx.j)
+          for (n <- 2 to 1 by -1 if !ctx.found) {
+            if (n_annot == n && parseAnnotH(ctx, state"4")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            } else if (n_assignSuffix == n && parseAssignSuffixH(ctx, state"5")) {
+              return Result.error(ctx.isLexical, ctx.failIndex)
+            }
+          }
+          if (!ctx.found) {
+            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+          }
+        case state"4" =>
           ctx.found = F
           val n_assignSuffix = predictAssignSuffix(ctx.j)
-          if (n_assignSuffix >= 0 && parseAssignSuffixH(ctx, state"6")) {
+          if (n_assignSuffix >= 0 && parseAssignSuffixH(ctx, state"5")) {
             return Result.error(ctx.isLexical, ctx.failIndex)
           }
           if (!ctx.found) {
             return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
           }
-        case state"6" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+        case state"5" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
         case _ => halt("Infeasible")
       }
       if (ctx.max < ctx.j) {
@@ -6945,7 +7032,7 @@ import SlangLl2Parser._
   }
 
   @pure def parseDeduceStmt(i: Z): Result = {
-    val ctx = Context.create("deduceStmt", u32"0x79CB0F51", ISZ(state"2"), i)
+    val ctx = Context.create("deduceStmt", u32"0x79CB0F51", ISZ(state"2", state"3"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -6976,7 +7063,7 @@ import SlangLl2Parser._
               return Result.error(ctx.isLexical, ctx.failIndex)
             } else if (n_proof == n && parseProofH(ctx, state"2")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
-            } else if (n_sequent == n && parseSequentH(ctx, state"2")) {
+            } else if (n_sequent == n && parseSequentH(ctx, state"3")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
             } else if (n_expProof == n && parseExpProofH(ctx, state"2")) {
               return Result.error(ctx.isLexical, ctx.failIndex)
@@ -6986,6 +7073,15 @@ import SlangLl2Parser._
             return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
           }
         case state"2" => return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+        case state"3" =>
+          ctx.found = F
+          val n_sequent = predictSequent(ctx.j)
+          if (n_sequent >= 0 && parseSequentH(ctx, state"3")) {
+            return Result.error(ctx.isLexical, ctx.failIndex)
+          }
+          if (!ctx.found) {
+            return retVal(ctx.max, ctx.resOpt, ctx.initial, T)
+          }
         case _ => halt("Infeasible")
       }
       if (ctx.max < ctx.j) {
@@ -9327,6 +9423,26 @@ import SlangLl2Parser._
     return F
   }
 
+  def parsePkgSuffixH(ctx: Context, nextState: State): B = {
+    val r = parsePkgSuffix(ctx.j)
+    r.kind match {
+      case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
+      case Result.Kind.LexicalError =>
+        ctx.failIndex = r.newIndex
+        ctx.isLexical = T
+        return T
+      case Result.Kind.GrammaticalError =>
+        val index = r.newIndex
+        if (index < 0) {
+          ctx.failIndex = index
+          return T
+        } else if (ctx.max < index) {
+          ctx.max = index
+        }
+    }
+    return F
+  }
+
   def parseVarDefnH(ctx: Context, nextState: State): B = {
     val r = parseVarDefn(ctx.j)
     r.kind match {
@@ -9829,6 +9945,26 @@ import SlangLl2Parser._
 
   def parseTypeArgsH(ctx: Context, nextState: State): B = {
     val r = parseTypeArgs(ctx.j)
+    r.kind match {
+      case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
+      case Result.Kind.LexicalError =>
+        ctx.failIndex = r.newIndex
+        ctx.isLexical = T
+        return T
+      case Result.Kind.GrammaticalError =>
+        val index = r.newIndex
+        if (index < 0) {
+          ctx.failIndex = index
+          return T
+        } else if (ctx.max < index) {
+          ctx.max = index
+        }
+    }
+    return F
+  }
+
+  def parseColonTypeH(ctx: Context, nextState: State): B = {
+    val r = parseColonType(ctx.j)
     r.kind match {
       case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
       case Result.Kind.LexicalError =>
@@ -11267,26 +11403,6 @@ import SlangLl2Parser._
     return F
   }
 
-  def parseColonTypeH(ctx: Context, nextState: State): B = {
-    val r = parseColonType(ctx.j)
-    r.kind match {
-      case Result.Kind.Normal => ctx.updateNonTerminal(r, nextState)
-      case Result.Kind.LexicalError =>
-        ctx.failIndex = r.newIndex
-        ctx.isLexical = T
-        return T
-      case Result.Kind.GrammaticalError =>
-        val index = r.newIndex
-        if (index < 0) {
-          ctx.failIndex = index
-          return T
-        } else if (ctx.max < index) {
-          ctx.max = index
-        }
-    }
-    return F
-  }
-
   def parseQuantRangeH(ctx: Context, nextState: State): B = {
     val r = parseQuantRange(ctx.j)
     r.kind match {
@@ -12087,7 +12203,7 @@ import SlangLl2Parser._
         case _ =>
       }
     }
-    return 0
+    return -1
   }
 
   @pure def predictDefParams(j: Z): Z = {
@@ -20902,6 +21018,7 @@ import SlangLl2Parser._
                 case u32"0xCE1D1E69" /* DEF */ => return 2
                 case u32"0x702A655E" /* TYPE */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
+                case u32"0xDC2A8959" /* LBRACE */ => return 2
                 case _ =>
               }
             }
@@ -23492,6 +23609,7 @@ import SlangLl2Parser._
                 case u32"0xCE1D1E69" /* DEF */ => return 2
                 case u32"0x702A655E" /* TYPE */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
+                case u32"0xDC2A8959" /* LBRACE */ => return 2
                 case _ =>
               }
             }
@@ -24041,6 +24159,53 @@ import SlangLl2Parser._
               tokenJ1.leaf.tipe match {
                 case u32"0xD735687B" /* AT */ => return 2
                 case u32"0x0FA8D2E6" /* ID */ => return 2
+                case _ =>
+              }
+            }
+          }
+
+        case _ =>
+      }
+    }
+    return -1
+  }
+
+  @pure def predictPkgSuffix(j: Z): Z = {
+    val j1 = j + 1
+    val hasJ1 = tokens.has(j1)
+    val tokenJ = tokens.at(j)
+    if (tokenJ.kind == Result.Kind.Normal) {
+      tokenJ.leaf.tipe match {
+        case u32"0xDC2A8959" /* LBRACE */ =>
+          if (hasJ1) {
+            val tokenJ1 = tokens.at(j1)
+            if (tokenJ1.kind == Result.Kind.Normal) {
+              tokenJ1.leaf.tipe match {
+                case u32"0x0FA8D2E6" /* ID */ => return 2
+                case u32"0x93DEEB98" /* THIS */ => return 2
+                case u32"0x136381C3" /* SUPER */ => return 2
+                case u32"0xEE99A672" /* TRUE */ => return 2
+                case u32"0x43340E3B" /* FALSE */ => return 2
+                case u32"0x589C233C" /* INT */ => return 2
+                case u32"0x5028A536" /* HEX */ => return 2
+                case u32"0x4E33B13F" /* BIN */ => return 2
+                case u32"0x1F9A2C24" /* REAL */ => return 2
+                case u32"0xA7CF0FE0" /* STRING */ => return 2
+                case u32"0x84A54E6B" /* MSTR */ => return 2
+                case u32"0x2C97C56A" /* SP */ => return 2
+                case u32"0x50C3B99F" /* SPB */ => return 2
+                case u32"0x7E667FD0" /* MSTRP */ => return 2
+                case u32"0x2427C288" /* MSTRPB */ => return 2
+                case u32"0x1E045002" /* DO */ => return 2
+                case u32"0x18F352F5" /* VAR */ => return 2
+                case u32"0x8210408E" /* IF */ => return 2
+                case u32"0x0E0F65B7" /* WHILE */ => return 2
+                case u32"0xBF5AD766" /* FOR */ => return 2
+                case u32"0x0FBD9BE6" /* DEDUCE */ => return 2
+                case u32"0x142AC92F" /* MATCH */ => return 2
+                case u32"0xCE1D1E69" /* DEF */ => return 2
+                case u32"0x702A655E" /* TYPE */ => return 2
+                case u32"0xED041C82" /* RBRACE */ => return 2
                 case _ =>
               }
             }
@@ -25137,6 +25302,7 @@ import SlangLl2Parser._
                 case u32"0xCE1D1E69" /* DEF */ => return 2
                 case u32"0x702A655E" /* TYPE */ => return 2
                 case u32"0x9A468353" /* DOT */ => return 2
+                case u32"0xDC2A8959" /* LBRACE */ => return 2
                 case _ =>
               }
             }
@@ -25636,7 +25802,7 @@ import SlangLl2Parser._
     updateToken(r, lex_LBRACE(i))
     updateToken(r, lex_LPAREN(i))
     updateToken(r, lex_LSQUARE(i))
-    updateToken(r, lex_QUESTION(i))
+    updateToken(r, lex_STAR(i))
     updateToken(r, lex_RBRACE(i))
     updateToken(r, lex_RPAREN(i))
     updateToken(r, lex_RSQUARE(i))
@@ -25647,7 +25813,6 @@ import SlangLl2Parser._
     updateToken(r, lex_LANGLE(i))
     updateToken(r, lex_RANGLE(i))
     updateToken(r, lex_LRANGLE(i))
-    updateToken(r, lex_STAR(i))
     updateToken(r, lex_CASE(i))
     updateToken(r, lex_DEDUCE(i))
     updateToken(r, lex_DEF(i))
@@ -25971,7 +26136,7 @@ import SlangLl2Parser._
 
   @pure def lex_LSQUARE(index: Z): Option[Result] = { return lexH(index, dfa_LSQUARE(index), """LSQUARE""", u32"0x951E9CFB", F) }
 
-  @pure def dfa_QUESTION(i: Z): Z = {
+  @pure def dfa_STAR(i: Z): Z = {
     val ctx = LContext.create(ISZ(state"1"), i)
 
     while (cis.has(ctx.j)) {
@@ -25979,7 +26144,7 @@ import SlangLl2Parser._
         case state"0" =>
           val c = cis.at(ctx.j)
           ctx.found = F
-          if (c == '?') {
+          if (c == '*') {
             ctx.update(state"1")
           }
           if (!ctx.found) {
@@ -25993,7 +26158,7 @@ import SlangLl2Parser._
     return ctx.afterAcceptIndex
   }
 
-  @pure def lex_QUESTION(index: Z): Option[Result] = { return lexH(index, dfa_QUESTION(index), """QUESTION""", u32"0xA4512A72", F) }
+  @pure def lex_STAR(index: Z): Option[Result] = { return lexH(index, dfa_STAR(index), """STAR""", u32"0x7EF5EC39", F) }
 
   @pure def dfa_RBRACE(i: Z): Z = {
     val ctx = LContext.create(ISZ(state"1"), i)
@@ -26281,30 +26446,6 @@ import SlangLl2Parser._
   }
 
   @pure def lex_LRANGLE(index: Z): Option[Result] = { return lexH(index, dfa_LRANGLE(index), """LRANGLE""", u32"0x15503F3A", F) }
-
-  @pure def dfa_STAR(i: Z): Z = {
-    val ctx = LContext.create(ISZ(state"1"), i)
-
-    while (cis.has(ctx.j)) {
-      ctx.state match {
-        case state"0" =>
-          val c = cis.at(ctx.j)
-          ctx.found = F
-          if (c == '*') {
-            ctx.update(state"1")
-          }
-          if (!ctx.found) {
-            return ctx.afterAcceptIndex
-          }
-        case state"1" => return ctx.afterAcceptIndex
-        case _ => halt("Infeasible")
-      }
-      ctx.j = ctx.j + 1
-    }
-    return ctx.afterAcceptIndex
-  }
-
-  @pure def lex_STAR(index: Z): Option[Result] = { return lexH(index, dfa_STAR(index), """STAR""", u32"0x7EF5EC39", F) }
 
   @pure def dfa_CASE(i: Z): Z = {
     val ctx = LContext.create(ISZ(state"4"), i)
