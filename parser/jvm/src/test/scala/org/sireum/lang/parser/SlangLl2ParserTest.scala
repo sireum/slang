@@ -30,6 +30,9 @@ import org.sireum.test._
 
 class SlangLl2ParserTest extends SireumRcSpec {
 
+  val temp = Os.home / "Temp" / "ll2"
+  temp.removeAll()
+
   def shouldIgnore(name: Predef.String, isSimplified: Boolean): Boolean = false
 
   def textResources: scala.collection.SortedMap[scala.Vector[Predef.String], Predef.String] = {
@@ -55,6 +58,10 @@ class SlangLl2ParserTest extends SireumRcSpec {
         try {
           val ll2 = lang.ast.SlangLl2PrettyPrinter.prettyPrint(program).render
           println(ll2)
+          val f = temp / ops.StringOps(uriOpt.get).replaceAllLiterally(".sc", ".sl")
+          f.up.mkdirAll()
+          f.writeOver(ll2)
+          println(s"Wrote $f")
           SlangLl2Parser.parse(uriOpt, ll2, reporter)
           SlangLl2ParserUtil.parse(uriOpt, ll2, reporter)
         } catch {

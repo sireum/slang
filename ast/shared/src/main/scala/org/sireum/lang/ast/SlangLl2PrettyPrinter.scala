@@ -58,9 +58,21 @@ object SlangLl2PrettyPrinter {
           st"(${(for (t <- o.args) yield printType(t), ", ")}) => ${if (o.isPure) st"@pure " else st""}${printType(o.ret)}"
         }
     }
-    @strictpure def printInvoke(o: AST.Exp.Invoke): ST = st"${if (o.receiverOpt.isEmpty) st"" else st"${printExp(o.receiverOpt.get)}."}${o.ident.id.value}${if (o.targs.isEmpty) st"" else st"[${(for (t <- o.targs) yield printType(t), ", ")}]"}${if (o.args.isEmpty) st"" else st"(${(for (e <- o.args) yield printExp(e), ", ")})"}"
+    @strictpure def printInvoke(o: AST.Exp.Invoke): ST = {
+      val id: String = if (o.ident.id.value == "apply") "" else o.ident.id.value
+      val receiver: ST = if (o.receiverOpt.isEmpty) st"" else st"${printExp(o.receiverOpt.get)}${if (id.size == 0) "" else "."}"
+      val targs: ST = if (o.targs.isEmpty) st"" else st"[${(for (t <- o.targs) yield printType(t), ", ")}]"
+      val args: ST = if (o.args.isEmpty) st"" else st"(${(for (e <- o.args) yield printExp(e), ", ")})"
+      st"$receiver$id$targs$args"
+    }
     @strictpure def printNamedArg(o: AST.NamedArg): ST = st"${o.id.value} = ${printExp(o.arg)}"
-    @strictpure def printInvokeNamed(o: AST.Exp.InvokeNamed): ST = st"${if (o.receiverOpt.isEmpty) st"" else st"${printExp(o.receiverOpt.get)}."}${o.ident.id.value}${if (o.targs.isEmpty) st"" else st"[${(for (t <- o.targs) yield printType(t), ", ")}]"}${if (o.args.isEmpty) st"" else st"(${(for (na <- o.args) yield printNamedArg(na), ", ")})"}"
+    @strictpure def printInvokeNamed(o: AST.Exp.InvokeNamed): ST = {
+      val id: String = if (o.ident.id.value == "apply") "." else o.ident.id.value
+      val receiver: ST = if (o.receiverOpt.isEmpty) st"" else st"${printExp(o.receiverOpt.get)}${if (id.size == 0) "" else "."}"
+      val targs: ST = if (o.targs.isEmpty) st"" else st"[${(for (t <- o.targs) yield printType(t), ", ")}]"
+      val args: ST = if (o.args.isEmpty) st"" else st"(${(for (na <- o.args) yield printNamedArg(na), ", ")})"
+      st"$receiver$id$targs$args"
+    }
     @strictpure def printBinary(o: AST.Exp.Binary): ST = {
       val leftOpOpt: Option[String] = o.left match {
         case left: AST.Exp.Binary => Some(left.op)
@@ -91,11 +103,11 @@ object SlangLl2PrettyPrinter {
     }
     @strictpure def printLoopContract(o: AST.LoopContract): ST = {
       val modifies: ISZ[ST] = for (m <- o.modifies) yield printExp(m.asExp)
-      val contracts: ISZ[ST] = (if (modifies.isEmpty) ISZ[ST]() else ISZ(st"Modifies(${(modifies, ", ")})")) ++
-        (for (inv <- o.invariants) yield printExp(inv))
+      val contracts: ISZ[ST] = (if (modifies.isEmpty) ISZ[ST]() else ISZ(st"modifies ${(modifies, ", ")}")) :+
+        st"inv ${(for (inv <- o.invariants) yield printExp(inv), s",$lineSep  ")}"
       if (o.isEmpty) st"" else
         st""" @[
-            |  ${(contracts, s",$lineSep")}
+            |  ${(contracts, lineSep)}
             |]"""
     }
 
@@ -170,7 +182,7 @@ object SlangLl2PrettyPrinter {
       case o: AST.ProofAst.StepId.Str => o.prettyST
     }
     @strictpure def printAssignExp(o: AST.AssignExp): ST = printStmt(T, o.asStmt)
-    @strictpure def printWitnesses(o: AST.ProofAst.Step.Justification): ST = if (o.hasWitness) st" ${(for (w <- o.witnesses) yield w.prettyST, " ")}." else st"."
+    @strictpure def printWitnesses(o: AST.ProofAst.Step.Justification): ST = if (o.hasWitness) st" ${(for (w <- o.witnesses) yield w.prettyST, " ")}" else st""
     @strictpure def isNatDedId(id: String): B = id match {
       case string"Subst_>" => T
       case string"Subst_<" => T
@@ -264,28 +276,28 @@ object SlangLl2PrettyPrinter {
     @strictpure def printParam(o: AST.Param): ST = st"${if (o.isHidden) "@hidden " else ""}${o.id.value}: ${printType(o.tipe)}"
     @strictpure def printParams(hasParams: B, o: ISZ[AST.Param]): ST = if (hasParams) st"(${(for (p <- o) yield printParam(p), ", ")})" else st""
     @strictpure def printAccesses(id: String, o: AST.MethodContract.Accesses): ISZ[ST] =
-      if (o.isEmpty) ISZ() else ISZ(st"$id(${(for (ref <- o.refs) yield printExp(ref.asExp), ", ")})")
+      if (o.isEmpty) ISZ() else ISZ(st"$id ${(for (ref <- o.refs) yield printExp(ref.asExp), ", ")}")
     @strictpure def printClaims(id: String, o: AST.MethodContract.Claims): ISZ[ST] =
-      if (o.isEmpty) ISZ() else ISZ(st"$id(${(for (claim <- o.claims) yield printExp(claim), ", ")})")
+      if (o.isEmpty) ISZ() else ISZ(st"$id ${(for (claim <- o.claims) yield printExp(claim), ", ")}")
     @pure def printMethodContract(o: AST.MethodContract): ISZ[ST] = {
       o match {
         case o: AST.MethodContract.Simple =>
-          return printAccesses("Reads", o.readsClause) ++
-            printClaims("Requires", o.requiresClause) ++
-            printAccesses("Modifies", o.modifiesClause) ++
-            printClaims("Ensures", o.ensuresClause)
+          return printAccesses("reads", o.readsClause) ++
+            printClaims("requires", o.requiresClause) ++
+            printAccesses("modifies", o.modifiesClause) ++
+            printClaims("ensures", o.ensuresClause)
         case o: AST.MethodContract.Cases =>
-          var r = printAccesses("Reads", o.readsClause) ++ printAccesses("Modifies", o.modifiesClause)
+          var r = printAccesses("reads", o.readsClause) ++ printAccesses("modifies", o.modifiesClause)
           for (cs <- o.cases) {
             r = r :+
-              st"""Case(${if (cs.label.value.size == 0) st"" else st"${cs.label.prettyST},"}
-                  |  ${(printClaims("Requires", cs.requiresClause) ++ printClaims("Ensures", cs.ensuresClause), s",$lineSep")}
-                  |)"""
+              st"""${cs.label.prettyST} [
+                  |  ${(printClaims("requires", cs.requiresClause) ++ printClaims("ensures", cs.ensuresClause), lineSep)}
+                  |]"""
           }
           r = ISZ(
-            st"""Cases(
-                |  ${(r, s",$lineSep")}
-                |)"""
+            st"""cases[
+                |  ${(r, lineSep)}
+                |]"""
           )
           return r
       }
@@ -347,7 +359,7 @@ object SlangLl2PrettyPrinter {
       val sig = st"def ${o.sig.id.value}$tparams$params: ${printType(o.sig.returnType)}"
       if (o.contract.isEmpty) sig else
         st"""$sig @[
-            |  ${(printMethodContract(o.contract), s",$lineSep")}
+            |  ${(printMethodContract(o.contract), s"$lineSep")}
             |]"""
     }
     @strictpure def printStmt(isExp: B, o: AST.Stmt): ST = o match {
@@ -460,7 +472,7 @@ object SlangLl2PrettyPrinter {
         val sig = st"def${printPurity(o.purity)} ${o.sig.id.value}$tparams$params: ${printType(o.sig.returnType)}"
         val header: ST = if (o.contract.isEmpty) sig else
           st"""$sig @[
-              |  ${(printMethodContract(o.contract), s",$lineSep")}
+              |  ${(printMethodContract(o.contract), s"$lineSep")}
               |]"""
         o.bodyOpt match {
           case Some(body) =>

@@ -1,0 +1,544 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Slang",
+  "scopeName": "source.slang",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#string-interpolation" },
+    { "include": "#multi-line-strings" },
+    { "include": "#annotations" },
+    { "include": "#loops" },
+    { "include": "#deduce" },
+    { "include": "#json-literals" },
+    { "include": "#keywords" },
+    { "include": "#literals" },
+    { "include": "#identifiers" },
+    { "include": "#operators" },
+    { "include": "#symbols" },
+    { "include": "#punctuation" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.slang",
+          "match": "//[^\\n\\r]*"
+        },
+        {
+          "name": "comment.block.slang",
+          "begin": "/\\*",
+          "end": "\\*{1,2}/",
+          "patterns": [
+            { "include": "#comments" }
+          ]
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.slang",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            { "include": "#string-escape" }
+          ]
+        }
+      ]
+    },
+    "string-escape": {
+      "patterns": [
+        {
+          "name": "constant.character.escape.slang",
+          "match": "\\\\[btnfr\"'\\\\]"
+        },
+        {
+          "name": "constant.character.escape.unicode.slang",
+          "match": "\\\\u[0-9a-fA-F]{4,5}"
+        },
+        {
+          "name": "constant.character.escape.dollar.slang",
+          "match": "\\$\\$"
+        }
+      ]
+    },
+    "string-interpolation": {
+      "patterns": [
+        {
+          "comment": "Non-interpolating string: id\"...\"",
+          "name": "string.interpolated.slang",
+          "begin": "([a-zA-Z_][a-zA-Z0-9_$]*)(\")",
+          "beginCaptures": {
+            "1": { "name": "entity.name.function.interpolation.slang" },
+            "2": { "name": "punctuation.definition.string.begin.slang" }
+          },
+          "end": "\"",
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.string.end.slang" }
+          },
+          "patterns": [
+            { "include": "#interpolation-expression" },
+            { "include": "#string-escape" }
+          ]
+        }
+      ]
+    },
+    "interpolation-expression": {
+      "patterns": [
+        {
+          "comment": "Interpolation boundary $...$",
+          "match": "\\$",
+          "name": "punctuation.section.interpolation.slang"
+        }
+      ]
+    },
+    "multi-line-strings": {
+      "patterns": [
+        {
+          "comment": "Prefixed multi-line string line: name#content (MSTRP/MSTRPB first line)",
+          "begin": "([a-zA-Z_][a-zA-Z0-9_$]*)(#)",
+          "beginCaptures": {
+            "1": { "name": "entity.name.function.interpolation.slang" },
+            "2": { "name": "punctuation.definition.string.slang" }
+          },
+          "end": "$",
+          "patterns": [
+            { "include": "#mstring-line-content" }
+          ]
+        },
+        {
+          "comment": "Multi-line string continuation line: #content (MSTR/MSTRPB/MSTRPM/MSTRPE lines)",
+          "begin": "#",
+          "beginCaptures": {
+            "0": { "name": "punctuation.definition.string.slang" }
+          },
+          "end": "$",
+          "patterns": [
+            { "include": "#mstring-line-content" }
+          ]
+        }
+      ]
+    },
+    "mstring-line-content": {
+      "comment": "Content within a multi-line string #-line: string text, escaped dollars, and interpolation regions",
+      "patterns": [
+        {
+          "comment": "Escaped dollar sign ($$) in multi-line string",
+          "name": "constant.character.escape.dollar.slang",
+          "match": "\\$\\$"
+        },
+        {
+          "comment": "Interpolation region: $expression$",
+          "begin": "\\$",
+          "beginCaptures": {
+            "0": { "name": "punctuation.section.interpolation.begin.slang" }
+          },
+          "end": "\\$|(?=$)",
+          "endCaptures": {
+            "0": { "name": "punctuation.section.interpolation.end.slang" }
+          },
+          "name": "meta.interpolation.slang",
+          "patterns": [
+            { "include": "$self" }
+          ]
+        },
+        {
+          "comment": "String content (characters outside interpolation)",
+          "name": "string.unquoted.multi-line.slang",
+          "match": "[^$]+"
+        }
+      ]
+    },
+    "annotations": {
+      "patterns": [
+        {
+          "comment": "Annotation @[...]",
+          "begin": "(@)(\\[)",
+          "beginCaptures": {
+            "1": { "name": "punctuation.definition.annotation.slang" },
+            "2": { "name": "punctuation.section.annotation.begin.slang" }
+          },
+          "end": "\\]",
+          "endCaptures": {
+            "0": { "name": "punctuation.section.annotation.end.slang" }
+          },
+          "name": "meta.annotation.slang",
+          "patterns": [
+            {
+              "comment": "ensures clause with Old/Res soft keywords",
+              "begin": "\\b(ensures)\\b",
+              "beginCaptures": {
+                "1": { "name": "keyword.other.contract.slang" }
+              },
+              "end": "(?=\\b(?:requires|ensures|modifies|inv|cases)\\b|\\])",
+              "patterns": [
+                {
+                  "comment": "In and Res soft keywords in ensures expressions",
+                  "name": "keyword.other.contract.slang",
+                  "match": "\\b(In|Res)\\b"
+                },
+                { "include": "$self" }
+              ]
+            },
+            {
+              "comment": "Contract soft keywords inside annotations",
+              "name": "keyword.other.contract.slang",
+              "match": "\\b(requires|modifies|inv|cases)\\b"
+            },
+            { "include": "$self" }
+          ]
+        },
+        {
+          "comment": "Modifier @name or @name[...]",
+          "match": "(@)([a-zA-Z_][a-zA-Z0-9_$]*)",
+          "captures": {
+            "1": { "name": "punctuation.definition.annotation.slang" },
+            "2": { "name": "storage.modifier.annotation.slang" }
+          }
+        }
+      ]
+    },
+    "loops": {
+      "patterns": [
+        {
+          "comment": "While loop with loop-specific annotation",
+          "begin": "\\b(while)\\b",
+          "beginCaptures": {
+            "1": { "name": "keyword.control.slang" }
+          },
+          "end": "(?=\\{)",
+          "patterns": [
+            { "include": "#loop-annotation" },
+            { "include": "$self" }
+          ]
+        },
+        {
+          "comment": "For loop with loop-specific annotation",
+          "begin": "\\b(for)\\b",
+          "beginCaptures": {
+            "1": { "name": "keyword.control.slang" }
+          },
+          "end": "(?=\\{)",
+          "patterns": [
+            { "include": "#loop-annotation" },
+            { "include": "$self" }
+          ]
+        }
+      ]
+    },
+    "loop-annotation": {
+      "patterns": [
+        {
+          "comment": "Loop annotation @[...]",
+          "begin": "(@)(\\[)",
+          "beginCaptures": {
+            "1": { "name": "punctuation.definition.annotation.slang" },
+            "2": { "name": "punctuation.section.annotation.begin.slang" }
+          },
+          "end": "\\]",
+          "endCaptures": {
+            "0": { "name": "punctuation.section.annotation.end.slang" }
+          },
+          "name": "meta.annotation.slang",
+          "patterns": [
+            {
+              "comment": "Contract soft keywords inside loop annotations",
+              "name": "keyword.other.contract.slang",
+              "match": "\\b(modifies|inv|Old|In)\\b"
+            },
+            { "include": "$self" }
+          ]
+        }
+      ]
+    },
+    "deduce": {
+      "patterns": [
+        {
+          "comment": "Deduce statement",
+          "begin": "\\b(deduce)\\b",
+          "beginCaptures": {
+            "1": { "name": "keyword.other.proof.slang" }
+          },
+          "end": "(?<=\\})|(?<=\\))",
+          "name": "meta.deduce.slang",
+          "patterns": [
+            { "include": "#deduce-proof" },
+            { "include": "#deduce-expProof" },
+            { "include": "$self" }
+          ]
+        }
+      ]
+    },
+    "deduce-proof": {
+      "comment": "Proof block { ... } with recursive nesting for subProofs",
+      "begin": "\\{",
+      "beginCaptures": {
+        "0": { "name": "punctuation.section.braces.begin.slang" }
+      },
+      "end": "\\}",
+      "endCaptures": {
+        "0": { "name": "punctuation.section.braces.end.slang" }
+      },
+      "name": "meta.proof.slang",
+      "patterns": [
+        { "include": "#deduce-proof" },
+        {
+          "comment": "In and Old soft keywords in proof",
+          "name": "keyword.other.contract.slang",
+          "match": "\\b(In|Old)\\b"
+        },
+        { "include": "$self" }
+      ]
+    },
+    "deduce-expProof": {
+      "comment": "Expression proof ( ... ) with recursive nesting",
+      "begin": "\\(",
+      "beginCaptures": {
+        "0": { "name": "punctuation.section.parens.begin.slang" }
+      },
+      "end": "\\)",
+      "endCaptures": {
+        "0": { "name": "punctuation.section.parens.end.slang" }
+      },
+      "name": "meta.expProof.slang",
+      "patterns": [
+        { "include": "#deduce-expProof" },
+        {
+          "comment": "In and Old soft keywords in expProof",
+          "name": "keyword.other.contract.slang",
+          "match": "\\b(In|Old)\\b"
+        },
+        { "include": "$self" }
+      ]
+    },
+    "json-literals": {
+      "patterns": [
+        {
+          "comment": "JSON literal: `{ ... }, `[ ... ], or `( ... )",
+          "begin": "`(?=[{\\[(])",
+          "beginCaptures": {
+            "0": { "name": "punctuation.definition.json-literal.slang" }
+          },
+          "end": "(?<=[}\\])])",
+          "name": "meta.json-literal.slang",
+          "patterns": [
+            {
+              "comment": "Null in JSON literal",
+              "name": "constant.language.null.slang",
+              "match": "\\bnull\\b"
+            },
+            { "include": "$self" }
+          ]
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "comment": "Control flow keywords",
+          "name": "keyword.control.slang",
+          "match": "\\b(if|else|while|for|match|case|return|halt|do|yield)\\b"
+        },
+        {
+          "comment": "Declaration keywords",
+          "name": "keyword.declaration.slang",
+          "match": "\\b(def|val|var|type|package|import)\\b"
+        },
+        {
+          "comment": "Boolean literals",
+          "name": "constant.language.boolean.slang",
+          "match": "\\b(true|false)\\b"
+        },
+        {
+          "comment": "Null literal",
+          "name": "constant.language.null.slang",
+          "match": "\\bnull\\b"
+        },
+        {
+          "comment": "Self-reference keywords",
+          "name": "variable.language.slang",
+          "match": "\\b(this|super)\\b"
+        },
+        {
+          "comment": "Proof and verification keywords",
+          "name": "keyword.other.proof.slang",
+          "match": "\\b(deduce|by|assert|assume)\\b"
+        }
+      ]
+    },
+    "literals": {
+      "patterns": [
+        {
+          "comment": "Hexadecimal integer",
+          "name": "constant.numeric.hex.slang",
+          "match": "\\b0x[0-9a-fA-F][0-9a-fA-F_]*\\b"
+        },
+        {
+          "comment": "Binary integer",
+          "name": "constant.numeric.binary.slang",
+          "match": "\\b0b[01][01_]*\\b"
+        },
+        {
+          "comment": "Real (floating-point) number",
+          "name": "constant.numeric.float.slang",
+          "match": "\\b(?:0|-?[1-9][0-9_]*)(?:\\.[0-9][0-9_]*(?:[eE][+-]?[0-9_]+)?|[eE][+-]?[0-9_]+)[fFdD]?\\b"
+        },
+        {
+          "comment": "Integer with optional type suffix (e.g. 42z, 5l)",
+          "name": "constant.numeric.integer.slang",
+          "match": "\\b(?:0|-?[1-9][0-9_]*)(?:[a-zA-Z][a-zA-Z0-9_$]*)?\\b"
+        }
+      ]
+    },
+    "identifiers": {
+      "patterns": [
+        {
+          "comment": "Backtick-escaped identifier (e.g., `Subst_<`)",
+          "match": "`[^\\n\\r\\t]*`"
+        },
+        {
+          "comment": "Identifier with operator suffix (e.g., Subst_<, foo_+)",
+          "match": "'?[a-zA-Z_][a-zA-Z0-9_$]*_[\\u2200-\\u22FF\\u2A00-\\u2AFF\\u27C0-\\u27EF\\u2980-\\u29FF+\\-*/%<>!&^|~:=]+"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "comment": "Fat arrow",
+          "name": "keyword.operator.arrow.slang",
+          "match": "=>"
+        },
+        {
+          "comment": "Range operators",
+          "name": "keyword.operator.range.slang",
+          "match": "\\.\\.<|\\.\\.(?!\\.)"
+        },
+        {
+          "comment": "Sequent turnstile (Unicode)",
+          "name": "keyword.operator.turnstile.slang",
+          "match": "\\u22A2"
+        },
+        {
+          "comment": "Sequent turnstile (ASCII)",
+          "name": "keyword.operator.turnstile.slang",
+          "match": "\\|-"
+        },
+        {
+          "comment": "Universal quantifier",
+          "name": "keyword.operator.quantifier.slang",
+          "match": "\\u2200"
+        },
+        {
+          "comment": "Existential quantifier",
+          "name": "keyword.operator.quantifier.slang",
+          "match": "\\u2203"
+        },
+        {
+          "comment": "Diamond operator",
+          "name": "keyword.operator.comparison.slang",
+          "match": "<>"
+        },
+        {
+          "comment": "Optional chaining operator",
+          "name": "keyword.operator.optional.slang",
+          "match": "\\?"
+        },
+        {
+          "comment": "Assignment operator",
+          "name": "keyword.operator.assignment.slang",
+          "match": "(?<!=|!)=(?!=|>)"
+        },
+        {
+          "comment": "Comparison and equality operators",
+          "name": "keyword.operator.comparison.slang",
+          "match": "==|!=|>=|<=|>(?!>)|<(?!<)"
+        },
+        {
+          "comment": "Logical operators",
+          "name": "keyword.operator.logical.slang",
+          "match": "&&|\\|\\||!"
+        },
+        {
+          "comment": "Arithmetic operators",
+          "name": "keyword.operator.arithmetic.slang",
+          "match": "[+\\-*/%]"
+        },
+        {
+          "comment": "Bitwise operators",
+          "name": "keyword.operator.bitwise.slang",
+          "match": "&|\\||\\^|~"
+        },
+        {
+          "comment": "Unicode mathematical operators",
+          "name": "keyword.operator.mathematical.slang",
+          "match": "[\\u2200-\\u22FF\\u2A00-\\u2AFF\\u27C0-\\u27EF\\u2980-\\u29FF]+"
+        },
+        {
+          "comment": "Horizontal line (truth table separator)",
+          "name": "punctuation.separator.hline.slang",
+          "match": "-----+"
+        }
+      ]
+    },
+    "symbols": {
+      "patterns": [
+        {
+          "comment": "Symbol literal \\name",
+          "name": "constant.other.symbol.slang",
+          "match": "\\\\[a-zA-Z_][a-zA-Z0-9_$]*"
+        },
+        {
+          "comment": "Wildcard underscore",
+          "name": "variable.language.wildcard.slang",
+          "match": "\\b_\\b"
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.section.braces.begin.slang",
+          "match": "\\{"
+        },
+        {
+          "name": "punctuation.section.braces.end.slang",
+          "match": "\\}"
+        },
+        {
+          "name": "punctuation.section.parens.begin.slang",
+          "match": "\\("
+        },
+        {
+          "name": "punctuation.section.parens.end.slang",
+          "match": "\\)"
+        },
+        {
+          "name": "punctuation.section.brackets.begin.slang",
+          "match": "\\["
+        },
+        {
+          "name": "punctuation.section.brackets.end.slang",
+          "match": "\\]"
+        },
+        {
+          "name": "punctuation.separator.comma.slang",
+          "match": ","
+        },
+        {
+          "name": "punctuation.separator.colon.slang",
+          "match": ":"
+        },
+        {
+          "name": "punctuation.accessor.dot.slang",
+          "match": "\\."
+        },
+        {
+          "name": "punctuation.separator.semicolon.slang",
+          "match": ";"
+        }
+      ]
+    }
+  }
+}

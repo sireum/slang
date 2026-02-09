@@ -41,7 +41,7 @@ importWildcardSuffix: UNDERSCORE annot? ;
 
 importQualSuffix: ID importIdSuffix? ;
 
-importRenamesSuffix: LBRACE importRename importRenameSuffix* RBRACE ;
+importRenamesSuffix: LBRACE importRename importRenameSuffix* COMMA? RBRACE ;
 
 importRenameSuffix: COMMA importRename ;
 
@@ -53,7 +53,7 @@ pkg: PACKAGE mod* name? annot? imprt* ( member* | pkgSuffix ) ;
 
 pkgSuffix: LBRACE mainMember* RBRACE ;
 
-init: DOT DOT LBRACE annot? stmt* RBRACE ;
+init: TO LBRACE annot? stmt* RBRACE ;
 
 member: varDefn | defDefn | typeDefn | init ;
 
@@ -90,11 +90,11 @@ typeParamSuffix: COMMA typeParam ;
 
 typeParam: mod* ID ;
 
-enumMembers: LBRACE ID commaId* RBRACE ;
+enumMembers: LBRACE ID commaId* COMMA? RBRACE ;
 
 commaId: COMMA ID ;
 
-params: LPAREN param commaParams* RPAREN ;
+params: LPAREN param commaParams* COMMA? RPAREN ;
 
 commaParams: COMMA param ;
 
@@ -106,7 +106,11 @@ commaSuper: COMMA supr ;
 
 supr: annot? name typeArgs? ;
 
-annot: AT LSQUARE args? RSQUARE ;
+annot: AT LSQUARE annotArg* RSQUARE ;
+
+annotArg: ( ID | STRING ) ( exp commaExp* | annotArgNested ) ;
+
+annotArgNested: LSQUARE annotArg+ RSQUARE ;
 
 varDefn: VAR mod* ID colonType? annot? assignSuffix? ;
 
@@ -118,7 +122,7 @@ defnTypeSuffix: COLON type annot? ;
 
 defId: ID | OP | SYMBOL ;
 
-defParams: LPAREN defParam defParamSuffix? RPAREN ;
+defParams: LPAREN defParam defParamSuffix? COMMA? RPAREN ;
 
 defParam: mod* ID COLON type ;
 
@@ -126,7 +130,9 @@ defParamSuffix: COMMA ( defParamSuffixVarargs | defParam defParamSuffix? ) ;
 
 defParamSuffixVarargs: TO defParam ;
 
-stmt: expOrAssignStmt | varPattern | ifStmt | whileStmt | forStmt | deduceStmt | matchStmt | defStmt ;
+stmt: expOrAssignStmt | varPattern | ifStmt | whileStmt | forStmt | deduceStmt | matchStmt | defStmt | assertumeStmt ;
+
+assertumeStmt: ( ASSERT | ASSUME ) exp commaExp? ;
 
 defStmt: DEF mod* defId typeParams? defParams? defnTypeSuffix? assignSuffix? ;
 
@@ -152,7 +158,7 @@ block: LBRACE annot? blockContent RBRACE ;
 
 blockContent: stmt* ret? ;
 
-ret: RETURN annot? rhs? ;
+ret: ( RETURN | HALT ) annot? rhs? ;
 
 els: ELSE ( elsIf | block ) ;
 
@@ -192,7 +198,7 @@ wildCardPattern: UNDERSCORE colonType1? ;
 
 wildCardSeqPattern: STAR ;
 
-patterns: LPAREN patternsArg RPAREN ;
+patterns: LPAREN patternsArg COMMA? RPAREN ;
 
 patternsArg: pattern commaPattern* | namedPattern commaNamedPattern* ;
 
@@ -216,7 +222,7 @@ eta: UNDERSCORE ;
 
 exp1: OP? ( exp0 | paren ) ;
 
-exp0: idExp | thisExp | superExp | lit | interp | pureBlock ;
+exp0: idExp | thisExp | superExp | lit | interp | pureBlock | jsonLit ;
 
 pureBlock: AT LBRACE stmt+ RBRACE ;
 
@@ -226,19 +232,41 @@ thisExp: THIS ;
 
 superExp: SUPER ;
 
-access: fieldAccess | applyAccess ;
+access: QUESTION? ( fieldAccess | applyAccess ) ;
 
 fieldAccess: DOT ID typeArgs? ;
 
-applyAccess: LPAREN args? RPAREN fn? ;
+applyAccess: LPAREN args? COMMA? RPAREN fn? ;
 
-fn: LBRACE ARROW annot? fnBody RBRACE ;
+fn: LBRACE COLON annot? fnBody RBRACE ;
 
 fnBody: blockContent | cas+ ;
 
 lit: TRUE | FALSE | INT | HEX | BIN | REAL | STRING |  MSTR /* | MSTRING */ ;
 
-paren: LPAREN annot? parenArgs RPAREN ;
+jsonLit: BACKTICK ( jsonObject | jsonArray | jsonParen ) ;
+
+jsonParen: LPAREN jsonExp RPAREN ;
+
+json: jsonObject | jsonArray | jsonExp ;
+
+jsonObject: LBRACE jsonKeyValue commaJsonKeyValue* COMMA? RBRACE;
+
+jsonKeyValue: jsonKey COLON json ;
+
+jsonKey: ID | STRING ;
+
+commaJsonKeyValue: COMMA jsonKeyValue ;
+
+jsonArray: LSQUARE json commaJson COMMA? RSQUARE ;
+
+commaJson: COMMA json ;
+
+jsonExp: exp | jsonNull ;
+
+jsonNull: NULL ;
+
+paren: LPAREN annot? parenArgs COMMA? RPAREN ;
 
 parenArgs : exp annot? commaExpAnnot* | namedExpAnnot commaNamedExpAnnot* ;
 
@@ -274,13 +302,17 @@ sequent: COLON exps? SEQUENT exp proof? ;
 
 exps: exp commaExp* ;
 
-expProof: LPAREN expJustOpt commaExpJustOpt* RPAREN ;
+expProof: LPAREN expJustOpt commaExpJustOpt* COMMA? RPAREN ;
 
 commaExpJustOpt: COMMA expJustOpt ;
 
 expJustOpt: exp just? ;
 
-proofStep: proofId DOT ( exp just? | subProof ) ;
+proofStep: proofId DOT ( exp just | subProof | assumeProofStep | assertProofStep ) ;
+
+assumeProofStep: ASSUME exp ;
+
+assertProofStep: ASSERT exp subProof ;
 
 subProof: LBRACE freshIds* proofStep+ RBRACE ;
 
@@ -288,9 +320,9 @@ freshIds: ID commaId* colonType? ;
 
 proofId: INT | STRING ;
 
-just: BY name justTypeArgs? justArgs? proofId* DOT ;
+just: BY name justTypeArgs? justArgs? proofId* ;
 
-justArgs: LPAREN args RPAREN ;
+justArgs: LPAREN args COMMA? RPAREN ;
 
 justTypeArgs: LSQUARE type commaType* RSQUARE ;
 
@@ -326,7 +358,7 @@ typeSuffix: ARROW annot? type1 ;
 
 type1: parenType | type0 type0Suffix* ;
 
-parenType: LPAREN typeParenArgs RPAREN ;
+parenType: LPAREN typeParenArgs COMMA? RPAREN ;
 
 type0Suffix: ( OP | SYMBOL ) type0 ;
 
@@ -357,13 +389,14 @@ COMMA:      ','           ; COLON:      ':'           ; DOT:        '.'         
 LBRACE:     '{'           ; LPAREN:     '('           ; LSQUARE:    '['           ; STAR:       '*'           ;
 RBRACE:     '}'           ; RPAREN:     ')'           ; RSQUARE:    ']'           ; SEQUENT:    '⊢' | '|-'    ;
 SOME:       '∃'           ; TO:         '..'          ; UNTIL:      '..<'         ; LANGLE:     '<'           ;
-RANGLE:     '>'           ; LRANGLE:    '<>'          ;
+RANGLE:     '>'           ; LRANGLE:    '<>'          ; BACKTICK:   '`'           ; QUESTION:   '?'           ;
 
-CASE:       'case'        ; DEDUCE:     'deduce'      ; DEF:        'def'         ; DO:         'do'          ;
-FALSE:      'false'       ; ELSE:       'else'        ; FOR:        'for'         ; TYPE:       'type'        ;
-IF:         'if'          ; IMPORT:     'import'      ; MATCH:      'match'       ; PACKAGE:    'package'     ;
-RETURN:     'return'      ; SUPER:      'super'       ; THIS:       'this'        ; TRUE:       'true'        ; 
-WHILE:      'while'       ; YIELD:      'yield'       ; VAR:        'val' | 'var' ; BY:         'by'          ;
+ASSUME:     'assume'      ; ASSERT:     'assert'      ; BY:         'by'          ; CASE:       'case'        ;
+DEDUCE:     'deduce'      ; DEF:        'def'         ; DO:         'do'          ; FALSE:      'false'       ;
+ELSE:       'else'        ; FOR:        'for'         ; IF:         'if'          ; IMPORT:     'import'      ;
+MATCH:      'match'       ; PACKAGE:    'package'     ; RETURN:     'return'      ; SUPER:      'super'       ;
+THIS:       'this'        ; TRUE:       'true'        ; TYPE:       'type'        ; WHILE:      'while'       ;
+YIELD:      'yield'       ; VAR:        'val' | 'var' ; HALT:       'halt'        ; NULL:       'null'        ;
 
 SYMBOL: '\\' IDF ;
 
@@ -385,7 +418,7 @@ MSTRPB: IDF ( '#' MSTRF WSF? )* '#' MSTRI '$' ;
 
 MSTRPM: '$' MSTRF WSF? ( '#' MSTRF WSF? )* '#' MSTRI '$' ;
 
-MSTRPE: '$' MSTRF WSF? ( '#' MSTRF WSF? )* '#' MSTRF ;
+MSTRPE: '$' MSTRF? ;
 
 ID: IDF | IDESC;
 
@@ -406,9 +439,9 @@ CHAR: '\'' ( ESC_SEQ | ~('\''|'\\') ) '\'' ;
 COMMENT: ( '//' ~( '\n' | '\r' )* '\r'? '\n'
          | '/*' ( ~'*' | '*' ~'/' )* ( '*/' | '**/' ) )  -> skip ;
 
-WS: ( ' ' | '\t' | '\r' | '\n' )+                    -> skip ;
+WS: ( ' ' | '\t' | '\r' | '\n' )+                        -> skip ;
 
-fragment MSTRF:	~( '\n' | '\r' )* '\r'? '\n' ;
+fragment MSTRF:	MSTRI '\r'? '\n' ;
 
 fragment MSTRI:	( ~( '\n' | '\r' | '$' ) | '$$' )* ;
 
@@ -416,7 +449,7 @@ fragment WSF:	( ' ' | '\t' )+ ;
 
 fragment IDESC: '`' ~( '\n' | '\r' | '\t' )* '`' ;
 
-fragment IDF: ( LETTER | '_' | '$' ) ( LETTER | DIGIT | '_' | '$' )* ( '_' OPSYM+ )? ;
+fragment IDF: ( LETTER | '_' ) ( LETTER | DIGIT | '_' | '$' )* ( '_' OPSYM+ )? ;
 
 fragment SPI: ESC_SEQ | ~( '\\' | '"' | '$' ) | '$$' ;
 
