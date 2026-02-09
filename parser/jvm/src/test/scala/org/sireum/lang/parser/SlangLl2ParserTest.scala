@@ -30,8 +30,11 @@ import org.sireum.test._
 
 class SlangLl2ParserTest extends SireumRcSpec {
 
-  val temp = Os.home / "Temp" / "ll2"
-  temp.removeAll()
+  val temp: Os.Path = if (Os.env("GITHUB_ACTION").nonEmpty) {
+    val t = Os.home / "Temp" / "ll2"
+    t.removeAll()
+    t
+  } else null
 
   def shouldIgnore(name: Predef.String, isSimplified: Boolean): Boolean = false
 
@@ -58,10 +61,12 @@ class SlangLl2ParserTest extends SireumRcSpec {
         try {
           val ll2 = lang.ast.SlangLl2PrettyPrinter.prettyPrint(program).render
           println(ll2)
-          val f = temp / ops.StringOps(uriOpt.get).replaceAllLiterally(".sc", ".sl")
-          f.up.mkdirAll()
-          f.writeOver(ll2)
-          println(s"Wrote $f")
+          if (temp != null) {
+            val f = temp / ops.StringOps(uriOpt.get).replaceAllLiterally(".sc", ".sl")
+            f.up.mkdirAll()
+            f.writeOver(ll2)
+            println(s"Wrote $f")
+          }
           SlangLl2Parser.parse(uriOpt, ll2, reporter)
           SlangLl2ParserUtil.parse(uriOpt, ll2, reporter)
         } catch {
