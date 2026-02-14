@@ -22,7 +22,7 @@ The LL(2) syntax differs from Scala-based syntax primarily in:
 
 | Category | Scala-based Syntax | LL(2) Syntax | AST Node |
 |---|---|---|---|
-| **Program** | `// #Sireum` `package p` `import org.sireum._` ... | `package p` ... | `TopUnit.Program` |
+| **Program** | `// #Sireum \n package p import org.sireum._ ...` | `package p\n...` | `TopUnit.Program` |
 | **Import** | `import a.b.c` | `import a.b.c` | `Stmt.Import` |
 | **Import wildcard** | `import a.b._` | `import a.b._` | `Stmt.Import` + `WildcardSelector` |
 | **Import rename** | `import a.b.{x => y}` | `import a.b.{x => y}` | `Stmt.Import` + `MultiSelector` |
@@ -37,7 +37,7 @@ The LL(2) syntax differs from Scala-based syntax primarily in:
 | **Sig trait** | `@sig trait Foo` | `type @trait Foo` | `Stmt.Sig(isImmutable=T)` |
 | **Sealed sig** | `@sig sealed trait Foo` | `type @sealed @trait Foo` | `Stmt.Sig(isSealed=T)` |
 | **Msig trait** | `@msig trait Foo` | `type @trait @mut Foo` | `Stmt.Sig(isImmutable=F)` |
-| **Enum** | `@enum object Color { ... }` | `type @enum Color: { ... }` | `Stmt.Enum` |
+| **Enum** | `@enum object Color { "Red"\n "Green" }` | `type @enum Color: { Red\n Green }` | `Stmt.Enum` |
 | **Range type** | `@range(min = 0, max = 10) class Idx` | `type @range(min = 0, max = 10) Idx` | `Stmt.SubZ(isBitVector=F)` |
 | **Bits type** | `@bits(signed = F, width = 8) class U8` | `type @bits(signed = F, width = 8) U8` | `Stmt.SubZ(isBitVector=T)` |
 | **Type alias** | `type Foo = Bar[Z]` | `type @alias Foo = Bar[Z]` | `Stmt.TypeAlias` |
@@ -81,8 +81,8 @@ The LL(2) syntax differs from Scala-based syntax primarily in:
 | **Induct** | `(exp: @induct)` | `(@induct exp)` | `Stmt.Induct` |
 | **Deduce steps** | `Deduce(1. claim ...)` | `deduce { 1. claim ... }` | `Stmt.DeduceSteps` |
 | **Deduce sequent** | `Deduce(⊢ ...)` | `deduce : premises ⊢ conclusion` | `Stmt.DeduceSequent` |
-| **Assert** | `assert(exp)` | `assert exp` | `Stmt.Expr` (assert builtin) |
-| **Assume** | `assume(exp)` | `assume exp` | `Stmt.Expr` (assume builtin) |
+| **Assert** | `assert(exp)` | `assert exp [, exp]` | `Stmt.Expr` (assert builtin) |
+| **Assume** | `assume(exp)` | `assume exp [, exp]` | `Stmt.Expr` (assume builtin) |
 
 ### Expressions
 
@@ -95,7 +95,7 @@ The LL(2) syntax differs from Scala-based syntax primarily in:
 | **Apply** | `x(i)` | `x(i)` | `Exp.Invoke(ident.id="apply")` |
 | **Binary** | `a + b` | `a + b` | `Exp.Binary` |
 | **Unary** | `-x`, `!x` | `-x`, `!x` | `Exp.Unary` |
-| **If exp** | `if (c) t else e` | `(c? t : e)` | `Exp.If` |
+| **If exp** | `if (c) t else e` | `if (c) t else e` | `Exp.If` |
 | **Tuple** | `(a, b)` | `(a, b)` | `Exp.Tuple` |
 | **This** | `this` | `this` | `Exp.This` |
 | **Super** | `super` | `super` | `Exp.Super` |
@@ -156,11 +156,11 @@ The LL(2) syntax differs from Scala-based syntax primarily in:
 |---|---|---|---|
 | **Proof block** | `Proof(...)` | `deduce { ... }` | `ProofAst` |
 | **Regular step** | `n (claim) by just` | `n. claim  by just` | `ProofAst.Step.Regular` |
-| **Assume step** | `n Assume(claim)` | `n. assume(claim)` | `ProofAst.Step.Assume` |
-| **Assert step** | `n Assert(claim, SubProof(...))` | `n. assert(claim) { ... }` | `ProofAst.Step.Assert` |
+| **Assume step** | `n Assume(claim)` | `n. assume claim` | `ProofAst.Step.Assume` |
+| **Assert step** | `n Assert(claim, SubProof(...))` | `n. assert claim { ... }` | `ProofAst.Step.Assert` |
 | **SubProof** | `n SubProof(...)` | `n. { steps }` | `ProofAst.Step.SubProof` |
 | **Let step** | `n Let((x: T) => ...)` | `n. { x: T  steps }` | `ProofAst.Step.Let` |
-| **Justification** | `by just` | `by just.` | `ProofAst.Step.Justification.*` |
+| **Justification** | `by just` | `by just` | `ProofAst.Step.Justification.*` |
 | **Sequent** | `⊢(premises, conclusion)` | `: premises ⊢ conclusion` | `Sequent` |
 
 ### LL(2)-Only Constructs

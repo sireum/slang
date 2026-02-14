@@ -148,7 +148,7 @@ object SlangLl2PrettyPrinter {
       case o: AST.Exp.Eta => st"${printExp(o.ref.asExp)} _"
       case o: AST.Exp.ForYield => st"yield ${(for (g <- o.enumGens) yield printEnumGen(g), ", ")} => ${printExp(o.exp)}"
       case o: AST.Exp.Ident => st"${o.id.value}"
-      case o: AST.Exp.If => st"(${printExp(o.cond)}? ${printExp(o.thenExp)} : ${printExp(o.elseExp)})"
+      case o: AST.Exp.If => st"if (${printExp(o.cond)}) ${printExp(o.thenExp)} else ${printExp(o.elseExp)}"
       case o: AST.Exp.Input => st"In(${printExp(o.exp)})"
       case o: AST.Exp.Invoke => printInvoke(o)
       case o: AST.Exp.InvokeNamed => printInvokeNamed(o)
@@ -225,8 +225,8 @@ object SlangLl2PrettyPrinter {
       case o: AST.ProofAst.Step.Justification.Ref => st"by ${printJustExp(o.ref.asExp)}${printWitnesses(o)}"
     }
     @strictpure def printProofStep(o: AST.ProofAst.Step): ST = o match {
-      case o: AST.ProofAst.Step.Assert => st"${o.id.prettyST}. assert(${printExp(o.claim)})"
-      case o: AST.ProofAst.Step.Assume => st"${o.id.prettyST}. assume(${printExp(o.claim)})"
+      case o: AST.ProofAst.Step.Assert => st"${o.id.prettyST}. assert ${printExp(o.claim)}"
+      case o: AST.ProofAst.Step.Assume => st"${o.id.prettyST}. assume ${printExp(o.claim)}"
       case o: AST.ProofAst.Step.Let =>
         st"""${o.id.prettyST}. {
             |  ${(for (param <- o.params) yield st"${param.id.value}${if (param.tipeOpt.isEmpty) st"" else st": ${printType(param.tipeOpt.get)}"}", "  ")}
