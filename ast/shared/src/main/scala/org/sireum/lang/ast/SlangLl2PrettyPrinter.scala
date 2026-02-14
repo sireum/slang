@@ -182,7 +182,7 @@ object SlangLl2PrettyPrinter {
       case o: AST.ProofAst.StepId.Str => o.prettyST
     }
     @strictpure def printAssignExp(o: AST.AssignExp): ST = printStmt(T, o.asStmt)
-    @strictpure def printWitnesses(o: AST.ProofAst.Step.Justification): ST = if (o.hasWitness) st" ${(for (w <- o.witnesses) yield w.prettyST, " ")}" else st""
+    @strictpure def printWitnesses(o: AST.ProofAst.Step.Justification): ST = if (o.witnesses.nonEmpty) st" ${(for (w <- o.witnesses) yield w.prettyST, " ")}" else st""
     @strictpure def isNatDedId(id: String): B = id match {
       case string"Subst_>" => T
       case string"Subst_<" => T
@@ -520,7 +520,7 @@ object SlangLl2PrettyPrinter {
           case Some(t) => st": ${printType(t)}"
           case _ => st""
         }
-        st"var ${printPattern(o.pattern)}$tipe = ${printAssignExp(o.init)}"
+        st"${if (o.isVal) "val" else "var"} ${printPattern(o.pattern)}$tipe = ${printAssignExp(o.init)}"
       case o: AST.Stmt.While =>
         st"""while ${printExp(o.cond)}${printLoopContract(o.contract)} {
             |  ${(printStmts(F, o.body.stmts), lineSep)}

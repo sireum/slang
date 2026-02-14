@@ -28,13 +28,7 @@ import org.sireum._
 import org.sireum.test._
 
 
-class SlangLl2ParserTest extends SireumRcSpec {
-
-  val temp: Os.Path = if (Os.env("GITHUB_ACTION").nonEmpty) {
-    val t = Os.home / "Temp" / "ll2"
-    t.removeAll()
-    t
-  } else null
+class SlangLl2AstBuilderTest extends SireumRcSpec {
 
   def shouldIgnore(name: Predef.String, isSimplified: Boolean): Boolean = false
 
@@ -42,7 +36,7 @@ class SlangLl2ParserTest extends SireumRcSpec {
     val m = $internal.RC.text(Vector(
       "../../../../../../../../../../logika-examples/src/programming/manual/",
       "../../../../../../../../../logika-examples/src")
-    ) { (p, _) => T }//p.last.endsWith("assignment-5.sc") }
+    ) { (p, _) => T }
     implicit val ordering: Ordering[Vector[Predef.String]] = m.ordering
     for ((k, v) <- m; pair <- {
       var r = Vector[(Vector[Predef.String], Predef.String)]()
@@ -56,21 +50,57 @@ class SlangLl2ParserTest extends SireumRcSpec {
   def check(path: scala.Vector[Predef.String], content: Predef.String): scala.Boolean = {
     val uriOpt = Some(st"${(path, "/")}".render)
     val reporter = message.Reporter.create
+    // Step 1: Parse Slang source -> AST
     lang.parser.Parser(content).parseTopUnit[lang.ast.TopUnit.Program](isWorksheet = T, isDiet = F, uriOpt, reporter) match {
       case Some(program) if !reporter.hasIssue =>
         try {
+          // Step 2: Pretty print AST -> LL(2) text
           val ll2 = lang.ast.SlangLl2PrettyPrinter.prettyPrint(program).render
-          println(ll2)
-          if (temp != null) {
-            val f = temp / ops.StringOps(uriOpt.get).replaceAllLiterally(".sc", ".sl")
-            f.up.mkdirAll()
-            f.writeOver(ll2)
-            println(s"Wrote $f")
+
+          // Step 3: Parse LL(2) -> ParseTree
+          val parseTreeOpt = SlangLl2Parser.parse(uriOpt, ll2, reporter)
+          if (reporter.hasError || parseTreeOpt.isEmpty) {
+            reporter.printMessages()
+            return false
           }
-          SlangLl2Parser.parse(uriOpt, ll2, reporter).get
-          SlangLl2ParserUtil.parse(uriOpt, ll2, reporter)
+
+          // Step 4: Build AST from ParseTree
+          val builtProgramOpt = lang.ast.SlangLl2AstBuilder.build(uriOpt, parseTreeOpt.get, reporter)
+          if (reporter.hasError || builtProgramOpt.isEmpty) {
+            reporter.printMessages()
+            return false
+          }
+
+          // Step 5: Pretty print built AST -> LL(2) text
+          val ll2Built = lang.ast.SlangLl2PrettyPrinter.prettyPrint(builtProgramOpt.get).render
+
+          // Step 6: Assert both LL(2) texts are equal
+          if (ll2 != ll2Built) {
+            println("=== Expected ===")
+            println(ll2)
+            println("=== Got ===")
+            println(ll2Built)
+            println("=== Diff ===")
+            val nl = conversions.String.toCis("\n")(0)
+            val ll2Lines = ops.StringOps(ll2).split((c: C) => c == nl)
+            val builtLines = ops.StringOps(ll2Built).split((c: C) => c == nl)
+            val maxLines: Z = if (ll2Lines.size > builtLines.size) ll2Lines.size else builtLines.size
+            for (i <- 0 until maxLines) {
+              val l1: String = if (i < ll2Lines.size) ll2Lines(i) else String("<missing>")
+              val l2: String = if (i < builtLines.size) builtLines(i) else String("<missing>")
+              if (l1 != l2) {
+                println(st"Line $i differs:".render)
+                println(st"  expected: $l1".render)
+                println(st"  got:      $l2".render)
+              }
+            }
+            return false
+          }
         } catch {
-          case _: Throwable => return false
+          case e: Throwable =>
+            println(s"Exception: ${e.getMessage}")
+            e.printStackTrace()
+            return false
         }
       case _ =>
     }
