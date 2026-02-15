@@ -48,7 +48,7 @@ object SlangLl2Parser {
   def parseRule(uriOpt: Option[String], content: String, ruleName: String, reporter: message.Reporter): Option[ParseTree] = {
     val cis = conversions.String.toCis(content)
     val docInfo = message.DocInfo.createFromCis(uriOpt, cis)
-    val chars = Indexable.IszDocInfo[C](cis, docInfo)
+    val chars = Indexable.IszDocInfoC(cis, docInfo)
     val (errorIndex, tokens) = lexerDfas.tokens(chars, T)
     if (errorIndex >= 0) {
       reporter.error(chars.posOpt(errorIndex, 1), "SlangLl2Parser", st"Unrecognized character '${ops.COps(cis(errorIndex)).escapeString}'".render)
