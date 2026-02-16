@@ -30,8 +30,6 @@ package org.sireum.lang.ast
 import org.sireum._
 import org.sireum.message.Position
 import org.sireum.parser._
-import org.sireum.U32._
-
 object SlangLl2ParseTreeUtil {
 
   @datatype class BinaryPrecedenceOps extends ParseTree.BinaryPrecedenceOps[B, ParseTree, ParseTree] {
@@ -87,10 +85,10 @@ object SlangLl2ParseTreeUtil {
     @strictpure override def posOpt(t: ParseTree): Option[Position] = t.posOpt
 
     @strictpure override def parenthesize(builder: B, t: ParseTree): ParseTree =
-      ParseTree.Node(ISZ(t), "paren", u32"0")
+      ParseTree.Node(ISZ(t), "paren", 0)
 
     @strictpure override def binary(builder: B, left: ParseTree, op: ParseTree, right: ParseTree): ParseTree =
-      ParseTree.Node(ISZ(left, op, right), "Binary", U32.Max)
+      ParseTree.Node(ISZ(left, op, right), "Binary", -1)
 
     @strictpure override def transform(builder: B, tree: ParseTree): ParseTree = tree match {
       case tree: ParseTree.Leaf if tree.text == "->" => tree(text = "__>:")
