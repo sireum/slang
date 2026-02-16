@@ -232,8 +232,8 @@ object SlangTruthTableLl1Parser {
   val eofLeaf: ParseTree.Leaf = ParseTree.Leaf("<EOF>", "EOF", u32"0xFC5CB374", F, None())
 
   def parse(uriOpt: Option[String], input: String, reporter: message.Reporter): Option[ParseTree] = {
-    val docInfo = message.DocInfo.create(uriOpt, input)
-    val tokens = lex(input, docInfo, T, T, reporter)
+    val chars = Indexable.Ext.fromString(uriOpt, input)
+    val tokens = lex(chars, T, T, reporter)
     if (reporter.hasError) {
       return None()
     }
@@ -241,7 +241,7 @@ object SlangTruthTableLl1Parser {
     r.kind match {
       case Result.Kind.Normal => return Some(r.tree)
       case Result.Kind.LexicalError =>
-        reporter.error(Some(message.PosInfo(docInfo, offsetLength(r.newIndex, 1))), kind, s"Could not recognize token")
+        reporter.error(chars.posOpt(r.newIndex, 1), kind, s"Could not recognize token")
         return None()
       case Result.Kind.GrammaticalError =>
         val idx: Z = if (r.newIndex < 0) -r.newIndex else r.newIndex
@@ -277,9 +277,9 @@ object SlangTruthTableLl1Parser {
     }
   }
 
-  def lex(input: String, docInfo: message.DocInfo, skipHidden: B, stopAtError: B,
+  def lex(chars: Indexable.PosC, skipHidden: B, stopAtError: B,
           reporter: message.Reporter): ISZ[Result] = {
-    return SlangTruthTableLl1Lexer(Indexable.fromIszDocInfo(conversions.String.toCis(input), docInfo)).tokenizeAll(skipHidden, stopAtError, reporter)
+    return SlangTruthTableLl1Lexer(chars).tokenizeAll(skipHidden, stopAtError, reporter)
   }
 
   @pure def offsetLength(offset: Z, length: Z): U64 = {
