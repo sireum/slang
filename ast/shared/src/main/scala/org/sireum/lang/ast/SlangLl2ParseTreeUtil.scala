@@ -86,10 +86,10 @@ object SlangLl2ParseTreeUtil {
     @strictpure override def posOpt(t: ParseTree): Option[Position] = t.posOpt
 
     @strictpure override def parenthesize(builder: B, t: ParseTree): ParseTree =
-      ParseTree.Node(IS[S32, ParseTree](t), "paren", 0)
+      ParseTree.Node(IS[S32, ParseTree](t), "paren", s32"0")
 
     @strictpure override def binary(builder: B, left: ParseTree, op: ParseTree, right: ParseTree): ParseTree =
-      ParseTree.Node(IS[S32, ParseTree](left, op, right), "Binary", -1)
+      ParseTree.Node(IS[S32, ParseTree](left, op, right), "Binary", s32"-1")
 
     @strictpure override def transform(builder: B, tree: ParseTree): ParseTree = tree match {
       case tree: ParseTree.Leaf if tree.text == "->" => tree(text = "__>:")
