@@ -207,27 +207,27 @@ object SlangTruthTableLl1Parser {
   val T_584EF8BA: S32 = s32"0x584EF8BA" /* "Contingent" */
   val T_56000B93: S32 = s32"0x56000B93" /* "Valid" */
   val T_1E4BCCF1: S32 = s32"0x1E4BCCF1" /* "Invalid" */
-  val T_HLINE: S32 = s32"0x7566CFCC"
-  val T_HASH: S32 = s32"0x63CEDE8B"
-  val T_NL: S32 = s32"0x6CB684C0"
-  val T_LSQUARE: S32 = s32"0x951E9CFB"
-  val T_RSQUARE: S32 = s32"0xA97171F1"
-  val T_COMMENT: S32 = s32"0x486B464F"
-  val T_WS: S32 = s32"0x0E3F5D1E"
-  val T_OTHER: S32 = s32"0xFE2BCE26"
-  val T_file: S32 = s32"0x31351F54"
-  val T_table: S32 = s32"0x923B3672"
-  val T_stars: S32 = s32"0x5886A04C"
-  val T_header: S32 = s32"0xE58011D2"
-  val T_hlinep: S32 = s32"0xC530B4FF"
-  val T_rows: S32 = s32"0x902B3F8C"
-  val T_row: S32 = s32"0x7CEE554F"
-  val T_hlines: S32 = s32"0x5F12D13F"
-  val T_conclusion: S32 = s32"0x67601A2E"
-  val T_cas: S32 = s32"0xCD3E833F"
-  val T_assign: S32 = s32"0xE5F71CFA"
-  val T_others: S32 = s32"0xB759F101"
-  val T_nls: S32 = s32"0x81F64CF7"
+  val T_HLINE: S32 = s32"0x7566CFCC" 
+  val T_HASH: S32 = s32"0x63CEDE8B" 
+  val T_NL: S32 = s32"0x6CB684C0" 
+  val T_LSQUARE: S32 = s32"0x951E9CFB" 
+  val T_RSQUARE: S32 = s32"0xA97171F1" 
+  val T_COMMENT: S32 = s32"0x486B464F" 
+  val T_WS: S32 = s32"0x0E3F5D1E" 
+  val T_OTHER: S32 = s32"0xFE2BCE26" 
+  val T_file: S32 = s32"0x31351F54" 
+  val T_table: S32 = s32"0x923B3672" 
+  val T_stars: S32 = s32"0x5886A04C" 
+  val T_header: S32 = s32"0xE58011D2" 
+  val T_hlinep: S32 = s32"0xC530B4FF" 
+  val T_rows: S32 = s32"0x902B3F8C" 
+  val T_row: S32 = s32"0x7CEE554F" 
+  val T_hlines: S32 = s32"0x5F12D13F" 
+  val T_conclusion: S32 = s32"0x67601A2E" 
+  val T_cas: S32 = s32"0xCD3E833F" 
+  val T_assign: S32 = s32"0xE5F71CFA" 
+  val T_others: S32 = s32"0xB759F101" 
+  val T_nls: S32 = s32"0x81F64CF7" 
 
   val errorLeaf: ParseTree.Leaf = ParseTree.Leaf("<ERROR>", "<ERROR>", s32"0xE3CDEDDA", F, None())
   val eofLeaf: ParseTree.Leaf = ParseTree.Leaf("<EOF>", "EOF", s32"0xFC5CB374", F, None())
@@ -294,7 +294,7 @@ import SlangTruthTableLl1Parser._
 @datatype class SlangTruthTableLl1Parser(tokens: Indexable[Result]) {
 
   @pure def parseFile(i: Z): Result = {
-    val ctx = Context.create("file", s32"0x31351F54", ISZ(state"3"), i)
+    val ctx = Context.create("file", s32"0x31351F54" , ISZ(state"3"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -349,7 +349,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseTable(i: Z): Result = {
-    val ctx = Context.create("table", s32"0x923B3672", ISZ(state"6", state"7"), i)
+    val ctx = Context.create("table", s32"0x923B3672" , ISZ(state"6", state"7"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -435,7 +435,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseStars(i: Z): Result = {
-    val ctx = Context.create("stars", s32"0x5886A04C", ISZ(state"2"), i)
+    val ctx = Context.create("stars", s32"0x5886A04C" , ISZ(state"2"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -485,7 +485,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseHeader(i: Z): Result = {
-    val ctx = Context.create("header", s32"0xE58011D2", ISZ(state"4"), i)
+    val ctx = Context.create("header", s32"0xE58011D2" , ISZ(state"4"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -552,7 +552,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseHlinep(i: Z): Result = {
-    val ctx = Context.create("hlinep", s32"0xC530B4FF", ISZ(state"2"), i)
+    val ctx = Context.create("hlinep", s32"0xC530B4FF" , ISZ(state"2"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -601,7 +601,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseRows(i: Z): Result = {
-    val ctx = Context.create("rows", s32"0x902B3F8C", ISZ(state"0"), i)
+    val ctx = Context.create("rows", s32"0x902B3F8C" , ISZ(state"0"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -633,7 +633,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseRow(i: Z): Result = {
-    val ctx = Context.create("row", s32"0x7CEE554F", ISZ(state"4"), i)
+    val ctx = Context.create("row", s32"0x7CEE554F" , ISZ(state"4"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -692,7 +692,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseHlines(i: Z): Result = {
-    val ctx = Context.create("hlines", s32"0x5F12D13F", ISZ(state"1"), i)
+    val ctx = Context.create("hlines", s32"0x5F12D13F" , ISZ(state"1"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -732,7 +732,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseConclusion(i: Z): Result = {
-    val ctx = Context.create("conclusion", s32"0x67601A2E", ISZ(state"1", state"2", state"4", state"5", state"6", state"7", state"8", state"9", state"10"), i)
+    val ctx = Context.create("conclusion", s32"0x67601A2E" , ISZ(state"1", state"2", state"4", state"5", state"6", state"7", state"8", state"9", state"10"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -875,7 +875,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseCas(i: Z): Result = {
-    val ctx = Context.create("cas", s32"0xCD3E833F", ISZ(state"3"), i)
+    val ctx = Context.create("cas", s32"0xCD3E833F" , ISZ(state"3"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -933,7 +933,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseAssign(i: Z): Result = {
-    val ctx = Context.create("assign", s32"0xE5F71CFA", ISZ(state"3"), i)
+    val ctx = Context.create("assign", s32"0xE5F71CFA" , ISZ(state"3"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -983,7 +983,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseOthers(i: Z): Result = {
-    val ctx = Context.create("others", s32"0xB759F101", ISZ(state"0"), i)
+    val ctx = Context.create("others", s32"0xB759F101" , ISZ(state"0"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -1015,7 +1015,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseNls(i: Z): Result = {
-    val ctx = Context.create("nls", s32"0x81F64CF7", ISZ(state"1"), i)
+    val ctx = Context.create("nls", s32"0x81F64CF7" , ISZ(state"1"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -1649,7 +1649,7 @@ import SlangTruthTableLl1Parser._
     return ctx.afterAcceptIndex
   }
 
-  @pure def lex_HLINE(index: Z): Option[Result] = { return lexH(index, dfa_HLINE(index), """HLINE""", s32"0x7566CFCC", F) }
+  @pure def lex_HLINE(index: Z): Option[Result] = { return lexH(index, dfa_HLINE(index), """HLINE""", s32"0x7566CFCC" , F) }
 
   @pure def dfa_HASH(i: Z): Z = {
     val ctx = LContext.create(ISZ(state"1"), i)
@@ -1673,7 +1673,7 @@ import SlangTruthTableLl1Parser._
     return ctx.afterAcceptIndex
   }
 
-  @pure def lex_HASH(index: Z): Option[Result] = { return lexH(index, dfa_HASH(index), """HASH""", s32"0x63CEDE8B", F) }
+  @pure def lex_HASH(index: Z): Option[Result] = { return lexH(index, dfa_HASH(index), """HASH""", s32"0x63CEDE8B" , F) }
 
   @pure def dfa_NL(i: Z): Z = {
     val ctx = LContext.create(ISZ(state"1"), i)
@@ -1697,7 +1697,7 @@ import SlangTruthTableLl1Parser._
     return ctx.afterAcceptIndex
   }
 
-  @pure def lex_NL(index: Z): Option[Result] = { return lexH(index, dfa_NL(index), """NL""", s32"0x6CB684C0", F) }
+  @pure def lex_NL(index: Z): Option[Result] = { return lexH(index, dfa_NL(index), """NL""", s32"0x6CB684C0" , F) }
 
   @pure def dfa_LSQUARE(i: Z): Z = {
     val ctx = LContext.create(ISZ(state"1"), i)
@@ -1721,7 +1721,7 @@ import SlangTruthTableLl1Parser._
     return ctx.afterAcceptIndex
   }
 
-  @pure def lex_LSQUARE(index: Z): Option[Result] = { return lexH(index, dfa_LSQUARE(index), """LSQUARE""", s32"0x951E9CFB", F) }
+  @pure def lex_LSQUARE(index: Z): Option[Result] = { return lexH(index, dfa_LSQUARE(index), """LSQUARE""", s32"0x951E9CFB" , F) }
 
   @pure def dfa_RSQUARE(i: Z): Z = {
     val ctx = LContext.create(ISZ(state"1"), i)
@@ -1745,7 +1745,7 @@ import SlangTruthTableLl1Parser._
     return ctx.afterAcceptIndex
   }
 
-  @pure def lex_RSQUARE(index: Z): Option[Result] = { return lexH(index, dfa_RSQUARE(index), """RSQUARE""", s32"0xA97171F1", F) }
+  @pure def lex_RSQUARE(index: Z): Option[Result] = { return lexH(index, dfa_RSQUARE(index), """RSQUARE""", s32"0xA97171F1" , F) }
 
   @pure def dfa_COMMENT(i: Z): Z = {
     val ctx = LContext.create(ISZ(state"3"), i)
@@ -1800,7 +1800,7 @@ import SlangTruthTableLl1Parser._
     return ctx.afterAcceptIndex
   }
 
-  @pure def lex_COMMENT(index: Z): Option[Result] = { return lexH(index, dfa_COMMENT(index), """COMMENT""", s32"0x486B464F", T) }
+  @pure def lex_COMMENT(index: Z): Option[Result] = { return lexH(index, dfa_COMMENT(index), """COMMENT""", s32"0x486B464F" , T) }
 
   @pure def dfa_WS(i: Z): Z = {
     val ctx = LContext.create(ISZ(state"1"), i)
@@ -1832,7 +1832,7 @@ import SlangTruthTableLl1Parser._
     return ctx.afterAcceptIndex
   }
 
-  @pure def lex_WS(index: Z): Option[Result] = { return lexH(index, dfa_WS(index), """WS""", s32"0x0E3F5D1E", T) }
+  @pure def lex_WS(index: Z): Option[Result] = { return lexH(index, dfa_WS(index), """WS""", s32"0x0E3F5D1E" , T) }
 
   @pure def dfa_OTHER(i: Z): Z = {
     val ctx = LContext.create(ISZ(state"1"), i)
@@ -1856,7 +1856,7 @@ import SlangTruthTableLl1Parser._
     return ctx.afterAcceptIndex
   }
 
-  @pure def lex_OTHER(index: Z): Option[Result] = { return lexH(index, dfa_OTHER(index), """OTHER""", s32"0xFE2BCE26", F) }
+  @pure def lex_OTHER(index: Z): Option[Result] = { return lexH(index, dfa_OTHER(index), """OTHER""", s32"0xFE2BCE26" , F) }
 
   @pure def hidden(i: Z): Z = {
      var j: Z = -1
