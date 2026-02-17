@@ -27,6 +27,7 @@
 package org.sireum.lang.ast
 
 import org.sireum._
+import org.sireum.S32._
 import org.sireum.lang.{ast => AST}
 import org.sireum.message.Position
 import org.sireum.parser.ParseTree
@@ -61,7 +62,7 @@ object SlangLl2AstBuilder {
 
   @strictpure def mkName(ids: ISZ[AST.Id], tree: ParseTree): AST.Name = AST.Name(ids, attr(tree))
 
-  def children(tree: ParseTree): ISZ[ParseTree] = {
+  def children(tree: ParseTree): IS[S32, ParseTree] = {
     return tree.asInstanceOf[ParseTree.Node].children
   }
 
@@ -181,7 +182,7 @@ object SlangLl2AstBuilder {
   // ─── Annotations / mods ────────────────────────────────────────────
 
   @datatype class ModInfo(val names: ISZ[String],
-                          val args: ISZ[(String, ISZ[ParseTree])])
+                          val args: ISZ[(String, IS[S32, ParseTree])])
 
   def buildMods(mods: ISZ[ParseTree.Node]): ISZ[ModInfo] = {
     var r = ISZ[ModInfo]()
@@ -197,7 +198,7 @@ object SlangLl2AstBuilder {
     val argsNode = findChild(node, "args")
     argsNode match {
       case Some(an) =>
-        var argPairs = ISZ[(String, ISZ[ParseTree])]()
+        var argPairs = ISZ[(String, IS[S32, ParseTree])]()
         // For now, just store raw children
         argPairs = argPairs :+ ((name, an.children))
         return ModInfo(names = ISZ(name), args = argPairs)
@@ -226,15 +227,15 @@ object SlangLl2AstBuilder {
 
   // ─── Annotations (LL2 annotation block) ────────────────────────────
 
-  def buildAnnot(nodeOpt: Option[ParseTree.Node], reporter: message.Reporter): ISZ[(String, ISZ[ParseTree])] = {
+  def buildAnnot(nodeOpt: Option[ParseTree.Node], reporter: message.Reporter): ISZ[(String, IS[S32, ParseTree])] = {
     nodeOpt match {
       case Some(node) =>
         // annot: AT LSQUARE annotArg* RSQUARE
         val annotArgs = findChildren(node, "annotArg")
-        var r = ISZ[(String, ISZ[ParseTree])]()
+        var r = ISZ[(String, IS[S32, ParseTree])]()
         for (aa <- annotArgs) {
           val key = firstLeaf(aa).text
-          var values = ISZ[ParseTree]()
+          var values = IS[S32, ParseTree]()
           for (c <- aa.children) {
             c match {
               case c: ParseTree.Leaf if c.ruleName == "ID" || c.ruleName == "STRING" =>
@@ -1473,9 +1474,9 @@ object SlangLl2AstBuilder {
   def buildBinaryFromTree(tree: ParseTree, contextNode: ParseTree, reporter: message.Reporter): AST.Exp = {
     tree match {
       case n: ParseTree.Node if n.ruleName == "Binary" =>
-        val left = buildBinaryFromTree(n.children(0), contextNode, reporter)
-        val opLeaf = n.children(1).asInstanceOf[ParseTree.Leaf]
-        val right = buildBinaryFromTree(n.children(2), contextNode, reporter)
+        val left = buildBinaryFromTree(n.children.atS32(s32"0"), contextNode, reporter)
+        val opLeaf = n.children.atS32(s32"1").asInstanceOf[ParseTree.Leaf]
+        val right = buildBinaryFromTree(n.children.atS32(s32"2"), contextNode, reporter)
         return AST.Exp.Binary(
           left = left,
           op = opLeaf.text,
@@ -1751,7 +1752,7 @@ object SlangLl2AstBuilder {
             if (expNodes.nonEmpty) {
               val innerExp = buildExp(expNodes(0), reporter)
               // Check for num argument
-              val numOpt: Option[AST.Exp.LitZ] = if (aa.children.size > 1) {
+              val numOpt: Option[AST.Exp.LitZ] = if (aa.children.sizeS32 > s32"1") {
                 var found: Option[AST.Exp.LitZ] = None()
                 for (c <- aa.children) {
                   c match {

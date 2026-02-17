@@ -30,6 +30,7 @@ package org.sireum.lang.parser
 
 
 import org.sireum._
+import org.sireum.S32._
 import org.sireum.parser._
 
 object SlangLl2Parser {
@@ -48,11 +49,11 @@ object SlangLl2Parser {
   def parseRule(uriOpt: Option[String], content: String, ruleName: String, reporter: message.Reporter): Option[ParseTree] = {
     val chars = Indexable.Ext.fromString(uriOpt, content)
     val (errorIndex, tokens) = lexerDfas.tokens(chars, T)
-    if (errorIndex >= 0) {
-      reporter.error(chars.posOpt(errorIndex, 1), "SlangLl2Parser", st"Unrecognized character '${ops.COps(chars.at(errorIndex)).escapeString}'".render)
+    if (errorIndex >= s32"0") {
+      reporter.error(chars.posOptS32(errorIndex, s32"1"), "SlangLl2Parser", st"Unrecognized character '${ops.COps(chars.atS32(errorIndex)).escapeString}'".render)
       return None()
     }
-    return g.parse(ruleName, Indexable.fromIsz(tokens), reporter)
+    return g.parse(ruleName, Indexable.fromIs(tokens), reporter)
   }
 
   def parse(uriOpt: Option[String], content: String, reporter: message.Reporter): Option[ParseTree] = {

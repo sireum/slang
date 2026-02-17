@@ -26,6 +26,7 @@
 package org.sireum.lang.parser
 
 import org.sireum._
+import org.sireum.S32._
 import org.sireum.message._
 import org.sireum.lang.{ast => AST}
 import org.sireum.parser.ParseTree
@@ -86,7 +87,7 @@ object SlangTruthTableParser {
 
       def assignment(t: ParseTree): AST.TruthTable.Assignment = {
         var values = ISZ[AST.Exp.LitB]()
-        t.asInstanceOf[ParseTree.Node].children(1) match {
+        t.asInstanceOf[ParseTree.Node].children.atS32(s32"1") match {
           case others: ParseTree.Node =>
             for (other <- others.children) {
               values = values :+ boolValue(other)
@@ -97,18 +98,23 @@ object SlangTruthTableParser {
       }
 
       assert(tree.ruleName == "file")
-      val ptableNode: ParseTree.Node = tree.asInstanceOf[ParseTree.Node].children match {
-        case ISZ(pt: ParseTree.Node, _) => pt
-        case ISZ(_, pt: ParseTree.Node, _) => pt
+      val fileChildren = tree.asInstanceOf[ParseTree.Node].children
+      val ptableNode: ParseTree.Node = if (fileChildren.sizeS32 == s32"2") {
+        fileChildren.atS32(s32"0").asInstanceOf[ParseTree.Node]
+      } else {
+        fileChildren.atS32(s32"1").asInstanceOf[ParseTree.Node]
       }
-      val ISZ(pstars, _, pheader, _, prows, _, _*) = ptableNode.children
+      val ptc = ptableNode.children
+      val pstars = ptc.atS32(s32"0")
+      val pheader = ptc.atS32(s32"2")
+      val prows = ptc.atS32(s32"4")
       val stars: ISZ[Position] = {
         var r = ISZ[Position]()
-        var i = 0
+        var i: S32 = s32"0"
         val pstarsChildren = pstars.asInstanceOf[ParseTree.Node].children
         var end = F
-        while (i < pstarsChildren.size) {
-          val leaf = pstarsChildren(i).asInstanceOf[ParseTree.Leaf]
+        while (i < pstarsChildren.sizeS32) {
+          val leaf = pstarsChildren.atS32(i).asInstanceOf[ParseTree.Leaf]
           leaf.text.native match {
             case "*" =>
               if (end) {
@@ -120,17 +126,31 @@ object SlangTruthTableParser {
               end = T
             case _ => reporter.error(leaf.posOpt, kind, s"Expecting '*', but found '${leaf.text}'")
           }
-          i = i + 1
+          i = i + s32"1"
         }
         r
       }
       var idMap = HashMap.empty[String, Position]
       val (vars, separator, isSequent, sequent): (ISZ[AST.Id], Position, B, AST.Sequent) = {
-        val (others1, hash, tokens): (ISZ[ParseTree], ParseTree.Leaf, ISZ[ParseTree]) = pheader.asInstanceOf[ParseTree.Node].children match {
-          case ISZ(o1, hash: ParseTree.Leaf, o2, _: ParseTree.Leaf, _*) => (o1.asInstanceOf[ParseTree.Node].children, hash, o2.asInstanceOf[ParseTree.Node].children)
-          case ISZ(hash: ParseTree.Leaf, o2, _: ParseTree.Leaf, _*) => (ISZ(), hash, o2.asInstanceOf[ParseTree.Node].children)
-          case ISZ(o1, hash: ParseTree.Leaf, _: ParseTree.Leaf, _*) => (o1.asInstanceOf[ParseTree.Node].children, hash, ISZ())
-          case ISZ(hash: ParseTree.Leaf, _: ParseTree.Leaf, _*) => (ISZ(), hash, ISZ())
+        val phChildren = pheader.asInstanceOf[ParseTree.Node].children
+        val (others1, hash, tokens): (IS[S32, ParseTree], ParseTree.Leaf, IS[S32, ParseTree]) = {
+          val first = phChildren.atS32(s32"0")
+          if (first.isInstanceOf[ParseTree.Leaf]) {
+            val h = first.asInstanceOf[ParseTree.Leaf]
+            if (phChildren.sizeS32 >= s32"3" && phChildren.atS32(s32"1").isInstanceOf[ParseTree.Node]) {
+              (IS[S32, ParseTree](), h, phChildren.atS32(s32"1").asInstanceOf[ParseTree.Node].children)
+            } else {
+              (IS[S32, ParseTree](), h, IS[S32, ParseTree]())
+            }
+          } else {
+            val o1 = first.asInstanceOf[ParseTree.Node].children
+            val h = phChildren.atS32(s32"1").asInstanceOf[ParseTree.Leaf]
+            if (phChildren.sizeS32 >= s32"4" && phChildren.atS32(s32"2").isInstanceOf[ParseTree.Node]) {
+              (o1, h, phChildren.atS32(s32"2").asInstanceOf[ParseTree.Node].children)
+            } else {
+              (o1, h, IS[S32, ParseTree]())
+            }
+          }
         }
         var ids = ISZ[AST.Id]()
         for (x <- others1) {
@@ -152,9 +172,9 @@ object SlangTruthTableParser {
         @strictpure def emptySeq: AST.Sequent = AST.Sequent(ISZ(), AST.Exp.LitB(F, AST.Attr(None())), ISZ(), AST.Attr(None()))
         var iseq = F
         val sqnt: AST.Sequent = if (tokens.nonEmpty) {
-          val startPos = tokens(0).asInstanceOf[ParseTree.Leaf].posOpt.get
+          val startPos = tokens.atS32(s32"0").asInstanceOf[ParseTree.Leaf].posOpt.get
           val start = startPos.offset
-          val endPos = tokens(tokens.size - 1).asInstanceOf[ParseTree.Leaf].posOpt.get
+          val endPos = tokens.atS32(tokens.sizeS32 - s32"1").asInstanceOf[ParseTree.Leaf].posOpt.get
           val end = endPos.offset + endPos.length
           val cms = conversions.String.toCms(text)
           for (i <- 0 until cms.size) {
@@ -185,11 +205,25 @@ object SlangTruthTableParser {
       }
       var rows = ISZ[AST.TruthTable.Row]()
       for (prow <- prows.asInstanceOf[ParseTree.Node].children) {
-        val (passignment, hash, pvalues): (ISZ[ParseTree], ParseTree.Leaf, ISZ[ParseTree]) = prow.asInstanceOf[ParseTree.Node].children match {
-          case ISZ(passignment, hash: ParseTree.Leaf, pvalues, _) => (passignment.asInstanceOf[ParseTree.Node].children, hash, pvalues.asInstanceOf[ParseTree.Node].children)
-          case ISZ(hash: ParseTree.Leaf, pvalues, _) => (ISZ(), hash, pvalues.asInstanceOf[ParseTree.Node].children)
-          case ISZ(passignment, hash: ParseTree.Leaf, _) => (passignment.asInstanceOf[ParseTree.Node].children, hash, ISZ())
-          case ISZ(hash: ParseTree.Leaf, _) => (ISZ(), hash, ISZ())
+        val rowChildren = prow.asInstanceOf[ParseTree.Node].children
+        val (passignment, hash, pvalues): (IS[S32, ParseTree], ParseTree.Leaf, IS[S32, ParseTree]) = {
+          val first = rowChildren.atS32(s32"0")
+          if (first.isInstanceOf[ParseTree.Leaf]) {
+            val h = first.asInstanceOf[ParseTree.Leaf]
+            if (rowChildren.sizeS32 >= s32"3" && rowChildren.atS32(s32"1").isInstanceOf[ParseTree.Node]) {
+              (IS[S32, ParseTree](), h, rowChildren.atS32(s32"1").asInstanceOf[ParseTree.Node].children)
+            } else {
+              (IS[S32, ParseTree](), h, IS[S32, ParseTree]())
+            }
+          } else {
+            val pa = first.asInstanceOf[ParseTree.Node].children
+            val h = rowChildren.atS32(s32"1").asInstanceOf[ParseTree.Leaf]
+            if (rowChildren.sizeS32 >= s32"4" && rowChildren.atS32(s32"2").isInstanceOf[ParseTree.Node]) {
+              (pa, h, rowChildren.atS32(s32"2").asInstanceOf[ParseTree.Node].children)
+            } else {
+              (pa, h, IS[S32, ParseTree]())
+            }
+          }
         }
         var assignment = ISZ[AST.Exp.LitB]()
         for (pvalue <- passignment) {
@@ -211,9 +245,10 @@ object SlangTruthTableParser {
           AST.TruthTable.Assignment(values, vAttr)
         )
       }
-      val conclusionOpt: Option[AST.TruthTable.Conclusion] = if (ptableNode.children(ptableNode.children.size - 1).ruleName == "conclusion") {
-        val pconclusion = ptableNode.children(ptableNode.children.size - 1).asInstanceOf[ParseTree.Node].children
-        val pconclusionFirst = pconclusion(0).asInstanceOf[ParseTree.Leaf]
+      val lastChildIdx: S32 = ptableNode.children.sizeS32 - s32"1"
+      val conclusionOpt: Option[AST.TruthTable.Conclusion] = if (ptableNode.children.atS32(lastChildIdx).ruleName == "conclusion") {
+        val pconclusion = ptableNode.children.atS32(lastChildIdx).asInstanceOf[ParseTree.Node].children
+        val pconclusionFirst = pconclusion.atS32(s32"0").asInstanceOf[ParseTree.Leaf]
         pconclusionFirst.ruleName match {
           case "'Tautology'" => Some(AST.TruthTable.Conclusion.Tautology(AST.Attr(pconclusionFirst.posOpt)))
           case "'Contradictory'" => Some(AST.TruthTable.Conclusion.Contradictory(AST.Attr(pconclusionFirst.posOpt)))
@@ -222,9 +257,11 @@ object SlangTruthTableParser {
             var fPosOpt = Option.none[Position]()
             var tAssignments = ISZ[AST.TruthTable.Assignment]()
             var fAssignments = ISZ[AST.TruthTable.Assignment]()
-            for (i <- 1 until pconclusion.size if pconclusion(i).ruleName == "cas") {
-              val cas = pconclusion(i).asInstanceOf[ParseTree.Node].children
-              val b = boolValue(cas(0))
+            var ki: S32 = s32"1"
+            while (ki < pconclusion.sizeS32) {
+              if (pconclusion.atS32(ki).ruleName == "cas") {
+              val cas = pconclusion.atS32(ki).asInstanceOf[ParseTree.Node].children
+              val b = boolValue(cas.atS32(s32"0"))
               if (b.value) {
                 if (tPosOpt.nonEmpty) {
                   reporter.error(b.posOpt, kind, s"T contingent assignment has been defined at [${tPosOpt.get.beginLine}, ${tPosOpt.get.beginColumn}]")
@@ -236,26 +273,34 @@ object SlangTruthTableParser {
                 }
                 fPosOpt = b.posOpt
               }
-              val colon = cas(1).asInstanceOf[ParseTree.Leaf]
+              val colon = cas.atS32(s32"1").asInstanceOf[ParseTree.Leaf]
               if (colon.text != ":") {
                 reporter.error(colon.posOpt, kind, "Expecting a colon (':')")
               }
               var assignments = ISZ[AST.TruthTable.Assignment]()
-              for (j <- 2 until cas.size) {
-                assignments = assignments :+ assignment(cas(j))
+              var kj: S32 = s32"2"
+              while (kj < cas.sizeS32) {
+                assignments = assignments :+ assignment(cas.atS32(kj))
+                kj = kj + s32"1"
               }
               if (b.value) {
                 tAssignments = assignments
               } else {
                 fAssignments = assignments
               }
+              }
+              ki = ki + s32"1"
             }
             Some(AST.TruthTable.Conclusion.Contingent(tAssignments, fAssignments, AST.Attr(pconclusionFirst.posOpt)))
           case _ =>
             assert(pconclusionFirst.ruleName == "'Valid'" || pconclusionFirst.ruleName == "'Invalid'")
             var assigments = ISZ[AST.TruthTable.Assignment]()
-            for (i <- 1 until pconclusion.size if pconclusion(i).ruleName == "assign") {
-              assigments = assigments :+ assignment(pconclusion(i))
+            var ai: S32 = s32"1"
+            while (ai < pconclusion.sizeS32) {
+              if (pconclusion.atS32(ai).ruleName == "assign") {
+                assigments = assigments :+ assignment(pconclusion.atS32(ai))
+              }
+              ai = ai + s32"1"
             }
             Some(AST.TruthTable.Conclusion.Validity(pconclusionFirst.ruleName == "'Valid'", assigments, AST.Attr(pconclusionFirst.posOpt)))
         }

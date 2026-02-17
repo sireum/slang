@@ -28,6 +28,7 @@ package org.sireum.lang.ast
 
 
 import org.sireum._
+import org.sireum.S32._
 import org.sireum.message.Position
 import org.sireum.parser._
 object SlangLl2ParseTreeUtil {
@@ -46,7 +47,7 @@ object SlangLl2ParseTreeUtil {
         case "___>:" => T
         case _ => F
       }
-      case t: ParseTree.Node if isBinary(t) => isRightAssoc(t.children(1))
+      case t: ParseTree.Node if isBinary(t) => isRightAssoc(t.children.atS32(s32"1"))
       case _ => F
     }
 
@@ -78,17 +79,17 @@ object SlangLl2ParseTreeUtil {
             case _ => Some(lowestPrecedence)
           }
         }
-      case t: ParseTree.Node if isBinary(t) => precedence(t.children(1))
+      case t: ParseTree.Node if isBinary(t) => precedence(t.children.atS32(s32"1"))
       case _ => None()
     }
 
     @strictpure override def posOpt(t: ParseTree): Option[Position] = t.posOpt
 
     @strictpure override def parenthesize(builder: B, t: ParseTree): ParseTree =
-      ParseTree.Node(ISZ(t), "paren", 0)
+      ParseTree.Node(IS[S32, ParseTree](t), "paren", 0)
 
     @strictpure override def binary(builder: B, left: ParseTree, op: ParseTree, right: ParseTree): ParseTree =
-      ParseTree.Node(ISZ(left, op, right), "Binary", -1)
+      ParseTree.Node(IS[S32, ParseTree](left, op, right), "Binary", -1)
 
     @strictpure override def transform(builder: B, tree: ParseTree): ParseTree = tree match {
       case tree: ParseTree.Leaf if tree.text == "->" => tree(text = "__>:")
@@ -115,7 +116,7 @@ object SlangLl2ParseTreeUtil {
           for (c <- n.children) {
             c match {
               case m: ParseTree.Node if m.ruleName == "infixOp" =>
-                newChildren = newChildren :+ m.children(0)
+                newChildren = newChildren :+ m.children.atS32(s32"0")
               case _ =>
                 newChildren = newChildren :+ c
             }

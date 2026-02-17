@@ -30,6 +30,7 @@ package org.sireum.lang.parser
 
 
 import org.sireum._
+import org.sireum.S32._
 import org.sireum.U32._
 import org.sireum.U64._
 import org.sireum.conversions.U32.toC
@@ -74,7 +75,7 @@ object SlangTruthTableLl1Parser {
                         var j: Z,
                         var max: Z,
                         var initial: B,
-                        var trees: ISZ[ParseTree],
+                        var trees: IS[S32, ParseTree],
                         var found: B,
                         var failIndex: Z,
                         var isLexical: B) {
@@ -120,7 +121,7 @@ object SlangTruthTableLl1Parser {
         accepting = accepting.toIS,
         state = state"0",
         resOpt = None(),
-        trees = ISZ[ParseTree](),
+        trees = IS[S32, ParseTree](),
         j = i,
         max = i,
         initial = T,
