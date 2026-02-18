@@ -30,6 +30,7 @@ package org.sireum.lang.parser
 
 
 import org.sireum._
+import org.sireum.S32._
 import org.sireum.U32._
 import org.sireum.U64._
 import org.sireum.conversions.U32.toC
@@ -67,14 +68,14 @@ object SlangTruthTableLl1Parser {
   }
 
   @record class Context(val ruleName: String,
-                        val ruleType: U32,
+                        val ruleType: S32,
                         val accepting: IS[State, B],
                         var state: State,
                         var resOpt: Option[Result],
                         var j: Z,
                         var max: Z,
                         var initial: B,
-                        var trees: ISZ[ParseTree],
+                        var trees: IS[S32, ParseTree],
                         var found: B,
                         var failIndex: Z,
                         var isLexical: B) {
@@ -109,7 +110,7 @@ object SlangTruthTableLl1Parser {
   }
 
   object Context {
-    @pure def create(ruleName: String, ruleType: U32, accepts: ISZ[State], i: Z): Context = {
+    @pure def create(ruleName: String, ruleType: S32, accepts: ISZ[State], i: Z): Context = {
       val accepting = MS.create[State, B](11, F)
       for (accept <- accepts) {
         accepting(accept) = T
@@ -120,7 +121,7 @@ object SlangTruthTableLl1Parser {
         accepting = accepting.toIS,
         state = state"0",
         resOpt = None(),
-        trees = ISZ[ParseTree](),
+        trees = IS[S32, ParseTree](),
         j = i,
         max = i,
         initial = T,
@@ -201,39 +202,39 @@ object SlangTruthTableLl1Parser {
   val minChar: C = '\u0000'
   val maxChar: C = toC(u32"0x0010FFFF")
 
-  val T_E8F861E8: U32 = u32"0xE8F861E8" /* "Tautology" */
-  val T_2E50643A: U32 = u32"0x2E50643A" /* "Contradictory" */
-  val T_584EF8BA: U32 = u32"0x584EF8BA" /* "Contingent" */
-  val T_56000B93: U32 = u32"0x56000B93" /* "Valid" */
-  val T_1E4BCCF1: U32 = u32"0x1E4BCCF1" /* "Invalid" */
-  val T_HLINE: U32 = u32"0x7566CFCC"
-  val T_HASH: U32 = u32"0x63CEDE8B"
-  val T_NL: U32 = u32"0x6CB684C0"
-  val T_LSQUARE: U32 = u32"0x951E9CFB"
-  val T_RSQUARE: U32 = u32"0xA97171F1"
-  val T_COMMENT: U32 = u32"0x486B464F"
-  val T_WS: U32 = u32"0x0E3F5D1E"
-  val T_OTHER: U32 = u32"0xFE2BCE26"
-  val T_file: U32 = u32"0x31351F54"
-  val T_table: U32 = u32"0x923B3672"
-  val T_stars: U32 = u32"0x5886A04C"
-  val T_header: U32 = u32"0xE58011D2"
-  val T_hlinep: U32 = u32"0xC530B4FF"
-  val T_rows: U32 = u32"0x902B3F8C"
-  val T_row: U32 = u32"0x7CEE554F"
-  val T_hlines: U32 = u32"0x5F12D13F"
-  val T_conclusion: U32 = u32"0x67601A2E"
-  val T_cas: U32 = u32"0xCD3E833F"
-  val T_assign: U32 = u32"0xE5F71CFA"
-  val T_others: U32 = u32"0xB759F101"
-  val T_nls: U32 = u32"0x81F64CF7"
+  val T_E8F861E8: S32 = s32"0xE8F861E8" /* "Tautology" */
+  val T_2E50643A: S32 = s32"0x2E50643A" /* "Contradictory" */
+  val T_584EF8BA: S32 = s32"0x584EF8BA" /* "Contingent" */
+  val T_56000B93: S32 = s32"0x56000B93" /* "Valid" */
+  val T_1E4BCCF1: S32 = s32"0x1E4BCCF1" /* "Invalid" */
+  val T_HLINE: S32 = s32"0x7566CFCC" 
+  val T_HASH: S32 = s32"0x63CEDE8B" 
+  val T_NL: S32 = s32"0x6CB684C0" 
+  val T_LSQUARE: S32 = s32"0x951E9CFB" 
+  val T_RSQUARE: S32 = s32"0xA97171F1" 
+  val T_COMMENT: S32 = s32"0x486B464F" 
+  val T_WS: S32 = s32"0x0E3F5D1E" 
+  val T_OTHER: S32 = s32"0xFE2BCE26" 
+  val T_file: S32 = s32"0x31351F54" 
+  val T_table: S32 = s32"0x923B3672" 
+  val T_stars: S32 = s32"0x5886A04C" 
+  val T_header: S32 = s32"0xE58011D2" 
+  val T_hlinep: S32 = s32"0xC530B4FF" 
+  val T_rows: S32 = s32"0x902B3F8C" 
+  val T_row: S32 = s32"0x7CEE554F" 
+  val T_hlines: S32 = s32"0x5F12D13F" 
+  val T_conclusion: S32 = s32"0x67601A2E" 
+  val T_cas: S32 = s32"0xCD3E833F" 
+  val T_assign: S32 = s32"0xE5F71CFA" 
+  val T_others: S32 = s32"0xB759F101" 
+  val T_nls: S32 = s32"0x81F64CF7" 
 
-  val errorLeaf: ParseTree.Leaf = ParseTree.Leaf("<ERROR>", "<ERROR>", u32"0xE3CDEDDA", F, None())
-  val eofLeaf: ParseTree.Leaf = ParseTree.Leaf("<EOF>", "EOF", u32"0xFC5CB374", F, None())
+  val errorLeaf: ParseTree.Leaf = ParseTree.Leaf("<ERROR>", "<ERROR>", s32"0xE3CDEDDA", F, None())
+  val eofLeaf: ParseTree.Leaf = ParseTree.Leaf("<EOF>", "EOF", s32"0xFC5CB374", F, None())
 
   def parse(uriOpt: Option[String], input: String, reporter: message.Reporter): Option[ParseTree] = {
-    val docInfo = message.DocInfo.create(uriOpt, input)
-    val tokens = lex(input, docInfo, T, T, reporter)
+    val chars = Indexable.Ext.fromString(uriOpt, input)
+    val tokens = lex(chars, T, T, reporter)
     if (reporter.hasError) {
       return None()
     }
@@ -241,7 +242,7 @@ object SlangTruthTableLl1Parser {
     r.kind match {
       case Result.Kind.Normal => return Some(r.tree)
       case Result.Kind.LexicalError =>
-        reporter.error(Some(message.PosInfo(docInfo, offsetLength(r.newIndex, 1))), kind, s"Could not recognize token")
+        reporter.error(chars.posOpt(r.newIndex, 1), kind, s"Could not recognize token")
         return None()
       case Result.Kind.GrammaticalError =>
         val idx: Z = if (r.newIndex < 0) -r.newIndex else r.newIndex
@@ -277,9 +278,9 @@ object SlangTruthTableLl1Parser {
     }
   }
 
-  def lex(input: String, docInfo: message.DocInfo, skipHidden: B, stopAtError: B,
+  def lex(chars: Indexable.PosC, skipHidden: B, stopAtError: B,
           reporter: message.Reporter): ISZ[Result] = {
-    return SlangTruthTableLl1Lexer(Indexable.fromIszDocInfo(conversions.String.toCis(input), docInfo)).tokenizeAll(skipHidden, stopAtError, reporter)
+    return SlangTruthTableLl1Lexer(chars).tokenizeAll(skipHidden, stopAtError, reporter)
   }
 
   @pure def offsetLength(offset: Z, length: Z): U64 = {
@@ -293,7 +294,7 @@ import SlangTruthTableLl1Parser._
 @datatype class SlangTruthTableLl1Parser(tokens: Indexable[Result]) {
 
   @pure def parseFile(i: Z): Result = {
-    val ctx = Context.create("file", u32"0x31351F54", ISZ(state"3"), i)
+    val ctx = Context.create("file", s32"0x31351F54" , ISZ(state"3"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -330,7 +331,7 @@ import SlangTruthTableLl1Parser._
         case state"2" =>
           ctx.found = F
           token.tipe match {
-            case u32"0xFC5CB374" /* EOF */ => ctx.updateTerminal(token, state"3")
+            case s32"0xFC5CB374" /* EOF */ => ctx.updateTerminal(token, state"3")
             case _ =>
           }
           if (!ctx.found) {
@@ -348,7 +349,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseTable(i: Z): Result = {
-    val ctx = Context.create("table", u32"0x923B3672", ISZ(state"6", state"7"), i)
+    val ctx = Context.create("table", s32"0x923B3672" , ISZ(state"6", state"7"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -434,7 +435,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseStars(i: Z): Result = {
-    val ctx = Context.create("stars", u32"0x5886A04C", ISZ(state"2"), i)
+    val ctx = Context.create("stars", s32"0x5886A04C" , ISZ(state"2"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -448,7 +449,7 @@ import SlangTruthTableLl1Parser._
         case state"0" =>
           ctx.found = F
           token.tipe match {
-            case u32"0xFE2BCE26" /* OTHER */ => ctx.updateTerminal(token, state"1")
+            case s32"0xFE2BCE26" /* OTHER */ => ctx.updateTerminal(token, state"1")
             case _ =>
           }
           if (!ctx.found) {
@@ -457,8 +458,8 @@ import SlangTruthTableLl1Parser._
         case state"1" =>
           ctx.found = F
           token.tipe match {
-            case u32"0xFE2BCE26" /* OTHER */ => ctx.updateTerminal(token, state"1")
-            case u32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"2")
+            case s32"0xFE2BCE26" /* OTHER */ => ctx.updateTerminal(token, state"1")
+            case s32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"2")
             case _ =>
           }
           if (!ctx.found) {
@@ -467,7 +468,7 @@ import SlangTruthTableLl1Parser._
         case state"2" =>
           ctx.found = F
           token.tipe match {
-            case u32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"2")
+            case s32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"2")
             case _ =>
           }
           if (!ctx.found) {
@@ -484,7 +485,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseHeader(i: Z): Result = {
-    val ctx = Context.create("header", u32"0xE58011D2", ISZ(state"4"), i)
+    val ctx = Context.create("header", s32"0xE58011D2" , ISZ(state"4"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -507,7 +508,7 @@ import SlangTruthTableLl1Parser._
         case state"1" =>
           ctx.found = F
           token.tipe match {
-            case u32"0x63CEDE8B" /* HASH */ => ctx.updateTerminal(token, state"2")
+            case s32"0x63CEDE8B" /* HASH */ => ctx.updateTerminal(token, state"2")
             case _ =>
           }
           if (!ctx.found) {
@@ -525,7 +526,7 @@ import SlangTruthTableLl1Parser._
         case state"3" =>
           ctx.found = F
           token.tipe match {
-            case u32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"4")
+            case s32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"4")
             case _ =>
           }
           if (!ctx.found) {
@@ -534,7 +535,7 @@ import SlangTruthTableLl1Parser._
         case state"4" =>
           ctx.found = F
           token.tipe match {
-            case u32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"4")
+            case s32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"4")
             case _ =>
           }
           if (!ctx.found) {
@@ -551,7 +552,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseHlinep(i: Z): Result = {
-    val ctx = Context.create("hlinep", u32"0xC530B4FF", ISZ(state"2"), i)
+    val ctx = Context.create("hlinep", s32"0xC530B4FF" , ISZ(state"2"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -565,7 +566,7 @@ import SlangTruthTableLl1Parser._
         case state"0" =>
           ctx.found = F
           token.tipe match {
-            case u32"0x7566CFCC" /* HLINE */ => ctx.updateTerminal(token, state"1")
+            case s32"0x7566CFCC" /* HLINE */ => ctx.updateTerminal(token, state"1")
             case _ =>
           }
           if (!ctx.found) {
@@ -574,7 +575,7 @@ import SlangTruthTableLl1Parser._
         case state"1" =>
           ctx.found = F
           token.tipe match {
-            case u32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"2")
+            case s32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"2")
             case _ =>
           }
           if (!ctx.found) {
@@ -583,7 +584,7 @@ import SlangTruthTableLl1Parser._
         case state"2" =>
           ctx.found = F
           token.tipe match {
-            case u32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"2")
+            case s32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"2")
             case _ =>
           }
           if (!ctx.found) {
@@ -600,7 +601,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseRows(i: Z): Result = {
-    val ctx = Context.create("rows", u32"0x902B3F8C", ISZ(state"0"), i)
+    val ctx = Context.create("rows", s32"0x902B3F8C" , ISZ(state"0"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -632,7 +633,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseRow(i: Z): Result = {
-    val ctx = Context.create("row", u32"0x7CEE554F", ISZ(state"4"), i)
+    val ctx = Context.create("row", s32"0x7CEE554F" , ISZ(state"4"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -655,7 +656,7 @@ import SlangTruthTableLl1Parser._
         case state"1" =>
           ctx.found = F
           token.tipe match {
-            case u32"0x63CEDE8B" /* HASH */ => ctx.updateTerminal(token, state"2")
+            case s32"0x63CEDE8B" /* HASH */ => ctx.updateTerminal(token, state"2")
             case _ =>
           }
           if (!ctx.found) {
@@ -673,7 +674,7 @@ import SlangTruthTableLl1Parser._
         case state"3" =>
           ctx.found = F
           token.tipe match {
-            case u32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"4")
+            case s32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"4")
             case _ =>
           }
           if (!ctx.found) {
@@ -691,7 +692,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseHlines(i: Z): Result = {
-    val ctx = Context.create("hlines", u32"0x5F12D13F", ISZ(state"1"), i)
+    val ctx = Context.create("hlines", s32"0x5F12D13F" , ISZ(state"1"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -705,7 +706,7 @@ import SlangTruthTableLl1Parser._
         case state"0" =>
           ctx.found = F
           token.tipe match {
-            case u32"0x7566CFCC" /* HLINE */ => ctx.updateTerminal(token, state"1")
+            case s32"0x7566CFCC" /* HLINE */ => ctx.updateTerminal(token, state"1")
             case _ =>
           }
           if (!ctx.found) {
@@ -714,7 +715,7 @@ import SlangTruthTableLl1Parser._
         case state"1" =>
           ctx.found = F
           token.tipe match {
-            case u32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"1")
+            case s32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"1")
             case _ =>
           }
           if (!ctx.found) {
@@ -731,7 +732,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseConclusion(i: Z): Result = {
-    val ctx = Context.create("conclusion", u32"0x67601A2E", ISZ(state"1", state"2", state"4", state"5", state"6", state"7", state"8", state"9", state"10"), i)
+    val ctx = Context.create("conclusion", s32"0x67601A2E" , ISZ(state"1", state"2", state"4", state"5", state"6", state"7", state"8", state"9", state"10"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -745,11 +746,11 @@ import SlangTruthTableLl1Parser._
         case state"0" =>
           ctx.found = F
           token.tipe match {
-            case u32"0xE8F861E8" /* "Tautology" */ => ctx.updateTerminal(token, state"1")
-            case u32"0x2E50643A" /* "Contradictory" */ => ctx.updateTerminal(token, state"2")
-            case u32"0x584EF8BA" /* "Contingent" */ => ctx.updateTerminal(token, state"3")
-            case u32"0x56000B93" /* "Valid" */ => ctx.updateTerminal(token, state"7")
-            case u32"0x1E4BCCF1" /* "Invalid" */ => ctx.updateTerminal(token, state"9")
+            case s32"0xE8F861E8" /* "Tautology" */ => ctx.updateTerminal(token, state"1")
+            case s32"0x2E50643A" /* "Contradictory" */ => ctx.updateTerminal(token, state"2")
+            case s32"0x584EF8BA" /* "Contingent" */ => ctx.updateTerminal(token, state"3")
+            case s32"0x56000B93" /* "Valid" */ => ctx.updateTerminal(token, state"7")
+            case s32"0x1E4BCCF1" /* "Invalid" */ => ctx.updateTerminal(token, state"9")
             case _ =>
           }
           if (!ctx.found) {
@@ -758,7 +759,7 @@ import SlangTruthTableLl1Parser._
         case state"1" =>
           ctx.found = F
           token.tipe match {
-            case u32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"1")
+            case s32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"1")
             case _ =>
           }
           if (!ctx.found) {
@@ -767,7 +768,7 @@ import SlangTruthTableLl1Parser._
         case state"2" =>
           ctx.found = F
           token.tipe match {
-            case u32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"2")
+            case s32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"2")
             case _ =>
           }
           if (!ctx.found) {
@@ -776,7 +777,7 @@ import SlangTruthTableLl1Parser._
         case state"3" =>
           ctx.found = F
           token.tipe match {
-            case u32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"4")
+            case s32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"4")
             case _ =>
           }
           if (!ctx.found) {
@@ -794,7 +795,7 @@ import SlangTruthTableLl1Parser._
         case state"5" =>
           ctx.found = F
           token.tipe match {
-            case u32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"6")
+            case s32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"6")
             case _ =>
           }
           if (!ctx.found) {
@@ -808,7 +809,7 @@ import SlangTruthTableLl1Parser._
           }
           if (!ctx.found) {
             token.tipe match {
-              case u32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"6")
+              case s32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"6")
               case _ =>
             }
           }
@@ -823,7 +824,7 @@ import SlangTruthTableLl1Parser._
           }
           if (!ctx.found) {
             token.tipe match {
-              case u32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"8")
+              case s32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"8")
               case _ =>
             }
           }
@@ -833,7 +834,7 @@ import SlangTruthTableLl1Parser._
         case state"8" =>
           ctx.found = F
           token.tipe match {
-            case u32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"8")
+            case s32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"8")
             case _ =>
           }
           if (!ctx.found) {
@@ -847,7 +848,7 @@ import SlangTruthTableLl1Parser._
           }
           if (!ctx.found) {
             token.tipe match {
-              case u32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"10")
+              case s32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"10")
               case _ =>
             }
           }
@@ -857,7 +858,7 @@ import SlangTruthTableLl1Parser._
         case state"10" =>
           ctx.found = F
           token.tipe match {
-            case u32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"10")
+            case s32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"10")
             case _ =>
           }
           if (!ctx.found) {
@@ -874,7 +875,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseCas(i: Z): Result = {
-    val ctx = Context.create("cas", u32"0xCD3E833F", ISZ(state"3"), i)
+    val ctx = Context.create("cas", s32"0xCD3E833F" , ISZ(state"3"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -888,7 +889,7 @@ import SlangTruthTableLl1Parser._
         case state"0" =>
           ctx.found = F
           token.tipe match {
-            case u32"0xFE2BCE26" /* OTHER */ => ctx.updateTerminal(token, state"1")
+            case s32"0xFE2BCE26" /* OTHER */ => ctx.updateTerminal(token, state"1")
             case _ =>
           }
           if (!ctx.found) {
@@ -897,7 +898,7 @@ import SlangTruthTableLl1Parser._
         case state"1" =>
           ctx.found = F
           token.tipe match {
-            case u32"0xFE2BCE26" /* OTHER */ => ctx.updateTerminal(token, state"2")
+            case s32"0xFE2BCE26" /* OTHER */ => ctx.updateTerminal(token, state"2")
             case _ =>
           }
           if (!ctx.found) {
@@ -932,7 +933,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseAssign(i: Z): Result = {
-    val ctx = Context.create("assign", u32"0xE5F71CFA", ISZ(state"3"), i)
+    val ctx = Context.create("assign", s32"0xE5F71CFA" , ISZ(state"3"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -946,7 +947,7 @@ import SlangTruthTableLl1Parser._
         case state"0" =>
           ctx.found = F
           token.tipe match {
-            case u32"0x951E9CFB" /* LSQUARE */ => ctx.updateTerminal(token, state"1")
+            case s32"0x951E9CFB" /* LSQUARE */ => ctx.updateTerminal(token, state"1")
             case _ =>
           }
           if (!ctx.found) {
@@ -964,7 +965,7 @@ import SlangTruthTableLl1Parser._
         case state"2" =>
           ctx.found = F
           token.tipe match {
-            case u32"0xA97171F1" /* RSQUARE */ => ctx.updateTerminal(token, state"3")
+            case s32"0xA97171F1" /* RSQUARE */ => ctx.updateTerminal(token, state"3")
             case _ =>
           }
           if (!ctx.found) {
@@ -982,7 +983,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseOthers(i: Z): Result = {
-    val ctx = Context.create("others", u32"0xB759F101", ISZ(state"0"), i)
+    val ctx = Context.create("others", s32"0xB759F101" , ISZ(state"0"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -996,7 +997,7 @@ import SlangTruthTableLl1Parser._
         case state"0" =>
           ctx.found = F
           token.tipe match {
-            case u32"0xFE2BCE26" /* OTHER */ => ctx.updateTerminal(token, state"0")
+            case s32"0xFE2BCE26" /* OTHER */ => ctx.updateTerminal(token, state"0")
             case _ =>
           }
           if (!ctx.found) {
@@ -1014,7 +1015,7 @@ import SlangTruthTableLl1Parser._
   }
 
   @pure def parseNls(i: Z): Result = {
-    val ctx = Context.create("nls", u32"0x81F64CF7", ISZ(state"1"), i)
+    val ctx = Context.create("nls", s32"0x81F64CF7" , ISZ(state"1"), i)
 
     while (tokens.has(ctx.j)) {
       val token: ParseTree.Leaf = {
@@ -1028,7 +1029,7 @@ import SlangTruthTableLl1Parser._
         case state"0" =>
           ctx.found = F
           token.tipe match {
-            case u32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"1")
+            case s32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"1")
             case _ =>
           }
           if (!ctx.found) {
@@ -1037,7 +1038,7 @@ import SlangTruthTableLl1Parser._
         case state"1" =>
           ctx.found = F
           token.tipe match {
-            case u32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"1")
+            case s32"0x6CB684C0" /* NL */ => ctx.updateTerminal(token, state"1")
             case _ =>
           }
           if (!ctx.found) {
@@ -1297,8 +1298,8 @@ import SlangTruthTableLl1Parser._
     val tokenJ = tokens.at(j)
     if (tokenJ.kind == Result.Kind.Normal) {
       tokenJ.leaf.tipe match {
-        case u32"0x6CB684C0" /* NL */ => return 1
-        case u32"0xFE2BCE26" /* OTHER */ => return 1
+        case s32"0x6CB684C0" /* NL */ => return 1
+        case s32"0xFE2BCE26" /* OTHER */ => return 1
         case _ =>
       }
     }
@@ -1309,11 +1310,11 @@ import SlangTruthTableLl1Parser._
     val tokenJ = tokens.at(j)
     if (tokenJ.kind == Result.Kind.Normal) {
       tokenJ.leaf.tipe match {
-        case u32"0xE8F861E8" /* "Tautology" */ => return 1
-        case u32"0x2E50643A" /* "Contradictory" */ => return 1
-        case u32"0x584EF8BA" /* "Contingent" */ => return 1
-        case u32"0x56000B93" /* "Valid" */ => return 1
-        case u32"0x1E4BCCF1" /* "Invalid" */ => return 1
+        case s32"0xE8F861E8" /* "Tautology" */ => return 1
+        case s32"0x2E50643A" /* "Contradictory" */ => return 1
+        case s32"0x584EF8BA" /* "Contingent" */ => return 1
+        case s32"0x56000B93" /* "Valid" */ => return 1
+        case s32"0x1E4BCCF1" /* "Invalid" */ => return 1
         case _ =>
       }
     }
@@ -1324,7 +1325,7 @@ import SlangTruthTableLl1Parser._
     val tokenJ = tokens.at(j)
     if (tokenJ.kind == Result.Kind.Normal) {
       tokenJ.leaf.tipe match {
-        case u32"0x6CB684C0" /* NL */ => return 1
+        case s32"0x6CB684C0" /* NL */ => return 1
         case _ =>
       }
     }
@@ -1335,7 +1336,7 @@ import SlangTruthTableLl1Parser._
     val tokenJ = tokens.at(j)
     if (tokenJ.kind == Result.Kind.Normal) {
       tokenJ.leaf.tipe match {
-        case u32"0xFE2BCE26" /* OTHER */ => return 1
+        case s32"0xFE2BCE26" /* OTHER */ => return 1
         case _ =>
       }
     }
@@ -1346,7 +1347,7 @@ import SlangTruthTableLl1Parser._
     val tokenJ = tokens.at(j)
     if (tokenJ.kind == Result.Kind.Normal) {
       tokenJ.leaf.tipe match {
-        case u32"0xFE2BCE26" /* OTHER */ => return 1
+        case s32"0xFE2BCE26" /* OTHER */ => return 1
         case _ =>
       }
     }
@@ -1357,7 +1358,7 @@ import SlangTruthTableLl1Parser._
     val tokenJ = tokens.at(j)
     if (tokenJ.kind == Result.Kind.Normal) {
       tokenJ.leaf.tipe match {
-        case u32"0xFE2BCE26" /* OTHER */ => return 1
+        case s32"0xFE2BCE26" /* OTHER */ => return 1
         case _ =>
       }
     }
@@ -1368,8 +1369,8 @@ import SlangTruthTableLl1Parser._
     val tokenJ = tokens.at(j)
     if (tokenJ.kind == Result.Kind.Normal) {
       tokenJ.leaf.tipe match {
-        case u32"0x63CEDE8B" /* HASH */ => return 1
-        case u32"0xFE2BCE26" /* OTHER */ => return 1
+        case s32"0x63CEDE8B" /* HASH */ => return 1
+        case s32"0xFE2BCE26" /* OTHER */ => return 1
         case _ =>
       }
     }
@@ -1380,7 +1381,7 @@ import SlangTruthTableLl1Parser._
     val tokenJ = tokens.at(j)
     if (tokenJ.kind == Result.Kind.Normal) {
       tokenJ.leaf.tipe match {
-        case u32"0x7566CFCC" /* HLINE */ => return 1
+        case s32"0x7566CFCC" /* HLINE */ => return 1
         case _ =>
       }
     }
@@ -1391,8 +1392,8 @@ import SlangTruthTableLl1Parser._
     val tokenJ = tokens.at(j)
     if (tokenJ.kind == Result.Kind.Normal) {
       tokenJ.leaf.tipe match {
-        case u32"0x63CEDE8B" /* HASH */ => return 1
-        case u32"0xFE2BCE26" /* OTHER */ => return 1
+        case s32"0x63CEDE8B" /* HASH */ => return 1
+        case s32"0xFE2BCE26" /* OTHER */ => return 1
         case _ =>
       }
     }
@@ -1403,7 +1404,7 @@ import SlangTruthTableLl1Parser._
     val tokenJ = tokens.at(j)
     if (tokenJ.kind == Result.Kind.Normal) {
       tokenJ.leaf.tipe match {
-        case u32"0xFE2BCE26" /* OTHER */ => return 1
+        case s32"0xFE2BCE26" /* OTHER */ => return 1
         case _ =>
       }
     }
@@ -1414,7 +1415,7 @@ import SlangTruthTableLl1Parser._
     val tokenJ = tokens.at(j)
     if (tokenJ.kind == Result.Kind.Normal) {
       tokenJ.leaf.tipe match {
-        case u32"0x7566CFCC" /* HLINE */ => return 1
+        case s32"0x7566CFCC" /* HLINE */ => return 1
         case _ =>
       }
     }
@@ -1425,8 +1426,8 @@ import SlangTruthTableLl1Parser._
     val tokenJ = tokens.at(j)
     if (tokenJ.kind == Result.Kind.Normal) {
       tokenJ.leaf.tipe match {
-        case u32"0x63CEDE8B" /* HASH */ => return 1
-        case u32"0xFE2BCE26" /* OTHER */ => return 1
+        case s32"0x63CEDE8B" /* HASH */ => return 1
+        case s32"0xFE2BCE26" /* OTHER */ => return 1
         case _ =>
       }
     }
@@ -1437,7 +1438,7 @@ import SlangTruthTableLl1Parser._
     val tokenJ = tokens.at(j)
     if (tokenJ.kind == Result.Kind.Normal) {
       tokenJ.leaf.tipe match {
-        case u32"0x951E9CFB" /* LSQUARE */ => return 1
+        case s32"0x951E9CFB" /* LSQUARE */ => return 1
         case _ =>
       }
     }
@@ -1532,7 +1533,7 @@ import SlangTruthTableLl1Parser._
     return -1
   }
 
-  @pure def lex_Tautology(index: Z): Option[Result] = { return lexH(index, lit_Tautology(index), """'Tautology'""", u32"0xE8F861E8" /* "Tautology" */, F) }
+  @pure def lex_Tautology(index: Z): Option[Result] = { return lexH(index, lit_Tautology(index), """'Tautology'""", s32"0xE8F861E8" /* "Tautology" */, F) }
 
   @pure def lit_Contradictory(i: Z): Z = {
     if (!cis.has(i + 12)) {
@@ -1544,7 +1545,7 @@ import SlangTruthTableLl1Parser._
     return -1
   }
 
-  @pure def lex_Contradictory(index: Z): Option[Result] = { return lexH(index, lit_Contradictory(index), """'Contradictory'""", u32"0x2E50643A" /* "Contradictory" */, F) }
+  @pure def lex_Contradictory(index: Z): Option[Result] = { return lexH(index, lit_Contradictory(index), """'Contradictory'""", s32"0x2E50643A" /* "Contradictory" */, F) }
 
   @pure def lit_Contingent(i: Z): Z = {
     if (!cis.has(i + 9)) {
@@ -1556,7 +1557,7 @@ import SlangTruthTableLl1Parser._
     return -1
   }
 
-  @pure def lex_Contingent(index: Z): Option[Result] = { return lexH(index, lit_Contingent(index), """'Contingent'""", u32"0x584EF8BA" /* "Contingent" */, F) }
+  @pure def lex_Contingent(index: Z): Option[Result] = { return lexH(index, lit_Contingent(index), """'Contingent'""", s32"0x584EF8BA" /* "Contingent" */, F) }
 
   @pure def lit_Valid(i: Z): Z = {
     if (!cis.has(i + 4)) {
@@ -1568,7 +1569,7 @@ import SlangTruthTableLl1Parser._
     return -1
   }
 
-  @pure def lex_Valid(index: Z): Option[Result] = { return lexH(index, lit_Valid(index), """'Valid'""", u32"0x56000B93" /* "Valid" */, F) }
+  @pure def lex_Valid(index: Z): Option[Result] = { return lexH(index, lit_Valid(index), """'Valid'""", s32"0x56000B93" /* "Valid" */, F) }
 
   @pure def lit_Invalid(i: Z): Z = {
     if (!cis.has(i + 6)) {
@@ -1580,7 +1581,7 @@ import SlangTruthTableLl1Parser._
     return -1
   }
 
-  @pure def lex_Invalid(index: Z): Option[Result] = { return lexH(index, lit_Invalid(index), """'Invalid'""", u32"0x1E4BCCF1" /* "Invalid" */, F) }
+  @pure def lex_Invalid(index: Z): Option[Result] = { return lexH(index, lit_Invalid(index), """'Invalid'""", s32"0x1E4BCCF1" /* "Invalid" */, F) }
 
   @pure def dfa_HLINE(i: Z): Z = {
     val ctx = LContext.create(ISZ(state"5"), i)
@@ -1648,7 +1649,7 @@ import SlangTruthTableLl1Parser._
     return ctx.afterAcceptIndex
   }
 
-  @pure def lex_HLINE(index: Z): Option[Result] = { return lexH(index, dfa_HLINE(index), """HLINE""", u32"0x7566CFCC", F) }
+  @pure def lex_HLINE(index: Z): Option[Result] = { return lexH(index, dfa_HLINE(index), """HLINE""", s32"0x7566CFCC" , F) }
 
   @pure def dfa_HASH(i: Z): Z = {
     val ctx = LContext.create(ISZ(state"1"), i)
@@ -1672,7 +1673,7 @@ import SlangTruthTableLl1Parser._
     return ctx.afterAcceptIndex
   }
 
-  @pure def lex_HASH(index: Z): Option[Result] = { return lexH(index, dfa_HASH(index), """HASH""", u32"0x63CEDE8B", F) }
+  @pure def lex_HASH(index: Z): Option[Result] = { return lexH(index, dfa_HASH(index), """HASH""", s32"0x63CEDE8B" , F) }
 
   @pure def dfa_NL(i: Z): Z = {
     val ctx = LContext.create(ISZ(state"1"), i)
@@ -1696,7 +1697,7 @@ import SlangTruthTableLl1Parser._
     return ctx.afterAcceptIndex
   }
 
-  @pure def lex_NL(index: Z): Option[Result] = { return lexH(index, dfa_NL(index), """NL""", u32"0x6CB684C0", F) }
+  @pure def lex_NL(index: Z): Option[Result] = { return lexH(index, dfa_NL(index), """NL""", s32"0x6CB684C0" , F) }
 
   @pure def dfa_LSQUARE(i: Z): Z = {
     val ctx = LContext.create(ISZ(state"1"), i)
@@ -1720,7 +1721,7 @@ import SlangTruthTableLl1Parser._
     return ctx.afterAcceptIndex
   }
 
-  @pure def lex_LSQUARE(index: Z): Option[Result] = { return lexH(index, dfa_LSQUARE(index), """LSQUARE""", u32"0x951E9CFB", F) }
+  @pure def lex_LSQUARE(index: Z): Option[Result] = { return lexH(index, dfa_LSQUARE(index), """LSQUARE""", s32"0x951E9CFB" , F) }
 
   @pure def dfa_RSQUARE(i: Z): Z = {
     val ctx = LContext.create(ISZ(state"1"), i)
@@ -1744,7 +1745,7 @@ import SlangTruthTableLl1Parser._
     return ctx.afterAcceptIndex
   }
 
-  @pure def lex_RSQUARE(index: Z): Option[Result] = { return lexH(index, dfa_RSQUARE(index), """RSQUARE""", u32"0xA97171F1", F) }
+  @pure def lex_RSQUARE(index: Z): Option[Result] = { return lexH(index, dfa_RSQUARE(index), """RSQUARE""", s32"0xA97171F1" , F) }
 
   @pure def dfa_COMMENT(i: Z): Z = {
     val ctx = LContext.create(ISZ(state"3"), i)
@@ -1799,7 +1800,7 @@ import SlangTruthTableLl1Parser._
     return ctx.afterAcceptIndex
   }
 
-  @pure def lex_COMMENT(index: Z): Option[Result] = { return lexH(index, dfa_COMMENT(index), """COMMENT""", u32"0x486B464F", T) }
+  @pure def lex_COMMENT(index: Z): Option[Result] = { return lexH(index, dfa_COMMENT(index), """COMMENT""", s32"0x486B464F" , T) }
 
   @pure def dfa_WS(i: Z): Z = {
     val ctx = LContext.create(ISZ(state"1"), i)
@@ -1831,7 +1832,7 @@ import SlangTruthTableLl1Parser._
     return ctx.afterAcceptIndex
   }
 
-  @pure def lex_WS(index: Z): Option[Result] = { return lexH(index, dfa_WS(index), """WS""", u32"0x0E3F5D1E", T) }
+  @pure def lex_WS(index: Z): Option[Result] = { return lexH(index, dfa_WS(index), """WS""", s32"0x0E3F5D1E" , T) }
 
   @pure def dfa_OTHER(i: Z): Z = {
     val ctx = LContext.create(ISZ(state"1"), i)
@@ -1855,7 +1856,7 @@ import SlangTruthTableLl1Parser._
     return ctx.afterAcceptIndex
   }
 
-  @pure def lex_OTHER(index: Z): Option[Result] = { return lexH(index, dfa_OTHER(index), """OTHER""", u32"0xFE2BCE26", F) }
+  @pure def lex_OTHER(index: Z): Option[Result] = { return lexH(index, dfa_OTHER(index), """OTHER""", s32"0xFE2BCE26" , F) }
 
   @pure def hidden(i: Z): Z = {
      var j: Z = -1
@@ -1870,7 +1871,7 @@ import SlangTruthTableLl1Parser._
      return -1
   }
 
-  @pure def lexH(index: Z, newIndex: Z, name: String, tipe: U32, isHidden: B): Option[Result] = {
+  @pure def lexH(index: Z, newIndex: Z, name: String, tipe: S32, isHidden: B): Option[Result] = {
     if (newIndex > 0) {
       return Some(Result.create(ParseTree.Leaf(conversions.String.fromCis(for (i <- index until newIndex) yield cis.at(i)),
         name, tipe, isHidden, cis.posOpt(index, newIndex - index)), newIndex))
