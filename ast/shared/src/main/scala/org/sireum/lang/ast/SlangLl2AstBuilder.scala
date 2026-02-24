@@ -752,14 +752,15 @@ object SlangLl2AstBuilder {
       }
     }
 
-    // Check for @trait / @sealed
+    // Check for @sig / @msig / @datatype / @record
+    val isSig = hasMod(mods, "sig")
+    val isMsig = hasMod(mods, "msig")
+    val isRecord = hasMod(mods, "record")
     val isTrait = hasMod(mods, "trait")
     val isSealed = hasMod(mods, "sealed")
-    val isMut = hasMod(mods, "mut")
-    val isData = hasMod(mods, "data")
     val isUnclonable = hasMod(mods, "unclonable")
 
-    if (isTrait && !isData) {
+    if (isSig || isMsig) {
       // Sig
       val adtSuffix = findChild(node, "typeDefnAdtSuffix")
       var parents = ISZ[AST.Type.Named]()
@@ -783,7 +784,7 @@ object SlangLl2AstBuilder {
         case _ =>
       }
       return AST.Stmt.Sig(
-        isImmutable = !isMut,
+        isImmutable = !isMsig,
         isSealed = isSealed,
         isExt = F,
         id = id,
@@ -823,8 +824,8 @@ object SlangLl2AstBuilder {
     }
 
     return AST.Stmt.Adt(
-      isRoot = isSealed && isTrait,
-      isDatatype = !isMut,
+      isRoot = isTrait,
+      isDatatype = !isRecord,
       isUnclonable = isUnclonable,
       id = id,
       typeParams = typeParams,

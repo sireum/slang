@@ -385,25 +385,25 @@ object SlangLl2PrettyPrinter {
       case o: AST.Stmt.RsVal => st"val @rw ${o.id} = ${printExp(o.init)}"
       case o: AST.Stmt.Adt =>
         val tparams = printTypeParams(o.typeParams)
-        val data: String = if (o.isRoot) "@sealed @trait " else "@data"
-        val mut: String = if (o.isDatatype) "" else " @mut"
+        val kind: String = if (o.isDatatype) "@datatype" else "@record"
+        val root: String = if (o.isRoot) " @trait" else ""
         val clonable: String = if (o.isUnclonable) " @unclonable" else ""
         val supers: ST = if (o.parents.isEmpty) st"" else st": ${(for (p <- o.parents) yield printType(p), ", ")}"
         val members: ST = if (o.stmts.isEmpty) st"" else
           st""" {
               |  ${(printStmts(F, o.stmts), lineSep)}
               |}"""
-        st"type $data$mut$clonable ${o.id.value}$tparams$supers$members"
+        st"type $kind$root$clonable ${o.id.value}$tparams$supers$members"
       case o: AST.Stmt.Sig =>
         val tparams = printTypeParams(o.typeParams)
-        val mut: String = if (o.isImmutable) "" else " @mut"
-        val seal: String = if (o.isSealed) "" else "@sealed "
+        val kind: String = if (o.isImmutable) "@sig" else "@msig"
+        val seal: String = if (o.isSealed) " @sealed" else ""
         val supers: ST = if (o.parents.isEmpty) st"" else st": ${(for (p <- o.parents) yield printType(p), ", ")}"
         val members: ST = if (o.stmts.isEmpty) st"" else
           st""" {
               |  ${(printStmts(F, o.stmts), lineSep)}
               |}"""
-        st"type $seal@trait$mut ${o.id.value}$tparams$supers$members"
+        st"type $kind$seal ${o.id.value}$tparams$supers$members"
       case o: AST.Stmt.DeduceSequent =>
         st"""deduce
             |${(for (s <- o.sequents) yield printSequent(s), lineSep)}"""

@@ -30,13 +30,13 @@ The LL(2) syntax differs from Scala-based syntax primarily in:
 | **App object** | `object Foo extends App { ... }` | `package @app Foo { ... }` | `Stmt.Object(isApp=T)` |
 | **Ext object** | `@ext object Foo { ... }` | `package @ext Foo { ... }` | `Stmt.Object(extNameOpt=Some(""))` |
 | **Named ext object** | `@ext("Bar") object Foo { ... }` | `package @ext("Bar") Foo { ... }` | `Stmt.Object(extNameOpt=Some("Bar"))` |
-| **Datatype class** | `@datatype class Foo(val x: Z)` | `type @data Foo(x: Z)` | `Stmt.Adt(isDatatype=T, isRoot=F)` |
-| **Datatype trait** | `@datatype trait Foo` | `type @sealed @trait Foo` | `Stmt.Adt(isDatatype=T, isRoot=T)` |
-| **Record class** | `@record class Foo(var x: Z)` | `type @data @mut Foo(var x: Z)` | `Stmt.Adt(isDatatype=F, isRoot=F)` |
-| **Record trait** | `@record trait Foo` | `type @sealed @trait @mut Foo` | `Stmt.Adt(isDatatype=F, isRoot=T)` |
-| **Sig trait** | `@sig trait Foo` | `type @trait Foo` | `Stmt.Sig(isImmutable=T)` |
-| **Sealed sig** | `@sig sealed trait Foo` | `type @sealed @trait Foo` | `Stmt.Sig(isSealed=T)` |
-| **Msig trait** | `@msig trait Foo` | `type @trait @mut Foo` | `Stmt.Sig(isImmutable=F)` |
+| **Datatype class** | `@datatype class Foo(val x: Z)` | `type @datatype Foo(x: Z)` | `Stmt.Adt(isDatatype=T, isRoot=F)` |
+| **Datatype trait** | `@datatype trait Foo` | `type @datatype @trait Foo` | `Stmt.Adt(isDatatype=T, isRoot=T)` |
+| **Record class** | `@record class Foo(var x: Z)` | `type @record Foo(var x: Z)` | `Stmt.Adt(isDatatype=F, isRoot=F)` |
+| **Record trait** | `@record trait Foo` | `type @record @trait Foo` | `Stmt.Adt(isDatatype=F, isRoot=T)` |
+| **Sig trait** | `@sig trait Foo` | `type @sig Foo` | `Stmt.Sig(isImmutable=T)` |
+| **Sealed sig** | `@sig sealed trait Foo` | `type @sig @sealed Foo` | `Stmt.Sig(isSealed=T)` |
+| **Msig trait** | `@msig trait Foo` | `type @msig Foo` | `Stmt.Sig(isImmutable=F)` |
 | **Enum** | `@enum object Color { "Red"\n "Green" }` | `type @enum Color: { Red\n Green }` | `Stmt.Enum` |
 | **Range type** | `@range(min = 0, max = 10) class Idx` | `type @range(min = 0, max = 10) Idx` | `Stmt.SubZ(isBitVector=F)` |
 | **Bits type** | `@bits(signed = F, width = 8) class U8` | `type @bits(signed = F, width = 8) U8` | `Stmt.SubZ(isBitVector=T)` |
@@ -108,7 +108,7 @@ The LL(2) syntax differs from Scala-based syntax primarily in:
 | **Quant range** | `∀(lo until hi)(x => P(x))` | `∀ x: lo ..< hi => P(x)` | `Exp.QuantRange` |
 | **Quant each** | `∀(xs)(x => P(x))` | `∀ x: xs => P(x)` | `Exp.QuantEach` |
 | **String interp** | `s"hello $x"` | `s"hello $x"` | `Exp.StringInterpolate` |
-| **Lit bool** | `T` / `F` | `true` / `false` | `Exp.LitB` |
+| **Lit bool** | `T` / `F` | `T`/`true` / `F`/`false` | `Exp.LitB` |
 | **Lit int** | `z"42"` or `42` | `42` | `Exp.LitZ` |
 | **Lit float32** | `f32"1.0"` or `1.0f` | `1.0f` / `1.0F` | `Exp.LitF32` |
 | **Lit float64** | `f64"1.0"` or `1.0d` | `1.0d` / `1.0D` | `Exp.LitF64` |
@@ -206,19 +206,70 @@ All LL(2) parser grammars are in `parser/shared/src/main/resources/`:
 - **Parse tree utilities**: `ast/shared/src/main/scala/org/sireum/lang/ast/SlangLl2ParseTreeUtil.scala`
 - **Scala-based parser**: `parser/shared/src/main/scala/org/sireum/lang/parser/SlangParser.scala`
 
-## Parallel Construct Internals
+## Parallel and Partitioning Constructs
 
-### `@par for-yield`
+Annotations modify `for` (statement) and `yield` (expression) semantics. Grammar:
+```
+forStmt: FOR annot? forRange commaForRange* block ;
+forExp:  YIELD annot? forRange commaForRange* ARROW annot? rhs ;
+```
 
-`@par for (x <- xs) yield f(x)` inlines the body at each call site — no closure created. Each worker receives a per-site static function + captured vals by value.
+### `for @fork` — Structured Concurrency
 
-- AST: `isPar: B` field on `Exp.ForYield`
-- Grammar: optional `@par` prefix before `for` in `for-yield`
+Fork-join: all generators execute in parallel, implicit join before body executes.
 
-### `do @par { }` Structured Concurrency
+```
+for @fork a: computeA(),
+          b: computeB(),
+          c: computeC() {
+  // a, b, c computed in parallel, all available here
+}
+```
 
-Fork-join block; `@fork val`/`@fork var` declarations inside form parallel phases; implicit join before the first non-`@fork` statement.
+- Replaces the previous `do @par { @fork val }` design
+- Each generator is an independent task — no data dependencies between them
+- `@fork` return types may be `@record` or `@datatype` — Slang's return-copy semantics
+  guarantee each thread receives an independent deep copy with no shared mutable state
+- AST: `Stmt.For` gains optional annotation field; `@fork` semantics on generators
 
-- Grammar: `stmt ::= ... | 'do' '@par' '{' stmt* '}'`; `varDeclStmt` gains optional `@fork` prefix
-- AST: `Stmt.VarDecl` gains `isFork: B`
-- `@fork` return types may be `@record` or `@datatype` — Slang's return-clone semantics guarantee each thread receives an independent deep copy with no shared mutable state
+### `for @par` — Data-Parallel Iteration
+
+Each iteration of the loop body runs in parallel over elements of a collection.
+
+```
+for @par x: xs {
+  // body runs in parallel for each x
+}
+```
+
+### `yield @par` — Data-Parallel Map
+
+Expression form — produces a collection via parallel comprehension.
+
+```
+val results: ISZ[R] = yield @par x: xs => f(x)
+```
+
+Inlines the body at each call site — no closure created. Each worker receives a
+per-site static function + captured vals by value.
+
+### `for @part` — Tensor Partitioning
+
+Parallel tiling of an `@mtensor` into non-overlapping sub-tensors (inspired by CUDA grid
+decomposition); non-overlap guaranteed by tile geometry — no runtime check needed.
+Source tensor is shadowed (inaccessible) inside the block.
+
+```
+for @part tile: mmat.tile(4, 8) {
+  // each tile processed in parallel — no interference, tiles don't overlap
+  // mmat is inaccessible here
+  tile = tile + bias
+}
+// mmat accessible again, reflects mutations made through tiles
+```
+
+- `.tile(tileDims...)` decomposes tensor into equal-sized non-overlapping sub-tensors
+- Non-overlap is structural (from tile geometry) — no runtime overlap check needed
+- `for @part` is **parallel by default** (tiles are independent, like CUDA thread blocks)
+- For sequential dependence between tiles, use a regular `for` loop with index arithmetic
+- Immutable `@tensor`: `.tile()` freely returns read-only sub-tensors (no `@part` needed)
