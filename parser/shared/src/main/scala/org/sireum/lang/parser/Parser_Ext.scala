@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2017-2026,Robby, Kansas State University
+ Copyright (c) 2017-2025, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,7 @@ object Parser_Ext {
   def parseStmt[T](text: String): T = {
     val reporter = Reporter.create
     val (dialect, input) = SlangParser.scalaDialect(isWorksheet = false)(text.value)
-    val metap = new ScalametaParser(input)(dialect, scala.meta.parsers.ParserOptions.default)
+    val metap = new ScalametaParser(input)(dialect)
     val stat = Try(metap.parseStat()) match {
       case Success(s) => s
       case Failure(e) => err(e.getMessage)
@@ -61,7 +61,7 @@ object Parser_Ext {
   def parseExp[T](text: String): T = {
     val reporter = Reporter.create
     val (dialect, input) = SlangParser.scalaDialect(isWorksheet = false)(text.value)
-    val metap = new ScalametaParser(input)(dialect, scala.meta.parsers.ParserOptions.default)
+    val metap = new ScalametaParser(input)(dialect)
     val term = Try(metap.parseTerm()) match {
       case Success(t) => t
       case Failure(e) => err(e.getMessage)
@@ -84,7 +84,7 @@ object Parser_Ext {
 
   def parseExpOpt(fileUriOpt: Option[String], text: String, isTruthTable: B, reporter: Reporter): Option[lang.ast.Exp] = {
     val (dialect, input) = SlangParser.scalaDialect(isWorksheet = false)(text.value)
-    val metap = new ScalametaParser(input)(dialect, scala.meta.parsers.ParserOptions.default)
+    val metap = new ScalametaParser(input)(dialect)
     val term = Try(metap.parseTerm()) match {
       case Success(t) => t
       case Failure(e) => err(e.getMessage)
@@ -105,7 +105,7 @@ object Parser_Ext {
 
   def parseSequentOpt(fileUriOpt: Option[String], text: String, isTruthTable: B, reporter: Reporter): Option[lang.ast.Sequent] = {
     val (dialect, input) = SlangParser.scalaDialect(isWorksheet = false)(text.value)
-    val metap = new ScalametaParser(input)(dialect, scala.meta.parsers.ParserOptions.default)
+    val metap = new ScalametaParser(input)(dialect)
     val term = Try(metap.parseTerm()) match {
       case Success(t) => t
       case Failure(e) => err(e.getMessage)
@@ -125,12 +125,12 @@ object Parser_Ext {
   }
 
   def parseTopUnit[T](
-    text: String,
-    isWorksheet: B,
-    isDiet: B,
-    fileUriOpt: Option[String],
-    reporter: Reporter
-  ): Option[T] =
+                       text: String,
+                       isWorksheet: B,
+                       isDiet: B,
+                       fileUriOpt: Option[String],
+                       reporter: Reporter
+                     ): Option[T] =
     SlangParser(isWorksheet, isDiet, fileUriOpt, text.value, reporter).unitOpt.map(_.asInstanceOf[T])
 
   @pure def detectSlang(fileUriOpt: Option[String], txt: String): (B, String, String) = {
