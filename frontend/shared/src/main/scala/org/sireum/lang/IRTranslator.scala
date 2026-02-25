@@ -879,7 +879,7 @@ object IRTranslator {
             case AST.ResolvedInfo.BuiltIn.Kind.BinaryShl => AST.IR.Exp.Binary.Op.Shl
             case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondAnd =>
               if (threeAddressCode) {
-                return translateExp(AST.Exp.If(exp.left, exp.right, AST.Exp.LitB(T, AST.Attr(exp.posOpt)),
+                return translateExp(AST.Exp.If(exp.left, exp.right, AST.Exp.LitB(F, AST.Attr(exp.posOpt)),
                   AST.TypedAttr(exp.posOpt, AST.Typed.bOpt)))
               }
               AST.IR.Exp.Binary.Op.CondAnd
@@ -891,7 +891,7 @@ object IRTranslator {
               AST.IR.Exp.Binary.Op.CondOr
             case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondImply =>
               if (threeAddressCode) {
-                return translateExp(AST.Exp.If(exp.left, exp.right, AST.Exp.LitB(F, AST.Attr(exp.posOpt)),
+                return translateExp(AST.Exp.If(exp.left, exp.right, AST.Exp.LitB(T, AST.Attr(exp.posOpt)),
                   AST.TypedAttr(exp.posOpt, AST.Typed.bOpt)))
               }
               AST.IR.Exp.Binary.Op.CondImply
