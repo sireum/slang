@@ -1247,7 +1247,7 @@ object TypeHierarchy {
     }
   }
 
-  @memoize def isIndexType(tipe: AST.Typed): B = {
+  def isIndexType(tipe: AST.Typed): B = {
     tipe match {
       case tipe: AST.Typed.TypeVar => return tipe.isIndex
       case AST.Typed.z => return T
