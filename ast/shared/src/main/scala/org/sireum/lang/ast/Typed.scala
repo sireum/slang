@@ -58,7 +58,7 @@ import org.sireum._
   @pure override def hash: Z = {
     this match {
       case t: Typed.Name => return (t.ids, t.args).hash
-      case t: Typed.TypeVar => return t.id.hash
+      case t: Typed.TypeVar => return (t.id, t.kind).hash
       case t: Typed.Tuple => return t.args.hash
       case t: Typed.Method => return t.name.hash
       case t: Typed.Enum => return t.name.hash
@@ -114,7 +114,7 @@ import org.sireum._
         }
         return T
       case (t1: Typed.TypeVar, t2: Typed.TypeVar) =>
-        return t1.id == t2.id
+        return t1.id == t2.id && t1.kind == t2.kind
       case (t1: Typed.Package, t2: Typed.Package) =>
         return t1.name == t2.name
       case (t1: Typed.Object, t2: Typed.Object) =>
