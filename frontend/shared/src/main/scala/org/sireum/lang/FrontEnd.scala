@@ -343,8 +343,16 @@ object FrontEnd {
 
     val par = Ext.par
     val (tc, reporter) = libraryReporterPar(par)
+    if (reporter.hasError) {
+      reporter.printMessages()
+      halt("Erroneous Slang library detected during outlining")
+    }
     val th = tc.typeHierarchy
     val th2 = TypeChecker.checkComponents(par, T, th, th.nameMap, th.typeMap, reporter)
+    if (reporter.hasError) {
+      reporter.printMessages()
+      halt("Erroneous Slang library detected during type checking")
+    }
     return (TypeChecker(th2, ISZ(), F, TypeChecker.ModeContext.Code, T), reporter)
   }
 
