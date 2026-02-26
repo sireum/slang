@@ -62,7 +62,7 @@ mainMember: stmt | typeDefn ;
 
 pkg: PACKAGE mod* name? annot? imprt* ( member* | pkgSuffix ) ;
 
-pkgSuffix: LBRACE mainMember* RBRACE ;
+pkgSuffix: LBRACE member* RBRACE ;
 
 init: TO LBRACE annot? stmt* RBRACE ;
 
@@ -133,7 +133,7 @@ defnTypeSuffix: COLON type annot? ;
 
 defId: ID | OP | SYMBOL ;
 
-defParams: LPAREN defParam defParamSuffix? COMMA? RPAREN ;
+defParams: LPAREN ( defParam defParamSuffix? COMMA? )? RPAREN ;
 
 defParam: mod* ID COLON type ;
 
@@ -219,7 +219,7 @@ commaPattern: COMMA pattern ;
 
 commaNamedPattern: COMMA ID ASSIGN pattern ;
 
-exp: exp3 | forExp | defAnon | quant ;
+exp: exp3 | forExp | defAnon | quant | ite ;
 
 exp3: exp2 infixSuffix* ;
 
@@ -253,7 +253,7 @@ fn: LBRACE COLON annot? fnBody RBRACE ;
 
 fnBody: blockContent | cas+ ;
 
-lit: TRUE | FALSE | INT | HEX | BIN | REAL | STRING |  MSTR /* | MSTRING */ ;
+lit: TRUE | FALSE | INT | HEX | BIN | REAL | STRING | CHAR | MSTR /* | MSTRING */ ;
 
 jsonLit: BACKTICK ( jsonObject | jsonArray | jsonParen ) ;
 
@@ -293,7 +293,9 @@ ifExp: IF exp ;
 
 forExp: YIELD annot? forRange commaForRange* ARROW annot? rhs ;
 
-defAnon: DEF mod* defParams colonType? DOT annot? rhs ;
+defAnon: DEF mod* defParams annot? rhs ;
+
+ite: QUESTION exp COLON exp COLON exp ;
 
 colonType: COLON type ;
 
@@ -381,7 +383,9 @@ namedType: ID ASSIGN annot? type ;
 
 commaNamedType: COMMA ID ASSIGN annot? type ;
 
-type0: ID typeArgs? ;
+type0: ID dotID* typeArgs? ;
+
+dotID: DOT ID;
 
 typeArgs: LSQUARE typeParenArgs RSQUARE ;
 
@@ -441,9 +445,9 @@ HEX: '0x'  HEX_DIGIT ( '_' | HEX_DIGIT )* ;
 
 BIN: '0b' ( '0' | '1' ) ( '0' | '1' | '_' )* ;
 
-INT: ( '0' | '-'? '1'..'9' ( DIGIT | '_' )* ) ( LETTER ( IDF | IDESC ) )? ;
+INT: ( '0' | '-'? '1'..'9' ( DIGIT | '_' )* ) ( LETTER ( LETTER | DIGIT | '_' )* )? ;
 
-REAL: ( '0' | '-'? '1'..'9' ( DIGIT | '_' )* ) ( '.' DIGIT ( DIGIT | '_' )* EXPONENT? | EXPONENT ) ( 'f' | 'F' | 'd' | 'D' )? ;
+REAL: ( '0' | '-'? '1'..'9' ( DIGIT | '_' )* ) ( '.' DIGIT ( DIGIT | '_' )* EXPONENT? | EXPONENT ) ( 'f' | 'F' | 'd' | 'D' | 'h' | 'H' )? ;
 
 CHAR: '\'' ( ESC_SEQ | ~('\''|'\\') ) '\'' ;
 

@@ -148,7 +148,7 @@ object SlangLl2PrettyPrinter {
       case o: AST.Exp.Eta => st"${printExp(o.ref.asExp)} _"
       case o: AST.Exp.ForYield => st"yield ${(for (g <- o.enumGens) yield printEnumGen(g), ", ")} => ${printExp(o.exp)}"
       case o: AST.Exp.Ident => st"${o.id.value}"
-      case o: AST.Exp.If => st"if (${printExp(o.cond)}) ${printExp(o.thenExp)} else ${printExp(o.elseExp)}"
+      case o: AST.Exp.If => st"? ${printExp(o.cond)}: ${printExp(o.thenExp)} : ${printExp(o.elseExp)}"
       case o: AST.Exp.Input => st"In(${printExp(o.exp)})"
       case o: AST.Exp.Invoke => printInvoke(o)
       case o: AST.Exp.InvokeNamed => printInvokeNamed(o)

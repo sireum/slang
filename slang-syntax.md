@@ -37,7 +37,7 @@ The LL(2) syntax differs from Scala-based syntax primarily in:
 | **Sig trait** | `@sig trait Foo` | `type @sig Foo` | `Stmt.Sig(isImmutable=T)` |
 | **Sealed sig** | `@sig sealed trait Foo` | `type @sig @sealed Foo` | `Stmt.Sig(isSealed=T)` |
 | **Msig trait** | `@msig trait Foo` | `type @msig Foo` | `Stmt.Sig(isImmutable=F)` |
-| **Enum** | `@enum object Color { "Red"\n "Green" }` | `type @enum Color: { Red\n Green }` | `Stmt.Enum` |
+| **Enum** | `@enum object Color { "Red"\n "Green" }` | `type @enum Color: { Red, Green }` | `Stmt.Enum` |
 | **Range type** | `@range(min = 0, max = 10) class Idx` | `type @range(min = 0, max = 10) Idx` | `Stmt.SubZ(isBitVector=F)` |
 | **Bits type** | `@bits(signed = F, width = 8) class U8` | `type @bits(signed = F, width = 8) U8` | `Stmt.SubZ(isBitVector=T)` |
 | **Type alias** | `type Foo = Bar[Z]` | `type @alias Foo = Bar[Z]` | `Stmt.TypeAlias` |
@@ -95,7 +95,7 @@ The LL(2) syntax differs from Scala-based syntax primarily in:
 | **Apply** | `x(i)` | `x(i)` | `Exp.Invoke(ident.id="apply")` |
 | **Binary** | `a + b` | `a + b` | `Exp.Binary` |
 | **Unary** | `-x`, `!x` | `-x`, `!x` | `Exp.Unary` |
-| **If exp** | `if (c) t else e` | `if (c) t else e` | `Exp.If` |
+| **If exp (ternary)** | `if (c) t else e` | `? c: t : e` | `Exp.If` |
 | **Tuple** | `(a, b)` | `(a, b)` | `Exp.Tuple` |
 | **This** | `this` | `this` | `Exp.This` |
 | **Super** | `super` | `super` | `Exp.Super` |
@@ -110,9 +110,11 @@ The LL(2) syntax differs from Scala-based syntax primarily in:
 | **String interp** | `s"hello $x"` | `s"hello $x"` | `Exp.StringInterpolate` |
 | **Lit bool** | `T` / `F` | `T`/`true` / `F`/`false` | `Exp.LitB` |
 | **Lit int** | `z"42"` or `42` | `42` | `Exp.LitZ` |
+| **Lit SubZ** | `s32"100"`, `u8"42"` | `100s32`, `42u8` | `Exp.StringInterpolate` |
 | **Lit float32** | `f32"1.0"` or `1.0f` | `1.0f` / `1.0F` | `Exp.LitF32` |
-| **Lit float64** | `f64"1.0"` or `1.0d` | `1.0d` / `1.0D` | `Exp.LitF64` |
-| **Lit real** | `r"1.0"` | `1.0` | `Exp.LitR` |
+| **Lit float64** | `f64"1.0"` or `1.0d` | `1.0d` / `1.0D` / unsuffixed `1.0` | `Exp.LitF64` |
+| **Lit float16** | `f16"1.0"` | `1.0h` / `1.0H` | `Exp.StringInterpolate` |
+| **Lit real** | `r"1.0"` | `4r` (INT with `r` suffix) | `Exp.LitR` |
 | **Lit string** | `"hello"` | `"hello"` | `Exp.LitString` |
 | **Lit char** | `'c'` | `'c'` | `Exp.LitC` |
 | **Input** | `In(x)` | `In(x)` | `Exp.Input` |
@@ -129,7 +131,7 @@ The LL(2) syntax differs from Scala-based syntax primarily in:
 
 | Category | Scala-based Syntax | LL(2) Syntax | AST Node |
 |---|---|---|---|
-| **Named** | `Z`, `ISZ[Z]` | `Z`, `ISZ[Z]` | `Type.Named` |
+| **Named** | `Z`, `ISZ[Z]` | `Z`, `ISZ[Z]`, `Color.Type` | `Type.Named` |
 | **Tuple** | `(Z, B)` | `(Z, B)` | `Type.Tuple` |
 | **Function** | `Z => B` | `Z => B` | `Type.Fun` |
 | **Pure function** | `Z => B @pure` | `Z => @pure B` | `Type.Fun(isPure=T)` |

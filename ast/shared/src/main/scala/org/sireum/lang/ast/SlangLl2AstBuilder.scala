@@ -665,12 +665,12 @@ object SlangLl2AstBuilder {
       stmts = stmts ++ buildMember(m, extNameOpt.nonEmpty, reporter)
     }
 
-    // pkgSuffix: LBRACE mainMember* RBRACE
+    // pkgSuffix: LBRACE member* RBRACE
     pkgSuffixOpt match {
       case Some(ps) =>
-        val mainMembers = findChildren(ps, "mainMember")
-        for (mm <- mainMembers) {
-          stmts = stmts ++ buildMainMember(mm, reporter)
+        val members = findChildren(ps, "member")
+        for (m <- members) {
+          stmts = stmts ++ buildMember(m, extNameOpt.nonEmpty, reporter)
         }
       case _ =>
     }
@@ -1219,12 +1219,18 @@ object SlangLl2AstBuilder {
   }
 
   def buildType0(node: ParseTree.Node, reporter: message.Reporter): AST.Type.Named = {
-    // type0: ID typeArgs?
+    // type0: ID dotID* typeArgs?
     val id = findLeafByRule(node, "ID").get
+    var ids = ISZ[AST.Id](mkId(id.text, id))
+    val dotIds = findChildren(node, "dotID")
+    for (d <- dotIds) {
+      val did = findLeafByRule(d, "ID").get
+      ids = ids :+ mkId(did.text, did)
+    }
     val typeArgsOpt = findChild(node, "typeArgs")
     val typeArgs = buildTypeArgsList(typeArgsOpt, reporter)
     return AST.Type.Named(
-      name = mkName(ISZ(mkId(id.text, id)), node),
+      name = mkName(ids, node),
       typeArgs = typeArgs,
       attr = typedAttr(node))
   }
@@ -1416,6 +1422,7 @@ object SlangLl2AstBuilder {
       case "paren" => return buildParenExp(node, reporter)
       // "Binary" case no longer needed - handled directly in buildExp3
       case "rhs" => return buildRhs(node, reporter)
+      case "ite" => return buildIte(node, reporter)
       case _ =>
         // Try to dispatch based on children
         for (c <- node.children) {
@@ -1437,7 +1444,7 @@ object SlangLl2AstBuilder {
   }
 
   def buildExpTop(node: ParseTree.Node, reporter: message.Reporter): AST.Exp = {
-    // exp: exp3 | forExp | defAnon | quant
+    // exp: exp3 | forExp | defAnon | quant | ite
     val exp3Opt = findChild(node, "exp3")
     exp3Opt match {
       case Some(e3) => return buildExp3(e3, reporter)
@@ -1458,7 +1465,25 @@ object SlangLl2AstBuilder {
       case Some(q) => return buildQuant(q, reporter)
       case _ =>
     }
+    val iteOpt = findChild(node, "ite")
+    iteOpt match {
+      case Some(i) => return buildIte(i, reporter)
+      case _ =>
+    }
     halt(st"Could not build exp from ${node.toST.render}".render)
+  }
+
+  def buildIte(node: ParseTree.Node, reporter: message.Reporter): AST.Exp = {
+    // ite: QUESTION exp COLON exp COLON exp
+    val exps = findChildren(node, "exp")
+    val cond = buildExpTop(exps(0), reporter)
+    val thenExp = buildExpTop(exps(1), reporter)
+    val elseExp = buildExpTop(exps(2), reporter)
+    return AST.Exp.If(
+      cond = cond,
+      thenExp = thenExp,
+      elseExp = elseExp,
+      attr = typedAttr(node))
   }
 
   def buildExp3(node: ParseTree.Node, reporter: message.Reporter): AST.Exp = {
@@ -1881,6 +1906,47 @@ object SlangLl2AstBuilder {
 
   def buildLitExp(node: ParseTree.Node, reporter: message.Reporter): AST.Exp = {
     val leaf = firstLeaf(node)
+    leaf.ruleName.native match {
+      case "INT" =>
+        val text = leaf.text
+        val chars = conversions.String.toCis(text)
+        var splitIdx: Z = text.size
+        var i: Z = 0
+        while (i < chars.size && splitIdx == text.size) {
+          val c = chars(i)
+          if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+            splitIdx = i
+          }
+          i = i + 1
+        }
+        if (splitIdx < text.size) {
+          val numPart = ops.StringOps(text).substring(0, splitIdx)
+          val suffix = ops.StringOps(text).substring(splitIdx, text.size)
+          val cleanNum = ops.StringOps(numPart).replaceAllLiterally("_", "")
+          if (suffix == "r") {
+            return AST.Exp.LitR(value = R(cleanNum).get, attr = attr(leaf))
+          } else {
+            return AST.Exp.StringInterpolate(
+              prefix = suffix,
+              lits = ISZ(AST.Exp.LitString(value = cleanNum, attr = attr(leaf))),
+              args = ISZ(),
+              attr = typedAttr(leaf))
+          }
+        }
+      case "REAL" =>
+        val text = leaf.text
+        val sops = ops.StringOps(text)
+        if (sops.endsWith("h") || sops.endsWith("H")) {
+          val numStr = sops.substring(0, text.size - 1)
+          val cleanNum = ops.StringOps(numStr).replaceAllLiterally("_", "")
+          return AST.Exp.StringInterpolate(
+            prefix = "f16",
+            lits = ISZ(AST.Exp.LitString(value = cleanNum, attr = attr(leaf))),
+            args = ISZ(),
+            attr = typedAttr(leaf))
+        }
+      case _ =>
+    }
     return buildLitFromLeaf(leaf)
   }
 
@@ -1921,7 +1987,7 @@ object SlangLl2AstBuilder {
           return AST.Exp.LitF64(value = F64(cleanNum).get, attr = attr(leaf))
         } else {
           val cleanNum = ops.StringOps(text).replaceAllLiterally("_", "")
-          return AST.Exp.LitR(value = R(cleanNum).get, attr = attr(leaf))
+          return AST.Exp.LitF64(value = F64(cleanNum).get, attr = attr(leaf))
         }
       case "STRING" =>
         val value = parseStringLit(leaf.text)
@@ -2183,20 +2249,23 @@ object SlangLl2AstBuilder {
   }
 
   def buildDefAnonParams(node: ParseTree.Node, reporter: message.Reporter): ISZ[AST.Exp.Fun.Param] = {
-    // defParams: LPAREN defParam defParamSuffix? COMMA? RPAREN
+    // defParams: LPAREN ( defParam defParamSuffix? COMMA? )? RPAREN
     var r = ISZ[AST.Exp.Fun.Param]()
-    val firstParam = findChild(node, "defParam").get
-    r = r :+ buildDefAnonParam(firstParam, reporter)
-    val suffixOpt = findChild(node, "defParamSuffix")
-    suffixOpt match {
-      case Some(suffix) =>
-        val nextParam = findChild(suffix, "defParam")
-        nextParam match {
-          case Some(np) =>
-            r = r :+ buildDefAnonParam(np, reporter)
-            val innerSuffix = findChild(suffix, "defParamSuffix")
-            innerSuffix match {
-              case Some(is) => r = r ++ buildDefParamSuffixChain(is, reporter)
+    findChild(node, "defParam") match {
+      case Some(firstParam) =>
+        r = r :+ buildDefAnonParam(firstParam, reporter)
+        val suffixOpt = findChild(node, "defParamSuffix")
+        suffixOpt match {
+          case Some(suffix) =>
+            val nextParam = findChild(suffix, "defParam")
+            nextParam match {
+              case Some(np) =>
+                r = r :+ buildDefAnonParam(np, reporter)
+                val innerSuffix = findChild(suffix, "defParamSuffix")
+                innerSuffix match {
+                  case Some(is) => r = r ++ buildDefParamSuffixChain(is, reporter)
+                  case _ =>
+                }
               case _ =>
             }
           case _ =>
@@ -2499,7 +2568,18 @@ object SlangLl2AstBuilder {
     assignOpt match {
       case Some(as) =>
         val rhs = buildAssignSuffix(as, reporter)
-        return AST.Stmt.Assign(lhs = result, rhs = rhs, attr = attr(node))
+        val lhs: AST.Exp = result match {
+          case invoke: AST.Exp.Invoke if invoke.receiverOpt.isEmpty =>
+            invoke(
+              receiverOpt = Some(invoke.ident),
+              ident = AST.Exp.Ident(id = AST.Id(value = "apply", attr = emptyAttr), attr = invoke.attr))
+          case invoke: AST.Exp.InvokeNamed if invoke.receiverOpt.isEmpty =>
+            invoke(
+              receiverOpt = Some(invoke.ident),
+              ident = AST.Exp.Ident(id = AST.Id(value = "apply", attr = emptyAttr), attr = invoke.attr))
+          case _ => result
+        }
+        return AST.Stmt.Assign(lhs = lhs, rhs = rhs, attr = attr(node))
       case _ =>
     }
     return AST.Stmt.Expr(exp = result, attr = typedAttr(node))
@@ -2823,10 +2903,40 @@ object SlangLl2AstBuilder {
         blockOpt match {
           case Some(blk) =>
             val block = buildBlock(blk, reporter)
-            Some(block.body)
+            if (purity == AST.Purity.StrictPure || purity == AST.Purity.Abs) {
+              val expAttr = attr(rhsNode)
+              val rId = AST.Id("_r_", expAttr)
+              val varStmt = AST.Stmt.Var(
+                isSpec = F,
+                isVal = T,
+                id = rId,
+                tipeOpt = Some(returnType),
+                initOpt = Some(block),
+                attr = AST.ResolvedAttr(expAttr.posOpt, None(), None()))
+              val ident = AST.Exp.Ident(id = rId, attr = AST.ResolvedAttr(expAttr.posOpt, None(), None()))
+              val retStmt = AST.Stmt.Return(expOpt = Some(ident), attr = typedAttr(rhsNode))
+              Some(AST.Body(stmts = ISZ(varStmt, retStmt), undecls = ISZ()))
+            } else {
+              Some(block.body)
+            }
           case _ =>
             val exp = buildRhsAsAssignExp(rhsNode, reporter)
-            Some(AST.Body(stmts = ISZ(exp.asStmt), undecls = ISZ()))
+            if (purity == AST.Purity.StrictPure || purity == AST.Purity.Abs) {
+              val expAttr = attr(rhsNode)
+              val rId = AST.Id("_r_", expAttr)
+              val varStmt = AST.Stmt.Var(
+                isSpec = F,
+                isVal = T,
+                id = rId,
+                tipeOpt = Some(returnType),
+                initOpt = Some(exp),
+                attr = AST.ResolvedAttr(expAttr.posOpt, None(), None()))
+              val ident = AST.Exp.Ident(id = rId, attr = AST.ResolvedAttr(expAttr.posOpt, None(), None()))
+              val retStmt = AST.Stmt.Return(expOpt = Some(ident), attr = typedAttr(rhsNode))
+              Some(AST.Body(stmts = ISZ(varStmt, retStmt), undecls = ISZ()))
+            } else {
+              Some(AST.Body(stmts = ISZ(exp.asStmt), undecls = ISZ()))
+            }
         }
       case _ => None()
     }
@@ -2881,13 +2991,16 @@ object SlangLl2AstBuilder {
   }
 
   def buildDefParams(node: ParseTree.Node, reporter: message.Reporter): ISZ[AST.Param] = {
-    // defParams: LPAREN defParam defParamSuffix? COMMA? RPAREN
+    // defParams: LPAREN ( defParam defParamSuffix? COMMA? )? RPAREN
     var r = ISZ[AST.Param]()
-    val firstParam = findChild(node, "defParam").get
-    r = r :+ buildDefParam(firstParam, reporter)
-    val suffixOpt = findChild(node, "defParamSuffix")
-    suffixOpt match {
-      case Some(suffix) => r = r ++ buildDefParamSuffixChainP(suffix, reporter)
+    findChild(node, "defParam") match {
+      case Some(firstParam) =>
+        r = r :+ buildDefParam(firstParam, reporter)
+        val suffixOpt = findChild(node, "defParamSuffix")
+        suffixOpt match {
+          case Some(suffix) => r = r ++ buildDefParamSuffixChainP(suffix, reporter)
+          case _ =>
+        }
       case _ =>
     }
     return r
