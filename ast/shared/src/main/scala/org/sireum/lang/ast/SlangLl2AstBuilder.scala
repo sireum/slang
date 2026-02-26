@@ -668,8 +668,8 @@ object SlangLl2AstBuilder {
     // pkgSuffix: LBRACE member* RBRACE
     pkgSuffixOpt match {
       case Some(ps) =>
-        val members = findChildren(ps, "member")
-        for (m <- members) {
+        val pkgMembers = findChildren(ps, "member")
+        for (m <- pkgMembers) {
           stmts = stmts ++ buildMember(m, extNameOpt.nonEmpty, reporter)
         }
       case _ =>
