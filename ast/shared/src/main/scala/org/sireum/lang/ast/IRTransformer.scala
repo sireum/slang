@@ -70,6 +70,7 @@ object IRTransformer {
         case o: IR.Exp.Indexing => return preIRExpIndexing(ctx, o)
         case o: IR.Exp.Type => return preIRExpType(ctx, o)
         case o: IR.Exp.Intrinsic => return preIRExpIntrinsic(ctx, o)
+        case o: IR.Exp.ClosureRef => return preIRExpClosureRef(ctx, o)
       }
     }
 
@@ -146,6 +147,10 @@ object IRTransformer {
     }
 
     @pure def preIRExpIntrinsic(ctx: Context, o: IR.Exp.Intrinsic): PreResult[Context, IR.Exp] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRExpClosureRef(ctx: Context, o: IR.Exp.ClosureRef): PreResult[Context, IR.Exp] = {
       return PreResult(ctx, T, None())
     }
 
@@ -450,6 +455,14 @@ object IRTransformer {
       return PreResult(ctx, T, None())
     }
 
+    @pure def preIRProgramIntrinsic(ctx: Context, o: IR.Program.Intrinsic): PreResult[Context, IR.Program.Intrinsic] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRProgramIntrinsicType(ctx: Context, o: IR.Program.Intrinsic.Type): PreResult[Context, IR.Program.Intrinsic.Type] = {
+      return PreResult(ctx, T, None())
+    }
+
     @pure def preIRProgram(ctx: Context, o: IR.Program): PreResult[Context, IR.Program] = {
       return PreResult(ctx, T, None())
     }
@@ -560,6 +573,7 @@ object IRTransformer {
         case o: IR.Exp.Indexing => return postIRExpIndexing(ctx, o)
         case o: IR.Exp.Type => return postIRExpType(ctx, o)
         case o: IR.Exp.Intrinsic => return postIRExpIntrinsic(ctx, o)
+        case o: IR.Exp.ClosureRef => return postIRExpClosureRef(ctx, o)
       }
     }
 
@@ -636,6 +650,10 @@ object IRTransformer {
     }
 
     @pure def postIRExpIntrinsic(ctx: Context, o: IR.Exp.Intrinsic): TPostResult[Context, IR.Exp] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRExpClosureRef(ctx: Context, o: IR.Exp.ClosureRef): TPostResult[Context, IR.Exp] = {
       return TPostResult(ctx, None())
     }
 
@@ -940,6 +958,14 @@ object IRTransformer {
       return TPostResult(ctx, None())
     }
 
+    @pure def postIRProgramIntrinsic(ctx: Context, o: IR.Program.Intrinsic): TPostResult[Context, IR.Program.Intrinsic] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRProgramIntrinsicType(ctx: Context, o: IR.Program.Intrinsic.Type): TPostResult[Context, IR.Program.Intrinsic.Type] = {
+      return TPostResult(ctx, None())
+    }
+
     @pure def postIRProgram(ctx: Context, o: IR.Program): TPostResult[Context, IR.Program] = {
       return TPostResult(ctx, None())
     }
@@ -1216,6 +1242,13 @@ import IRTransformer._
             TPostResult(r0.ctx, Some(o2(intrinsic = r0.resultOpt.getOrElse(o2.intrinsic))))
           else
             TPostResult(r0.ctx, None())
+        case o2: IR.Exp.ClosureRef =>
+          val r0: TPostResult[Context, IS[Z, IR.Exp]] = transformISZ(preR.ctx, o2.captures, transformIRExp _)
+          val r1: TPostResult[Context, Typed.Fun] = transformTypedFun(r0.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(captures = r0.resultOpt.getOrElse(o2.captures), tipe = r1.resultOpt.getOrElse(o2.tipe))))
+          else
+            TPostResult(r1.ctx, None())
       }
       rOpt
     } else if (preR.resultOpt.nonEmpty) {
@@ -1930,6 +1963,57 @@ import IRTransformer._
     }
   }
 
+  @pure def transformIRProgramIntrinsic(ctx: Context, o: IR.Program.Intrinsic): TPostResult[Context, IR.Program.Intrinsic] = {
+    val preR: PreResult[Context, IR.Program.Intrinsic] = pp.preIRProgramIntrinsic(ctx, o)
+    val r: TPostResult[Context, IR.Program.Intrinsic] = if (preR.continu) {
+      val o2: IR.Program.Intrinsic = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: TPostResult[Context, IR.Program.Intrinsic.Type] = transformIRProgramIntrinsicType(preR.ctx, o2.intrinsic)
+      if (hasChanged || r0.resultOpt.nonEmpty)
+        TPostResult(r0.ctx, Some(o2(intrinsic = r0.resultOpt.getOrElse(o2.intrinsic))))
+      else
+        TPostResult(r0.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: IR.Program.Intrinsic = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, IR.Program.Intrinsic] = pp.postIRProgramIntrinsic(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformIRProgramIntrinsicType(ctx: Context, o: IR.Program.Intrinsic.Type): TPostResult[Context, IR.Program.Intrinsic.Type] = {
+    val preR: PreResult[Context, IR.Program.Intrinsic.Type] = pp.preIRProgramIntrinsicType(ctx, o)
+    val r: TPostResult[Context, IR.Program.Intrinsic.Type] = if (preR.continu) {
+      val o2: IR.Program.Intrinsic.Type = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: TPostResult[Context, IR.Program.Intrinsic.Type] = TPostResult(ctx, None())
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: IR.Program.Intrinsic.Type = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, IR.Program.Intrinsic.Type] = pp.postIRProgramIntrinsicType(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
   @pure def transformIRProgram(ctx: Context, o: IR.Program): TPostResult[Context, IR.Program] = {
     val preR: PreResult[Context, IR.Program] = pp.preIRProgram(ctx, o)
     val r: TPostResult[Context, IR.Program] = if (preR.continu) {
@@ -1937,10 +2021,11 @@ import IRTransformer._
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: TPostResult[Context, IS[Z, IR.Global]] = transformISZ(preR.ctx, o2.globals, transformIRGlobal _)
       val r1: TPostResult[Context, IS[Z, IR.Procedure]] = transformISZ(r0.ctx, o2.procedures, transformIRProcedure _)
-      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-        TPostResult(r1.ctx, Some(o2(globals = r0.resultOpt.getOrElse(o2.globals), procedures = r1.resultOpt.getOrElse(o2.procedures))))
+      val r2: TPostResult[Context, IS[Z, IR.Program.Intrinsic]] = transformISZ(r1.ctx, o2.programIntrinsics, transformIRProgramIntrinsic _)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+        TPostResult(r2.ctx, Some(o2(globals = r0.resultOpt.getOrElse(o2.globals), procedures = r1.resultOpt.getOrElse(o2.procedures), programIntrinsics = r2.resultOpt.getOrElse(o2.programIntrinsics))))
       else
-        TPostResult(r1.ctx, None())
+        TPostResult(r2.ctx, None())
     } else if (preR.resultOpt.nonEmpty) {
       TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
     } else {

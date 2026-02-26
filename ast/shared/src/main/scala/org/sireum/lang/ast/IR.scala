@@ -278,6 +278,26 @@ object IR {
       @strictpure def depth: Z = intrinsic.depth
     }
 
+    @datatype class ClosureRef(val owner: ISZ[org.sireum.String], val id: org.sireum.String,
+                                val captures: ISZ[Exp], val tipe: Typed.Fun, val pos: Position) extends Exp {
+      @strictpure def prettyRawST(p: Printer): ST =
+        st"closure(${(owner, ".")}.$id[${(for (cap <- captures) yield cap.prettyST(p), ", ")}])"
+      @pure def numOfTemps: Z = {
+        var r: Z = 0
+        for (cap <- captures) {
+          r = r + cap.numOfTemps
+        }
+        return r
+      }
+      @pure def depth: Z = {
+        var r: Z = 0
+        for (cap <- captures) {
+          r = max(r, cap.depth)
+        }
+        return r + 1
+      }
+    }
+
     object Intrinsic {
       @sig trait Type {
         @pure def tipe: Typed
@@ -640,13 +660,26 @@ object IR {
     @strictpure def prettyST: ST = st"global ${(name, ".")}: $tipe"
   }
 
+  object Program {
+    @datatype class Intrinsic(val intrinsic: Intrinsic.Type)
+
+    object Intrinsic {
+      @sig trait Type {
+        @pure def prettyST(p: Printer): ST
+      }
+    }
+  }
+
   @datatype class Program(val threeAddressCode: B,
                           val globals: ISZ[Global],
-                          val procedures: ISZ[Procedure]) {
+                          val procedures: ISZ[Procedure],
+                          val programIntrinsics: ISZ[Program.Intrinsic]) {
     @strictpure def prettyST(printer: Printer): ST =
       st"""${(for (g <- globals) yield g.prettyST, "\n")}
           |
-          |${(for (p <- procedures) yield p.prettyST(printer), "\n\n")}"""
+          |${(for (p <- procedures) yield p.prettyST(printer), "\n\n")}
+          |
+          |${(for (pi <- programIntrinsics) yield pi.intrinsic.prettyST(printer), "\n")}"""
     @pure override def string: String = {
       return prettyST(Printer.Empty()).render
     }
@@ -656,6 +689,7 @@ object IR {
     @pure def exp(e: Exp): Option[ST]
     @pure def stmt(stmt: Stmt): Option[ST]
     @pure def jump(j: Jump): Option[ST]
+    @pure def program(pi: Program.Intrinsic): Option[ST]
   }
 
   object Printer {
@@ -663,6 +697,7 @@ object IR {
       @strictpure def exp(e: Exp): Option[ST] = None()
       @strictpure def stmt(stmt: Stmt): Option[ST] = None()
       @strictpure def jump(j: Jump): Option[ST] = None()
+      @strictpure def program(pi: Program.Intrinsic): Option[ST] = None()
     }
   }
 

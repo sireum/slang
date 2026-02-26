@@ -133,6 +133,10 @@ object MIRTransformer {
 
   val PostResultIRExpIntrinsic: MOption[IR.Exp] = MNone()
 
+  val PreResultIRExpClosureRef: PreResult[IR.Exp] = PreResult(T, MNone())
+
+  val PostResultIRExpClosureRef: MOption[IR.Exp] = MNone()
+
   def transformOption[T](option: Option[T], f: T => MOption[T]): MOption[Option[T]] = {
     option match {
       case Some(v) =>
@@ -285,6 +289,10 @@ object MIRTransformer {
 
   val PostResultIRGlobal: MOption[IR.Global] = MNone()
 
+  val PreResultIRProgramIntrinsic: PreResult[IR.Program.Intrinsic] = PreResult(T, MNone())
+
+  val PostResultIRProgramIntrinsic: MOption[IR.Program.Intrinsic] = MNone()
+
   val PreResultIRProgram: PreResult[IR.Program] = PreResult(T, MNone())
 
   val PostResultIRProgram: MOption[IR.Program] = MNone()
@@ -372,6 +380,7 @@ import MIRTransformer._
       case o: IR.Exp.Indexing => return preIRExpIndexing(o)
       case o: IR.Exp.Type => return preIRExpType(o)
       case o: IR.Exp.Intrinsic => return preIRExpIntrinsic(o)
+      case o: IR.Exp.ClosureRef => return preIRExpClosureRef(o)
     }
   }
 
@@ -449,6 +458,10 @@ import MIRTransformer._
 
   def preIRExpIntrinsic(o: IR.Exp.Intrinsic): PreResult[IR.Exp] = {
     return PreResultIRExpIntrinsic
+  }
+
+  def preIRExpClosureRef(o: IR.Exp.ClosureRef): PreResult[IR.Exp] = {
+    return PreResultIRExpClosureRef
   }
 
   def preIRExpIntrinsicType(o: IR.Exp.Intrinsic.Type): PreResult[IR.Exp.Intrinsic.Type] = {
@@ -752,6 +765,14 @@ import MIRTransformer._
     return PreResultIRGlobal
   }
 
+  def preIRProgramIntrinsic(o: IR.Program.Intrinsic): PreResult[IR.Program.Intrinsic] = {
+    return PreResultIRProgramIntrinsic
+  }
+
+  def preIRProgramIntrinsicType(o: IR.Program.Intrinsic.Type): PreResult[IR.Program.Intrinsic.Type] = {
+    return PreResult(T, MNone())
+  }
+
   def preIRProgram(o: IR.Program): PreResult[IR.Program] = {
     return PreResultIRProgram
   }
@@ -862,6 +883,7 @@ import MIRTransformer._
       case o: IR.Exp.Indexing => return postIRExpIndexing(o)
       case o: IR.Exp.Type => return postIRExpType(o)
       case o: IR.Exp.Intrinsic => return postIRExpIntrinsic(o)
+      case o: IR.Exp.ClosureRef => return postIRExpClosureRef(o)
     }
   }
 
@@ -939,6 +961,10 @@ import MIRTransformer._
 
   def postIRExpIntrinsic(o: IR.Exp.Intrinsic): MOption[IR.Exp] = {
     return PostResultIRExpIntrinsic
+  }
+
+  def postIRExpClosureRef(o: IR.Exp.ClosureRef): MOption[IR.Exp] = {
+    return PostResultIRExpClosureRef
   }
 
   def postIRExpIntrinsicType(o: IR.Exp.Intrinsic.Type): MOption[IR.Exp.Intrinsic.Type] = {
@@ -1242,6 +1268,14 @@ import MIRTransformer._
     return PostResultIRGlobal
   }
 
+  def postIRProgramIntrinsic(o: IR.Program.Intrinsic): MOption[IR.Program.Intrinsic] = {
+    return PostResultIRProgramIntrinsic
+  }
+
+  def postIRProgramIntrinsicType(o: IR.Program.Intrinsic.Type): MOption[IR.Program.Intrinsic.Type] = {
+    return MNone()
+  }
+
   def postIRProgram(o: IR.Program): MOption[IR.Program] = {
     return PostResultIRProgram
   }
@@ -1478,6 +1512,13 @@ import MIRTransformer._
           val r0: MOption[IR.Exp.Intrinsic.Type] = transformIRExpIntrinsicType(o2.intrinsic)
           if (hasChanged || r0.nonEmpty)
             MSome(o2(intrinsic = r0.getOrElse(o2.intrinsic)))
+          else
+            MNone()
+        case o2: IR.Exp.ClosureRef =>
+          val r0: MOption[IS[Z, IR.Exp]] = transformISZ(o2.captures, transformIRExp _)
+          val r1: MOption[Typed.Fun] = transformTypedFun(o2.tipe)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(captures = r0.getOrElse(o2.captures), tipe = r1.getOrElse(o2.tipe)))
           else
             MNone()
       }
@@ -2194,6 +2235,57 @@ import MIRTransformer._
     }
   }
 
+  def transformIRProgramIntrinsic(o: IR.Program.Intrinsic): MOption[IR.Program.Intrinsic] = {
+    val preR: PreResult[IR.Program.Intrinsic] = preIRProgramIntrinsic(o)
+    val r: MOption[IR.Program.Intrinsic] = if (preR.continu) {
+      val o2: IR.Program.Intrinsic = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[IR.Program.Intrinsic.Type] = transformIRProgramIntrinsicType(o2.intrinsic)
+      if (hasChanged || r0.nonEmpty)
+        MSome(o2(intrinsic = r0.getOrElse(o2.intrinsic)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: IR.Program.Intrinsic = r.getOrElse(o)
+    val postR: MOption[IR.Program.Intrinsic] = postIRProgramIntrinsic(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformIRProgramIntrinsicType(o: IR.Program.Intrinsic.Type): MOption[IR.Program.Intrinsic.Type] = {
+    val preR: PreResult[IR.Program.Intrinsic.Type] = preIRProgramIntrinsicType(o)
+    val r: MOption[IR.Program.Intrinsic.Type] = if (preR.continu) {
+      val o2: IR.Program.Intrinsic.Type = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: MOption[IR.Program.Intrinsic.Type] = MNone()
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: IR.Program.Intrinsic.Type = r.getOrElse(o)
+    val postR: MOption[IR.Program.Intrinsic.Type] = postIRProgramIntrinsicType(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
   def transformIRProgram(o: IR.Program): MOption[IR.Program] = {
     val preR: PreResult[IR.Program] = preIRProgram(o)
     val r: MOption[IR.Program] = if (preR.continu) {
@@ -2201,8 +2293,9 @@ import MIRTransformer._
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: MOption[IS[Z, IR.Global]] = transformISZ(o2.globals, transformIRGlobal _)
       val r1: MOption[IS[Z, IR.Procedure]] = transformISZ(o2.procedures, transformIRProcedure _)
-      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-        MSome(o2(globals = r0.getOrElse(o2.globals), procedures = r1.getOrElse(o2.procedures)))
+      val r2: MOption[IS[Z, IR.Program.Intrinsic]] = transformISZ(o2.programIntrinsics, transformIRProgramIntrinsic _)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+        MSome(o2(globals = r0.getOrElse(o2.globals), procedures = r1.getOrElse(o2.procedures), programIntrinsics = r2.getOrElse(o2.programIntrinsics)))
       else
         MNone()
     } else if (preR.resultOpt.nonEmpty) {

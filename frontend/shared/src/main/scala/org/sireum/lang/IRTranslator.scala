@@ -46,6 +46,21 @@ object IRTranslator {
 
   @strictpure def createFresh: Fresh = Ext.createFresh
 
+  @record class ClosureCaptureCollector(var captures: HashSMap[(ISZ[String], String), (ISZ[String], B, String, AST.Typed)])
+    extends AST.MTransformer {
+    override def postResolvedAttr(o: AST.ResolvedAttr): MOption[AST.ResolvedAttr] = {
+      o.resOpt match {
+        case Some(res: AST.ResolvedInfo.LocalVar) if res.scope == AST.ResolvedInfo.LocalVar.Scope.Closure =>
+          val key = (res.context, res.id)
+          if (!captures.contains(key)) {
+            captures = captures + key ~> ((res.context, res.isVal, res.id, o.typedOpt.get))
+          }
+        case _ =>
+      }
+      return AST.MTransformer.PostResultResolvedAttr
+    }
+  }
+
 }
 
 @record class IRTranslator(val spec: B,
@@ -56,6 +71,9 @@ object IRTranslator {
 
   var methodContext: AST.IR.MethodContext = AST.IR.MethodContext.empty
   var stmts: ISZ[AST.IR.Stmt] = ISZ()
+  var liftedProcedures: ISZ[AST.IR.Procedure] = ISZ()
+  var nestedMethodCaptures: HashMap[ISZ[String], ISZ[(B, String, AST.Typed)]] = HashMap.empty
+  var varCaptureSet: HashSet[String] = HashSet.empty
 
   def translateMethodH(isBasic: B,
                        receiverTypeOpt: Option[AST.Typed],
@@ -778,6 +796,12 @@ object IRTranslator {
     return e
   }
 
+  def collectCaptures(assignExp: AST.AssignExp): ISZ[(ISZ[String], B, String, AST.Typed)] = {
+    val collector = IRTranslator.ClosureCaptureCollector(HashSMap.empty)
+    collector.transformAssignExp(assignExp)
+    return collector.captures.values
+  }
+
   def translateExp(exp: AST.Exp): AST.IR.Exp = {
 
     val pos = exp.posOpt.get
@@ -1014,7 +1038,41 @@ object IRTranslator {
         }
       case exp: AST.Exp.Tuple => halt(s"TODO: $exp")
       case exp: AST.Exp.ForYield => halt(s"TODO: $exp")
-      case exp: AST.Exp.Eta => halt(s"TODO: $exp")
+      case exp: AST.Exp.Eta =>
+        val funType = exp.attr.typedOpt.get.asInstanceOf[AST.Typed.Fun]
+        exp.ref.resOpt.get match {
+          case res: AST.ResolvedInfo.Method =>
+            val captures: ISZ[AST.IR.Exp] = if (res.isInObject) {
+              ISZ()
+            } else {
+              exp.ref match {
+                case ref: AST.Exp.Select =>
+                  ref.receiverOpt match {
+                    case Some(receiver) => ISZ(translateExp(receiver))
+                    case _ => ISZ(thiz(pos))
+                  }
+                case _: AST.Exp.Ident => ISZ(thiz(pos))
+                case _ => ISZ(thiz(pos))
+              }
+            }
+            return norm3AC(AST.IR.Exp.ClosureRef(
+              owner = res.owner,
+              id = res.id,
+              captures = captures,
+              tipe = funType,
+              pos = pos
+            ))
+          case res: AST.ResolvedInfo.LocalVar =>
+            return norm3AC(AST.IR.Exp.LocalVarRef(
+              isVal = res.isVal,
+              context = methodContext,
+              id = res.id,
+              tipe = funType,
+              pos = pos
+            ))
+          case res =>
+            halt(s"TODO: Eta with $res")
+        }
       case exp: AST.Exp.Fun => halt(s"TODO: $exp")
       case exp: AST.Exp.QuantEach => halt(s"TODO: $exp")
       case exp: AST.Exp.QuantRange => halt(s"TODO: $exp")
