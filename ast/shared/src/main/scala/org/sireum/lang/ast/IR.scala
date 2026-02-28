@@ -298,6 +298,26 @@ object IR {
       }
     }
 
+    @datatype class ApplyClosure(val closureExp: Exp, val args: ISZ[Exp], val tipe: Typed,
+                                  val pos: Position) extends Exp {
+      @strictpure def prettyRawST(p: Printer): ST =
+        st"${closureExp.prettyST(p)}.apply(${(for (a <- args) yield a.prettyST(p), ", ")})"
+      @pure def numOfTemps: Z = {
+        var r: Z = closureExp.numOfTemps
+        for (a <- args) {
+          r = r + a.numOfTemps
+        }
+        return r
+      }
+      @pure def depth: Z = {
+        var r: Z = closureExp.depth
+        for (a <- args) {
+          r = max(r, a.depth)
+        }
+        return r + 1
+      }
+    }
+
     object Intrinsic {
       @sig trait Type {
         @pure def tipe: Typed

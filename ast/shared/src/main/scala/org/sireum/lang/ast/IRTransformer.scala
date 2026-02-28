@@ -71,6 +71,7 @@ object IRTransformer {
         case o: IR.Exp.Type => return preIRExpType(ctx, o)
         case o: IR.Exp.Intrinsic => return preIRExpIntrinsic(ctx, o)
         case o: IR.Exp.ClosureRef => return preIRExpClosureRef(ctx, o)
+        case o: IR.Exp.ApplyClosure => return preIRExpApplyClosure(ctx, o)
       }
     }
 
@@ -151,6 +152,10 @@ object IRTransformer {
     }
 
     @pure def preIRExpClosureRef(ctx: Context, o: IR.Exp.ClosureRef): PreResult[Context, IR.Exp] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRExpApplyClosure(ctx: Context, o: IR.Exp.ApplyClosure): PreResult[Context, IR.Exp] = {
       return PreResult(ctx, T, None())
     }
 
@@ -574,6 +579,7 @@ object IRTransformer {
         case o: IR.Exp.Type => return postIRExpType(ctx, o)
         case o: IR.Exp.Intrinsic => return postIRExpIntrinsic(ctx, o)
         case o: IR.Exp.ClosureRef => return postIRExpClosureRef(ctx, o)
+        case o: IR.Exp.ApplyClosure => return postIRExpApplyClosure(ctx, o)
       }
     }
 
@@ -654,6 +660,10 @@ object IRTransformer {
     }
 
     @pure def postIRExpClosureRef(ctx: Context, o: IR.Exp.ClosureRef): TPostResult[Context, IR.Exp] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRExpApplyClosure(ctx: Context, o: IR.Exp.ApplyClosure): TPostResult[Context, IR.Exp] = {
       return TPostResult(ctx, None())
     }
 
@@ -1249,6 +1259,14 @@ import IRTransformer._
             TPostResult(r1.ctx, Some(o2(captures = r0.resultOpt.getOrElse(o2.captures), tipe = r1.resultOpt.getOrElse(o2.tipe))))
           else
             TPostResult(r1.ctx, None())
+        case o2: IR.Exp.ApplyClosure =>
+          val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.closureExp)
+          val r1: TPostResult[Context, IS[Z, IR.Exp]] = transformISZ(r0.ctx, o2.args, transformIRExp _)
+          val r2: TPostResult[Context, Typed] = transformTyped(r1.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(closureExp = r0.resultOpt.getOrElse(o2.closureExp), args = r1.resultOpt.getOrElse(o2.args), tipe = r2.resultOpt.getOrElse(o2.tipe))))
+          else
+            TPostResult(r2.ctx, None())
       }
       rOpt
     } else if (preR.resultOpt.nonEmpty) {

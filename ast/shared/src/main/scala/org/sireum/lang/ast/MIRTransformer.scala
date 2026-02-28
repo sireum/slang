@@ -137,6 +137,10 @@ object MIRTransformer {
 
   val PostResultIRExpClosureRef: MOption[IR.Exp] = MNone()
 
+  val PreResultIRExpApplyClosure: PreResult[IR.Exp] = PreResult(T, MNone())
+
+  val PostResultIRExpApplyClosure: MOption[IR.Exp] = MNone()
+
   def transformOption[T](option: Option[T], f: T => MOption[T]): MOption[Option[T]] = {
     option match {
       case Some(v) =>
@@ -381,6 +385,7 @@ import MIRTransformer._
       case o: IR.Exp.Type => return preIRExpType(o)
       case o: IR.Exp.Intrinsic => return preIRExpIntrinsic(o)
       case o: IR.Exp.ClosureRef => return preIRExpClosureRef(o)
+      case o: IR.Exp.ApplyClosure => return preIRExpApplyClosure(o)
     }
   }
 
@@ -462,6 +467,10 @@ import MIRTransformer._
 
   def preIRExpClosureRef(o: IR.Exp.ClosureRef): PreResult[IR.Exp] = {
     return PreResultIRExpClosureRef
+  }
+
+  def preIRExpApplyClosure(o: IR.Exp.ApplyClosure): PreResult[IR.Exp] = {
+    return PreResultIRExpApplyClosure
   }
 
   def preIRExpIntrinsicType(o: IR.Exp.Intrinsic.Type): PreResult[IR.Exp.Intrinsic.Type] = {
@@ -884,6 +893,7 @@ import MIRTransformer._
       case o: IR.Exp.Type => return postIRExpType(o)
       case o: IR.Exp.Intrinsic => return postIRExpIntrinsic(o)
       case o: IR.Exp.ClosureRef => return postIRExpClosureRef(o)
+      case o: IR.Exp.ApplyClosure => return postIRExpApplyClosure(o)
     }
   }
 
@@ -965,6 +975,10 @@ import MIRTransformer._
 
   def postIRExpClosureRef(o: IR.Exp.ClosureRef): MOption[IR.Exp] = {
     return PostResultIRExpClosureRef
+  }
+
+  def postIRExpApplyClosure(o: IR.Exp.ApplyClosure): MOption[IR.Exp] = {
+    return PostResultIRExpApplyClosure
   }
 
   def postIRExpIntrinsicType(o: IR.Exp.Intrinsic.Type): MOption[IR.Exp.Intrinsic.Type] = {
@@ -1519,6 +1533,14 @@ import MIRTransformer._
           val r1: MOption[Typed.Fun] = transformTypedFun(o2.tipe)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
             MSome(o2(captures = r0.getOrElse(o2.captures), tipe = r1.getOrElse(o2.tipe)))
+          else
+            MNone()
+        case o2: IR.Exp.ApplyClosure =>
+          val r0: MOption[IR.Exp] = transformIRExp(o2.closureExp)
+          val r1: MOption[IS[Z, IR.Exp]] = transformISZ(o2.args, transformIRExp _)
+          val r2: MOption[Typed] = transformTyped(o2.tipe)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(closureExp = r0.getOrElse(o2.closureExp), args = r1.getOrElse(o2.args), tipe = r2.getOrElse(o2.tipe)))
           else
             MNone()
       }
