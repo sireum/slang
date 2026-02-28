@@ -295,7 +295,7 @@ forExp: YIELD annot? forRange commaForRange* ARROW annot? rhs ;
 
 defAnon: BACKSLASH mod* defParams annot? rhs ;
 
-ite: QUESTION exp COLON exp COLON exp ;
+ite: QUESTION exp COLON exp ELSE exp ;
 
 colonType: COLON type ;
 
@@ -371,7 +371,7 @@ typeSuffix: ARROW annot? type1 ;
 
 type1: parenType | type0 type0Suffix* ;
 
-parenType: LPAREN typeParenArgs COMMA? RPAREN ;
+parenType: LPAREN typeParenArgs? COMMA? RPAREN ;
 
 type0Suffix: ( OP | SYMBOL ) type0 ;
 

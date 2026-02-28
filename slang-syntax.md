@@ -95,7 +95,7 @@ The LL(2) syntax differs from Scala-based syntax primarily in:
 | **Apply** | `x(i)` | `x(i)` | `Exp.Invoke(ident.id="apply")` |
 | **Binary** | `a + b` | `a + b` | `Exp.Binary` |
 | **Unary** | `-x`, `!x` | `-x`, `!x` | `Exp.Unary` |
-| **If exp (ternary)** | `if (c) t else e` | `? c: t : e` | `Exp.If` |
+| **If exp (ternary)** | `if (c) t else e` | `? c: t else e` | `Exp.If` |
 | **Tuple** | `(a, b)` | `(a, b)` | `Exp.Tuple` |
 | **This** | `this` | `this` | `Exp.This` |
 | **Super** | `super` | `super` | `Exp.Super` |

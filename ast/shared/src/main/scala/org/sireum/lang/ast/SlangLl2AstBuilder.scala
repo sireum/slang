@@ -1196,8 +1196,13 @@ object SlangLl2AstBuilder {
   }
 
   def buildParenType(node: ParseTree.Node, reporter: message.Reporter): AST.Type = {
-    // parenType: LPAREN typeParenArgs COMMA? RPAREN
-    val argsNode = findChild(node, "typeParenArgs").get
+    // parenType: LPAREN typeParenArgs? COMMA? RPAREN
+    val argsNodeOpt = findChild(node, "typeParenArgs")
+    if (argsNodeOpt.isEmpty) {
+      // Empty parens () — used as zero-arg function type: () => R
+      return AST.Type.Tuple(args = ISZ(), attr = typedAttr(node))
+    }
+    val argsNode = argsNodeOpt.get
     // typeParenArgs: annot? type commaAnnotType* | namedType commaNamedType*
 
     // Check for by-name type: if annotated and only one type => Type.Fun(isByName = T)
@@ -1486,7 +1491,7 @@ object SlangLl2AstBuilder {
   }
 
   def buildIte(node: ParseTree.Node, reporter: message.Reporter): AST.Exp = {
-    // ite: QUESTION exp COLON exp COLON exp
+    // ite: QUESTION exp COLON exp ELSE exp
     val exps = findChildren(node, "exp")
     val cond = buildExpTop(exps(0), reporter)
     val thenExp = buildExpTop(exps(1), reporter)
