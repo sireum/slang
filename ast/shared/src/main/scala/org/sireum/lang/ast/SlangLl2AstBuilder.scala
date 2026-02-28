@@ -1149,22 +1149,34 @@ object SlangLl2AstBuilder {
   // ─── type ──────────────────────────────────────────────────────────
 
   def buildType(node: ParseTree.Node, reporter: message.Reporter): AST.Type = {
-    // type: type1 typeSuffix*
+    // type: type1 typeSuffix*  (=> is right-associative: Z => Z => Z  ≡  Z => (Z => Z))
     val type1Node = findChild(node, "type1").get
     val typeSuffixes = findChildren(node, "typeSuffix")
-    var result = buildType1(type1Node, reporter)
+    if (typeSuffixes.isEmpty) {
+      return buildType1(type1Node, reporter)
+    }
+    // Collect all type1 nodes and suffix metadata for right-associative fold
+    var types = ISZ(buildType1(type1Node, reporter))
+    var pures = ISZ[B]()
+    var suffixNodes = ISZ[ParseTree.Node]()
     for (ts <- typeSuffixes) {
-      // typeSuffix: ARROW annot? type1
-      val annotOpt = findChild(ts, "annot")
-      val isPure = annotOpt.nonEmpty
-      val retType1 = findChild(ts, "type1").get
-      val retType = buildType1(retType1, reporter)
-      result match {
+      pures = pures :+ findChild(ts, "annot").nonEmpty
+      suffixNodes = suffixNodes :+ ts
+      types = types :+ buildType1(findChild(ts, "type1").get, reporter)
+    }
+    // Right fold: start from the last return type and work backwards
+    var result = types(types.size - 1)
+    var i = types.size - 2
+    while (i >= 0) {
+      val isPure = pures(i)
+      val ts = suffixNodes(i)
+      types(i) match {
         case tupleResult: AST.Type.Tuple =>
-          result = AST.Type.Fun(isPure = isPure, isByName = F, args = tupleResult.args, ret = retType, attr = typedAttr(ts))
+          result = AST.Type.Fun(isPure = isPure, isByName = F, args = tupleResult.args, ret = result, attr = typedAttr(ts))
         case _ =>
-          result = AST.Type.Fun(isPure = isPure, isByName = F, args = ISZ(result), ret = retType, attr = typedAttr(ts))
+          result = AST.Type.Fun(isPure = isPure, isByName = F, args = ISZ(types(i)), ret = result, attr = typedAttr(ts))
       }
+      i = i - 1
     }
     return result
   }
@@ -2233,9 +2245,8 @@ object SlangLl2AstBuilder {
   }
 
   def buildDefAnon(node: ParseTree.Node, reporter: message.Reporter): AST.Exp.Fun = {
-    // defAnon: DEF mod* defParams colonType? DOT annot? rhs
+    // defAnon: BACKSLASH mod* defParams annot? rhs
     val defParamsOpt = findChild(node, "defParams")
-    val colonTypeOpt = findChild(node, "colonType")
     val rhsNode = findChild(node, "rhs").get
 
     var params = ISZ[AST.Exp.Fun.Param]()
@@ -2729,15 +2740,15 @@ object SlangLl2AstBuilder {
   // ─── varPattern ────────────────────────────────────────────────────
 
   def buildVarPattern(node: ParseTree.Node, reporter: message.Reporter): AST.Stmt.VarPattern = {
-    // varPattern: VAR pattern0 colonType1? ASSIGN annot? rhs
+    // varPattern: VAR pattern0 colonType? ASSIGN annot? rhs
     val varLeaf = findLeafByRule(node, "VAR").get
     val isVal = varLeaf.text == "val"
     val pattern = buildPattern0(findChild(node, "pattern0").get, reporter)
-    val colonTypeOpt = findChild(node, "colonType1")
+    val colonTypeOpt = findChild(node, "colonType")
     val tipeOpt: Option[AST.Type] = colonTypeOpt match {
       case Some(ct) =>
-        val type1Node = findChild(ct, "type1").get
-        Some(buildType1(type1Node, reporter))
+        val typeNode = findChild(ct, "type").get
+        Some(buildType(typeNode, reporter))
       case _ => None()
     }
     val rhsNode = findChild(node, "rhs").get

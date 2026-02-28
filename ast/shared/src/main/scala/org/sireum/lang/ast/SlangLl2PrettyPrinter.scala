@@ -143,7 +143,7 @@ object SlangLl2PrettyPrinter {
         } else {
           halt("TODO: $o")
         }
-      case o: AST.Exp.Fun => st"def (${(for (p <- o.params) yield st"${if (p.idOpt.nonEmpty) p.idOpt.get.value else "_"}${if (p.tipeOpt.nonEmpty) st": ${printType(p.tipeOpt.get)}" else st""}", ", ")}). ${printAssignExp(o.exp)}"
+      case o: AST.Exp.Fun => st"\\(${(for (p <- o.params) yield st"${if (p.idOpt.nonEmpty) p.idOpt.get.value else "_"}${if (p.tipeOpt.nonEmpty) st": ${printType(p.tipeOpt.get)}" else st""}", ", ")}) ${printAssignExp(o.exp)}"
       case o: AST.Exp.Binary => printBinary(o)
       case o: AST.Exp.Eta => st"${printExp(o.ref.asExp)} _"
       case o: AST.Exp.ForYield => st"yield ${(for (g <- o.enumGens) yield printEnumGen(g), ", ")} => ${printExp(o.exp)}"

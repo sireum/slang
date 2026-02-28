@@ -159,7 +159,7 @@ expStmt: exp0 access+ annot? assignSuffix? ;
 
 doStmt: DO annot? ( exp | mod* block ) ;
 
-varPattern: VAR pattern0 colonType1? ASSIGN annot? rhs ;
+varPattern: VAR pattern0 colonType? ASSIGN annot? rhs ;
 
 rhs: exp | block | ifStmt | matchStmt ;
 
@@ -293,7 +293,7 @@ ifExp: IF exp ;
 
 forExp: YIELD annot? forRange commaForRange* ARROW annot? rhs ;
 
-defAnon: DEF mod* defParams annot? rhs ;
+defAnon: BACKSLASH mod* defParams annot? rhs ;
 
 ite: QUESTION exp COLON exp COLON exp ;
 
@@ -412,6 +412,8 @@ ELSE:       'else'        ; FOR:        'for'         ; IF:         'if'        
 MATCH:      'match'       ; PACKAGE:    'package'     ; RETURN:     'return'      ; SUPER:      'super'       ;
 THIS:       'this'        ; TRUE:       'true'        ; TYPE:       'type'        ; WHILE:      'while'       ;
 YIELD:      'yield'       ; VAR:        'val' | 'var' ; HALT:       'halt'        ; NULL:       'null'        ;
+
+BACKSLASH:  '\\'          ;
 
 SYMBOL: '\\' IDF ;
 

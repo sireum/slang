@@ -100,7 +100,7 @@ The LL(2) syntax differs from Scala-based syntax primarily in:
 | **This** | `this` | `this` | `Exp.This` |
 | **Super** | `super` | `super` | `Exp.Super` |
 | **Eta** | `f _` | `f _` | `Exp.Eta` |
-| **Lambda** | `(x: Z) => x + 1` | `def (x: Z). x + 1` | `Exp.Fun` |
+| **Lambda** | `(x: Z) => x + 1` | `\(x: Z) x + 1` | `Exp.Fun` |
 | **For-yield** | `for (x <- xs) yield f(x)` | `yield x: xs => f(x)` | `Exp.ForYield` |
 | **For-yield range** | `for (i <- 0 until n) yield f(i)` | `yield i: 0 ..< n => f(i)` | `Exp.ForYield` |
 | **Quant forall type** | `∀((x: T) => P(x))` | `∀ x: T => P(x)` | `Exp.QuantType` |
