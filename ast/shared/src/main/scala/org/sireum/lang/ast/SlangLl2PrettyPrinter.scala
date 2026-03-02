@@ -135,7 +135,7 @@ object SlangLl2PrettyPrinter {
       case o: AST.Exp.TypeCond => halt(s"TODO: $o")
       case o: AST.Exp.RS =>
         st"${if (o.rightToLeft) "~" else ""}RS(${(for (r <- o.refs) yield printExp(r.asExp), ", ")})"
-      case o: AST.Exp.StrictPureBlock => st"@${printAssignExp(o.block)}"
+      case o: AST.Exp.StrictPureBlock => st"\\${printAssignExp(o.block)}"
       case o: AST.Exp.StringInterpolate =>
         if (T) {//ops.ISZOps(o.lits).forall((s: AST.Exp.LitString) => !ops.StringOps(s.value).contains("\n"))) {
           if (o.lits.size == 1) st"""${o.prefix}"${o.lits(0).prettyST}""""
@@ -181,7 +181,10 @@ object SlangLl2PrettyPrinter {
       case o: AST.ProofAst.StepId.Num => o.prettyST
       case o: AST.ProofAst.StepId.Str => o.prettyST
     }
-    @strictpure def printAssignExp(o: AST.AssignExp): ST = printStmt(T, o.asStmt)
+    @strictpure def printAssignExp(o: AST.AssignExp): ST = o match {
+      case o: AST.Stmt.Expr => printExp(o.exp)
+      case _ => printStmt(T, o.asStmt)
+    }
     @strictpure def printWitnesses(o: AST.ProofAst.Step.Justification): ST = if (o.witnesses.nonEmpty) st" ${(for (w <- o.witnesses) yield w.prettyST, " ")}" else st""
     @strictpure def isNatDedId(id: String): B = id match {
       case string"Subst_>" => T
@@ -427,8 +430,9 @@ object SlangLl2PrettyPrinter {
             |  ${(for (element <- o.elements) yield element.value, lineSep)}
             |}"""
       case o: AST.Stmt.Expr =>
-        if (!isExp && shouldAddDo(o.exp)) st"do ${printExp(o.exp)}"
-        else printExp(o.exp)
+        val expST = printExp(o.exp)
+        if (!isExp && shouldAddDo(o.exp)) st"do $expST"
+        else if (isExp) st"\\$expST" else expST
       case o: AST.Stmt.Fact =>
         val tparams: ST = printTypeParams(o.typeParams)
         val desc: ST = o.descOpt match {

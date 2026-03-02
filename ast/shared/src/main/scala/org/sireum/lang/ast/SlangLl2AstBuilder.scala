@@ -859,48 +859,67 @@ object SlangLl2AstBuilder {
     var isIndex = F
     var index: Z = 0
 
+    def processSubZRangeNamedArg(namedArg: ParseTree.Node): Unit = {
+      // namedArg: ID ASSIGN annot? rhs
+      // ID leaf is the arg name; rhs node is the value
+      val argName = idText(namedArg)
+      val rhsNode = findChild(namedArg, "rhs")
+      rhsNode match {
+        case Some(rhs) =>
+          val expNode = findChild(rhs, "exp")
+          expNode match {
+            case Some(en) =>
+              val e = buildExp(en, reporter)
+              val zValOpt: Option[Z] = e match {
+                case e: AST.Exp.LitZ => Some(e.value)
+                case e: AST.Exp.Unary if e.op == AST.Exp.UnaryOp.Minus =>
+                  e.exp match {
+                    case inner: AST.Exp.LitZ => Some(-inner.value)
+                    case _ => None()
+                  }
+                case _ => None()
+              }
+              argName.native match {
+                case "min" =>
+                  hasMin = T
+                  zValOpt match {
+                    case Some(v) => min = v
+                    case _ =>
+                  }
+                case "max" =>
+                  hasMax = T
+                  zValOpt match {
+                    case Some(v) => max = v
+                    case _ =>
+                  }
+                case "index" =>
+                  isIndex = T
+                  zValOpt match {
+                    case Some(v) => index = v
+                    case _ =>
+                  }
+                case _ =>
+              }
+            case _ =>
+          }
+        case _ =>
+      }
+    }
+
     for (pair <- rangeMod.args) {
       val argsChildren = pair._2
       for (c <- argsChildren) {
         c match {
           case c: ParseTree.Node if c.ruleName == "namedArg" =>
-            val argName = idText(c)
-            val assignSuffix = findChild(c, "assignSuffix")
-            assignSuffix match {
-              case Some(as) =>
-                val rhsNode = findChild(as, "rhs")
-                rhsNode match {
-                  case Some(rhs) =>
-                    val expNode = findChild(rhs, "exp")
-                    expNode match {
-                      case Some(en) =>
-                        val e = buildExp(en, reporter)
-                        argName.native match {
-                          case "min" =>
-                            hasMin = T
-                            e match {
-                              case e: AST.Exp.LitZ => min = e.value
-                              case _ =>
-                            }
-                          case "max" =>
-                            hasMax = T
-                            e match {
-                              case e: AST.Exp.LitZ => max = e.value
-                              case _ =>
-                            }
-                          case "index" =>
-                            isIndex = T
-                            e match {
-                              case e: AST.Exp.LitZ => index = e.value
-                              case _ =>
-                            }
-                          case _ =>
-                        }
-                      case _ =>
-                    }
-                  case _ =>
-                }
-              case _ =>
+            processSubZRangeNamedArg(c)
+          case c: ParseTree.Node if c.ruleName == "namedArgSuffix" =>
+            // namedArgSuffix: COMMA namedArg — look for namedArg inside
+            for (inner <- c.children) {
+              inner match {
+                case inner: ParseTree.Node if inner.ruleName == "namedArg" =>
+                  processSubZRangeNamedArg(inner)
+                case _ =>
+              }
             }
           case _ =>
         }
@@ -933,58 +952,77 @@ object SlangLl2AstBuilder {
     var isIndex = F
     var index: Z = 0
 
+    def processSubZBitsNamedArg(namedArg: ParseTree.Node): Unit = {
+      // namedArg: ID ASSIGN annot? rhs
+      // ID leaf is the arg name; rhs node is the value
+      val argName = idText(namedArg)
+      val rhsNode = findChild(namedArg, "rhs")
+      rhsNode match {
+        case Some(rhs) =>
+          val expNode = findChild(rhs, "exp")
+          expNode match {
+            case Some(en) =>
+              val e = buildExp(en, reporter)
+              val zValOpt: Option[Z] = e match {
+                case e: AST.Exp.LitZ => Some(e.value)
+                case e: AST.Exp.Unary if e.op == AST.Exp.UnaryOp.Minus =>
+                  e.exp match {
+                    case inner: AST.Exp.LitZ => Some(-inner.value)
+                    case _ => None()
+                  }
+                case _ => None()
+              }
+              argName.native match {
+                case "signed" =>
+                  e match {
+                    case e: AST.Exp.LitB => isSigned = e.value
+                    case _ =>
+                  }
+                case "width" =>
+                  zValOpt match {
+                    case Some(v) => bitWidth = v
+                    case _ =>
+                  }
+                case "min" =>
+                  hasMin = T
+                  zValOpt match {
+                    case Some(v) => min = v
+                    case _ =>
+                  }
+                case "max" =>
+                  hasMax = T
+                  zValOpt match {
+                    case Some(v) => max = v
+                    case _ =>
+                  }
+                case "index" =>
+                  isIndex = T
+                  zValOpt match {
+                    case Some(v) => index = v
+                    case _ =>
+                  }
+                case _ =>
+              }
+            case _ =>
+          }
+        case _ =>
+      }
+    }
+
     for (pair <- bitsMod.args) {
       val argsChildren = pair._2
       for (c <- argsChildren) {
         c match {
           case c: ParseTree.Node if c.ruleName == "namedArg" =>
-            val argName = idText(c)
-            val rhsOpt = findChild(c, "assignSuffix")
-            rhsOpt match {
-              case Some(as) =>
-                val rhs = findChild(as, "rhs")
-                rhs match {
-                  case Some(rhsN) =>
-                    val expOpt = findChild(rhsN, "exp")
-                    expOpt match {
-                      case Some(en) =>
-                        val e = buildExp(en, reporter)
-                        argName.native match {
-                          case "signed" =>
-                            e match {
-                              case e: AST.Exp.LitB => isSigned = e.value
-                              case _ =>
-                            }
-                          case "width" =>
-                            e match {
-                              case e: AST.Exp.LitZ => bitWidth = e.value
-                              case _ =>
-                            }
-                          case "min" =>
-                            hasMin = T
-                            e match {
-                              case e: AST.Exp.LitZ => min = e.value
-                              case _ =>
-                            }
-                          case "max" =>
-                            hasMax = T
-                            e match {
-                              case e: AST.Exp.LitZ => max = e.value
-                              case _ =>
-                            }
-                          case "index" =>
-                            isIndex = T
-                            e match {
-                              case e: AST.Exp.LitZ => index = e.value
-                              case _ =>
-                            }
-                          case _ =>
-                        }
-                      case _ =>
-                    }
-                  case _ =>
-                }
-              case _ =>
+            processSubZBitsNamedArg(c)
+          case c: ParseTree.Node if c.ruleName == "namedArgSuffix" =>
+            // namedArgSuffix: COMMA namedArg — look for namedArg inside
+            for (inner <- c.children) {
+              inner match {
+                case inner: ParseTree.Node if inner.ruleName == "namedArg" =>
+                  processSubZBitsNamedArg(inner)
+                case _ =>
+              }
             }
           case _ =>
         }
@@ -1881,16 +1919,9 @@ object SlangLl2AstBuilder {
   }
 
   def buildPureBlock(node: ParseTree.Node, reporter: message.Reporter): AST.Exp.StrictPureBlock = {
-    // pureBlock: AT LBRACE stmt+ RBRACE
-    var stmts = ISZ[AST.Stmt]()
-    val stmtNodes = findChildren(node, "stmt")
-    for (s <- stmtNodes) {
-      stmts = stmts :+ buildStmt(s, reporter)
-    }
-    val block = AST.Stmt.Block(
-      contract = AST.MethodContract.Simple.empty,
-      body = AST.Body(stmts = stmts, undecls = ISZ()),
-      attr = attr(node))
+    // pureBlock: BACKSLASH block
+    val blockNode = findChild(node, "block").get
+    val block = buildBlock(blockNode, reporter)
     return AST.Exp.StrictPureBlock(block = block, attr = typedAttr(node))
   }
 
@@ -2653,14 +2684,6 @@ object SlangLl2AstBuilder {
       case Some(e) => return buildExp(e, reporter)
       case _ =>
     }
-    // For block/if/match, wrap in appropriate expression
-    val blockOpt = findChild(node, "block")
-    blockOpt match {
-      case Some(blk) =>
-        val block = buildBlock(blk, reporter)
-        halt(st"Block as expression not directly supported; use buildRhsAsAssignExp".render)
-      case _ =>
-    }
     halt(st"Could not build rhs as exp from ${node.toST.render}".render)
   }
 
@@ -2778,7 +2801,7 @@ object SlangLl2AstBuilder {
   }
 
   def buildDefCommon(node: ParseTree.Node, reporter: message.Reporter): AST.Stmt = {
-    // defDefn/defStmt: DEF mod* defId typeParams? defParams? defnTypeSuffix? assignSuffix?
+    // defDefn/defStmt: DEF mod* defId typeParams? defParams? defnTypeSuffix? defDefnSuffix?
     val mods = buildMods(findChildren(node, "mod"))
     val defIdNode = findChild(node, "defId").get
     val idLeaf = firstLeaf(defIdNode)
@@ -2806,18 +2829,20 @@ object SlangLl2AstBuilder {
       case _ => None()
     }
 
-    val assignSuffixOpt = findChild(node, "assignSuffix")
+    // defDefn/defStmt: ... defDefnSuffix?
+    // defDefnSuffix: ASSIGN annot? ( exp | block | ifStmt | matchStmt )
+    val bodySrcOpt: Option[ParseTree.Node] = findChild(node, "defDefnSuffix")
 
     // Determine what kind of def based on mods
     if (hasMod(mods, "fact")) {
-      return buildFact(id, typeParams, hasParams, params, assignSuffixOpt, node, reporter)
+      return buildFact(id, typeParams, hasParams, params, bodySrcOpt, node, reporter)
     }
     if (hasMod(mods, "theorem") || hasMod(mods, "lemma")) {
       val isLemma = hasMod(mods, "lemma")
-      return buildTheorem(isLemma, id, typeParams, hasParams, params, assignSuffixOpt, node, reporter)
+      return buildTheorem(isLemma, id, typeParams, hasParams, params, bodySrcOpt, node, reporter)
     }
     if (hasMod(mods, "inv")) {
-      return buildInv(id, assignSuffixOpt, node, reporter)
+      return buildInv(id, bodySrcOpt, node, reporter)
     }
     if (hasMod(mods, "just")) {
       val justMod = findMod(mods, "just").get
@@ -2912,15 +2937,17 @@ object SlangLl2AstBuilder {
       params = params,
       returnType = returnType)
 
-    val bodyOpt: Option[AST.Body] = assignSuffixOpt match {
-      case Some(as) =>
-        val rhsNode = findChild(as, "rhs").get
-        val blockOpt = findChild(rhsNode, "block")
+    val bodyOpt: Option[AST.Body] = bodySrcOpt match {
+      case Some(srcNode) =>
+        // defDefnSuffix: ASSIGN annot? ( exp | block | ifStmt | matchStmt )
+        val blockOpt: Option[AST.Stmt.Block] = findChild(srcNode, "block") match {
+          case Some(blk) => Some(buildBlock(blk, reporter))
+          case _ => None()
+        }
         blockOpt match {
-          case Some(blk) =>
-            val block = buildBlock(blk, reporter)
+          case Some(block) =>
             if (purity == AST.Purity.StrictPure || purity == AST.Purity.Abs) {
-              val expAttr = attr(rhsNode)
+              val expAttr = attr(srcNode)
               val rId = AST.Id("_r_", expAttr)
               val varStmt = AST.Stmt.Var(
                 isSpec = F,
@@ -2930,28 +2957,82 @@ object SlangLl2AstBuilder {
                 initOpt = Some(block),
                 attr = AST.ResolvedAttr(expAttr.posOpt, None(), None()))
               val ident = AST.Exp.Ident(id = rId, attr = AST.ResolvedAttr(expAttr.posOpt, None(), None()))
-              val retStmt = AST.Stmt.Return(expOpt = Some(ident), attr = typedAttr(rhsNode))
+              val retStmt = AST.Stmt.Return(expOpt = Some(ident), attr = typedAttr(srcNode))
               Some(AST.Body(stmts = ISZ(varStmt, retStmt), undecls = ISZ()))
             } else {
               Some(block.body)
             }
           case _ =>
-            val exp = buildRhsAsAssignExp(rhsNode, reporter)
-            if (purity == AST.Purity.StrictPure || purity == AST.Purity.Abs) {
-              val expAttr = attr(rhsNode)
-              val rId = AST.Id("_r_", expAttr)
-              val varStmt = AST.Stmt.Var(
-                isSpec = F,
-                isVal = T,
-                id = rId,
-                tipeOpt = Some(returnType),
-                initOpt = Some(exp),
-                attr = AST.ResolvedAttr(expAttr.posOpt, None(), None()))
-              val ident = AST.Exp.Ident(id = rId, attr = AST.ResolvedAttr(expAttr.posOpt, None(), None()))
-              val retStmt = AST.Stmt.Return(expOpt = Some(ident), attr = typedAttr(rhsNode))
-              Some(AST.Body(stmts = ISZ(varStmt, retStmt), undecls = ISZ()))
-            } else {
-              Some(AST.Body(stmts = ISZ(exp.asStmt), undecls = ISZ()))
+            // Try exp, ifStmt, matchStmt
+            val expOpt = findChild(srcNode, "exp")
+            expOpt match {
+              case Some(en) =>
+                val exp = AST.Stmt.Expr(exp = buildExp(en, reporter), attr = typedAttr(en))
+                if (purity == AST.Purity.StrictPure || purity == AST.Purity.Abs) {
+                  val expAttr = attr(srcNode)
+                  val rId = AST.Id("_r_", expAttr)
+                  val varStmt = AST.Stmt.Var(
+                    isSpec = F,
+                    isVal = T,
+                    id = rId,
+                    tipeOpt = Some(returnType),
+                    initOpt = Some(exp),
+                    attr = AST.ResolvedAttr(expAttr.posOpt, None(), None()))
+                  val ident = AST.Exp.Ident(id = rId, attr = AST.ResolvedAttr(expAttr.posOpt, None(), None()))
+                  val retStmt = AST.Stmt.Return(expOpt = Some(ident), attr = typedAttr(srcNode))
+                  Some(AST.Body(stmts = ISZ(varStmt, retStmt), undecls = ISZ()))
+                } else {
+                  Some(AST.Body(stmts = ISZ(exp), undecls = ISZ()))
+                }
+              case _ =>
+                val ifStmtOpt: Option[AST.Stmt] = findChild(srcNode, "ifStmt") match {
+                  case Some(is) => Some(buildIfStmt(is, reporter))
+                  case _ => None()
+                }
+                ifStmtOpt match {
+                  case Some(ifStmt) =>
+                    if (purity == AST.Purity.StrictPure || purity == AST.Purity.Abs) {
+                      val expAttr = attr(srcNode)
+                      val rId = AST.Id("_r_", expAttr)
+                      val varStmt = AST.Stmt.Var(
+                        isSpec = F,
+                        isVal = T,
+                        id = rId,
+                        tipeOpt = Some(returnType),
+                        initOpt = Some(ifStmt.asInstanceOf[AST.AssignExp]),
+                        attr = AST.ResolvedAttr(expAttr.posOpt, None(), None()))
+                      val ident = AST.Exp.Ident(id = rId, attr = AST.ResolvedAttr(expAttr.posOpt, None(), None()))
+                      val retStmt = AST.Stmt.Return(expOpt = Some(ident), attr = typedAttr(srcNode))
+                      Some(AST.Body(stmts = ISZ(varStmt, retStmt), undecls = ISZ()))
+                    } else {
+                      Some(AST.Body(stmts = ISZ(ifStmt), undecls = ISZ()))
+                    }
+                  case _ =>
+                    val matchStmtOpt: Option[AST.Stmt] = findChild(srcNode, "matchStmt") match {
+                      case Some(ms) => Some(buildMatchStmt(ms, reporter))
+                      case _ => None()
+                    }
+                    matchStmtOpt match {
+                      case Some(matchStmt) =>
+                        if (purity == AST.Purity.StrictPure || purity == AST.Purity.Abs) {
+                          val expAttr = attr(srcNode)
+                          val rId = AST.Id("_r_", expAttr)
+                          val varStmt = AST.Stmt.Var(
+                            isSpec = F,
+                            isVal = T,
+                            id = rId,
+                            tipeOpt = Some(returnType),
+                            initOpt = Some(matchStmt.asInstanceOf[AST.AssignExp]),
+                            attr = AST.ResolvedAttr(expAttr.posOpt, None(), None()))
+                          val ident = AST.Exp.Ident(id = rId, attr = AST.ResolvedAttr(expAttr.posOpt, None(), None()))
+                          val retStmt = AST.Stmt.Return(expOpt = Some(ident), attr = typedAttr(srcNode))
+                          Some(AST.Body(stmts = ISZ(varStmt, retStmt), undecls = ISZ()))
+                        } else {
+                          Some(AST.Body(stmts = ISZ(matchStmt), undecls = ISZ()))
+                        }
+                      case _ => None()
+                    }
+                }
             }
         }
       case _ => None()
@@ -3049,15 +3130,14 @@ object SlangLl2AstBuilder {
     return AST.Param(isHidden = isHidden, id = id, tipe = tipe)
   }
 
-  def buildFact(id: AST.Id, typeParams: ISZ[AST.TypeParam], hasParams: B, params: ISZ[AST.Param], assignSuffixOpt: Option[ParseTree.Node], posTree: ParseTree, reporter: message.Reporter): AST.Stmt.Fact = {
+  def buildFact(id: AST.Id, typeParams: ISZ[AST.TypeParam], hasParams: B, params: ISZ[AST.Param], bodySrcOpt: Option[ParseTree.Node], posTree: ParseTree, reporter: message.Reporter): AST.Stmt.Fact = {
     var claims = ISZ[AST.Exp]()
     var descOpt: Option[AST.Exp.LitString] = None()
     var isFun = hasParams
 
-    assignSuffixOpt match {
-      case Some(as) =>
-        val rhsNode = findChild(as, "rhs").get
-        val expOpt = findChild(rhsNode, "exp")
+    bodySrcOpt match {
+      case Some(srcNode) =>
+        val expOpt = findChild(srcNode, "exp")
         expOpt match {
           case Some(expNode) =>
             val exp = buildExp(expNode, reporter)
@@ -3105,15 +3185,14 @@ object SlangLl2AstBuilder {
       attr = resolvedAttr(posTree))
   }
 
-  def buildTheorem(isLemma: B, id: AST.Id, typeParams: ISZ[AST.TypeParam], hasParams: B, params: ISZ[AST.Param], assignSuffixOpt: Option[ParseTree.Node], posTree: ParseTree, reporter: message.Reporter): AST.Stmt.Theorem = {
+  def buildTheorem(isLemma: B, id: AST.Id, typeParams: ISZ[AST.TypeParam], hasParams: B, params: ISZ[AST.Param], bodySrcOpt: Option[ParseTree.Node], posTree: ParseTree, reporter: message.Reporter): AST.Stmt.Theorem = {
     var claim: AST.Exp = AST.Exp.LitB(value = T, attr = attr(posTree))
     var descOpt: Option[AST.Exp.LitString] = None()
     var isFun = hasParams
 
-    assignSuffixOpt match {
-      case Some(as) =>
-        val rhsNode = findChild(as, "rhs").get
-        val expOpt = findChild(rhsNode, "exp")
+    bodySrcOpt match {
+      case Some(srcNode) =>
+        val expOpt = findChild(srcNode, "exp")
         expOpt match {
           case Some(expNode) =>
             claim = buildExp(expNode, reporter)
@@ -3143,12 +3222,11 @@ object SlangLl2AstBuilder {
       attr = resolvedAttr(posTree))
   }
 
-  def buildInv(id: AST.Id, assignSuffixOpt: Option[ParseTree.Node], posTree: ParseTree, reporter: message.Reporter): AST.Stmt.Inv = {
+  def buildInv(id: AST.Id, bodySrcOpt: Option[ParseTree.Node], posTree: ParseTree, reporter: message.Reporter): AST.Stmt.Inv = {
     var claims = ISZ[AST.Exp]()
-    assignSuffixOpt match {
-      case Some(as) =>
-        val rhsNode = findChild(as, "rhs").get
-        val expOpt = findChild(rhsNode, "exp")
+    bodySrcOpt match {
+      case Some(srcNode) =>
+        val expOpt = findChild(srcNode, "exp")
         expOpt match {
           case Some(expNode) =>
             val exp = buildExp(expNode, reporter)
@@ -3186,25 +3264,11 @@ object SlangLl2AstBuilder {
   }
 
   def buildElse(node: ParseTree.Node, reporter: message.Reporter): AST.Body = {
-    // els: ELSE ( elsIf | block )
-    val elsIfOpt = findChild(node, "elsIf")
-    elsIfOpt match {
-      case Some(ei) =>
-        // elsIf: IF exp annot? block els?
-        val expNode = findChild(ei, "exp").get
-        val cond = buildExp(expNode, reporter)
-        val blockNode = findChild(ei, "block").get
-        val thenBlock = buildBlock(blockNode, reporter)
-        val elsOpt = findChild(ei, "els")
-        val elseBody: AST.Body = elsOpt match {
-          case Some(els) => buildElse(els, reporter)
-          case _ => AST.Body(stmts = ISZ(), undecls = ISZ())
-        }
-        val ifStmt = AST.Stmt.If(
-          cond = cond,
-          thenBody = thenBlock.body,
-          elseBody = elseBody,
-          attr = typedAttr(ei))
+    // els: ELSE ( ifStmt | block )
+    val ifOpt = findChild(node, "ifStmt")
+    ifOpt match {
+      case Some(is) =>
+        val ifStmt = buildIfStmt(is, reporter)
         return AST.Body(stmts = ISZ(ifStmt), undecls = ISZ())
       case _ =>
     }
@@ -3244,15 +3308,19 @@ object SlangLl2AstBuilder {
   }
 
   def buildReturn(node: ParseTree.Node, reporter: message.Reporter): AST.Stmt.Return = {
-    // ret: ( RETURN | HALT ) annot? rhs?
+    // ret: ( RETURN | HALT ) annot? rhs? | BACKSLASH annot? exp
+    val backslashOpt = findLeafByRule(node, "BACKSLASH")
+    backslashOpt match {
+      case Some(_) =>
+        // BACKSLASH annot? exp — value-producing return expression
+        val expNode = findChild(node, "exp").get
+        val exp = buildExp(expNode, reporter)
+        return AST.Stmt.Return(expOpt = Some(exp), attr = typedAttr(node))
+      case _ =>
+    }
     val rhsOpt = findChild(node, "rhs")
     val expOpt: Option[AST.Exp] = rhsOpt match {
-      case Some(rhs) =>
-        val expNode = findChild(rhs, "exp")
-        expNode match {
-          case Some(en) => Some(buildExp(en, reporter))
-          case _ => None()
-        }
+      case Some(rhs) => Some(buildRhs(rhs, reporter))
       case _ => None()
     }
     val isHalt = findLeafByRule(node, "HALT").nonEmpty

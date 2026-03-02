@@ -127,7 +127,9 @@ varDefn: VAR mod* ID colonType? annot? assignSuffix? ;
 
 assignSuffix: ASSIGN annot? rhs ;
 
-defDefn: DEF mod* defId typeParams? defParams? defnTypeSuffix? assignSuffix? ;
+defDefn: DEF mod* defId typeParams? defParams? defnTypeSuffix? defDefnSuffix? ;
+
+defDefnSuffix: ASSIGN annot? ( exp | block | ifStmt | matchStmt );	
 
 defnTypeSuffix: COLON type annot? ;
 
@@ -145,7 +147,7 @@ stmt: expOrAssignStmt | varPattern | ifStmt | whileStmt | forStmt | deduceStmt |
 
 assertumeStmt: ( ASSERT | ASSUME ) exp commaExp? ;
 
-defStmt: DEF mod* defId typeParams? defParams? defnTypeSuffix? assignSuffix? ;
+defStmt: DEF mod* defId typeParams? defParams? defnTypeSuffix? defDefnSuffix? ;
 
 expOrAssignStmt: idStmt | expStmt | doStmt ;
 
@@ -169,11 +171,9 @@ block: LBRACE annot? blockContent RBRACE ;
 
 blockContent: stmt* ret? ;
 
-ret: ( RETURN | HALT ) annot? rhs? ;
+ret: ( RETURN | HALT ) annot? rhs? | BACKSLASH annot? exp ;
 
-els: ELSE ( elsIf | block ) ;
-
-elsIf: IF exp annot? block els? ;
+els: ELSE ( ifStmt | block ) ;
 
 whileStmt: WHILE exp annot? block ;
 
@@ -235,7 +235,7 @@ exp1: OP? ( exp0 | paren ) ;
 
 exp0: idExp | thisExp | superExp | lit | interp | pureBlock | jsonLit ;
 
-pureBlock: AT LBRACE stmt+ RBRACE ;
+pureBlock: BACKSLASH block ;
 
 idExp: ID typeArgs? ;
 
