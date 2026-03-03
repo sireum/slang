@@ -81,6 +81,10 @@ object MIRTransformer {
 
   val PostResultIRExpString: MOption[IR.Exp] = MNone()
 
+  val PreResultIRExpStringInterpolate: PreResult[IR.Exp] = PreResult(T, MNone())
+
+  val PostResultIRExpStringInterpolate: MOption[IR.Exp] = MNone()
+
   val PreResultIRExpTemp: PreResult[IR.Exp] = PreResult(T, MNone())
 
   val PostResultIRExpTemp: MOption[IR.Exp] = MNone()
@@ -371,6 +375,7 @@ import MIRTransformer._
       case o: IR.Exp.F64 => return preIRExpF64(o)
       case o: IR.Exp.R => return preIRExpR(o)
       case o: IR.Exp.String => return preIRExpString(o)
+      case o: IR.Exp.StringInterpolate => return preIRExpStringInterpolate(o)
       case o: IR.Exp.Temp => return preIRExpTemp(o)
       case o: IR.Exp.LocalVarRef => return preIRExpLocalVarRef(o)
       case o: IR.Exp.GlobalVarRef => return preIRExpGlobalVarRef(o)
@@ -411,6 +416,10 @@ import MIRTransformer._
 
   def preIRExpString(o: IR.Exp.String): PreResult[IR.Exp] = {
     return PreResultIRExpString
+  }
+
+  def preIRExpStringInterpolate(o: IR.Exp.StringInterpolate): PreResult[IR.Exp] = {
+    return PreResultIRExpStringInterpolate
   }
 
   def preIRExpTemp(o: IR.Exp.Temp): PreResult[IR.Exp] = {
@@ -879,6 +888,7 @@ import MIRTransformer._
       case o: IR.Exp.F64 => return postIRExpF64(o)
       case o: IR.Exp.R => return postIRExpR(o)
       case o: IR.Exp.String => return postIRExpString(o)
+      case o: IR.Exp.StringInterpolate => return postIRExpStringInterpolate(o)
       case o: IR.Exp.Temp => return postIRExpTemp(o)
       case o: IR.Exp.LocalVarRef => return postIRExpLocalVarRef(o)
       case o: IR.Exp.GlobalVarRef => return postIRExpGlobalVarRef(o)
@@ -919,6 +929,10 @@ import MIRTransformer._
 
   def postIRExpString(o: IR.Exp.String): MOption[IR.Exp] = {
     return PostResultIRExpString
+  }
+
+  def postIRExpStringInterpolate(o: IR.Exp.StringInterpolate): MOption[IR.Exp] = {
+    return PostResultIRExpStringInterpolate
   }
 
   def postIRExpTemp(o: IR.Exp.Temp): MOption[IR.Exp] = {
@@ -1437,6 +1451,13 @@ import MIRTransformer._
         case o2: IR.Exp.String =>
           if (hasChanged)
             MSome(o2)
+          else
+            MNone()
+        case o2: IR.Exp.StringInterpolate =>
+          val r0: MOption[IS[Z, IR.Exp]] = transformISZ(o2.args, transformIRExp _)
+          val r1: MOption[Typed] = transformTyped(o2.tipe)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(args = r0.getOrElse(o2.args), tipe = r1.getOrElse(o2.tipe)))
           else
             MNone()
         case o2: IR.Exp.Temp =>

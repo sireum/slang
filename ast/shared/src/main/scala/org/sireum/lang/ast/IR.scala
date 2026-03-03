@@ -97,6 +97,28 @@ object IR {
       @strictpure def depth: Z = 1
     }
 
+    @datatype class StringInterpolate(val prefix: org.sireum.String,
+                                      val lits: ISZ[org.sireum.String],
+                                      val args: ISZ[Exp],
+                                      val tipe: Typed,
+                                      val pos: Position) extends Exp {
+      @strictpure def prettyRawST(p: Printer): ST = st"""${prefix}"${(lits, "$$")}" """
+      @pure def numOfTemps: Z = {
+        var r: Z = 0
+        for (arg <- args) {
+          r = r + arg.numOfTemps
+        }
+        return r
+      }
+      @pure def depth: Z = {
+        var r: Z = 0
+        for (arg <- args) {
+          r = max(r, arg.depth)
+        }
+        return r + 1
+      }
+    }
+
     @datatype class Temp(val n: Z, val tipe: Typed, val pos: Position) extends Exp {
       @strictpure def prettyRawST(p: Printer): ST = st"($$$n: $tipe)"
       @strictpure def numOfTemps: Z = 1

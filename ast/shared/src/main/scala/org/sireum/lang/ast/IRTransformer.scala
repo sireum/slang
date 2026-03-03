@@ -57,6 +57,7 @@ object IRTransformer {
         case o: IR.Exp.F64 => return preIRExpF64(ctx, o)
         case o: IR.Exp.R => return preIRExpR(ctx, o)
         case o: IR.Exp.String => return preIRExpString(ctx, o)
+        case o: IR.Exp.StringInterpolate => return preIRExpStringInterpolate(ctx, o)
         case o: IR.Exp.Temp => return preIRExpTemp(ctx, o)
         case o: IR.Exp.LocalVarRef => return preIRExpLocalVarRef(ctx, o)
         case o: IR.Exp.GlobalVarRef => return preIRExpGlobalVarRef(ctx, o)
@@ -96,6 +97,10 @@ object IRTransformer {
     }
 
     @pure def preIRExpString(ctx: Context, o: IR.Exp.String): PreResult[Context, IR.Exp] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRExpStringInterpolate(ctx: Context, o: IR.Exp.StringInterpolate): PreResult[Context, IR.Exp] = {
       return PreResult(ctx, T, None())
     }
 
@@ -565,6 +570,7 @@ object IRTransformer {
         case o: IR.Exp.F64 => return postIRExpF64(ctx, o)
         case o: IR.Exp.R => return postIRExpR(ctx, o)
         case o: IR.Exp.String => return postIRExpString(ctx, o)
+        case o: IR.Exp.StringInterpolate => return postIRExpStringInterpolate(ctx, o)
         case o: IR.Exp.Temp => return postIRExpTemp(ctx, o)
         case o: IR.Exp.LocalVarRef => return postIRExpLocalVarRef(ctx, o)
         case o: IR.Exp.GlobalVarRef => return postIRExpGlobalVarRef(ctx, o)
@@ -604,6 +610,10 @@ object IRTransformer {
     }
 
     @pure def postIRExpString(ctx: Context, o: IR.Exp.String): TPostResult[Context, IR.Exp] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRExpStringInterpolate(ctx: Context, o: IR.Exp.StringInterpolate): TPostResult[Context, IR.Exp] = {
       return TPostResult(ctx, None())
     }
 
@@ -1163,6 +1173,13 @@ import IRTransformer._
             TPostResult(preR.ctx, Some(o2))
           else
             TPostResult(preR.ctx, None())
+        case o2: IR.Exp.StringInterpolate =>
+          val r0: TPostResult[Context, IS[Z, IR.Exp]] = transformISZ(preR.ctx, o2.args, transformIRExp _)
+          val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args), tipe = r1.resultOpt.getOrElse(o2.tipe))))
+          else
+            TPostResult(r1.ctx, None())
         case o2: IR.Exp.Temp =>
           val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
           if (hasChanged || r0.resultOpt.nonEmpty)

@@ -918,7 +918,14 @@ object IRTranslator {
           val value = Z(exp.lits(0).value).get
           return norm3AC(AST.IR.Exp.Int(t, value, pos))
         } else {
-          halt(s"TODO: $exp")
+          val irArgs: ISZ[AST.IR.Exp] = for (arg <- exp.args) yield translateExp(arg)
+          val litStrings: ISZ[String] = for (lit <- exp.lits) yield lit.value
+          return norm3AC(AST.IR.Exp.StringInterpolate(
+            prefix = exp.prefix,
+            lits = litStrings,
+            args = irArgs,
+            tipe = exp.typedOpt.get,
+            pos = pos))
         }
       case _: AST.Exp.This => return thiz(pos)
       case exp: AST.Exp.Ident =>
