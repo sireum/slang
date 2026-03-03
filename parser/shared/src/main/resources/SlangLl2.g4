@@ -51,7 +51,7 @@ mainMember: stmt | typeDefn ;
 
 pkg: PACKAGE mod* name? annot? imprt* ( member* | pkgSuffix ) ;
 
-pkgSuffix: LBRACE mainMember* RBRACE ;
+pkgSuffix: LBRACE member* RBRACE ;
 
 init: TO LBRACE annot? stmt* RBRACE ;
 
@@ -116,13 +116,15 @@ varDefn: VAR mod* ID colonType? annot? assignSuffix? ;
 
 assignSuffix: ASSIGN annot? rhs ;
 
-defDefn: DEF mod* defId typeParams? defParams? defnTypeSuffix? assignSuffix? ;
+defDefn: DEF mod* defId typeParams? defParams? defnTypeSuffix? defDefnSuffix? ;
+
+defDefnSuffix: ASSIGN annot? ( exp | block | ifStmt | matchStmt );
 
 defnTypeSuffix: COLON type annot? ;
 
 defId: ID | OP | SYMBOL ;
 
-defParams: LPAREN defParam defParamSuffix? COMMA? RPAREN ;
+defParams: LPAREN ( defParam defParamSuffix? COMMA? )? RPAREN ;
 
 defParam: mod* ID COLON type ;
 
@@ -134,7 +136,7 @@ stmt: expOrAssignStmt | varPattern | ifStmt | whileStmt | forStmt | deduceStmt |
 
 assertumeStmt: ( ASSERT | ASSUME ) exp commaExp? ;
 
-defStmt: DEF mod* defId typeParams? defParams? defnTypeSuffix? assignSuffix? ;
+defStmt: DEF mod* defId typeParams? defParams? defnTypeSuffix? defDefnSuffix? ;
 
 expOrAssignStmt: idStmt | expStmt | doStmt ;
 
@@ -148,7 +150,7 @@ expStmt: exp0 access+ annot? assignSuffix? ;
 
 doStmt: DO annot? ( exp | mod* block ) ;
 
-varPattern: VAR pattern0 colonType1? ASSIGN annot? rhs ;
+varPattern: VAR pattern0 colonType? ASSIGN annot? rhs ;
 
 rhs: exp | block | ifStmt | matchStmt ;
 
@@ -158,11 +160,9 @@ block: LBRACE annot? blockContent RBRACE ;
 
 blockContent: stmt* ret? ;
 
-ret: ( RETURN | HALT ) annot? rhs? ;
+ret: ( RETURN | HALT ) annot? rhs? | BACKSLASH annot? exp ;
 
-els: ELSE ( elsIf | block ) ;
-
-elsIf: IF exp annot? block els? ;
+els: ELSE ( ifStmt | block ) ;
 
 whileStmt: WHILE exp annot? block ;
 
@@ -208,7 +208,7 @@ commaPattern: COMMA pattern ;
 
 commaNamedPattern: COMMA ID ASSIGN pattern ;
 
-exp: exp3 | forExp | defAnon | quant ;
+exp: exp3 | forExp | defAnon | quant | ite ;
 
 exp3: exp2 infixSuffix* ;
 
@@ -224,7 +224,7 @@ exp1: OP? ( exp0 | paren ) ;
 
 exp0: idExp | thisExp | superExp | lit | interp | pureBlock | jsonLit ;
 
-pureBlock: AT LBRACE stmt+ RBRACE ;
+pureBlock: BACKSLASH block ;
 
 idExp: ID typeArgs? ;
 
@@ -242,7 +242,7 @@ fn: LBRACE COLON annot? fnBody RBRACE ;
 
 fnBody: blockContent | cas+ ;
 
-lit: TRUE | FALSE | INT | HEX | BIN | REAL | STRING |  MSTR /* | MSTRING */ ;
+lit: TRUE | FALSE | INT | HEX | BIN | REAL | STRING | CHAR | MSTR /* | MSTRING */ ;
 
 jsonLit: BACKTICK ( jsonObject | jsonArray | jsonParen ) ;
 
@@ -282,7 +282,9 @@ ifExp: IF exp ;
 
 forExp: YIELD annot? forRange commaForRange* ARROW annot? rhs ;
 
-defAnon: DEF mod* defParams colonType? DOT annot? rhs ;
+defAnon: BACKSLASH mod* defParams annot? rhs ;
+
+ite: QUESTION exp COLON exp ELSE exp ;
 
 colonType: COLON type ;
 
@@ -358,7 +360,7 @@ typeSuffix: ARROW annot? type1 ;
 
 type1: parenType | type0 type0Suffix* ;
 
-parenType: LPAREN typeParenArgs COMMA? RPAREN ;
+parenType: LPAREN typeParenArgs? COMMA? RPAREN ;
 
 type0Suffix: ( OP | SYMBOL ) type0 ;
 
@@ -370,7 +372,9 @@ namedType: ID ASSIGN annot? type ;
 
 commaNamedType: COMMA ID ASSIGN annot? type ;
 
-type0: ID typeArgs? ;
+type0: ID dotID* typeArgs? ;
+
+dotID: DOT ID;
 
 typeArgs: LSQUARE typeParenArgs RSQUARE ;
 
@@ -398,6 +402,8 @@ MATCH:      'match'       ; PACKAGE:    'package'     ; RETURN:     'return'    
 THIS:       'this'        ; TRUE:       'true'        ; TYPE:       'type'        ; WHILE:      'while'       ;
 YIELD:      'yield'       ; VAR:        'val' | 'var' ; HALT:       'halt'        ; NULL:       'null'        ;
 
+BACKSLASH:  '\\'          ;
+
 SYMBOL: '\\' IDF ;
 
 STRING: '"' ( ESC_SEQ | ~( '\\' | '"' ) )* '"' ;
@@ -420,7 +426,7 @@ MSTRPM: '$' MSTRF WSF? ( '#' MSTRF WSF? )* '#' MSTRI '$' ;
 
 MSTRPE: '$' MSTRF? ;
 
-ID: IDF | IDESC;
+ID: '\''? IDF | IDESC;
 
 HLINE: '-' '-' '-' '-' '-'+ ;
 
@@ -430,9 +436,9 @@ HEX: '0x'  HEX_DIGIT ( '_' | HEX_DIGIT )* ;
 
 BIN: '0b' ( '0' | '1' ) ( '0' | '1' | '_' )* ;
 
-INT: ( '0' | '-'? '1'..'9' ( DIGIT | '_' )* ) ( LETTER ( IDF | IDESC ) )? ;
+INT: ( '0' | '-'? '1'..'9' ( DIGIT | '_' )* ) ( LETTER ( LETTER | DIGIT | '_' )* )? ;
 
-REAL: ( '0' | '-'? '1'..'9' ( DIGIT | '_' )* ) ( '.' DIGIT ( DIGIT | '_' )* EXPONENT? | EXPONENT ) ( 'f' | 'F' | 'd' | 'D' )? ;
+REAL: ( '0' | '-'? '1'..'9' ( DIGIT | '_' )* ) ( '.' DIGIT ( DIGIT | '_' )* EXPONENT? | EXPONENT ) ( 'f' | 'F' | 'd' | 'D' | 'h' | 'H' )? ;
 
 CHAR: '\'' ( ESC_SEQ | ~('\''|'\\') ) '\'' ;
 

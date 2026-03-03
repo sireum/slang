@@ -46,7 +46,12 @@ module.exports = grammar({
   word: $ => $.ID,
 
   conflicts: $ => [
-    [$.name],
+    [$.parenArgs],
+    [$.args],
+    [$.patternsArg],
+    [$.typeParenArgs],
+    [$.type1],
+    [$.defParamSuffix],
   ],
 
   rules: {
@@ -101,9 +106,9 @@ module.exports = grammar({
       ),
     )),
 
-    pkgSuffix: $ => seq('{', repeat($.mainMember), '}'),
+    pkgSuffix: $ => seq('{', repeat($.member), '}'),
 
-    init: $ => seq('.', '.', '{', optional($.annot), repeat($.stmt), '}'),
+    init: $ => seq('..', '{', optional($.annot), repeat($.stmt), '}'),
 
     member: $ => choice($.varDefn, $.defDefn, $.typeDefn, $.init),
 
@@ -215,14 +220,16 @@ module.exports = grammar({
       optional($.typeParams),
       optional($.defParams),
       optional($.defnTypeSuffix),
-      optional($.assignSuffix),
+      optional($.defDefnSuffix),
     )),
+
+    defDefnSuffix: $ => seq('=', optional($.annot), choice($.exp, $.block, $.ifStmt, $.matchStmt)),
 
     defnTypeSuffix: $ => prec.right(seq(':', $.type, optional($.annot))),
 
     defId: $ => choice($.ID, $.OP, $.SYMBOL),
 
-    defParams: $ => seq('(', $.defParam, optional($.defParamSuffix), optional(','), ')'),
+    defParams: $ => seq('(', optional(seq($.defParam, optional($.defParamSuffix), optional(','))), ')'),
 
     defParam: $ => seq(repeat($.mod), $.ID, ':', $.type),
 
@@ -256,7 +263,7 @@ module.exports = grammar({
       optional($.typeParams),
       optional($.defParams),
       optional($.defnTypeSuffix),
-      optional($.assignSuffix),
+      optional($.defDefnSuffix),
     )),
 
     expOrAssignStmt: $ => choice($.idStmt, $.expStmt, $.doStmt),
@@ -271,7 +278,7 @@ module.exports = grammar({
 
     doStmt: $ => prec.right(seq('do', optional($.annot), choice($.exp, seq(repeat($.mod), $.block)))),
 
-    varPattern: $ => seq($.VAR, $.pattern0, optional($.colonType1), '=', optional($.annot), $.rhs),
+    varPattern: $ => seq($.VAR, $.pattern0, optional($.colonType), '=', optional($.annot), $.rhs),
 
     rhs: $ => choice($.exp, $.block, $.ifStmt, $.matchStmt),
 
@@ -286,11 +293,12 @@ module.exports = grammar({
       $.ret,
     ),
 
-    ret: $ => prec.right(seq(choice('return', 'halt'), optional($.annot), optional($.rhs))),
+    ret: $ => prec.right(choice(
+      seq(choice('return', 'halt'), optional($.annot), optional($.rhs)),
+      seq('\\', optional($.annot), $.exp),
+    )),
 
-    els: $ => seq('else', choice($.elsIf, $.block)),
-
-    elsIf: $ => prec.right(seq('if', $.exp, optional($.annot), $.block, optional($.els))),
+    els: $ => seq('else', choice($.ifStmt, $.block)),
 
     whileStmt: $ => prec.right(seq('while', $.exp, optional($.annot), $.block)),
 
@@ -361,7 +369,7 @@ module.exports = grammar({
 
     // ==================== Expressions ====================
 
-    exp: $ => choice($.exp3, $.forExp, $.defAnon, $.quant),
+    exp: $ => choice($.exp3, $.forExp, $.defAnon, $.quant, $.ite),
 
     exp3: $ => prec.right(seq($.exp2, repeat($.infixSuffix))),
 
@@ -377,7 +385,7 @@ module.exports = grammar({
 
     exp0: $ => choice($.idExp, $.thisExp, $.superExp, $.lit, $.interp, $.pureBlock, $.jsonLit),
 
-    pureBlock: $ => seq('@', '{', repeat1($.stmt), '}'),
+    pureBlock: $ => seq('\\', $.block),
 
     idExp: $ => prec.right(seq($.ID, optional($.typeArgs))),
 
@@ -407,6 +415,7 @@ module.exports = grammar({
       $.BIN,
       $.REAL,
       $.STRING,
+      $.CHAR,
       $.MSTR,
     ),
 
@@ -455,11 +464,13 @@ module.exports = grammar({
 
     ifExp: $ => seq('if', $.exp),
 
-    // ==================== For/yield, anonymous def, quantifiers ====================
+    // ==================== For/yield, anonymous def, quantifiers, ITE ====================
 
     forExp: $ => seq('yield', optional($.annot), $.forRange, repeat($.commaForRange), '=>', optional($.annot), $.rhs),
 
-    defAnon: $ => prec.right(seq('def', repeat($.mod), $.defParams, optional($.colonType), '.', optional($.annot), $.rhs)),
+    defAnon: $ => prec.right(seq('\\', repeat($.mod), $.defParams, optional($.annot), $.rhs)),
+
+    ite: $ => seq('?', $.exp, ':', $.exp, 'else', $.exp),
 
     colonType: $ => seq(':', $.type),
 
@@ -564,7 +575,7 @@ module.exports = grammar({
 
     type1: $ => choice($.parenType, seq($.type0, repeat($.type0Suffix))),
 
-    parenType: $ => seq('(', $.typeParenArgs, optional(','), ')'),
+    parenType: $ => seq('(', optional($.typeParenArgs), optional(','), ')'),
 
     type0Suffix: $ => seq(choice($.OP, $.SYMBOL), $.type0),
 
@@ -579,7 +590,9 @@ module.exports = grammar({
 
     commaNamedType: $ => seq(',', $.ID, '=', optional($.annot), $.type),
 
-    type0: $ => prec.right(seq($.ID, optional($.typeArgs))),
+    type0: $ => prec.right(seq($.ID, repeat($.dotID), optional($.typeArgs))),
+
+    dotID: $ => seq('.', $.ID),
 
     typeArgs: $ => seq('[', $.typeParenArgs, ']'),
 
@@ -606,7 +619,7 @@ module.exports = grammar({
 
     _proofStepIntDot: $ => token(seq(
       choice('0', seq(optional('-'), /[1-9]/, repeat(/[0-9_]/))),
-      optional(seq(LETTER, choice(IDF, IDESC))),
+      optional(seq(LETTER, repeat(/[a-zA-Z0-9_]/))),
       '.',
     )),
 
@@ -669,7 +682,7 @@ module.exports = grammar({
 
     INT: $ => token(seq(
       choice('0', seq(optional('-'), /[1-9]/, repeat(/[0-9_]/))),
-      optional(seq(LETTER, choice(IDF, IDESC))),
+      optional(seq(LETTER, repeat(/[a-zA-Z0-9_]/))),
     )),
 
     REAL: $ => token(seq(
@@ -678,8 +691,10 @@ module.exports = grammar({
         seq('.', DIGIT, repeat(/[0-9_]/), optional(seq(/[eE]/, optional(/[+-]/), repeat1(/[0-9_]/)))),
         seq(/[eE]/, optional(/[+-]/), repeat1(/[0-9_]/)),
       ),
-      optional(/[fFdD]/),
+      optional(/[fFdDhH]/),
     )),
+
+    CHAR: $ => token(seq("'", choice(ESC_SEQ, /[^'\\]/), "'")),
 
     // ==================== Comments (extras) ====================
 
