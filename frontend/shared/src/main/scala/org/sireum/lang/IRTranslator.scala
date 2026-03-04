@@ -153,12 +153,17 @@ object IRTranslator {
           prefixStmts = prefixStmts :+ AST.IR.Stmt.Assign.Local(methodContext, e._1._2, e._2.tipe, e._2, e._2.pos)
         }
       }
-      val last = cs(cs.size - 1)
-      var r = AST.IR.Stmt.If(last, cas.body(stmts = prefixStmts ++ cas.body.stmts),
-        AST.IR.Stmt.Block(ISZ(), last.pos), last.pos)
-      for (i <- cs.size - 2 to 0 by -1) {
-        val cond = cs(i)
-        r = AST.IR.Stmt.If(cond, AST.IR.Stmt.Block(ISZ(r), r.pos), AST.IR.Stmt.Block(ISZ(), cond.pos), cond.pos)
+      var r: AST.IR.Stmt = if (cs.isEmpty) {
+        cas.body(stmts = prefixStmts ++ cas.body.stmts)
+      } else {
+        val last = cs(cs.size - 1)
+        var ifStmt = AST.IR.Stmt.If(last, cas.body(stmts = prefixStmts ++ cas.body.stmts),
+          AST.IR.Stmt.Block(ISZ(), last.pos), last.pos)
+        for (i <- cs.size - 2 to 0 by -1) {
+          val cond = cs(i)
+          ifStmt = AST.IR.Stmt.If(cond, AST.IR.Stmt.Block(ISZ(ifStmt), ifStmt.pos), AST.IR.Stmt.Block(ISZ(), cond.pos), cond.pos)
+        }
+        ifStmt
       }
       if (first) {
         first = F
@@ -405,7 +410,11 @@ object IRTranslator {
         case rhs: AST.Stmt.Expr => return translateExp(rhs.exp)
         case _ =>
           val aePos = rhs.asStmt.posOpt.get
-          val id = assignExpId(None(), aePos)
+          val prefix: String = rhs match {
+            case _: AST.Stmt.Match => "match$"
+            case _ => ""
+          }
+          val id = assignExpId(prefix, None(), aePos)
           stmts = stmts :+ AST.IR.Stmt.Decl(F, T, F, methodContext, ISZ(AST.IR.Stmt.Decl.Local(id, lhsType)), aePos)
           translateAssignExp(rhs, (id, lhsType))
           return AST.IR.Exp.LocalVarRef(T, methodContext, id, lhsType, aePos)
@@ -426,7 +435,11 @@ object IRTranslator {
           case init: AST.Stmt.Expr => translateExp(init.exp)
           case _ =>
             val aePos = init.asStmt.posOpt.get
-            val id = assignExpId(Some(stmt.id.value), aePos)
+            val prefix: String = init match {
+              case _: AST.Stmt.Match => "match$"
+              case _ => ""
+            }
+            val id = assignExpId(prefix, Some(stmt.id.value), aePos)
             stmts = stmts :+ AST.IR.Stmt.Decl(F, T, F, methodContext, ISZ(AST.IR.Stmt.Decl.Local(id, t)), aePos)
             translateAssignExp(init, (id, t))
             AST.IR.Exp.LocalVarRef(T, methodContext, id, t, aePos)
@@ -485,7 +498,11 @@ object IRTranslator {
                 case rhs: AST.Stmt.Expr => return translateExp(rhs.exp)
                 case _ =>
                   val aePos = stmt.rhs.asStmt.posOpt.get
-                  val id = assignExpId(None(), aePos)
+                  val prefix: String = stmt.rhs match {
+                    case _: AST.Stmt.Match => "match$"
+                    case _ => ""
+                  }
+                  val id = assignExpId(prefix, None(), aePos)
                   val t = stmt.lhs.typedOpt.get
                   stmts = stmts :+ AST.IR.Stmt.Decl(F, T, F, methodContext, ISZ(AST.IR.Stmt.Decl.Local(id, t)), aePos)
                   translateAssignExp(stmt.rhs, (id, t))
@@ -511,7 +528,11 @@ object IRTranslator {
               case rhs: AST.Stmt.Expr => translateExp(rhs.exp)
               case _ =>
                 val aePos = stmt.rhs.asStmt.posOpt.get
-                val id = assignExpId(None(), aePos)
+                val prefix: String = stmt.rhs match {
+                  case _: AST.Stmt.Match => "match$"
+                  case _ => ""
+                }
+                val id = assignExpId(prefix, None(), aePos)
                 val t = stmt.lhs.typedOpt.get
                 stmts = stmts :+ AST.IR.Stmt.Decl(F, T, F, methodContext, ISZ(AST.IR.Stmt.Decl.Local(id, t)), aePos)
                 translateAssignExp(stmt.rhs, (id, t))
@@ -660,7 +681,53 @@ object IRTranslator {
           }
         }
         stmts = oldStmts :+ AST.IR.Stmt.Match(exp, cases, pos)
-      case stmt: AST.Stmt.For => halt(s"TODO: $stmt")
+      case stmt: AST.Stmt.For =>
+        val fPos = stmt.posOpt.get
+        def translateForEnumGen(i: Z): AST.IR.Stmt.For = {
+          val enumGen = stmt.enumGens(i)
+          val idOpt: Option[String] = enumGen.idOpt match {
+            case Some(id) => Some(id.value)
+            case _ => None()
+          }
+          val range: AST.IR.Stmt.For.Range = enumGen.range match {
+            case r: AST.EnumGen.Range.Expr =>
+              val rangeExp = translateExp(r.exp)
+              AST.IR.Stmt.For.Range.Expr(rangeExp, r.attr.posOpt.getOrElse(fPos))
+            case r: AST.EnumGen.Range.Step =>
+              val rPos = r.attr.posOpt.getOrElse(fPos)
+              val start = translateExp(r.start)
+              val end = translateExp(r.end)
+              val byOpt: Option[AST.IR.Exp] = r.byOpt match {
+                case Some(by) => Some(translateExp(by))
+                case _ => None()
+              }
+              AST.IR.Stmt.For.Range.Step(r.isInclusive, start, end, byOpt, rPos)
+          }
+          val condOpt: Option[AST.IR.ExpBlock] = enumGen.condOpt match {
+            case Some(cond) => Some(translateExpBlock(cond))
+            case _ => None()
+          }
+          val innerBlock: AST.IR.Stmt.Block = if (i < stmt.enumGens.size - 1) {
+            val oldStmts2 = stmts
+            stmts = ISZ()
+            val nested = translateForEnumGen(i + 1)
+            val nestedStmts = stmts :+ nested
+            stmts = oldStmts2
+            fresh.setTemp(0)
+            AST.IR.Stmt.Block(nestedStmts, fPos)
+          } else {
+            val oldStmts2 = stmts
+            stmts = ISZ()
+            translateBody(stmt.body, None())
+            val bodyStmts = stmts
+            stmts = oldStmts2
+            fresh.setTemp(0)
+            AST.IR.Stmt.Block(bodyStmts, fPos)
+          }
+          return AST.IR.Stmt.For(methodContext, idOpt, range, condOpt, innerBlock, fPos)
+        }
+        stmts = stmts :+ translateForEnumGen(0)
+        fresh.setTemp(0)
       case stmt: AST.Stmt.VarPattern =>
         val oldStmts = stmts
         stmts = ISZ()
@@ -946,6 +1013,14 @@ object IRTranslator {
             }
           case res: AST.ResolvedInfo.EnumElement =>
             return norm3AC(AST.IR.Exp.EnumElementRef(res.owner, res.name, res.ordinal, pos))
+          case res: AST.ResolvedInfo.Method =>
+            val methodType = res.tpeOpt.get
+            if (res.isInObject) {
+              return norm3AC(AST.IR.Exp.Apply(T, res.owner, res.id, ISZ(), methodType, pos))
+            } else {
+              return norm3AC(AST.IR.Exp.Apply(F, res.owner, res.id, ISZ(thiz(pos)),
+                methodType(args = thiz(pos).tipe +: methodType.args), pos))
+            }
           case _ => halt(s"Infeasible: $exp")
         }
       case exp: AST.Exp.Select =>
@@ -976,6 +1051,18 @@ object IRTranslator {
             val receiver = translateExp(exp.receiverOpt.get)
             return norm3AC(AST.IR.Exp.Type(kind == AST.ResolvedInfo.BuiltIn.Kind.IsInstanceOf, receiver,
               exp.targs(0).typedOpt.get.asInstanceOf[AST.Typed.Name], exp.posOpt.get))
+          case res: AST.ResolvedInfo.Tuple =>
+            val receiver = translateExp(exp.receiverOpt.get)
+            return norm3AC(AST.IR.Exp.FieldVarRef(receiver, s"_${res.index}", t, pos))
+          case AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.String) =>
+            val receiver = translateExp(exp.receiverOpt.get)
+            val receiverType = exp.receiverOpt.get.typedOpt.get
+            val owner: ISZ[String] = receiverType match {
+              case tn: AST.Typed.Name => tn.ids
+              case _ => ISZ[String]()
+            }
+            val methodType = AST.Typed.Fun(AST.Purity.Impure, F, ISZ(receiverType), AST.Typed.string)
+            return norm3AC(AST.IR.Exp.Apply(F, owner, "string", ISZ(receiver), methodType, pos))
           case res => halt(s"TODO: $res")
         }
       case exp: AST.Exp.Unary =>
@@ -1359,7 +1446,7 @@ object IRTranslator {
             val r = translateExp(bodyExpr.exp)
             stmts = stmts :+ AST.IR.Stmt.Return(Some(r), bodyPos)
           case _ =>
-            val retId = assignExpId(Some("$closureRet"), bodyPos)
+            val retId = assignExpId("", Some("$closureRet"), bodyPos)
             stmts = stmts :+ AST.IR.Stmt.Decl(F, T, F, methodContext,
               ISZ(AST.IR.Stmt.Decl.Local(retId, retType)), bodyPos)
             translateAssignExp(exp.exp, (retId, retType))
@@ -1549,8 +1636,8 @@ object IRTranslator {
       conversions.U8.toU32(bs(2)) << u32"8" | conversions.U8.toU32(bs(3))
   }
 
-  @strictpure def assignExpId(idOpt: Option[String], pos: message.Position): String = {
-    st"${idOpt.getOrElse("$ae")}.${pos.beginLine}.${pos.beginColumn}.${sha3(pos.string)}".render
+  @strictpure def assignExpId(prefix: String, idOpt: Option[String], pos: message.Position): String = {
+    st"${prefix}${idOpt.getOrElse("$ae")}.${pos.beginLine}.${pos.beginColumn}.${sha3(pos.string)}".render
   }
 
   @strictpure def matchExpId(pos: message.Position): String = {
