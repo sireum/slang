@@ -31,7 +31,7 @@ const DIGIT = /[0-9]/;
 const HEX_DIGIT = /[0-9a-fA-F]/;
 const OPSYM = /[\u2200-\u22FF\u2A00-\u2AFF\u27C0-\u27EF\u2980-\u29FF+\-*/%<>!&^|~:=]/;
 const ESC_SEQ = /\\[btnfr"'\\]|\\u[0-9a-fA-F]{4,5}/;
-const IDF = /[a-zA-Z_][a-zA-Z0-9_$]*(?:_[\u2200-\u22FF\u2A00-\u2AFF\u27C0-\u27EF\u2980-\u29FF+\-*/%<>!&^|~:=]+)?/;
+const IDF = /[a-zA-Z_](?:[a-zA-Z0-9_]|\$[a-zA-Z0-9_])*(?:_[\u2200-\u22FF\u2A00-\u2AFF\u27C0-\u27EF\u2980-\u29FF+\-*/%<>!&^|~:=]+)?/;
 const IDESC = /`[^\n\r\t]*`/;
 
 module.exports = grammar({
@@ -656,16 +656,16 @@ module.exports = grammar({
     MSTRPB: $ => token(seq(
       IDF,
       repeat(seq('#', /(?:[^\n\r$]|\$\$)*\r?\n/, optional(/[ \t]+/))),
-      '#', /(?:[^\n\r$]|\$\$)*/, '$',
+      '#', /(?:[^\n\r$]|\$\$)*/, '${',
     )),
 
     MSTRPM: $ => token(seq(
-      '$', /(?:[^\n\r$]|\$\$)*\r?\n/, optional(/[ \t]+/),
+      '}$', /(?:[^\n\r$]|\$\$)*\r?\n/, optional(/[ \t]+/),
       repeat(seq('#', /(?:[^\n\r$]|\$\$)*\r?\n/, optional(/[ \t]+/))),
-      '#', /(?:[^\n\r$]|\$\$)*/, '$',
+      '#', /(?:[^\n\r$]|\$\$)*/, '${',
     )),
 
-    MSTRPE: $ => token(seq('$', optional(/(?:[^\n\r$]|\$\$)*\r?\n/))),
+    MSTRPE: $ => token(seq('}$', optional(/(?:[^\n\r$]|\$\$)*\r?\n/))),
 
     ID: $ => token(choice(seq(optional("'"), IDF), IDESC)),
 

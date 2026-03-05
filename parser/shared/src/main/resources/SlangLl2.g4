@@ -420,11 +420,11 @@ MSTR:	( '#' MSTRF WSF? )* '#' MSTRF ;
 
 MSTRP:	IDF ( '#' MSTRF WSF? )* '#' MSTRF ;
 
-MSTRPB: IDF ( '#' MSTRF WSF? )* '#' MSTRI '$' ;
+MSTRPB: IDF ( '#' MSTRF WSF? )* '#' MSTRI '${' ;
 
-MSTRPM: '$' MSTRF WSF? ( '#' MSTRF WSF? )* '#' MSTRI '$' ;
+MSTRPM: '}$' MSTRF WSF? ( '#' MSTRF WSF? )* '#' MSTRI '${' ;
 
-MSTRPE: '$' MSTRF? ;
+MSTRPE: '}$' MSTRF? ;
 
 ID: '\''? IDF | IDESC;
 
@@ -455,7 +455,7 @@ fragment WSF:	( ' ' | '\t' )+ ;
 
 fragment IDESC: '`' ~( '\n' | '\r' | '\t' )* '`' ;
 
-fragment IDF: ( LETTER | '_' ) ( LETTER | DIGIT | '_' | '$' )* ( '_' OPSYM+ )? ;
+fragment IDF: ( LETTER | '_' ) ( LETTER | DIGIT | '_' | '$' ( LETTER | DIGIT | '_' ) )* ( '_' OPSYM+ )? ;
 
 fragment SPI: ESC_SEQ | ~( '\\' | '"' | '$' ) | '$$' ;
 

@@ -68,7 +68,7 @@
         {
           "comment": "Non-interpolating string: id\"...\"",
           "name": "string.interpolated.slang",
-          "begin": "([a-zA-Z_][a-zA-Z0-9_$]*)(\")",
+          "begin": "([a-zA-Z_](?:[a-zA-Z0-9_]|\\$[a-zA-Z0-9_])*)(\")",
           "beginCaptures": {
             "1": { "name": "entity.name.function.interpolation.slang" },
             "2": { "name": "punctuation.definition.string.begin.slang" }
@@ -97,7 +97,7 @@
       "patterns": [
         {
           "comment": "Prefixed multi-line string line: name#content (MSTRP/MSTRPB first line)",
-          "begin": "([a-zA-Z_][a-zA-Z0-9_$]*)(#)",
+          "begin": "([a-zA-Z_](?:[a-zA-Z0-9_]|\\$[a-zA-Z0-9_])*)(#)",
           "beginCaptures": {
             "1": { "name": "entity.name.function.interpolation.slang" },
             "2": { "name": "punctuation.definition.string.slang" }
@@ -129,12 +129,12 @@
           "match": "\\$\\$"
         },
         {
-          "comment": "Interpolation region: $expression$",
-          "begin": "\\$",
+          "comment": "Interpolation region: ${expression}$",
+          "begin": "\\$\\{",
           "beginCaptures": {
             "0": { "name": "punctuation.section.interpolation.begin.slang" }
           },
-          "end": "\\$|(?=$)",
+          "end": "\\}\\$|(?=$)",
           "endCaptures": {
             "0": { "name": "punctuation.section.interpolation.end.slang" }
           },

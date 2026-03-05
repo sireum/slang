@@ -107,7 +107,7 @@ The LL(2) syntax differs from Scala-based syntax primarily in:
 | **Quant exists type** | `∃((x: T) => P(x))` | `∃ x: T => P(x)` | `Exp.QuantType` |
 | **Quant range** | `∀(lo until hi)(x => P(x))` | `∀ x: lo ..< hi => P(x)` | `Exp.QuantRange` |
 | **Quant each** | `∀(xs)(x => P(x))` | `∀ x: xs => P(x)` | `Exp.QuantEach` |
-| **String interp** | `s"hello $x"` | `s"hello $x"` | `Exp.StringInterpolate` |
+| **String interp** | `s"hello $x"` | `s"hello $x$"` | `Exp.StringInterpolate` |
 | **Lit bool** | `T` / `F` | `T`/`true` / `F`/`false` | `Exp.LitB` |
 | **Lit int** | `z"42"` or `42` | `42` | `Exp.LitZ` |
 | **Lit SubZ** | `s32"100"`, `u8"42"` | `100s32`, `42u8` | `Exp.StringInterpolate` |
@@ -125,7 +125,7 @@ The LL(2) syntax differs from Scala-based syntax primarily in:
 | **RS** | `RS(a, b)` | `RS(a, b)` | `Exp.RS` |
 | **Strict pure block** | (via annotation) | `@{ stmts }` | `Exp.StrictPureBlock` |
 | **Multi-line string** | `"""line1\nline2"""` | `#line1\n #line2` (`MSTR`) | `Exp.LitString` |
-| **Multi-line interp** | `prefix"""...$exp..."""` | `prefix#...$exp...` (`MSTRP`/etc.) | `Exp.StringInterpolate` |
+| **Multi-line interp** | `prefix"""...$exp..."""` | `prefix#...${exp}$...` (`MSTRP`/etc.) | `Exp.StringInterpolate` |
 
 ### Types
 

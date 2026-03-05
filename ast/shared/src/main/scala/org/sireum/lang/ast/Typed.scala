@@ -591,6 +591,9 @@ object Typed {
   val u16: Typed.Name = Typed.Name(sireumName :+ "U16", ISZ())
   val u32: Typed.Name = Typed.Name(sireumName :+ "U32", ISZ())
   val u64: Typed.Name = Typed.Name(sireumName :+ "U64", ISZ())
+  val f16Name: ISZ[String] = sireumName :+ "F16"
+  val f16: Typed.Name = Typed.Name(f16Name, ISZ())
+  val f16Opt: Option[Typed] = Some(f16)
   val f32Name: ISZ[String] = sireumName :+ "F32"
   val f32: Typed.Name = Typed.Name(f32Name, ISZ())
   val f32Opt: Option[Typed] = Some(f32)
