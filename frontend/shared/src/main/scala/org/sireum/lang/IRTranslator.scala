@@ -78,6 +78,48 @@ object IRTranslator {
   @strictpure def mboxType(t: AST.Typed): AST.Typed.Name =
     AST.Typed.Name(AST.Typed.sireumName :+ "MBox", ISZ(t))
 
+  def collectTypeVarIds(t: AST.Typed, seen: HashSet[String]): (ISZ[String], HashSet[String]) = {
+    t match {
+      case tv: AST.Typed.TypeVar =>
+        if (seen.contains(tv.id)) {
+          return (ISZ(), seen)
+        }
+        return (ISZ(tv.id), seen + tv.id)
+      case n: AST.Typed.Name =>
+        var ids = ISZ[String]()
+        var s = seen
+        for (a <- n.args) {
+          val p = collectTypeVarIds(a, s)
+          ids = ids ++ p._1
+          s = p._2
+        }
+        return (ids, s)
+      case f: AST.Typed.Fun =>
+        var ids = ISZ[String]()
+        var s = seen
+        for (a <- f.args) {
+          val p = collectTypeVarIds(a, s)
+          ids = ids ++ p._1
+          s = p._2
+        }
+        val p = collectTypeVarIds(f.ret, s)
+        ids = ids ++ p._1
+        s = p._2
+        return (ids, s)
+      case tu: AST.Typed.Tuple =>
+        var ids = ISZ[String]()
+        var s = seen
+        for (a <- tu.args) {
+          val p = collectTypeVarIds(a, s)
+          ids = ids ++ p._1
+          s = p._2
+        }
+        return (ids, s)
+      case _ =>
+        return (ISZ(), seen)
+    }
+  }
+
   def translateMethodH(isBasic: B,
                        receiverTypeOpt: Option[AST.Typed],
                        owner: ISZ[String],
@@ -746,8 +788,11 @@ object IRTranslator {
             val collector = IRTranslator.ClosureCaptureCollector(HashSMap.empty)
             collector.transformBody(body)
             val captures = collector.captures.values
+            // Filter out captures from the nested method's own scope — those are
+            // lambda-internal captures handled by lambda lifting, not captures
+            // the nested method needs from the enclosing scope
             val captureList: ISZ[(B, String, AST.Typed)] =
-              for (c <- captures) yield (c._2, c._3, c._4)
+              for (c <- captures if c._1 != nestedKey) yield (c._2, c._3, c._4)
 
             // Register captures for call-site rewriting
             nestedMethodCaptures = nestedMethodCaptures + nestedKey ~> captureList
@@ -1455,10 +1500,21 @@ object IRTranslator {
         }
         val liftedBody = AST.IR.Body.Block(AST.IR.Stmt.Block(stmts, pos))
 
-        // Step 8: Create the lifted IR.Procedure and append to liftedProcedures
+        // Step 8: Collect free TypeVars from capture types so step13 adds typeOps params
+        var closureTypeVarIds = ISZ[String]()
+        var closureTypeVarSeen = HashSet.empty[String]
+        for (ct <- captureTypes) {
+          collectTypeVarIds(ct, closureTypeVarSeen) match {
+            case (ids, seen) =>
+              closureTypeVarIds = closureTypeVarIds ++ ids
+              closureTypeVarSeen = seen
+          }
+        }
+
+        // Step 9: Create the lifted IR.Procedure and append to liftedProcedures
         val liftedProc = AST.IR.Procedure(
           isInObject = T,
-          typeParams = ISZ(),
+          typeParams = closureTypeVarIds,
           owner = owner,
           id = closureName,
           paramNames = fullParamNames,
