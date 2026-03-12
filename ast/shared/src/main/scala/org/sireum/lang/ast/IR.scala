@@ -138,7 +138,7 @@ object IR {
     }
 
     @datatype class EnumElementRef(val owner: ISZ[org.sireum.String], val id: org.sireum.String, val ordinal: Z, val pos: Position) extends Exp {
-      @strictpure def tipe: Typed = Typed.Enum(owner :+ "Type")
+      @strictpure def tipe: Typed = Typed.Name(owner :+ "Type", ISZ())
       @strictpure def prettyRawST(p: Printer): ST = st"${(owner, ".")}.$id"
       @strictpure def numOfTemps: Z = 0
       @strictpure def depth: Z = 1
