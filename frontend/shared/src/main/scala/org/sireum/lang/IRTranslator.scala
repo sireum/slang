@@ -1320,7 +1320,17 @@ object IRTranslator {
           case _ =>
             halt(s"TODO: $exp")
         }
-      case exp: AST.Exp.Tuple => halt(s"TODO: $exp")
+      case exp: AST.Exp.Tuple =>
+        val tupleType = exp.typedOpt.get
+        val tupleIds = ISZ[String]("org", "sireum", "Tuple")
+        var args = ISZ[AST.IR.Exp]()
+        var argTypes = ISZ[AST.Typed]()
+        for (arg <- exp.args) {
+          args = args :+ translateExp(arg)
+          argTypes = argTypes :+ arg.typedOpt.get
+        }
+        val methodType = AST.Typed.Fun(AST.Purity.Impure, F, argTypes, tupleType)
+        return norm3AC(AST.IR.Exp.Apply(T, tupleIds, "of", args, methodType, pos))
       case exp: AST.Exp.ForYield =>
         val resultType = exp.typedOpt.get.asInstanceOf[AST.Typed.Name]
         val resultId = st"$$forYield.${pos.beginLine}.${pos.beginColumn}.${sha3(pos.string)}".render
