@@ -581,7 +581,7 @@ object SlangLl2AstBuilder {
     // mainMember: stmt | typeDefn
     val stmtOpt = findChild(node, "stmt")
     stmtOpt match {
-      case Some(s) => return ISZ(buildStmt(s, reporter))
+      case Some(s) => return ISZ(buildStmt(s, reporter, F))
       case _ =>
     }
     val typeDefnOpt = findChild(node, "typeDefn")
@@ -1421,6 +1421,8 @@ object SlangLl2AstBuilder {
                 idContext = ISZ(),
                 attr = typedAttr(node))
             } else {
+              reporter.error(nameNode.posOpt, "SlangLl2AstBuilder",
+                "Qualified name in pattern without arguments looks like an enum ref — use dot prefix (e.g., '.Color.Red' instead of 'Color.Red')")
               return AST.Pattern.Ref(isAccess = F, name = name, receiverTipeOpt = None(), idContext = ISZ(), attr = resolvedAttr(node))
             }
         }
@@ -1921,7 +1923,7 @@ object SlangLl2AstBuilder {
   def buildPureBlock(node: ParseTree.Node, reporter: message.Reporter): AST.Exp.StrictPureBlock = {
     // pureBlock: BACKSLASH block
     val blockNode = findChild(node, "block").get
-    val block = buildBlock(blockNode, reporter)
+    val block = buildBlock(blockNode, reporter, 2, T)
     return AST.Exp.StrictPureBlock(block = block, attr = typedAttr(node))
   }
 
@@ -2480,8 +2482,29 @@ object SlangLl2AstBuilder {
 
   // ─── statements ────────────────────────────────────────────────────
 
-  def buildStmt(node: ParseTree.Node, reporter: message.Reporter): AST.Stmt = {
+  def buildStmt(node: ParseTree.Node, reporter: message.Reporter, isPure: B): AST.Stmt = {
     // stmt: expOrAssignStmt | varPattern | ifStmt | whileStmt | forStmt | deduceStmt | matchStmt | defStmt | assertumeStmt
+    // Rule 2-3: pure context restrictions
+    if (isPure) {
+      for (c <- node.children) {
+        c match {
+          case c: ParseTree.Node =>
+            c.ruleName.native match {
+              case "varPattern" =>
+                reporter.error(c.posOpt, "SlangLl2AstBuilder",
+                  "'var' declarations are not allowed in @strictpure/@abs methods or strict pure blocks")
+              case "whileStmt" =>
+                reporter.error(c.posOpt, "SlangLl2AstBuilder",
+                  "'while' loops are not allowed in @strictpure/@abs methods or strict pure blocks")
+              case "forStmt" =>
+                reporter.error(c.posOpt, "SlangLl2AstBuilder",
+                  "'for' loops are not allowed in @strictpure/@abs methods or strict pure blocks")
+              case _ =>
+            }
+          case _ =>
+        }
+      }
+    }
     for (c <- node.children) {
       c match {
         case c: ParseTree.Node =>
@@ -2601,7 +2624,9 @@ object SlangLl2AstBuilder {
         }
       case _ =>
     }
-    // Just an ID expression
+    // Bare identifier as statement has no effect — parameter-less methods are pure
+    reporter.error(node.posOpt, "SlangLl2AstBuilder",
+      "Bare identifier as statement has no effect — use 'id()' for method calls, or 'return id' / '\\\\ id' to produce a value")
     return AST.Stmt.Expr(
       exp = AST.Exp.Ident(id = mkId(idLeaf.text, idLeaf), attr = resolvedAttr(idLeaf)),
       attr = typedAttr(node))
@@ -2658,7 +2683,7 @@ object SlangLl2AstBuilder {
 
     blockOpt match {
       case Some(blk) =>
-        val block = buildBlock(blk, reporter)
+        val block = buildBlock(blk, reporter, 0, F)
         if (isSpec) {
           return AST.Stmt.SpecBlock(block = block)
         }
@@ -2702,7 +2727,7 @@ object SlangLl2AstBuilder {
     }
     val blockOpt = findChild(node, "block")
     blockOpt match {
-      case Some(blk) => return buildBlock(blk, reporter)
+      case Some(blk) => return buildBlock(blk, reporter, 2, F)
       case _ =>
     }
     val ifOpt = findChild(node, "ifStmt")
@@ -2738,6 +2763,27 @@ object SlangLl2AstBuilder {
     }
 
     val assignSuffixOpt = findChild(node, "assignSuffix")
+
+    // Rule 4: explicit type required when initializer is a block, if, or match
+    if (colonTypeOpt.isEmpty) {
+      assignSuffixOpt match {
+        case Some(as) =>
+          val rhsOpt = findChild(as, "rhs")
+          rhsOpt match {
+            case Some(rhs) =>
+              val hasComplexRhs: B =
+                findChild(rhs, "block").nonEmpty ||
+                findChild(rhs, "ifStmt").nonEmpty ||
+                findChild(rhs, "matchStmt").nonEmpty
+              if (hasComplexRhs) {
+                reporter.error(rhs.posOpt, "SlangLl2AstBuilder",
+                  "Explicit type annotation required when initializer is a block, 'if', or 'match'")
+              }
+            case _ =>
+          }
+        case _ =>
+      }
+    }
 
     if (isSpec && tipeOpt.nonEmpty && assignSuffixOpt.isEmpty) {
       return AST.Stmt.SpecVar(
@@ -2784,6 +2830,17 @@ object SlangLl2AstBuilder {
       case _ => None()
     }
     val rhsNode = findChild(node, "rhs").get
+    // Rule 4: explicit type required when initializer is a block, if, or match
+    if (colonTypeOpt.isEmpty) {
+      val hasComplexRhs: B =
+        findChild(rhsNode, "block").nonEmpty ||
+        findChild(rhsNode, "ifStmt").nonEmpty ||
+        findChild(rhsNode, "matchStmt").nonEmpty
+      if (hasComplexRhs) {
+        reporter.error(rhsNode.posOpt, "SlangLl2AstBuilder",
+          "Explicit type annotation required when initializer is a block, 'if', or 'match'")
+      }
+    }
     val init = buildRhsAsAssignExp(rhsNode, reporter)
     return AST.Stmt.VarPattern(
       isSpec = F,
@@ -2922,6 +2979,11 @@ object SlangLl2AstBuilder {
       AST.Purity.Impure
     }
 
+    if (!hasParams && purity == AST.Purity.Impure) {
+      reporter.error(node.posOpt, "SlangLl2AstBuilder",
+        "Parameter-less method must be @pure, @strictpure, or @abs")
+    }
+
     val returnType: AST.Type = returnTypeOpt match {
       case Some(rt) => rt
       case _ => AST.Type.Named(
@@ -2941,11 +3003,23 @@ object SlangLl2AstBuilder {
       params = params,
       returnType = returnType)
 
+    val methodIsPure: B = purity == AST.Purity.StrictPure || purity == AST.Purity.Abs
+    val isUnitReturn: B = returnTypeOpt match {
+      case Some(rt) =>
+        rt match {
+          case rt: AST.Type.Named =>
+            rt.name.ids.size == 1 && rt.name.ids(0).value == "Unit"
+          case _ => F
+        }
+      case _ => T
+    }
+    val methodExpectsValue: Z = if (isUnitReturn) 0 else if (methodIsPure) 2 else 1
+
     val bodyOpt: Option[AST.Body] = bodySrcOpt match {
       case Some(srcNode) =>
         // defDefnSuffix: ASSIGN annot? ( exp | block | ifStmt | matchStmt )
         val blockOpt: Option[AST.Stmt.Block] = findChild(srcNode, "block") match {
-          case Some(blk) => Some(buildBlock(blk, reporter))
+          case Some(blk) => Some(buildBlock(blk, reporter, methodExpectsValue, methodIsPure))
           case _ => None()
         }
         blockOpt match {
@@ -3254,7 +3328,7 @@ object SlangLl2AstBuilder {
     val expNode = findChild(node, "exp").get
     val cond = buildExp(expNode, reporter)
     val blockNode = findChild(node, "block").get
-    val thenBlock = buildBlock(blockNode, reporter)
+    val thenBlock = buildBlock(blockNode, reporter, 0, F)
     val elsOpt = findChild(node, "els")
     val elseBody: AST.Body = elsOpt match {
       case Some(els) => buildElse(els, reporter)
@@ -3279,34 +3353,55 @@ object SlangLl2AstBuilder {
     val blockOpt = findChild(node, "block")
     blockOpt match {
       case Some(blk) =>
-        val block = buildBlock(blk, reporter)
+        val block = buildBlock(blk, reporter, 0, F)
         return block.body
       case _ =>
     }
     return AST.Body(stmts = ISZ(), undecls = ISZ())
   }
 
-  def buildBlock(node: ParseTree.Node, reporter: message.Reporter): AST.Stmt.Block = {
+  def buildBlock(node: ParseTree.Node, reporter: message.Reporter, expectsValue: Z, isPure: B): AST.Stmt.Block = {
     // block: LBRACE annot? blockContent RBRACE
     val blockContent = findChild(node, "blockContent").get
-    val stmts = buildBlockContent(blockContent, reporter)
+    val stmts = buildBlockContent(blockContent, reporter, expectsValue, isPure)
     return AST.Stmt.Block(
       contract = AST.MethodContract.Simple.empty,
       body = AST.Body(stmts = stmts, undecls = ISZ()),
       attr = attr(node))
   }
 
-  def buildBlockContent(node: ParseTree.Node, reporter: message.Reporter): ISZ[AST.Stmt] = {
+  def buildBlockContent(node: ParseTree.Node, reporter: message.Reporter, expectsValue: Z, isPure: B): ISZ[AST.Stmt] = {
     // blockContent: stmt* ret?
     var stmts = ISZ[AST.Stmt]()
     val stmtNodes = findChildren(node, "stmt")
     for (s <- stmtNodes) {
-      stmts = stmts :+ buildStmt(s, reporter)
+      stmts = stmts :+ buildStmt(s, reporter, isPure)
     }
     val retOpt = findChild(node, "ret")
     retOpt match {
       case Some(r) => stmts = stmts :+ buildReturn(r, reporter)
       case _ =>
+        // Rule 1: check for missing value marker at leaf
+        if (expectsValue > 0 && stmtNodes.nonEmpty) {
+          val lastStmtNode = stmtNodes(stmtNodes.size - 1)
+          for (c <- lastStmtNode.children) {
+            c match {
+              case c: ParseTree.Node if c.ruleName == "expOrAssignStmt" =>
+                val hasAssign = findChild(c, "assignSuffix").nonEmpty ||
+                  findChild(c, "idAssignSuffix").nonEmpty
+                if (!hasAssign) {
+                  if (expectsValue == 1) {
+                    reporter.error(c.posOpt, "SlangLl2AstBuilder",
+                      "Non-Unit method requires explicit 'return' — use 'return exp' or 'halt' instead of bare expression")
+                  } else {
+                    reporter.error(c.posOpt, "SlangLl2AstBuilder",
+                      "Value-producing block requires '\\' before the result expression — use '\\ exp' or 'halt'")
+                  }
+                }
+              case _ =>
+            }
+          }
+        }
     }
     return stmts
   }
@@ -3353,7 +3448,7 @@ object SlangLl2AstBuilder {
     val annotOpt = findChild(node, "annot")
     val contract = buildLoopContract(annotOpt, reporter)
     val blockNode = findChild(node, "block").get
-    val block = buildBlock(blockNode, reporter)
+    val block = buildBlock(blockNode, reporter, 0, F)
     return AST.Stmt.While(
       context = ISZ(),
       cond = cond,
@@ -3375,7 +3470,7 @@ object SlangLl2AstBuilder {
       enumGens = enumGens :+ buildForRange(fr, reporter)
     }
     val blockNode = findChild(node, "block").get
-    val block = buildBlock(blockNode, reporter)
+    val block = buildBlock(blockNode, reporter, 0, F)
     return AST.Stmt.For(
       context = ISZ(),
       enumGens = enumGens,
@@ -3436,21 +3531,21 @@ object SlangLl2AstBuilder {
     val expNode = findChild(node, "exp").get
     val exp = buildExp(expNode, reporter)
     val matchCasesNode = findChild(node, "matchCases").get
-    val cases = buildMatchCases(matchCasesNode, reporter)
+    val cases = buildMatchCases(matchCasesNode, reporter, 0, F)
     return AST.Stmt.Match(isInduct = F, exp = exp, cases = cases, attr = typedAttr(node))
   }
 
-  def buildMatchCases(node: ParseTree.Node, reporter: message.Reporter): ISZ[AST.Case] = {
+  def buildMatchCases(node: ParseTree.Node, reporter: message.Reporter, expectsValue: Z, isPure: B): ISZ[AST.Case] = {
     // matchCases: LBRACE cas+ RBRACE
     val casNodes = findChildren(node, "cas")
     var r = ISZ[AST.Case]()
     for (c <- casNodes) {
-      r = r :+ buildCase(c, reporter)
+      r = r :+ buildCase(c, reporter, expectsValue, isPure)
     }
     return r
   }
 
-  def buildCase(node: ParseTree.Node, reporter: message.Reporter): AST.Case = {
+  def buildCase(node: ParseTree.Node, reporter: message.Reporter, expectsValue: Z, isPure: B): AST.Case = {
     // cas: CASE pattern ifExp? ARROW annot? blockContent
     val patternNode = findChild(node, "pattern").get
     val pattern = buildPattern(patternNode, reporter)
@@ -3462,7 +3557,7 @@ object SlangLl2AstBuilder {
       case _ => None()
     }
     val blockContent = findChild(node, "blockContent").get
-    val stmts = buildBlockContent(blockContent, reporter)
+    val stmts = buildBlockContent(blockContent, reporter, expectsValue, isPure)
     return AST.Case(pattern = pattern, condOpt = condOpt, body = AST.Body(stmts = stmts, undecls = ISZ()))
   }
 
