@@ -2033,6 +2033,10 @@ object SlangLl2AstBuilder {
           val numStr = sops.substring(0, text.size - 1)
           val cleanNum = ops.StringOps(numStr).replaceAllLiterally("_", "")
           return AST.Exp.LitF64(value = F64(cleanNum).get, attr = attr(leaf))
+        } else if (sops.endsWith("r") || sops.endsWith("R")) {
+          val numStr = sops.substring(0, text.size - 1)
+          val cleanNum = ops.StringOps(numStr).replaceAllLiterally("_", "")
+          return AST.Exp.LitR(value = R(cleanNum).get, attr = attr(leaf))
         } else {
           val cleanNum = ops.StringOps(text).replaceAllLiterally("_", "")
           return AST.Exp.LitF64(value = F64(cleanNum).get, attr = attr(leaf))

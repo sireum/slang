@@ -151,8 +151,8 @@
     // INT: ('0' | '-'? '1'..'9' (DIGIT|'_')*) (LETTER (LETTER | DIGIT | '_')*)?
     INT        = 'regexp:(0|-?[1-9][0-9_]*)([a-zA-Z][a-zA-Z0-9_]*)?'
 
-    // REAL: ('0' | '-'? '1'..'9' (DIGIT|'_')*) ('.' DIGIT (DIGIT|'_')* EXPONENT? | EXPONENT) ('f'|'F'|'d'|'D'|'h'|'H')?
-    REAL       = 'regexp:(0|-?[1-9][0-9_]*)(\.[0-9][0-9_]*([eE][+-]?[0-9_]+)?|[eE][+-]?[0-9_]+)[fFdDhH]?'
+    // REAL: ('0' | '-'? '1'..'9' (DIGIT|'_')*) ('.' DIGIT (DIGIT|'_')* EXPONENT? | EXPONENT) ('f'|'F'|'d'|'D'|'h'|'H'|'r'|'R')?
+    REAL       = 'regexp:(0|-?[1-9][0-9_]*)(\.[0-9][0-9_]*([eE][+-]?[0-9_]+)?|[eE][+-]?[0-9_]+)[fFdDhHrR]?'
 
     // CHAR: '\'' (ESC_SEQ | ~('\'' | '\\')) '\''
     CHAR       = 'regexp:\x27(\\[btnfr"\x27\\]|\\u[0-9a-fA-F]{4}[0-9a-fA-F]?|[^\x27\\])\x27'

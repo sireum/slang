@@ -438,7 +438,7 @@ BIN: '0b' ( '0' | '1' ) ( '0' | '1' | '_' )* ;
 
 INT: ( '0' | '-'? '1'..'9' ( DIGIT | '_' )* ) ( LETTER ( LETTER | DIGIT | '_' )* )? ;
 
-REAL: ( '0' | '-'? '1'..'9' ( DIGIT | '_' )* ) ( '.' DIGIT ( DIGIT | '_' )* EXPONENT? | EXPONENT ) ( 'f' | 'F' | 'd' | 'D' | 'h' | 'H' )? ;
+REAL: ( '0' | '-'? '1'..'9' ( DIGIT | '_' )* ) ( '.' DIGIT ( DIGIT | '_' )* EXPONENT? | EXPONENT ) ( 'f' | 'F' | 'd' | 'D' | 'h' | 'H' | 'r' | 'R' )? ;
 
 CHAR: '\'' ( ESC_SEQ | ~('\''|'\\') ) '\'' ;
 
