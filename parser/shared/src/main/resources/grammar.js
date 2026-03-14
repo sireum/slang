@@ -691,7 +691,7 @@ module.exports = grammar({
         seq('.', DIGIT, repeat(/[0-9_]/), optional(seq(/[eE]/, optional(/[+-]/), repeat1(/[0-9_]/)))),
         seq(/[eE]/, optional(/[+-]/), repeat1(/[0-9_]/)),
       ),
-      optional(/[fFdDhH]/),
+      optional(/[fFdDhHrR]/),
     )),
 
     CHAR: $ => token(seq("'", choice(ESC_SEQ, /[^'\\]/), "'")),

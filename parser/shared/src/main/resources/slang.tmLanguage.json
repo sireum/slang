@@ -382,7 +382,7 @@
         {
           "comment": "Real (floating-point) number",
           "name": "constant.numeric.float.slang",
-          "match": "\\b(?:0|-?[1-9][0-9_]*)(?:\\.[0-9][0-9_]*(?:[eE][+-]?[0-9_]+)?|[eE][+-]?[0-9_]+)[fFdDhH]?\\b"
+          "match": "\\b(?:0|-?[1-9][0-9_]*)(?:\\.[0-9][0-9_]*(?:[eE][+-]?[0-9_]+)?|[eE][+-]?[0-9_]+)[fFdDhHrR]?\\b"
         },
         {
           "comment": "Integer with optional type suffix (e.g. 42z, 5l)",
