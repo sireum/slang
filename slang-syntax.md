@@ -18,6 +18,30 @@ The LL(2) syntax differs from Scala-based syntax primarily in:
 - **No semicolons** — LL(2) is not whitespace-significant; it uses statement keywords and braces to determine statement termination (with some exceptional conventions for expression statements)
 - **Omission** of `import org.sireum._` (implicit in LL(2))
 
+## Method and Block Rules (both syntaxes)
+
+### Purity annotations
+- `@pure` — pure method (no side effects, deterministic)
+- `@strictpure` — strict pure method (single expression body, no `var`/`while`/`for`)
+- `@abs` — functional abstraction (abstracting over behavior; NOT "abstract")
+- `@pure` can be used for both method definitions (with body) and method declarations (without body, in traits)
+
+### Parameter-less methods
+- Methods without parameter list (no `()`) must be `@pure`, `@strictpure`, or `@abs`
+- Example: `def @pure get: T = { return value }` — OK
+- Example: `def get: T = { return value }` — error
+
+### Value markers at leaf positions
+- Non-Unit method body leaves must use `return exp` or `halt` — bare expressions are not implicit returns
+- Value-producing block leaves (rhs, `@strictpure` body, if/match branches in rhs) must use `\ exp` (LL(2)) / block result (Scala-based) or `halt`
+
+### Pure context restrictions
+- `@strictpure` and `@abs` method bodies must not contain `var`, `while`, or `for`
+- Strict pure block expressions must not contain `var`, `while`, or `for`
+
+### Explicit type annotations
+- `val`/`var` declarations with block, `if`, or `match` as rhs must have explicit type annotations
+
 ## Construct Mapping Table
 
 | Category | Scala-based Syntax | LL(2) Syntax | AST Node |

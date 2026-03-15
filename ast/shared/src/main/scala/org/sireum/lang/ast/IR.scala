@@ -641,8 +641,13 @@ object IR {
       def updatePos(pos: Position): Unit = {
         if (line != pos.beginLine) {
           line = pos.beginLine
-          val uriOps = ops.StringOps(pos.uriOpt.get)
-          sts = sts :+ st"// ${uriOps.substring(uriOps.lastIndexOf('/') + 1, uriOps.size)}:$line"
+          pos.uriOpt match {
+            case Some(uri) =>
+              val uriOps = ops.StringOps(uri)
+              sts = sts :+ st"// ${uriOps.substring(uriOps.lastIndexOf('/') + 1, uriOps.size)}:$line"
+            case _ =>
+              sts = sts :+ st"// <unknown>:$line"
+          }
         }
       }
       for (g <- grounds) {

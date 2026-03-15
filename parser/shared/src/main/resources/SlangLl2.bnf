@@ -354,11 +354,11 @@ infixSuffix ::= infixOp exp2
 
 infixOp ::= OP | SYMBOL | LANGLE | RANGLE | LRANGLE | STAR
 
-exp2 ::= exp1 access* [eta]
+exp2 ::= [OP] exp1 access* [eta]
 
 eta ::= UNDERSCORE
 
-exp1 ::= [OP] ( exp0 | paren )
+exp1 ::= exp0 | paren
 
 exp0 ::= idExp | thisExp | superExp | lit | interp | pureBlock | jsonLit
 

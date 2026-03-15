@@ -1574,7 +1574,8 @@ object SlangLl2AstBuilder {
   }
 
   def buildExp2(node: ParseTree.Node, reporter: message.Reporter): AST.Exp = {
-    // exp2: exp1 access* eta?
+    // exp2: OP? exp1 access* eta?
+    val opOpt = findLeafByRule(node, "OP")
     val exp1Node = findChild(node, "exp1").get
     var result = buildExp1(exp1Node, reporter)
     val accesses = findChildren(node, "access")
@@ -1594,23 +1595,7 @@ object SlangLl2AstBuilder {
         }
       case _ =>
     }
-    return result
-  }
-
-  def buildExp1(node: ParseTree.Node, reporter: message.Reporter): AST.Exp = {
-    // exp1: OP? ( exp0 | paren )
-    val opOpt = findLeafByRule(node, "OP")
-    val exp0Opt = findChild(node, "exp0")
-    val parenOpt = findChild(node, "paren")
-    var inner: AST.Exp = AST.Exp.LitB(value = F, attr = attr(node))
-    exp0Opt match {
-      case Some(e0) => inner = buildExp0(e0, reporter)
-      case _ =>
-        parenOpt match {
-          case Some(p) => inner = buildParenExp(p, reporter)
-          case _ => halt(st"Expected exp0 or paren in exp1 ${node.toST.render}".render)
-        }
-    }
+    // Apply unary operator after access chain (so !x.m() parses as !(x.m()))
     opOpt match {
       case Some(opLeaf) =>
         val opText = opLeaf.text
@@ -1624,12 +1609,26 @@ object SlangLl2AstBuilder {
         }
         return AST.Exp.Unary(
           op = unaryOp,
-          exp = inner,
+          exp = result,
           attr = resolvedAttr(node),
           opPosOpt = opLeaf.posOpt)
       case _ =>
     }
-    return inner
+    return result
+  }
+
+  def buildExp1(node: ParseTree.Node, reporter: message.Reporter): AST.Exp = {
+    // exp1: exp0 | paren
+    val exp0Opt = findChild(node, "exp0")
+    val parenOpt = findChild(node, "paren")
+    exp0Opt match {
+      case Some(e0) => return buildExp0(e0, reporter)
+      case _ =>
+        parenOpt match {
+          case Some(p) => return buildParenExp(p, reporter)
+          case _ => halt(st"Expected exp0 or paren in exp1 ${node.toST.render}".render)
+        }
+    }
   }
 
   def buildExp0(node: ParseTree.Node, reporter: message.Reporter): AST.Exp = {
@@ -2188,6 +2187,28 @@ object SlangLl2AstBuilder {
     return (rLits, rArgs)
   }
 
+  // Normalize LL(2) multi-line '#' delimiters to match Scala '|' margin format.
+  // - Strip leading '#' (first line delimiter, no Scala equivalent)
+  // - Replace '#' with '|' after newline+whitespace (continuation line markers)
+  def normalizeHashToBar(s: String): String = {
+    val cis = conversions.String.toCis(s)
+    var r = ISZ[C]()
+    var i: Z = 0
+    // Strip leading '#'
+    if (cis.size > 0 && cis(0) == '#') {
+      i = 1
+    }
+    while (i < cis.size) {
+      if (cis(i) == '#') {
+        r = r :+ '|'
+      } else {
+        r = r :+ cis(i)
+      }
+      i = i + 1
+    }
+    return conversions.String.fromCis(r)
+  }
+
   def parseMSTRP(leaf: ParseTree.Leaf): AST.Exp.StringInterpolate = {
     // MSTRP: IDF ( '#' MSTRF WSF? )* '#' MSTRF - no interpolation
     val text = leaf.text
@@ -2196,7 +2217,7 @@ object SlangLl2AstBuilder {
     // Find first '#'
     val firstHash = sops.indexOf('#')
     val prefix = sops.substring(0, firstHash)
-    val content = sops.substring(firstHash, text.size)
+    val content = normalizeHashToBar(sops.substring(firstHash, text.size))
     // Convert multi-line string content
     return AST.Exp.StringInterpolate(
       prefix = prefix,
@@ -2210,7 +2231,7 @@ object SlangLl2AstBuilder {
     val sops = ops.StringOps(text)
     val firstHash = sops.indexOf('#')
     val prefix = sops.substring(0, firstHash)
-    val firstLit = sops.substring(firstHash, text.size - 1) // before the $
+    val firstLit = normalizeHashToBar(sops.substring(firstHash, text.size - 2)) // strip trailing '${'
 
     var lits = ISZ[AST.Exp.LitString](AST.Exp.LitString(firstLit, attr(mstrpb)))
     var args = ISZ[AST.Exp]()
@@ -2242,8 +2263,8 @@ object SlangLl2AstBuilder {
       case Some(mstrpm) =>
         val mText = mstrpm.text
         val mSops = ops.StringOps(mText)
-        // MSTRPM: '$' MSTRF WSF? ( '#' MSTRF WSF? )* '#' MSTRI '$'
-        val litContent = mSops.substring(1, mText.size - 1)
+        // MSTRPM: '}$' MSTRF WSF? ( '#' MSTRF WSF? )* '#' MSTRI '${'
+        val litContent = normalizeHashToBar(mSops.substring(2, mText.size - 2))
         rLits = rLits :+ AST.Exp.LitString(litContent, attr(mstrpm))
         val nextInterp = findChild(node, "mstrinterp")
         nextInterp match {
@@ -2257,8 +2278,8 @@ object SlangLl2AstBuilder {
       case Some(mstrpe) =>
         val mText = mstrpe.text
         val mSops = ops.StringOps(mText)
-        // MSTRPE: '$' MSTRF?
-        val litContent = mSops.substring(1, mText.size)
+        // MSTRPE: '}$' MSTRF?
+        val litContent = normalizeHashToBar(mSops.substring(2, mText.size))
         rLits = rLits :+ AST.Exp.LitString(litContent, attr(mstrpe))
       case _ =>
     }

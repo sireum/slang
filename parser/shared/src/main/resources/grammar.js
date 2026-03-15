@@ -377,11 +377,11 @@ module.exports = grammar({
 
     infixOp: $ => choice($.OP, $.SYMBOL, '<', '>', '<>', '*'),
 
-    exp2: $ => prec.right(seq($.exp1, repeat($.access), optional($.eta))),
+    exp2: $ => prec.right(seq(optional($.OP), $.exp1, repeat($.access), optional($.eta))),
 
     eta: $ => '_',
 
-    exp1: $ => seq(optional($.OP), choice($.exp0, $.paren)),
+    exp1: $ => choice($.exp0, $.paren),
 
     exp0: $ => choice($.idExp, $.thisExp, $.superExp, $.lit, $.interp, $.pureBlock, $.jsonLit),
 
