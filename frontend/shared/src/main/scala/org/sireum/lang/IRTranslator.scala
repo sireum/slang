@@ -1183,6 +1183,22 @@ object IRTranslator {
             case _ =>
           }
         }
+        // Non-scalar, non-seq binary op: lower to method call on left operand
+        exp.attr.resOpt.get match {
+          case res: AST.ResolvedInfo.Method =>
+            val left = translateExp(exp.left)
+            val right = translateExp(exp.right)
+            val receiverType: AST.Typed = exp.left.typedOpt.get
+            val owner: ISZ[String] = receiverType match {
+              case tn: AST.Typed.Name => tn.ids
+              case _ => ISZ[String]()
+            }
+            // Use resolved method type (with proper type substitution) + prepend receiver
+            var methodType = res.tpeOpt.get
+            methodType = methodType(args = receiverType +: methodType.args)
+            return norm3AC(AST.IR.Exp.Apply(F, owner, res.id, ISZ(left, right), methodType, pos))
+          case _ =>
+        }
         halt(s"TODO: $exp")
       case exp: AST.Exp.If =>
         val t = exp.typedOpt.get
@@ -1297,15 +1313,21 @@ object IRTranslator {
       case exp: AST.Exp.InvokeNamed =>
         exp.attr.resOpt.get match {
           case res: AST.ResolvedInfo.Method if res.mode == AST.MethodMode.Copy =>
-            val receiver = translateExp(exp.receiverOpt.get)
             val t = exp.typedOpt.get.asInstanceOf[AST.Typed.Name]
+            val adt = th.typeMap.get(t.ids).get.asInstanceOf[TypeInfo.Adt]
+            val sm = tipe.TypeChecker.buildTypeSubstMap(t.ids, exp.posOpt, adt.ast.typeParams, t.args,
+              message.Reporter.create).get
+            // Evaluate receiver first (preserves evaluation order)
+            val receiver: AST.IR.Exp = exp.receiverOpt match {
+              case Some(recv) => translateExp(recv)
+              case _ => translateExp(AST.Exp.Ident(exp.ident.id, exp.ident.attr))
+            }
+            // Evaluate named args in source order (preserves side-effect order)
             var map = HashMap.empty[Z, AST.IR.Exp]
             for (narg <- exp.args) {
               map = map + narg.index ~> translateExp(narg.arg)
             }
-            val adt = th.typeMap.get(t.ids).get.asInstanceOf[TypeInfo.Adt]
-            val sm = tipe.TypeChecker.buildTypeSubstMap(t.ids, exp.posOpt, adt.ast.typeParams, t.args,
-              message.Reporter.create).get
+            // Assemble in param order: use named arg if provided, else copy from receiver
             var args = ISZ[AST.IR.Exp]()
             for (i <- adt.ast.params.indices) {
               map.get(i) match {
