@@ -520,6 +520,11 @@ class TypeCheckerTest extends TestSuite {
 
         * - failingWorksheet(
           """import org.sireum._
+            |val x = 3
+            |val (x, y) = (2, 3)""".stripMargin, "the identifier has already been previously declared")
+
+        * - failingWorksheet(
+          """import org.sireum._
             |import org.sireum.U32._
             |import org.sireum.S32._
             |assert(u32"0" < s32"0")""".stripMargin, "Incompatible")

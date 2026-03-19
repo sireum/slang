@@ -58,6 +58,40 @@ object SlangLl2AstBuilder {
 
   @strictpure def emptyResolvedAttr: AST.ResolvedAttr = AST.ResolvedAttr(None(), None(), None())
 
+  // ─── auto-imports for LL(2) ────────────────────────────────────────
+  // LL(2) Slang auto-imports org.sireum._ and all runtime SubZ types.
+  // This is an intentional ergonomic improvement over Scala-based Slang
+  // (where users must manually import SubZ types for literal suffixes).
+
+  @strictpure def mkWildcardImport(ids: ISZ[String]): AST.Stmt.Import = AST.Stmt.Import(
+    importers = ISZ(AST.Stmt.Import.Importer(
+      name = AST.Name(
+        ids = for (id <- ids) yield AST.Id(id, AST.Attr(None())),
+        attr = AST.Attr(None())),
+      selectorOpt = Some(AST.Stmt.Import.WildcardSelector()))),
+    attr = AST.Attr(None()))
+
+  val autoImports: ISZ[AST.Stmt] = ISZ[AST.Stmt](
+    mkWildcardImport(ISZ("org", "sireum")),
+    mkWildcardImport(ISZ("org", "sireum", "S8")),
+    mkWildcardImport(ISZ("org", "sireum", "S16")),
+    mkWildcardImport(ISZ("org", "sireum", "S32")),
+    mkWildcardImport(ISZ("org", "sireum", "S64")),
+    mkWildcardImport(ISZ("org", "sireum", "U8")),
+    mkWildcardImport(ISZ("org", "sireum", "U16")),
+    mkWildcardImport(ISZ("org", "sireum", "U32")),
+    mkWildcardImport(ISZ("org", "sireum", "U64")),
+    mkWildcardImport(ISZ("org", "sireum", "N")),
+    mkWildcardImport(ISZ("org", "sireum", "N8")),
+    mkWildcardImport(ISZ("org", "sireum", "N16")),
+    mkWildcardImport(ISZ("org", "sireum", "N32")),
+    mkWildcardImport(ISZ("org", "sireum", "N64")),
+    mkWildcardImport(ISZ("org", "sireum", "Z8")),
+    mkWildcardImport(ISZ("org", "sireum", "Z16")),
+    mkWildcardImport(ISZ("org", "sireum", "Z32")),
+    mkWildcardImport(ISZ("org", "sireum", "Z64"))
+  )
+
   @strictpure def mkId(value: String, tree: ParseTree): AST.Id = AST.Id(value, attr(tree))
 
   @strictpure def mkName(ids: ISZ[AST.Id], tree: ParseTree): AST.Name = AST.Name(ids, attr(tree))
@@ -479,6 +513,10 @@ object SlangLl2AstBuilder {
     val pkgs = findChildren(node, "pkg")
 
     var stmts = ISZ[AST.Stmt]()
+
+    // Auto-import org.sireum._ and all runtime SubZ types (LL(2) ergonomic improvement —
+    // no explicit imports needed for standard library types and literal suffixes like 100s32, 42u8)
+    stmts = stmts ++ autoImports
 
     // imports
     for (imp <- imports) {
@@ -1922,7 +1960,7 @@ object SlangLl2AstBuilder {
   def buildPureBlock(node: ParseTree.Node, reporter: message.Reporter): AST.Exp.StrictPureBlock = {
     // pureBlock: BACKSLASH block
     val blockNode = findChild(node, "block").get
-    val block = buildBlock(blockNode, reporter, 2, T)
+    val block = buildBlock(blockNode, reporter, 2, T, F)
     return AST.Exp.StrictPureBlock(block = block, attr = typedAttr(node))
   }
 
@@ -2318,7 +2356,7 @@ object SlangLl2AstBuilder {
       case _ =>
     }
 
-    val exp = buildRhsAsAssignExp(rhsNode, reporter)
+    val exp = buildRhsAsAssignExpLambda(rhsNode, reporter)
     return AST.Exp.Fun(context = ISZ(), params = params, exp = exp, attr = typedAttr(node))
   }
 
@@ -2704,7 +2742,7 @@ object SlangLl2AstBuilder {
 
     blockOpt match {
       case Some(blk) =>
-        val block = buildBlock(blk, reporter, 0, F)
+        val block = buildBlock(blk, reporter, 0, F, F)
         if (isSpec) {
           return AST.Stmt.SpecBlock(block = block)
         }
@@ -2738,6 +2776,14 @@ object SlangLl2AstBuilder {
   }
 
   def buildRhsAsAssignExp(node: ParseTree.Node, reporter: message.Reporter): AST.AssignExp = {
+    return buildRhsAsAssignExpH(node, F, reporter)
+  }
+
+  def buildRhsAsAssignExpLambda(node: ParseTree.Node, reporter: message.Reporter): AST.AssignExp = {
+    return buildRhsAsAssignExpH(node, T, reporter)
+  }
+
+  def buildRhsAsAssignExpH(node: ParseTree.Node, isLambda: B, reporter: message.Reporter): AST.AssignExp = {
     // rhs: exp | block | ifStmt | matchStmt
     val expOpt = findChild(node, "exp")
     expOpt match {
@@ -2748,7 +2794,7 @@ object SlangLl2AstBuilder {
     }
     val blockOpt = findChild(node, "block")
     blockOpt match {
-      case Some(blk) => return buildBlock(blk, reporter, 2, F)
+      case Some(blk) => return buildBlock(blk, reporter, if (isLambda) 0 else 2, F, isLambda)
       case _ =>
     }
     val ifOpt = findChild(node, "ifStmt")
@@ -2838,7 +2884,7 @@ object SlangLl2AstBuilder {
 
   // ─── varPattern ────────────────────────────────────────────────────
 
-  def buildVarPattern(node: ParseTree.Node, reporter: message.Reporter): AST.Stmt.VarPattern = {
+  def buildVarPattern(node: ParseTree.Node, reporter: message.Reporter): AST.Stmt = {
     // varPattern: VAR pattern0 colonType? ASSIGN annot? rhs
     val varLeaf = findLeafByRule(node, "VAR").get
     val isVal = varLeaf.text == "val"
@@ -2863,6 +2909,18 @@ object SlangLl2AstBuilder {
       }
     }
     val init = buildRhsAsAssignExp(rhsNode, reporter)
+    // Simple VarBinding pattern → emit Stmt.Var directly (avoids VarPatternRewriter in compiler)
+    pattern match {
+      case p: AST.Pattern.VarBinding =>
+        return AST.Stmt.Var(
+          isSpec = F,
+          isVal = isVal,
+          id = p.id,
+          tipeOpt = if (tipeOpt.nonEmpty) tipeOpt else p.tipeOpt,
+          initOpt = Some(init),
+          attr = resolvedAttr(node))
+      case _ =>
+    }
     return AST.Stmt.VarPattern(
       isSpec = F,
       isVal = isVal,
@@ -3040,7 +3098,7 @@ object SlangLl2AstBuilder {
       case Some(srcNode) =>
         // defDefnSuffix: ASSIGN annot? ( exp | block | ifStmt | matchStmt )
         val blockOpt: Option[AST.Stmt.Block] = findChild(srcNode, "block") match {
-          case Some(blk) => Some(buildBlock(blk, reporter, methodExpectsValue, methodIsPure))
+          case Some(blk) => Some(buildBlock(blk, reporter, methodExpectsValue, methodIsPure, F))
           case _ => None()
         }
         blockOpt match {
@@ -3349,7 +3407,7 @@ object SlangLl2AstBuilder {
     val expNode = findChild(node, "exp").get
     val cond = buildExp(expNode, reporter)
     val blockNode = findChild(node, "block").get
-    val thenBlock = buildBlock(blockNode, reporter, 0, F)
+    val thenBlock = buildBlock(blockNode, reporter, 0, F, F)
     val elsOpt = findChild(node, "els")
     val elseBody: AST.Body = elsOpt match {
       case Some(els) => buildElse(els, reporter)
@@ -3374,24 +3432,24 @@ object SlangLl2AstBuilder {
     val blockOpt = findChild(node, "block")
     blockOpt match {
       case Some(blk) =>
-        val block = buildBlock(blk, reporter, 0, F)
+        val block = buildBlock(blk, reporter, 0, F, F)
         return block.body
       case _ =>
     }
     return AST.Body(stmts = ISZ(), undecls = ISZ())
   }
 
-  def buildBlock(node: ParseTree.Node, reporter: message.Reporter, expectsValue: Z, isPure: B): AST.Stmt.Block = {
+  def buildBlock(node: ParseTree.Node, reporter: message.Reporter, expectsValue: Z, isPure: B, isLambda: B): AST.Stmt.Block = {
     // block: LBRACE annot? blockContent RBRACE
     val blockContent = findChild(node, "blockContent").get
-    val stmts = buildBlockContent(blockContent, reporter, expectsValue, isPure)
+    val stmts = buildBlockContent(blockContent, reporter, expectsValue, isPure, isLambda)
     return AST.Stmt.Block(
       contract = AST.MethodContract.Simple.empty,
       body = AST.Body(stmts = stmts, undecls = ISZ()),
       attr = attr(node))
   }
 
-  def buildBlockContent(node: ParseTree.Node, reporter: message.Reporter, expectsValue: Z, isPure: B): ISZ[AST.Stmt] = {
+  def buildBlockContent(node: ParseTree.Node, reporter: message.Reporter, expectsValue: Z, isPure: B, isLambda: B): ISZ[AST.Stmt] = {
     // blockContent: stmt* ret?
     var stmts = ISZ[AST.Stmt]()
     val stmtNodes = findChildren(node, "stmt")
@@ -3400,7 +3458,12 @@ object SlangLl2AstBuilder {
     }
     val retOpt = findChild(node, "ret")
     retOpt match {
-      case Some(r) => stmts = stmts :+ buildReturn(r, reporter)
+      case Some(r) =>
+        if (isLambda && findLeafByRule(r, "HALT").isEmpty) {
+          reporter.error(r.posOpt, "SlangLl2AstBuilder",
+            "'return' is not allowed inside a lambda body — the last expression is the result value")
+        }
+        stmts = stmts :+ buildReturn(r, reporter)
       case _ =>
         // Rule 1: check for missing value marker at leaf
         if (expectsValue > 0 && stmtNodes.nonEmpty) {
@@ -3469,7 +3532,7 @@ object SlangLl2AstBuilder {
     val annotOpt = findChild(node, "annot")
     val contract = buildLoopContract(annotOpt, reporter)
     val blockNode = findChild(node, "block").get
-    val block = buildBlock(blockNode, reporter, 0, F)
+    val block = buildBlock(blockNode, reporter, 0, F, F)
     return AST.Stmt.While(
       context = ISZ(),
       cond = cond,
@@ -3491,7 +3554,7 @@ object SlangLl2AstBuilder {
       enumGens = enumGens :+ buildForRange(fr, reporter)
     }
     val blockNode = findChild(node, "block").get
-    val block = buildBlock(blockNode, reporter, 0, F)
+    val block = buildBlock(blockNode, reporter, 0, F, F)
     return AST.Stmt.For(
       context = ISZ(),
       enumGens = enumGens,
@@ -3578,7 +3641,7 @@ object SlangLl2AstBuilder {
       case _ => None()
     }
     val blockContent = findChild(node, "blockContent").get
-    val stmts = buildBlockContent(blockContent, reporter, expectsValue, isPure)
+    val stmts = buildBlockContent(blockContent, reporter, expectsValue, isPure, F)
     return AST.Case(pattern = pattern, condOpt = condOpt, body = AST.Body(stmts = stmts, undecls = ISZ()))
   }
 

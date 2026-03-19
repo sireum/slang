@@ -257,6 +257,13 @@ for @fork a: computeA(),
 - `@fork` return types may be `@record` or `@datatype` — Slang's return-copy semantics
   guarantee each thread receives an independent deep copy with no shared mutable state
 - AST: `Stmt.For` gains optional annotation field; `@fork` semantics on generators
+- Cancellation: exiting a `for @fork` scope cancels unfinished tasks.  No additional
+  language features required — cancellation is structural (scope-based).  Two runtime
+  mechanisms provide cooperative cancellation:
+  1. **Loop back-edges**: compiler inserts cancellation checks at `for`/`while` back-edges
+     inside `@fork` scopes (covers Slang code)
+  2. **`@ext` calls**: runtime invokes a registered cancellation hook when the scope exits
+     (covers long-running native/external calls, e.g., Z3 `interrupt()`)
 
 ### `for @par` — Data-Parallel Iteration
 

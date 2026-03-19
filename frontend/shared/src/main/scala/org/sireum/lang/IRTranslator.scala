@@ -680,7 +680,13 @@ object IRTranslator {
         }
         val e = translateExp(stmt.exp)
         if (e.tipe == AST.Typed.unit || e.tipe == AST.Typed.nothing || norm3AC(e) == e) {
-          stmts = stmts :+ AST.IR.Stmt.Expr(e.asInstanceOf[AST.IR.Exp.Apply])
+          e match {
+            case applyExp: AST.IR.Exp.Apply =>
+              stmts = stmts :+ AST.IR.Stmt.Expr(applyExp)
+            case _ =>
+              // Non-Apply void expression (e.g., ApplyClosure): assign to discarded temp
+              stmts = stmts :+ AST.IR.Stmt.Assign.Temp(fresh.temp(), e, pos)
+          }
         } else {
           halt("Infeasible")
         }
@@ -1523,12 +1529,25 @@ object IRTranslator {
             val r = translateExp(bodyExpr.exp)
             stmts = stmts :+ AST.IR.Stmt.Return(Some(r), bodyPos)
           case _ =>
-            val retId = assignExpId("", Some("$closureRet"), bodyPos)
-            stmts = stmts :+ AST.IR.Stmt.Decl(F, T, F, methodContext,
-              ISZ(AST.IR.Stmt.Decl.Local(retId, retType)), bodyPos)
-            translateAssignExp(exp.exp, (retId, retType))
-            val retRef = AST.IR.Exp.LocalVarRef(T, methodContext, retId, retType, bodyPos)
-            stmts = stmts :+ AST.IR.Stmt.Return(Some(retRef), bodyPos)
+            if (retType == AST.Typed.unit) {
+              // Unit-returning lambda: translate body as statements, return Unit singleton
+              exp.exp match {
+                case block: AST.Stmt.Block =>
+                  for (s <- block.body.stmts) {
+                    translateStmt(s, None())
+                  }
+                case _ =>
+                  translateStmt(exp.exp.asStmt, None())
+              }
+              stmts = stmts :+ AST.IR.Stmt.Return(None(), bodyPos)
+            } else {
+              val retId = assignExpId("", Some("$closureRet"), bodyPos)
+              stmts = stmts :+ AST.IR.Stmt.Decl(F, T, F, methodContext,
+                ISZ(AST.IR.Stmt.Decl.Local(retId, retType)), bodyPos)
+              translateAssignExp(exp.exp, (retId, retType))
+              val retRef = AST.IR.Exp.LocalVarRef(T, methodContext, retId, retType, bodyPos)
+              stmts = stmts :+ AST.IR.Stmt.Return(Some(retRef), bodyPos)
+            }
         }
         val liftedBody = AST.IR.Body.Block(AST.IR.Stmt.Block(stmts, pos))
 

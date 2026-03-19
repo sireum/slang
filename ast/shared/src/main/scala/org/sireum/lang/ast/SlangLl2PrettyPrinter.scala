@@ -30,6 +30,10 @@ import org.sireum._
 import org.sireum.lang.{ast => AST}
 
 object SlangLl2PrettyPrinter {
+  val implicitSubZ: HashSet[String] = HashSet.empty[String] ++ ISZ[String](
+    "U8", "U16", "U32", "U64", "S8", "S16", "S32", "S64",
+    "N8", "N16", "N32", "N64", "Z8", "Z16", "Z32", "Z64", "N"
+  )
   @pure def prettyPrint(ast: AST.TopUnit.Program): ST = {
     val lineSep = "\n"
     @strictpure def printName(o: AST.Name): ST = st"${(for (id <- o.ids) yield id.value, ".")}"
@@ -40,10 +44,22 @@ object SlangLl2PrettyPrinter {
     }
     @strictpure def printImporter(o: AST.Stmt.Import.Importer): ST =
       st"import ${printName(o.name)}${if (o.selectorOpt.isEmpty) st"" else st".${printSelector(o.selectorOpt.get)}"}"
-    @strictpure def isSireumImport(i: AST.Stmt.Import.Importer): B = i.selectorOpt match {
-      case Some(_: AST.Stmt.Import.WildcardSelector) => i.name.ids.size == 2 && i.name.ids(0).value == "org" && i.name.ids(1).value == "sireum"
-      case _ => F
+    @strictpure def isSireumImport(i: AST.Stmt.Import.Importer): B = if (i.name.ids.size == 2) {
+      i.selectorOpt match {
+        case Some(_: AST.Stmt.Import.WildcardSelector) =>
+          i.name.ids(0).value == "org" && i.name.ids(1).value == "sireum"
+        case _ => F
+      }
+    } else if (i.name.ids.size == 3) {
+      i.selectorOpt match {
+        case Some(_: AST.Stmt.Import.WildcardSelector) =>
+          i.name.ids(0).value == "org" && i.name.ids(1).value == "sireum" && implicitSubZ.contains(i.name.ids(2).value)
+        case _ => F
+      }
+    } else {
+      F
     }
+
     @strictpure def printImport(o: AST.Stmt.Import): ST = st"${(for (i <- o.importers if !isSireumImport(i)) yield printImporter(i), lineSep)}"
     @strictpure def printType(o: AST.Type): ST = o match {
       case o: AST.Type.Named => st"${printName(o.name)}${if (o.typeArgs.isEmpty) st"" else st"[${(for (t <- o.typeArgs) yield printType(t), ", ")}]"}"

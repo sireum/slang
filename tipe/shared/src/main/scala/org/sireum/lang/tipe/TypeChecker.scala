@@ -3794,9 +3794,9 @@ import TypeChecker._
       case aexp: AST.Stmt.Expr =>
         val r = checkExpr(F, expectedOpt, scope, aexp, reporter)
         return (r, r.typedOpt)
-      case aexp: AST.Stmt.If => checkIf(T, expectedOpt, scope, aexp, reporter)
-      case aexp: AST.Stmt.Block => checkBlock(T, expectedOpt, scope, aexp, reporter)
-      case aexp: AST.Stmt.Match => checkMatch(T, expectedOpt, scope, aexp, reporter)
+      case aexp: AST.Stmt.If => checkIf(expectedOpt != AST.Typed.unitOpt, expectedOpt, scope, aexp, reporter)
+      case aexp: AST.Stmt.Block => checkBlock(expectedOpt != AST.Typed.unitOpt, expectedOpt, scope, aexp, reporter)
+      case aexp: AST.Stmt.Match => checkMatch(expectedOpt != AST.Typed.unitOpt, expectedOpt, scope, aexp, reporter)
       case aexp: AST.Stmt.Return => checkStmt(scope, aexp, reporter)
     }
 
@@ -4666,6 +4666,17 @@ import TypeChecker._
       case Some(initType) =>
         val expected: AST.Typed = if (expectedOpt.nonEmpty) expectedOpt.get else initType
         val (scopeOpt, newPattern) = checkPattern(stmt.isSpec, None(), expected, scope, stmt.pattern, reporter)
+        scopeOpt match {
+          case Some(newScope) =>
+            val locals = HashSet.empty[String] ++ scope.localIds
+            for (p <- newScope.nameMap.entries) {
+              val (id, info) = p
+              if (locals.contains(id)) {
+                reporter.error(info.posOpt, typeCheckerKind, s"Cannot declare '$id' because the identifier has already been previously declared.")
+              }
+            }
+          case _ =>
+        }
         return (scopeOpt, stmt(pattern = newPattern, tipeOpt = newTipeOpt, init = newInit))
       case _ =>
         if (expectedOpt.isEmpty) {
