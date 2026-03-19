@@ -4668,11 +4668,12 @@ import TypeChecker._
         val (scopeOpt, newPattern) = checkPattern(stmt.isSpec, None(), expected, scope, stmt.pattern, reporter)
         scopeOpt match {
           case Some(newScope) =>
-            val locals = HashSet.empty[String] ++ scope.localIds
             for (p <- newScope.nameMap.entries) {
               val (id, info) = p
-              if (locals.contains(id)) {
-                reporter.error(info.posOpt, typeCheckerKind, s"Cannot declare '$id' because the identifier has already been previously declared.")
+              scope.resolveName(typeHierarchy.nameMap, ISZ(id)) match {
+                case Some(_: Info.LocalVar) =>
+                  reporter.error(info.posOpt, typeCheckerKind, s"Cannot declare '$id' because the identifier has already been previously declared.")
+                case _ =>
               }
             }
           case _ =>
