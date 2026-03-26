@@ -61,8 +61,83 @@ object SlangLl2PrettyPrinter {
     }
 
     @strictpure def printImport(o: AST.Stmt.Import): ST = st"${(for (i <- o.importers if !isSireumImport(i)) yield printImporter(i), lineSep)}"
+    @strictpure def isOpSym(c: C): B = c match {
+      case '+' => T; case '-' => T; case '*' => T; case '/' => T; case '%' => T
+      case '<' => T; case '>' => T; case '!' => T; case '&' => T; case '^' => T
+      case '|' => T; case '~' => T; case ':' => T; case '=' => T
+      case _ => '\u2200' <= c && c <= '\u22FF' || '\u2A00' <= c && c <= '\u2AFF' ||
+                '\u27C0' <= c && c <= '\u27EF' || '\u2980' <= c && c <= '\u29FF'
+    }
+    @strictpure def defIdSep(id: String): String =
+      if (id.size > 0 && isOpSym(conversions.String.toCis(id)(id.size - 1))) " " else ""
+    // Backtick-escape ids that would not lex as a valid ID or OP token without backticks.
+    // Valid without backticks: pure OPSYM sequences (OP), or IDF patterns (letter/_ start,
+    // letters/digits/_, optional trailing _OPSYM+).
+    @pure def escapeDefId(id: String): String = {
+      val cis = conversions.String.toCis(id)
+      if (cis.isEmpty) {
+        return id
+      }
+      val c0 = cis(0)
+      @strictpure def isLetter(c: C): B = ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
+      @strictpure def isDigit(c: C): B = '0' <= c && c <= '9'
+      @strictpure def isIdBody(c: C): B = isLetter(c) || isDigit(c) || c == '_'
+      // Pure OPSYM sequence → valid OP token
+      val bt = '`'
+      if (isOpSym(c0)) {
+        var allOp = T
+        var i: Z = 0
+        while (i < cis.size) {
+          if (!isOpSym(cis(i))) { allOp = F }
+          i = i + 1
+        }
+        if (allOp) {
+          // But single-char tokens <, >, * lex as LANGLE/RANGLE/STAR, not OP
+          if (cis.size == z"1" && (c0 == '<' || c0 == '>' || c0 == '*')) {
+            return s"$bt$id$bt"
+          }
+          return id
+        }
+      }
+      // IDF pattern: starts with letter or _, body is letters/digits/_, optional _OPSYM+ suffix
+      if (isLetter(c0) || c0 == '_') {
+        var i: Z = 1
+        while (i < cis.size && isIdBody(cis(i))) {
+          i = i + 1
+        }
+        if (i == cis.size) {
+          return id // pure alphanumeric ID
+        }
+        // Check if remaining is a valid _OPSYM+ suffix: the last consumed char must be _
+        // and everything after must be OPSYM
+        if (i >= 2 && cis(i - 1) == '_') {
+          var allOpSuffix = T
+          var j = i
+          while (j < cis.size) {
+            if (!isOpSym(cis(j))) { allOpSuffix = F }
+            j = j + 1
+          }
+          if (allOpSuffix) {
+            return id // valid IDF with _OPSYM+ suffix (e.g., unary_-)
+          }
+        }
+      }
+      // Doesn't match ID or OP — needs backtick escaping
+      return s"$bt$id$bt"
+    }
+    @pure def isUnitType(o: AST.Type): B = {
+      if (o.typedOpt == Typed.unitOpt) {
+        return T
+      }
+      o match {
+        case o: AST.Type.Named => return o.typeArgs.isEmpty && o.name.ids.size == 1 && o.name.ids(0).value == "Unit"
+        case _ => return F
+      }
+    }
     @strictpure def printType(o: AST.Type): ST = o match {
-      case o: AST.Type.Named => st"${printName(o.name)}${if (o.typeArgs.isEmpty) st"" else st"[${(for (t <- o.typeArgs) yield printType(t), ", ")}]"}"
+      case o: AST.Type.Named =>
+        if (isUnitType(o)) st"()"
+        else st"${printName(o.name)}${if (o.typeArgs.isEmpty) st"" else st"[${(for (t <- o.typeArgs) yield printType(t), ", ")}]"}"
       case o: AST.Type.Tuple => st"(${(for (t <- o.args) yield printType(t), ", ")})"
       case o: AST.Type.Fun =>
         if (o.isByName) {
@@ -288,7 +363,7 @@ object SlangLl2PrettyPrinter {
       case AST.Purity.StrictPure => st" @strictpure"
     }
     @strictpure def printTypeParam(o: AST.TypeParam): ST = {
-      val ann: String = if (o.isImmutable) "@imm" else if (o.isIndex) "@index" else "@mut"
+      val ann: String = if (o.isIndex) "@index" else if (o.isImmutable) "@imm" else "@mut"
       st"$ann ${o.id.value}"
     }
     @strictpure def printTypeParams(o: ISZ[AST.TypeParam]): ST = if (o.isEmpty) st"" else st"[${(for (tp <- o) yield printTypeParam(tp), ", ")}]"
@@ -372,10 +447,18 @@ object SlangLl2PrettyPrinter {
             |}"""
       st": ${(for (p <- o.premises) yield printExp(p), ", ")} ⊢ ${printExp(o.conclusion)}$proof"
     }
+    @pure def printExtMember(o: AST.Stmt): ST = {
+      o match {
+        case em: AST.Stmt.ExtMethod => return printExtMethod(em)
+        case _ => return printStmt(F, o)
+      }
+    }
     @strictpure def printExtMethod(o: AST.Stmt.ExtMethod): ST = {
       val tparams: ST = printTypeParams(o.sig.typeParams)
       val params: ST = printParams(o.sig.hasParams, o.sig.params)
-      val sig = st"def ${o.sig.id.value}$tparams$params: ${printType(o.sig.returnType)}"
+      val retSuffix: ST = if (isUnitType(o.sig.returnType)) st"" else st": ${printType(o.sig.returnType)}"
+      val eid = escapeDefId(o.sig.id.value)
+      val sig = st"def $eid${defIdSep(o.sig.id.value)}$tparams$params$retSuffix"
       if (o.contract.isEmpty) sig else
         st"""$sig @[
             |  ${(printMethodContract(o.contract), s"$lineSep")}
@@ -389,11 +472,11 @@ object SlangLl2PrettyPrinter {
         val (ext, members): (ST, ISZ[ST]) = o.extNameOpt match {
           case Some(extName) =>
             val ext: ST = if (extName == "") st" @ext" else st" @ext(${AST.Exp.LitString(extName, o.attr).prettyST})"
-            (ext, for (stmt <- o.stmts) yield printExtMethod(stmt.asInstanceOf[AST.Stmt.ExtMethod]))
+            (ext, for (stmt <- o.stmts) yield printExtMember(stmt))
           case _ =>
             (st"", printStmts(F, o.stmts))
         }
-        st"""package${if (o.isApp) " @app" else ""}$ext ${o.id} {
+        st"""package${if (o.isApp) " @app" else ""}$ext ${o.id.value} {
             |  ${(members, lineSep)}
             |}"""
       case o: AST.Stmt.For =>
@@ -416,13 +499,14 @@ object SlangLl2PrettyPrinter {
       case o: AST.Stmt.Sig =>
         val tparams = printTypeParams(o.typeParams)
         val kind: String = if (o.isImmutable) "@sig" else "@msig"
+        val ext: String = if (o.isExt) " @ext" else ""
         val seal: String = if (o.isSealed) " @sealed" else ""
         val supers: ST = if (o.parents.isEmpty) st"" else st": ${(for (p <- o.parents) yield printType(p), ", ")}"
         val members: ST = if (o.stmts.isEmpty) st"" else
           st""" {
               |  ${(printStmts(F, o.stmts), lineSep)}
               |}"""
-        st"type $kind$seal ${o.id.value}$tparams$supers$members"
+        st"type $kind$ext$seal ${o.id.value}$tparams$supers$members"
       case o: AST.Stmt.DeduceSequent =>
         st"""deduce
             |${(for (s <- o.sequents) yield printSequent(s), lineSep)}"""
@@ -484,22 +568,45 @@ object SlangLl2PrettyPrinter {
           case Some(e) => st"(${e.prettyST})"
           case _ => st""
         }
-        st"def @just$eta ${o.sig.id.value}$tparams$params"
+        st"def @just$eta ${escapeDefId(o.sig.id.value)}${defIdSep(o.sig.id.value)}$tparams$params"
       case _: AST.Stmt.ExtMethod => halt("Infeasible")
       case o: AST.Stmt.Method =>
         val tparams: ST = printTypeParams(o.sig.typeParams)
-        val params: ST = printParams(o.sig.hasParams, o.sig.params)
-        val sig = st"def${printPurity(o.purity)} ${o.sig.id.value}$tparams$params: ${printType(o.sig.returnType)}"
-        val header: ST = if (o.contract.isEmpty) sig else
-          st"""$sig @[
-              |  ${(printMethodContract(o.contract), s"$lineSep")}
-              |]"""
-        o.bodyOpt match {
-          case Some(body) =>
-            st"""$header = {
-                |  ${(printStmts(F, body.stmts), lineSep)}
-                |}"""
-          case _ => header
+        val isUnit: B = isUnitType(o.sig.returnType)
+        if (isUnit) {
+          // Procedural syntax: def foo() { ... } — no return type, no =
+          // Parameterless procedural: def foo { ... } — omit ()
+          val params: ST = if (o.sig.params.isEmpty) st"" else printParams(o.sig.hasParams, o.sig.params)
+          val eid = escapeDefId(o.sig.id.value)
+          val sep = defIdSep(o.sig.id.value)
+          val sig = st"def${printPurity(o.purity)} $eid$sep$tparams$params"
+          val header: ST = if (o.contract.isEmpty) sig else
+            st"""$sig @[
+                |  ${(printMethodContract(o.contract), s"$lineSep")}
+                |]"""
+          o.bodyOpt match {
+            case Some(body) =>
+              st"""$header {
+                  |  ${(printStmts(F, body.stmts), lineSep)}
+                  |}"""
+            case _ => header
+          }
+        } else {
+          val params: ST = printParams(o.sig.hasParams, o.sig.params)
+          val eid = escapeDefId(o.sig.id.value)
+          val sep = defIdSep(o.sig.id.value)
+          val sig = st"def${printPurity(o.purity)} $eid$sep$tparams$params: ${printType(o.sig.returnType)}"
+          val header: ST = if (o.contract.isEmpty) sig else
+            st"""$sig @[
+                |  ${(printMethodContract(o.contract), s"$lineSep")}
+                |]"""
+          o.bodyOpt match {
+            case Some(body) =>
+              st"""$header = {
+                  |  ${(printStmts(F, body.stmts), lineSep)}
+                  |}"""
+            case _ => header
+          }
         }
       case o: AST.Stmt.Return => st"return${if (o.expOpt.isEmpty) st"" else st" ${printExp(o.expOpt.get)}"}"
       case o: AST.Stmt.SpecBlock =>
@@ -509,7 +616,8 @@ object SlangLl2PrettyPrinter {
       case o: AST.Stmt.SpecMethod =>
         val tparams: ST = printTypeParams(o.sig.typeParams)
         val params: ST = printParams(o.sig.hasParams, o.sig.params)
-        st"def @spec ${o.sig.id.value}$tparams$params: ${printType(o.sig.returnType)}"
+        val retSuffix: ST = if (isUnitType(o.sig.returnType)) st"" else st": ${printType(o.sig.returnType)}"
+        st"def @spec ${escapeDefId(o.sig.id.value)}${defIdSep(o.sig.id.value)}$tparams$params$retSuffix"
       case o: AST.Stmt.Inv =>
         st"""def @inv ${o.id.value} = (
             |  ${(for (claim <- o.claims) yield printExp(claim), s",$lineSep")})

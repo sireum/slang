@@ -130,8 +130,12 @@ object Parser_Ext {
                        isDiet: B,
                        fileUriOpt: Option[String],
                        reporter: Reporter
-                     ): Option[T] =
+                     ): Option[T] = {
+    if (SlangLl2.is(fileUriOpt)) {
+      return SlangLl2.parse(fileUriOpt, text, reporter).map(_.asInstanceOf[T])
+    }
     SlangParser(isWorksheet, isDiet, fileUriOpt, text.value, reporter).unitOpt.map(_.asInstanceOf[T])
+  }
 
   @pure def detectSlang(fileUriOpt: Option[String], txt: String): (B, String, String) = {
     val t = SlangParser.detectSlang(fileUriOpt, txt)

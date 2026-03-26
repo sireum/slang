@@ -42,10 +42,10 @@ class LibraryTypeCheckingTest extends TestSuite {
   val tests = Tests {
 
     * - {
-      val Either.Left(leaves) = tc.typeHierarchy.substLeavesOfType(None(), ast.Typed.Name(ISZ("org", "sireum", "Option"), ISZ(ast.Typed.Name(ISZ("org", "sireum", "Z"), ISZ()))))
+      val Either.Left(leaves) = tc.typeHierarchy.substLeavesOfType(None(), ast.Typed.Name(ISZ("org", "sireum", "Option"), None(), ISZ(ast.Typed.Name(ISZ("org", "sireum", "Z"), None(), ISZ()))))
       assert(leaves == ISZ(
-        ast.Typed.Name(ISZ("org", "sireum", "None"), ISZ(ast.Typed.Name(ISZ("org", "sireum", "Z"), ISZ()))),
-        ast.Typed.Name(ISZ("org", "sireum", "Some"), ISZ(ast.Typed.Name(ISZ("org", "sireum", "Z"), ISZ())))
+        ast.Typed.Name(ISZ("org", "sireum", "None"), None(), ISZ(ast.Typed.Name(ISZ("org", "sireum", "Z"), None(), ISZ()))),
+        ast.Typed.Name(ISZ("org", "sireum", "Some"), None(), ISZ(ast.Typed.Name(ISZ("org", "sireum", "Z"), None(), ISZ())))
       ))
     }
 

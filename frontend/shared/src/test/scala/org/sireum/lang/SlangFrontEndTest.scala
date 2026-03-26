@@ -27,18 +27,18 @@ package org.sireum.lang
 
 import org.sireum.message._
 import org.sireum.test._
-import org.sireum.{ISZ, HashSMap => SHashSMap, None => SNone, String => SString}
+import org.sireum.{ISZ, HashSMap => SHashSMap, Option => SOption, None => SNone, Some => SSome, String => SString}
 import org.sireum.lang.{ast => AST}
-import org.sireum.lang.parser.SlangParser
 import org.sireum.lang.symbol._
 import org.sireum.lang.tipe._
 
 object SlangFrontEndTest {
 
-  def parse(text: String, isWorksheet: Boolean, reporter: Reporter): SlangParser.Result =
-    SlangParser(isWorksheet, isDiet = false, SNone(), text, reporter)
+  def parse(uri: String, text: String, isWorksheet: Boolean, reporter: Reporter): SOption[AST.TopUnit.Program] =
+    parser.Parser(text).parseTopUnit[AST.TopUnit.Program](isWorksheet, false, if (uri.isEmpty) SNone() else SSome(uri), reporter)
 
   def passingCheck(
+    uri: String,
     text: String,
     addImport: Boolean = true,
     isWorksheet: Boolean = false,
@@ -50,21 +50,22 @@ object SlangFrontEndTest {
     val prelude = if (isPrelude) "" else "// #Sireum\n"
     val impor = if (addImport) "import org.sireum._; " else ""
     val r = parse(
+      uri,
       s"$prelude$impor$text",
       isWorksheet,
       reporter
     )
-    var b = r.unitOpt.nonEmpty && !reporter.hasIssue
-    if (!b) report(r, reporter)
+    var b = r.nonEmpty && !reporter.hasIssue
+    if (!b) report(text, r, reporter)
     else {
       val gdr = GlobalDeclarationResolver(SHashSMap.empty, SHashSMap.empty, reporter)
       reporter.reports(gdr.reporter.messages)
-      if (reporter.hasIssue) report(r, reporter)
-      r.unitOpt.foreach {
+      if (reporter.hasIssue) report(text, r, reporter)
+      r.foreach {
         case p: AST.TopUnit.Program =>
           gdr.resolveProgram(p)
           if (reporter.hasIssue) {
-            report(r, reporter)
+            report(text, r, reporter)
             b = false
           }
 
@@ -97,7 +98,7 @@ object SlangFrontEndTest {
     isPrelude: Boolean = true,
     checkJson: Boolean = true
   ): Unit =
-    assert(passingCheck(text, addImport, isWorksheet, isPrelude, checkJson))
+    assert(passingCheck("", text, addImport, isWorksheet, isPrelude, checkJson))
 
   def failing(
     text: String,
@@ -111,12 +112,13 @@ object SlangFrontEndTest {
       val prelude = if (isPrelude) "" else "// #Sireum\n"
       val impor = if (addImport) "import org.sireum._; " else ""
       val r = parse(
+        "",
         s"$prelude$impor$text",
         isWorksheet,
         reporter
       )
       val b = reporter.issues.elements.exists(_.text.value.contains(msg))
-      if (!b) report(r, reporter)
+      if (!b) report(text, r, reporter)
       b
     })
 
@@ -133,6 +135,7 @@ object SlangFrontEndTest {
       val prelude = if (isPrelude) "" else "// #Sireum\n"
       val impor = if (addImport) "import org.sireum._; " else ""
       val r = parse(
+        "",
         s"$prelude$impor$text",
         isWorksheet,
         reporter
@@ -144,14 +147,14 @@ object SlangFrontEndTest {
               info.endLine == end._1 && info.endColumn == end._2
         )
       )
-      if (!b) report(r, reporter)
+      if (!b) report(text, r, reporter)
       b
     })
 
-  def report(r: SlangParser.Result, reporter: Reporter): Unit = {
+  def report(text: String, r: SOption[AST.TopUnit.Program], reporter: Reporter): Unit = {
     reporter.printMessages()
-    Console.err.println(r.text)
-    Console.err.println(r.unitOpt)
+    Console.err.println(text)
+    Console.err.println(r)
   }
 
 }

@@ -117,7 +117,7 @@ import GlobalDeclarationResolver._
               T,
               T,
               T,
-              AST.Stmt.Object(F, None(), AST.Id(id, attr), ISZ(), attr),
+              AST.Stmt.Object(F, None(), AST.Id(id, attr), ISZ(), ISZ(), attr),
               Some(AST.Typed.Object(owner, id)),
               Some(AST.ResolvedInfo.Object(name)),
               AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), owner, id, ISZ(), None(), ISZ(), ISZ()),
@@ -326,7 +326,7 @@ import GlobalDeclarationResolver._
             T,
             T,
             T,
-            AST.Stmt.Object(F, None(), AST.Id(stringInterpolator, stmt.id.attr), ISZ(), stmt.attr),
+            AST.Stmt.Object(F, None(), AST.Id(stringInterpolator, stmt.id.attr), ISZ(), ISZ(), stmt.attr),
             Some(AST.Typed.Object(name, stringInterpolator)),
             Some(AST.ResolvedInfo.Object(stringInterpolatorName)),
             AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), currentName, id, ISZ(), None(), ISZ(), ISZ())
@@ -337,7 +337,7 @@ import GlobalDeclarationResolver._
         val name = currentName :+ stmt.id.value
         var elements = Map.empty[String, AST.ResolvedInfo]
         val elementTypeName = name :+ Info.Enum.elementTypeSuffix
-        val elementTypedOpt: Option[AST.Typed] = Some(AST.Typed.Name(elementTypeName, ISZ()))
+        val elementTypedOpt: Option[AST.Typed] = Some(AST.Typed.Name(elementTypeName, None(), ISZ()))
         var elementPosOpts: ISZ[Option[Position]] = ISZ()
         var ordinal = 0
         for (e <- stmt.elements) {
@@ -433,6 +433,7 @@ import GlobalDeclarationResolver._
         assert(members.vars.isEmpty)
         val tpe = AST.Typed.Name(
           name,
+          None(),
           for (p <- typeParamMap(stmt.typeParams, reporter).entries)
             yield AST.Typed.TypeVar(p._1, p._2.asInstanceOf[TypeInfo.TypeVar].ast.kind)
         )
@@ -477,14 +478,14 @@ import GlobalDeclarationResolver._
             name,
             F,
             sc,
-            AST.Stmt.Var(F, p.isVal, p.id, Some(p.tipe), None(),
+            AST.Stmt.Var(F, p.isVal, p.id, Some(p.tipe), None(), ISZ(),
               AST.ResolvedAttr(posOpt = p.id.attr.posOpt, resOpt = paramResInfoOpt, typedOpt = None()))
           )
         }
         val members = resolveMembers(name, sc, stmt.stmts, paramVars)
         val typeParams = typeParamMap(stmt.typeParams, reporter)
         val typeVars = typeParams.keys
-        val tpe = AST.Typed.Name(name, for (p <- typeParams.entries) yield AST.Typed.TypeVar(p._1, p._2.asInstanceOf[TypeInfo.TypeVar].ast.kind))
+        val tpe = AST.Typed.Name(name, None(), for (p <- typeParams.entries) yield AST.Typed.TypeVar(p._1, p._2.asInstanceOf[TypeInfo.TypeVar].ast.kind))
         val constructorResOpt: Option[AST.ResolvedInfo] = Some(
           AST.ResolvedInfo
             .Method(F, AST.MethodMode.Constructor, typeVars, currentName, stmt.id.value, constructorParamVars, None(), ISZ(), ISZ())

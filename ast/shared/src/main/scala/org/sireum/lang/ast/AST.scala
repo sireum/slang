@@ -38,12 +38,12 @@ object TopUnit {
   object Program {
 
     @memoize def empty: Program = {
-      return TopUnit.Program(None(), Name(ISZ(), Attr(None())), Body(ISZ(), ISZ()))
+      return TopUnit.Program(None(), Name(ISZ(), Attr(None())), Body(ISZ(), ISZ()), ISZ())
     }
 
   }
 
-  @datatype class Program(val fileUriOpt: Option[String], val packageName: Name, val body: Body) extends TopUnit {
+  @datatype class Program(val fileUriOpt: Option[String], val packageName: Name, val body: Body, val annotations: ISZ[Annotation]) extends TopUnit {
     @pure override def string: String = {
       return if (packageName.ids.isEmpty)
         st"""// #Sireum
@@ -189,11 +189,11 @@ object Stmt {
       @strictpure override def prettyST: ST = st"{${(for (s <- selectors) yield st"${s.from.prettyST} => ${s.to.prettyST}", ", ")}}"
     }
 
-    @datatype class WildcardSelector extends Selector {
+    @datatype class WildcardSelector(val annotations: ISZ[Annotation]) extends Selector {
       @strictpure override def prettyST: ST = st"_"
     }
 
-    @datatype class NamedSelector(val from: Id, val to: Id)
+    @datatype class NamedSelector(val from: Id, val to: Id, val annotations: ISZ[Annotation])
 
   }
 
@@ -202,6 +202,7 @@ object Stmt {
                       val id: Id,
                       val tipeOpt: Option[Type],
                       val initOpt: Option[AssignExp],
+                      val annotations: ISZ[Annotation],
                       @hidden val attr: ResolvedAttr) extends Stmt {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @pure override def prettyST: ST = {
@@ -224,6 +225,7 @@ object Stmt {
                              val pattern: Pattern,
                              val tipeOpt: Option[Type],
                              val init: AssignExp,
+                             val annotations: ISZ[Annotation],
                              @hidden val attr: Attr) extends Stmt {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @pure override def prettyST: ST = {
@@ -443,6 +445,7 @@ object Stmt {
                          val extNameOpt: Option[String],
                          val id: Id,
                          val stmts: ISZ[Stmt],
+                         val annotations: ISZ[Annotation],
                          @hidden val attr: Attr) extends Stmt {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @pure override def prettyST: ST = {
@@ -464,6 +467,7 @@ object Stmt {
                       val typeParams: ISZ[TypeParam],
                       val parents: ISZ[Type.Named],
                       val stmts: ISZ[Stmt],
+                      val annotations: ISZ[Annotation],
                       @hidden val attr: Attr) extends Stmt {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @pure override def prettyST: ST = {
@@ -489,6 +493,7 @@ object Stmt {
                       val params: ISZ[AdtParam],
                       val parents: ISZ[Type.Named],
                       val stmts: ISZ[Stmt],
+                      val annotations: ISZ[Annotation],
                       @hidden val attr: Attr) extends Stmt {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @pure override def prettyST: ST = {
@@ -514,7 +519,7 @@ object Stmt {
     @strictpure def compNum: Z = 0
   }
 
-  @datatype class Assign(val lhs: Exp, val rhs: AssignExp, @hidden val attr: Attr) extends Stmt {
+  @datatype class Assign(val lhs: Exp, val rhs: AssignExp, val annotations: ISZ[Annotation], @hidden val attr: Attr) extends Stmt {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @pure override def prettyST: ST = {
       return st"${lhs.prettyST} = ${rhs.prettyST}"
@@ -663,7 +668,7 @@ object Stmt {
     }
   }
 
-  @datatype class Return(val expOpt: Option[Exp], @hidden val attr: TypedAttr) extends Stmt with AssignExp {
+  @datatype class Return(val expOpt: Option[Exp], val annotations: ISZ[Annotation], @hidden val attr: TypedAttr) extends Stmt with AssignExp {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure override def asStmt: Stmt = this
     @strictpure override def asAssignExp: AssignExp = this
@@ -676,7 +681,7 @@ object Stmt {
     @strictpure def compNum: Z = 1
   }
 
-  @datatype class Expr(val exp: Exp, @hidden val attr: TypedAttr) extends Stmt with AssignExp {
+  @datatype class Expr(val exp: Exp, val annotations: ISZ[Annotation], @hidden val attr: TypedAttr) extends Stmt with AssignExp {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure def typedOpt: Option[Typed] = attr.typedOpt
     @strictpure override def asAssignExp: AssignExp = this
@@ -1293,7 +1298,7 @@ object ProofAst {
   @pure def typedOpt: Option[Typed]
 }
 
-@datatype class Case(val pattern: Pattern, val condOpt: Option[Exp], val body: Body) {
+@datatype class Case(val pattern: Pattern, val condOpt: Option[Exp], val body: Body, val annotations: ISZ[Annotation]) {
   @pure def prettyST: ST = {
     return st"""case ${pattern.prettyST}${if (condOpt.nonEmpty) st" if ${condOpt.get.prettyST}" else st""} =>
                |  ${(body.prettySTs, "\n")}"""
@@ -1311,13 +1316,13 @@ object EnumGen {
 
   object Range {
 
-    @datatype class Expr(val exp: Exp, @hidden val attr: Attr) extends Range {
+    @datatype class Expr(val exp: Exp, val annotations: ISZ[Annotation], @hidden val attr: Attr) extends Range {
       @pure override def prettyST: ST = {
         return exp.prettyST
       }
     }
 
-    @datatype class Step(val isInclusive: B, val start: Exp, val end: Exp, val byOpt: Option[Exp], @hidden val attr: Attr) extends Range {
+    @datatype class Step(val isInclusive: B, val start: Exp, val end: Exp, val byOpt: Option[Exp], val annotations: ISZ[Annotation], @hidden val attr: Attr) extends Range {
       @pure override def prettyST: ST = {
         val bOpt: Option[ST] = byOpt match {
           case Some(by) => Some(st" by ${by.prettyST}")
@@ -1369,10 +1374,10 @@ object EnumGen {
 
 object Type {
 
-  @datatype class Named(val name: Name, val typeArgs: ISZ[Type], @hidden val attr: TypedAttr) extends Type {
+  @datatype class Named(val name: Name, val rTypeOpt: Option[RType], val typeArgs: ISZ[Type], @hidden val attr: TypedAttr) extends Type {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
-    @strictpure override def typed(t: Typed): Named = this (name, typeArgs, attr(typedOpt = Some(t)))
+    @strictpure override def typed(t: Typed): Named = this (name, rTypeOpt, typeArgs, attr(typedOpt = Some(t)))
 
     @pure def isEqual(other: Named): B = {
       (typedOpt, other.typedOpt) match {
@@ -1896,6 +1901,7 @@ object Exp {
 
   @datatype class Invoke(val receiverOpt: Option[Exp],
                          val ident: Ident,
+                         val rTypes: ISZ[RType],
                          val targs: ISZ[Type],
                          val args: ISZ[Exp],
                          @hidden val attr: ResolvedAttr) extends Exp {
@@ -1932,6 +1938,7 @@ object Exp {
 
   @datatype class InvokeNamed(val receiverOpt: Option[Exp],
                               val ident: Ident,
+                              val rTypes: ISZ[RType],
                               val targs: ISZ[Type],
                               val args: ISZ[NamedArg],
                               @hidden val attr: ResolvedAttr) extends Exp {
@@ -2008,6 +2015,7 @@ object Exp {
   @datatype class Fun(val context: ISZ[String],
                       val params: ISZ[Fun.Param],
                       val exp: AssignExp,
+                      val annotations: ISZ[Annotation],
                       @hidden val attr: TypedAttr) extends Exp {
 
     @strictpure override def posOpt: Option[Position] = attr.posOpt
@@ -2046,7 +2054,7 @@ object Exp {
     }
   }
 
-  @datatype class ForYield(val enumGens: ISZ[EnumGen.For], val exp: Exp, @hidden val attr: TypedAttr) extends Exp {
+  @datatype class ForYield(val enumGens: ISZ[EnumGen.For], val exp: Exp, val annotations: ISZ[Annotation], @hidden val attr: TypedAttr) extends Exp {
     @strictpure override def posOpt: Option[Position] = attr.posOpt
     @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
     @pure override def prettyST: ST = {
@@ -2314,9 +2322,29 @@ object Exp {
 
 @datatype class Annotation(val name: ISZ[String], val args: ISZ[Lit])
 
+@enum object RTypeKind {
+  "Arena"
+  "Pool"
+  "Scope"
+  "Raw"
+}
+
+@datatype trait RType {
+  @strictpure def id: Id
+}
+
+object RType {
+  @datatype class Var(val kind: RTypeKind.Type, val id: Id) extends RType
+  @datatype class Arena(val id: Id) extends RType
+  @datatype class Pool(val id: Id, val capacity: Z) extends RType
+  @datatype class Scope(val id: Id) extends RType
+  @datatype class Raw(val id: Id) extends RType
+}
+
 @datatype class MethodSig(val purity: Purity.Type,
                           val annotations: ISZ[Annotation],
                           val id: Id,
+                          val rTypeParams: ISZ[RType.Var],
                           val typeParams: ISZ[TypeParam],
                           val hasParams: B,
                           val params: ISZ[Param],

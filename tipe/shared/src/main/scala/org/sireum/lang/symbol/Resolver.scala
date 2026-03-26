@@ -57,12 +57,12 @@ object Resolver {
     }
 
     @pure def tname(name: String, args: ISZ[AST.Type]): AST.Type.Named = {
-      return AST.Type.Named(AST.Name(ISZ(id(name)), emptyAttr), args, emptyTypedAttr)
+      return AST.Type.Named(AST.Name(ISZ(id(name)), emptyAttr), None(), args, emptyTypedAttr)
     }
 
     val dollar = AST.Exp
       .Ident(AST.Id("$", emptyAttr), AST.ResolvedAttr(None[Position](), None[AST.ResolvedInfo](), None[AST.Typed]()))
-    val dollarAssignExp = AST.Stmt.Expr(dollar, AST.TypedAttr(None(), None()))
+    val dollarAssignExp = AST.Stmt.Expr(dollar, ISZ(), AST.TypedAttr(None(), None()))
     val scope = Scope.Global(AST.Typed.sireumName, ISZ[AST.Stmt.Import](), ISZ[String]())
 
     val tName = AST.Typed.sireumName :+ "T"
@@ -70,7 +70,7 @@ object Resolver {
       AST.Typed.sireumName,
       T,
       scope,
-      AST.Stmt.Var(F, T, id("T"), Some(tname("B", ISZ())), Some(dollarAssignExp),
+      AST.Stmt.Var(F, T, id("T"), Some(tname("B", ISZ())), Some(dollarAssignExp), ISZ(),
         AST.ResolvedAttr(None[Position](),
           Some[AST.ResolvedInfo](AST.ResolvedInfo.Var(T, F, T, AST.Typed.sireumName, "T")), AST.Typed.bOpt)))
 
@@ -79,17 +79,17 @@ object Resolver {
       AST.Typed.sireumName,
       T,
       scope,
-      AST.Stmt.Var(F, T, id("F"), Some(tname("B", ISZ())), Some(dollarAssignExp),
+      AST.Stmt.Var(F, T, id("F"), Some(tname("B", ISZ())), Some(dollarAssignExp), ISZ(),
         AST.ResolvedAttr(None[Position](),
           Some[AST.ResolvedInfo](AST.ResolvedInfo.Var(T, F, T, AST.Typed.sireumName, "F")), AST.Typed.bOpt)))
 
     val randomIntId = "randomInt"
     val randomIntTyped = AST.Typed.Fun(AST.Purity.Impure, F, ISZ(), AST.Typed.z)
     val randomIntName = AST.Typed.sireumName :+ randomIntId
-    val zType = AST.Type.Named(AST.Name(for (id <- AST.Typed.zName) yield AST.Id(id, emptyAttr), emptyAttr), ISZ(),
+    val zType = AST.Type.Named(AST.Name(for (id <- AST.Typed.zName) yield AST.Id(id, emptyAttr), emptyAttr), None(), ISZ(),
       AST.TypedAttr(None(), Some(AST.Typed.z)))
     nm = nm + randomIntName ~> Info.ExtMethod(AST.Typed.sireumName, scope,
-      AST.Stmt.ExtMethod(F, AST.MethodSig(AST.Purity.Impure, ISZ(), AST.Id(randomIntId, emptyAttr), ISZ(), F, ISZ(), zType),
+      AST.Stmt.ExtMethod(F, AST.MethodSig(AST.Purity.Impure, ISZ(), AST.Id(randomIntId, emptyAttr), ISZ(), ISZ(), F, ISZ(), zType),
         AST.MethodContract.Simple.empty,
         AST.ResolvedAttr(None[Position](), Some[AST.ResolvedInfo](AST.ResolvedInfo.Method(
           T, AST.MethodMode.Ext, ISZ(), AST.Typed.sireumName, randomIntId, ISZ(), Some(randomIntTyped), ISZ(), ISZ())),
@@ -100,11 +100,11 @@ object Resolver {
     val seqIndexValidSizeName = AST.Typed.sireumName :+ seqIndexValidSizeId
     val seqIndexValidSizeTypeParamId = "I"
     val seqIndexValidSizeParamId = "size"
-    val bType = AST.Type.Named(AST.Name(for (id <- AST.Typed.bName) yield AST.Id(id, emptyAttr), emptyAttr), ISZ(),
+    val bType = AST.Type.Named(AST.Name(for (id <- AST.Typed.bName) yield AST.Id(id, emptyAttr), emptyAttr), None(), ISZ(),
       AST.TypedAttr(None(), Some(AST.Typed.b)))
     nm = nm + seqIndexValidSizeName ~> Info.SpecMethod(AST.Typed.sireumName, T, scope,
       AST.Stmt.SpecMethod(
-        AST.MethodSig(AST.Purity.Pure, ISZ(), AST.Id(seqIndexValidSizeId, emptyAttr), ISZ(
+        AST.MethodSig(AST.Purity.Pure, ISZ(), AST.Id(seqIndexValidSizeId, emptyAttr), ISZ(), ISZ(
           AST.TypeParam(AST.Id(seqIndexValidSizeTypeParamId, emptyAttr), AST.Typed.VarKind.Immutable)), F, ISZ(
           AST.Param(F, AST.Id(seqIndexValidSizeParamId, emptyAttr), zType)), bType),
         AST.ResolvedAttr(None[Position](), Some[AST.ResolvedInfo](AST.ResolvedInfo.Method(T, AST.MethodMode.Spec,
@@ -163,7 +163,7 @@ object Resolver {
       HashSMap.empty,
       ISZ(),
       scope,
-      AST.Stmt.Adt(T, T, F, AST.Id("Unit", emptyAttr), ISZ(), ISZ(), ISZ(), ISZ(), emptyAttr)
+      AST.Stmt.Adt(T, T, F, AST.Id("Unit", emptyAttr), ISZ(), ISZ(), ISZ(), ISZ(), ISZ(), emptyAttr)
     )
 
     tm = tm + AST.Typed.nothing.ids ~> TypeInfo.Adt(
@@ -185,7 +185,7 @@ object Resolver {
       HashSMap.empty,
       ISZ(),
       scope,
-      AST.Stmt.Adt(T, T, F, AST.Id("Nothing", emptyAttr), ISZ(), ISZ(), ISZ(), ISZ(), emptyAttr)
+      AST.Stmt.Adt(T, T, F, AST.Id("Nothing", emptyAttr), ISZ(), ISZ(), ISZ(), ISZ(), ISZ(), emptyAttr)
     )
 
     return (nm, tm)

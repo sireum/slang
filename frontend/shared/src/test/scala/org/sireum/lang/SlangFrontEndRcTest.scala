@@ -57,7 +57,7 @@ class SlangFrontEndRcTest extends TestSuite {
         case child: Trie.Leaf[String, String] =>
           registerTest(childKey, ts: _*)(
             assert(
-              SlangFrontEndTest.passingCheck(child.data, addImport = false, isPrelude = true, checkJSON = false)
+              SlangFrontEndTest.passingCheck(childKey, child.data, addImport = false, isPrelude = true, checkJSON = false)
             )
           )(pos)
       }

@@ -150,7 +150,7 @@ object SlangParser {
       case Some(fileUri) =>
         if ((fileUri.value.endsWith(".scala") || fileUri.value.endsWith(".sc")) && firstLine.contains("#Sireum")) {
           hashSireum = true
-        } else if (fileUri.value.endsWith(".slang") || fileUri.value.endsWith(".logika")) {
+        } else if (fileUri.value.endsWith(".slang") || fileUri.value.endsWith(".logika") || fileUri.value.endsWith(".sl")) {
           hashSireum = false
         } else if (fileUri.value.endsWith(".cmd") && firstLine.startsWith("::#!")) {
           var found = false
@@ -222,7 +222,7 @@ object SlangParser {
 
   private[SlangParser] lazy val rDollarId = AST.Id("$", emptyAttr)
   private[SlangParser] lazy val rExp = AST.Exp.Ident(rDollarId, emptyResolvedAttr)
-  private[SlangParser] lazy val rStmt = AST.Stmt.Expr(rExp, emptyTypedAttr)
+  private[SlangParser] lazy val rStmt = AST.Stmt.Expr(rExp, ISZ(), emptyTypedAttr)
   private[SlangParser] lazy val emptyContract = AST.MethodContract.Simple.empty
   private[SlangParser] lazy val emptyProofStep = AST.ProofAst.Step.SubProof(AST.ProofAst.StepId.Num(42, emptyAttr), ISZ(), emptyAttr)
 
@@ -258,8 +258,8 @@ class SlangParser(
   def parseTopUnit(): Result = {
     try {
       val fileUri = fileUriOpt.getOrElse("").value
-      if (fileUri.endsWith(".scala") || fileUri.endsWith(".sc") || fileUri.endsWith(".slang") || fileUri.endsWith(".cmd") || (fileUri == "" && hashSireum)) {
-        if (hashSireum || fileUri.endsWith(".slang")) {
+      if (fileUri.endsWith(".scala") || fileUri.endsWith(".sc") || fileUri.endsWith(".cmd") || (fileUri == "" && hashSireum)) {
+        if (hashSireum) {
           val parser = new ScalametaParser(input)(dialect)
           translateSource(parser.parseSource())
         } else Result(text, hashSireum, None())
@@ -329,7 +329,7 @@ class SlangParser(
   def warn(pos: Position, message: Predef.String): Unit =
     reporter.warn(posOpt(pos), SlangParser.messageKind, message)
 
-  val unitType = AST.Type.Named(AST.Name(ISZ(AST.Id("Unit", emptyAttr)), emptyAttr), ISZ(), emptyTypedAttr)
+  val unitType = AST.Type.Named(AST.Name(ISZ(AST.Id("Unit", emptyAttr)), emptyAttr), None(), ISZ(), emptyTypedAttr)
 
   def errorNotSlang(pos: Position, message: Predef.String): Unit =
     error(pos, message + " not in Slang.")
@@ -355,7 +355,8 @@ class SlangParser(
             AST.TopUnit.Program(
               fileUriOpt,
               AST.Name(ISZ(), emptyAttr),
-              bodyCheck(stmts, ISZ())
+              bodyCheck(stmts, ISZ()),
+              ISZ()
             )
           )
         )
@@ -377,7 +378,8 @@ class SlangParser(
                 AST.TopUnit.Program(
                   fileUriOpt,
                   name,
-                  bodyCheck(checkMemberStmts(ISZ(rest.map(translateStat(Enclosing.Package)): _*)), ISZ())
+                  bodyCheck(checkMemberStmts(ISZ(rest.map(translateStat(Enclosing.Package)): _*)), ISZ()),
+                  ISZ()
                 )
               )
             )
@@ -400,7 +402,7 @@ class SlangParser(
         Result(
           text,
           hashSireum,
-          Some(AST.TopUnit.Program(fileUriOpt, AST.Name(ISZ(), emptyAttr), bodyCheck(ISZ(), ISZ())))
+          Some(AST.TopUnit.Program(fileUriOpt, AST.Name(ISZ(), emptyAttr), bodyCheck(ISZ(), ISZ()), ISZ()))
         )
       case stats =>
         if (hashSireum)
@@ -480,7 +482,7 @@ class SlangParser(
       case _: Term.Apply | _: Term.ApplyInfix =>
         val term = stat.asInstanceOf[Term]
         stmtCheck(enclosing, term, s"${syntax(stat)}")
-        AST.Stmt.Expr(translateExp(term), typedAttr(stat.pos))
+        AST.Stmt.Expr(translateExp(term), ISZ(), typedAttr(stat.pos))
       case _ =>
         errorNotSlang(stat.pos, s"Statement '${stat.syntax}' is")
         rStmt
@@ -492,7 +494,7 @@ class SlangParser(
 
       override def preStmtExpr(ctx: Unit, o: AST.Stmt.Expr): AST.Transformer.PreResult[Unit, AST.Stmt] = {
         o.exp match {
-          case AST.Exp.Invoke(expOpt, AST.Exp.Ident(AST.Id(id)), _, args) if topLevelMethodsIds.contains(id) =>
+          case AST.Exp.Invoke(expOpt, AST.Exp.Ident(AST.Id(id)), _, _, args) if topLevelMethodsIds.contains(id) =>
             expOpt.foreach(e => transformer.transformExp((), e))
             for (arg <- args) {
               transformer.transformExp((), arg)
@@ -541,7 +543,7 @@ class SlangParser(
     stat.importers match {
       case Seq(Importer(ref: Term.Ref, Seq(Importee.Wildcard()))) =>
         AST.Stmt.Import(
-          ISZ(AST.Stmt.Import.Importer(AST.Name(ref2IS(ref), attr(ref.pos)), Some(AST.Stmt.Import.WildcardSelector()))),
+          ISZ(AST.Stmt.Import.Importer(AST.Name(ref2IS(ref), attr(ref.pos)), Some(AST.Stmt.Import.WildcardSelector(ISZ())))),
           attr(stat.pos)
         )
       case _ =>
@@ -552,10 +554,10 @@ class SlangParser(
           var sels = ISZ[AST.Stmt.Import.NamedSelector]()
           for (importee <- importer.importees) importee match {
             case importee"$finame => $tiname" =>
-              sels +:= AST.Stmt.Import.NamedSelector(cid(finame), cid(tiname))
+              sels +:= AST.Stmt.Import.NamedSelector(cid(finame), cid(tiname), ISZ())
             case importee"${iname: Name.Indeterminate}" =>
               val id = cid(iname)
-              sels +:= AST.Stmt.Import.NamedSelector(id, id)
+              sels +:= AST.Stmt.Import.NamedSelector(id, id, ISZ())
             case _ => errorNotSlang(importee.pos, s"Importee '${importee.syntax}' from ${importer.ref.syntax} is")
           }
           importers +:= AST.Stmt.Import.Importer(name, Some(AST.Stmt.Import.MultiSelector(sels)))
@@ -693,6 +695,7 @@ class SlangParser(
             if (isDiet && tpeopt.nonEmpty) None()
             else if (isDollarExpr) None()
             else Some(translateAssignExp(expr)),
+            ISZ(),
             resolvedAttr(stat.pos)
           )
           if (tpeopt.isEmpty) checkTyped(expr.pos, r.initOpt)
@@ -711,7 +714,7 @@ class SlangParser(
             case _ => error(pattern.pos, s"Unallowable val pattern: '${pattern.syntax}'")
           }
           val exp = translateAssignExp(expr)
-          val r = AST.Stmt.VarPattern(isSpec = hasSpec, isVal = true, pat, opt(tpeopt.map(translateType)), exp, attr(stat.pos))
+          val r = AST.Stmt.VarPattern(isSpec = hasSpec, isVal = true, pat, opt(tpeopt.map(translateType)), exp, ISZ(), attr(stat.pos))
           if (tpeopt.isEmpty) checkTyped(expr.pos, Some(r.init))
           r
       }
@@ -799,6 +802,7 @@ class SlangParser(
             if (isDiet && tpeopt.nonEmpty) None()
             else if (isDollarExpr) None()
             else opt(expropt.map(translateAssignExp)),
+            ISZ(),
             resolvedAttr(stat.pos)
           )
           if (tpeopt.isEmpty) checkTyped(expropt.get.pos, r.initOpt)
@@ -823,8 +827,8 @@ class SlangParser(
             case _: AST.Pattern.Structure =>
             case _ => error(pattern.pos, s"Unallowable var pattern: '${pattern.syntax}'")
           }
-          val exp = expropt.map(translateAssignExp).getOrElse(AST.Stmt.Expr(rExp, typedAttr(pattern.pos)))
-          val r = AST.Stmt.VarPattern(isSpec = hasSpec, isVal = false, pat, opt(tpeopt.map(translateType)), exp, attr(stat.pos))
+          val exp = expropt.map(translateAssignExp).getOrElse(AST.Stmt.Expr(rExp, ISZ(), typedAttr(pattern.pos)))
+          val r = AST.Stmt.VarPattern(isSpec = hasSpec, isVal = false, pat, opt(tpeopt.map(translateType)), exp, ISZ(), attr(stat.pos))
           if (tpeopt.isEmpty) checkTyped(expropt.get.pos, Some(r.init))
           r
       }
@@ -834,9 +838,9 @@ class SlangParser(
     var hasError = false
 
     def check(stmt: Any): Unit = stmt match {
-      case AST.Stmt.Expr(_: AST.Exp.If) => hasError = true
-      case AST.Stmt.Expr(_: AST.Exp.ForYield) => hasError = true
-      case AST.Stmt.Expr(_) =>
+      case AST.Stmt.Expr(_: AST.Exp.If, _) => hasError = true
+      case AST.Stmt.Expr(_: AST.Exp.ForYield, _) => hasError = true
+      case AST.Stmt.Expr(_, _) =>
       case _ => hasError = true
     }
 
@@ -865,7 +869,7 @@ class SlangParser(
       case _ => (false, ISZ[AST.Param]())
     }
     val (purity, mods, _, _, _, anns) = methodMods(true, enclosing, stat.mods)
-    val sig = AST.MethodSig(purity, anns, cid(name), ISZ(
+    val sig = AST.MethodSig(purity, anns, cid(name), ISZ(), ISZ(
       tparams.map(translateTypeParam(AST.Typed.VarKind.Immutable, true)): _*), hasParams, params, translateType(tpe))
     AST.Stmt.Method(false, purity, mods, sig, emptyContract, None(), resolvedAttr(stat.pos))
   }
@@ -1163,6 +1167,7 @@ class SlangParser(
       if (purity == AST.Purity.Impure && org.sireum.ops.ISZOps(mods).contains("@spec")) AST.Purity.Pure else purity,
       anns,
       cid(name),
+      ISZ(),
       ISZ(tparams.map(translateTypeParam(AST.Typed.VarKind.Immutable, true)): _*),
       hasParams,
       params,
@@ -1555,8 +1560,8 @@ class SlangParser(
     } else if (!hasError) {
       val tstat = if (extNameOpt.nonEmpty) translateStat(Enclosing.ExtObject) _ else translateStat(Enclosing.Object) _
       val oattr = attr(stat.pos)
-      AST.Stmt.Object(hasApp, extNameOpt, cid(name), checkMemberStmts(ISZ(stats.map(tstat): _*)), oattr)
-    } else AST.Stmt.Object(hasApp, extNameOpt, cid(name), ISZ(), attr(stat.pos))
+      AST.Stmt.Object(hasApp, extNameOpt, cid(name), checkMemberStmts(ISZ(stats.map(tstat): _*)), ISZ(), oattr)
+    } else AST.Stmt.Object(hasApp, extNameOpt, cid(name), ISZ(), ISZ(), attr(stat.pos))
   }
 
   def translateSig(enclosing: Enclosing.Type, stat: Defn.Trait): AST.Stmt = {
@@ -1633,6 +1638,7 @@ class SlangParser(
       ISZ(tparams.map(translateTypeParam(if (hasSig) AST.Typed.VarKind.Immutable else AST.Typed.VarKind.Mutable, !hasSig)): _*),
       ISZ(ctorcalls.map(translateExtend): _*),
       checkMemberStmts(ISZ(stats.map(translateStat(if (hasSig) Enclosing.Sig else Enclosing.MSig)): _*)),
+      ISZ(),
       attr(stat.pos)
     )
   }
@@ -1677,6 +1683,7 @@ class SlangParser(
       ISZ(),
       ISZ(ctorcalls.map(translateExtend): _*),
       checkMemberStmts(ISZ(stats.map(translateStat(Enclosing.DatatypeTrait)): _*)),
+      ISZ(),
       attr(stat.pos)
     )
   }
@@ -1724,6 +1731,7 @@ class SlangParser(
       params,
       ISZ(ctorcalls.map(translateExtend): _*),
       checkMemberStmts(ISZ(stats.map(translateStat(Enclosing.DatatypeClass)): _*)),
+      ISZ(),
       attr(stat.pos)
     )
   }
@@ -1767,6 +1775,7 @@ class SlangParser(
       ISZ(),
       ISZ(ctorcalls.map(translateExtend): _*),
       checkMemberStmts(ISZ(stats.map(translateStat(Enclosing.RecordTrait)): _*)),
+      ISZ(),
       attr(stat.pos)
     )
   }
@@ -1820,6 +1829,7 @@ class SlangParser(
       params,
       ISZ(ctorcalls.map(translateExtend): _*),
       checkMemberStmts(ISZ(stats.map(translateStat(Enclosing.RecordClass)): _*)),
+      ISZ(),
       attr(stat.pos)
     )
   }
@@ -1847,15 +1857,15 @@ class SlangParser(
     t match {
       case t"$ref.$tname[..$tpesnel]" =>
         AST.Type
-          .Named(AST.Name(f(ref) :+ cid(tname), attr(t.pos)), ISZ(tpesnel.map(translateType): _*), typedAttr(t.pos))
+          .Named(AST.Name(f(ref) :+ cid(tname), attr(t.pos)), None(), ISZ(tpesnel.map(translateType): _*), typedAttr(t.pos))
       case t"${name: Type.Name}[..$tpesnel]" =>
-        AST.Type.Named(AST.Name(ISZ(cid(name)), attr(name.pos)), ISZ(tpesnel.map(translateType): _*), typedAttr(t.pos))
+        AST.Type.Named(AST.Name(ISZ(cid(name)), attr(name.pos)), None(), ISZ(tpesnel.map(translateType): _*), typedAttr(t.pos))
       case t"${name: Type.Name}" =>
-        AST.Type.Named(AST.Name(ISZ(cid(name)), attr(name.pos)), ISZ(), typedAttr(t.pos))
+        AST.Type.Named(AST.Name(ISZ(cid(name)), attr(name.pos)), None(), ISZ(), typedAttr(t.pos))
       case t"(..$tpesnel)" =>
         AST.Type.Tuple(ISZ(tpesnel.map(translateType): _*), typedAttr(t.pos))
       case t"$ref.$tname" =>
-        AST.Type.Named(AST.Name(f(ref) :+ cid(tname), attr(t.pos)), ISZ(), typedAttr(t.pos))
+        AST.Type.Named(AST.Name(f(ref) :+ cid(tname), attr(t.pos)), None(), ISZ(), typedAttr(t.pos))
       case t: Type.Function =>
         val (isPure, ret) = t.res match {
           case res: Type.Annotate =>
@@ -1914,7 +1924,7 @@ class SlangParser(
       translateIfStmt(Enclosing.Block, exp, isAssignExp = true)
     case exp: Term.Match => translateMatch(Enclosing.Block, exp, isAssignExp = true)
     case exp: Term.Return => translateReturn(Enclosing.Block, exp)
-    case _ => AST.Stmt.Expr(translateExp(exp), typedAttr(exp.pos))
+    case _ => AST.Stmt.Expr(translateExp(exp), ISZ(), typedAttr(exp.pos))
   }
 
   def translateStmtsExp(pos: Position, stats: Seq[Stat]): ISZ[AST.Stmt] = {
@@ -2127,7 +2137,7 @@ class SlangParser(
       case r: AST.Type.Named => r
       case _ =>
         errorInSlang(init.pos, "Invalid type for extends")
-        AST.Type.Named(AST.Name(ISZ(), emptyAttr), ISZ(), emptyTypedAttr)
+        AST.Type.Named(AST.Name(ISZ(), emptyAttr), None(), ISZ(), emptyTypedAttr)
     }
   }
 
@@ -2169,7 +2179,7 @@ class SlangParser(
     for (stmt <- stmts) {
       val (ret, hlt) = stmt match {
         case _: AST.Stmt.Return => (true, false)
-        case AST.Stmt.Expr(AST.Exp.Invoke(_, AST.Exp.Ident(AST.Id(id)), _, _)) if id.value == "halt" => (false, true)
+        case AST.Stmt.Expr(AST.Exp.Invoke(_, AST.Exp.Ident(AST.Id(id)), _, _, _), _) if id.value == "halt" => (false, true)
         case _ => (false, false)
       }
       if ((ret || hlt) && Z(i) != stmts.size - 1) {
@@ -2202,7 +2212,7 @@ class SlangParser(
           ) =>
         lhs.receiverOpt.foreach(receiver => checkLhs(receiver))
       case lhs: AST.Exp.Invoke if lhs.receiverOpt.isEmpty && lhs.targs.isEmpty && lhs.args.size == Z(1) =>
-        return AST.Exp.Invoke(Some(lhs.ident), AST.Exp.Ident(AST.Id("apply", lhs.ident.id.attr), lhs.ident.attr), lhs.targs, lhs.args, lhs.attr)
+        return AST.Exp.Invoke(Some(lhs.ident), AST.Exp.Ident(AST.Id("apply", lhs.ident.id.attr), lhs.ident.attr), ISZ(), lhs.targs, lhs.args, lhs.attr)
       case _ =>
         reporter.error(lhs.posOpt, SlangParser.messageKind, s"Invalid assignment left-hand-side form in Slang: $lhs")
     }
@@ -2212,7 +2222,7 @@ class SlangParser(
   def translateAssign(enclosing: Enclosing.Type, stat: Term.Assign): AST.Stmt = {
     stmtCheck(enclosing, stat, "Assignments")
     val lhs = translateExp(stat.lhs)
-    AST.Stmt.Assign(checkLhs(lhs), translateAssignExp(stat.rhs), attr(stat.pos))
+    AST.Stmt.Assign(checkLhs(lhs), translateAssignExp(stat.rhs), ISZ(), attr(stat.pos))
   }
 
   def translateAssign(
@@ -2237,7 +2247,7 @@ class SlangParser(
     } else {
       errorInSlang(pos, s"Invalid update form: '${syntax(stat)}'")
     }
-    AST.Stmt.Assign(checkLhs(lhs), translateAssignExp(rhs), attr(pos))
+    AST.Stmt.Assign(checkLhs(lhs), translateAssignExp(rhs), ISZ(), attr(pos))
   }
 
   def translateIfStmt(enclosing: Enclosing.Type, stat: Term.If, isAssignExp: Boolean): AST.Stmt.If = {
@@ -2313,7 +2323,7 @@ class SlangParser(
             error(stat.body.pos, s"Expecting an expression but '${syntax(b)}' found.")
             bodyCheck(ISZ(), ISZ())
           case b => bodyCheck(ISZ(translateStat(Enclosing.Block)(b)), ISZ())
-        })
+        }, ISZ())
     }
 
     stmtCheck(enclosing, stat, "Match-statements")
@@ -2423,15 +2433,15 @@ class SlangParser(
     r match {
       case q"$start until $end by $by" =>
         AST.EnumGen.Range
-          .Step(isInclusive = false, translateExp(start), translateExp(end), Some(translateExp(by)), attr(r.pos))
+          .Step(isInclusive = false, translateExp(start), translateExp(end), Some(translateExp(by)), ISZ(), attr(r.pos))
       case q"$start to $end by $by" =>
         AST.EnumGen.Range
-          .Step(isInclusive = true, translateExp(start), translateExp(end), Some(translateExp(by)), attr(r.pos))
+          .Step(isInclusive = true, translateExp(start), translateExp(end), Some(translateExp(by)), ISZ(), attr(r.pos))
       case q"$start until $end" =>
-        AST.EnumGen.Range.Step(isInclusive = false, translateExp(start), translateExp(end), None(), attr(r.pos))
+        AST.EnumGen.Range.Step(isInclusive = false, translateExp(start), translateExp(end), None(), ISZ(), attr(r.pos))
       case q"$start to $end" =>
-        AST.EnumGen.Range.Step(isInclusive = true, translateExp(start), translateExp(end), None(), attr(r.pos))
-      case _ => AST.EnumGen.Range.Expr(translateExp(r), attr(r.pos))
+        AST.EnumGen.Range.Step(isInclusive = true, translateExp(start), translateExp(end), None(), ISZ(), attr(r.pos))
+      case _ => AST.EnumGen.Range.Expr(translateExp(r), ISZ(), attr(r.pos))
     }
   }
 
@@ -2461,8 +2471,8 @@ class SlangParser(
   def translateReturn(enclosing: Enclosing.Type, stat: Term.Return): AST.Stmt.Return = {
     stmtCheck(enclosing, stat, "Return-statements")
     stat.expr match {
-      case _: Lit.Unit => AST.Stmt.Return(None(), typedAttr(stat.pos))
-      case _ => AST.Stmt.Return(Some(translateExp(stat.expr)), typedAttr(stat.pos))
+      case _: Lit.Unit => AST.Stmt.Return(None(), ISZ(), typedAttr(stat.pos))
+      case _ => AST.Stmt.Return(Some(translateExp(stat.expr)), ISZ(), typedAttr(stat.pos))
     }
   }
 
@@ -3038,6 +3048,7 @@ class SlangParser(
         AST.Exp.InvokeNamed(
           opt(receiverOpt.map(translateExp)),
           AST.Exp.Ident(name, resolvedAttr(namePos)),
+          ISZ(),
           ISZ(tpes.map(translateType): _*),
           args,
           resolvedAttr(pos)
@@ -3046,6 +3057,7 @@ class SlangParser(
         AST.Exp.Invoke(
           opt(receiverOpt.map(translateExp)),
           AST.Exp.Ident(name, resolvedAttr(namePos)),
+          ISZ(),
           ISZ(tpes.map(translateType): _*),
           args,
           resolvedAttr(pos)
@@ -3111,14 +3123,14 @@ class SlangParser(
       case _ =>
     }
     if (hasError) rExp
-    else AST.Exp.ForYield(enums, translateExp(exp.body), typedAttr(exp.pos))
+    else AST.Exp.ForYield(enums, translateExp(exp.body), ISZ(), typedAttr(exp.pos))
   }
 
   def translateFun(exp: Term.Function): AST.Exp = {
     val ps = ISZ(exp.paramClause.values.map(translateFunParam): _*)
 
     val body = translateAssignExp(exp.body)
-    AST.Exp.Fun(ISZ(), ps, body, typedAttr(exp.pos))
+    AST.Exp.Fun(ISZ(), ps, body, ISZ(), typedAttr(exp.pos))
   }
 
   def translateArgs(args: Seq[Term]): Either[ISZ[AST.NamedArg], ISZ[AST.Exp]] = {
@@ -3157,12 +3169,13 @@ class SlangParser(
           Some(fun),
           AST.Exp.Ident(cidNoCheck("apply", pos), resolvedAttr(pos)),
           ISZ(),
+          ISZ(),
           args,
           resolvedAttr(pos)
         )
       case Right(args) =>
         AST.Exp
-          .Invoke(Some(fun), AST.Exp.Ident(cidNoCheck("apply", pos), resolvedAttr(pos)), ISZ(), args, resolvedAttr(pos))
+          .Invoke(Some(fun), AST.Exp.Ident(cidNoCheck("apply", pos), resolvedAttr(pos)), ISZ(), ISZ(), args, resolvedAttr(pos))
     }
   }
 
@@ -3523,7 +3536,7 @@ class SlangParser(
       val tattr = typedAttr(iexpr.pos)
       claims = claims :+ (
         if (params.nonEmpty) AST.Exp.QuantType(true, AST.Exp.Fun(ISZ(), params,
-          AST.Stmt.Expr(claim, tattr), tattr), attr(iexpr.pos))
+          AST.Stmt.Expr(claim, ISZ(), tattr), ISZ(), tattr), attr(iexpr.pos))
         else claim)
     }
     AST.Stmt.Fact(cid(stat.name), typeArgs, descOpt, claims, params.nonEmpty, resolvedAttr(stat.pos))
@@ -4008,7 +4021,7 @@ class SlangParser(
     val tattr = AST.TypedAttr(claim.posOpt, None())
     val (isFun, body): (B, AST.Exp) =
       if (params.isEmpty) (false, claim)
-      else (true, AST.Exp.QuantType(true, AST.Exp.Fun(ISZ(), params, AST.Stmt.Expr(claim, tattr), tattr), AST.Attr(claim.posOpt)))
+      else (true, AST.Exp.QuantType(true, AST.Exp.Fun(ISZ(), params, AST.Stmt.Expr(claim, ISZ(), tattr), ISZ(), tattr), AST.Attr(claim.posOpt)))
     AST.Stmt.Theorem(isLemma, cid(stat.name), typeArgs, descOpt, body, isFun, proof, resolvedAttr(stat.pos))
   }
 

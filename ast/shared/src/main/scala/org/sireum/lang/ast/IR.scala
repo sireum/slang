@@ -138,7 +138,7 @@ object IR {
     }
 
     @datatype class EnumElementRef(val owner: ISZ[org.sireum.String], val id: org.sireum.String, val ordinal: Z, val pos: Position) extends Exp {
-      @strictpure def tipe: Typed = Typed.Name(owner :+ "Type", ISZ())
+      @strictpure def tipe: Typed = Typed.Name(owner :+ "Type", None(), ISZ())
       @strictpure def prettyRawST(p: Printer): ST = st"${(owner, ".")}.$id"
       @strictpure def numOfTemps: Z = 0
       @strictpure def depth: Z = 1
@@ -237,7 +237,7 @@ object IR {
       @strictpure def depth: Z = 1 + max(cond.depth, max(thenExp.depth, elseExp.depth))
     }
 
-    @datatype class Construct(val tipe: Typed.Name, val args: ISZ[Exp], val pos: Position) extends Exp {
+    @datatype class Construct(val tipe: Typed.Name, val rTypes: ISZ[RType], val args: ISZ[Exp], val pos: Position) extends Exp {
       @strictpure def prettyRawST(p: Printer): ST = st"$tipe(${(for (arg <- args) yield arg.prettyST(p), ", ")})"
       @pure def numOfTemps: Z = {
         var r: Z = 0
@@ -256,7 +256,7 @@ object IR {
     }
 
     @datatype class Apply(val isInObject: B, val owner: ISZ[org.sireum.String], val id: org.sireum.String,
-                          val args: ISZ[Exp], val methodType: Typed.Fun, val pos: Position) extends Exp {
+                          val rTypes: ISZ[RType], val args: ISZ[Exp], val methodType: Typed.Fun, val pos: Position) extends Exp {
       @strictpure def tipe: Typed = methodType.ret
       @strictpure def prettyRawST(p: Printer): ST = p.exp(this).getOrElse(
         if (!isInObject && ops.StringOps(id).isScalaOp && args.size == 2) st"(${args(0).prettyST(p)} $id ${args(1).prettyST(p)})"
@@ -686,6 +686,7 @@ object IR {
   }
 
   @datatype class Procedure(val isInObject: B,
+                            val rTypeParams: ISZ[RType.Var],
                             val typeParams: ISZ[String],
                             val owner: ISZ[String],
                             val id: String,

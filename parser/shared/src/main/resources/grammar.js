@@ -219,8 +219,12 @@ module.exports = grammar({
       $.defId,
       optional($.typeParams),
       optional($.defParams),
-      optional($.defnTypeSuffix),
-      optional($.defDefnSuffix),
+      optional(choice(
+        seq($.defnTypeSuffix, optional($.defDefnSuffix)),
+        $.defDefnSuffix,
+        seq($.annot, $.block),
+        $.block,
+      )),
     )),
 
     defDefnSuffix: $ => seq('=', optional($.annot), choice($.exp, $.block, $.ifStmt, $.matchStmt)),
@@ -231,7 +235,7 @@ module.exports = grammar({
 
     defParams: $ => seq('(', optional(seq($.defParam, optional($.defParamSuffix), optional(','))), ')'),
 
-    defParam: $ => seq(repeat($.mod), $.ID, ':', $.type),
+    defParam: $ => seq(repeat($.mod), $.ID, ':', optional('=>'), $.type),
 
     defParamSuffix: $ => seq(',', choice(
       $.defParamSuffixVarargs,
@@ -262,8 +266,12 @@ module.exports = grammar({
       $.defId,
       optional($.typeParams),
       optional($.defParams),
-      optional($.defnTypeSuffix),
-      optional($.defDefnSuffix),
+      optional(choice(
+        seq($.defnTypeSuffix, optional($.defDefnSuffix)),
+        $.defDefnSuffix,
+        seq($.annot, $.block),
+        $.block,
+      )),
     )),
 
     expOrAssignStmt: $ => choice($.idStmt, $.expStmt, $.doStmt),
@@ -571,7 +579,7 @@ module.exports = grammar({
 
     type: $ => seq($.type1, repeat($.typeSuffix)),
 
-    typeSuffix: $ => seq('=>', optional($.annot), $.type1),
+    typeSuffix: $ => seq('=>', optional($.mod), $.type1),
 
     type1: $ => choice($.parenType, seq($.type0, repeat($.type0Suffix))),
 

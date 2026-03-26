@@ -116,7 +116,7 @@ varDefn: VAR mod* ID colonType? annot? assignSuffix? ;
 
 assignSuffix: ASSIGN annot? rhs ;
 
-defDefn: DEF mod* defId typeParams? defParams? defnTypeSuffix? defDefnSuffix? ;
+defDefn: DEF mod* defId typeParams? defParams? ( defnTypeSuffix defDefnSuffix? | defDefnSuffix | annot block | block )? ;
 
 defDefnSuffix: ASSIGN annot? ( exp | block | ifStmt | matchStmt );
 
@@ -126,7 +126,7 @@ defId: ID | OP | SYMBOL ;
 
 defParams: LPAREN ( defParam defParamSuffix? COMMA? )? RPAREN ;
 
-defParam: mod* ID COLON type ;
+defParam: mod* ID COLON ARROW? type ;
 
 defParamSuffix: COMMA ( defParamSuffixVarargs | defParam defParamSuffix? ) ;
 
@@ -136,7 +136,7 @@ stmt: expOrAssignStmt | varPattern | ifStmt | whileStmt | forStmt | deduceStmt |
 
 assertumeStmt: ( ASSERT | ASSUME ) exp commaExp? ;
 
-defStmt: DEF mod* defId typeParams? defParams? defnTypeSuffix? defDefnSuffix? ;
+defStmt: DEF mod* defId typeParams? defParams? ( defnTypeSuffix defDefnSuffix? | defDefnSuffix | annot block | block )? ;
 
 expOrAssignStmt: idStmt | expStmt | doStmt ;
 
@@ -356,7 +356,7 @@ commaTruthTableAssignment: COMMA truthTableAssignment ;
 
 type: type1 typeSuffix* ;
 
-typeSuffix: ARROW annot? type1 ;
+typeSuffix: ARROW mod? type1 ;
 
 type1: parenType | type0 type0Suffix* ;
 

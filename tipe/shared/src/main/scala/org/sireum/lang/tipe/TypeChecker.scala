@@ -343,7 +343,7 @@ object TypeChecker {
         val indexTypeVar = AST.Typed.TypeVar("I", AST.Typed.VarKind.Index)
         val valueTypeVar = AST.Typed.TypeVar("V", AST.Typed.VarKind.Immutable)
         val argTypes: ISZ[AST.Typed] = for (_ <- z"0" until numOfArgs) yield valueTypeVar
-        val constructorType = AST.Typed.Fun(AST.Purity.Pure,F, argTypes, AST.Typed.Name(AST.Typed.isName, ISZ(indexTypeVar, valueTypeVar)))
+        val constructorType = AST.Typed.Fun(AST.Purity.Pure,F, argTypes, AST.Typed.Name(AST.Typed.isName, None(), ISZ(indexTypeVar, valueTypeVar)))
         return (
           Some(AST.Typed.Method(T, AST.MethodMode.Constructor, sTypeParams, AST.Typed.sireumName, "IS", ISZ(),
             constructorType)),
@@ -354,7 +354,7 @@ object TypeChecker {
         val indexTypeVar = AST.Typed.TypeVar("I", AST.Typed.VarKind.Index)
         val valueTypeVar = AST.Typed.TypeVar("V", AST.Typed.VarKind.Mutable)
         val argTypes: ISZ[AST.Typed] = for (_ <- z"0" until numOfArgs) yield valueTypeVar
-        val constructorType = AST.Typed.Fun(AST.Purity.Pure,F, argTypes, AST.Typed.Name(AST.Typed.msName, ISZ(indexTypeVar, valueTypeVar)))
+        val constructorType = AST.Typed.Fun(AST.Purity.Pure,F, argTypes, AST.Typed.Name(AST.Typed.msName, None(), ISZ(indexTypeVar, valueTypeVar)))
         return (
           Some(AST.Typed.Method(T, AST.MethodMode.Constructor, sTypeParams, AST.Typed.sireumName, "MS", ISZ(), constructorType)),
           Some(AST.ResolvedInfo.Method(T, AST.MethodMode.Constructor, sTypeParams, AST.Typed.sireumName, "MS", ISZ(),
@@ -363,7 +363,7 @@ object TypeChecker {
       case AST.Typed.`iszName` =>
         val valueTypeVar = AST.Typed.TypeVar("V", AST.Typed.VarKind.Immutable)
         val argTypes: ISZ[AST.Typed] = for (_ <- z"0" until numOfArgs) yield valueTypeVar
-        val constructorType = AST.Typed.Fun(AST.Purity.Pure,F, argTypes, AST.Typed.Name(AST.Typed.isName, ISZ(AST.Typed.z, valueTypeVar)))
+        val constructorType = AST.Typed.Fun(AST.Purity.Pure,F, argTypes, AST.Typed.Name(AST.Typed.isName, None(), ISZ(AST.Typed.z, valueTypeVar)))
         val typeParams = ISZ[String]("V")
         return (
           Some(AST.Typed.Method(T, AST.MethodMode.Constructor, typeParams, AST.Typed.sireumName, "IS", ISZ(), constructorType)),
@@ -373,7 +373,7 @@ object TypeChecker {
       case AST.Typed.`mszName` =>
         val valueTypeVar = AST.Typed.TypeVar("V", AST.Typed.VarKind.Mutable)
         val argTypes: ISZ[AST.Typed] = for (_ <- z"0" until numOfArgs) yield valueTypeVar
-        val constructorType = AST.Typed.Fun(AST.Purity.Pure,F, argTypes, AST.Typed.Name(AST.Typed.msName, ISZ(AST.Typed.z, valueTypeVar)))
+        val constructorType = AST.Typed.Fun(AST.Purity.Pure,F, argTypes, AST.Typed.Name(AST.Typed.msName, None(), ISZ(AST.Typed.z, valueTypeVar)))
         val typeParams = ISZ[String]("V")
         return (
           Some(AST.Typed.Method(T, AST.MethodMode.Constructor, typeParams, AST.Typed.sireumName, "MS", ISZ(), constructorType)),
@@ -382,7 +382,7 @@ object TypeChecker {
         )
       case AST.Typed.`zsName` =>
         val argTypes: ISZ[AST.Typed] = for (_ <- z"0" until numOfArgs) yield AST.Typed.z
-        val constructorType = AST.Typed.Fun(AST.Purity.Pure,F, argTypes, AST.Typed.Name(AST.Typed.msName, ISZ(AST.Typed.z, AST.Typed.z)))
+        val constructorType = AST.Typed.Fun(AST.Purity.Pure,F, argTypes, AST.Typed.Name(AST.Typed.msName, None(), ISZ(AST.Typed.z, AST.Typed.z)))
         return (
           Some(AST.Typed.Method(T, AST.MethodMode.Constructor, ISZ(), AST.Typed.sireumName, "IS", ISZ(), constructorType)),
           Some(AST.ResolvedInfo.Method(T, AST.MethodMode.Constructor, ISZ(), AST.Typed.sireumName, "IS", ISZ(),
@@ -1190,7 +1190,7 @@ import TypeChecker._
         scope.resolveType(typeHierarchy.typeMap, info.owner) match {
           case Some(typeInfo: TypeInfo.SubZ) =>
             checkRange(Z(value).get, typeInfo.ast)
-            return Some(AST.Typed.Name(typeInfo.name, ISZ()))
+            return Some(AST.Typed.Name(typeInfo.name, None(), ISZ()))
           case _ =>
         }
       case Some(info: Info.LocalVar) =>
@@ -1571,7 +1571,7 @@ import TypeChecker._
                   case _ =>
                 }
               } else if (id == "indices" && (t.ids == AST.Typed.isName || t.ids == AST.Typed.msName)) {
-                return (Some(AST.Typed.Name(AST.Typed.isName, ISZ(AST.Typed.z, t.args(0)))), indicesResOpt, typeArgs)
+                return (Some(AST.Typed.Name(AST.Typed.isName, None(), ISZ(AST.Typed.z, t.args(0)))), indicesResOpt, typeArgs)
               }
             case _ =>
           }
@@ -1668,7 +1668,7 @@ import TypeChecker._
               case "Max" if info.ast.hasMax || info.ast.isBitVector => return (info.typedOpt, maxResOpt, typeArgs)
               case "Min" if info.ast.hasMin || info.ast.isBitVector => return (info.typedOpt, minResOpt, typeArgs)
               case "random" =>
-                val t = AST.Typed.Name(info.name, ISZ())
+                val t = AST.Typed.Name(info.name, None(), ISZ())
                 val f = AST.Typed.Fun(AST.Purity.Impure,T, ISZ(), t)
                 return (
                   Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), info.name, id, ISZ(), f)),
@@ -1676,7 +1676,7 @@ import TypeChecker._
                   typeArgs
                 )
               case "randomSeed" =>
-                val t = AST.Typed.Name(info.name, ISZ())
+                val t = AST.Typed.Name(info.name, None(), ISZ())
                 val f = AST.Typed.Fun(AST.Purity.Pure,F, ISZ(AST.Typed.z), t)
                 val paramNames = ISZ[String]("seed")
                 return (
@@ -1685,7 +1685,7 @@ import TypeChecker._
                   typeArgs
                 )
               case "randomBetween" =>
-                val t = AST.Typed.Name(info.name, ISZ())
+                val t = AST.Typed.Name(info.name, None(), ISZ())
                 val f = AST.Typed.Fun(AST.Purity.Impure,F, ISZ(t, t), t)
                 val paramNames = ISZ[String]("min", "max")
                 return (
@@ -1694,7 +1694,7 @@ import TypeChecker._
                   typeArgs
                 )
               case "randomSeedBetween" =>
-                val t = AST.Typed.Name(info.name, ISZ())
+                val t = AST.Typed.Name(info.name, None(), ISZ())
                 val f = AST.Typed.Fun(AST.Purity.Pure,F, ISZ(AST.Typed.z, t, t), t)
                 val paramNames = ISZ[String]("seed", "min", "max")
                 return (
@@ -1703,7 +1703,7 @@ import TypeChecker._
                   typeArgs
                 )
               case "fromZ" =>
-                val t = AST.Typed.Name(info.name, ISZ())
+                val t = AST.Typed.Name(info.name, None(), ISZ())
                 val f = AST.Typed.Fun(AST.Purity.Pure,F, ISZ(AST.Typed.z), t)
                 val paramNames = ISZ[String]("n")
                 return (
@@ -1746,7 +1746,7 @@ import TypeChecker._
               case "elements" => return (info.elementsTypedOpt, info.elementsResOpt, typeArgs)
               case "numOfElements" => return (info.numOfElementsTypedOpt, info.numOfElementsResOpt, typeArgs)
               case "random" =>
-                val t = AST.Typed.Name(info.name :+ Info.Enum.elementTypeSuffix, ISZ())
+                val t = AST.Typed.Name(info.name :+ Info.Enum.elementTypeSuffix, None(), ISZ())
                 val f = AST.Typed.Fun(AST.Purity.Impure,T, ISZ(), t)
                 return (
                   Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), info.name, id, ISZ(), f)),
@@ -1754,7 +1754,7 @@ import TypeChecker._
                   typeArgs
                 )
               case "randomSeed" =>
-                val t = AST.Typed.Name(info.name :+ Info.Enum.elementTypeSuffix, ISZ())
+                val t = AST.Typed.Name(info.name :+ Info.Enum.elementTypeSuffix, None(), ISZ())
                 val f = AST.Typed.Fun(AST.Purity.Pure,F, ISZ(AST.Typed.z), t)
                 val paramNames = ISZ[String]("seed")
                 return (
@@ -1763,7 +1763,7 @@ import TypeChecker._
                   typeArgs
                 )
               case "randomBetween" =>
-                val t = AST.Typed.Name(info.name :+ Info.Enum.elementTypeSuffix, ISZ())
+                val t = AST.Typed.Name(info.name :+ Info.Enum.elementTypeSuffix, None(), ISZ())
                 val f = AST.Typed.Fun(AST.Purity.Impure,F, ISZ(t, t), t)
                 val paramNames = ISZ[String]("min", "max")
                 return (
@@ -1772,7 +1772,7 @@ import TypeChecker._
                   typeArgs
                 )
               case "randomSeedBetween" =>
-                val t = AST.Typed.Name(info.name :+ Info.Enum.elementTypeSuffix, ISZ())
+                val t = AST.Typed.Name(info.name :+ Info.Enum.elementTypeSuffix, None(), ISZ())
                 val f = AST.Typed.Fun(AST.Purity.Pure,F, ISZ(AST.Typed.z, t, t), t)
                 val paramNames = ISZ[String]("seed", "min", "max")
                 return (
@@ -1995,6 +1995,7 @@ import TypeChecker._
                 AST.ResolvedAttr(binaryExp.posOpt, None(), None())
               ),
               ISZ(),
+              ISZ(),
               ISZ(binaryExp.left),
               binaryExp.attr
             )
@@ -2015,6 +2016,7 @@ import TypeChecker._
                 AST.Id(binaryExp.op, AST.Attr(binaryExp.posOpt)),
                 AST.ResolvedAttr(binaryExp.posOpt, None(), None())
               ),
+              ISZ(),
               ISZ(),
               ISZ(binaryExp.right),
               binaryExp.attr
@@ -2442,9 +2444,9 @@ import TypeChecker._
                     case Some(info) =>
                       info match {
                         case info: TypeInfo.SubZ =>
-                          val t = AST.Typed.Name(tpe.name, ISZ())
+                          val t = AST.Typed.Name(tpe.name, None(), ISZ())
                           val constructorType: AST.Typed.Fun =
-                            AST.Typed.Fun(AST.Purity.Pure,F, ISZ(AST.Typed.string), AST.Typed.Name(AST.Typed.optionName, ISZ(t)))
+                            AST.Typed.Fun(AST.Purity.Pure,F, ISZ(AST.Typed.string), AST.Typed.Name(AST.Typed.optionName, None(), ISZ(t)))
                           return (
                             Some(AST.Typed.Method(T, AST.MethodMode.Constructor, ISZ(), info.owner, info.ast.id.value,
                               ISZ(), constructorType)),
@@ -3194,16 +3196,16 @@ import TypeChecker._
                 case Some(expectedValue) =>
                   indexTypeOpt match {
                     case Some(indexType) =>
-                      Some(AST.Typed.Name(if (isImm) AST.Typed.isName else AST.Typed.msName, ISZ(indexType, expectedValue)))
+                      Some(AST.Typed.Name(if (isImm) AST.Typed.isName else AST.Typed.msName, None(), ISZ(indexType, expectedValue)))
                     case _ =>
-                      Some(AST.Typed.Name(if (isImm) AST.Typed.jenName else AST.Typed.mjenName, ISZ(expectedValue)))
+                      Some(AST.Typed.Name(if (isImm) AST.Typed.jenName else AST.Typed.mjenName, None(), ISZ(expectedValue)))
                   }
                 case _ =>
                   indexTypeOpt match {
                     case Some(indexType) =>
-                      Some(AST.Typed.Name(if (isImm) AST.Typed.isName else AST.Typed.msName, ISZ(indexType, t)))
+                      Some(AST.Typed.Name(if (isImm) AST.Typed.isName else AST.Typed.msName, None(), ISZ(indexType, t)))
                     case _ =>
-                      Some(AST.Typed.Name(if (isImm) AST.Typed.jenName else AST.Typed.mjenName, ISZ(t)))
+                      Some(AST.Typed.Name(if (isImm) AST.Typed.jenName else AST.Typed.mjenName, None(), ISZ(t)))
                   }
               }
               return (forExp(enumGens = newEnumGens, exp = newExp, attr = forExp.attr(typedOpt = tOpt)), tOpt)
@@ -3569,7 +3571,7 @@ import TypeChecker._
 
         case exp: AST.Exp.Invoke =>
           exp match {
-            case exp @ AST.Exp.Invoke(None(), AST.Exp.Ident(AST.Id(name)), _, args)
+            case exp @ AST.Exp.Invoke(None(), AST.Exp.Ident(AST.Id(name)), _, _, args)
                 if exp.targs.isEmpty && builtInMethods.contains(name) =>
               val (kind, resOpt): (BuiltInKind.Type, Option[AST.ResolvedInfo]) =
                 name match {
@@ -3618,7 +3620,7 @@ import TypeChecker._
 
         case exp: AST.Exp.InvokeNamed =>
           exp match {
-            case exp @ AST.Exp.InvokeNamed(None(), AST.Exp.Ident(AST.Id(name)), _, _)
+            case exp @ AST.Exp.InvokeNamed(None(), AST.Exp.Ident(AST.Id(name)), _, _, _)
                 if exp.targs.isEmpty && builtInMethods.contains(name) =>
               reporter.error(exp.posOpt, typeCheckerKind, s"Cannot invoke '$name' with named argument(s).")
               return (exp, None())
@@ -4249,9 +4251,9 @@ import TypeChecker._
                 )
               }
               (ti.name, expectedType) match {
-                case (AST.Typed.isName, AST.Typed.Name(AST.Typed.isName, argTypes)) => val r = s(argTypes(1)); return r
-                case (AST.Typed.msName, AST.Typed.Name(AST.Typed.msName, argTypes)) => val r = s(argTypes(1)); return r
-                case (AST.Typed.iszName, AST.Typed.Name(AST.Typed.isName, argTypes)) =>
+                case (AST.Typed.isName, AST.Typed.Name(AST.Typed.isName, _, argTypes)) => val r = s(argTypes(1)); return r
+                case (AST.Typed.msName, AST.Typed.Name(AST.Typed.msName, _, argTypes)) => val r = s(argTypes(1)); return r
+                case (AST.Typed.iszName, AST.Typed.Name(AST.Typed.isName, _, argTypes)) =>
                   if (argTypes(0) != AST.Typed.z) {
                     reporter.error(pattern.posOpt, typeCheckerKind,
                       st"Expecting an '${(AST.Typed.isName, ".")}' with index type '${AST.Typed.z}', but index type '${argTypes(0)}' found.".render)
@@ -4259,7 +4261,7 @@ import TypeChecker._
                   }
                   val r = s(argTypes(1))
                   return r
-                case (AST.Typed.mszName, AST.Typed.Name(AST.Typed.msName, argTypes)) =>
+                case (AST.Typed.mszName, AST.Typed.Name(AST.Typed.msName, _, argTypes)) =>
                   if (argTypes(0) != AST.Typed.z) {
                     reporter.error(pattern.posOpt, typeCheckerKind,
                       st"Expecting an '${(AST.Typed.msName, ".")}' with index type '${AST.Typed.z}', but index type '${argTypes(0)}' found.".render)
@@ -4267,7 +4269,7 @@ import TypeChecker._
                   }
                   val r = s(argTypes(1))
                   return r
-                case (AST.Typed.zsName, AST.Typed.Name(AST.Typed.msName, argTypes)) =>
+                case (AST.Typed.zsName, AST.Typed.Name(AST.Typed.msName, _, argTypes)) =>
                   var ok2 = T
                   if (argTypes(0) != AST.Typed.z) {
                     reporter.error(pattern.posOpt, typeCheckerKind,
@@ -4863,7 +4865,7 @@ import TypeChecker._
           val receiver = lhs.receiverOpt.get
           val (newReceiver, receiverTypeOpt) = checkExp(None(), scope, receiver, reporter)
           receiverTypeOpt match {
-            case Some(AST.Typed.Name(AST.Typed.msName, args)) =>
+            case Some(AST.Typed.Name(AST.Typed.msName, _, args)) =>
               val (newArg, _) = checkExp(Some(args(0)), scope, lhs.args(0), reporter)
               val (newRhs, _) = checkAssignExp(Some(args(1)), scope, assignStmt.rhs, reporter)
               val resOpt: Option[AST.ResolvedInfo] = Some(
@@ -5127,7 +5129,7 @@ import TypeChecker._
             case _ =>
           }
           return AST.ProofAst.Step.Justification.Apply(
-            invoke = AST.Exp.Invoke(r.invoke.receiverOpt, r.invoke.ident, r.invoke.targs, r.args, r.invoke.attr),
+            invoke = AST.Exp.Invoke(r.invoke.receiverOpt, r.invoke.ident, ISZ(), r.invoke.targs, r.args, r.invoke.attr),
             hasWitness = r.hasWitness, witnesses = r.witnesses)
         case just: AST.ProofAst.Step.Justification.ApplyEta =>
           val newEta = checkExp(None(), scope, just.eta, reporter)._1.asInstanceOf[AST.Exp.Eta]
@@ -5360,7 +5362,7 @@ import TypeChecker._
               for (lOpt <- body.leaves) {
                 lOpt match {
                   case Some(_: AST.Stmt.Return) =>
-                  case Some(AST.Stmt.Expr(exp: AST.Exp.Invoke)) =>
+                  case Some(AST.Stmt.Expr(exp: AST.Exp.Invoke, _)) =>
                     exp.attr.resOpt match {
                       case Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Halt)) =>
                       case _ =>

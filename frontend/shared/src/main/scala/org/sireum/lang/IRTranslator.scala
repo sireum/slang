@@ -76,7 +76,7 @@ object IRTranslator {
   var varCaptureSet: HashSet[String] = HashSet.empty
 
   @strictpure def mboxType(t: AST.Typed): AST.Typed.Name =
-    AST.Typed.Name(AST.Typed.sireumName :+ "MBox", ISZ(t))
+    AST.Typed.Name(AST.Typed.sireumName :+ "MBox", None(), ISZ(t))
 
   def collectTypeVarIds(t: AST.Typed, seen: HashSet[String]): (ISZ[String], HashSet[String]) = {
     t match {
@@ -162,7 +162,7 @@ object IRTranslator {
     if (isBasic) {
       body = toBasic(body.asInstanceOf[AST.IR.Body.Block], pos)
     }
-    return AST.IR.Procedure(isInObject, typeParams, owner, id, paramNames, t, body, pos)
+    return AST.IR.Procedure(isInObject, ISZ(), typeParams, owner, id, paramNames, t, body, pos)
   }
 
   def translateMethod(isBasic: B,
@@ -300,11 +300,11 @@ object IRTranslator {
           }
           for (j <- i until stmt.args.size) {
             val arg = stmt.args(j)
-            grounds = grounds :+ AST.IR.Stmt.Expr(AST.IR.Exp.Apply(T, AST.Typed.sireumName, id, args :+ stmt.args(j),
+            grounds = grounds :+ AST.IR.Stmt.Expr(AST.IR.Exp.Apply(T, AST.Typed.sireumName, id, AST.Typed.emptyRTypes, args :+ stmt.args(j),
               AST.Typed.Fun(AST.Purity.Impure, F, ISZ(arg.tipe), AST.Typed.unit), arg.pos))
           }
           if (stmt.line) {
-            grounds = grounds :+ AST.IR.Stmt.Expr(AST.IR.Exp.Apply(T, AST.Typed.sireumName, id, args :+
+            grounds = grounds :+ AST.IR.Stmt.Expr(AST.IR.Exp.Apply(T, AST.Typed.sireumName, id, AST.Typed.emptyRTypes, args :+
               AST.IR.Exp.Int(AST.Typed.c, 10, stmt.pos), AST.Typed.Fun(AST.Purity.Impure, F, ISZ(AST.Typed.c),
               AST.Typed.unit), stmt.pos))
           }
@@ -489,7 +489,7 @@ object IRTranslator {
         if (varCaptureSet.contains(stmt.id.value)) {
           val mt = mboxType(t)
           stmts = stmts :+ AST.IR.Stmt.Assign.Local(methodContext, stmt.id.value, mt,
-            AST.IR.Exp.Construct(mt, ISZ(varRhs), pos), pos)
+            AST.IR.Exp.Construct(mt, AST.Typed.emptyRTypes, ISZ(varRhs), pos), pos)
           oldStmts = oldStmts :+ AST.IR.Stmt.Decl(F, T, F, methodContext,
             ISZ(AST.IR.Stmt.Decl.Local(stmt.id.value, mt)), pos)
         } else {
@@ -840,6 +840,7 @@ object IRTranslator {
 
             val liftedProc = AST.IR.Procedure(
               isInObject = T,
+              rTypeParams = ISZ(),
               typeParams = typeParams,
               owner = liftedOwner,
               id = res.id,
@@ -915,7 +916,7 @@ object IRTranslator {
   }
 
   @strictpure def isHalt(stmt: AST.Stmt.Expr): B = stmt match {
-    case AST.Stmt.Expr(e: AST.Exp.Invoke) =>
+    case AST.Stmt.Expr(e: AST.Exp.Invoke, _) =>
       e.attr.resOpt.get match {
         case res: AST.ResolvedInfo.BuiltIn if res.kind == AST.ResolvedInfo.BuiltIn.Kind.Halt => T
         case _ => F
@@ -1067,9 +1068,9 @@ object IRTranslator {
           case res: AST.ResolvedInfo.Method =>
             val methodType = res.tpeOpt.get
             if (res.isInObject) {
-              return norm3AC(AST.IR.Exp.Apply(T, res.owner, res.id, ISZ(), methodType, pos))
+              return norm3AC(AST.IR.Exp.Apply(T, res.owner, res.id, AST.Typed.emptyRTypes, ISZ(), methodType, pos))
             } else {
-              return norm3AC(AST.IR.Exp.Apply(F, res.owner, res.id, ISZ(thiz(pos)),
+              return norm3AC(AST.IR.Exp.Apply(F, res.owner, res.id, AST.Typed.emptyRTypes, ISZ(thiz(pos)),
                 methodType(args = thiz(pos).tipe +: methodType.args), pos))
             }
           case _ => halt(s"Infeasible: $exp")
@@ -1094,7 +1095,7 @@ object IRTranslator {
               val rcv = translateExp(receiver)
               return norm3AC(AST.IR.Exp.FieldVarRef(rcv, res.id, res.tpeOpt.get.ret, pos))
             } else {
-              return translateExp(AST.Exp.Invoke(exp.receiverOpt, AST.Exp.Ident(exp.id, exp.attr), ISZ(), ISZ(),
+              return translateExp(AST.Exp.Invoke(exp.receiverOpt, AST.Exp.Ident(exp.id, exp.attr), ISZ(), ISZ(), ISZ(),
                 exp.attr(typedOpt = Some(exp.typedOpt.get.asInstanceOf[AST.Typed.Method].tpe.ret))))
             }
           case AST.ResolvedInfo.BuiltIn(kind) if kind == AST.ResolvedInfo.BuiltIn.Kind.AsInstanceOf ||
@@ -1113,7 +1114,7 @@ object IRTranslator {
               case _ => ISZ[String]()
             }
             val methodType = AST.Typed.Fun(AST.Purity.Impure, F, ISZ(receiverType), AST.Typed.string)
-            return norm3AC(AST.IR.Exp.Apply(F, owner, "string", ISZ(receiver), methodType, pos))
+            return norm3AC(AST.IR.Exp.Apply(F, owner, "string", AST.Typed.emptyRTypes, ISZ(receiver), methodType, pos))
           case res => halt(s"TODO: $res")
         }
       case exp: AST.Exp.Unary =>
@@ -1202,7 +1203,7 @@ object IRTranslator {
             // Use resolved method type (with proper type substitution) + prepend receiver
             var methodType = res.tpeOpt.get
             methodType = methodType(args = receiverType +: methodType.args)
-            return norm3AC(AST.IR.Exp.Apply(F, owner, res.id, ISZ(left, right), methodType, pos))
+            return norm3AC(AST.IR.Exp.Apply(F, owner, res.id, AST.Typed.emptyRTypes, ISZ(left, right), methodType, pos))
           case _ =>
         }
         halt(s"TODO: $exp")
@@ -1272,13 +1273,13 @@ object IRTranslator {
                 for (arg <- exp.args) {
                   args = args :+ translateExp(arg)
                 }
-                return norm3AC(AST.IR.Exp.Apply(applyIsInObject, applyOwner, res.id, args, methodType, pos))
+                return norm3AC(AST.IR.Exp.Apply(applyIsInObject, applyOwner, res.id, AST.Typed.emptyRTypes, args, methodType, pos))
               case AST.MethodMode.Ext =>
                 var args = ISZ[AST.IR.Exp]()
                 for (arg <- exp.args) {
                   args = args :+ translateExp(arg)
                 }
-                return norm3AC(AST.IR.Exp.Apply(T, res.owner, res.id, args, res.tpeOpt.get, pos))
+                return norm3AC(AST.IR.Exp.Apply(T, res.owner, res.id, AST.Typed.emptyRTypes, args, res.tpeOpt.get, pos))
               case AST.MethodMode.Select =>
                 val rcv: AST.IR.Exp = exp.receiverOpt match {
                   case Some(receiver) =>
@@ -1297,7 +1298,7 @@ object IRTranslator {
                 for (arg <- exp.args) {
                   args = args :+ translateExp(arg)
                 }
-                return norm3AC(AST.IR.Exp.Construct(exp.typedOpt.get.asInstanceOf[AST.Typed.Name], args, pos))
+                return norm3AC(AST.IR.Exp.Construct(exp.typedOpt.get.asInstanceOf[AST.Typed.Name], AST.Typed.emptyRTypes, args, pos))
               case _ => halt(s"TODO: $exp")
             }
           case res: AST.ResolvedInfo.LocalVar =>
@@ -1344,7 +1345,7 @@ object IRTranslator {
                   args = args :+ norm3AC(AST.IR.Exp.FieldVarRef(receiver, param.id.value, pt, pos))
               }
             }
-            return norm3AC(AST.IR.Exp.Construct(t, args, pos))
+            return norm3AC(AST.IR.Exp.Construct(t, AST.Typed.emptyRTypes, args, pos))
           case _ =>
             halt(s"TODO: $exp")
         }
@@ -1358,14 +1359,14 @@ object IRTranslator {
           argTypes = argTypes :+ arg.typedOpt.get
         }
         val methodType = AST.Typed.Fun(AST.Purity.Impure, F, argTypes, tupleType)
-        return norm3AC(AST.IR.Exp.Apply(T, tupleIds, "of", args, methodType, pos))
+        return norm3AC(AST.IR.Exp.Apply(T, tupleIds, "of", AST.Typed.emptyRTypes, args, methodType, pos))
       case exp: AST.Exp.ForYield =>
         val resultType = exp.typedOpt.get.asInstanceOf[AST.Typed.Name]
         val resultId = st"$$forYield.${pos.beginLine}.${pos.beginColumn}.${sha3(pos.string)}".render
         stmts = stmts :+ AST.IR.Stmt.Decl(F, F, F, methodContext,
           ISZ(AST.IR.Stmt.Decl.Local(resultId, resultType)), pos)
         stmts = stmts :+ AST.IR.Stmt.Assign.Local(methodContext, resultId, resultType,
-          AST.IR.Exp.Construct(resultType, ISZ(), pos), pos)
+          AST.IR.Exp.Construct(resultType, AST.Typed.emptyRTypes, ISZ(), pos), pos)
         def translateEnumGen(i: Z): AST.IR.Stmt.For = {
           val enumGen = exp.enumGens(i)
           val idOpt: Option[String] = enumGen.idOpt match {
@@ -1565,6 +1566,7 @@ object IRTranslator {
         // Step 9: Create the lifted IR.Procedure and append to liftedProcedures
         val liftedProc = AST.IR.Procedure(
           isInObject = T,
+          rTypeParams = ISZ(),
           typeParams = closureTypeVarIds,
           owner = owner,
           id = closureName,

@@ -334,7 +334,7 @@ object TypeHierarchy {
   @datatype class QuantTypePrePostNormalizer extends AST.Transformer.PrePost[B] {
     override def postExpQuantType(ctx: B, o: AST.Exp.QuantType): AST.Transformer.TPostResult[B, AST.Exp.Quant] = {
       o.fun.exp match {
-        case AST.Stmt.Expr(body: AST.Exp.QuantType) if o.isForall == body.isForall =>
+        case AST.Stmt.Expr(body: AST.Exp.QuantType, _) if o.isForall == body.isForall =>
           val params = o.fun.params ++ body.fun.params
           val exp = AST.Transformer(LocalVarContextPrePostSubstitutor(body.fun.context, o.fun.context)).
             transformAssignExp(F, body.fun.exp).resultOpt.getOrElse(body.fun.exp)
@@ -369,8 +369,8 @@ object TypeHierarchy {
       val fun = AST.Exp.Fun(o.fun.context, o.fun.params, AST.Stmt.Expr(
         AST.Exp.Binary(cond, AST.Exp.BinaryOp.CondImply, exp, AST.ResolvedAttr(o.posOpt,
           Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryCondImply)), AST.Typed.bOpt), o.posOpt),
-        AST.TypedAttr(o.posOpt, AST.Typed.bOpt)
-      ), AST.TypedAttr(o.attr.posOpt, o.attr.typedOpt))
+        ISZ(), AST.TypedAttr(o.posOpt, AST.Typed.bOpt)
+      ), ISZ(), AST.TypedAttr(o.attr.posOpt, o.attr.typedOpt))
       val newQuant = AST.Exp.QuantType(o.isForall, fun, AST.Attr(o.posOpt))
       val r = postExpQuantType(ctx, newQuant)
       return if (r.resultOpt.isEmpty) AST.Transformer.TPostResult(ctx, Some(newQuant)) else r
@@ -396,21 +396,21 @@ object TypeHierarchy {
 
   @pure def typedInfo(info: TypeInfo): AST.Typed.Name = {
     @pure def typedParam(tp: AST.TypeParam): AST.Typed = {
-      return AST.Typed.Name(ISZ(tp.id.value), ISZ())
+      return AST.Typed.Name(ISZ(tp.id.value), None(), ISZ())
     }
 
     info match {
-      case info: TypeInfo.SubZ => return AST.Typed.Name(info.name, ISZ())
-      case info: TypeInfo.Enum => return AST.Typed.Name(info.name, ISZ())
+      case info: TypeInfo.SubZ => return AST.Typed.Name(info.name, None(), ISZ())
+      case info: TypeInfo.Enum => return AST.Typed.Name(info.name, None(), ISZ())
       case info: TypeInfo.Sig =>
         val args = info.ast.typeParams.map(typedParam _)
-        return AST.Typed.Name(info.name, args)
+        return AST.Typed.Name(info.name, None(), args)
       case info: TypeInfo.Adt =>
         val args = info.ast.typeParams.map(typedParam _)
-        return AST.Typed.Name(info.name, args)
+        return AST.Typed.Name(info.name, None(), args)
       case info: TypeInfo.TypeAlias =>
         val args = info.ast.typeParams.map(typedParam _)
-        return AST.Typed.Name(info.name, args)
+        return AST.Typed.Name(info.name, None(), args)
       case _: TypeInfo.TypeVar => halt("Infeasible")
     }
   }
@@ -439,7 +439,7 @@ object TypeHierarchy {
             }
             as
           }
-          return AST.Typed.Name(name, args)
+          return AST.Typed.Name(name, None(), args)
         case t: AST.Type.Tuple =>
           val ts: ISZ[AST.Typed] = {
             var as = ISZ[AST.Typed]()
@@ -482,7 +482,7 @@ object TypeHierarchy {
     def resolveAlias(info: TypeInfo.TypeAlias, seen: HashSet[QName]): AST.Typed = {
       if (seen.contains(info.name)) {
         reporter.error(info.posOpt, resolverKind, st"Type alias ${(info.name, ".")} is cyclic.".render)
-        return AST.Typed.Name(info.name, ISZ())
+        return AST.Typed.Name(info.name, None(), ISZ())
       }
       val typed = typedInfo(info)
       r.aliases.get(typed.ids) match {
@@ -896,7 +896,7 @@ object TypeHierarchy {
                 )
                 return None()
               }
-              val tpe = dealias(AST.Typed.Name(ti.name, argTypes), tipe.posOpt, reporter)
+              val tpe = dealias(AST.Typed.Name(ti.name, None(), argTypes), tipe.posOpt, reporter)
               checkTyped(tipe.posOpt, tpe, reporter)
               return Some(tipe(typeArgs = newTypeArgs, attr = tipe.attr(typedOpt = Some(tpe))))
             case Some(ti: TypeInfo.TypeVar) =>
@@ -939,7 +939,7 @@ object TypeHierarchy {
                 }
                 return None()
               }
-              val t = AST.Typed.Name(p._3, argTypes)
+              val t = AST.Typed.Name(p._3, None(), argTypes)
               checkTyped(tipe.posOpt, t, reporter)
               return Some(tipe(typeArgs = newTypeArgs, attr = tipe.attr(typedOpt = Some(t))))
             case _ =>
@@ -1318,7 +1318,7 @@ object TypeHierarchy {
                         case _ => return F
                       }
                     }
-                    if (!isSubstitutableH(AST.Typed.Name(childInfo.name, ctargs))) {
+                    if (!isSubstitutableH(AST.Typed.Name(childInfo.name, None(), ctargs))) {
                       return F
                     }
                   }
@@ -1408,7 +1408,7 @@ object TypeHierarchy {
                         case _ => return F
                       }
                     }
-                    if (!isSubstitutableWithoutSpecVarsH(AST.Typed.Name(childInfo.name, ctargs))) {
+                    if (!isSubstitutableWithoutSpecVarsH(AST.Typed.Name(childInfo.name, None(), ctargs))) {
                       return F
                     }
                   }
@@ -1460,7 +1460,7 @@ object TypeHierarchy {
                       case _ => return F
                     }
                   }
-                  if (!isSubstitutableWithoutSpecVarsH(AST.Typed.Name(childInfo.name, ctargs))) {
+                  if (!isSubstitutableWithoutSpecVarsH(AST.Typed.Name(childInfo.name, None(), ctargs))) {
                     return F
                   }
                 }
@@ -1502,7 +1502,7 @@ object TypeHierarchy {
         case _: Info.Enum => return (Some(AST.ResolvedInfo.Enum(ids)),
           Some(AST.Typed.Enum(ids)))
         case info: Info.EnumElement => return (nameMap.get(info.owner).get.asInstanceOf[Info.Enum].elements.get(info.id),
-          Some(AST.Typed.Name(ids, ISZ())))
+          Some(AST.Typed.Name(ids, None(), ISZ())))
         case info: Info.Var => return (info.resOpt, info.typedOpt)
         case info: Info.SpecVar => return (info.resOpt, info.typedOpt)
         case info => halt(s"Infeasible: $info")
@@ -1691,7 +1691,7 @@ object TypeHierarchy {
                 vb.asInstanceOf[AST.Pattern.VarBinding].id.value)), vb.typedOpt))
             val right = AST.Exp.Invoke(
               None(), AST.Exp.Ident(ti.ast.id, AST.ResolvedAttr(posOpt, Some(AST.ResolvedInfo.Object(ti.name)),
-                Some(AST.Typed.Object(ti.owner, ti.ast.id.value)))), for (arg <- sub.args) yield AST.Util.typedToType(arg, pos),
+                Some(AST.Typed.Object(ti.owner, ti.ast.id.value)))), ISZ(), for (arg <- sub.args) yield AST.Util.typedToType(arg, pos),
               args, AST.ResolvedAttr(posOpt, ti.constructorResOpt, Some(sub)))
             cases = cases :+ TypeHierarchy.InductResult.Case(AST.Pattern.Structure(None(), Some(ids2name(ti.name)), vbs, context,
               resolvedAttr(resOpt = ti.extractorResOpt, typedOpt = Some(sub))), ISZ(

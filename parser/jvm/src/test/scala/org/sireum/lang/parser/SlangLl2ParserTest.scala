@@ -30,7 +30,7 @@ import org.sireum.test._
 
 class SlangLl2ParserTest extends SireumRcSpec {
 
-  val temp: Os.Path = if (Os.env("GITHUB_ACTION").nonEmpty) {
+  lazy val temp: Os.Path = if (Os.env("GITHUB_ACTION").isEmpty) {
     val t = Os.home / "Temp" / "ll2"
     t.removeAll()
     t

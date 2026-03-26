@@ -142,7 +142,7 @@ object CoreExp {
   }
 
   @datatype class LitEnum(val owner: ISZ[String], val id: String, val ordinal: Z) extends Lit {
-    @strictpure def rawType: Typed = Typed.Name(owner :+ "Type", ISZ())
+    @strictpure def rawType: Typed = Typed.Name(owner :+ "Type", None(), ISZ())
     @pure override def prettyST: ST = {
       return st"""${owner(owner.size - 1)}.$id"""
     }

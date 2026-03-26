@@ -68,7 +68,7 @@ object SlangLl2AstBuilder {
       name = AST.Name(
         ids = for (id <- ids) yield AST.Id(id, AST.Attr(None())),
         attr = AST.Attr(None())),
-      selectorOpt = Some(AST.Stmt.Import.WildcardSelector()))),
+      selectorOpt = Some(AST.Stmt.Import.WildcardSelector(annotations = ISZ())))),
     attr = AST.Attr(None()))
 
   val autoImports: ISZ[AST.Stmt] = ISZ[AST.Stmt](
@@ -92,7 +92,15 @@ object SlangLl2AstBuilder {
     mkWildcardImport(ISZ("org", "sireum", "Z64"))
   )
 
-  @strictpure def mkId(value: String, tree: ParseTree): AST.Id = AST.Id(value, attr(tree))
+  @strictpure def mkId(value: String, tree: ParseTree): AST.Id = {
+    // Strip backtick escaping from IDESC tokens (e.g., `__>:` → __>:)
+    val v: String = if (value.size > 1 && ops.StringOps(value).startsWith("`") && ops.StringOps(value).endsWith("`")) {
+      ops.StringOps(value).substring(1, value.size - 1)
+    } else {
+      value
+    }
+    AST.Id(v, attr(tree))
+  }
 
   @strictpure def mkName(ids: ISZ[AST.Id], tree: ParseTree): AST.Name = AST.Name(ids, attr(tree))
 
@@ -528,21 +536,72 @@ object SlangLl2AstBuilder {
       stmts = stmts ++ buildMainMember(mm, reporter)
     }
 
-    // packages
-    for (pkg <- pkgs) {
-      stmts = stmts :+ buildPkg(pkg, reporter)
+    // Detect the first package as a package-name declaration if it has a name with
+    // no modifiers (@ext/@app) — its members become the program body statements.
+    // Remaining packages are regular Stmt.Object entries.
+    var packageName: AST.Name = AST.Name(ISZ(), emptyAttr)
+    var pkgStartIdx: Z = 0
+
+    if (pkgs.nonEmpty) {
+      val firstPkg = pkgs(0)
+      val firstMods = buildMods(findChildren(firstPkg, "mod"))
+      val firstNameOpt = findChild(firstPkg, "name")
+      // A package with braces is always an object; only the non-braced form can be a namespace
+      val hasBraces = findChild(firstPkg, "pkgSuffix").nonEmpty
+      val isNamespacePkg = !hasBraces && firstNameOpt.nonEmpty && !hasMod(firstMods, "ext") && !hasMod(firstMods, "app")
+
+      if (isNamespacePkg) {
+        packageName = buildName(firstNameOpt.get, reporter)
+        // Collect namespace members and remaining packages, then interleave:
+        // Objects (packages) first, then Sigs (types) — matches Scala parser order
+        var nsMemberStmts = ISZ[AST.Stmt]()
+        val nsPkgImports = findChildren(firstPkg, "imprt")
+        for (imp <- nsPkgImports) {
+          stmts = stmts :+ buildImport(imp, reporter)
+        }
+        val nsPkgMembers = findChildren(firstPkg, "member")
+        for (m <- nsPkgMembers) {
+          nsMemberStmts = nsMemberStmts ++ buildMember(m, F, reporter)
+        }
+        val nsPkgSuffixOpt = findChild(firstPkg, "pkgSuffix")
+        nsPkgSuffixOpt match {
+          case Some(ps) =>
+            val psMembers = findChildren(ps, "member")
+            for (m <- psMembers) {
+              nsMemberStmts = nsMemberStmts ++ buildMember(m, F, reporter)
+            }
+          case _ =>
+        }
+        pkgStartIdx = 1
+
+        // Build remaining packages (Objects)
+        var pkgStmts = ISZ[AST.Stmt]()
+        var j: Z = pkgStartIdx
+        while (j < pkgs.size) {
+          pkgStmts = pkgStmts :+ buildPkg(pkgs(j), reporter)
+          j = j + 1
+        }
+
+        // Interleave: for each name, Object first then Sig (matches Scala convention)
+        // First add all Objects, then all non-Object members (Sigs, etc.)
+        stmts = stmts ++ pkgStmts ++ nsMemberStmts
+      }
     }
 
-    // First check if there is a package name from annotation
-    val packageName: AST.Name = annotOpt match {
-      case Some(_) => AST.Name(ISZ(), emptyAttr)
-      case _ => AST.Name(ISZ(), emptyAttr)
+    if (pkgStartIdx == z"0") {
+      // No namespace package — add all packages normally
+      var i: Z = 0
+      while (i < pkgs.size) {
+        stmts = stmts :+ buildPkg(pkgs(i), reporter)
+        i = i + 1
+      }
     }
 
     return AST.TopUnit.Program(
       fileUriOpt = fileUriOpt,
       packageName = packageName,
-      body = AST.Body(stmts = stmts, undecls = ISZ()))
+      body = AST.Body(stmts = stmts, undecls = ISZ()),
+      annotations = ISZ())
   }
 
   // ─── import ────────────────────────────────────────────────────────
@@ -566,7 +625,7 @@ object SlangLl2AstBuilder {
           case Some(_) =>
             return AST.Stmt.Import.Importer(
               name = mkName(ids, posTree),
-              selectorOpt = Some(AST.Stmt.Import.WildcardSelector()))
+              selectorOpt = Some(AST.Stmt.Import.WildcardSelector(annotations = ISZ())))
           case _ =>
         }
         qualOpt match {
@@ -610,7 +669,8 @@ object SlangLl2AstBuilder {
     }
     return AST.Stmt.Import.NamedSelector(
       from = mkId(idLeaves(0).text, idLeaves(0)),
-      to = mkId(idLeaves(1).text, idLeaves(1)))
+      to = mkId(idLeaves(1).text, idLeaves(1)),
+      annotations = ISZ())
   }
 
   // ─── mainMember ────────────────────────────────────────────────────
@@ -718,6 +778,7 @@ object SlangLl2AstBuilder {
       extNameOpt = extNameOpt,
       id = mkId(id, node),
       stmts = stmts,
+      annotations = ISZ(),
       attr = attr(node))
   }
 
@@ -796,10 +857,11 @@ object SlangLl2AstBuilder {
     val isRecord = hasMod(mods, "record")
     val isTrait = hasMod(mods, "trait")
     val isSealed = hasMod(mods, "sealed")
+    val isExt = hasMod(mods, "ext")
     val isUnclonable = hasMod(mods, "unclonable")
 
     if (isSig || isMsig) {
-      // Sig
+      // Sig (@ext pairs with @sig or @msig)
       val adtSuffix = findChild(node, "typeDefnAdtSuffix")
       var parents = ISZ[AST.Type.Named]()
       var stmts = ISZ[AST.Stmt]()
@@ -822,13 +884,14 @@ object SlangLl2AstBuilder {
         case _ =>
       }
       return AST.Stmt.Sig(
-        isImmutable = !isMsig,
+        isImmutable = isSig,
         isSealed = isSealed,
-        isExt = F,
+        isExt = isExt,
         id = id,
         typeParams = typeParams,
         parents = parents,
         stmts = stmts,
+        annotations = ISZ(),
         attr = attr(node))
     }
 
@@ -870,6 +933,7 @@ object SlangLl2AstBuilder {
       params = params,
       parents = parents,
       stmts = stmts,
+      annotations = ISZ(),
       attr = attr(node))
   }
 
@@ -1141,7 +1205,7 @@ object SlangLl2AstBuilder {
     }
     val id = mkId(idText(node), node)
     val typeNodes = findChildren(node, "type")
-    var tipe: AST.Type = AST.Type.Named(name = mkName(ISZ(), node), typeArgs = ISZ(), attr = emptyTypedAttr)
+    var tipe: AST.Type = AST.Type.Named(name = mkName(ISZ(), node), rTypeOpt = None(), typeArgs = ISZ(), attr = emptyTypedAttr)
     if (typeNodes.nonEmpty) {
       tipe = buildType(typeNodes(0), reporter)
     } else {
@@ -1204,7 +1268,7 @@ object SlangLl2AstBuilder {
     val name = buildName(nameNode, reporter)
     val typeArgsOpt = findChild(node, "typeArgs")
     val typeArgs = buildTypeArgsList(typeArgsOpt, reporter)
-    return AST.Type.Named(name = name, typeArgs = typeArgs, attr = typedAttr(node))
+    return AST.Type.Named(name = name, rTypeOpt = None(), typeArgs = typeArgs, attr = typedAttr(node))
   }
 
   // ─── name ──────────────────────────────────────────────────────────
@@ -1229,14 +1293,24 @@ object SlangLl2AstBuilder {
     val type1Node = findChild(node, "type1").get
     val typeSuffixes = findChildren(node, "typeSuffix")
     if (typeSuffixes.isEmpty) {
-      return buildType1(type1Node, reporter)
+      val t = buildType1(type1Node, reporter)
+      // Standalone () (empty tuple) → Unit
+      t match {
+        case t: AST.Type.Tuple if t.args.isEmpty =>
+          return AST.Type.Named(
+            name = mkName(ISZ(AST.Id("Unit", emptyAttr)), node),
+            rTypeOpt = None(),
+            typeArgs = ISZ(),
+            attr = emptyTypedAttr)
+        case _ => return t
+      }
     }
     // Collect all type1 nodes and suffix metadata for right-associative fold
     var types = ISZ(buildType1(type1Node, reporter))
     var pures = ISZ[B]()
     var suffixNodes = ISZ[ParseTree.Node]()
     for (ts <- typeSuffixes) {
-      pures = pures :+ findChild(ts, "annot").nonEmpty
+      pures = pures :+ findChild(ts, "mod").nonEmpty
       suffixNodes = suffixNodes :+ ts
       types = types :+ buildType1(findChild(ts, "type1").get, reporter)
     }
@@ -1275,7 +1349,8 @@ object SlangLl2AstBuilder {
     // parenType: LPAREN typeParenArgs? COMMA? RPAREN
     val argsNodeOpt = findChild(node, "typeParenArgs")
     if (argsNodeOpt.isEmpty) {
-      // Empty parens () — used as zero-arg function type: () => R
+      // Empty parens () — zero-arg tuple (becomes Unit in standalone position,
+      // zero-arg function type when followed by =>)
       return AST.Type.Tuple(args = ISZ(), attr = typedAttr(node))
     }
     val argsNode = argsNodeOpt.get
@@ -1324,6 +1399,7 @@ object SlangLl2AstBuilder {
     val typeArgs = buildTypeArgsList(typeArgsOpt, reporter)
     return AST.Type.Named(
       name = mkName(ids, node),
+      rTypeOpt = None(),
       typeArgs = typeArgs,
       attr = typedAttr(node))
   }
@@ -1695,6 +1771,11 @@ object SlangLl2AstBuilder {
     val idLeaf = findLeafByRule(node, "ID").get
     val typeArgsOpt = findChild(node, "typeArgs")
     val targs = buildTypeArgsList(typeArgsOpt, reporter)
+    // Reserved identifier: Res → Exp.Result
+    if (idLeaf.text == "Res") {
+      val tipeOpt: Option[AST.Type] = if (targs.nonEmpty) Some(targs(0)) else None()
+      return AST.Exp.Result(tipeOpt = tipeOpt, attr = typedAttr(node))
+    }
     if (targs.nonEmpty) {
       return AST.Exp.Select(
         receiverOpt = None(),
@@ -1781,22 +1862,18 @@ object SlangLl2AstBuilder {
               case _ =>
             }
           }
-          val ident: AST.Exp.Ident = receiver match {
-            case receiver: AST.Exp.Ident => receiver
+          val (ident, rcvOpt, targs): (AST.Exp.Ident, Option[AST.Exp], ISZ[AST.Type]) = receiver match {
+            case receiver: AST.Exp.Ident => (receiver, None(), ISZ())
             case receiver: AST.Exp.Select =>
-              AST.Exp.Ident(id = receiver.id, attr = resolvedAttr(node))
+              (AST.Exp.Ident(id = receiver.id, attr = resolvedAttr(node)), receiver.receiverOpt, receiver.targs)
             case _ =>
-              AST.Exp.Ident(id = AST.Id("apply", emptyAttr), attr = resolvedAttr(node))
-          }
-          val rcvOpt: Option[AST.Exp] = receiver match {
-            case _: AST.Exp.Ident => None()
-            case receiver: AST.Exp.Select => receiver.receiverOpt
-            case _ => Some(receiver)
+              (AST.Exp.Ident(id = AST.Id("apply", emptyAttr), attr = resolvedAttr(node)), Some(receiver), ISZ())
           }
           return AST.Exp.InvokeNamed(
             receiverOpt = rcvOpt,
             ident = ident,
-            targs = ISZ(),
+            rTypes = ISZ(),
+            targs = targs,
             args = namedArgs,
             attr = resolvedAttr(node))
         } else {
@@ -1812,43 +1889,35 @@ object SlangLl2AstBuilder {
             args = args :+ buildRhs(rhs, reporter)
           }
 
-          val ident: AST.Exp.Ident = receiver match {
-            case receiver: AST.Exp.Ident => receiver
+          val (ident, rcvOpt, targs): (AST.Exp.Ident, Option[AST.Exp], ISZ[AST.Type]) = receiver match {
+            case receiver: AST.Exp.Ident => (receiver, None(), ISZ())
             case receiver: AST.Exp.Select =>
-              AST.Exp.Ident(id = receiver.id, attr = resolvedAttr(node))
+              (AST.Exp.Ident(id = receiver.id, attr = resolvedAttr(node)), receiver.receiverOpt, receiver.targs)
             case _ =>
-              AST.Exp.Ident(id = AST.Id("apply", emptyAttr), attr = resolvedAttr(node))
-          }
-          val rcvOpt: Option[AST.Exp] = receiver match {
-            case _: AST.Exp.Ident => None()
-            case receiver: AST.Exp.Select => receiver.receiverOpt
-            case _ => Some(receiver)
+              (AST.Exp.Ident(id = AST.Id("apply", emptyAttr), attr = resolvedAttr(node)), Some(receiver), ISZ())
           }
           return AST.Exp.Invoke(
             receiverOpt = rcvOpt,
             ident = ident,
-            targs = ISZ(),
+            rTypes = ISZ(),
+            targs = targs,
             args = args,
             attr = resolvedAttr(node))
         }
       case _ =>
         // Empty args: receiver()
-        val ident: AST.Exp.Ident = receiver match {
-          case receiver: AST.Exp.Ident => receiver
+        val (ident, rcvOpt, targs): (AST.Exp.Ident, Option[AST.Exp], ISZ[AST.Type]) = receiver match {
+          case receiver: AST.Exp.Ident => (receiver, None(), ISZ())
           case receiver: AST.Exp.Select =>
-            AST.Exp.Ident(id = receiver.id, attr = resolvedAttr(node))
+            (AST.Exp.Ident(id = receiver.id, attr = resolvedAttr(node)), receiver.receiverOpt, receiver.targs)
           case _ =>
-            AST.Exp.Ident(id = AST.Id("apply", emptyAttr), attr = resolvedAttr(node))
-        }
-        val rcvOpt: Option[AST.Exp] = receiver match {
-          case _: AST.Exp.Ident => None()
-          case receiver: AST.Exp.Select => receiver.receiverOpt
-          case _ => Some(receiver)
+            (AST.Exp.Ident(id = AST.Id("apply", emptyAttr), attr = resolvedAttr(node)), Some(receiver), ISZ())
         }
         return AST.Exp.Invoke(
           receiverOpt = rcvOpt,
           ident = ident,
-          targs = ISZ(),
+          rTypes = ISZ(),
+          targs = targs,
           args = ISZ(),
           attr = resolvedAttr(node))
     }
@@ -1920,6 +1989,7 @@ object SlangLl2AstBuilder {
       return AST.Exp.InvokeNamed(
         receiverOpt = None(),
         ident = AST.Exp.Ident(id = AST.Id("apply", emptyAttr), attr = emptyResolvedAttr),
+        rTypes = ISZ(),
         targs = ISZ(),
         args = namedArgs,
         attr = resolvedAttr(node))
@@ -2342,7 +2412,7 @@ object SlangLl2AstBuilder {
     }
 
     val exp = buildRhs(rhsNode, reporter)
-    return AST.Exp.ForYield(enumGens = enumGens, exp = exp, attr = typedAttr(node))
+    return AST.Exp.ForYield(enumGens = enumGens, exp = exp, annotations = ISZ(), attr = typedAttr(node))
   }
 
   def buildDefAnon(node: ParseTree.Node, reporter: message.Reporter): AST.Exp.Fun = {
@@ -2357,7 +2427,7 @@ object SlangLl2AstBuilder {
     }
 
     val exp = buildRhsAsAssignExpLambda(rhsNode, reporter)
-    return AST.Exp.Fun(context = ISZ(), params = params, exp = exp, attr = typedAttr(node))
+    return AST.Exp.Fun(context = ISZ(), params = params, exp = exp, annotations = ISZ(), attr = typedAttr(node))
   }
 
   def buildDefAnonParams(node: ParseTree.Node, reporter: message.Reporter): ISZ[AST.Exp.Fun.Param] = {
@@ -2445,6 +2515,7 @@ object SlangLl2AstBuilder {
           case typeExp: AST.Exp.Ident =>
             Some(AST.Type.Named(
               name = mkName(ISZ(typeExp.id), typeExpOpt(0)),
+              rTypeOpt = None(),
               typeArgs = ISZ(),
               attr = typedAttr(typeExpOpt(0))))
           case typeExp: AST.Exp.Select =>
@@ -2458,6 +2529,7 @@ object SlangLl2AstBuilder {
             }
             Some(AST.Type.Named(
               name = mkName(ids, typeExpOpt(0)),
+              rTypeOpt = None(),
               typeArgs = typeExp.targs,
               attr = typedAttr(typeExpOpt(0))))
           case _ => None()
@@ -2469,7 +2541,7 @@ object SlangLl2AstBuilder {
     }
 
     val body = buildRhsAsAssignExp(rhsNode, reporter)
-    val fun = AST.Exp.Fun(context = ISZ(), params = params, exp = body, attr = typedAttr(node))
+    val fun = AST.Exp.Fun(context = ISZ(), params = params, exp = body, annotations = ISZ(), attr = typedAttr(node))
     return AST.Exp.QuantType(isForall = isForall, fun = fun, attr = attr(node))
   }
 
@@ -2481,7 +2553,7 @@ object SlangLl2AstBuilder {
 
     val body = buildRhsAsAssignExp(rhsNode, reporter)
     val param = AST.Exp.Fun.Param(idOpt = Some(qrId), tipeOpt = None(), typedOpt = None())
-    val fun = AST.Exp.Fun(context = ISZ(), params = ISZ(param), exp = body, attr = typedAttr(posTree))
+    val fun = AST.Exp.Fun(context = ISZ(), params = ISZ(param), exp = body, annotations = ISZ(), attr = typedAttr(posTree))
 
     rangeSuffix match {
       case Some(rs) =>
@@ -2506,10 +2578,11 @@ object SlangLl2AstBuilder {
               // Could be either type or seq
               val tipe = AST.Type.Named(
                 name = mkName(ISZ(typeOrSeqExp.id), expNodes(0)),
+                rTypeOpt = None(),
                 typeArgs = ISZ(),
                 attr = typedAttr(expNodes(0)))
               val paramWithType = AST.Exp.Fun.Param(idOpt = Some(qrId), tipeOpt = Some(tipe), typedOpt = None())
-              val funWithType = AST.Exp.Fun(context = ISZ(), params = ISZ(paramWithType), exp = body, attr = typedAttr(posTree))
+              val funWithType = AST.Exp.Fun(context = ISZ(), params = ISZ(paramWithType), exp = body, annotations = ISZ(), attr = typedAttr(posTree))
               return AST.Exp.QuantType(isForall = isForall, fun = funWithType, attr = attr(posTree))
             case typeOrSeqExp: AST.Exp.Select =>
               // Multi-component name => could be type like ISZ[Z]
@@ -2524,10 +2597,11 @@ object SlangLl2AstBuilder {
               if (typeOrSeqExp.targs.nonEmpty) {
                 val tipe = AST.Type.Named(
                   name = mkName(ids, expNodes(0)),
+                  rTypeOpt = None(),
                   typeArgs = typeOrSeqExp.targs,
                   attr = typedAttr(expNodes(0)))
                 val paramWithType = AST.Exp.Fun.Param(idOpt = Some(qrId), tipeOpt = Some(tipe), typedOpt = None())
-                val funWithType = AST.Exp.Fun(context = ISZ(), params = ISZ(paramWithType), exp = body, attr = typedAttr(posTree))
+                val funWithType = AST.Exp.Fun(context = ISZ(), params = ISZ(paramWithType), exp = body, annotations = ISZ(), attr = typedAttr(posTree))
                 return AST.Exp.QuantType(isForall = isForall, fun = funWithType, attr = attr(posTree))
               }
               return AST.Exp.QuantEach(isForall = isForall, seq = typeOrSeqExp, fun = fun, attr = resolvedAttr(posTree))
@@ -2605,10 +2679,11 @@ object SlangLl2AstBuilder {
     val invoke = AST.Exp.Invoke(
       receiverOpt = None(),
       ident = ident,
+      rTypes = ISZ(),
       targs = ISZ(),
       args = args,
       attr = resolvedAttr(node))
-    return AST.Stmt.Expr(exp = invoke, attr = typedAttr(node))
+    return AST.Stmt.Expr(exp = invoke, annotations = ISZ(), attr = typedAttr(node))
   }
 
   def buildExpOrAssignStmt(node: ParseTree.Node, reporter: message.Reporter): AST.Stmt = {
@@ -2647,7 +2722,7 @@ object SlangLl2AstBuilder {
             // Assignment: ID = rhs
             val lhs = AST.Exp.Ident(id = mkId(idLeaf.text, idLeaf), attr = resolvedAttr(idLeaf))
             val rhs = buildAssignSuffix(as, reporter)
-            return AST.Stmt.Assign(lhs = lhs, rhs = rhs, attr = attr(node))
+            return AST.Stmt.Assign(lhs = lhs, rhs = rhs, annotations = ISZ(), attr = attr(node))
           case _ =>
         }
         annotOpt match {
@@ -2664,12 +2739,14 @@ object SlangLl2AstBuilder {
                   // val @rw ID = exp (but this comes from varDefn, not idStmt)
                   return AST.Stmt.Expr(
                     exp = AST.Exp.Ident(id = mkId(idLeaf.text, idLeaf), attr = resolvedAttr(idLeaf)),
+                    annotations = ISZ(),
                     attr = typedAttr(node))
                 case _ =>
               }
             }
             return AST.Stmt.Expr(
               exp = AST.Exp.Ident(id = mkId(idLeaf.text, idLeaf), attr = resolvedAttr(idLeaf)),
+              annotations = ISZ(),
               attr = typedAttr(node))
           case _ =>
         }
@@ -2678,6 +2755,7 @@ object SlangLl2AstBuilder {
             // Label: ID : annot?
             return AST.Stmt.Expr(
               exp = AST.Exp.Ident(id = mkId(idLeaf.text, idLeaf), attr = resolvedAttr(idLeaf)),
+              annotations = ISZ(),
               attr = typedAttr(node))
           case _ =>
         }
@@ -2688,6 +2766,7 @@ object SlangLl2AstBuilder {
       "Bare identifier as statement has no effect — use 'id()' for method calls, or 'return id' / '\\\\ id' to produce a value")
     return AST.Stmt.Expr(
       exp = AST.Exp.Ident(id = mkId(idLeaf.text, idLeaf), attr = resolvedAttr(idLeaf)),
+      annotations = ISZ(),
       attr = typedAttr(node))
   }
 
@@ -2714,10 +2793,10 @@ object SlangLl2AstBuilder {
               ident = AST.Exp.Ident(id = AST.Id(value = "apply", attr = emptyAttr), attr = invoke.attr))
           case _ => result
         }
-        return AST.Stmt.Assign(lhs = lhs, rhs = rhs, attr = attr(node))
+        return AST.Stmt.Assign(lhs = lhs, rhs = rhs, annotations = ISZ(), attr = attr(node))
       case _ =>
     }
-    return AST.Stmt.Expr(exp = result, attr = typedAttr(node))
+    return AST.Stmt.Expr(exp = result, annotations = ISZ(), attr = typedAttr(node))
   }
 
   def buildDoStmt(node: ParseTree.Node, reporter: message.Reporter): AST.Stmt = {
@@ -2753,7 +2832,7 @@ object SlangLl2AstBuilder {
     expOpt match {
       case Some(expNode) =>
         val exp = buildExp(expNode, reporter)
-        return AST.Stmt.Expr(exp = exp, attr = typedAttr(node))
+        return AST.Stmt.Expr(exp = exp, annotations = ISZ(), attr = typedAttr(node))
       case _ =>
     }
     halt(st"Could not build doStmt from ${node.toST.render}".render)
@@ -2789,7 +2868,7 @@ object SlangLl2AstBuilder {
     expOpt match {
       case Some(e) =>
         val exp = buildExp(e, reporter)
-        return AST.Stmt.Expr(exp = exp, attr = typedAttr(e))
+        return AST.Stmt.Expr(exp = exp, annotations = ISZ(), attr = typedAttr(e))
       case _ =>
     }
     val blockOpt = findChild(node, "block")
@@ -2879,6 +2958,7 @@ object SlangLl2AstBuilder {
       id = id,
       tipeOpt = tipeOpt,
       initOpt = initOpt,
+      annotations = ISZ(),
       attr = resolvedAttr(node))
   }
 
@@ -2918,6 +2998,7 @@ object SlangLl2AstBuilder {
           id = p.id,
           tipeOpt = if (tipeOpt.nonEmpty) tipeOpt else p.tipeOpt,
           initOpt = Some(init),
+          annotations = ISZ(),
           attr = resolvedAttr(node))
       case _ =>
     }
@@ -2927,6 +3008,7 @@ object SlangLl2AstBuilder {
       pattern = pattern,
       tipeOpt = tipeOpt,
       init = init,
+      annotations = ISZ(),
       attr = attr(node))
   }
 
@@ -2941,7 +3023,7 @@ object SlangLl2AstBuilder {
   }
 
   def buildDefCommon(node: ParseTree.Node, reporter: message.Reporter): AST.Stmt = {
-    // defDefn/defStmt: DEF mod* defId typeParams? defParams? defnTypeSuffix? defDefnSuffix?
+    // defDefn/defStmt: DEF mod* defId typeParams? defParams? ( defnTypeSuffix? defDefnSuffix? | annot? block )
     val mods = buildMods(findChildren(node, "mod"))
     val defIdNode = findChild(node, "defId").get
     val idLeaf = firstLeaf(defIdNode)
@@ -2949,24 +3031,38 @@ object SlangLl2AstBuilder {
     val typeParams = buildTypeParams(findChild(node, "typeParams"), reporter)
     val defParamsOpt = findChild(node, "defParams")
 
-    val hasParams = defParamsOpt.nonEmpty
+    // Procedural branch: direct block child means Unit-returning method
+    val proceduralBlockOpt = findChild(node, "block")
+    val isProcedural = proceduralBlockOpt.nonEmpty
+
+    // For procedural syntax, auto-inject hasParams = T (empty params if parameterless)
+    val hasParams: B = if (isProcedural) T else defParamsOpt.nonEmpty
     val params: ISZ[AST.Param] = defParamsOpt match {
       case Some(dp) => buildDefParams(dp, reporter)
       case _ => ISZ()
     }
 
     val defnTypeSuffixOpt = findChild(node, "defnTypeSuffix")
-    val returnTypeOpt: Option[AST.Type] = defnTypeSuffixOpt match {
-      case Some(dts) =>
-        val typeNode = findChild(dts, "type").get
-        Some(buildType(typeNode, reporter))
-      case _ => None()
+    val returnTypeOpt: Option[AST.Type] = if (isProcedural) {
+      // Procedural: Unit return type auto-injected
+      None()
+    } else {
+      defnTypeSuffixOpt match {
+        case Some(dts) =>
+          val typeNode = findChild(dts, "type").get
+          Some(buildType(typeNode, reporter))
+        case _ => None()
+      }
     }
 
-    // Get annotation from defnTypeSuffix if present
-    val contractAnnotOpt: Option[ParseTree.Node] = defnTypeSuffixOpt match {
-      case Some(dts) => findChild(dts, "annot")
-      case _ => None()
+    // Get annotation: from the node itself for procedural, from defnTypeSuffix otherwise
+    val contractAnnotOpt: Option[ParseTree.Node] = if (isProcedural) {
+      findChild(node, "annot")
+    } else {
+      defnTypeSuffixOpt match {
+        case Some(dts) => findChild(dts, "annot")
+        case _ => None()
+      }
     }
 
     // defDefn/defStmt: ... defDefnSuffix?
@@ -3013,6 +3109,7 @@ object SlangLl2AstBuilder {
         case Some(rt) => rt
         case _ => AST.Type.Named(
           name = mkName(ISZ(AST.Id("Unit", emptyAttr)), node),
+          rTypeOpt = None(),
           typeArgs = ISZ(),
           attr = emptyTypedAttr)
       }
@@ -3020,6 +3117,7 @@ object SlangLl2AstBuilder {
         purity = AST.Purity.Impure,
         annotations = ISZ(),
         id = id,
+        rTypeParams = ISZ(),
         typeParams = typeParams,
         hasParams = hasParams,
         params = params,
@@ -3031,6 +3129,7 @@ object SlangLl2AstBuilder {
         case Some(rt) => rt
         case _ => AST.Type.Named(
           name = mkName(ISZ(AST.Id("Unit", emptyAttr)), node),
+          rTypeOpt = None(),
           typeArgs = ISZ(),
           attr = emptyTypedAttr)
       }
@@ -3038,6 +3137,7 @@ object SlangLl2AstBuilder {
         purity = AST.Purity.Impure,
         annotations = ISZ(),
         id = id,
+        rTypeParams = ISZ(),
         typeParams = typeParams,
         hasParams = hasParams,
         params = params,
@@ -3067,6 +3167,7 @@ object SlangLl2AstBuilder {
       case Some(rt) => rt
       case _ => AST.Type.Named(
         name = mkName(ISZ(AST.Id("Unit", emptyAttr)), node),
+        rTypeOpt = None(),
         typeArgs = ISZ(),
         attr = emptyTypedAttr)
     }
@@ -3077,6 +3178,7 @@ object SlangLl2AstBuilder {
       purity = purity,
       annotations = ISZ(),
       id = id,
+      rTypeParams = ISZ(),
       typeParams = typeParams,
       hasParams = hasParams,
       params = params,
@@ -3094,7 +3196,12 @@ object SlangLl2AstBuilder {
     }
     val methodExpectsValue: Z = if (isUnitReturn) 0 else if (methodIsPure) 2 else 1
 
-    val bodyOpt: Option[AST.Body] = bodySrcOpt match {
+    val bodyOpt: Option[AST.Body] = if (isProcedural) {
+      // Procedural branch: direct block on node, Unit-returning
+      val blk = buildBlock(proceduralBlockOpt.get, reporter, 0, F, F)
+      Some(blk.body)
+    } else {
+      bodySrcOpt match {
       case Some(srcNode) =>
         // defDefnSuffix: ASSIGN annot? ( exp | block | ifStmt | matchStmt )
         val blockOpt: Option[AST.Stmt.Block] = findChild(srcNode, "block") match {
@@ -3112,9 +3219,10 @@ object SlangLl2AstBuilder {
                 id = rId,
                 tipeOpt = Some(returnType),
                 initOpt = Some(block),
+                annotations = ISZ(),
                 attr = AST.ResolvedAttr(expAttr.posOpt, None(), None()))
               val ident = AST.Exp.Ident(id = rId, attr = AST.ResolvedAttr(expAttr.posOpt, None(), None()))
-              val retStmt = AST.Stmt.Return(expOpt = Some(ident), attr = typedAttr(srcNode))
+              val retStmt = AST.Stmt.Return(expOpt = Some(ident), annotations = ISZ(), attr = typedAttr(srcNode))
               Some(AST.Body(stmts = ISZ(varStmt, retStmt), undecls = ISZ()))
             } else {
               Some(block.body)
@@ -3124,7 +3232,7 @@ object SlangLl2AstBuilder {
             val expOpt = findChild(srcNode, "exp")
             expOpt match {
               case Some(en) =>
-                val exp = AST.Stmt.Expr(exp = buildExp(en, reporter), attr = typedAttr(en))
+                val exp = AST.Stmt.Expr(exp = buildExp(en, reporter), annotations = ISZ(), attr = typedAttr(en))
                 if (purity == AST.Purity.StrictPure || purity == AST.Purity.Abs) {
                   val expAttr = attr(srcNode)
                   val rId = AST.Id("_r_", expAttr)
@@ -3134,9 +3242,10 @@ object SlangLl2AstBuilder {
                     id = rId,
                     tipeOpt = Some(returnType),
                     initOpt = Some(exp),
+                    annotations = ISZ(),
                     attr = AST.ResolvedAttr(expAttr.posOpt, None(), None()))
                   val ident = AST.Exp.Ident(id = rId, attr = AST.ResolvedAttr(expAttr.posOpt, None(), None()))
-                  val retStmt = AST.Stmt.Return(expOpt = Some(ident), attr = typedAttr(srcNode))
+                  val retStmt = AST.Stmt.Return(expOpt = Some(ident), annotations = ISZ(), attr = typedAttr(srcNode))
                   Some(AST.Body(stmts = ISZ(varStmt, retStmt), undecls = ISZ()))
                 } else {
                   Some(AST.Body(stmts = ISZ(exp), undecls = ISZ()))
@@ -3157,9 +3266,10 @@ object SlangLl2AstBuilder {
                         id = rId,
                         tipeOpt = Some(returnType),
                         initOpt = Some(ifStmt.asInstanceOf[AST.AssignExp]),
+                        annotations = ISZ(),
                         attr = AST.ResolvedAttr(expAttr.posOpt, None(), None()))
                       val ident = AST.Exp.Ident(id = rId, attr = AST.ResolvedAttr(expAttr.posOpt, None(), None()))
-                      val retStmt = AST.Stmt.Return(expOpt = Some(ident), attr = typedAttr(srcNode))
+                      val retStmt = AST.Stmt.Return(expOpt = Some(ident), annotations = ISZ(), attr = typedAttr(srcNode))
                       Some(AST.Body(stmts = ISZ(varStmt, retStmt), undecls = ISZ()))
                     } else {
                       Some(AST.Body(stmts = ISZ(ifStmt), undecls = ISZ()))
@@ -3180,9 +3290,10 @@ object SlangLl2AstBuilder {
                             id = rId,
                             tipeOpt = Some(returnType),
                             initOpt = Some(matchStmt.asInstanceOf[AST.AssignExp]),
+                            annotations = ISZ(),
                             attr = AST.ResolvedAttr(expAttr.posOpt, None(), None()))
                           val ident = AST.Exp.Ident(id = rId, attr = AST.ResolvedAttr(expAttr.posOpt, None(), None()))
-                          val retStmt = AST.Stmt.Return(expOpt = Some(ident), attr = typedAttr(srcNode))
+                          val retStmt = AST.Stmt.Return(expOpt = Some(ident), annotations = ISZ(), attr = typedAttr(srcNode))
                           Some(AST.Body(stmts = ISZ(varStmt, retStmt), undecls = ISZ()))
                         } else {
                           Some(AST.Body(stmts = ISZ(matchStmt), undecls = ISZ()))
@@ -3193,12 +3304,18 @@ object SlangLl2AstBuilder {
             }
         }
       case _ => None()
+    }}
+
+    // Build modifiers list to match Scala parser convention (e.g., "@pure", "@strictpure")
+    var modifiers = ISZ[String]()
+    for (m <- mods) {
+      modifiers = modifiers :+ st"@${(m.names, ".")}".render
     }
 
     return AST.Stmt.Method(
       typeChecked = F,
       purity = purity,
-      modifiers = ISZ(),
+      modifiers = modifiers,
       sig = sig,
       mcontract = contract,
       bodyOpt = bodyOpt,
@@ -3225,6 +3342,7 @@ object SlangLl2AstBuilder {
         buildType(typeNode, reporter)
       case _ => AST.Type.Named(
         name = mkName(ISZ(AST.Id("Unit", emptyAttr)), node),
+        rTypeOpt = None(),
         typeArgs = ISZ(),
         attr = emptyTypedAttr)
     }
@@ -3233,15 +3351,18 @@ object SlangLl2AstBuilder {
       case _ => None()
     }
     val contract = buildMethodContract(contractAnnotOpt, reporter)
+    val isPure = hasMod(mods, "pure")
+    val purity: AST.Purity.Type = if (isPure) AST.Purity.Pure else AST.Purity.Impure
     val sig = AST.MethodSig(
-      purity = AST.Purity.Impure,
+      purity = purity,
       annotations = ISZ(),
       id = id,
+      rTypeParams = ISZ(),
       typeParams = typeParams,
       hasParams = hasParams,
       params = params,
       returnType = returnType)
-    return AST.Stmt.ExtMethod(isPure = F, sig = sig, contract = contract, attr = resolvedAttr(node))
+    return AST.Stmt.ExtMethod(isPure = isPure, sig = sig, contract = contract, attr = resolvedAttr(node))
   }
 
   def buildDefParams(node: ParseTree.Node, reporter: message.Reporter): ISZ[AST.Param] = {
@@ -3278,12 +3399,18 @@ object SlangLl2AstBuilder {
   }
 
   def buildDefParam(node: ParseTree.Node, reporter: message.Reporter): AST.Param = {
-    // defParam: mod* ID COLON type
+    // defParam: mod* ID COLON ARROW? type
     val mods = buildMods(findChildren(node, "mod"))
     val isHidden = hasMod(mods, "hidden")
     val id = mkId(idText(node), node)
     val typeNode = findChild(node, "type").get
-    val tipe = buildType(typeNode, reporter)
+    val hasArrow = findLeafByRule(node, "ARROW").nonEmpty
+    val tipe: AST.Type = if (hasArrow) {
+      val innerType = buildType(typeNode, reporter)
+      AST.Type.Fun(isPure = F, isByName = T, args = ISZ(), ret = innerType, attr = typedAttr(node))
+    } else {
+      buildType(typeNode, reporter)
+    }
     return AST.Param(isHidden = isHidden, id = id, tipe = tipe)
   }
 
@@ -3324,11 +3451,11 @@ object SlangLl2AstBuilder {
         funParams = funParams :+ AST.Exp.Fun.Param(idOpt = Some(p.id), tipeOpt = Some(p.tipe), typedOpt = None())
       }
       val body: AST.AssignExp = if (claims.size == 1) {
-        AST.Stmt.Expr(exp = claims(0), attr = typedAttr(posTree))
+        AST.Stmt.Expr(exp = claims(0), annotations = ISZ(), attr = typedAttr(posTree))
       } else {
-        AST.Stmt.Expr(exp = claims(0), attr = typedAttr(posTree))
+        AST.Stmt.Expr(exp = claims(0), annotations = ISZ(), attr = typedAttr(posTree))
       }
-      val fun = AST.Exp.Fun(context = ISZ(), params = funParams, exp = body, attr = typedAttr(posTree))
+      val fun = AST.Exp.Fun(context = ISZ(), params = funParams, exp = body, annotations = ISZ(), attr = typedAttr(posTree))
       val quant = AST.Exp.QuantType(isForall = T, fun = fun, attr = attr(posTree))
       claims = ISZ(quant)
     }
@@ -3363,8 +3490,8 @@ object SlangLl2AstBuilder {
       for (p <- params) {
         funParams = funParams :+ AST.Exp.Fun.Param(idOpt = Some(p.id), tipeOpt = Some(p.tipe), typedOpt = None())
       }
-      val body = AST.Stmt.Expr(exp = claim, attr = typedAttr(posTree))
-      val fun = AST.Exp.Fun(context = ISZ(), params = funParams, exp = body, attr = typedAttr(posTree))
+      val body = AST.Stmt.Expr(exp = claim, annotations = ISZ(), attr = typedAttr(posTree))
+      val fun = AST.Exp.Fun(context = ISZ(), params = funParams, exp = body, annotations = ISZ(), attr = typedAttr(posTree))
       claim = AST.Exp.QuantType(isForall = T, fun = fun, attr = attr(posTree))
     }
 
@@ -3498,7 +3625,7 @@ object SlangLl2AstBuilder {
         // BACKSLASH annot? exp — value-producing return expression
         val expNode = findChild(node, "exp").get
         val exp = buildExp(expNode, reporter)
-        return AST.Stmt.Return(expOpt = Some(exp), attr = typedAttr(node))
+        return AST.Stmt.Return(expOpt = Some(exp), annotations = ISZ(), attr = typedAttr(node))
       case _ =>
     }
     val rhsOpt = findChild(node, "rhs")
@@ -3517,12 +3644,13 @@ object SlangLl2AstBuilder {
       val haltInvoke = AST.Exp.Invoke(
         receiverOpt = None(),
         ident = haltIdent,
+        rTypes = ISZ(),
         targs = ISZ(),
         args = haltArgs,
         attr = resolvedAttr(node))
-      return AST.Stmt.Return(expOpt = Some(haltInvoke), attr = typedAttr(node))
+      return AST.Stmt.Return(expOpt = Some(haltInvoke), annotations = ISZ(), attr = typedAttr(node))
     }
-    return AST.Stmt.Return(expOpt = expOpt, attr = typedAttr(node))
+    return AST.Stmt.Return(expOpt = expOpt, annotations = ISZ(), attr = typedAttr(node))
   }
 
   def buildWhileStmt(node: ParseTree.Node, reporter: message.Reporter): AST.Stmt.While = {
@@ -3599,12 +3727,13 @@ object SlangLl2AstBuilder {
           start = startExp,
           end = endExp,
           byOpt = byExpOpt,
+          annotations = ISZ(),
           attr = attr(node))
       case _ =>
         if (expNodes.isEmpty) {
           halt(st"Expected expression in forRange ${node.toST.render}".render)
         }
-        AST.EnumGen.Range.Expr(exp = buildExp(expNodes(0), reporter), attr = attr(node))
+        AST.EnumGen.Range.Expr(exp = buildExp(expNodes(0), reporter), annotations = ISZ(), attr = attr(node))
     }
 
     return AST.EnumGen.For(idOpt = idOpt, range = range, condOpt = condOpt, contract = contract)
@@ -3642,7 +3771,7 @@ object SlangLl2AstBuilder {
     }
     val blockContent = findChild(node, "blockContent").get
     val stmts = buildBlockContent(blockContent, reporter, expectsValue, isPure, F)
-    return AST.Case(pattern = pattern, condOpt = condOpt, body = AST.Body(stmts = stmts, undecls = ISZ()))
+    return AST.Case(pattern = pattern, condOpt = condOpt, body = AST.Body(stmts = stmts, undecls = ISZ()), annotations = ISZ())
   }
 
   // ─── deduce / proof / sequent ──────────────────────────────────────
@@ -3888,6 +4017,7 @@ object SlangLl2AstBuilder {
           val invoke = AST.Exp.Invoke(
             receiverOpt = None(),
             ident = ident,
+            rTypes = ISZ(),
             targs = targs,
             args = args,
             attr = resolvedAttr(node))
@@ -3906,6 +4036,7 @@ object SlangLl2AstBuilder {
           val invoke = AST.Exp.Invoke(
             receiverOpt = Some(rcv),
             ident = ident,
+            rTypes = ISZ(),
             targs = targs,
             args = args,
             attr = resolvedAttr(node))

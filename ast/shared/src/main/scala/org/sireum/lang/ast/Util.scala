@@ -1285,7 +1285,7 @@ object Util {
 
   @pure def constantInitOpt(initOpt: Option[AssignExp], tOpt: Option[Typed]): Option[Exp] = {
     initOpt match {
-      case Some(Stmt.Expr(exp)) =>
+      case Some(Stmt.Expr(exp, _)) =>
         exp match {
           case _: Exp.LitZ =>
           case _: Exp.LitB =>
@@ -1466,11 +1466,11 @@ object Util {
     }
 
     t match {
-      case t: Typed.Name => return Type.Named(toName(t.ids),
+      case t: Typed.Name => return Type.Named(toName(t.ids), None(),
         for (arg <- t.args) yield typedToType(arg, pos), typedAttr)
-      case t: Typed.TypeVar => return Type.Named(toName(ISZ(t.id)), ISZ(), typedAttr)
+      case t: Typed.TypeVar => return Type.Named(toName(ISZ(t.id)), None(), ISZ(), typedAttr)
       case t: Typed.Tuple => return Type.Tuple(for (arg <- t.args) yield typedToType(arg, pos), typedAttr)
-      case t: Typed.Enum => return Type.Named(toName(t.name), ISZ(), typedAttr)
+      case t: Typed.Enum => return Type.Named(toName(t.name), None(), ISZ(), typedAttr)
       case t: Typed.Fun => return Type.Fun(t.isPureFun, t.isByName, for (arg <- t.args) yield typedToType(arg, pos),
         typedToType(t.ret, pos), typedAttr)
       case t: Typed.Method => halt(s"Infeasible: $t")

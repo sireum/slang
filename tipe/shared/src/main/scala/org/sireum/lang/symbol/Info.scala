@@ -626,7 +626,7 @@ object Info {
         name,
         "byName",
         ISZ(),
-        AST.Typed.Fun(AST.Purity.Pure, F, ISZ(AST.Typed.string), AST.Typed.Name(AST.Typed.optionName, ISZ(elementTypedOpt.get)))
+        AST.Typed.Fun(AST.Purity.Pure, F, ISZ(AST.Typed.string), AST.Typed.Name(AST.Typed.optionName, None(), ISZ(elementTypedOpt.get)))
       )
     )
 
@@ -638,7 +638,7 @@ object Info {
         name,
         "byOrdinal",
         ISZ(),
-        AST.Typed.Fun(AST.Purity.Pure, F, ISZ(AST.Typed.z), AST.Typed.Name(AST.Typed.optionName, ISZ(elementTypedOpt.get)))
+        AST.Typed.Fun(AST.Purity.Pure, F, ISZ(AST.Typed.z), AST.Typed.Name(AST.Typed.optionName, None(), ISZ(elementTypedOpt.get)))
       )
     )
 
@@ -650,7 +650,7 @@ object Info {
         name,
         "elements",
         ISZ(),
-        AST.Typed.Fun(AST.Purity.Pure, T, ISZ(), AST.Typed.Name(AST.Typed.isName, ISZ(AST.Typed.z, elementTypedOpt.get)))
+        AST.Typed.Fun(AST.Purity.Pure, T, ISZ(), AST.Typed.Name(AST.Typed.isName, None(), ISZ(AST.Typed.z, elementTypedOpt.get)))
       )
     )
 
@@ -674,7 +674,7 @@ object Info {
         name,
         "byName",
         ISZ(),
-        Some(AST.Typed.Fun(AST.Purity.Pure, F, ISZ(AST.Typed.string), AST.Typed.Name(AST.Typed.optionName, ISZ(elementTypedOpt.get)))),
+        Some(AST.Typed.Fun(AST.Purity.Pure, F, ISZ(AST.Typed.string), AST.Typed.Name(AST.Typed.optionName, None(), ISZ(elementTypedOpt.get)))),
         ISZ(),
         ISZ()
       )
@@ -688,7 +688,7 @@ object Info {
         name,
         "byOrdinal",
         ISZ(),
-        Some(AST.Typed.Fun(AST.Purity.Pure, F, ISZ(AST.Typed.z), AST.Typed.Name(AST.Typed.optionName, ISZ(elementTypedOpt.get)))),
+        Some(AST.Typed.Fun(AST.Purity.Pure, F, ISZ(AST.Typed.z), AST.Typed.Name(AST.Typed.optionName, None(), ISZ(elementTypedOpt.get)))),
         ISZ(),
         ISZ()
       )
@@ -702,7 +702,7 @@ object Info {
         name,
         "elements",
         ISZ(),
-        Some(AST.Typed.Fun(AST.Purity.Pure, T, ISZ(), AST.Typed.Name(AST.Typed.isName, ISZ(AST.Typed.z, elementTypedOpt.get)))),
+        Some(AST.Typed.Fun(AST.Purity.Pure, T, ISZ(), AST.Typed.Name(AST.Typed.isName, None(), ISZ(AST.Typed.z, elementTypedOpt.get)))),
         ISZ(),
         ISZ()
       )
@@ -863,7 +863,7 @@ object TypeInfo {
 
   @datatype class SubZ(val owner: ISZ[String], val ast: AST.Stmt.SubZ) extends TypeInfo {
 
-    val typedOpt: Option[AST.Typed] = Some(AST.Typed.Name(name, ISZ()))
+    val typedOpt: Option[AST.Typed] = Some(AST.Typed.Name(name, None(), ISZ()))
 
     @pure override def name: ISZ[String] = {
       return owner :+ ast.id.value
@@ -884,7 +884,7 @@ object TypeInfo {
   @datatype class Enum(val owner: ISZ[String], val elements: Map[String, AST.ResolvedInfo], val posOpt: Option[Position])
     extends TypeInfo {
 
-    val typedOpt: Option[AST.Typed] = Some(AST.Typed.Name(name, ISZ()))
+    val typedOpt: Option[AST.Typed] = Some(AST.Typed.Name(name, None(), ISZ()))
 
     val nameTypedOpt: Option[AST.Typed] = Some(
       AST.Typed

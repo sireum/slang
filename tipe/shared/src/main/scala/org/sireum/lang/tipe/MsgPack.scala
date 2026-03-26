@@ -332,79 +332,89 @@ object MsgPack {
 
     val _astAnnotation: Z = 115
 
-    val _astMethodSig: Z = 116
+    val _astRTypeVar: Z = 116
 
-    val _astParam: Z = 117
+    val _astRTypeArena: Z = 117
 
-    val _astTypeParam: Z = 118
+    val _astRTypePool: Z = 118
 
-    val _astAttr: Z = 119
+    val _astRTypeScope: Z = 119
 
-    val _astTypedAttr: Z = 120
+    val _astRTypeRaw: Z = 120
 
-    val _astResolvedAttr: Z = 121
+    val _astMethodSig: Z = 121
 
-    val _astResolvedInfoBuiltIn: Z = 122
+    val _astParam: Z = 122
 
-    val _astResolvedInfoPackage: Z = 123
+    val _astTypeParam: Z = 123
 
-    val _astResolvedInfoEnum: Z = 124
+    val _astAttr: Z = 124
 
-    val _astResolvedInfoEnumElement: Z = 125
+    val _astTypedAttr: Z = 125
 
-    val _astResolvedInfoObject: Z = 126
+    val _astResolvedAttr: Z = 126
 
-    val _astResolvedInfoVar: Z = 127
+    val _astResolvedInfoBuiltIn: Z = 127
 
-    val _astResolvedInfoMethod: Z = 128
+    val _astResolvedInfoPackage: Z = 128
 
-    val _astResolvedInfoMethods: Z = 129
+    val _astResolvedInfoEnum: Z = 129
 
-    val _astResolvedInfoTuple: Z = 130
+    val _astResolvedInfoEnumElement: Z = 130
 
-    val _astResolvedInfoLocalVar: Z = 131
+    val _astResolvedInfoObject: Z = 131
 
-    val _astResolvedInfoFact: Z = 132
+    val _astResolvedInfoVar: Z = 132
 
-    val _astResolvedInfoTheorem: Z = 133
+    val _astResolvedInfoMethod: Z = 133
 
-    val _astResolvedInfoInv: Z = 134
+    val _astResolvedInfoMethods: Z = 134
 
-    val _astTruthTableRow: Z = 135
+    val _astResolvedInfoTuple: Z = 135
 
-    val _astTruthTableAssignment: Z = 136
+    val _astResolvedInfoLocalVar: Z = 136
 
-    val _astTruthTableConclusionValidity: Z = 137
+    val _astResolvedInfoFact: Z = 137
 
-    val _astTruthTableConclusionTautology: Z = 138
+    val _astResolvedInfoTheorem: Z = 138
 
-    val _astTruthTableConclusionContradictory: Z = 139
+    val _astResolvedInfoInv: Z = 139
 
-    val _astTruthTableConclusionContingent: Z = 140
+    val _astTruthTableRow: Z = 140
 
-    val _astTypedName: Z = 141
+    val _astTruthTableAssignment: Z = 141
 
-    val _astTypedTuple: Z = 142
+    val _astTruthTableConclusionValidity: Z = 142
 
-    val _astTypedFun: Z = 143
+    val _astTruthTableConclusionTautology: Z = 143
 
-    val _astTypedTypeVar: Z = 144
+    val _astTruthTableConclusionContradictory: Z = 144
 
-    val _astTypedPackage: Z = 145
+    val _astTruthTableConclusionContingent: Z = 145
 
-    val _astTypedObject: Z = 146
+    val _astTypedName: Z = 146
 
-    val _astTypedEnum: Z = 147
+    val _astTypedTuple: Z = 147
 
-    val _astTypedMethod: Z = 148
+    val _astTypedFun: Z = 148
 
-    val _astTypedMethods: Z = 149
+    val _astTypedTypeVar: Z = 149
 
-    val _astTypedFact: Z = 150
+    val _astTypedPackage: Z = 150
 
-    val _astTypedTheorem: Z = 151
+    val _astTypedObject: Z = 151
 
-    val _astTypedInv: Z = 152
+    val _astTypedEnum: Z = 152
+
+    val _astTypedMethod: Z = 153
+
+    val _astTypedMethods: Z = 154
+
+    val _astTypedFact: Z = 155
+
+    val _astTypedTheorem: Z = 156
+
+    val _astTypedInv: Z = 157
 
   }
 
@@ -695,6 +705,7 @@ object MsgPack {
       writer.writeOption(o.fileUriOpt, writer.writeString _)
       write_astName(o.packageName)
       write_astBody(o.body)
+      writer.writeISZ(o.annotations, write_astAnnotation _)
     }
 
     def write_astTopUnitTruthTableUnit(o: org.sireum.lang.ast.TopUnit.TruthTableUnit): Unit = {
@@ -788,12 +799,14 @@ object MsgPack {
 
     def write_astStmtImportWildcardSelector(o: org.sireum.lang.ast.Stmt.Import.WildcardSelector): Unit = {
       writer.writeZ(Constants._astStmtImportWildcardSelector)
+      writer.writeISZ(o.annotations, write_astAnnotation _)
     }
 
     def write_astStmtImportNamedSelector(o: org.sireum.lang.ast.Stmt.Import.NamedSelector): Unit = {
       writer.writeZ(Constants._astStmtImportNamedSelector)
       write_astId(o.from)
       write_astId(o.to)
+      writer.writeISZ(o.annotations, write_astAnnotation _)
     }
 
     def write_astStmtVar(o: org.sireum.lang.ast.Stmt.Var): Unit = {
@@ -803,6 +816,7 @@ object MsgPack {
       write_astId(o.id)
       writer.writeOption(o.tipeOpt, write_astType _)
       writer.writeOption(o.initOpt, write_astAssignExp _)
+      writer.writeISZ(o.annotations, write_astAnnotation _)
       write_astResolvedAttr(o.attr)
     }
 
@@ -813,6 +827,7 @@ object MsgPack {
       write_astPattern(o.pattern)
       writer.writeOption(o.tipeOpt, write_astType _)
       write_astAssignExp(o.init)
+      writer.writeISZ(o.annotations, write_astAnnotation _)
       write_astAttr(o.attr)
     }
 
@@ -892,6 +907,7 @@ object MsgPack {
       writer.writeOption(o.extNameOpt, writer.writeString _)
       write_astId(o.id)
       writer.writeISZ(o.stmts, write_astStmt _)
+      writer.writeISZ(o.annotations, write_astAnnotation _)
       write_astAttr(o.attr)
     }
 
@@ -904,6 +920,7 @@ object MsgPack {
       writer.writeISZ(o.typeParams, write_astTypeParam _)
       writer.writeISZ(o.parents, write_astTypeNamed _)
       writer.writeISZ(o.stmts, write_astStmt _)
+      writer.writeISZ(o.annotations, write_astAnnotation _)
       write_astAttr(o.attr)
     }
 
@@ -917,6 +934,7 @@ object MsgPack {
       writer.writeISZ(o.params, write_astAdtParam _)
       writer.writeISZ(o.parents, write_astTypeNamed _)
       writer.writeISZ(o.stmts, write_astStmt _)
+      writer.writeISZ(o.annotations, write_astAnnotation _)
       write_astAttr(o.attr)
     }
 
@@ -932,6 +950,7 @@ object MsgPack {
       writer.writeZ(Constants._astStmtAssign)
       write_astExp(o.lhs)
       write_astAssignExp(o.rhs)
+      writer.writeISZ(o.annotations, write_astAnnotation _)
       write_astAttr(o.attr)
     }
 
@@ -986,12 +1005,14 @@ object MsgPack {
     def write_astStmtReturn(o: org.sireum.lang.ast.Stmt.Return): Unit = {
       writer.writeZ(Constants._astStmtReturn)
       writer.writeOption(o.expOpt, write_astExp _)
+      writer.writeISZ(o.annotations, write_astAnnotation _)
       write_astTypedAttr(o.attr)
     }
 
     def write_astStmtExpr(o: org.sireum.lang.ast.Stmt.Expr): Unit = {
       writer.writeZ(Constants._astStmtExpr)
       write_astExp(o.exp)
+      writer.writeISZ(o.annotations, write_astAnnotation _)
       write_astTypedAttr(o.attr)
     }
 
@@ -1304,6 +1325,7 @@ object MsgPack {
       write_astPattern(o.pattern)
       writer.writeOption(o.condOpt, write_astExp _)
       write_astBody(o.body)
+      writer.writeISZ(o.annotations, write_astAnnotation _)
     }
 
     def write_astEnumGenRange(o: org.sireum.lang.ast.EnumGen.Range): Unit = {
@@ -1316,6 +1338,7 @@ object MsgPack {
     def write_astEnumGenRangeExpr(o: org.sireum.lang.ast.EnumGen.Range.Expr): Unit = {
       writer.writeZ(Constants._astEnumGenRangeExpr)
       write_astExp(o.exp)
+      writer.writeISZ(o.annotations, write_astAnnotation _)
       write_astAttr(o.attr)
     }
 
@@ -1325,6 +1348,7 @@ object MsgPack {
       write_astExp(o.start)
       write_astExp(o.end)
       writer.writeOption(o.byOpt, write_astExp _)
+      writer.writeISZ(o.annotations, write_astAnnotation _)
       write_astAttr(o.attr)
     }
 
@@ -1347,6 +1371,7 @@ object MsgPack {
     def write_astTypeNamed(o: org.sireum.lang.ast.Type.Named): Unit = {
       writer.writeZ(Constants._astTypeNamed)
       write_astName(o.name)
+      writer.writeOption(o.rTypeOpt, write_astRType _)
       writer.writeISZ(o.typeArgs, write_astType _)
       write_astTypedAttr(o.attr)
     }
@@ -1606,6 +1631,7 @@ object MsgPack {
       writer.writeZ(Constants._astExpInvoke)
       writer.writeOption(o.receiverOpt, write_astExp _)
       write_astExpIdent(o.ident)
+      writer.writeISZ(o.rTypes, write_astRType _)
       writer.writeISZ(o.targs, write_astType _)
       writer.writeISZ(o.args, write_astExp _)
       write_astResolvedAttr(o.attr)
@@ -1615,6 +1641,7 @@ object MsgPack {
       writer.writeZ(Constants._astExpInvokeNamed)
       writer.writeOption(o.receiverOpt, write_astExp _)
       write_astExpIdent(o.ident)
+      writer.writeISZ(o.rTypes, write_astRType _)
       writer.writeISZ(o.targs, write_astType _)
       writer.writeISZ(o.args, write_astNamedArg _)
       write_astResolvedAttr(o.attr)
@@ -1653,6 +1680,7 @@ object MsgPack {
       writer.writeISZ(o.context, writer.writeString _)
       writer.writeISZ(o.params, write_astExpFunParam _)
       write_astAssignExp(o.exp)
+      writer.writeISZ(o.annotations, write_astAnnotation _)
       write_astTypedAttr(o.attr)
     }
 
@@ -1660,6 +1688,7 @@ object MsgPack {
       writer.writeZ(Constants._astExpForYield)
       writer.writeISZ(o.enumGens, write_astEnumGenFor _)
       write_astExp(o.exp)
+      writer.writeISZ(o.annotations, write_astAnnotation _)
       write_astTypedAttr(o.attr)
     }
 
@@ -1823,11 +1852,53 @@ object MsgPack {
       writer.writeISZ(o.args, write_astLit _)
     }
 
+    def write_astRTypeKindType(o: org.sireum.lang.ast.RTypeKind.Type): Unit = {
+      writer.writeZ(o.ordinal)
+    }
+
+    def write_astRType(o: org.sireum.lang.ast.RType): Unit = {
+      o match {
+        case o: org.sireum.lang.ast.RType.Var => write_astRTypeVar(o)
+        case o: org.sireum.lang.ast.RType.Arena => write_astRTypeArena(o)
+        case o: org.sireum.lang.ast.RType.Pool => write_astRTypePool(o)
+        case o: org.sireum.lang.ast.RType.Scope => write_astRTypeScope(o)
+        case o: org.sireum.lang.ast.RType.Raw => write_astRTypeRaw(o)
+      }
+    }
+
+    def write_astRTypeVar(o: org.sireum.lang.ast.RType.Var): Unit = {
+      writer.writeZ(Constants._astRTypeVar)
+      write_astRTypeKindType(o.kind)
+      write_astId(o.id)
+    }
+
+    def write_astRTypeArena(o: org.sireum.lang.ast.RType.Arena): Unit = {
+      writer.writeZ(Constants._astRTypeArena)
+      write_astId(o.id)
+    }
+
+    def write_astRTypePool(o: org.sireum.lang.ast.RType.Pool): Unit = {
+      writer.writeZ(Constants._astRTypePool)
+      write_astId(o.id)
+      writer.writeZ(o.capacity)
+    }
+
+    def write_astRTypeScope(o: org.sireum.lang.ast.RType.Scope): Unit = {
+      writer.writeZ(Constants._astRTypeScope)
+      write_astId(o.id)
+    }
+
+    def write_astRTypeRaw(o: org.sireum.lang.ast.RType.Raw): Unit = {
+      writer.writeZ(Constants._astRTypeRaw)
+      write_astId(o.id)
+    }
+
     def write_astMethodSig(o: org.sireum.lang.ast.MethodSig): Unit = {
       writer.writeZ(Constants._astMethodSig)
       write_astPurityType(o.purity)
       writer.writeISZ(o.annotations, write_astAnnotation _)
       write_astId(o.id)
+      writer.writeISZ(o.rTypeParams, write_astRTypeVar _)
       writer.writeISZ(o.typeParams, write_astTypeParam _)
       writer.writeB(o.hasParams)
       writer.writeISZ(o.params, write_astParam _)
@@ -2055,6 +2126,7 @@ object MsgPack {
     def write_astTypedName(o: org.sireum.lang.ast.Typed.Name): Unit = {
       writer.writeZ(Constants._astTypedName)
       writer.writeISZ(o.ids, writer.writeString _)
+      writer.writeOption(o.rTypeOpt, write_astRType _)
       writer.writeISZ(o.args, write_astTyped _)
     }
 
@@ -2656,7 +2728,8 @@ object MsgPack {
       val fileUriOpt = reader.readOption(reader.readString _)
       val packageName = read_astName()
       val body = read_astBody()
-      return org.sireum.lang.ast.TopUnit.Program(fileUriOpt, packageName, body)
+      val annotations = reader.readISZ(read_astAnnotation _)
+      return org.sireum.lang.ast.TopUnit.Program(fileUriOpt, packageName, body, annotations)
     }
 
     def read_astTopUnitTruthTableUnit(): org.sireum.lang.ast.TopUnit.TruthTableUnit = {
@@ -2815,7 +2888,8 @@ object MsgPack {
       if (!typeParsed) {
         reader.expectZ(Constants._astStmtImportWildcardSelector)
       }
-      return org.sireum.lang.ast.Stmt.Import.WildcardSelector()
+      val annotations = reader.readISZ(read_astAnnotation _)
+      return org.sireum.lang.ast.Stmt.Import.WildcardSelector(annotations)
     }
 
     def read_astStmtImportNamedSelector(): org.sireum.lang.ast.Stmt.Import.NamedSelector = {
@@ -2829,7 +2903,8 @@ object MsgPack {
       }
       val from = read_astId()
       val to = read_astId()
-      return org.sireum.lang.ast.Stmt.Import.NamedSelector(from, to)
+      val annotations = reader.readISZ(read_astAnnotation _)
+      return org.sireum.lang.ast.Stmt.Import.NamedSelector(from, to, annotations)
     }
 
     def read_astStmtVar(): org.sireum.lang.ast.Stmt.Var = {
@@ -2846,8 +2921,9 @@ object MsgPack {
       val id = read_astId()
       val tipeOpt = reader.readOption(read_astType _)
       val initOpt = reader.readOption(read_astAssignExp _)
+      val annotations = reader.readISZ(read_astAnnotation _)
       val attr = read_astResolvedAttr()
-      return org.sireum.lang.ast.Stmt.Var(isSpec, isVal, id, tipeOpt, initOpt, attr)
+      return org.sireum.lang.ast.Stmt.Var(isSpec, isVal, id, tipeOpt, initOpt, annotations, attr)
     }
 
     def read_astStmtVarPattern(): org.sireum.lang.ast.Stmt.VarPattern = {
@@ -2864,8 +2940,9 @@ object MsgPack {
       val pattern = read_astPattern()
       val tipeOpt = reader.readOption(read_astType _)
       val init = read_astAssignExp()
+      val annotations = reader.readISZ(read_astAnnotation _)
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.VarPattern(isSpec, isVal, pattern, tipeOpt, init, attr)
+      return org.sireum.lang.ast.Stmt.VarPattern(isSpec, isVal, pattern, tipeOpt, init, annotations, attr)
     }
 
     def read_astStmtSpecVar(): org.sireum.lang.ast.Stmt.SpecVar = {
@@ -3015,8 +3092,9 @@ object MsgPack {
       val extNameOpt = reader.readOption(reader.readString _)
       val id = read_astId()
       val stmts = reader.readISZ(read_astStmt _)
+      val annotations = reader.readISZ(read_astAnnotation _)
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.Object(isApp, extNameOpt, id, stmts, attr)
+      return org.sireum.lang.ast.Stmt.Object(isApp, extNameOpt, id, stmts, annotations, attr)
     }
 
     def read_astStmtSig(): org.sireum.lang.ast.Stmt.Sig = {
@@ -3035,8 +3113,9 @@ object MsgPack {
       val typeParams = reader.readISZ(read_astTypeParam _)
       val parents = reader.readISZ(read_astTypeNamed _)
       val stmts = reader.readISZ(read_astStmt _)
+      val annotations = reader.readISZ(read_astAnnotation _)
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.Sig(isImmutable, isSealed, isExt, id, typeParams, parents, stmts, attr)
+      return org.sireum.lang.ast.Stmt.Sig(isImmutable, isSealed, isExt, id, typeParams, parents, stmts, annotations, attr)
     }
 
     def read_astStmtAdt(): org.sireum.lang.ast.Stmt.Adt = {
@@ -3056,8 +3135,9 @@ object MsgPack {
       val params = reader.readISZ(read_astAdtParam _)
       val parents = reader.readISZ(read_astTypeNamed _)
       val stmts = reader.readISZ(read_astStmt _)
+      val annotations = reader.readISZ(read_astAnnotation _)
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.Adt(isRoot, isDatatype, isUnclonable, id, typeParams, params, parents, stmts, attr)
+      return org.sireum.lang.ast.Stmt.Adt(isRoot, isDatatype, isUnclonable, id, typeParams, params, parents, stmts, annotations, attr)
     }
 
     def read_astStmtTypeAlias(): org.sireum.lang.ast.Stmt.TypeAlias = {
@@ -3087,8 +3167,9 @@ object MsgPack {
       }
       val lhs = read_astExp()
       val rhs = read_astAssignExp()
+      val annotations = reader.readISZ(read_astAnnotation _)
       val attr = read_astAttr()
-      return org.sireum.lang.ast.Stmt.Assign(lhs, rhs, attr)
+      return org.sireum.lang.ast.Stmt.Assign(lhs, rhs, annotations, attr)
     }
 
     def read_astStmtBlock(): org.sireum.lang.ast.Stmt.Block = {
@@ -3197,8 +3278,9 @@ object MsgPack {
         reader.expectZ(Constants._astStmtReturn)
       }
       val expOpt = reader.readOption(read_astExp _)
+      val annotations = reader.readISZ(read_astAnnotation _)
       val attr = read_astTypedAttr()
-      return org.sireum.lang.ast.Stmt.Return(expOpt, attr)
+      return org.sireum.lang.ast.Stmt.Return(expOpt, annotations, attr)
     }
 
     def read_astStmtExpr(): org.sireum.lang.ast.Stmt.Expr = {
@@ -3211,8 +3293,9 @@ object MsgPack {
         reader.expectZ(Constants._astStmtExpr)
       }
       val exp = read_astExp()
+      val annotations = reader.readISZ(read_astAnnotation _)
       val attr = read_astTypedAttr()
-      return org.sireum.lang.ast.Stmt.Expr(exp, attr)
+      return org.sireum.lang.ast.Stmt.Expr(exp, annotations, attr)
     }
 
     def read_astStmtExprKindType(): org.sireum.lang.ast.Stmt.Expr.Kind.Type = {
@@ -3830,7 +3913,8 @@ object MsgPack {
       val pattern = read_astPattern()
       val condOpt = reader.readOption(read_astExp _)
       val body = read_astBody()
-      return org.sireum.lang.ast.Case(pattern, condOpt, body)
+      val annotations = reader.readISZ(read_astAnnotation _)
+      return org.sireum.lang.ast.Case(pattern, condOpt, body, annotations)
     }
 
     def read_astEnumGenRange(): org.sireum.lang.ast.EnumGen.Range = {
@@ -3856,8 +3940,9 @@ object MsgPack {
         reader.expectZ(Constants._astEnumGenRangeExpr)
       }
       val exp = read_astExp()
+      val annotations = reader.readISZ(read_astAnnotation _)
       val attr = read_astAttr()
-      return org.sireum.lang.ast.EnumGen.Range.Expr(exp, attr)
+      return org.sireum.lang.ast.EnumGen.Range.Expr(exp, annotations, attr)
     }
 
     def read_astEnumGenRangeStep(): org.sireum.lang.ast.EnumGen.Range.Step = {
@@ -3873,8 +3958,9 @@ object MsgPack {
       val start = read_astExp()
       val end = read_astExp()
       val byOpt = reader.readOption(read_astExp _)
+      val annotations = reader.readISZ(read_astAnnotation _)
       val attr = read_astAttr()
-      return org.sireum.lang.ast.EnumGen.Range.Step(isInclusive, start, end, byOpt, attr)
+      return org.sireum.lang.ast.EnumGen.Range.Step(isInclusive, start, end, byOpt, annotations, attr)
     }
 
     def read_astEnumGenFor(): org.sireum.lang.ast.EnumGen.For = {
@@ -3917,9 +4003,10 @@ object MsgPack {
         reader.expectZ(Constants._astTypeNamed)
       }
       val name = read_astName()
+      val rTypeOpt = reader.readOption(read_astRType _)
       val typeArgs = reader.readISZ(read_astType _)
       val attr = read_astTypedAttr()
-      return org.sireum.lang.ast.Type.Named(name, typeArgs, attr)
+      return org.sireum.lang.ast.Type.Named(name, rTypeOpt, typeArgs, attr)
     }
 
     def read_astTypeFun(): org.sireum.lang.ast.Type.Fun = {
@@ -4409,10 +4496,11 @@ object MsgPack {
       }
       val receiverOpt = reader.readOption(read_astExp _)
       val ident = read_astExpIdent()
+      val rTypes = reader.readISZ(read_astRType _)
       val targs = reader.readISZ(read_astType _)
       val args = reader.readISZ(read_astExp _)
       val attr = read_astResolvedAttr()
-      return org.sireum.lang.ast.Exp.Invoke(receiverOpt, ident, targs, args, attr)
+      return org.sireum.lang.ast.Exp.Invoke(receiverOpt, ident, rTypes, targs, args, attr)
     }
 
     def read_astExpInvokeNamed(): org.sireum.lang.ast.Exp.InvokeNamed = {
@@ -4426,10 +4514,11 @@ object MsgPack {
       }
       val receiverOpt = reader.readOption(read_astExp _)
       val ident = read_astExpIdent()
+      val rTypes = reader.readISZ(read_astRType _)
       val targs = reader.readISZ(read_astType _)
       val args = reader.readISZ(read_astNamedArg _)
       val attr = read_astResolvedAttr()
-      return org.sireum.lang.ast.Exp.InvokeNamed(receiverOpt, ident, targs, args, attr)
+      return org.sireum.lang.ast.Exp.InvokeNamed(receiverOpt, ident, rTypes, targs, args, attr)
     }
 
     def read_astExpIf(): org.sireum.lang.ast.Exp.If = {
@@ -4504,8 +4593,9 @@ object MsgPack {
       val context = reader.readISZ(reader.readString _)
       val params = reader.readISZ(read_astExpFunParam _)
       val exp = read_astAssignExp()
+      val annotations = reader.readISZ(read_astAnnotation _)
       val attr = read_astTypedAttr()
-      return org.sireum.lang.ast.Exp.Fun(context, params, exp, attr)
+      return org.sireum.lang.ast.Exp.Fun(context, params, exp, annotations, attr)
     }
 
     def read_astExpForYield(): org.sireum.lang.ast.Exp.ForYield = {
@@ -4519,8 +4609,9 @@ object MsgPack {
       }
       val enumGens = reader.readISZ(read_astEnumGenFor _)
       val exp = read_astExp()
+      val annotations = reader.readISZ(read_astAnnotation _)
       val attr = read_astTypedAttr()
-      return org.sireum.lang.ast.Exp.ForYield(enumGens, exp, attr)
+      return org.sireum.lang.ast.Exp.ForYield(enumGens, exp, annotations, attr)
     }
 
     def read_astExpQuant(): org.sireum.lang.ast.Exp.Quant = {
@@ -4865,6 +4956,94 @@ object MsgPack {
       return org.sireum.lang.ast.Annotation(name, args)
     }
 
+    def read_astRTypeKindType(): org.sireum.lang.ast.RTypeKind.Type = {
+      val r = reader.readZ()
+      return org.sireum.lang.ast.RTypeKind.byOrdinal(r).get
+    }
+
+    def read_astRType(): org.sireum.lang.ast.RType = {
+      val i = reader.curr
+      val t = reader.readZ()
+      t match {
+        case Constants._astRTypeVar => val r = read_astRTypeVarT(T); return r
+        case Constants._astRTypeArena => val r = read_astRTypeArenaT(T); return r
+        case Constants._astRTypePool => val r = read_astRTypePoolT(T); return r
+        case Constants._astRTypeScope => val r = read_astRTypeScopeT(T); return r
+        case Constants._astRTypeRaw => val r = read_astRTypeRawT(T); return r
+        case _ =>
+          reader.error(i, s"$t is not a valid type of org.sireum.lang.ast.RType.")
+          val r = read_astRTypeRawT(T)
+          return r
+      }
+    }
+
+    def read_astRTypeVar(): org.sireum.lang.ast.RType.Var = {
+      val r = read_astRTypeVarT(F)
+      return r
+    }
+
+    def read_astRTypeVarT(typeParsed: B): org.sireum.lang.ast.RType.Var = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astRTypeVar)
+      }
+      val kind = read_astRTypeKindType()
+      val id = read_astId()
+      return org.sireum.lang.ast.RType.Var(kind, id)
+    }
+
+    def read_astRTypeArena(): org.sireum.lang.ast.RType.Arena = {
+      val r = read_astRTypeArenaT(F)
+      return r
+    }
+
+    def read_astRTypeArenaT(typeParsed: B): org.sireum.lang.ast.RType.Arena = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astRTypeArena)
+      }
+      val id = read_astId()
+      return org.sireum.lang.ast.RType.Arena(id)
+    }
+
+    def read_astRTypePool(): org.sireum.lang.ast.RType.Pool = {
+      val r = read_astRTypePoolT(F)
+      return r
+    }
+
+    def read_astRTypePoolT(typeParsed: B): org.sireum.lang.ast.RType.Pool = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astRTypePool)
+      }
+      val id = read_astId()
+      val capacity = reader.readZ()
+      return org.sireum.lang.ast.RType.Pool(id, capacity)
+    }
+
+    def read_astRTypeScope(): org.sireum.lang.ast.RType.Scope = {
+      val r = read_astRTypeScopeT(F)
+      return r
+    }
+
+    def read_astRTypeScopeT(typeParsed: B): org.sireum.lang.ast.RType.Scope = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astRTypeScope)
+      }
+      val id = read_astId()
+      return org.sireum.lang.ast.RType.Scope(id)
+    }
+
+    def read_astRTypeRaw(): org.sireum.lang.ast.RType.Raw = {
+      val r = read_astRTypeRawT(F)
+      return r
+    }
+
+    def read_astRTypeRawT(typeParsed: B): org.sireum.lang.ast.RType.Raw = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astRTypeRaw)
+      }
+      val id = read_astId()
+      return org.sireum.lang.ast.RType.Raw(id)
+    }
+
     def read_astMethodSig(): org.sireum.lang.ast.MethodSig = {
       val r = read_astMethodSigT(F)
       return r
@@ -4877,11 +5056,12 @@ object MsgPack {
       val purity = read_astPurityType()
       val annotations = reader.readISZ(read_astAnnotation _)
       val id = read_astId()
+      val rTypeParams = reader.readISZ(read_astRTypeVar _)
       val typeParams = reader.readISZ(read_astTypeParam _)
       val hasParams = reader.readB()
       val params = reader.readISZ(read_astParam _)
       val returnType = read_astType()
-      return org.sireum.lang.ast.MethodSig(purity, annotations, id, typeParams, hasParams, params, returnType)
+      return org.sireum.lang.ast.MethodSig(purity, annotations, id, rTypeParams, typeParams, hasParams, params, returnType)
     }
 
     def read_astParam(): org.sireum.lang.ast.Param = {
@@ -5327,8 +5507,9 @@ object MsgPack {
         reader.expectZ(Constants._astTypedName)
       }
       val ids = reader.readISZ(reader.readString _)
+      val rTypeOpt = reader.readOption(read_astRType _)
       val args = reader.readISZ(read_astTyped _)
-      return org.sireum.lang.ast.Typed.Name(ids, args)
+      return org.sireum.lang.ast.Typed.Name(ids, rTypeOpt, args)
     }
 
     def read_astTypedTuple(): org.sireum.lang.ast.Typed.Tuple = {
@@ -8033,6 +8214,96 @@ object MsgPack {
       return r
     }
     val r = to(data, f_astAnnotation _)
+    return r
+  }
+
+  def from_astRType(o: org.sireum.lang.ast.RType, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astRType(o)
+    return w.result
+  }
+
+  def to_astRType(data: ISZ[U8]): Either[org.sireum.lang.ast.RType, MessagePack.ErrorMsg] = {
+    def f_astRType(reader: Reader): org.sireum.lang.ast.RType = {
+      val r = reader.read_astRType()
+      return r
+    }
+    val r = to(data, f_astRType _)
+    return r
+  }
+
+  def from_astRTypeVar(o: org.sireum.lang.ast.RType.Var, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astRTypeVar(o)
+    return w.result
+  }
+
+  def to_astRTypeVar(data: ISZ[U8]): Either[org.sireum.lang.ast.RType.Var, MessagePack.ErrorMsg] = {
+    def f_astRTypeVar(reader: Reader): org.sireum.lang.ast.RType.Var = {
+      val r = reader.read_astRTypeVar()
+      return r
+    }
+    val r = to(data, f_astRTypeVar _)
+    return r
+  }
+
+  def from_astRTypeArena(o: org.sireum.lang.ast.RType.Arena, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astRTypeArena(o)
+    return w.result
+  }
+
+  def to_astRTypeArena(data: ISZ[U8]): Either[org.sireum.lang.ast.RType.Arena, MessagePack.ErrorMsg] = {
+    def f_astRTypeArena(reader: Reader): org.sireum.lang.ast.RType.Arena = {
+      val r = reader.read_astRTypeArena()
+      return r
+    }
+    val r = to(data, f_astRTypeArena _)
+    return r
+  }
+
+  def from_astRTypePool(o: org.sireum.lang.ast.RType.Pool, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astRTypePool(o)
+    return w.result
+  }
+
+  def to_astRTypePool(data: ISZ[U8]): Either[org.sireum.lang.ast.RType.Pool, MessagePack.ErrorMsg] = {
+    def f_astRTypePool(reader: Reader): org.sireum.lang.ast.RType.Pool = {
+      val r = reader.read_astRTypePool()
+      return r
+    }
+    val r = to(data, f_astRTypePool _)
+    return r
+  }
+
+  def from_astRTypeScope(o: org.sireum.lang.ast.RType.Scope, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astRTypeScope(o)
+    return w.result
+  }
+
+  def to_astRTypeScope(data: ISZ[U8]): Either[org.sireum.lang.ast.RType.Scope, MessagePack.ErrorMsg] = {
+    def f_astRTypeScope(reader: Reader): org.sireum.lang.ast.RType.Scope = {
+      val r = reader.read_astRTypeScope()
+      return r
+    }
+    val r = to(data, f_astRTypeScope _)
+    return r
+  }
+
+  def from_astRTypeRaw(o: org.sireum.lang.ast.RType.Raw, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astRTypeRaw(o)
+    return w.result
+  }
+
+  def to_astRTypeRaw(data: ISZ[U8]): Either[org.sireum.lang.ast.RType.Raw, MessagePack.ErrorMsg] = {
+    def f_astRTypeRaw(reader: Reader): org.sireum.lang.ast.RType.Raw = {
+      val r = reader.read_astRTypeRaw()
+      return r
+    }
+    val r = to(data, f_astRTypeRaw _)
     return r
   }
 

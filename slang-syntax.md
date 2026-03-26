@@ -26,10 +26,18 @@ The LL(2) syntax differs from Scala-based syntax primarily in:
 - `@abs` — functional abstraction (abstracting over behavior; NOT "abstract")
 - `@pure` can be used for both method definitions (with body) and method declarations (without body, in traits)
 
+### Procedural syntax (Unit-returning methods)
+- Methods that return `Unit` use **procedural syntax**: a block body with no return type and no `=`
+- `def foo() { ... }` — Unit-returning method with explicit empty params
+- `def foo { ... }` — Unit-returning method; empty `()` params auto-injected
+- `Unit` is not directly usable as a type in user code; use `()` in type position instead (e.g., `Z => ()`)
+- The AST always has a return type node (`Unit`) and `hasParams = T`; the compiler injects both
+
 ### Parameter-less methods
-- Methods without parameter list (no `()`) must be `@pure`, `@strictpure`, or `@abs`
+- Methods without parameter list (no `()`) and **non-procedural** must be `@pure`, `@strictpure`, or `@abs`
 - Example: `def @pure get: T = { return value }` — OK
 - Example: `def get: T = { return value }` — error
+- Exception: procedural syntax (`def foo { ... }`) is allowed without `()` — params are auto-injected
 
 ### Value markers at leaf positions
 - Non-Unit method body leaves must use `return exp` or `halt` — bare expressions are not implicit returns
@@ -61,6 +69,8 @@ The LL(2) syntax differs from Scala-based syntax primarily in:
 | **Sig trait** | `@sig trait Foo` | `type @sig Foo` | `Stmt.Sig(isImmutable=T)` |
 | **Sealed sig** | `@sig sealed trait Foo` | `type @sig @sealed Foo` | `Stmt.Sig(isSealed=T)` |
 | **Msig trait** | `@msig trait Foo` | `type @msig Foo` | `Stmt.Sig(isImmutable=F)` |
+| **Ext sig** | `@ext trait Foo` | `type @sig @ext Foo` | `Stmt.Sig(isImmutable=T, isExt=T)` |
+| **Ext msig** | *(new)* | `type @msig @ext Foo` | `Stmt.Sig(isImmutable=F, isExt=T)` |
 | **Enum** | `@enum object Color { "Red"\n "Green" }` | `type @enum Color: { Red, Green }` | `Stmt.Enum` |
 | **Range type** | `@range(min = 0, max = 10) class Idx` | `type @range(min = 0, max = 10) Idx` | `Stmt.SubZ(isBitVector=F)` |
 | **Bits type** | `@bits(signed = F, width = 8) class U8` | `type @bits(signed = F, width = 8) U8` | `Stmt.SubZ(isBitVector=T)` |
@@ -73,6 +83,8 @@ The LL(2) syntax differs from Scala-based syntax primarily in:
 | **RsVal** | `@rw val rs = RS(...)` | `val @rw rs = RS(...)` | `Stmt.RsVal` |
 | **Val pattern** | `val (a, b): (Z, Z) = f()` | `val (a, b): (Z, Z) = f()` | `Stmt.VarPattern` |
 | **Method** | `def foo(x: Z): Z = { ... }` | `def foo(x: Z): Z = { ... }` | `Stmt.Method` |
+| **Procedural method** | `def foo(x: Z): Unit = { ... }` | `def foo(x: Z) { ... }` | `Stmt.Method` (Unit auto-injected) |
+| **Parameterless proc** | `def foo(): Unit = { ... }` | `def foo { ... }` | `Stmt.Method` (Unit + `()` auto-injected) |
 | **Pure method** | `@pure def foo(x: Z): Z = { ... }` | `def @pure foo(x: Z): Z = { ... }` | `Stmt.Method(purity=Pure)` |
 | **Strict pure method** | `@strictpure def foo(x: Z): Z = exp` | `def @strictpure foo(x: Z): Z = { ... }` | `Stmt.Method(purity=StrictPure)` |
 | **Memoize method** | `@memoize def foo: Z = { ... }` | `def @memoize foo: Z = { ... }` | `Stmt.Method(purity=Memoize)` |
@@ -156,8 +168,10 @@ The LL(2) syntax differs from Scala-based syntax primarily in:
 | Category | Scala-based Syntax | LL(2) Syntax | AST Node |
 |---|---|---|---|
 | **Named** | `Z`, `ISZ[Z]` | `Z`, `ISZ[Z]`, `Color.Type` | `Type.Named` |
+| **Unit** | `Unit` | `()` | `Type.Named("Unit")` |
 | **Tuple** | `(Z, B)` | `(Z, B)` | `Type.Tuple` |
 | **Function** | `Z => B` | `Z => B` | `Type.Fun` |
+| **Procedure fn** | `Z => Unit` | `Z => ()` | `Type.Fun` (return = Unit) |
 | **Pure function** | `Z => B @pure` | `Z => @pure B` | `Type.Fun(isPure=T)` |
 | **Multi-param fn** | `(Z, B) => R` | `(Z, B) => R` | `Type.Fun` |
 | **By-name** | `=> T` | `=> T` | `Type.Fun(isByName=T)` |
