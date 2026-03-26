@@ -2320,7 +2320,7 @@ object Exp {
   }
 }
 
-@datatype class Annotation(val name: ISZ[String], val args: ISZ[Lit])
+@datatype class Annotation(val name: Id, val args: ISZ[Exp], val nested: ISZ[Annotation])
 
 @enum object RTypeKind {
   "Arena"
@@ -2470,17 +2470,17 @@ object ResolvedInfo {
 
   }
 
-  @datatype class BuiltIn(val kind: BuiltIn.Kind.Type) extends ResolvedInfo
+  @datatype class BuiltIn(val kind: BuiltIn.Kind.Type, @hidden val defPosOpt: Option[Position]) extends ResolvedInfo
 
-  @datatype class Package(val name: ISZ[String]) extends ResolvedInfo
+  @datatype class Package(val name: ISZ[String], @hidden val defPosOpt: Option[Position]) extends ResolvedInfo
 
-  @datatype class Enum(val name: ISZ[String]) extends ResolvedInfo
+  @datatype class Enum(val name: ISZ[String], @hidden val defPosOpt: Option[Position]) extends ResolvedInfo
 
-  @datatype class EnumElement(val owner: ISZ[String], val name: String, val ordinal: Z) extends ResolvedInfo
+  @datatype class EnumElement(val owner: ISZ[String], val name: String, val ordinal: Z, @hidden val defPosOpt: Option[Position]) extends ResolvedInfo
 
-  @datatype class Object(val name: ISZ[String]) extends ResolvedInfo
+  @datatype class Object(val name: ISZ[String], @hidden val defPosOpt: Option[Position]) extends ResolvedInfo
 
-  @datatype class Var(val isInObject: B, val isSpec: B, val isVal: B, val owner: ISZ[String], val id: String) extends ResolvedInfo
+  @datatype class Var(val isInObject: B, val isSpec: B, val isVal: B, val owner: ISZ[String], val id: String, @hidden val defPosOpt: Option[Position]) extends ResolvedInfo
 
   @datatype class Method(val isInObject: B,
                          val mode: MethodMode.Type,
@@ -2490,21 +2490,22 @@ object ResolvedInfo {
                          val paramNames: ISZ[String],
                          val tpeOpt: Option[Typed.Fun],
                          val reads: ISZ[ResolvedInfo],
-                         val writes: ISZ[ResolvedInfo]) extends ResolvedInfo {
+                         val writes: ISZ[ResolvedInfo],
+                         @hidden val defPosOpt: Option[Position]) extends ResolvedInfo {
 
     @pure override def subst(substMap: HashMap[String, Typed]): ResolvedInfo = {
       tpeOpt match {
         case Some(tpe) => return Method(isInObject, mode, typeParams, owner, id, paramNames, Some(tpe.subst(substMap)),
-          for (r <- reads) yield r.subst(substMap), for (w <- writes) yield w.subst(substMap))
+          for (r <- reads) yield r.subst(substMap), for (w <- writes) yield w.subst(substMap), defPosOpt)
         case _ => return this
       }
     }
 
   }
 
-  @datatype class Methods(val methods: ISZ[Method]) extends ResolvedInfo
+  @datatype class Methods(val methods: ISZ[Method], @hidden val defPosOpt: Option[Position]) extends ResolvedInfo
 
-  @datatype class Tuple(val size: Z, val index: Z) extends ResolvedInfo
+  @datatype class Tuple(val size: Z, val index: Z, @hidden val defPosOpt: Option[Position]) extends ResolvedInfo
 
   object LocalVar {
 
@@ -2520,16 +2521,17 @@ object ResolvedInfo {
                            val scope: ResolvedInfo.LocalVar.Scope.Type,
                            val isSpec: B,
                            val isVal: B,
-                           val id: String) extends ResolvedInfo {
+                           val id: String,
+                           @hidden val defPosOpt: Option[Position]) extends ResolvedInfo {
     @strictpure def isEqual(other: LocalVar): B = id == other.id && context == other.context
     @strictpure override def hash: Z = (context :+ id).hash
   }
 
-  @datatype class Fact(val name: ISZ[String]) extends ResolvedInfo
+  @datatype class Fact(val name: ISZ[String], @hidden val defPosOpt: Option[Position]) extends ResolvedInfo
 
-  @datatype class Theorem(val name: ISZ[String]) extends ResolvedInfo
+  @datatype class Theorem(val name: ISZ[String], @hidden val defPosOpt: Option[Position]) extends ResolvedInfo
 
-  @datatype class Inv(val isInObject: B, val owner: ISZ[String], val id: String) extends ResolvedInfo
+  @datatype class Inv(val isInObject: B, val owner: ISZ[String], val id: String, @hidden val defPosOpt: Option[Position]) extends ResolvedInfo
 
   @pure def substOpt(resOpt: Option[ResolvedInfo], substMap: HashMap[String, Typed]): Option[ResolvedInfo] = {
     resOpt match {

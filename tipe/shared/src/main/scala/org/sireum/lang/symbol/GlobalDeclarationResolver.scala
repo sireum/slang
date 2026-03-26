@@ -119,8 +119,8 @@ import GlobalDeclarationResolver._
               T,
               AST.Stmt.Object(F, None(), AST.Id(id, attr), ISZ(), ISZ(), attr),
               Some(AST.Typed.Object(owner, id)),
-              Some(AST.ResolvedInfo.Object(name)),
-              AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), owner, id, ISZ(), None(), ISZ(), ISZ()),
+              Some(AST.ResolvedInfo.Object(name, posOpt)),
+              AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), owner, id, ISZ(), None(), ISZ(), ISZ(), posOpt),
             )
           }
       }
@@ -156,7 +156,7 @@ import GlobalDeclarationResolver._
             currentName,
             T,
             scope(packageName, currentImports, name),
-            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Var(T, F, stmt.isVal, currentName, stmt.id.value))))
+            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Var(T, F, stmt.isVal, currentName, stmt.id.value, stmt.id.attr.posOpt))))
           ),
           stmt.attr.posOpt
         )
@@ -169,7 +169,7 @@ import GlobalDeclarationResolver._
             currentName,
             T,
             scope(packageName, currentImports, name),
-            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Var(T, T, stmt.isVal, currentName, stmt.id.value))))
+            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Var(T, T, stmt.isVal, currentName, stmt.id.value, stmt.id.attr.posOpt))))
           ),
           stmt.attr.posOpt
         )
@@ -181,7 +181,7 @@ import GlobalDeclarationResolver._
           Info.RsVal(
             currentName,
             scope(packageName, currentImports, name),
-            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Var(T, T, T, currentName, stmt.id.value))))
+            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Var(T, T, T, currentName, stmt.id.value, stmt.id.attr.posOpt))))
           ),
           stmt.attr.posOpt
         )
@@ -209,7 +209,8 @@ import GlobalDeclarationResolver._
                     params,
                     None(),
                     ISZ(),
-                    ISZ()
+                    ISZ(),
+                    stmt.sig.id.attr.posOpt
                   )
                 )
               )
@@ -239,7 +240,8 @@ import GlobalDeclarationResolver._
                     params,
                     None(),
                     ISZ(),
-                    ISZ()
+                    ISZ(),
+                    stmt.sig.id.attr.posOpt
                   )
                 )
               )
@@ -269,7 +271,8 @@ import GlobalDeclarationResolver._
                     params,
                     None(),
                     ISZ(),
-                    ISZ()
+                    ISZ(),
+                    stmt.sig.id.attr.posOpt
                   )
                 )
               )
@@ -300,7 +303,8 @@ import GlobalDeclarationResolver._
                     params,
                     None(),
                     ISZ(),
-                    ISZ()
+                    ISZ(),
+                    stmt.sig.id.attr.posOpt
                   )
                 )
               )
@@ -328,8 +332,8 @@ import GlobalDeclarationResolver._
             T,
             AST.Stmt.Object(F, None(), AST.Id(stringInterpolator, stmt.id.attr), ISZ(), ISZ(), stmt.attr),
             Some(AST.Typed.Object(name, stringInterpolator)),
-            Some(AST.ResolvedInfo.Object(stringInterpolatorName)),
-            AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), currentName, id, ISZ(), None(), ISZ(), ISZ())
+            Some(AST.ResolvedInfo.Object(stringInterpolatorName, stmt.id.attr.posOpt)),
+            AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), currentName, id, ISZ(), None(), ISZ(), ISZ(), stmt.id.attr.posOpt)
           ),
           stmt.attr.posOpt
         )
@@ -344,7 +348,7 @@ import GlobalDeclarationResolver._
           if (elements.contains(e.value)) {
             reporter.error(e.attr.posOpt, resolverKind, s"Redeclaration of @enum element ${e.value}.")
           } else {
-            elements = elements + e.value ~> AST.ResolvedInfo.EnumElement(name, e.value, ordinal)
+            elements = elements + e.value ~> AST.ResolvedInfo.EnumElement(name, e.value, ordinal, e.attr.posOpt)
             elementPosOpts = elementPosOpts :+ e.attr.posOpt
           }
           ordinal = ordinal + 1
@@ -356,7 +360,7 @@ import GlobalDeclarationResolver._
             name,
             elements,
             Some(AST.Typed.Enum(name)),
-            Some(AST.ResolvedInfo.Enum(name)),
+            Some(AST.ResolvedInfo.Enum(name, stmt.id.attr.posOpt)),
             elementTypedOpt,
             stmt.attr.posOpt
           ),
@@ -415,8 +419,8 @@ import GlobalDeclarationResolver._
             F,
             stmt,
             Some(AST.Typed.Object(currentName, stmt.id.value)),
-            Some(AST.ResolvedInfo.Object(name)),
-            AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), currentName, id, ISZ(), None(), ISZ(), ISZ())
+            Some(AST.ResolvedInfo.Object(name, stmt.id.attr.posOpt)),
+            AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), currentName, id, ISZ(), None(), ISZ(), ISZ(), stmt.id.attr.posOpt)
           ),
           stmt.attr.posOpt
         )
@@ -473,7 +477,7 @@ import GlobalDeclarationResolver._
           if (paramVars.contains(id)) {
             reporter.error(p.id.attr.posOpt, resolverKind, s"Cannot redeclare parameter '$id'.")
           }
-          val paramResInfoOpt = Some[AST.ResolvedInfo](AST.ResolvedInfo.Var(F, F, p.isVal, name, id))
+          val paramResInfoOpt = Some[AST.ResolvedInfo](AST.ResolvedInfo.Var(F, F, p.isVal, name, id, p.id.attr.posOpt))
           paramVars = paramVars + id ~> Info.Var(
             name,
             F,
@@ -488,11 +492,11 @@ import GlobalDeclarationResolver._
         val tpe = AST.Typed.Name(name, None(), for (p <- typeParams.entries) yield AST.Typed.TypeVar(p._1, p._2.asInstanceOf[TypeInfo.TypeVar].ast.kind))
         val constructorResOpt: Option[AST.ResolvedInfo] = Some(
           AST.ResolvedInfo
-            .Method(F, AST.MethodMode.Constructor, typeVars, currentName, stmt.id.value, constructorParamVars, None(), ISZ(), ISZ())
+            .Method(F, AST.MethodMode.Constructor, typeVars, currentName, stmt.id.value, constructorParamVars, None(), ISZ(), ISZ(), stmt.id.attr.posOpt)
         )
         val extractorResOpt: Option[AST.ResolvedInfo] = Some(
           AST.ResolvedInfo
-            .Method(F, AST.MethodMode.Extractor, typeVars, currentName, stmt.id.value, extractorParamVars, None(), ISZ(), ISZ())
+            .Method(F, AST.MethodMode.Extractor, typeVars, currentName, stmt.id.value, extractorParamVars, None(), ISZ(), ISZ(), stmt.id.attr.posOpt)
         )
         declareType(
           if (stmt.isDatatype) "datatype" else "record",
@@ -537,7 +541,7 @@ import GlobalDeclarationResolver._
             currentName,
             stmt.id.value,
             scope(packageName, currentImports, name),
-            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Fact(name)),
+            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Fact(name, stmt.id.attr.posOpt)),
               typedOpt = Some(AST.Typed.Fact(currentName, stmt.id.value))))
           ),
           stmt.attr.posOpt
@@ -551,7 +555,7 @@ import GlobalDeclarationResolver._
             currentName,
             stmt.id.value,
             scope(packageName, currentImports, name),
-            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Theorem(name)),
+            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Theorem(name, stmt.id.attr.posOpt)),
               typedOpt = Some(AST.Typed.Theorem(currentName, stmt.id.value))))
           ),
           stmt.attr.posOpt
@@ -565,7 +569,7 @@ import GlobalDeclarationResolver._
             currentName,
             stmt.id.value,
             scope(packageName, currentImports, name),
-            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Inv(T, currentName, stmt.id.value)),
+            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Inv(T, currentName, stmt.id.value, stmt.id.attr.posOpt)),
               typedOpt = Some(AST.Typed.Inv(T, currentName, stmt.id.value))))
           ),
           stmt.attr.posOpt
@@ -605,13 +609,13 @@ import GlobalDeclarationResolver._
           checkId(stmt.id)
           val id = stmt.id.value
           vars = vars + id ~> Info.Var(owner, F, scope,
-            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Var(F, F, stmt.isVal, owner, id)))))
+            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Var(F, F, stmt.isVal, owner, id, stmt.id.attr.posOpt)))))
         case stmt: AST.Stmt.SpecVar =>
           checkId(stmt.id)
           val id = stmt.id.value
           specVars =
             specVars + id ~> Info.SpecVar(owner, F, scope,
-              stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Var(F, T, stmt.isVal, owner, id)))))
+              stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Var(F, T, stmt.isVal, owner, id, stmt.id.attr.posOpt)))))
         case stmt: AST.Stmt.Method =>
           checkId(stmt.sig.id)
           val id = stmt.sig.id.value
@@ -633,7 +637,8 @@ import GlobalDeclarationResolver._
                     params,
                     None(),
                     ISZ(),
-                    ISZ()
+                    ISZ(),
+                    stmt.sig.id.attr.posOpt
                   )
                 )
               )
@@ -660,7 +665,8 @@ import GlobalDeclarationResolver._
                     params,
                     None(),
                     ISZ(),
-                    ISZ()
+                    ISZ(),
+                    stmt.sig.id.attr.posOpt
                   )
                 )
               )
@@ -673,7 +679,7 @@ import GlobalDeclarationResolver._
             owner,
             id,
             scope,
-            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Inv(F, owner, id)),
+            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Inv(F, owner, id, stmt.id.attr.posOpt)),
               typedOpt = Some(AST.Typed.Inv(F, owner, id))))
           )
 
@@ -741,7 +747,7 @@ import GlobalDeclarationResolver._
         )
       case _ =>
         globalNameMap = globalNameMap + name ~> Info
-          .Package(name, Some(AST.Typed.Package(name)), Some(AST.ResolvedInfo.Package(name)))
+          .Package(name, Some(AST.Typed.Package(name)), Some(AST.ResolvedInfo.Package(name, None())))
     }
   }
 

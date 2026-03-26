@@ -1336,7 +1336,7 @@ object Util {
       case (_, id: Exp.Ident) => return (F, receiverOpt, id)
       case (None(), id: Exp.Select) => return (F, id.receiverOpt, Exp.Ident(id.id, id.attr))
       case (None(), _) => return (T, Some(ident), Exp.Ident(Id("apply", Attr(ident.posOpt)), ResolvedAttr(
-        ident.posOpt, Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.Apply)), ident.typedOpt)))
+        ident.posOpt, Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.Apply, None())), ident.typedOpt)))
       case (_, _) => halt(s"Infeasible: $receiverOpt.$ident")
     }
   }
@@ -1392,7 +1392,7 @@ object Util {
       }
     }
     return esToBinary(set.elements, trueLit, Exp.BinaryOp.And,
-      Typed.bOpt, ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.BinaryAnd), pOpt)
+      Typed.bOpt, ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.BinaryAnd, None()), pOpt)
   }
 
   @pure def bigOr(exps: ISZ[Exp], pOpt: Option[Position]): Exp = {
@@ -1407,7 +1407,7 @@ object Util {
       }
     }
     return esToBinary(set.elements, falseLit, Exp.BinaryOp.Or,
-      Typed.bOpt, ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.BinaryOr), pOpt)
+      Typed.bOpt, ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.BinaryOr, None()), pOpt)
   }
 
   @pure def bigImply(isCond: B, exps: ISZ[Exp], pOpt: Option[Position]): Exp = {
@@ -1425,7 +1425,7 @@ object Util {
     var r = es(es.size - 1)
     val op: String = if (isCond) Exp.BinaryOp.CondImply else Exp.BinaryOp.Imply
     val res = ResolvedInfo.BuiltIn(if (isCond) ResolvedInfo.BuiltIn.Kind.BinaryCondImply else
-      ResolvedInfo.BuiltIn.Kind.BinaryImply)
+      ResolvedInfo.BuiltIn.Kind.BinaryImply, None())
     var i = es.size - 2
     while (i >= 0) {
       if (r != trueLit) {
@@ -1442,13 +1442,13 @@ object Util {
         return trueLit
       }
       return Exp.Binary(cond, Exp.BinaryOp.CondImply, left, ResolvedAttr(pOpt,
-        Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.BinaryCondImply)), Typed.bOpt), pOpt)
+        Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.BinaryCondImply, None())), Typed.bOpt), pOpt)
     } else if (right == falseLit) {
       return Exp.Binary(cond, Exp.BinaryOp.CondAnd, left, ResolvedAttr(pOpt,
-        Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.BinaryCondAnd)), Typed.bOpt), pOpt)
+        Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.BinaryCondAnd, None())), Typed.bOpt), pOpt)
     } else if (left == trueLit) {
       return Exp.Binary(cond, Exp.BinaryOp.CondOr, right, ResolvedAttr(pOpt,
-        Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.BinaryCondOr)), Typed.bOpt), pOpt)
+        Some(ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.BinaryCondOr, None())), Typed.bOpt), pOpt)
     }
     return Exp.If(cond, left, right, TypedAttr(pOpt, tOpt))
   }

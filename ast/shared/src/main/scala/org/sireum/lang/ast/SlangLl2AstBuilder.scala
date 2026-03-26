@@ -505,6 +505,74 @@ object SlangLl2AstBuilder {
       ensuresClause = AST.MethodContract.Claims(ensures, attr(posTree)))
   }
 
+  // ─── buildAnnotation ───────────────────────────────────────────────
+
+  val contractKeywords: Set[String] = Set ++ ISZ[String]("requires", "ensures", "modifies", "reads", "inv", "cases")
+
+  def isContractAnnotArg(key: String): B = {
+    // Contract case labels are quoted strings (e.g. "case1")
+    if (ops.StringOps(key).startsWith("\"")) {
+      return T
+    }
+    return contractKeywords.contains(key)
+  }
+
+  def buildAnnotationFromArg(aa: ParseTree.Node, reporter: message.Reporter): AST.Annotation = {
+    // annotArg: ( ID | STRING ) ( exp commaExp* | annotArgNested )
+    val keyLeaf = firstLeaf(aa)
+    val keyText = keyLeaf.text
+    // For STRING keys strip the surrounding quotes to get the annotation name value
+    val nameValue: String = if (ops.StringOps(keyText).startsWith("\"") && ops.StringOps(keyText).endsWith("\"")) {
+      parseStringLit(keyText)
+    } else {
+      keyText
+    }
+    val nameId = AST.Id(nameValue, attr(keyLeaf))
+    val nestedNodeOpt = findChild(aa, "annotArgNested")
+    nestedNodeOpt match {
+      case Some(nestedNode) =>
+        // annotArgNested: LSQUARE annotArg+ RSQUARE
+        val innerArgs = findChildren(nestedNode, "annotArg")
+        var nested = ISZ[AST.Annotation]()
+        for (ia <- innerArgs) {
+          nested = nested :+ buildAnnotationFromArg(ia, reporter)
+        }
+        return AST.Annotation(name = nameId, args = ISZ(), nested = nested)
+      case _ =>
+        // Collect exp and commaExp children as expression args
+        var exps = ISZ[AST.Exp]()
+        val expOpt = findChild(aa, "exp")
+        expOpt match {
+          case Some(en) =>
+            exps = exps :+ buildExp(en, reporter)
+            val commaExps = findChildren(aa, "commaExp")
+            for (ce <- commaExps) {
+              val en2 = findChild(ce, "exp").get
+              exps = exps :+ buildExp(en2, reporter)
+            }
+          case _ =>
+        }
+        return AST.Annotation(name = nameId, args = exps, nested = ISZ())
+    }
+  }
+
+  def buildAnnotations(annotOpt: Option[ParseTree.Node], reporter: message.Reporter): ISZ[AST.Annotation] = {
+    annotOpt match {
+      case Some(annotNode) =>
+        // annot: AT LSQUARE annotArg* RSQUARE
+        val annotArgs = findChildren(annotNode, "annotArg")
+        var r = ISZ[AST.Annotation]()
+        for (aa <- annotArgs) {
+          val keyText = firstLeaf(aa).text
+          if (!isContractAnnotArg(keyText)) {
+            r = r :+ buildAnnotationFromArg(aa, reporter)
+          }
+        }
+        return r
+      case _ => return ISZ()
+    }
+  }
+
   // ─── file / program ────────────────────────────────────────────────
 
   def buildFile(fileUriOpt: Option[String], node: ParseTree.Node, reporter: message.Reporter): AST.TopUnit.Program = {
@@ -778,7 +846,7 @@ object SlangLl2AstBuilder {
       extNameOpt = extNameOpt,
       id = mkId(id, node),
       stmts = stmts,
-      annotations = ISZ(),
+      annotations = buildAnnotations(annotOpt, reporter),
       attr = attr(node))
   }
 
@@ -865,6 +933,7 @@ object SlangLl2AstBuilder {
       val adtSuffix = findChild(node, "typeDefnAdtSuffix")
       var parents = ISZ[AST.Type.Named]()
       var stmts = ISZ[AST.Stmt]()
+      var sigAnnotOpt: Option[ParseTree.Node] = None()
       adtSuffix match {
         case Some(as) =>
           val supersOpt = findChild(as, "supers")
@@ -872,6 +941,7 @@ object SlangLl2AstBuilder {
             case Some(sup) => parents = buildSupers(sup, reporter)
             case _ =>
           }
+          sigAnnotOpt = findChild(as, "annot")
           val membersOpt = findChild(as, "typeDefnAdtMembers")
           membersOpt match {
             case Some(mem) =>
@@ -891,7 +961,7 @@ object SlangLl2AstBuilder {
         typeParams = typeParams,
         parents = parents,
         stmts = stmts,
-        annotations = ISZ(),
+        annotations = buildAnnotations(sigAnnotOpt, reporter),
         attr = attr(node))
     }
 
@@ -900,6 +970,7 @@ object SlangLl2AstBuilder {
     var params = ISZ[AST.AdtParam]()
     var parents = ISZ[AST.Type.Named]()
     var stmts = ISZ[AST.Stmt]()
+    var adtAnnotOpt: Option[ParseTree.Node] = None()
     adtSuffix match {
       case Some(as) =>
         val paramsOpt = findChild(as, "params")
@@ -912,6 +983,7 @@ object SlangLl2AstBuilder {
           case Some(sup) => parents = buildSupers(sup, reporter)
           case _ =>
         }
+        adtAnnotOpt = findChild(as, "annot")
         val membersOpt = findChild(as, "typeDefnAdtMembers")
         membersOpt match {
           case Some(mem) =>
@@ -933,7 +1005,7 @@ object SlangLl2AstBuilder {
       params = params,
       parents = parents,
       stmts = stmts,
-      annotations = ISZ(),
+      annotations = buildAnnotations(adtAnnotOpt, reporter),
       attr = attr(node))
   }
 
@@ -2908,6 +2980,7 @@ object SlangLl2AstBuilder {
       case _ => None()
     }
 
+    val varAnnotOpt = findChild(node, "annot")
     val assignSuffixOpt = findChild(node, "assignSuffix")
 
     // Rule 4: explicit type required when initializer is a block, if, or match
@@ -2958,7 +3031,7 @@ object SlangLl2AstBuilder {
       id = id,
       tipeOpt = tipeOpt,
       initOpt = initOpt,
-      annotations = ISZ(),
+      annotations = buildAnnotations(varAnnotOpt, reporter),
       attr = resolvedAttr(node))
   }
 
@@ -3115,7 +3188,7 @@ object SlangLl2AstBuilder {
       }
       val sig = AST.MethodSig(
         purity = AST.Purity.Impure,
-        annotations = ISZ(),
+        annotations = buildAnnotations(contractAnnotOpt, reporter),
         id = id,
         rTypeParams = ISZ(),
         typeParams = typeParams,
@@ -3135,7 +3208,7 @@ object SlangLl2AstBuilder {
       }
       val sig = AST.MethodSig(
         purity = AST.Purity.Impure,
-        annotations = ISZ(),
+        annotations = buildAnnotations(contractAnnotOpt, reporter),
         id = id,
         rTypeParams = ISZ(),
         typeParams = typeParams,
@@ -3176,7 +3249,7 @@ object SlangLl2AstBuilder {
 
     val sig = AST.MethodSig(
       purity = purity,
-      annotations = ISZ(),
+      annotations = buildAnnotations(contractAnnotOpt, reporter),
       id = id,
       rTypeParams = ISZ(),
       typeParams = typeParams,
@@ -3355,7 +3428,7 @@ object SlangLl2AstBuilder {
     val purity: AST.Purity.Type = if (isPure) AST.Purity.Pure else AST.Purity.Impure
     val sig = AST.MethodSig(
       purity = purity,
-      annotations = ISZ(),
+      annotations = buildAnnotations(contractAnnotOpt, reporter),
       id = id,
       rTypeParams = ISZ(),
       typeParams = typeParams,

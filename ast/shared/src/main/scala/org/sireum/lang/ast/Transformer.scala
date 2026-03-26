@@ -4523,11 +4523,13 @@ import Transformer._
     val r: TPostResult[Context, Annotation] = if (preR.continu) {
       val o2: Annotation = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: TPostResult[Context, IS[Z, Lit]] = transformISZ(preR.ctx, o2.args, transformLit _)
-      if (hasChanged || r0.resultOpt.nonEmpty)
-        TPostResult(r0.ctx, Some(o2(args = r0.resultOpt.getOrElse(o2.args))))
+      val r0: TPostResult[Context, Id] = transformId(preR.ctx, o2.name)
+      val r1: TPostResult[Context, IS[Z, Exp]] = transformISZ(r0.ctx, o2.args, transformExp _)
+      val r2: TPostResult[Context, IS[Z, Annotation]] = transformISZ(r1.ctx, o2.nested, transformAnnotation _)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+        TPostResult(r2.ctx, Some(o2(name = r0.resultOpt.getOrElse(o2.name), args = r1.resultOpt.getOrElse(o2.args), nested = r2.resultOpt.getOrElse(o2.nested))))
       else
-        TPostResult(r0.ctx, None())
+        TPostResult(r2.ctx, None())
     } else if (preR.resultOpt.nonEmpty) {
       TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
     } else {

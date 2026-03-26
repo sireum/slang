@@ -5171,9 +5171,11 @@ import MTransformer._
     val r: MOption[Annotation] = if (preR.continu) {
       val o2: Annotation = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
-      val r0: MOption[IS[Z, Lit]] = transformISZ(o2.args, transformLit _)
-      if (hasChanged || r0.nonEmpty)
-        MSome(o2(args = r0.getOrElse(o2.args)))
+      val r0: MOption[Id] = transformId(o2.name)
+      val r1: MOption[IS[Z, Exp]] = transformISZ(o2.args, transformExp _)
+      val r2: MOption[IS[Z, Annotation]] = transformISZ(o2.nested, transformAnnotation _)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+        MSome(o2(name = r0.getOrElse(o2.name), args = r1.getOrElse(o2.args), nested = r2.getOrElse(o2.nested)))
       else
         MNone()
     } else if (preR.resultOpt.nonEmpty) {

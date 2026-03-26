@@ -676,7 +676,8 @@ object Info {
         ISZ(),
         Some(AST.Typed.Fun(AST.Purity.Pure, F, ISZ(AST.Typed.string), AST.Typed.Name(AST.Typed.optionName, None(), ISZ(elementTypedOpt.get)))),
         ISZ(),
-        ISZ()
+        ISZ(),
+        posOpt
       )
     )
 
@@ -690,7 +691,8 @@ object Info {
         ISZ(),
         Some(AST.Typed.Fun(AST.Purity.Pure, F, ISZ(AST.Typed.z), AST.Typed.Name(AST.Typed.optionName, None(), ISZ(elementTypedOpt.get)))),
         ISZ(),
-        ISZ()
+        ISZ(),
+        posOpt
       )
     )
 
@@ -704,7 +706,8 @@ object Info {
         ISZ(),
         Some(AST.Typed.Fun(AST.Purity.Pure, T, ISZ(), AST.Typed.Name(AST.Typed.isName, None(), ISZ(AST.Typed.z, elementTypedOpt.get)))),
         ISZ(),
-        ISZ()
+        ISZ(),
+        posOpt
       )
     )
 
@@ -718,7 +721,8 @@ object Info {
         ISZ(),
         Some(AST.Typed.Fun(AST.Purity.Pure, T, ISZ(), AST.Typed.z)),
         ISZ(),
-        ISZ()
+        ISZ(),
+        posOpt
       )
     )
 
@@ -897,12 +901,12 @@ object TypeInfo {
 
     val nameResOpt: Option[AST.ResolvedInfo] = Some(
       AST.ResolvedInfo.Method(F, AST.MethodMode.Ext, ISZ(), name, "name", ISZ(), Some(AST.Typed.Fun(AST.Purity.Pure, T, ISZ(),
-        AST.Typed.string)), ISZ(), ISZ())
+        AST.Typed.string)), ISZ(), ISZ(), posOpt)
     )
 
     val ordinalResOpt: Option[AST.ResolvedInfo] = Some(
       AST.ResolvedInfo.Method(F, AST.MethodMode.Ext, ISZ(), name, "ordinal", ISZ(), Some(AST.Typed.Fun(AST.Purity.Pure, T, ISZ(),
-        AST.Typed.z)), ISZ(), ISZ())
+        AST.Typed.z)), ISZ(), ISZ(), posOpt)
     )
 
     @pure override def name: ISZ[String] = {

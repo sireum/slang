@@ -42,7 +42,7 @@ object Resolver {
   val resolverKind: String = "Slang Resolver"
 
   val rootPackageInfo: Info.Package =
-    Info.Package(ISZ(), Some(AST.Typed.Package(ISZ())), Some(AST.ResolvedInfo.Package(ISZ())))
+    Info.Package(ISZ(), Some(AST.Typed.Package(ISZ())), Some(AST.ResolvedInfo.Package(ISZ(), None())))
 
   @pure def addBuiltIns(nameMap: NameMap, typeMap: TypeMap): (NameMap, TypeMap) = {
     if (typeMap.contains(AST.Typed.iszName)) {
@@ -72,7 +72,7 @@ object Resolver {
       scope,
       AST.Stmt.Var(F, T, id("T"), Some(tname("B", ISZ())), Some(dollarAssignExp), ISZ(),
         AST.ResolvedAttr(None[Position](),
-          Some[AST.ResolvedInfo](AST.ResolvedInfo.Var(T, F, T, AST.Typed.sireumName, "T")), AST.Typed.bOpt)))
+          Some[AST.ResolvedInfo](AST.ResolvedInfo.Var(T, F, T, AST.Typed.sireumName, "T", None())), AST.Typed.bOpt)))
 
     val fName = AST.Typed.sireumName :+ "F"
     nm = nm + fName ~> Info.Var(
@@ -81,7 +81,7 @@ object Resolver {
       scope,
       AST.Stmt.Var(F, T, id("F"), Some(tname("B", ISZ())), Some(dollarAssignExp), ISZ(),
         AST.ResolvedAttr(None[Position](),
-          Some[AST.ResolvedInfo](AST.ResolvedInfo.Var(T, F, T, AST.Typed.sireumName, "F")), AST.Typed.bOpt)))
+          Some[AST.ResolvedInfo](AST.ResolvedInfo.Var(T, F, T, AST.Typed.sireumName, "F", None())), AST.Typed.bOpt)))
 
     val randomIntId = "randomInt"
     val randomIntTyped = AST.Typed.Fun(AST.Purity.Impure, F, ISZ(), AST.Typed.z)
@@ -92,7 +92,7 @@ object Resolver {
       AST.Stmt.ExtMethod(F, AST.MethodSig(AST.Purity.Impure, ISZ(), AST.Id(randomIntId, emptyAttr), ISZ(), ISZ(), F, ISZ(), zType),
         AST.MethodContract.Simple.empty,
         AST.ResolvedAttr(None[Position](), Some[AST.ResolvedInfo](AST.ResolvedInfo.Method(
-          T, AST.MethodMode.Ext, ISZ(), AST.Typed.sireumName, randomIntId, ISZ(), Some(randomIntTyped), ISZ(), ISZ())),
+          T, AST.MethodMode.Ext, ISZ(), AST.Typed.sireumName, randomIntId, ISZ(), Some(randomIntTyped), ISZ(), ISZ(), None())),
           Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), AST.Typed.sireumName, randomIntId, ISZ(), randomIntTyped)))))
 
     val seqIndexValidSizeId = "seqIndexValidSize"
@@ -109,7 +109,7 @@ object Resolver {
           AST.Param(F, AST.Id(seqIndexValidSizeParamId, emptyAttr), zType)), bType),
         AST.ResolvedAttr(None[Position](), Some[AST.ResolvedInfo](AST.ResolvedInfo.Method(T, AST.MethodMode.Spec,
           ISZ(seqIndexValidSizeTypeParamId), AST.Typed.sireumName, seqIndexValidSizeId, ISZ(seqIndexValidSizeParamId),
-          Some(seqIndexValidSizeTyped), ISZ(), ISZ())), Some(AST.Typed.Method(T, AST.MethodMode.Spec,
+          Some(seqIndexValidSizeTyped), ISZ(), ISZ(), None())), Some(AST.Typed.Method(T, AST.MethodMode.Spec,
           ISZ(seqIndexValidSizeTypeParamId), AST.Typed.sireumName, seqIndexValidSizeId, ISZ(seqIndexValidSizeParamId),
             seqIndexValidSizeTyped)))))
 

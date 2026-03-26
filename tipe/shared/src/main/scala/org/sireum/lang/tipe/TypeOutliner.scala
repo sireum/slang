@@ -936,7 +936,7 @@ object TypeOutliner {
           invariants = invariants + id ~> invInfo
         } else {
           val newAst = invInfo.ast(claims = for (claim <- invInfo.ast.claims) yield transform(claim),
-            attr = invInfo.ast.attr(resOpt = Some(AST.ResolvedInfo.Inv(F, nameOwner, nameId)),
+            attr = invInfo.ast.attr(resOpt = Some(AST.ResolvedInfo.Inv(F, nameOwner, nameId, None())),
               typedOpt = Some(AST.Typed.Inv(F, nameOwner, nameId))))
           invariants = invariants + id ~> invInfo(ast = newAst)
         }

@@ -209,12 +209,12 @@ object TypeHierarchy {
           case AST.Exp.BinaryOp.Equiv =>
             return if (th.isGroundType(o.left.typedOpt.get))
               AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.Eq, attr = o.attr(resOpt =
-                Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEq))))))
+                Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEq, None()))))))
             else AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.EquivUni)))
           case AST.Exp.BinaryOp.Inequiv =>
             return if (th.isGroundType(o.left.typedOpt.get))
               AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.Ne, attr = o.attr(resOpt =
-                Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryNe))))))
+                Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryNe, None()))))))
             else AST.Transformer.TPostResult(ctx, Some(o(op = AST.Exp.BinaryOp.InequivUni)))
           case _ => return AST.Transformer.TPostResult(ctx, None())
         }
@@ -355,20 +355,20 @@ object TypeHierarchy {
       val param = o.fun.params(0)
       val id = param.idOpt.get
       val ident = AST.Exp.Ident(id, AST.ResolvedAttr(id.attr.posOpt, Some(
-        AST.ResolvedInfo.LocalVar(o.fun.context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T, id.value)),
+        AST.ResolvedInfo.LocalVar(o.fun.context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T, id.value, None())),
         param.typedOpt))
       val loCond = AST.Exp.Binary(o.lo, AST.Exp.BinaryOp.Le, ident, AST.ResolvedAttr(o.lo.posOpt, Some(
-        AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryLe)), o.lo.typedOpt), o.lo.posOpt)
+        AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryLe, None())), o.lo.typedOpt), o.lo.posOpt)
       val hiCond = AST.Exp.Binary(ident, if (o.hiExact) AST.Exp.BinaryOp.Le else AST.Exp.BinaryOp.Lt, o.hi,
         AST.ResolvedAttr(o.lo.posOpt, Some(AST.ResolvedInfo.BuiltIn(
-          if (o.hiExact) AST.ResolvedInfo.BuiltIn.Kind.BinaryLe else AST.ResolvedInfo.BuiltIn.Kind.BinaryLt)),
+          if (o.hiExact) AST.ResolvedInfo.BuiltIn.Kind.BinaryLe else AST.ResolvedInfo.BuiltIn.Kind.BinaryLt, None())),
           o.hi.typedOpt), o.lo.posOpt)
       val cond = AST.Exp.Binary(loCond, AST.Exp.BinaryOp.And, hiCond, AST.ResolvedAttr(
-        o.posOpt, Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryAnd)), AST.Typed.bOpt
+        o.posOpt, Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryAnd, None())), AST.Typed.bOpt
       ), o.posOpt)
       val fun = AST.Exp.Fun(o.fun.context, o.fun.params, AST.Stmt.Expr(
         AST.Exp.Binary(cond, AST.Exp.BinaryOp.CondImply, exp, AST.ResolvedAttr(o.posOpt,
-          Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryCondImply)), AST.Typed.bOpt), o.posOpt),
+          Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryCondImply, None())), AST.Typed.bOpt), o.posOpt),
         ISZ(), AST.TypedAttr(o.posOpt, AST.Typed.bOpt)
       ), ISZ(), AST.TypedAttr(o.attr.posOpt, o.attr.typedOpt))
       val newQuant = AST.Exp.QuantType(o.isForall, fun, AST.Attr(o.posOpt))
@@ -1495,11 +1495,11 @@ object TypeHierarchy {
   @pure def nameToExp(name: ISZ[String], p: Position): AST.Exp.Ref = {
     @pure def nameResTypeOpts(ids: ISZ[String]): (Option[AST.ResolvedInfo], Option[AST.Typed]) = {
       nameMap.get(ids).get match {
-        case info: Info.Object => return (Some(AST.ResolvedInfo.Object(ids)),
+        case info: Info.Object => return (Some(AST.ResolvedInfo.Object(ids, info.posOpt)),
           Some(AST.Typed.Object(info.owner, info.ast.id.value)))
-        case _: Info.Package => return (Some(AST.ResolvedInfo.Package(ids)),
+        case info: Info.Package => return (Some(AST.ResolvedInfo.Package(ids, info.posOpt)),
           Some(AST.Typed.Package(ids)))
-        case _: Info.Enum => return (Some(AST.ResolvedInfo.Enum(ids)),
+        case info: Info.Enum => return (Some(AST.ResolvedInfo.Enum(ids, info.posOpt)),
           Some(AST.Typed.Enum(ids)))
         case info: Info.EnumElement => return (nameMap.get(info.owner).get.asInstanceOf[Info.Enum].elements.get(info.id),
           Some(AST.Typed.Name(ids, None(), ISZ())))
@@ -1635,6 +1635,61 @@ object TypeHierarchy {
     }
   }
 
+  @memoize def builtInDefPosOpt(kind: AST.ResolvedInfo.BuiltIn.Kind.Type, receiverTypeOpt: Option[ISZ[String]]): Option[Position] = {
+    receiverTypeOpt match {
+      case Some(receiverType) =>
+        val methodId: String = kind match {
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryAdd => "+"
+          case AST.ResolvedInfo.BuiltIn.Kind.BinarySub => "-"
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryMul => "*"
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryDiv => "/"
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryRem => "%"
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryEq => "==="
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryNe => "=!="
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryEquiv => "==="
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryInequiv => "=!="
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryFpEq => "~~"
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryFpNe => "!~"
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryLt => "<"
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryLe => "<="
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryGt => ">"
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryGe => ">="
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryShl => "<<"
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryShr => ">>"
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryUshr => ">>>"
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryAnd => "&"
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryOr => "|"
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryXor => "|^"
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryImply => "__>:"
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondAnd => "&&"
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondOr => "||"
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryCondImply => "___>:"
+          case AST.ResolvedInfo.BuiltIn.Kind.BinaryMapsTo => "~>"
+          case AST.ResolvedInfo.BuiltIn.Kind.UnaryPlus => "unary_+"
+          case AST.ResolvedInfo.BuiltIn.Kind.UnaryMinus => "unary_-"
+          case AST.ResolvedInfo.BuiltIn.Kind.UnaryNot => "unary_!"
+          case AST.ResolvedInfo.BuiltIn.Kind.UnaryComplement => "unary_~"
+          case AST.ResolvedInfo.BuiltIn.Kind.Hash => "hash"
+          case AST.ResolvedInfo.BuiltIn.Kind.String => "string"
+          case AST.ResolvedInfo.BuiltIn.Kind.Indices => "indices"
+          case _ => return None()
+        }
+        typeMap.get(receiverType) match {
+          case Some(info: TypeInfo.Sig) =>
+            for (stmt <- info.ast.stmts) {
+              stmt match {
+                case m: AST.Stmt.Method if m.sig.id.value == methodId =>
+                  return m.sig.id.attr.posOpt
+                case _ =>
+              }
+            }
+            return None()
+          case _ => return None()
+        }
+      case _ => return None()
+    }
+  }
+
   @pure def induct(isPattern: B, localIds: HashSet[String], context: ISZ[String],
                    claim: AST.Exp, exp: AST.Exp, pos: Position): Option[TypeHierarchy.InductResult] = {
     val posOpt = Option.some(pos)
@@ -1642,7 +1697,7 @@ object TypeHierarchy {
     val resolvedAttr = AST.ResolvedAttr(posOpt, None(), None())
     val typedAttr = AST.TypedAttr(posOpt, None())
     val equivResAttr = AST.ResolvedAttr(posOpt,
-      Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEquiv)), AST.Typed.bOpt)
+      Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEquiv, None())), AST.Typed.bOpt)
 
     @pure def ids2name(ids: ISZ[String]): AST.Name = {
       return AST.Name(for (id <- ids) yield AST.Id(id, attr), attr)
@@ -1652,7 +1707,7 @@ object TypeHierarchy {
       val tOpt = Option.some(e.typedOpt.get)
       var cases = ISZ[TypeHierarchy.InductResult.Case]()
       val eResAttr = resolvedAttr(typedOpt = Some(AST.Typed.Enum(ti.name)), resOpt = Some(
-        AST.ResolvedInfo.Enum(ti.name)))
+        AST.ResolvedInfo.Enum(ti.name, None())))
       for (element <- ti.elements.entries) {
         val resAttr = resolvedAttr(resOpt = Some(element._2), typedOpt = tOpt)
         val premise = AST.Exp.Binary(e, AST.Exp.BinaryOp.EquivUni, AST.Exp.Select(
@@ -1688,9 +1743,9 @@ object TypeHierarchy {
                 typedAttr(typedOpt = Some(p.tipe.typedOpt.get.subst(sm))))
             val args: ISZ[AST.Exp] = for (vb <- vbs) yield AST.Exp.Ident(vb.asInstanceOf[AST.Pattern.VarBinding].id,
               AST.ResolvedAttr(posOpt, Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T,
-                vb.asInstanceOf[AST.Pattern.VarBinding].id.value)), vb.typedOpt))
+                vb.asInstanceOf[AST.Pattern.VarBinding].id.value, None())), vb.typedOpt))
             val right = AST.Exp.Invoke(
-              None(), AST.Exp.Ident(ti.ast.id, AST.ResolvedAttr(posOpt, Some(AST.ResolvedInfo.Object(ti.name)),
+              None(), AST.Exp.Ident(ti.ast.id, AST.ResolvedAttr(posOpt, Some(AST.ResolvedInfo.Object(ti.name, None())),
                 Some(AST.Typed.Object(ti.owner, ti.ast.id.value)))), ISZ(), for (arg <- sub.args) yield AST.Util.typedToType(arg, pos),
               args, AST.ResolvedAttr(posOpt, ti.constructorResOpt, Some(sub)))
             cases = cases :+ TypeHierarchy.InductResult.Case(AST.Pattern.Structure(None(), Some(ids2name(ti.name)), vbs, context,
@@ -1710,7 +1765,7 @@ object TypeHierarchy {
         if (isSubType(t, expType)) {
           r = r :+ exp ~> AST.Exp.Ident(vb.id, AST.ResolvedAttr(
             vb.posOpt,
-            Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Closure, F, T, vb.id.value)),
+            Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Closure, F, T, vb.id.value, None())),
             Some(t)))
         }
       }

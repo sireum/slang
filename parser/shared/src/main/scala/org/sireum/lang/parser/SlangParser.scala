@@ -987,14 +987,14 @@ class SlangParser(
             hasError = true
             error(mod.pos, "Redundant @anvil.hls.")
           }
-          anns = anns + name ~> AST.Annotation(name, ISZ())
+          anns = anns + name ~> AST.Annotation(AST.Id("hls", attr(mod.pos)), ISZ(), ISZ())
         case mod"@anvil.test" if !isDecl =>
           val name = AST.Typed.sireumName :+ "anvil" :+ "test"
           if (anns.contains(name)) {
             hasError = true
             error(mod.pos, "Redundant @anvil.test.")
           }
-          anns = anns + name ~> AST.Annotation(name, ISZ())
+          anns = anns + name ~> AST.Annotation(AST.Id("test", attr(mod.pos)), ISZ(), ISZ())
         case _ =>
           hasError = true
           if (isDecl) {

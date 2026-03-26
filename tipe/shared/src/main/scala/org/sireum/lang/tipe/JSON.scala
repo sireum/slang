@@ -1778,8 +1778,9 @@ object JSON {
     @pure def print_astAnnotation(o: org.sireum.lang.ast.Annotation): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.Annotation""""),
-        ("name", printISZ(T, o.name, printString _)),
-        ("args", printISZ(F, o.args, print_astLit _))
+        ("name", print_astId(o.name)),
+        ("args", printISZ(F, o.args, print_astExp _)),
+        ("nested", printISZ(F, o.nested, print_astAnnotation _))
       ))
     }
 
@@ -1982,21 +1983,24 @@ object JSON {
     @pure def print_astResolvedInfoBuiltIn(o: org.sireum.lang.ast.ResolvedInfo.BuiltIn): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.ResolvedInfo.BuiltIn""""),
-        ("kind", print_astResolvedInfoBuiltInKindType(o.kind))
+        ("kind", print_astResolvedInfoBuiltInKindType(o.kind)),
+        ("defPosOpt", printOption(F, o.defPosOpt, printPosition _))
       ))
     }
 
     @pure def print_astResolvedInfoPackage(o: org.sireum.lang.ast.ResolvedInfo.Package): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.ResolvedInfo.Package""""),
-        ("name", printISZ(T, o.name, printString _))
+        ("name", printISZ(T, o.name, printString _)),
+        ("defPosOpt", printOption(F, o.defPosOpt, printPosition _))
       ))
     }
 
     @pure def print_astResolvedInfoEnum(o: org.sireum.lang.ast.ResolvedInfo.Enum): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.ResolvedInfo.Enum""""),
-        ("name", printISZ(T, o.name, printString _))
+        ("name", printISZ(T, o.name, printString _)),
+        ("defPosOpt", printOption(F, o.defPosOpt, printPosition _))
       ))
     }
 
@@ -2005,14 +2009,16 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.ResolvedInfo.EnumElement""""),
         ("owner", printISZ(T, o.owner, printString _)),
         ("name", printString(o.name)),
-        ("ordinal", printZ(o.ordinal))
+        ("ordinal", printZ(o.ordinal)),
+        ("defPosOpt", printOption(F, o.defPosOpt, printPosition _))
       ))
     }
 
     @pure def print_astResolvedInfoObject(o: org.sireum.lang.ast.ResolvedInfo.Object): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.ResolvedInfo.Object""""),
-        ("name", printISZ(T, o.name, printString _))
+        ("name", printISZ(T, o.name, printString _)),
+        ("defPosOpt", printOption(F, o.defPosOpt, printPosition _))
       ))
     }
 
@@ -2023,7 +2029,8 @@ object JSON {
         ("isSpec", printB(o.isSpec)),
         ("isVal", printB(o.isVal)),
         ("owner", printISZ(T, o.owner, printString _)),
-        ("id", printString(o.id))
+        ("id", printString(o.id)),
+        ("defPosOpt", printOption(F, o.defPosOpt, printPosition _))
       ))
     }
 
@@ -2038,14 +2045,16 @@ object JSON {
         ("paramNames", printISZ(T, o.paramNames, printString _)),
         ("tpeOpt", printOption(F, o.tpeOpt, print_astTypedFun _)),
         ("reads", printISZ(F, o.reads, print_astResolvedInfo _)),
-        ("writes", printISZ(F, o.writes, print_astResolvedInfo _))
+        ("writes", printISZ(F, o.writes, print_astResolvedInfo _)),
+        ("defPosOpt", printOption(F, o.defPosOpt, printPosition _))
       ))
     }
 
     @pure def print_astResolvedInfoMethods(o: org.sireum.lang.ast.ResolvedInfo.Methods): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.ResolvedInfo.Methods""""),
-        ("methods", printISZ(F, o.methods, print_astResolvedInfoMethod _))
+        ("methods", printISZ(F, o.methods, print_astResolvedInfoMethod _)),
+        ("defPosOpt", printOption(F, o.defPosOpt, printPosition _))
       ))
     }
 
@@ -2053,7 +2062,8 @@ object JSON {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.ResolvedInfo.Tuple""""),
         ("size", printZ(o.size)),
-        ("index", printZ(o.index))
+        ("index", printZ(o.index)),
+        ("defPosOpt", printOption(F, o.defPosOpt, printPosition _))
       ))
     }
 
@@ -2076,21 +2086,24 @@ object JSON {
         ("scope", print_astResolvedInfoLocalVarScopeType(o.scope)),
         ("isSpec", printB(o.isSpec)),
         ("isVal", printB(o.isVal)),
-        ("id", printString(o.id))
+        ("id", printString(o.id)),
+        ("defPosOpt", printOption(F, o.defPosOpt, printPosition _))
       ))
     }
 
     @pure def print_astResolvedInfoFact(o: org.sireum.lang.ast.ResolvedInfo.Fact): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.ResolvedInfo.Fact""""),
-        ("name", printISZ(T, o.name, printString _))
+        ("name", printISZ(T, o.name, printString _)),
+        ("defPosOpt", printOption(F, o.defPosOpt, printPosition _))
       ))
     }
 
     @pure def print_astResolvedInfoTheorem(o: org.sireum.lang.ast.ResolvedInfo.Theorem): ST = {
       return printObject(ISZ(
         ("type", st""""org.sireum.lang.ast.ResolvedInfo.Theorem""""),
-        ("name", printISZ(T, o.name, printString _))
+        ("name", printISZ(T, o.name, printString _)),
+        ("defPosOpt", printOption(F, o.defPosOpt, printPosition _))
       ))
     }
 
@@ -2099,7 +2112,8 @@ object JSON {
         ("type", st""""org.sireum.lang.ast.ResolvedInfo.Inv""""),
         ("isInObject", printB(o.isInObject)),
         ("owner", printISZ(T, o.owner, printString _)),
-        ("id", printString(o.id))
+        ("id", printString(o.id)),
+        ("defPosOpt", printOption(F, o.defPosOpt, printPosition _))
       ))
     }
 
@@ -6119,12 +6133,15 @@ object JSON {
         parser.parseObjectType("org.sireum.lang.ast.Annotation")
       }
       parser.parseObjectKey("name")
-      val name = parser.parseISZ(parser.parseString _)
+      val name = parse_astId()
       parser.parseObjectNext()
       parser.parseObjectKey("args")
-      val args = parser.parseISZ(parse_astLit _)
+      val args = parser.parseISZ(parse_astExp _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.Annotation(name, args)
+      parser.parseObjectKey("nested")
+      val nested = parser.parseISZ(parse_astAnnotation _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.Annotation(name, args, nested)
     }
 
     def parse_astRTypeKindType(): org.sireum.lang.ast.RTypeKind.Type = {
@@ -6423,7 +6440,10 @@ object JSON {
       parser.parseObjectKey("kind")
       val kind = parse_astResolvedInfoBuiltInKindType()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ResolvedInfo.BuiltIn(kind)
+      parser.parseObjectKey("defPosOpt")
+      val defPosOpt = parser.parseOption(parser.parsePosition _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.ResolvedInfo.BuiltIn(kind, defPosOpt)
     }
 
     def parse_astResolvedInfoPackage(): org.sireum.lang.ast.ResolvedInfo.Package = {
@@ -6438,7 +6458,10 @@ object JSON {
       parser.parseObjectKey("name")
       val name = parser.parseISZ(parser.parseString _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ResolvedInfo.Package(name)
+      parser.parseObjectKey("defPosOpt")
+      val defPosOpt = parser.parseOption(parser.parsePosition _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.ResolvedInfo.Package(name, defPosOpt)
     }
 
     def parse_astResolvedInfoEnum(): org.sireum.lang.ast.ResolvedInfo.Enum = {
@@ -6453,7 +6476,10 @@ object JSON {
       parser.parseObjectKey("name")
       val name = parser.parseISZ(parser.parseString _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ResolvedInfo.Enum(name)
+      parser.parseObjectKey("defPosOpt")
+      val defPosOpt = parser.parseOption(parser.parsePosition _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.ResolvedInfo.Enum(name, defPosOpt)
     }
 
     def parse_astResolvedInfoEnumElement(): org.sireum.lang.ast.ResolvedInfo.EnumElement = {
@@ -6474,7 +6500,10 @@ object JSON {
       parser.parseObjectKey("ordinal")
       val ordinal = parser.parseZ()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ResolvedInfo.EnumElement(owner, name, ordinal)
+      parser.parseObjectKey("defPosOpt")
+      val defPosOpt = parser.parseOption(parser.parsePosition _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.ResolvedInfo.EnumElement(owner, name, ordinal, defPosOpt)
     }
 
     def parse_astResolvedInfoObject(): org.sireum.lang.ast.ResolvedInfo.Object = {
@@ -6489,7 +6518,10 @@ object JSON {
       parser.parseObjectKey("name")
       val name = parser.parseISZ(parser.parseString _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ResolvedInfo.Object(name)
+      parser.parseObjectKey("defPosOpt")
+      val defPosOpt = parser.parseOption(parser.parsePosition _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.ResolvedInfo.Object(name, defPosOpt)
     }
 
     def parse_astResolvedInfoVar(): org.sireum.lang.ast.ResolvedInfo.Var = {
@@ -6516,7 +6548,10 @@ object JSON {
       parser.parseObjectKey("id")
       val id = parser.parseString()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ResolvedInfo.Var(isInObject, isSpec, isVal, owner, id)
+      parser.parseObjectKey("defPosOpt")
+      val defPosOpt = parser.parseOption(parser.parsePosition _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.ResolvedInfo.Var(isInObject, isSpec, isVal, owner, id, defPosOpt)
     }
 
     def parse_astResolvedInfoMethod(): org.sireum.lang.ast.ResolvedInfo.Method = {
@@ -6555,7 +6590,10 @@ object JSON {
       parser.parseObjectKey("writes")
       val writes = parser.parseISZ(parse_astResolvedInfo _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ResolvedInfo.Method(isInObject, mode, typeParams, owner, id, paramNames, tpeOpt, reads, writes)
+      parser.parseObjectKey("defPosOpt")
+      val defPosOpt = parser.parseOption(parser.parsePosition _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.ResolvedInfo.Method(isInObject, mode, typeParams, owner, id, paramNames, tpeOpt, reads, writes, defPosOpt)
     }
 
     def parse_astResolvedInfoMethods(): org.sireum.lang.ast.ResolvedInfo.Methods = {
@@ -6570,7 +6608,10 @@ object JSON {
       parser.parseObjectKey("methods")
       val methods = parser.parseISZ(parse_astResolvedInfoMethod _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ResolvedInfo.Methods(methods)
+      parser.parseObjectKey("defPosOpt")
+      val defPosOpt = parser.parseOption(parser.parsePosition _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.ResolvedInfo.Methods(methods, defPosOpt)
     }
 
     def parse_astResolvedInfoTuple(): org.sireum.lang.ast.ResolvedInfo.Tuple = {
@@ -6588,7 +6629,10 @@ object JSON {
       parser.parseObjectKey("index")
       val index = parser.parseZ()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ResolvedInfo.Tuple(size, index)
+      parser.parseObjectKey("defPosOpt")
+      val defPosOpt = parser.parseOption(parser.parsePosition _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.ResolvedInfo.Tuple(size, index, defPosOpt)
     }
 
     def parse_astResolvedInfoLocalVarScopeType(): org.sireum.lang.ast.ResolvedInfo.LocalVar.Scope.Type = {
@@ -6636,7 +6680,10 @@ object JSON {
       parser.parseObjectKey("id")
       val id = parser.parseString()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ResolvedInfo.LocalVar(context, scope, isSpec, isVal, id)
+      parser.parseObjectKey("defPosOpt")
+      val defPosOpt = parser.parseOption(parser.parsePosition _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.ResolvedInfo.LocalVar(context, scope, isSpec, isVal, id, defPosOpt)
     }
 
     def parse_astResolvedInfoFact(): org.sireum.lang.ast.ResolvedInfo.Fact = {
@@ -6651,7 +6698,10 @@ object JSON {
       parser.parseObjectKey("name")
       val name = parser.parseISZ(parser.parseString _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ResolvedInfo.Fact(name)
+      parser.parseObjectKey("defPosOpt")
+      val defPosOpt = parser.parseOption(parser.parsePosition _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.ResolvedInfo.Fact(name, defPosOpt)
     }
 
     def parse_astResolvedInfoTheorem(): org.sireum.lang.ast.ResolvedInfo.Theorem = {
@@ -6666,7 +6716,10 @@ object JSON {
       parser.parseObjectKey("name")
       val name = parser.parseISZ(parser.parseString _)
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ResolvedInfo.Theorem(name)
+      parser.parseObjectKey("defPosOpt")
+      val defPosOpt = parser.parseOption(parser.parsePosition _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.ResolvedInfo.Theorem(name, defPosOpt)
     }
 
     def parse_astResolvedInfoInv(): org.sireum.lang.ast.ResolvedInfo.Inv = {
@@ -6687,7 +6740,10 @@ object JSON {
       parser.parseObjectKey("id")
       val id = parser.parseString()
       parser.parseObjectNext()
-      return org.sireum.lang.ast.ResolvedInfo.Inv(isInObject, owner, id)
+      parser.parseObjectKey("defPosOpt")
+      val defPosOpt = parser.parseOption(parser.parsePosition _)
+      parser.parseObjectNext()
+      return org.sireum.lang.ast.ResolvedInfo.Inv(isInObject, owner, id, defPosOpt)
     }
 
     def parse_astTruthTableRow(): org.sireum.lang.ast.TruthTable.Row = {

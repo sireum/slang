@@ -106,7 +106,7 @@ object CustomMessagePack {
       pOpt match {
         case Some((t, size)) =>
           assert(t == ResolvedInfoPoolExtType)
-          resolvedInfoPool = MSZ.create(size, AST.ResolvedInfo.Object(ISZ()))
+          resolvedInfoPool = MSZ.create(size, AST.ResolvedInfo.Object(ISZ(), None()))
           var i = 0
           while (i < size) {
             val ri = super.read_astResolvedInfo()

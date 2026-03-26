@@ -38,6 +38,7 @@ object PostTipeAttrChecker {
   val SkipExpResult: MTransformer.PreResult[Exp] = MTransformer.PreResult[Exp](F, MNone())
   val ResolvedResult: MTransformer.PreResult[ResolvedAttr] = MTransformer.PreResult[ResolvedAttr](F, MNone())
   val TypedResult: MTransformer.PreResult[TypedAttr] = MTransformer.PreResult[TypedAttr](F, MNone())
+  val AnnotationResult: MTransformer.PreResult[Annotation] = MTransformer.PreResult[Annotation](F, MNone())
   val avoidCheckNames: HashSet[QName] = HashSet ++ ISZ(
     Typed.sireumName :+ "T", Typed.sireumName :+ "F"
   )
@@ -84,6 +85,10 @@ object PostTipeAttrChecker {
 }
 
 @record class PostTipeAttrChecker(var messages: HashSSet[Message]) extends MTransformer {
+
+  override def preAnnotation(o: Annotation): MTransformer.PreResult[Annotation] = {
+    return PostTipeAttrChecker.AnnotationResult
+  }
 
   override def preExp(o: Exp): MTransformer.PreResult[Exp] = {
     o match {

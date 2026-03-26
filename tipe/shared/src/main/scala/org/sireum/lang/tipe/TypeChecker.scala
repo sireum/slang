@@ -229,98 +229,98 @@ object TypeChecker {
 
   val builtInMethods: HashSet[String] =
     HashSet ++ ISZ("assert", "assume", "println", "print", "cprintln", "cprint", "eprintln", "eprint", "halt", "setOptions")
-  val assertResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Assert))
+  val assertResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Assert, None()))
 
   val assertMsgResOpt: Option[AST.ResolvedInfo] = Some(
-    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.AssertMsg)
+    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.AssertMsg, None())
   )
-  val assumeResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Assume))
+  val assumeResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Assume, None()))
 
   val assumeMsgResOpt: Option[AST.ResolvedInfo] = Some(
-    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.AssumeMsg)
+    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.AssumeMsg, None())
   )
   val assertumeTypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(AST.Purity.Impure,F, ISZ(AST.Typed.b), AST.Typed.unit))
 
   val assertumeMsgTypedOpt: Option[AST.Typed] = Some(
     AST.Typed.Fun(AST.Purity.Impure,F, ISZ(AST.Typed.b, AST.Typed.string), AST.Typed.unit)
   )
-  val printlnResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Println))
-  val printResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Print))
-  val cprintlnResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Cprintln))
-  val cprintResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Cprint))
-  val eprintlnResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Eprintln))
-  val eprintResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Eprint))
-  val haltResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Halt))
+  val printlnResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Println, None()))
+  val printResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Print, None()))
+  val cprintlnResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Cprintln, None()))
+  val cprintResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Cprint, None()))
+  val eprintlnResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Eprintln, None()))
+  val eprintResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Eprint, None()))
+  val haltResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Halt, None()))
 
   val haltTypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(AST.Purity.Impure,F, ISZ(AST.Typed.string), AST.Typed.nothing))
-  val nativeResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Native))
+  val nativeResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Native, None()))
   val nativeCTypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(AST.Purity.Impure,T, ISZ(), AST.Typed.c))
   val nativeStringTypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(AST.Purity.Impure,T, ISZ(), AST.Typed.string))
   val nativeF32TypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(AST.Purity.Impure,T, ISZ(), AST.Typed.f32))
   val nativeF64TypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(AST.Purity.Impure,T, ISZ(), AST.Typed.f64))
-  val applyResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Apply))
-  val stringResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.String))
-  val hashResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Hash))
+  val applyResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Apply, None()))
+  val stringResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.String, None()))
+  val hashResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Hash, None()))
 
   val isInstanceOfResOpt: Option[AST.ResolvedInfo] = Some(
-    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.IsInstanceOf)
+    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.IsInstanceOf, None())
   )
 
   val asInstanceOfResOpt: Option[AST.ResolvedInfo] = Some(
-    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.AsInstanceOf)
+    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.AsInstanceOf, None())
   )
 
   val minResOpt: Option[AST.ResolvedInfo] = Some(
-    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Min)
+    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Min, None())
   )
 
   val maxResOpt: Option[AST.ResolvedInfo] = Some(
-    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Max)
+    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Max, None())
   )
 
   val indicesResOpt: Option[AST.ResolvedInfo] = Some(
-    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Indices)
+    AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Indices, None())
   )
 
   val unopResOpt: HashMap[AST.Exp.UnaryOp.Type, Option[AST.ResolvedInfo]] = HashMap ++ ISZ[(AST.Exp.UnaryOp.Type, Option[AST.ResolvedInfo])](
-    AST.Exp.UnaryOp.Plus ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.UnaryPlus)),
-    AST.Exp.UnaryOp.Minus ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.UnaryMinus)),
-    AST.Exp.UnaryOp.Not ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.UnaryNot)),
-    AST.Exp.UnaryOp.Complement ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.UnaryComplement))
+    AST.Exp.UnaryOp.Plus ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.UnaryPlus, None())),
+    AST.Exp.UnaryOp.Minus ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.UnaryMinus, None())),
+    AST.Exp.UnaryOp.Not ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.UnaryNot, None())),
+    AST.Exp.UnaryOp.Complement ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.UnaryComplement, None()))
   )
 
   val binopResOpt: HashMap[String, Option[AST.ResolvedInfo]] = HashMap ++ ISZ[(String, Option[AST.ResolvedInfo])](
-    AST.Exp.BinaryOp.Add ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryAdd)),
-    AST.Exp.BinaryOp.Sub ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinarySub)),
-    AST.Exp.BinaryOp.Mul ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryMul)),
-    AST.Exp.BinaryOp.Div ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryDiv)),
-    AST.Exp.BinaryOp.Rem ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryRem)),
-    AST.Exp.BinaryOp.Eq ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEq)),
-    AST.Exp.BinaryOp.Equiv ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEquiv)),
-    AST.Exp.BinaryOp.EquivUni ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEquiv)),
-    AST.Exp.BinaryOp.Ne ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryNe)),
-    AST.Exp.BinaryOp.Inequiv ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryInequiv)),
-    AST.Exp.BinaryOp.InequivUni ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryInequiv)),
-    AST.Exp.BinaryOp.FpEq ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryFpEq)),
-    AST.Exp.BinaryOp.FpNe ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryFpNe)),
-    AST.Exp.BinaryOp.Shl ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryShl)),
-    AST.Exp.BinaryOp.Shr ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryShr)),
-    AST.Exp.BinaryOp.Ushr ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryUshr)),
-    AST.Exp.BinaryOp.Lt ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryLt)),
-    AST.Exp.BinaryOp.Le ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryLe)),
-    AST.Exp.BinaryOp.Gt ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryGt)),
-    AST.Exp.BinaryOp.Ge ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryGe)),
-    AST.Exp.BinaryOp.And ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryAnd)),
-    AST.Exp.BinaryOp.Or ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryOr)),
-    AST.Exp.BinaryOp.Xor ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryXor)),
-    AST.Exp.BinaryOp.Imply ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryImply)),
-    string"->:" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryImply)),
-    AST.Exp.BinaryOp.CondAnd ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryCondAnd)),
-    AST.Exp.BinaryOp.CondOr ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryCondOr)),
-    AST.Exp.BinaryOp.CondImply ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryCondImply)),
-    string"-->:" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryCondImply)),
-    AST.Exp.BinaryOp.MapsTo ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryMapsTo)),
-    AST.Exp.BinaryOp.Arrow ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Arrow))
+    AST.Exp.BinaryOp.Add ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryAdd, None())),
+    AST.Exp.BinaryOp.Sub ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinarySub, None())),
+    AST.Exp.BinaryOp.Mul ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryMul, None())),
+    AST.Exp.BinaryOp.Div ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryDiv, None())),
+    AST.Exp.BinaryOp.Rem ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryRem, None())),
+    AST.Exp.BinaryOp.Eq ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEq, None())),
+    AST.Exp.BinaryOp.Equiv ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEquiv, None())),
+    AST.Exp.BinaryOp.EquivUni ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryEquiv, None())),
+    AST.Exp.BinaryOp.Ne ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryNe, None())),
+    AST.Exp.BinaryOp.Inequiv ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryInequiv, None())),
+    AST.Exp.BinaryOp.InequivUni ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryInequiv, None())),
+    AST.Exp.BinaryOp.FpEq ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryFpEq, None())),
+    AST.Exp.BinaryOp.FpNe ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryFpNe, None())),
+    AST.Exp.BinaryOp.Shl ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryShl, None())),
+    AST.Exp.BinaryOp.Shr ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryShr, None())),
+    AST.Exp.BinaryOp.Ushr ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryUshr, None())),
+    AST.Exp.BinaryOp.Lt ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryLt, None())),
+    AST.Exp.BinaryOp.Le ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryLe, None())),
+    AST.Exp.BinaryOp.Gt ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryGt, None())),
+    AST.Exp.BinaryOp.Ge ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryGe, None())),
+    AST.Exp.BinaryOp.And ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryAnd, None())),
+    AST.Exp.BinaryOp.Or ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryOr, None())),
+    AST.Exp.BinaryOp.Xor ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryXor, None())),
+    AST.Exp.BinaryOp.Imply ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryImply, None())),
+    string"->:" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryImply, None())),
+    AST.Exp.BinaryOp.CondAnd ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryCondAnd, None())),
+    AST.Exp.BinaryOp.CondOr ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryCondOr, None())),
+    AST.Exp.BinaryOp.CondImply ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryCondImply, None())),
+    string"-->:" ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryCondImply, None())),
+    AST.Exp.BinaryOp.MapsTo ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryMapsTo, None())),
+    AST.Exp.BinaryOp.Arrow ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Arrow, None()))
   )
 
   val eqBinops: HashSet[String] = HashSet ++ ISZ[String](
@@ -330,12 +330,12 @@ object TypeChecker {
 
   val emptySubstMap: HashMap[String, AST.Typed] = HashMap.empty
 
-  val setOptionsResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.SetOptions))
+  val setOptionsResOpt: Option[AST.ResolvedInfo] = Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.SetOptions, None()))
   val setOptionsTypedOpt: Option[AST.Typed] = Some(AST.Typed.Fun(AST.Purity.Impure,F, ISZ(AST.Typed.string, AST.Typed.string), AST.Typed.unit))
 
   @strictpure def extResOpt(isInObject: B, owner: ISZ[String], id: String, paramNames: ISZ[String],
                             tpe: AST.Typed.Fun): Option[AST.ResolvedInfo] = Some(
-    AST.ResolvedInfo.Method(isInObject, AST.MethodMode.Ext, ISZ(), owner, id, paramNames, Some(tpe), ISZ(), ISZ()))
+    AST.ResolvedInfo.Method(isInObject, AST.MethodMode.Ext, ISZ(), owner, id, paramNames, Some(tpe), ISZ(), ISZ(), None()))
 
   def sConstructorTypedResOpt(name: ISZ[String], numOfArgs: Z): (Option[AST.Typed], Option[AST.ResolvedInfo]) = {
     name match {
@@ -348,7 +348,7 @@ object TypeChecker {
           Some(AST.Typed.Method(T, AST.MethodMode.Constructor, sTypeParams, AST.Typed.sireumName, "IS", ISZ(),
             constructorType)),
           Some(AST.ResolvedInfo.Method(T, AST.MethodMode.Constructor, sTypeParams, AST.Typed.sireumName, "IS", ISZ(),
-            Some(constructorType), ISZ(), ISZ()))
+            Some(constructorType), ISZ(), ISZ(), None()))
         )
       case AST.Typed.`msName` =>
         val indexTypeVar = AST.Typed.TypeVar("I", AST.Typed.VarKind.Index)
@@ -358,7 +358,7 @@ object TypeChecker {
         return (
           Some(AST.Typed.Method(T, AST.MethodMode.Constructor, sTypeParams, AST.Typed.sireumName, "MS", ISZ(), constructorType)),
           Some(AST.ResolvedInfo.Method(T, AST.MethodMode.Constructor, sTypeParams, AST.Typed.sireumName, "MS", ISZ(),
-            Some(constructorType), ISZ(), ISZ()))
+            Some(constructorType), ISZ(), ISZ(), None()))
         )
       case AST.Typed.`iszName` =>
         val valueTypeVar = AST.Typed.TypeVar("V", AST.Typed.VarKind.Immutable)
@@ -368,7 +368,7 @@ object TypeChecker {
         return (
           Some(AST.Typed.Method(T, AST.MethodMode.Constructor, typeParams, AST.Typed.sireumName, "IS", ISZ(), constructorType)),
           Some(AST.ResolvedInfo.Method(T, AST.MethodMode.Constructor, typeParams, AST.Typed.sireumName, "IS", ISZ(),
-            Some(constructorType), ISZ(), ISZ()))
+            Some(constructorType), ISZ(), ISZ(), None()))
         )
       case AST.Typed.`mszName` =>
         val valueTypeVar = AST.Typed.TypeVar("V", AST.Typed.VarKind.Mutable)
@@ -378,7 +378,7 @@ object TypeChecker {
         return (
           Some(AST.Typed.Method(T, AST.MethodMode.Constructor, typeParams, AST.Typed.sireumName, "MS", ISZ(), constructorType)),
           Some(AST.ResolvedInfo.Method(T, AST.MethodMode.Constructor, typeParams, AST.Typed.sireumName, "MS", ISZ(),
-            Some(constructorType), ISZ(), ISZ()))
+            Some(constructorType), ISZ(), ISZ(), None()))
         )
       case AST.Typed.`zsName` =>
         val argTypes: ISZ[AST.Typed] = for (_ <- z"0" until numOfArgs) yield AST.Typed.z
@@ -386,7 +386,7 @@ object TypeChecker {
         return (
           Some(AST.Typed.Method(T, AST.MethodMode.Constructor, ISZ(), AST.Typed.sireumName, "IS", ISZ(), constructorType)),
           Some(AST.ResolvedInfo.Method(T, AST.MethodMode.Constructor, ISZ(), AST.Typed.sireumName, "IS", ISZ(),
-            Some(constructorType), ISZ(), ISZ()))
+            Some(constructorType), ISZ(), ISZ(), None()))
         )
       case _ => return (None(), None())
     }
@@ -457,7 +457,7 @@ object TypeChecker {
         return (
           Some(AST.Typed.Method(F, AST.MethodMode.Copy, ISZ(), owner, id, pns, copyType)),
           Some(AST.ResolvedInfo.Method(F, AST.MethodMode.Copy, ISZ(), owner, id, pns,
-            Some(copyType), ISZ(), ISZ())),
+            Some(copyType), ISZ(), ISZ(), None())),
           T,
           paramNames
         )
@@ -476,7 +476,7 @@ object TypeChecker {
     return (
       Some(AST.Typed.Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, id, ISZ(), storeType)),
       Some(AST.ResolvedInfo.Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, id, ISZ(), Some(storeType),
-        ISZ(), ISZ()))
+        ISZ(), ISZ(), None()))
     )
   }
 
@@ -489,7 +489,7 @@ object TypeChecker {
     val id = tpe.ids(tpe.ids.size - 1)
     val selectTypeMethod = AST.Typed.Method(F, AST.MethodMode.Select, ISZ(), AST.Typed.sireumName, id, ISZ(), selectType)
     val selectResMethod = AST.ResolvedInfo.Method(F, AST.MethodMode.Select, ISZ(), AST.Typed.sireumName, id, ISZ(),
-      Some(selectType), ISZ(), ISZ())
+      Some(selectType), ISZ(), ISZ(), None())
     if (storeSelect) {
       return (
         Some(AST.Typed.Methods(ISZ(
@@ -498,7 +498,7 @@ object TypeChecker {
         Some(AST.ResolvedInfo.Methods(ISZ(
           selectResMethod,
           AST.ResolvedInfo.Method(F, AST.MethodMode.Store, ISZ(), AST.Typed.sireumName, id, ISZ(),
-            Some(storeType), ISZ(), ISZ()))))
+            Some(storeType), ISZ(), ISZ(), None())), None()))
       )
     } else {
       return (Some(selectTypeMethod), Some(selectResMethod))
@@ -875,7 +875,7 @@ object TypeChecker {
           ok = F
         case _ =>
           scope = scope(nameMap = scope.nameMap + id ~> Info.LocalVar(context :+ id, T, p.id, p.tipe.typedOpt,
-            None(), Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T, id))))
+            None(), Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T, id, p.id.attr.posOpt))))
       }
     }
     return (ok, scope)
@@ -1266,7 +1266,7 @@ import TypeChecker._
             ok = F
           } else {
             scope = scope(nameMap = scope.nameMap + key ~> Info.LocalVar(context :+ key, F, id, tOpt, None(),
-              Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T, key))))
+              Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T, key, id.attr.posOpt))))
           }
         case _ =>
       }
@@ -1422,7 +1422,7 @@ import TypeChecker._
             ok = F
           } else {
             scope = scope(nameMap = scope.nameMap + key ~> Info.LocalVar(context :+ key, F, id, tOpt, None(),
-              Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T, key))))
+              Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T, key, id.attr.posOpt))))
           }
         case _ =>
       }
@@ -1643,7 +1643,7 @@ import TypeChecker._
               errTypeArgs(receiverType)
               return noResult
             }
-            return (Some(receiverType.args(n - 1)), Some(AST.ResolvedInfo.Tuple(size, n)), typeArgs)
+            return (Some(receiverType.args(n - 1)), Some(AST.ResolvedInfo.Tuple(size, n, None())), typeArgs)
           case _ =>
             errAccess(receiverType)
             return noResult
@@ -1722,7 +1722,7 @@ import TypeChecker._
             val ft = AST.Typed.Fun(AST.Purity.Pure, T, ISZ(), t)
             return (
               Some(AST.Typed.Method(T, AST.MethodMode.Ext, ISZ(), receiverType.name, id, ISZ(), ft)),
-              Some(AST.ResolvedInfo.Method(T, AST.MethodMode.Ext, ISZ(), receiverType.name, id, ISZ(), Some(ft), ISZ(), ISZ())),
+              Some(AST.ResolvedInfo.Method(T, AST.MethodMode.Ext, ISZ(), receiverType.name, id, ISZ(), Some(ft), ISZ(), ISZ(), None())),
               ISZ()
             )
           case _ =>
@@ -2451,7 +2451,7 @@ import TypeChecker._
                             Some(AST.Typed.Method(T, AST.MethodMode.Constructor, ISZ(), info.owner, info.ast.id.value,
                               ISZ(), constructorType)),
                             Some(AST.ResolvedInfo.Method(T, AST.MethodMode.Constructor, ISZ(), info.owner,
-                              info.ast.id.value, ISZ(), Some(constructorType), ISZ(), ISZ())),
+                              info.ast.id.value, ISZ(), Some(constructorType), ISZ(), ISZ(), info.posOpt)),
                             newTypeArgs,
                             ISZ()
                           )
@@ -3298,7 +3298,7 @@ import TypeChecker._
               checkIndexType(quant.lo.posOpt, tLo, reporter)
               val newFunExp = newFun.asInstanceOf[AST.Exp.Fun]
               val res = AST.ResolvedInfo.LocalVar(newFunExp.context, AST.ResolvedInfo.LocalVar.Scope.Current, F, T,
-                quant.fun.params(0).idOpt.get.value)
+                quant.fun.params(0).idOpt.get.value, quant.fun.params(0).idOpt.get.attr.posOpt)
               return (
                 quant(lo = newLo, hi = newHi, fun = newFunExp, attr = quant.attr(typedOpt = Some(tLo), resOpt = Some(res))),
                 Some(AST.Typed.b)
@@ -3316,7 +3316,8 @@ import TypeChecker._
                   val (newFun, _) = checkExp(Some(AST.Typed.Fun(AST.Purity.Impure,F, ISZ(eType), AST.Typed.b)), scope, quant.fun, reporter)
                   val newFunExp = newFun.asInstanceOf[AST.Exp.Fun]
                   val res = AST.ResolvedInfo.LocalVar(newFunExp.context,
-                    AST.ResolvedInfo.LocalVar.Scope.Current, F, T, quant.fun.params(0).idOpt.get.value)
+                    AST.ResolvedInfo.LocalVar.Scope.Current, F, T, quant.fun.params(0).idOpt.get.value,
+                    quant.fun.params(0).idOpt.get.attr.posOpt)
                   return (
                     quant(seq = newSeq, fun = newFunExp, attr = quant.attr(typedOpt = Some(eType), resOpt = Some(res))),
                     Some(AST.Typed.b)
@@ -3941,7 +3942,7 @@ import TypeChecker._
           val infoOpt = to.outlineMethod(Info.Method(context, isWorksheet, scope, T, stmt(attr = stmt.attr(
             resOpt = Some(AST.ResolvedInfo.Method(isWorksheet, AST.MethodMode.Method,
               stmt.sig.typeParams.map(tp => tp.id.value), context, id, stmt.sig.params.map(p => p.id.value),
-              None(), ISZ(), ISZ()))))),
+              None(), ISZ(), ISZ(), stmt.sig.id.attr.posOpt))))),
             reporter)
           infoOpt match {
             case Some(info: Info.Method) =>
@@ -3955,7 +3956,7 @@ import TypeChecker._
           val infoOpt = to.outlineSpecMethod(Info.SpecMethod(context, isWorksheet, scope, stmt(attr = stmt.attr(
             resOpt = Some(AST.ResolvedInfo.Method(isWorksheet, AST.MethodMode.Spec,
               stmt.sig.typeParams.map(tp => tp.id.value), context, id, stmt.sig.params.map(p => p.id.value), None(),
-              ISZ(), ISZ()))))),
+              ISZ(), ISZ(), stmt.sig.id.attr.posOpt))))),
             reporter
           )
           infoOpt match {
@@ -3994,7 +3995,7 @@ import TypeChecker._
           val id = stmt.id.value
           val name = context :+ id
           val newStmt = TypeChecker.checkFactStmt(strictAliasing, typeHierarchy, name, scope,
-            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Fact(name)))), reporter)
+            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Fact(name, stmt.id.attr.posOpt)))), reporter)
           stmts2 = stmts2 :+ newStmt
           val info = typeHierarchy.nameMap.get(name).get.asInstanceOf[Info.Fact]
           val newInfo = info(ast = newStmt)
@@ -4035,7 +4036,7 @@ import TypeChecker._
           val id = stmt.id.value
           val name = context :+ id
           val newStmt = TypeChecker.checkTheoremStmt(strictAliasing, th, name, scope,
-            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Theorem(name)))), reporter)
+            stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Theorem(name, stmt.id.attr.posOpt)))), reporter)
           stmts2 = stmts2 :+ newStmt
           val info = typeHierarchy.nameMap.get(name).get.asInstanceOf[Info.Theorem]
           val newInfo = info(ast = newStmt)
@@ -4119,7 +4120,7 @@ import TypeChecker._
               }
             }
             scope = scope(nameMap = scope.nameMap + key ~> Info.LocalVar(context :+ key, F, id, tOpt, None(),
-              Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, isSpec, T, key))))
+              Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, isSpec, T, key, id.attr.posOpt))))
           }
         case _ =>
       }
@@ -4605,7 +4606,7 @@ import TypeChecker._
         err()
         return (None(), r)
       case _ => Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, stmt.isSpec,
-        stmt.isVal, key))
+        stmt.isVal, key, stmt.id.attr.posOpt))
     }
     val expectedOpt: Option[AST.Typed] = stmt.tipeOpt match {
       case Some(tipe) =>
@@ -4869,7 +4870,7 @@ import TypeChecker._
               val (newArg, _) = checkExp(Some(args(0)), scope, lhs.args(0), reporter)
               val (newRhs, _) = checkAssignExp(Some(args(1)), scope, assignStmt.rhs, reporter)
               val resOpt: Option[AST.ResolvedInfo] = Some(
-                AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Apply)
+                AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Apply, None())
               )
               return assignStmt(
                 lhs = lhs(
@@ -5159,7 +5160,7 @@ import TypeChecker._
             ok = F
           } else {
             sc = sc(nameMap = sc.nameMap + key ~> Info.LocalVar(context :+ key, F, id, tOpt, None(),
-              Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, T, T, key))))
+              Some(AST.ResolvedInfo.LocalVar(context, AST.ResolvedInfo.LocalVar.Scope.Current, T, T, key, id.attr.posOpt))))
           }
         }
         var newParams = ISZ[AST.ProofAst.Step.Let.Param]()
