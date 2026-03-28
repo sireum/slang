@@ -816,7 +816,13 @@ object SlangLl2AstBuilder {
     }
 
     val id: String = nameOpt match {
-      case Some(nameNode) => idText(nameNode)
+      case Some(nameNode) =>
+        if (findChildren(nameNode, "nameSuffix").nonEmpty) {
+          reporter.error(nameNode.posOpt, "SlangLl2AstBuilder", "package name must be a simple identifier (dotted names are not allowed)")
+          return AST.Stmt.Object(isApp = F, extNameOpt = None(), id = mkId("", node),
+            stmts = ISZ(), annotations = ISZ(), attr = attr(node))
+        }
+        idText(nameNode)
       case _ => ""
     }
 
@@ -1254,14 +1260,17 @@ object SlangLl2AstBuilder {
   // ─── params ────────────────────────────────────────────────────────
 
   def buildAdtParams(node: ParseTree.Node, reporter: message.Reporter): ISZ[AST.AdtParam] = {
-    // params: LPAREN param commaParams* COMMA? RPAREN
+    // params: LPAREN ( param commaParams* COMMA? )? RPAREN
     var r = ISZ[AST.AdtParam]()
-    val firstParam = findChild(node, "param").get
-    r = r :+ buildAdtParam(firstParam, reporter)
-    val suffixes = findChildren(node, "commaParams")
-    for (s <- suffixes) {
-      val p = findChild(s, "param").get
-      r = r :+ buildAdtParam(p, reporter)
+    findChild(node, "param") match {
+      case Some(firstParam) =>
+        r = r :+ buildAdtParam(firstParam, reporter)
+        val suffixes = findChildren(node, "commaParams")
+        for (s <- suffixes) {
+          val p = findChild(s, "param").get
+          r = r :+ buildAdtParam(p, reporter)
+        }
+      case _ =>
     }
     return r
   }
@@ -2111,16 +2120,49 @@ object SlangLl2AstBuilder {
   def parseStringLit(text: String): String = {
     val sops = ops.StringOps(text)
     if (sops.startsWith("\"") && sops.endsWith("\"")) {
-      var inner = sops.substring(1, text.size - 1)
-      inner = ops.StringOps(inner).replaceAllLiterally("\\n", "\n")
-      inner = ops.StringOps(inner).replaceAllLiterally("\\t", "\t")
-      inner = ops.StringOps(inner).replaceAllLiterally("\\r", "\r")
-      inner = ops.StringOps(inner).replaceAllLiterally("\\\\", "\\")
-      inner = ops.StringOps(inner).replaceAllLiterally("\\\"", "\"")
-      inner = ops.StringOps(inner).replaceAllLiterally("\\'", "'")
-      return inner
+      val inner = sops.substring(1, text.size - 1)
+      return unescapeString(inner)
     }
     return text
+  }
+
+  def unescapeString(s: String): String = {
+    val cis = conversions.String.toCis(s)
+    val len = cis.size
+    var r = ISZ[C]()
+    var i: Z = 0
+    while (i < len) {
+      if (cis(i) == '\\' && i + 1 < len) {
+        val next = cis(i + 1)
+        if (next == 'n') { r = r :+ '\n'; i = i + 2 }
+        else if (next == 't') { r = r :+ '\t'; i = i + 2 }
+        else if (next == 'r') { r = r :+ '\r'; i = i + 2 }
+        else if (next == 'f') { r = r :+ '\u000c'; i = i + 2 }
+        else if (next == 'b') { r = r :+ '\u0008'; i = i + 2 }
+        else if (next == '\\') { r = r :+ '\\'; i = i + 2 }
+        else if (next == '"') { r = r :+ '"'; i = i + 2 }
+        else if (next == '\'') { r = r :+ '\''; i = i + 2 }
+        else if (next == 'u' && i + 5 < len) {
+          val hex = conversions.String.fromCis(ISZ(cis(i + 2), cis(i + 3), cis(i + 4), cis(i + 5)))
+          val codeOpt = Z(s"0x$hex")
+          codeOpt match {
+            case Some(code) =>
+              r = r :+ conversions.U32.toC(conversions.Z.toU32(code))
+              i = i + 6
+            case _ =>
+              r = r :+ cis(i)
+              i = i + 1
+          }
+        } else {
+          r = r :+ cis(i)
+          i = i + 1
+        }
+      } else {
+        r = r :+ cis(i)
+        i = i + 1
+      }
+    }
+    return conversions.String.fromCis(r)
   }
 
   def parseMStr(text: String): String = {
@@ -2301,7 +2343,7 @@ object SlangLl2AstBuilder {
     val sops = ops.StringOps(text)
     val firstQuote = sops.indexOf('"')
     val prefix = sops.substring(0, firstQuote)
-    val content = sops.substring(firstQuote + 1, text.size - 1)
+    val content = unescapeString(sops.substring(firstQuote + 1, text.size - 1))
     return AST.Exp.StringInterpolate(
       prefix = prefix,
       lits = ISZ(AST.Exp.LitString(content, attr(leaf))),
@@ -2315,7 +2357,7 @@ object SlangLl2AstBuilder {
     val sops = ops.StringOps(text)
     val firstQuote = sops.indexOf('"')
     val prefix = sops.substring(0, firstQuote)
-    val firstLit = sops.substring(firstQuote + 1, text.size - 1) // before the $
+    val firstLit = unescapeString(sops.substring(firstQuote + 1, text.size - 1)) // before the $
 
     var lits = ISZ[AST.Exp.LitString](AST.Exp.LitString(firstLit, attr(spb)))
     var args = ISZ[AST.Exp]()
@@ -2347,7 +2389,7 @@ object SlangLl2AstBuilder {
             val spmText = spm.text
             val spmSops = ops.StringOps(spmText)
             // SPM: '$' SPI* '$'
-            val litContent = spmSops.substring(1, spmText.size - 1)
+            val litContent = unescapeString(spmSops.substring(1, spmText.size - 1))
             rLits = rLits :+ AST.Exp.LitString(litContent, attr(spm))
             return collectSinterp(sinterp, rLits, rArgs, reporter)
           case _ =>
@@ -2358,7 +2400,7 @@ object SlangLl2AstBuilder {
             val speText = spe.text
             val speSops = ops.StringOps(speText)
             // SPE: '$' SPI* '"'
-            val litContent = speSops.substring(1, speText.size - 1)
+            val litContent = unescapeString(speSops.substring(1, speText.size - 1))
             rLits = rLits :+ AST.Exp.LitString(litContent, attr(spe))
           case _ =>
         }

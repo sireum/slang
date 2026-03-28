@@ -75,6 +75,13 @@ object IRTranslator {
   var nestedMethodCaptures: HashMap[ISZ[String], ISZ[(B, String, AST.Typed)]] = HashMap.empty
   var varCaptureSet: HashSet[String] = HashSet.empty
 
+  @strictpure def extOwner(owner: ISZ[String]): ISZ[String] =
+    if (owner.nonEmpty) ops.ISZOps(owner).dropRight(1) :+ s"${owner(owner.size - 1)}_Ext"
+    else owner
+
+  @strictpure def resolveOwner(res: AST.ResolvedInfo.Method): ISZ[String] =
+    if (res.mode == AST.MethodMode.Ext) extOwner(res.owner) else res.owner
+
   @strictpure def mboxType(t: AST.Typed): AST.Typed.Name =
     AST.Typed.Name(AST.Typed.sireumName :+ "MBox", None(), ISZ(t))
 
@@ -1067,10 +1074,11 @@ object IRTranslator {
             return norm3AC(AST.IR.Exp.EnumElementRef(res.owner, res.name, res.ordinal, pos))
           case res: AST.ResolvedInfo.Method =>
             val methodType = res.tpeOpt.get
+            val owner = resolveOwner(res)
             if (res.isInObject) {
-              return norm3AC(AST.IR.Exp.Apply(T, res.owner, res.id, AST.Typed.emptyRTypes, ISZ(), methodType, pos))
+              return norm3AC(AST.IR.Exp.Apply(T, owner, res.id, AST.Typed.emptyRTypes, ISZ(), methodType, pos))
             } else {
-              return norm3AC(AST.IR.Exp.Apply(F, res.owner, res.id, AST.Typed.emptyRTypes, ISZ(thiz(pos)),
+              return norm3AC(AST.IR.Exp.Apply(F, owner, res.id, AST.Typed.emptyRTypes, ISZ(thiz(pos)),
                 methodType(args = thiz(pos).tipe +: methodType.args), pos))
             }
           case _ => halt(s"Infeasible: $exp")
@@ -1279,7 +1287,7 @@ object IRTranslator {
                 for (arg <- exp.args) {
                   args = args :+ translateExp(arg)
                 }
-                return norm3AC(AST.IR.Exp.Apply(T, res.owner, res.id, AST.Typed.emptyRTypes, args, res.tpeOpt.get, pos))
+                return norm3AC(AST.IR.Exp.Apply(T, resolveOwner(res), res.id, AST.Typed.emptyRTypes, args, res.tpeOpt.get, pos))
               case AST.MethodMode.Select =>
                 val rcv: AST.IR.Exp = exp.receiverOpt match {
                   case Some(receiver) =>
@@ -1624,6 +1632,14 @@ object IRTranslator {
       case pattern: AST.Pattern.Literal =>
         r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, translateExp(pattern.lit), pos)
       case pattern: AST.Pattern.VarBinding =>
+        pattern.tipeOpt match {
+          case Some(tipe) =>
+            val t = tipe.typedOpt.get
+            if (t != exp.tipe) {
+              r = r :+ AST.IR.Exp.Type(T, exp, t.asInstanceOf[AST.Typed.Name], pos)
+            }
+          case _ =>
+        }
         lMap = lMap + (pattern.idContext, pattern.id.value) ~> exp
       case pattern: AST.Pattern.Structure =>
         val t = pattern.typedOpt.get

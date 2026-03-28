@@ -234,7 +234,6 @@ These AST nodes are produced by the Scala-based parser but not yet supported in 
 
 All LL(2) parser grammars are in `parser/shared/src/main/resources/`:
 - **ANTLR v3 grammar**: `SlangLl2.g` — the canonical LL(2) grammar specification
-- **Tree-sitter grammar**: `grammar.js` — created from `SlangLl2.g`
 - **Grammar-Kit BNF**: `SlangLl2.bnf` — created from `SlangLl2.g`
 
 ## Key Files

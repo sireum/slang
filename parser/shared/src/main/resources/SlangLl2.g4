@@ -94,7 +94,7 @@ enumMembers: LBRACE ID commaId* COMMA? RBRACE ;
 
 commaId: COMMA ID ;
 
-params: LPAREN param commaParams* COMMA? RPAREN ;
+params: LPAREN ( param commaParams* COMMA? )? RPAREN ;
 
 commaParams: COMMA param ;
 
@@ -455,7 +455,7 @@ fragment WSF:	( ' ' | '\t' )+ ;
 
 fragment IDESC: '`' ~( '\n' | '\r' | '\t' )* '`' ;
 
-fragment IDF: ( LETTER | '_' ) ( LETTER | DIGIT | '_' | '$' ( LETTER | DIGIT | '_' ) )* ( '_' OPSYM+ )? ;
+fragment IDF: ( LETTER | '_' ) ( LETTER | DIGIT | '_' )* ( '_' OPSYM+ )? ;
 
 fragment SPI: ESC_SEQ | ~( '\\' | '"' | '$' ) | '$$' ;
 
