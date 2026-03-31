@@ -29,6 +29,7 @@ package org.sireum.lang.symbol
 import org.sireum._
 import org.sireum.ops._
 import Resolver._
+import org.sireum.lang.ast.SlangLl2ParseTreeUtil
 import org.sireum.message._
 import org.sireum.lang.{ast => AST}
 
@@ -120,7 +121,7 @@ import GlobalDeclarationResolver._
               AST.Stmt.Object(F, None(), AST.Id(id, attr), ISZ(), ISZ(), attr),
               Some(AST.Typed.Object(owner, id)),
               Some(AST.ResolvedInfo.Object(name, posOpt)),
-              AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), owner, id, ISZ(), None(), ISZ(), ISZ(), posOpt),
+              AST.ResolvedInfo.Method(F, AST.MethodMode.ObjectConstructor, ISZ(), owner, id, ISZ(), None(), ISZ(), ISZ(), posOpt)
             )
           }
       }
@@ -141,6 +142,16 @@ import GlobalDeclarationResolver._
       paramSet = paramSet + id
     }
     return paramSet.elements
+  }
+
+  @strictpure def isSlang(posOpt: Option[Position]): B = posOpt match {
+    case Some(pos) => pos.uriOpt match {
+      case Some(uri) =>
+        val cis = conversions.String.toCis(uri)
+        ops.StringOps.endsWith(cis, SlangLl2ParseTreeUtil.slangExt) || ops.StringOps.endsWith(cis, SlangLl2ParseTreeUtil.slExt)
+      case _ => F
+    }
+    case _ => F
   }
 
   def resolveGlobalStmt(stmt: AST.Stmt): Unit = {
@@ -391,7 +402,7 @@ import GlobalDeclarationResolver._
                 resolverKind,
                 st"Cannot declare companion object for ${(info.name, ".")}.".render
               )
-            } else if (stmt.extNameOpt.nonEmpty) {
+            } else if (stmt.extNameOpt.nonEmpty && !isSlang(stmt.posOpt)) {
               reporter.error(
                 posOpt,
                 resolverKind,

@@ -620,39 +620,30 @@ object SlangLl2AstBuilder {
 
       if (isNamespacePkg) {
         packageName = buildName(firstNameOpt.get, reporter)
-        // Collect namespace members and remaining packages, then interleave:
-        // Objects (packages) first, then Sigs (types) — matches Scala parser order
-        var nsMemberStmts = ISZ[AST.Stmt]()
         val nsPkgImports = findChildren(firstPkg, "imprt")
         for (imp <- nsPkgImports) {
           stmts = stmts :+ buildImport(imp, reporter)
         }
         val nsPkgMembers = findChildren(firstPkg, "member")
         for (m <- nsPkgMembers) {
-          nsMemberStmts = nsMemberStmts ++ buildMember(m, F, reporter)
+          stmts = stmts ++ buildMember(m, F, reporter)
         }
         val nsPkgSuffixOpt = findChild(firstPkg, "pkgSuffix")
         nsPkgSuffixOpt match {
           case Some(ps) =>
             val psMembers = findChildren(ps, "member")
             for (m <- psMembers) {
-              nsMemberStmts = nsMemberStmts ++ buildMember(m, F, reporter)
+              stmts = stmts ++ buildMember(m, F, reporter)
             }
           case _ =>
         }
         pkgStartIdx = 1
 
-        // Build remaining packages (Objects)
-        var pkgStmts = ISZ[AST.Stmt]()
         var j: Z = pkgStartIdx
         while (j < pkgs.size) {
-          pkgStmts = pkgStmts :+ buildPkg(pkgs(j), reporter)
+          stmts = stmts :+ buildPkg(pkgs(j), reporter)
           j = j + 1
         }
-
-        // Interleave: for each name, Object first then Sig (matches Scala convention)
-        // First add all Objects, then all non-Object members (Sigs, etc.)
-        stmts = stmts ++ pkgStmts ++ nsMemberStmts
       }
     }
 

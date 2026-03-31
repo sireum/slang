@@ -128,4 +128,6 @@ object SlangLl2ParseTreeUtil {
     return ParseTree.rewriteBinary(T, binaryPrecedenceOps, newChildren, reporter)
   }
 
+  val slangExt: ISZ[C] = conversions.String.toCis(".slang")
+  val slExt: ISZ[C] = conversions.String.toCis(".sl")
 }
