@@ -582,78 +582,29 @@ object SlangLl2AstBuilder {
   }
 
   def buildProgram(fileUriOpt: Option[String], node: ParseTree.Node, reporter: message.Reporter): AST.TopUnit.Program = {
-    // program: annot? imprt* mainMember* pkg*
-    val annotOpt = findChild(node, "annot")
-    val imports = findChildren(node, "imprt")
-    val mainMembers = findChildren(node, "mainMember")
-    val pkgs = findChildren(node, "pkg")
+    // program: annot? ( full | script )?
+    val fullOpt = findChild(node, "full")
+    val scriptOpt = findChild(node, "script")
 
+    var packageName: AST.Name = AST.Name(ISZ(), emptyAttr)
     var stmts = ISZ[AST.Stmt]()
 
     // Auto-import org.sireum._ and all runtime SubZ types (LL(2) ergonomic improvement —
     // no explicit imports needed for standard library types and literal suffixes like 100s32, 42u8)
     stmts = stmts ++ autoImports
 
-    // imports
-    for (imp <- imports) {
-      stmts = stmts :+ buildImport(imp, reporter)
+    fullOpt match {
+      case Some(fullNode) =>
+        val r = buildFull(fullNode, reporter)
+        packageName = r._1
+        stmts = stmts ++ r._2
+      case _ =>
     }
 
-    // main members (stmt | typeDefn)
-    for (mm <- mainMembers) {
-      stmts = stmts ++ buildMainMember(mm, reporter)
-    }
-
-    // Detect the first package as a package-name declaration if it has a name with
-    // no modifiers (@ext/@app) — its members become the program body statements.
-    // Remaining packages are regular Stmt.Object entries.
-    var packageName: AST.Name = AST.Name(ISZ(), emptyAttr)
-    var pkgStartIdx: Z = 0
-
-    if (pkgs.nonEmpty) {
-      val firstPkg = pkgs(0)
-      val firstMods = buildMods(findChildren(firstPkg, "mod"))
-      val firstNameOpt = findChild(firstPkg, "name")
-      // A package with braces is always an object; only the non-braced form can be a namespace
-      val hasBraces = findChild(firstPkg, "pkgSuffix").nonEmpty
-      val isNamespacePkg = !hasBraces && firstNameOpt.nonEmpty && !hasMod(firstMods, "ext") && !hasMod(firstMods, "app")
-
-      if (isNamespacePkg) {
-        packageName = buildName(firstNameOpt.get, reporter)
-        val nsPkgImports = findChildren(firstPkg, "imprt")
-        for (imp <- nsPkgImports) {
-          stmts = stmts :+ buildImport(imp, reporter)
-        }
-        val nsPkgMembers = findChildren(firstPkg, "member")
-        for (m <- nsPkgMembers) {
-          stmts = stmts ++ buildMember(m, F, reporter)
-        }
-        val nsPkgSuffixOpt = findChild(firstPkg, "pkgSuffix")
-        nsPkgSuffixOpt match {
-          case Some(ps) =>
-            val psMembers = findChildren(ps, "member")
-            for (m <- psMembers) {
-              stmts = stmts ++ buildMember(m, F, reporter)
-            }
-          case _ =>
-        }
-        pkgStartIdx = 1
-
-        var j: Z = pkgStartIdx
-        while (j < pkgs.size) {
-          stmts = stmts :+ buildPkg(pkgs(j), reporter)
-          j = j + 1
-        }
-      }
-    }
-
-    if (pkgStartIdx == z"0") {
-      // No namespace package — add all packages normally
-      var i: Z = 0
-      while (i < pkgs.size) {
-        stmts = stmts :+ buildPkg(pkgs(i), reporter)
-        i = i + 1
-      }
+    scriptOpt match {
+      case Some(scriptNode) =>
+        stmts = stmts ++ buildScript(scriptNode, reporter)
+      case _ =>
     }
 
     return AST.TopUnit.Program(
@@ -661,6 +612,88 @@ object SlangLl2AstBuilder {
       packageName = packageName,
       body = AST.Body(stmts = stmts, undecls = ISZ()),
       annotations = ISZ())
+  }
+
+  def buildFull(node: ParseTree.Node, reporter: message.Reporter): (AST.Name, ISZ[AST.Stmt]) = {
+    // full: pkg fullMember*
+    val pkgNode = findChild(node, "pkg").get
+    val packageName = buildPkgName(pkgNode, reporter)
+    var stmts = ISZ[AST.Stmt]()
+    val fullMembers = findChildren(node, "fullMember")
+    for (fm <- fullMembers) {
+      stmts = stmts ++ buildFullMember(fm, reporter)
+    }
+    return (packageName, stmts)
+  }
+
+  def buildFullMember(node: ParseTree.Node, reporter: message.Reporter): ISZ[AST.Stmt] = {
+    // fullMember: pkgObj | typeDefn | imprt
+    val pkgObjOpt = findChild(node, "pkgObj")
+    pkgObjOpt match {
+      case Some(po) => return ISZ(buildPkgObj(po, reporter))
+      case _ =>
+    }
+    val typeDefnOpt = findChild(node, "typeDefn")
+    typeDefnOpt match {
+      case Some(td) => return ISZ(buildTypeDefn(td, reporter))
+      case _ =>
+    }
+    val imprtOpt = findChild(node, "imprt")
+    imprtOpt match {
+      case Some(imp) => return ISZ(buildImport(imp, reporter))
+      case _ =>
+    }
+    return ISZ()
+  }
+
+  def buildScript(node: ParseTree.Node, reporter: message.Reporter): ISZ[AST.Stmt] = {
+    // script: scriptMemberNoPkg scriptMember*
+    var stmts = ISZ[AST.Stmt]()
+    val firstOpt = findChild(node, "scriptMemberNoPkg")
+    firstOpt match {
+      case Some(first) => stmts = stmts ++ buildScriptMemberNoPkg(first, reporter)
+      case _ =>
+    }
+    val members = findChildren(node, "scriptMember")
+    for (m <- members) {
+      stmts = stmts ++ buildScriptMember(m, reporter)
+    }
+    return stmts
+  }
+
+  def buildScriptMemberNoPkg(node: ParseTree.Node, reporter: message.Reporter): ISZ[AST.Stmt] = {
+    // scriptMemberNoPkg: stmt | typeDefn | imprt
+    val stmtOpt = findChild(node, "stmt")
+    stmtOpt match {
+      case Some(s) => return ISZ(buildStmt(s, reporter, F))
+      case _ =>
+    }
+    val typeDefnOpt = findChild(node, "typeDefn")
+    typeDefnOpt match {
+      case Some(td) => return ISZ(buildTypeDefn(td, reporter))
+      case _ =>
+    }
+    val imprtOpt = findChild(node, "imprt")
+    imprtOpt match {
+      case Some(imp) => return ISZ(buildImport(imp, reporter))
+      case _ =>
+    }
+    return ISZ()
+  }
+
+  def buildScriptMember(node: ParseTree.Node, reporter: message.Reporter): ISZ[AST.Stmt] = {
+    // scriptMember: scriptMemberNoPkg | pkgObj
+    val noPkgOpt = findChild(node, "scriptMemberNoPkg")
+    noPkgOpt match {
+      case Some(np) => return buildScriptMemberNoPkg(np, reporter)
+      case _ =>
+    }
+    val pkgObjOpt = findChild(node, "pkgObj")
+    pkgObjOpt match {
+      case Some(po) => return ISZ(buildPkgObj(po, reporter))
+      case _ =>
+    }
+    return ISZ()
   }
 
   // ─── import ────────────────────────────────────────────────────────
@@ -732,33 +765,20 @@ object SlangLl2AstBuilder {
       annotations = ISZ())
   }
 
-  // ─── mainMember ────────────────────────────────────────────────────
-
-  def buildMainMember(node: ParseTree.Node, reporter: message.Reporter): ISZ[AST.Stmt] = {
-    // mainMember: stmt | typeDefn
-    val stmtOpt = findChild(node, "stmt")
-    stmtOpt match {
-      case Some(s) => return ISZ(buildStmt(s, reporter, F))
-      case _ =>
-    }
-    val typeDefnOpt = findChild(node, "typeDefn")
-    typeDefnOpt match {
-      case Some(td) => return ISZ(buildTypeDefn(td, reporter))
-      case _ =>
-    }
-    return ISZ()
-  }
-
   // ─── package ───────────────────────────────────────────────────────
 
-  def buildPkg(node: ParseTree.Node, reporter: message.Reporter): AST.Stmt.Object = {
-    // pkg: PACKAGE mod* name? annot? imprt* ( member* | pkgSuffix )
+  def buildPkgName(node: ParseTree.Node, reporter: message.Reporter): AST.Name = {
+    // pkg: PACKAGE mod* name annot?
+    val nameNode = findChild(node, "name").get
+    return buildName(nameNode, reporter)
+  }
+
+  def buildPkgObj(node: ParseTree.Node, reporter: message.Reporter): AST.Stmt.Object = {
+    // pkgObj: PACKAGE mod* ID annot? pkgSuffix
     val mods = buildMods(findChildren(node, "mod"))
-    val nameOpt = findChild(node, "name")
+    val idLeaf = findLeafByRule(node, "ID").get
     val annotOpt = findChild(node, "annot")
-    val imports = findChildren(node, "imprt")
-    val members = findChildren(node, "member")
-    val pkgSuffixOpt = findChild(node, "pkgSuffix")
+    val pkgSuffix = findChild(node, "pkgSuffix").get
 
     val isApp = hasMod(mods, "app")
     val extMod = findMod(mods, "ext")
@@ -806,42 +826,18 @@ object SlangLl2AstBuilder {
       case _ => None()
     }
 
-    val id: String = nameOpt match {
-      case Some(nameNode) =>
-        if (findChildren(nameNode, "nameSuffix").nonEmpty) {
-          reporter.error(nameNode.posOpt, "SlangLl2AstBuilder", "package name must be a simple identifier (dotted names are not allowed)")
-          return AST.Stmt.Object(isApp = F, extNameOpt = None(), id = mkId("", node),
-            stmts = ISZ(), annotations = ISZ(), attr = attr(node))
-        }
-        idText(nameNode)
-      case _ => ""
-    }
-
     var stmts = ISZ[AST.Stmt]()
 
-    for (imp <- imports) {
-      stmts = stmts :+ buildImport(imp, reporter)
-    }
-
-    // members
-    for (m <- members) {
-      stmts = stmts ++ buildMember(m, extNameOpt.nonEmpty, reporter)
-    }
-
     // pkgSuffix: LBRACE member* RBRACE
-    pkgSuffixOpt match {
-      case Some(ps) =>
-        val pkgMembers = findChildren(ps, "member")
-        for (m <- pkgMembers) {
-          stmts = stmts ++ buildMember(m, extNameOpt.nonEmpty, reporter)
-        }
-      case _ =>
+    val pkgMembers = findChildren(pkgSuffix, "member")
+    for (m <- pkgMembers) {
+      stmts = stmts ++ buildMember(m, extNameOpt.nonEmpty, reporter)
     }
 
     return AST.Stmt.Object(
       isApp = isApp,
       extNameOpt = extNameOpt,
-      id = mkId(id, node),
+      id = mkId(idLeaf.text, idLeaf),
       stmts = stmts,
       annotations = buildAnnotations(annotOpt, reporter),
       attr = attr(node))

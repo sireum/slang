@@ -42,7 +42,21 @@ expFile: annot? exp EOF ;
 
 stmtFile: annot? stmt EOF ;
 
-program: annot? imprt* mainMember* pkg* ;
+program: annot? ( full | script )? ;
+
+full: pkg fullMember* ;
+
+pkg: PACKAGE mod* name annot? ;
+
+fullMember: pkgObj | typeDefn | imprt ;
+
+script: scriptMemberNoPkg scriptMember* ;
+
+scriptMemberNoPkg: stmt | typeDefn | imprt ;
+
+scriptMember: scriptMemberNoPkg | pkgObj ;
+
+pkgObj: PACKAGE mod* ID annot? pkgSuffix ;
 
 imprt: IMPORT ID importIdSuffix? ;
 
@@ -57,10 +71,6 @@ importRenamesSuffix: LBRACE importRename importRenameSuffix* COMMA? RBRACE ;
 importRenameSuffix: COMMA importRename ;
 
 importRename: ID ARROW ID annot? ;
-
-mainMember: stmt | typeDefn ;
-
-pkg: PACKAGE mod* name? annot? imprt* ( member* | pkgSuffix ) ;
 
 pkgSuffix: LBRACE member* RBRACE ;
 
