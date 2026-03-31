@@ -1628,7 +1628,15 @@ object IRTranslator {
     var lMap = localMap
     val pos = pattern.posOpt.get
     pattern match {
-      case _: AST.Pattern.Wildcard => // skip
+      case pattern: AST.Pattern.Wildcard =>
+        pattern.typeOpt match {
+          case Some(tipe) =>
+            val t = tipe.typedOpt.get
+            if (t != exp.tipe) {
+              r = r :+ AST.IR.Exp.Type(T, exp, t.asInstanceOf[AST.Typed.Name], pos)
+            }
+          case _ =>
+        }
       case pattern: AST.Pattern.Literal =>
         r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, translateExp(pattern.lit), pos)
       case pattern: AST.Pattern.VarBinding =>
