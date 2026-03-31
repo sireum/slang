@@ -3732,7 +3732,7 @@ object SlangLl2AstBuilder {
     return stmts
   }
 
-  def buildReturn(node: ParseTree.Node, reporter: message.Reporter): AST.Stmt.Return = {
+  def buildReturn(node: ParseTree.Node, reporter: message.Reporter): AST.Stmt = {
     // ret: ( RETURN | HALT ) annot? rhs? | BACKSLASH annot? exp
     val backslashOpt = findLeafByRule(node, "BACKSLASH")
     backslashOpt match {
@@ -3750,7 +3750,7 @@ object SlangLl2AstBuilder {
     }
     val isHalt = findLeafByRule(node, "HALT").nonEmpty
     if (isHalt) {
-      // halt("...") is represented as a return with halt expression
+      // halt "msg" is a statement expression (Stmt.Expr), not a return
       val haltArgs: ISZ[AST.Exp] = expOpt match {
         case Some(e) => ISZ(e)
         case _ => ISZ()
@@ -3763,7 +3763,7 @@ object SlangLl2AstBuilder {
         targs = ISZ(),
         args = haltArgs,
         attr = resolvedAttr(node))
-      return AST.Stmt.Return(expOpt = Some(haltInvoke), annotations = ISZ(), attr = typedAttr(node))
+      return AST.Stmt.Expr(exp = haltInvoke, annotations = ISZ(), attr = typedAttr(node))
     }
     return AST.Stmt.Return(expOpt = expOpt, annotations = ISZ(), attr = typedAttr(node))
   }
