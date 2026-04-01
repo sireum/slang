@@ -68,6 +68,15 @@ object SlangLl2AstBuilder {
     return r
   }
 
+  @pure def extractBoolOpt(e: AST.Exp): Option[B] = {
+    e match {
+      case e: AST.Exp.LitB => return Some(e.value)
+      case e: AST.Exp.Ident if e.id.value == "T" => return Some(T)
+      case e: AST.Exp.Ident if e.id.value == "F" => return Some(F)
+      case _ => return None()
+    }
+  }
+
   // ─── auto-imports for LL(2) ────────────────────────────────────────
   // LL(2) Slang auto-imports org.sireum._ and all runtime SubZ types.
   // This is an intentional ergonomic improvement over Scala-based Slang
@@ -1128,9 +1137,8 @@ object SlangLl2AstBuilder {
                     case _ =>
                   }
                 case "index" =>
-                  isIndex = T
-                  zValOpt match {
-                    case Some(v) => index = v
+                  extractBoolOpt(e) match {
+                    case Some(v) => isIndex = v
                     case _ =>
                   }
                 case _ =>
@@ -1220,8 +1228,8 @@ object SlangLl2AstBuilder {
               argName.native match {
                 case "signed" =>
                   hasSigned = T
-                  e match {
-                    case e: AST.Exp.LitB => isSigned = e.value
+                  extractBoolOpt(e) match {
+                    case Some(v) => isSigned = v
                     case _ =>
                   }
                 case "width" =>
@@ -1242,9 +1250,8 @@ object SlangLl2AstBuilder {
                     case _ =>
                   }
                 case "index" =>
-                  isIndex = T
-                  zValOpt match {
-                    case Some(v) => index = v
+                  extractBoolOpt(e) match {
+                    case Some(v) => isIndex = v
                     case _ =>
                   }
                 case _ =>
