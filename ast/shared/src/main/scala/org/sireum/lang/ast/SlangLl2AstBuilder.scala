@@ -1527,6 +1527,16 @@ object SlangLl2AstBuilder {
     }
     // Right fold: start from the last return type and work backwards
     var result = types(types.size - 1)
+    // Normalize empty tuple () to Unit in return-type position
+    result match {
+      case t: AST.Type.Tuple if t.args.isEmpty =>
+        result = AST.Type.Named(
+          name = mkName(ISZ(AST.Id("Unit", emptyAttr)), node),
+          rTypeOpt = None(),
+          typeArgs = ISZ(),
+          attr = emptyTypedAttr)
+      case _ =>
+    }
     var i = types.size - 2
     while (i >= 0) {
       val isPure = pures(i)

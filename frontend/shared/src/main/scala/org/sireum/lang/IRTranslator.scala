@@ -182,6 +182,16 @@ object IRTranslator {
       typeParams, paramNames, method.sig.funType, method.sig.id.attr.posOpt.get, method.bodyOpt)
   }
 
+  @pure def simplifyAssignPattern(stmt: AST.IR.Stmt.AssignPattern): AST.IR.Stmt.Block = {
+    val pos = stmt.pos
+    val (_, lMap) = translatePattern(stmt.rhs, stmt.pattern, HashSMap.empty)
+    var assignStmts = ISZ[AST.IR.Stmt]()
+    for (e <- lMap.entries) {
+      assignStmts = assignStmts :+ AST.IR.Stmt.Assign.Local(stmt.context, e._1._2, e._2.tipe, e._2, e._2.pos)
+    }
+    return AST.IR.Stmt.Block(assignStmts, pos)
+  }
+
   @pure def simplifyMatch(stmt: AST.IR.Stmt.Match): AST.IR.Stmt.Block = {
     val matchCondId = matchExpId(stmt.exp.pos)
     val pos = stmt.pos
@@ -362,7 +372,8 @@ object IRTranslator {
           } else {
             return stmtToBasic(label, simplifyMatch(stmt))
           }
-        case stmt: AST.IR.Stmt.AssignPattern => halt(s"TODO: $stmt")
+        case stmt: AST.IR.Stmt.AssignPattern =>
+          return stmtToBasic(label, simplifyAssignPattern(stmt))
         case stmt: AST.IR.Stmt.For => halt(s"TODO: $stmt")
         case stmt: AST.IR.Stmt.If =>
           val t = fresh.label()
@@ -788,7 +799,10 @@ object IRTranslator {
         stmts = ISZ()
         val init = assignRhs(stmt.pattern.typedOpt.get, stmt.init)
         stmts = stmts :+ patternDecl(methodContext, stmt.pattern)
-        stmts = stmts :+ AST.IR.Stmt.AssignPattern(methodContext, stmt.pattern, init, pos)
+        val (_, lMap) = translatePattern(init, stmt.pattern, HashSMap.empty)
+        for (e <- lMap.entries) {
+          stmts = stmts :+ AST.IR.Stmt.Assign.Local(methodContext, e._1._2, e._2.tipe, e._2, e._2.pos)
+        }
         stmts = oldStmts ++ stmts
       case _: AST.Stmt.SubZ => // skip
       case stmt: AST.Stmt.Method =>
@@ -1123,6 +1137,15 @@ object IRTranslator {
             }
             val methodType = AST.Typed.Fun(AST.Purity.Impure, F, ISZ(receiverType), AST.Typed.string)
             return norm3AC(AST.IR.Exp.Apply(F, owner, "string", AST.Typed.emptyRTypes, ISZ(receiver), methodType, pos))
+          case AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Hash) =>
+            val receiver = translateExp(exp.receiverOpt.get)
+            val receiverType = exp.receiverOpt.get.typedOpt.get
+            val owner: ISZ[String] = receiverType match {
+              case tn: AST.Typed.Name => tn.ids
+              case _ => ISZ[String]()
+            }
+            val methodType = AST.Typed.Fun(AST.Purity.Impure, F, ISZ(receiverType), AST.Typed.z)
+            return norm3AC(AST.IR.Exp.Apply(F, owner, "hash", AST.Typed.emptyRTypes, ISZ(receiver), methodType, pos))
           case res => halt(s"TODO: $res")
         }
       case exp: AST.Exp.Unary =>
@@ -1326,6 +1349,28 @@ object IRTranslator {
                   args = args :+ translateExp(arg)
                 }
                 return norm3AC(AST.IR.Exp.Construct(t, AST.Typed.emptyRTypes, args, pos))
+              case AST.MethodMode.Store =>
+                // IS/MS functional update: is(idx ~> val) → Apply(IS/MS, "functionalUpdate", [rcv, idx, val])
+                val rcv: AST.IR.Exp = exp.receiverOpt match {
+                  case Some(receiver) => translateExp(receiver)
+                  case _ => translateExp(exp.ident)
+                }
+                val arg0 = exp.args(0)
+                val index: AST.IR.Exp = arg0 match {
+                  case b: AST.Exp.Binary => translateExp(b.left)
+                  case t: AST.Exp.Tuple => translateExp(t.args(0))
+                  case _ => halt(s"Unexpected Store arg: $arg0")
+                }
+                val value: AST.IR.Exp = arg0 match {
+                  case b: AST.Exp.Binary => translateExp(b.right)
+                  case t: AST.Exp.Tuple => translateExp(t.args(1))
+                  case _ => halt(s"Unexpected Store arg: $arg0")
+                }
+                val seqType = exp.typedOpt.get.asInstanceOf[AST.Typed.Name]
+                val elemType = seqType.args(1)
+                val methodType = AST.Typed.Fun(AST.Purity.Impure, F, ISZ(seqType, AST.Typed.z, elemType), seqType)
+                return norm3AC(AST.IR.Exp.Apply(T, seqType.ids, "functionalUpdate",
+                  AST.Typed.emptyRTypes, ISZ(rcv, index, value), methodType, pos))
               case _ => halt(s"TODO: $exp")
             }
           case res: AST.ResolvedInfo.LocalVar =>
