@@ -58,6 +58,16 @@ object SlangLl2AstBuilder {
 
   @strictpure def emptyResolvedAttr: AST.ResolvedAttr = AST.ResolvedAttr(None(), None(), None())
 
+  @pure def pow(base: Z, exp: Z): Z = {
+    var r: Z = 1
+    var i: Z = 0
+    while (i < exp) {
+      r = r * base
+      i = i + 1
+    }
+    return r
+  }
+
   // ─── auto-imports for LL(2) ────────────────────────────────────────
   // LL(2) Slang auto-imports org.sireum._ and all runtime SubZ types.
   // This is an intentional ergonomic improvement over Scala-based Slang
@@ -1151,9 +1161,18 @@ object SlangLl2AstBuilder {
       }
     }
 
+    val isSigned: B = !hasMin || min < 0
+
+    if (isIndex && !hasMin) {
+      reporter.error(posTree.posOpt, "Slang", "Slang @range index requires a min.")
+    }
+    if (hasMin && hasMax && min > max) {
+      reporter.error(posTree.posOpt, "Slang", s"Slang @range min ($min) should not be greater than its max ($max).")
+    }
+
     return AST.Stmt.SubZ(
       id = id,
-      isSigned = T,
+      isSigned = isSigned,
       isBitVector = F,
       isWrapped = F,
       hasMin = hasMin,
@@ -1162,12 +1181,13 @@ object SlangLl2AstBuilder {
       min = min,
       max = max,
       isIndex = isIndex,
-      index = index,
+      index = if (isIndex) min else 0,
       attr = attr(posTree))
   }
 
   def buildSubZBits(id: AST.Id, mods: ISZ[ModInfo], posTree: ParseTree, reporter: message.Reporter): AST.Stmt.SubZ = {
     val bitsMod = findMod(mods, "bits").get
+    var hasSigned = F
     var isSigned = F
     var bitWidth: Z = 0
     var hasMin = F
@@ -1199,6 +1219,7 @@ object SlangLl2AstBuilder {
               }
               argName.native match {
                 case "signed" =>
+                  hasSigned = T
                   e match {
                     case e: AST.Exp.LitB => isSigned = e.value
                     case _ =>
@@ -1254,18 +1275,75 @@ object SlangLl2AstBuilder {
       }
     }
 
+    // Infer isSigned if not explicitly provided
+    var inferredSigned = isSigned
+    if (!hasSigned) {
+      inferredSigned = if (hasMin) min < 0 else T
+    }
+
+    // Infer bitWidth from min/max if not provided
+    if (bitWidth == 0) {
+      if (hasMin && hasMax) {
+        if (inferredSigned) {
+          if (-pow(2, 7) <= min && max <= pow(2, 7) - 1) { bitWidth = 8 }
+          else if (-pow(2, 15) <= min && max <= pow(2, 15) - 1) { bitWidth = 16 }
+          else if (-pow(2, 31) <= min && max <= pow(2, 31) - 1) { bitWidth = 32 }
+          else if (-pow(2, 63) <= min && max <= pow(2, 63) - 1) { bitWidth = 64 }
+          else {
+            reporter.error(posTree.posOpt, "Slang", "Invalid Slang @bits: min/max do not fit into signed integer 8, 16, 32, or 64 bits.")
+            bitWidth = 64
+          }
+        } else {
+          if (min >= 0 && max <= pow(2, 8) - 1) { bitWidth = 8 }
+          else if (min >= 0 && max <= pow(2, 16) - 1) { bitWidth = 16 }
+          else if (min >= 0 && max <= pow(2, 32) - 1) { bitWidth = 32 }
+          else if (min >= 0 && max <= pow(2, 64) - 1) { bitWidth = 64 }
+          else {
+            reporter.error(posTree.posOpt, "Slang", "Invalid Slang @bits: min/max do not fit into unsigned integer 8, 16, 32, or 64 bits.")
+            bitWidth = 64
+          }
+        }
+      } else {
+        reporter.error(posTree.posOpt, "Slang", s"Slang @bits ${id.value} requires either width or min/max to be specified.")
+        bitWidth = 64
+      }
+    }
+
+    val signedString: String = if (inferredSigned) "signed" else "unsigned"
+
+    // Compute full-range min/max for this width
+    val wMin: Z = if (inferredSigned) -pow(2, bitWidth - 1) else z"0"
+    val wMax: Z = if (inferredSigned) pow(2, bitWidth - 1) - 1 else pow(2, bitWidth) - 1
+
+    if (isIndex && !hasMin) {
+      reporter.error(posTree.posOpt, "Slang", "Slang @bits index requires a min.")
+    }
+    if (hasMin && hasMax && min > max) {
+      reporter.error(posTree.posOpt, "Slang", s"Slang @range min ($min) should not be greater than its max ($max).")
+    }
+    if (hasMin && min < wMin) {
+      reporter.error(posTree.posOpt, "Slang", s"Slang @bits min ($min) should not be less than its $signedString bit-width minimum ($wMin).")
+    }
+    if (hasMax && max > wMax) {
+      reporter.error(posTree.posOpt, "Slang", s"Slang @bits max ($max) should not be greater than its $signedString bit-width maximum ($wMax).")
+    }
+    if (!hasMin) { min = wMin }
+    if (!hasMax) { max = wMax }
+
+    val isWrapped: B = min == wMin && max == wMax
+
     return AST.Stmt.SubZ(
       id = id,
-      isSigned = isSigned,
+      isSigned = inferredSigned,
       isBitVector = T,
-      isWrapped = F,
+      isWrapped = isWrapped,
       hasMin = hasMin,
       hasMax = hasMax,
       bitWidth = bitWidth,
       min = min,
       max = max,
       isIndex = isIndex,
-      index = index,
+      index = if (isIndex) min else 0,
       attr = attr(posTree))
   }
 
