@@ -44,17 +44,19 @@ stmtFile: annot? stmt EOF ;
 
 program: annot? ( full | script )? ;
 
-full: pkg fullMember* ;
+full: pkg member* ;
 
 pkg: PACKAGE mod* name annot? ;
 
-fullMember: pkgObj | typeDefn | imprt ;
-
 script: scriptMemberNoPkg scriptMember* ;
 
-scriptMemberNoPkg: stmt | typeDefn | imprt ;
+member: varDefn | defDefn | typeDefn | init | imprt | pkgObj ;
+
+scriptMemberNoPkg: typeDefn | imprt | stmt;
 
 scriptMember: scriptMemberNoPkg | pkgObj ;
+
+typeMember: varDefn | defDefn | init ;
 
 pkgObj: PACKAGE mod* ID annot? pkgSuffix ;
 
@@ -75,8 +77,6 @@ importRename: ID ARROW ID annot? ;
 pkgSuffix: LBRACE member* RBRACE ;
 
 init: TO LBRACE annot? stmt* RBRACE ;
-
-member: varDefn | defDefn | typeDefn | init ;
 
 mod: AT ID ( LSQUARE args RSQUARE )? ;
 
@@ -103,7 +103,7 @@ typeDefnAdtSuffix: params supers? annot? typeDefnAdtMembers?
                  | annot typeDefnAdtMembers?
                  | typeDefnAdtMembers ;
 
-typeDefnAdtMembers: LBRACE member* RBRACE ;
+typeDefnAdtMembers: LBRACE typeMember* RBRACE ;
 
 typeParams: LSQUARE typeParam typeParamSuffix* RSQUARE ;
 

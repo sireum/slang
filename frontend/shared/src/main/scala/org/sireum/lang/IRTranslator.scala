@@ -1198,6 +1198,18 @@ object IRTranslator {
             case _ =>
           }
         }
+        // MapsTo (~>): lower to Tuple.of(left, right)
+        exp.attr.resOpt.get match {
+          case AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryMapsTo) =>
+            val left = translateExp(exp.left)
+            val right = translateExp(exp.right)
+            val tupleIds = ISZ[String]("org", "sireum", "Tuple")
+            val leftType = exp.left.typedOpt.get
+            val rightType = exp.right.typedOpt.get
+            val methodType = AST.Typed.Fun(AST.Purity.Impure, F, ISZ(leftType, rightType), t)
+            return norm3AC(AST.IR.Exp.Apply(T, tupleIds, "of", AST.Typed.emptyRTypes, ISZ(left, right), methodType, pos))
+          case _ =>
+        }
         // Non-scalar, non-seq binary op: lower to method call on left operand
         exp.attr.resOpt.get match {
           case res: AST.ResolvedInfo.Method =>

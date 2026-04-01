@@ -615,35 +615,15 @@ object SlangLl2AstBuilder {
   }
 
   def buildFull(node: ParseTree.Node, reporter: message.Reporter): (AST.Name, ISZ[AST.Stmt]) = {
-    // full: pkg fullMember*
+    // full: pkg member*
     val pkgNode = findChild(node, "pkg").get
     val packageName = buildPkgName(pkgNode, reporter)
     var stmts = ISZ[AST.Stmt]()
-    val fullMembers = findChildren(node, "fullMember")
-    for (fm <- fullMembers) {
-      stmts = stmts ++ buildFullMember(fm, reporter)
+    val members = findChildren(node, "member")
+    for (m <- members) {
+      stmts = stmts ++ buildMember(m, F, reporter)
     }
     return (packageName, stmts)
-  }
-
-  def buildFullMember(node: ParseTree.Node, reporter: message.Reporter): ISZ[AST.Stmt] = {
-    // fullMember: pkgObj | typeDefn | imprt
-    val pkgObjOpt = findChild(node, "pkgObj")
-    pkgObjOpt match {
-      case Some(po) => return ISZ(buildPkgObj(po, reporter))
-      case _ =>
-    }
-    val typeDefnOpt = findChild(node, "typeDefn")
-    typeDefnOpt match {
-      case Some(td) => return ISZ(buildTypeDefn(td, reporter))
-      case _ =>
-    }
-    val imprtOpt = findChild(node, "imprt")
-    imprtOpt match {
-      case Some(imp) => return ISZ(buildImport(imp, reporter))
-      case _ =>
-    }
-    return ISZ()
   }
 
   def buildScript(node: ParseTree.Node, reporter: message.Reporter): ISZ[AST.Stmt] = {
@@ -662,12 +642,7 @@ object SlangLl2AstBuilder {
   }
 
   def buildScriptMemberNoPkg(node: ParseTree.Node, reporter: message.Reporter): ISZ[AST.Stmt] = {
-    // scriptMemberNoPkg: stmt | typeDefn | imprt
-    val stmtOpt = findChild(node, "stmt")
-    stmtOpt match {
-      case Some(s) => return ISZ(buildStmt(s, reporter, F))
-      case _ =>
-    }
+    // scriptMemberNoPkg: typeDefn | imprt | stmt
     val typeDefnOpt = findChild(node, "typeDefn")
     typeDefnOpt match {
       case Some(td) => return ISZ(buildTypeDefn(td, reporter))
@@ -678,14 +653,19 @@ object SlangLl2AstBuilder {
       case Some(imp) => return ISZ(buildImport(imp, reporter))
       case _ =>
     }
+    val stmtOpt = findChild(node, "stmt")
+    stmtOpt match {
+      case Some(s) => return ISZ(buildStmt(s, reporter, F))
+      case _ =>
+    }
     return ISZ()
   }
 
   def buildScriptMember(node: ParseTree.Node, reporter: message.Reporter): ISZ[AST.Stmt] = {
     // scriptMember: scriptMemberNoPkg | pkgObj
-    val noPkgOpt = findChild(node, "scriptMemberNoPkg")
-    noPkgOpt match {
-      case Some(np) => return buildScriptMemberNoPkg(np, reporter)
+    val smnpOpt = findChild(node, "scriptMemberNoPkg")
+    smnpOpt match {
+      case Some(smnp) => return buildScriptMemberNoPkg(smnp, reporter)
       case _ =>
     }
     val pkgObjOpt = findChild(node, "pkgObj")
@@ -694,6 +674,71 @@ object SlangLl2AstBuilder {
       case _ =>
     }
     return ISZ()
+  }
+
+  def buildMemberNoPkg(node: ParseTree.Node, isExt: B, reporter: message.Reporter): ISZ[AST.Stmt] = {
+    // memberNoPkg: varDefn | defDefn | typeDefn | init | imprt
+    val varDefnOpt = findChild(node, "varDefn")
+    varDefnOpt match {
+      case Some(vd) => return ISZ(buildVarDefn(vd, reporter))
+      case _ =>
+    }
+    val defDefnOpt = findChild(node, "defDefn")
+    defDefnOpt match {
+      case Some(dd) =>
+        if (isExt) {
+          return ISZ(buildExtMethod(dd, reporter))
+        } else {
+          return ISZ(buildDefDefn(dd, reporter))
+        }
+      case _ =>
+    }
+    val typeDefnOpt = findChild(node, "typeDefn")
+    typeDefnOpt match {
+      case Some(td) => return ISZ(buildTypeDefn(td, reporter))
+      case _ =>
+    }
+    val initOpt = findChild(node, "init")
+    initOpt match {
+      case Some(i) => return ISZ(buildInit(i, reporter))
+      case _ =>
+    }
+    val imprtOpt = findChild(node, "imprt")
+    imprtOpt match {
+      case Some(imp) => return ISZ(buildImport(imp, reporter))
+      case _ =>
+    }
+    return ISZ()
+  }
+
+  def buildTypeMember(node: ParseTree.Node, isExt: B, reporter: message.Reporter): ISZ[AST.Stmt] = {
+    // typeMember: varDefn | defDefn | init
+    val varDefnOpt = findChild(node, "varDefn")
+    varDefnOpt match {
+      case Some(vd) => return ISZ(buildVarDefn(vd, reporter))
+      case _ =>
+    }
+    val defDefnOpt = findChild(node, "defDefn")
+    defDefnOpt match {
+      case Some(dd) =>
+        if (isExt) {
+          return ISZ(buildExtMethod(dd, reporter))
+        } else {
+          return ISZ(buildDefDefn(dd, reporter))
+        }
+      case _ =>
+    }
+    val initOpt = findChild(node, "init")
+    initOpt match {
+      case Some(i) => return ISZ(buildInit(i, reporter))
+      case _ =>
+    }
+    return ISZ()
+  }
+
+  def buildInit(node: ParseTree.Node, reporter: message.Reporter): AST.Stmt = {
+    // init: TO LBRACE annot? stmt* RBRACE
+    halt("LL(2) init blocks are not yet supported")
   }
 
   // ─── import ────────────────────────────────────────────────────────
@@ -846,7 +891,7 @@ object SlangLl2AstBuilder {
   // ─── member ────────────────────────────────────────────────────────
 
   def buildMember(node: ParseTree.Node, isExt: B, reporter: message.Reporter): ISZ[AST.Stmt] = {
-    // member: varDefn | defDefn | typeDefn | init
+    // member: varDefn | defDefn | typeDefn | init | imprt | pkgObj
     val varDefnOpt = findChild(node, "varDefn")
     varDefnOpt match {
       case Some(vd) => return ISZ(buildVarDefn(vd, reporter))
@@ -867,8 +912,21 @@ object SlangLl2AstBuilder {
       case Some(td) => return ISZ(buildTypeDefn(td, reporter))
       case _ =>
     }
-    // init: TO LBRACE annot? stmt* RBRACE
-    // For now, we skip init blocks as they're not directly mapped
+    val initOpt = findChild(node, "init")
+    initOpt match {
+      case Some(i) => return ISZ(buildInit(i, reporter))
+      case _ =>
+    }
+    val imprtOpt = findChild(node, "imprt")
+    imprtOpt match {
+      case Some(imp) => return ISZ(buildImport(imp, reporter))
+      case _ =>
+    }
+    val pkgObjOpt = findChild(node, "pkgObj")
+    pkgObjOpt match {
+      case Some(po) => return ISZ(buildPkgObj(po, reporter))
+      case _ =>
+    }
     return ISZ()
   }
 
@@ -938,9 +996,9 @@ object SlangLl2AstBuilder {
           val membersOpt = findChild(as, "typeDefnAdtMembers")
           membersOpt match {
             case Some(mem) =>
-              val memberNodes = findChildren(mem, "member")
+              val memberNodes = findChildren(mem, "typeMember")
               for (m <- memberNodes) {
-                stmts = stmts ++ buildMember(m, F, reporter)
+                stmts = stmts ++ buildTypeMember(m, F, reporter)
               }
             case _ =>
           }
@@ -980,9 +1038,9 @@ object SlangLl2AstBuilder {
         val membersOpt = findChild(as, "typeDefnAdtMembers")
         membersOpt match {
           case Some(mem) =>
-            val memberNodes = findChildren(mem, "member")
+            val memberNodes = findChildren(mem, "typeMember")
             for (m <- memberNodes) {
-              stmts = stmts ++ buildMember(m, F, reporter)
+              stmts = stmts ++ buildTypeMember(m, F, reporter)
             }
           case _ =>
         }
@@ -2888,10 +2946,32 @@ object SlangLl2AstBuilder {
             invoke(
               receiverOpt = Some(invoke.ident),
               ident = AST.Exp.Ident(id = AST.Id(value = "apply", attr = emptyAttr), attr = invoke.attr))
+          case invoke: AST.Exp.Invoke if invoke.receiverOpt.nonEmpty && invoke.ident.id.value != "apply" =>
+            // Chained index assignment: e.g., a.b(i).c(j) = rhs
+            // Restructure Invoke(Some(R), Ident("field"), args) to
+            // Invoke(Some(Select(Some(R), "field")), Ident("apply"), args)
+            // so the type checker sees the MS/IS receiver type on the Invoke receiver
+            invoke(
+              receiverOpt = Some(AST.Exp.Select(
+                receiverOpt = invoke.receiverOpt,
+                id = invoke.ident.id,
+                targs = invoke.targs,
+                attr = invoke.ident.attr)),
+              ident = AST.Exp.Ident(id = AST.Id(value = "apply", attr = emptyAttr), attr = invoke.attr),
+              targs = ISZ())
           case invoke: AST.Exp.InvokeNamed if invoke.receiverOpt.isEmpty =>
             invoke(
               receiverOpt = Some(invoke.ident),
               ident = AST.Exp.Ident(id = AST.Id(value = "apply", attr = emptyAttr), attr = invoke.attr))
+          case invoke: AST.Exp.InvokeNamed if invoke.receiverOpt.nonEmpty && invoke.ident.id.value != "apply" =>
+            invoke(
+              receiverOpt = Some(AST.Exp.Select(
+                receiverOpt = invoke.receiverOpt,
+                id = invoke.ident.id,
+                targs = invoke.targs,
+                attr = invoke.ident.attr)),
+              ident = AST.Exp.Ident(id = AST.Id(value = "apply", attr = emptyAttr), attr = invoke.attr),
+              targs = ISZ())
           case _ => result
         }
         return AST.Stmt.Assign(lhs = lhs, rhs = rhs, annotations = ISZ(), attr = attr(node))
@@ -3724,10 +3804,10 @@ object SlangLl2AstBuilder {
     val backslashOpt = findLeafByRule(node, "BACKSLASH")
     backslashOpt match {
       case Some(_) =>
-        // BACKSLASH annot? exp — value-producing return expression
+        // BACKSLASH annot? exp — value-producing expression (NOT return)
         val expNode = findChild(node, "exp").get
         val exp = buildExp(expNode, reporter)
-        return AST.Stmt.Return(expOpt = Some(exp), annotations = ISZ(), attr = typedAttr(node))
+        return AST.Stmt.Expr(exp = exp, annotations = ISZ(), attr = typedAttr(node))
       case _ =>
     }
     val rhsOpt = findChild(node, "rhs")
