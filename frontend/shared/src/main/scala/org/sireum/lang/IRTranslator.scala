@@ -1319,6 +1319,13 @@ object IRTranslator {
                   args = args :+ translateExp(arg)
                 }
                 return norm3AC(AST.IR.Exp.Construct(exp.typedOpt.get.asInstanceOf[AST.Typed.Name], AST.Typed.emptyRTypes, args, pos))
+              case AST.MethodMode.Copy =>
+                val t = exp.typedOpt.get.asInstanceOf[AST.Typed.Name]
+                var args = ISZ[AST.IR.Exp]()
+                for (arg <- exp.args) {
+                  args = args :+ translateExp(arg)
+                }
+                return norm3AC(AST.IR.Exp.Construct(t, AST.Typed.emptyRTypes, args, pos))
               case _ => halt(s"TODO: $exp")
             }
           case res: AST.ResolvedInfo.LocalVar =>
