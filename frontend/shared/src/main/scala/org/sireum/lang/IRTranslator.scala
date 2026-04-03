@@ -1352,7 +1352,13 @@ object IRTranslator {
               case AST.MethodMode.Store =>
                 // IS/MS functional update: is(idx ~> val) → Apply(IS/MS, "functionalUpdate", [rcv, idx, val])
                 val rcv: AST.IR.Exp = exp.receiverOpt match {
-                  case Some(receiver) => translateExp(receiver)
+                  case Some(receiver) =>
+                    if (exp.ident.id.value == "apply") {
+                      translateExp(receiver)
+                    } else {
+                      val e = AST.Exp.Select(Some(receiver), exp.ident.id, exp.targs, exp.ident.attr)
+                      translateExp(e)
+                    }
                   case _ => translateExp(exp.ident)
                 }
                 val arg0 = exp.args(0)
