@@ -1381,6 +1381,10 @@ object Util {
   }
 
   @pure def bigAnd(exps: ISZ[Exp], pOpt: Option[Position]): Exp = {
+    return bigAndCond(F, exps, pOpt)
+  }
+
+  @pure def bigAndCond(isCond: B, exps: ISZ[Exp], pOpt: Option[Position]): Exp = {
     var set = HashSSet.empty[Exp]
     for (exp <- exps) {
       if (exp == trueLit) {
@@ -1391,11 +1395,16 @@ object Util {
         set = set + exp
       }
     }
-    return esToBinary(set.elements, trueLit, Exp.BinaryOp.And,
-      Typed.bOpt, ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.BinaryAnd, None()), pOpt)
+    return esToBinary(set.elements, trueLit, if (isCond) Exp.BinaryOp.CondAnd else Exp.BinaryOp.And,
+      Typed.bOpt, ResolvedInfo.BuiltIn(if (isCond) ResolvedInfo.BuiltIn.Kind.BinaryCondAnd
+      else ResolvedInfo.BuiltIn.Kind.BinaryAnd, None()), pOpt)
   }
 
   @pure def bigOr(exps: ISZ[Exp], pOpt: Option[Position]): Exp = {
+    return bigOrCond(F, exps, pOpt)
+  }
+
+  @pure def bigOrCond(isCond: B, exps: ISZ[Exp], pOpt: Option[Position]): Exp = {
     var set = HashSSet.empty[Exp]
     for (exp <- exps) {
       if (exp == trueLit) {
@@ -1406,8 +1415,9 @@ object Util {
         set = set + exp
       }
     }
-    return esToBinary(set.elements, falseLit, Exp.BinaryOp.Or,
-      Typed.bOpt, ResolvedInfo.BuiltIn(ResolvedInfo.BuiltIn.Kind.BinaryOr, None()), pOpt)
+    return esToBinary(set.elements, falseLit, if (isCond) Exp.BinaryOp.CondOr else Exp.BinaryOp.Or,
+      Typed.bOpt, ResolvedInfo.BuiltIn(if (isCond) ResolvedInfo.BuiltIn.Kind.BinaryCondOr
+      else ResolvedInfo.BuiltIn.Kind.BinaryOr, None()), pOpt)
   }
 
   @pure def bigImply(isCond: B, exps: ISZ[Exp], pOpt: Option[Position]): Exp = {
