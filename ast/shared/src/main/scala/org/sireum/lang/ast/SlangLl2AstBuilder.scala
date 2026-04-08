@@ -955,7 +955,12 @@ object SlangLl2AstBuilder {
     // typeDefn: TYPE mod* ID typeParams? ( typeDefnEnumSuffix | typeDefnAliasSuffix | typeDefnAdtSuffix )?
     val mods = buildMods(findChildren(node, "mod"))
     val id = mkId(idText(node), node)
-    val typeParams = buildTypeParams(findChild(node, "typeParams"), reporter)
+    val isSig = hasMod(mods, "sig")
+    val isMsig = hasMod(mods, "msig")
+    val isRecord = hasMod(mods, "record")
+    val typeParamDefaultKind: Typed.VarKind.Type =
+      if (isMsig || isRecord) Typed.VarKind.Mutable else Typed.VarKind.Immutable
+    val typeParams = buildTypeParamsWithDefault(findChild(node, "typeParams"), typeParamDefaultKind, reporter)
 
     // Check for enum
     if (hasMod(mods, "enum")) {
@@ -990,9 +995,6 @@ object SlangLl2AstBuilder {
     }
 
     // Check for @sig / @msig / @datatype / @record
-    val isSig = hasMod(mods, "sig")
-    val isMsig = hasMod(mods, "msig")
-    val isRecord = hasMod(mods, "record")
     val isTrait = hasMod(mods, "trait")
     val isSealed = hasMod(mods, "sealed")
     val isExt = hasMod(mods, "ext")
@@ -1357,16 +1359,20 @@ object SlangLl2AstBuilder {
   // ─── typeParams ────────────────────────────────────────────────────
 
   def buildTypeParams(nodeOpt: Option[ParseTree.Node], reporter: message.Reporter): ISZ[AST.TypeParam] = {
+    return buildTypeParamsWithDefault(nodeOpt, Typed.VarKind.Immutable, reporter)
+  }
+
+  def buildTypeParamsWithDefault(nodeOpt: Option[ParseTree.Node], defaultKind: Typed.VarKind.Type, reporter: message.Reporter): ISZ[AST.TypeParam] = {
     nodeOpt match {
       case Some(node) =>
         // typeParams: LSQUARE typeParam typeParamSuffix* RSQUARE
         var r = ISZ[AST.TypeParam]()
         val firstTP = findChild(node, "typeParam").get
-        r = r :+ buildTypeParam(firstTP, reporter)
+        r = r :+ buildTypeParamWithDefault(firstTP, defaultKind, reporter)
         val suffixes = findChildren(node, "typeParamSuffix")
         for (s <- suffixes) {
           val tp = findChild(s, "typeParam").get
-          r = r :+ buildTypeParam(tp, reporter)
+          r = r :+ buildTypeParamWithDefault(tp, defaultKind, reporter)
         }
         return r
       case _ => return ISZ()
@@ -1374,15 +1380,21 @@ object SlangLl2AstBuilder {
   }
 
   def buildTypeParam(node: ParseTree.Node, reporter: message.Reporter): AST.TypeParam = {
+    return buildTypeParamWithDefault(node, Typed.VarKind.Immutable, reporter)
+  }
+
+  def buildTypeParamWithDefault(node: ParseTree.Node, defaultKind: Typed.VarKind.Type, reporter: message.Reporter): AST.TypeParam = {
     // typeParam: mod* ID
     val mods = buildMods(findChildren(node, "mod"))
     val id = mkId(idText(node), node)
     val kind: Typed.VarKind.Type = if (hasMod(mods, "index")) {
       Typed.VarKind.Index
+    } else if (hasMod(mods, "imm")) {
+      Typed.VarKind.Immutable
     } else if (hasMod(mods, "mut")) {
       Typed.VarKind.Mutable
     } else {
-      Typed.VarKind.Immutable
+      defaultKind
     }
     return AST.TypeParam(id = id, kind = kind)
   }
