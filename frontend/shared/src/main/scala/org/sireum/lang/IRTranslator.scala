@@ -1602,11 +1602,16 @@ object IRTranslator {
         val retType = originalFunType.ret
         val bodyPos = exp.exp.asStmt.posOpt.get
         exp.exp match {
-          case bodyExpr: AST.Stmt.Expr if isHalt(bodyExpr) =>
-            translateStmt(bodyExpr, None())
           case bodyExpr: AST.Stmt.Expr =>
-            val r = translateExp(bodyExpr.exp)
-            stmts = stmts :+ AST.IR.Stmt.Return(Some(r), bodyPos)
+            if (isHalt(bodyExpr)) {
+              translateStmt(bodyExpr, None())
+            } else if (retType == AST.Typed.unit) {
+              translateStmt(bodyExpr, None())
+              stmts = stmts :+ AST.IR.Stmt.Return(None(), bodyPos)
+            } else {
+              val r = translateExp(bodyExpr.exp)
+              stmts = stmts :+ AST.IR.Stmt.Return(Some(r), bodyPos)
+            }
           case _ =>
             if (retType == AST.Typed.unit) {
               // Unit-returning lambda: translate body as statements, return Unit singleton
