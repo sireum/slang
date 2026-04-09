@@ -127,6 +127,136 @@ object IRTranslator {
     }
   }
 
+  @strictpure def byNameValueTypeOpt(t: AST.Typed): Option[AST.Typed] = t match {
+    case ft: AST.Typed.Fun if ft.isByName && ft.args.isEmpty => Some(ft.ret)
+    case _ => None()
+  }
+
+  def lowerByNameType(t: AST.Typed): AST.Typed = {
+    t match {
+      case ft: AST.Typed.Fun =>
+        var newArgs = ISZ[AST.Typed]()
+        for (arg <- ft.args) {
+          newArgs = newArgs :+ lowerByNameType(arg)
+        }
+        val newRet = lowerByNameType(ft.ret)
+        if (ft.isByName && ft.args.isEmpty) {
+          return AST.Typed.Fun(ft.purity, F, ISZ(), newRet)
+        }
+        return ft(args = newArgs, ret = newRet)
+      case tn: AST.Typed.Name =>
+        var newArgs = ISZ[AST.Typed]()
+        for (arg <- tn.args) {
+          newArgs = newArgs :+ lowerByNameType(arg)
+        }
+        return tn(args = newArgs)
+      case tu: AST.Typed.Tuple =>
+        var newArgs = ISZ[AST.Typed]()
+        for (arg <- tu.args) {
+          newArgs = newArgs :+ lowerByNameType(arg)
+        }
+        return tu(args = newArgs)
+      case _ => return t
+    }
+  }
+
+  def lowerByNameFunType(t: AST.Typed.Fun): AST.Typed.Fun = {
+    return lowerByNameType(t).asInstanceOf[AST.Typed.Fun]
+  }
+
+  def collectCapturesExp(exp: AST.Exp): ISZ[(ISZ[String], B, String, AST.Typed)] = {
+    val collector = IRTranslator.ClosureCaptureCollector(HashSMap.empty)
+    collector.transformExp(exp)
+    return collector.captures.values
+  }
+
+  def makeByNameClosure(arg: AST.Exp, byNameType: AST.Typed.Fun, pos: message.Position): AST.IR.Exp = {
+    val thunkType = lowerByNameFunType(byNameType)
+    val closureName = st"$$byname.${pos.beginLine}.${pos.beginColumn}.${fresh.temp()}".render
+    val owner = methodContext.owner
+    val captures = collectCapturesExp(arg)
+
+    var captureNames = ISZ[String]()
+    var captureTypes = ISZ[AST.Typed]()
+    var captureExprs = ISZ[AST.IR.Exp]()
+    var liftedVarCaptureSet = HashSet.empty[String]
+    for (capture <- captures) {
+      val captureId = capture._3
+      val captureIsVal = capture._2
+      val captureType = capture._4
+      val loweredCaptureType = lowerByNameType(captureType)
+      captureNames = captureNames :+ captureId
+      if (!captureIsVal || varCaptureSet.contains(captureId)) {
+        val mt = mboxType(captureType)
+        captureTypes = captureTypes :+ mt
+        captureExprs = captureExprs :+ AST.IR.Exp.LocalVarRef(T, methodContext, captureId, mt, pos)
+        liftedVarCaptureSet = liftedVarCaptureSet + captureId
+      } else {
+        captureTypes = captureTypes :+ loweredCaptureType
+        captureExprs = captureExprs :+ AST.IR.Exp.LocalVarRef(T, methodContext, captureId, loweredCaptureType, pos)
+      }
+    }
+
+    val savedMethodContext = methodContext
+    val savedStmts = stmts
+    val savedVarCaptureSet = varCaptureSet
+    val savedNestedMethodCaptures = nestedMethodCaptures
+
+    methodContext = AST.IR.MethodContext(
+      isInObject = T,
+      owner = owner,
+      id = closureName,
+      t = thunkType(args = captureTypes ++ thunkType.args)
+    )
+    stmts = ISZ()
+    varCaptureSet = liftedVarCaptureSet
+    nestedMethodCaptures = HashMap.empty
+
+    val bodyPos = arg.posOpt.get
+    if (thunkType.ret == AST.Typed.unit) {
+      translateStmt(AST.Stmt.Expr(arg, ISZ(), AST.TypedAttr(arg.posOpt, arg.typedOpt)), None())
+      stmts = stmts :+ AST.IR.Stmt.Return(None(), bodyPos)
+    } else {
+      val r = translateExp(arg)
+      stmts = stmts :+ AST.IR.Stmt.Return(Some(r), bodyPos)
+    }
+    val liftedBody = AST.IR.Body.Block(AST.IR.Stmt.Block(stmts, pos))
+
+    var closureTypeVarIds = ISZ[String]()
+    var closureTypeVarSeen = HashSet.empty[String]
+    for (ct <- captureTypes) {
+      val p = collectTypeVarIds(ct, closureTypeVarSeen)
+      closureTypeVarIds = closureTypeVarIds ++ p._1
+      closureTypeVarSeen = p._2
+    }
+
+    val liftedProc = AST.IR.Procedure(
+      isInObject = T,
+      rTypeParams = ISZ(),
+      typeParams = closureTypeVarIds,
+      owner = owner,
+      id = closureName,
+      paramNames = captureNames,
+      tipe = thunkType(args = captureTypes ++ thunkType.args),
+      body = liftedBody,
+      pos = pos
+    )
+    liftedProcedures = liftedProcedures :+ liftedProc
+
+    methodContext = savedMethodContext
+    stmts = savedStmts
+    varCaptureSet = savedVarCaptureSet
+    nestedMethodCaptures = savedNestedMethodCaptures
+
+    return norm3AC(AST.IR.Exp.ClosureRef(
+      owner = owner,
+      id = closureName,
+      captures = captureExprs,
+      tipe = thunkType,
+      pos = pos
+    ))
+  }
+
   def translateMethodH(isBasic: B,
                        receiverTypeOpt: Option[AST.Typed],
                        owner: ISZ[String],
@@ -137,11 +267,11 @@ object IRTranslator {
                        pos: message.Position,
                        bodyOpt: Option[AST.Body]): AST.IR.Procedure = {
     val isInObject = receiverTypeOpt.isEmpty
-    var t: AST.Typed.Fun = funType
+    var t: AST.Typed.Fun = lowerByNameFunType(funType)
     var paramNames = params
     if (!isInObject) {
       paramNames = "this" +: paramNames
-      t = t(args = receiverTypeOpt.get +: t.args)
+      t = t(args = lowerByNameType(receiverTypeOpt.get) +: t.args)
     }
     methodContext = AST.IR.MethodContext(isInObject, owner, id, t)
     val oldVarCaptureSet = varCaptureSet
@@ -835,7 +965,7 @@ object IRTranslator {
 
             // Lifted procedure has captures as extra leading params
             val liftedParamNames = captureParamNames ++ origParamNames
-            val liftedFunType = origFunType(args = captureParamTypes ++ origFunType.args)
+            val liftedFunType = lowerByNameFunType(origFunType(args = captureParamTypes ++ origFunType.args))
 
             // Save state
             val savedMethodContext = methodContext
@@ -1077,17 +1207,23 @@ object IRTranslator {
               val mboxRef = AST.IR.Exp.LocalVarRef(T, methodContext, res.id, mt, pos)
               return norm3AC(AST.IR.Exp.FieldVarRef(mboxRef, "value", t, pos))
             }
-            return norm3AC(AST.IR.Exp.LocalVarRef(res.isVal, methodContext, res.id, t, pos))
+            byNameValueTypeOpt(t) match {
+              case Some(valueT) =>
+                val ref = AST.IR.Exp.LocalVarRef(res.isVal, methodContext, res.id, lowerByNameType(t), pos)
+                return norm3AC(AST.IR.Exp.ApplyClosure(ref, ISZ(), valueT, pos))
+              case _ =>
+                return norm3AC(AST.IR.Exp.LocalVarRef(res.isVal, methodContext, res.id, lowerByNameType(t), pos))
+            }
           case res: AST.ResolvedInfo.Var =>
             if (res.isInObject) {
-              return norm3AC(AST.IR.Exp.GlobalVarRef(res.owner :+ res.id, t, pos))
+              return norm3AC(AST.IR.Exp.GlobalVarRef(res.owner :+ res.id, lowerByNameType(t), pos))
             } else {
-              return norm3AC(AST.IR.Exp.FieldVarRef(thiz(pos), res.id, t, pos))
+              return norm3AC(AST.IR.Exp.FieldVarRef(thiz(pos), res.id, lowerByNameType(t), pos))
             }
           case res: AST.ResolvedInfo.EnumElement =>
             return norm3AC(AST.IR.Exp.EnumElementRef(res.owner, res.name, res.ordinal, pos))
           case res: AST.ResolvedInfo.Method =>
-            val methodType = res.tpeOpt.get
+            val methodType = lowerByNameFunType(res.tpeOpt.get)
             val owner = resolveOwner(res)
             if (res.isInObject) {
               return norm3AC(AST.IR.Exp.Apply(T, owner, res.id, AST.Typed.emptyRTypes, ISZ(), methodType, pos))
@@ -1102,11 +1238,11 @@ object IRTranslator {
         exp.resOpt.get match {
           case res: AST.ResolvedInfo.Var =>
             if (res.isInObject) {
-              return norm3AC(AST.IR.Exp.GlobalVarRef(res.owner :+ res.id, t, pos))
+              return norm3AC(AST.IR.Exp.GlobalVarRef(res.owner :+ res.id, lowerByNameType(t), pos))
             } else {
               val receiver = exp.receiverOpt.get
               val rcv = translateExp(receiver)
-              return norm3AC(AST.IR.Exp.FieldVarRef(rcv, res.id, t, pos))
+              return norm3AC(AST.IR.Exp.FieldVarRef(rcv, res.id, lowerByNameType(t), pos))
             }
           case res: AST.ResolvedInfo.EnumElement =>
             return norm3AC(AST.IR.Exp.EnumElementRef(res.owner, res.name, res.ordinal, pos))
@@ -1115,7 +1251,7 @@ object IRTranslator {
             if (receiverType == AST.Typed.string || isSeq(receiverType)) {
               val receiver = exp.receiverOpt.get
               val rcv = translateExp(receiver)
-              return norm3AC(AST.IR.Exp.FieldVarRef(rcv, res.id, res.tpeOpt.get.ret, pos))
+              return norm3AC(AST.IR.Exp.FieldVarRef(rcv, res.id, lowerByNameType(res.tpeOpt.get.ret), pos))
             } else {
               return translateExp(AST.Exp.Invoke(exp.receiverOpt, AST.Exp.Ident(exp.id, exp.attr), ISZ(), ISZ(), ISZ(),
                 exp.attr(typedOpt = Some(exp.typedOpt.get.asInstanceOf[AST.Typed.Method].tpe.ret))))
@@ -1279,11 +1415,12 @@ object IRTranslator {
             res.mode match {
               case AST.MethodMode.Method =>
                 var args = ISZ[AST.IR.Exp]()
-                var methodType = res.tpeOpt.get
+                val originalMethodType = res.tpeOpt.get
+                var methodType = lowerByNameFunType(originalMethodType)
                 exp.receiverOpt match {
                   case Some(receiver) if !res.isInObject =>
                     args = args :+ translateExp(receiver)
-                    methodType = methodType(args = receiver.typedOpt.get +: methodType.args)
+                    methodType = methodType(args = lowerByNameType(receiver.typedOpt.get) +: methodType.args)
                   case _ =>
                 }
                 // Check if this is a call to a nested method with captures
@@ -1293,7 +1430,7 @@ object IRTranslator {
                 nestedMethodCaptures.get(nestedKey) match {
                   case Some(captureList) =>
                     // Prepend capture LocalVarRef expressions to args
-                    val captureTypes: ISZ[AST.Typed] = for (c <- captureList) yield c._3
+                    val captureTypes: ISZ[AST.Typed] = for (c <- captureList) yield lowerByNameType(c._3)
                     for (c <- captureList) {
                       val captureId = c._2
                       val captureTyped = c._3
@@ -1313,8 +1450,14 @@ object IRTranslator {
                     applyIsInObject = T
                   case _ =>
                 }
-                for (arg <- exp.args) {
-                  args = args :+ translateExp(arg)
+                for (i <- z"0" until exp.args.size) {
+                  val formalT = originalMethodType.args(i)
+                  byNameValueTypeOpt(formalT) match {
+                    case Some(_) =>
+                      args = args :+ makeByNameClosure(exp.args(i), formalT.asInstanceOf[AST.Typed.Fun], pos)
+                    case _ =>
+                      args = args :+ translateExp(exp.args(i))
+                  }
                 }
                 return norm3AC(AST.IR.Exp.Apply(applyIsInObject, applyOwner, res.id, AST.Typed.emptyRTypes, args, methodType, pos))
               case AST.MethodMode.Ext =>
@@ -1381,15 +1524,22 @@ object IRTranslator {
             }
           case res: AST.ResolvedInfo.LocalVar =>
             // Calling a function-typed local variable, e.g. f(10) where f: Z => Z
+            val originalFunType = exp.ident.attr.typedOpt.get.asInstanceOf[AST.Typed.Fun]
+            val loweredFunType = lowerByNameFunType(originalFunType)
             val closureVar: AST.IR.Exp = exp.receiverOpt match {
               case Some(receiver) => translateExp(receiver)
               case _ =>
-                val funType = exp.ident.attr.typedOpt.get
-                AST.IR.Exp.LocalVarRef(res.isVal, methodContext, res.id, funType, pos)
+                AST.IR.Exp.LocalVarRef(res.isVal, methodContext, res.id, loweredFunType, pos)
             }
             var args = ISZ[AST.IR.Exp]()
-            for (arg <- exp.args) {
-              args = args :+ translateExp(arg)
+            for (i <- z"0" until exp.args.size) {
+              val formalT = originalFunType.args(i)
+              byNameValueTypeOpt(formalT) match {
+                case Some(_) =>
+                  args = args :+ makeByNameClosure(exp.args(i), formalT.asInstanceOf[AST.Typed.Fun], pos)
+                case _ =>
+                  args = args :+ translateExp(exp.args(i))
+              }
             }
             val retType = exp.typedOpt.get
             return norm3AC(AST.IR.Exp.ApplyClosure(closureVar, args, retType, pos))
