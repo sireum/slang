@@ -2318,8 +2318,52 @@ object SlangLl2AstBuilder {
   }
 
   def parseMStr(text: String): String = {
-    // Multi-line strings: lines separated by # with | margin
-    return text
+    // MSTR grammar:  ( '#' MSTRF WSF? )* '#' MSTRF
+    //   MSTRF = MSTRI '\r'? '\n'
+    //   MSTRI = ( ~('\n' | '\r' | '$') | '$$' )*
+    //   WSF   = (' ' | '\t')+
+    //
+    // The lexer captures the full token text including every '#' line prefix
+    // plus any inter-line whitespace (WSF) before the next '#'. Convert that
+    // into a plain multi-line string payload:
+    //   - Skip leading whitespace at the start of each line.
+    //   - Skip the '#' marker at each line start.
+    //   - Normalize '\r\n' to '\n' and preserve '\n'.
+    //   - Unescape '$$' to a single '$' (the only escape permitted inside
+    //     MSTRI per the grammar).
+    //   - Preserve any '#' that appears mid-content (only the line-start
+    //     marker is stripped).
+    val cis = conversions.String.toCis(text)
+    val len = cis.size
+    var r = ISZ[C]()
+    var i: Z = 0
+    var atLineStart: B = T
+    while (i < len) {
+      val c = cis(i)
+      if (atLineStart && (c == ' ' || c == '\t')) {
+        i = i + 1
+      } else if (atLineStart && c == '#') {
+        i = i + 1
+        atLineStart = F
+      } else if (c == '\r' && i + 1 < len && cis(i + 1) == '\n') {
+        r = r :+ '\n'
+        i = i + 2
+        atLineStart = T
+      } else if (c == '\n') {
+        r = r :+ '\n'
+        i = i + 1
+        atLineStart = T
+      } else if (c == '$' && i + 1 < len && cis(i + 1) == '$') {
+        r = r :+ '$'
+        i = i + 2
+        atLineStart = F
+      } else {
+        r = r :+ c
+        i = i + 1
+        atLineStart = F
+      }
+    }
+    return conversions.String.fromCis(r)
   }
 
   def buildLit(node: ParseTree.Node, reporter: message.Reporter): AST.Lit = {
