@@ -1493,8 +1493,16 @@ object IRTranslator {
                 }
                 return norm3AC(AST.IR.Exp.Construct(t, AST.Typed.emptyRTypes, args, pos))
               case AST.MethodMode.Store =>
-                // IS/MS functional update: is(idx ~> val) → Apply(IS/MS, "functionalUpdate", [rcv, idx, val])
-                val rcv: AST.IR.Exp = exp.receiverOpt match {
+                // IS/MS functional update: is(p1, p2, ...) where each pi is `idx ~> val`.
+                // Lower to a chain of Apply(IS/MS, "functionalUpdate", [rcv', idx_i, val_i])
+                // so we correctly handle any number of ~> arguments (not just the first).
+                if (exp.args.isEmpty) {
+                  halt(s"Store-mode invoke with no ~> arguments at ${exp.posOpt}: $exp")
+                }
+                val seqType = exp.typedOpt.get.asInstanceOf[AST.Typed.Name]
+                val elemType = seqType.args(1)
+                val methodType = AST.Typed.Fun(AST.Purity.Impure, F, ISZ(seqType, AST.Typed.z, elemType), seqType)
+                var rcv: AST.IR.Exp = exp.receiverOpt match {
                   case Some(receiver) =>
                     if (exp.ident.id.value == "apply") {
                       translateExp(receiver)
@@ -1504,22 +1512,16 @@ object IRTranslator {
                     }
                   case _ => translateExp(exp.ident)
                 }
-                val arg0 = exp.args(0)
-                val index: AST.IR.Exp = arg0 match {
-                  case b: AST.Exp.Binary => translateExp(b.left)
-                  case t: AST.Exp.Tuple => translateExp(t.args(0))
-                  case _ => halt(s"Unexpected Store arg: $arg0")
+                for (arg <- exp.args) {
+                  val (index, value): (AST.IR.Exp, AST.IR.Exp) = arg match {
+                    case b: AST.Exp.Binary => (translateExp(b.left), translateExp(b.right))
+                    case t: AST.Exp.Tuple if t.args.size == z"2" => (translateExp(t.args(0)), translateExp(t.args(1)))
+                    case _ => halt(s"Unexpected Store arg at ${arg.posOpt}: $arg")
+                  }
+                  rcv = norm3AC(AST.IR.Exp.Apply(T, seqType.ids, "functionalUpdate",
+                    AST.Typed.emptyRTypes, ISZ(rcv, index, value), methodType, pos))
                 }
-                val value: AST.IR.Exp = arg0 match {
-                  case b: AST.Exp.Binary => translateExp(b.right)
-                  case t: AST.Exp.Tuple => translateExp(t.args(1))
-                  case _ => halt(s"Unexpected Store arg: $arg0")
-                }
-                val seqType = exp.typedOpt.get.asInstanceOf[AST.Typed.Name]
-                val elemType = seqType.args(1)
-                val methodType = AST.Typed.Fun(AST.Purity.Impure, F, ISZ(seqType, AST.Typed.z, elemType), seqType)
-                return norm3AC(AST.IR.Exp.Apply(T, seqType.ids, "functionalUpdate",
-                  AST.Typed.emptyRTypes, ISZ(rcv, index, value), methodType, pos))
+                return rcv
               case _ => halt(s"TODO: $exp")
             }
           case res: AST.ResolvedInfo.LocalVar =>
