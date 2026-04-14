@@ -1147,6 +1147,33 @@ object IRTranslator {
     return norm3AC(AST.IR.Exp.LocalVarRef(T, methodContext, "this", methodContext.receiverType, pos))
   }
 
+  def ownerTypedName(owner: ISZ[String]): AST.Typed = {
+    val args: ISZ[AST.Typed] = th.typeMap.get(owner) match {
+      case Some(info: TypeInfo.Adt) =>
+        for (tp <- info.ast.typeParams) yield AST.Typed.TypeVar(tp.id.value, tp.kind)
+      case Some(info: TypeInfo.Sig) =>
+        for (tp <- info.ast.typeParams) yield AST.Typed.TypeVar(tp.id.value, tp.kind)
+      case _ =>
+        ISZ()
+    }
+    return AST.Typed.Name(owner, AST.Typed.noRType, args)
+  }
+
+  def liftedThiz(owner: ISZ[String], pos: message.Position): AST.IR.Exp = {
+    if (methodContext.isInObject) {
+      val thisType = ownerTypedName(owner)
+      return norm3AC(AST.IR.Exp.LocalVarRef(T, methodContext, "this", thisType, pos))
+    }
+    return thiz(pos)
+  }
+
+  def liftedThizFromReceiver(receiver: AST.Exp, owner: ISZ[String], pos: message.Position): AST.IR.Exp = {
+    receiver match {
+      case _: AST.Exp.This => return liftedThiz(owner, pos)
+      case _ => return translateExp(receiver)
+    }
+  }
+
   def norm3AC(r: AST.IR.Exp): AST.IR.Exp = {
     val e: AST.IR.Exp = r match {
       case r: AST.IR.Exp.GlobalVarRef =>
@@ -1218,7 +1245,7 @@ object IRTranslator {
             if (res.isInObject) {
               return norm3AC(AST.IR.Exp.GlobalVarRef(res.owner :+ res.id, lowerByNameType(t), pos))
             } else {
-              return norm3AC(AST.IR.Exp.FieldVarRef(thiz(pos), res.id, lowerByNameType(t), pos))
+              return norm3AC(AST.IR.Exp.FieldVarRef(liftedThiz(res.owner, pos), res.id, lowerByNameType(t), pos))
             }
           case res: AST.ResolvedInfo.EnumElement =>
             return norm3AC(AST.IR.Exp.EnumElementRef(res.owner, res.name, res.ordinal, pos))
@@ -1241,7 +1268,7 @@ object IRTranslator {
               return norm3AC(AST.IR.Exp.GlobalVarRef(res.owner :+ res.id, lowerByNameType(t), pos))
             } else {
               val receiver = exp.receiverOpt.get
-              val rcv = translateExp(receiver)
+              val rcv = liftedThizFromReceiver(receiver, res.owner, pos)
               return norm3AC(AST.IR.Exp.FieldVarRef(rcv, res.id, lowerByNameType(t), pos))
             }
           case res: AST.ResolvedInfo.EnumElement =>
@@ -1545,6 +1572,34 @@ object IRTranslator {
             }
             val retType = exp.typedOpt.get
             return norm3AC(AST.IR.Exp.ApplyClosure(closureVar, args, retType, pos))
+          case res: AST.ResolvedInfo.Var =>
+            // Calling a function-typed field/global variable, e.g. this.p(10) where p: T => B
+            val originalFunType = exp.ident.attr.typedOpt.get.asInstanceOf[AST.Typed.Fun]
+            val loweredFunType = lowerByNameFunType(originalFunType)
+            val closureVar: AST.IR.Exp =
+              if (res.isInObject) {
+                AST.IR.Exp.GlobalVarRef(res.owner :+ res.id, loweredFunType, pos)
+              } else {
+                exp.receiverOpt match {
+                  case Some(receiver) =>
+                    val receiverExp = liftedThizFromReceiver(receiver, res.owner, pos)
+                    AST.IR.Exp.FieldVarRef(receiverExp, res.id, loweredFunType, pos)
+                  case _ =>
+                    AST.IR.Exp.FieldVarRef(liftedThiz(res.owner, pos), res.id, loweredFunType, pos)
+                }
+              }
+            var args = ISZ[AST.IR.Exp]()
+            for (i <- z"0" until exp.args.size) {
+              val formalT = originalFunType.args(i)
+              byNameValueTypeOpt(formalT) match {
+                case Some(_) =>
+                  args = args :+ makeByNameClosure(exp.args(i), formalT.asInstanceOf[AST.Typed.Fun], pos)
+                case _ =>
+                  args = args :+ translateExp(exp.args(i))
+              }
+            }
+            val retType = exp.typedOpt.get
+            return norm3AC(AST.IR.Exp.ApplyClosure(closureVar, args, retType, pos))
           case res => halt(s"TODO: $exp (res: $res)")
         }
       case exp: AST.Exp.InvokeNamed =>
@@ -1658,11 +1713,11 @@ object IRTranslator {
               exp.ref match {
                 case ref: AST.Exp.Select =>
                   ref.receiverOpt match {
-                    case Some(receiver) => ISZ(translateExp(receiver))
-                    case _ => ISZ(thiz(pos))
+                    case Some(receiver) => ISZ(liftedThizFromReceiver(receiver, res.owner, pos))
+                    case _ => ISZ(liftedThiz(res.owner, pos))
                   }
-                case _: AST.Exp.Ident => ISZ(thiz(pos))
-                case _ => ISZ(thiz(pos))
+                case _: AST.Exp.Ident => ISZ(liftedThiz(res.owner, pos))
+                case _ => ISZ(liftedThiz(res.owner, pos))
               }
             }
             return norm3AC(AST.IR.Exp.ClosureRef(
