@@ -442,9 +442,9 @@ HLINE: '-' '-' '-' '-' '-'+ ;
 
 OP: ( OPSYM+ | '\\' IDF ) ;
 
-HEX: '0x'  HEX_DIGIT ( '_' | HEX_DIGIT )* ;
+HEX: '0x'  HEX_DIGIT ( '_' | HEX_DIGIT )* ( ( 'g'..'z' | 'G'..'Z' ) ( LETTER | DIGIT | '_' )* )? ;
 
-BIN: '0b' ( '0' | '1' ) ( '0' | '1' | '_' )* ;
+BIN: '0b' ( '0' | '1' ) ( '0' | '1' | '_' )* ( LETTER ( LETTER | DIGIT | '_' )* )? ;
 
 INT: ( '0' | '-'? '1'..'9' ( DIGIT | '_' )* ) ( LETTER ( LETTER | DIGIT | '_' )* )? ;
 

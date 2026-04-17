@@ -2400,6 +2400,63 @@ object SlangLl2AstBuilder {
               attr = typedAttr(leaf))
           }
         }
+      case "HEX" =>
+        // HEX with optional type suffix (e.g., 0xFFu8). The lexer allows a
+        // non-hex-letter followed by [a-zA-Z0-9_]* after the hex digits.
+        // Split at the first non-[0-9a-fA-F_] character after the '0x' prefix.
+        val text = leaf.text
+        val chars = conversions.String.toCis(text)
+        var splitIdx: Z = text.size
+        var i: Z = 2 // skip '0x'
+        while (i < chars.size && splitIdx == text.size) {
+          val c = chars(i)
+          val isHex: B = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || c == '_'
+          if (!isHex) {
+            splitIdx = i
+          }
+          i = i + 1
+        }
+        if (splitIdx < text.size) {
+          val numPart = ops.StringOps(text).substring(0, splitIdx)
+          val suffix = ops.StringOps(text).substring(splitIdx, text.size)
+          val hexStr = ops.StringOps(numPart).substring(2, splitIdx) // strip '0x'
+          val cleanHex = ops.StringOps(hexStr).replaceAllLiterally("_", "")
+          val value = Z(st"0x$cleanHex".render).get
+          return AST.Exp.StringInterpolate(
+            prefix = suffix,
+            lits = ISZ(AST.Exp.LitString(value = value.string, attr = attr(leaf))),
+            args = ISZ(),
+            attr = typedAttr(leaf))
+        }
+      case "BIN" =>
+        // BIN with optional type suffix (e.g., 0b1010u8). Split at the
+        // first non-[01_] character after the '0b' prefix.
+        val text = leaf.text
+        val chars = conversions.String.toCis(text)
+        var splitIdx: Z = text.size
+        var i: Z = 2 // skip '0b'
+        while (i < chars.size && splitIdx == text.size) {
+          val c = chars(i)
+          if (c != '0' && c != '1' && c != '_') {
+            splitIdx = i
+          }
+          i = i + 1
+        }
+        if (splitIdx < text.size) {
+          val numPart = ops.StringOps(text).substring(0, splitIdx)
+          val suffix = ops.StringOps(text).substring(splitIdx, text.size)
+          val binStr = ops.StringOps(numPart).substring(2, splitIdx) // strip '0b'
+          val cleanBin = ops.StringOps(binStr).replaceAllLiterally("_", "")
+          var value: Z = 0
+          for (c <- conversions.String.toCis(cleanBin)) {
+            value = value * 2 + (if (c == '1') 1 else 0)
+          }
+          return AST.Exp.StringInterpolate(
+            prefix = suffix,
+            lits = ISZ(AST.Exp.LitString(value = value.string, attr = attr(leaf))),
+            args = ISZ(),
+            attr = typedAttr(leaf))
+        }
       case "REAL" =>
         val text = leaf.text
         val sops = ops.StringOps(text)
