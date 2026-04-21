@@ -67,7 +67,8 @@ object IRTranslator {
                            val threeAddressCode: B,
                            val threeAddressExpF: AST.IR.Exp => B @pure,
                            val th: TypeHierarchy,
-                           val fresh: IRTranslator.Fresh) {
+                           val fresh: IRTranslator.Fresh,
+                           val useExtImplementationOwner: B) {
 
   var methodContext: AST.IR.MethodContext = AST.IR.MethodContext.empty
   var stmts: ISZ[AST.IR.Stmt] = ISZ()
@@ -80,7 +81,11 @@ object IRTranslator {
     else owner
 
   @strictpure def resolveOwner(res: AST.ResolvedInfo.Method): ISZ[String] =
-    if (res.mode == AST.MethodMode.Ext) extOwner(res.owner) else res.owner
+    if (useExtImplementationOwner && res.mode == AST.MethodMode.Ext) extOwner(res.owner) else res.owner
+
+  def resolveMethodContextType(t: AST.Typed.Fun): AST.Typed.Fun = {
+    return if (useExtImplementationOwner) lowerByNameFunType(t) else t
+  }
 
   @strictpure def mboxType(t: AST.Typed): AST.Typed.Name =
     AST.Typed.Name(AST.Typed.sireumName :+ "MBox", None(), ISZ(t))
@@ -267,7 +272,7 @@ object IRTranslator {
                        pos: message.Position,
                        bodyOpt: Option[AST.Body]): AST.IR.Procedure = {
     val isInObject = receiverTypeOpt.isEmpty
-    var t: AST.Typed.Fun = lowerByNameFunType(funType)
+    var t: AST.Typed.Fun = resolveMethodContextType(funType)
     var paramNames = params
     if (!isInObject) {
       paramNames = "this" +: paramNames
@@ -1250,7 +1255,7 @@ object IRTranslator {
           case res: AST.ResolvedInfo.EnumElement =>
             return norm3AC(AST.IR.Exp.EnumElementRef(res.owner, res.name, res.ordinal, pos))
           case res: AST.ResolvedInfo.Method =>
-            val methodType = lowerByNameFunType(res.tpeOpt.get)
+            val methodType = resolveMethodContextType(res.tpeOpt.get)
             val owner = resolveOwner(res)
             if (res.isInObject) {
               return norm3AC(AST.IR.Exp.Apply(T, owner, res.id, AST.Typed.emptyRTypes, ISZ(), methodType, pos))
@@ -1443,7 +1448,7 @@ object IRTranslator {
               case AST.MethodMode.Method =>
                 var args = ISZ[AST.IR.Exp]()
                 val originalMethodType = res.tpeOpt.get
-                var methodType = lowerByNameFunType(originalMethodType)
+                var methodType = resolveMethodContextType(originalMethodType)
                 exp.receiverOpt match {
                   case Some(receiver) if !res.isInObject =>
                     args = args :+ translateExp(receiver)
