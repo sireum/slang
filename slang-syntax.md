@@ -72,7 +72,7 @@ The LL(2) syntax differs from Scala-based syntax primarily in:
 | **Ext sig** | `@ext trait Foo` | `type @sig @ext Foo` | `Stmt.Sig(isImmutable=T, isExt=T)` |
 | **Ext msig** | *(new)* | `type @msig @ext Foo` | `Stmt.Sig(isImmutable=F, isExt=T)` |
 | **Enum** | `@enum object Color { "Red"\n "Green" }` | `type @enum Color: { Red, Green }` | `Stmt.Enum` |
-| **Range type** | `@range(min = 0, max = 10) class Idx` | `type @range(min = 0, max = 10) Idx` | `Stmt.SubZ(isBitVector=F)` |
+| **Range type** | `@range(min = 0, max = 10) class Idx` | `type @range[min = 0, max = 10] Idx` | `Stmt.SubZ(isBitVector=F)` (LL(2) annotation args use `[...]`, not `(...)`) |
 | **Bits type** | `@bits(signed = F, width = 8) class U8` | `type @bits(signed = F, width = 8) U8` | `Stmt.SubZ(isBitVector=T)` |
 | **Type alias** | `type Foo = Bar[Z]` | `type @alias Foo = Bar[Z]` | `Stmt.TypeAlias` |
 | **Type params** | `[T, @mut U]` | `[@imm T, @mut U]` | `TypeParam` |
@@ -143,7 +143,7 @@ The LL(2) syntax differs from Scala-based syntax primarily in:
 | **Quant exists type** | `∃((x: T) => P(x))` | `∃ x: T => P(x)` | `Exp.QuantType` |
 | **Quant range** | `∀(lo until hi)(x => P(x))` | `∀ x: lo ..< hi => P(x)` | `Exp.QuantRange` |
 | **Quant each** | `∀(xs)(x => P(x))` | `∀ x: xs => P(x)` | `Exp.QuantEach` |
-| **String interp** | `s"hello $x"` | `s"hello $x$"` | `Exp.StringInterpolate` |
+| **String interp** | `s"hello $x"` / `s"${x + 1}"` | `s"hello $x$"` / `s"$x + 1$"` (single-line uses `$exp$` — no braces; interior is any `exp`, parenthesize only for precedence) | `Exp.StringInterpolate` |
 | **Lit bool** | `T` / `F` | `T`/`true` / `F`/`false` | `Exp.LitB` |
 | **Lit int** | `z"42"` or `42` | `42` | `Exp.LitZ` |
 | **Lit SubZ** | `s32"100"`, `u8"42"` | `100s32`, `42u8` | `Exp.StringInterpolate` |
@@ -161,7 +161,7 @@ The LL(2) syntax differs from Scala-based syntax primarily in:
 | **RS** | `RS(a, b)` | `RS(a, b)` | `Exp.RS` |
 | **Strict pure block** | (via annotation) | `@{ stmts }` | `Exp.StrictPureBlock` |
 | **Multi-line string** | `"""line1\nline2"""` | `#line1\n #line2` (`MSTR`) | `Exp.LitString` |
-| **Multi-line interp** | `prefix"""...$exp..."""` | `prefix#...${exp}$...` (`MSTRP`/etc.) | `Exp.StringInterpolate` |
+| **Multi-line interp** | `prefix"""...$exp..."""` | `prefix#...${exp}$...` (`MSTRP`/etc. — each line `#`-prefixed; interp uses `${exp}$` with braces, NOT the single-line `$exp$` form) | `Exp.StringInterpolate` |
 
 ### Types
 
