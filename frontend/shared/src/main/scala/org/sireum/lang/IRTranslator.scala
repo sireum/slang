@@ -466,9 +466,21 @@ object IRTranslator {
             c.condOpt.isEmpty && c.decl.locals.isEmpty && (c.pattern.isInstanceOf[AST.Pattern.LitInterpolate] ||
               c.pattern.isInstanceOf[AST.Pattern.Literal] || c.pattern.isInstanceOf[AST.Pattern.Wildcard]))) {
             def litOf(pattern: AST.Pattern): Option[AST.IR.Exp] = {
+              def directLit(lit: AST.Lit): AST.IR.Exp = {
+                lit match {
+                  case lit: AST.Exp.LitB => return AST.IR.Exp.Bool(lit.value, lit.posOpt.get)
+                  case lit: AST.Exp.LitC => return AST.IR.Exp.Int(AST.Typed.c, lit.value.toZ, lit.posOpt.get)
+                  case lit: AST.Exp.LitZ => return AST.IR.Exp.Int(AST.Typed.z, lit.value, lit.posOpt.get)
+                  case lit: AST.Exp.LitF32 => return AST.IR.Exp.F32(lit.value, lit.posOpt.get)
+                  case lit: AST.Exp.LitF64 => return AST.IR.Exp.F64(lit.value, lit.posOpt.get)
+                  case lit: AST.Exp.LitR => return AST.IR.Exp.R(lit.value, lit.posOpt.get)
+                  case lit: AST.Exp.LitString => return AST.IR.Exp.String(lit.value, lit.posOpt.get)
+                  case _ => halt(s"Infeasible: $lit")
+                }
+              }
               pattern match {
                 case _: AST.Pattern.Wildcard => return None()
-                case pattern: AST.Pattern.Literal => return Some(translateExp(pattern.lit))
+                case pattern: AST.Pattern.Literal => return Some(directLit(pattern.lit))
                 case pattern: AST.Pattern.LitInterpolate =>
                   val t = pattern.attr.typedOpt.get
                   val ppos = pattern.posOpt.get
@@ -1914,6 +1926,18 @@ object IRTranslator {
     var r = ISZ[AST.IR.Exp]()
     var lMap = localMap
     val pos = pattern.posOpt.get
+    def directPatternLit(lit: AST.Lit): AST.IR.Exp = {
+      lit match {
+        case lit: AST.Exp.LitB => return AST.IR.Exp.Bool(lit.value, lit.posOpt.get)
+        case lit: AST.Exp.LitC => return AST.IR.Exp.Int(AST.Typed.c, lit.value.toZ, lit.posOpt.get)
+        case lit: AST.Exp.LitZ => return AST.IR.Exp.Int(AST.Typed.z, lit.value, lit.posOpt.get)
+        case lit: AST.Exp.LitF32 => return AST.IR.Exp.F32(lit.value, lit.posOpt.get)
+        case lit: AST.Exp.LitF64 => return AST.IR.Exp.F64(lit.value, lit.posOpt.get)
+        case lit: AST.Exp.LitR => return AST.IR.Exp.R(lit.value, lit.posOpt.get)
+        case lit: AST.Exp.LitString => return AST.IR.Exp.String(lit.value, lit.posOpt.get)
+        case _ => halt("Infeasible")
+      }
+    }
     pattern match {
       case pattern: AST.Pattern.Wildcard =>
         pattern.typeOpt match {
@@ -1925,7 +1949,7 @@ object IRTranslator {
           case _ =>
         }
       case pattern: AST.Pattern.Literal =>
-        r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, translateExp(pattern.lit), pos)
+        r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, directPatternLit(pattern.lit), pos)
       case pattern: AST.Pattern.VarBinding =>
         pattern.tipeOpt match {
           case Some(tipe) =>

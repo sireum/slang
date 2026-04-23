@@ -2669,15 +2669,24 @@ object SlangLl2AstBuilder {
     val cis = conversions.String.toCis(s)
     var r = ISZ[C]()
     var i: Z = 0
+    var atLineStart = F
     // Strip leading '#'
     if (cis.size > 0 && cis(0) == '#') {
       i = 1
+      atLineStart = F
     }
     while (i < cis.size) {
-      if (cis(i) == '#') {
+      if (cis(i) == '\n') {
+        r = r :+ '\n'
+        atLineStart = T
+      } else if (atLineStart && (cis(i) == ' ' || cis(i) == '\t')) {
+        r = r :+ cis(i)
+      } else if (atLineStart && cis(i) == '#') {
         r = r :+ '|'
+        atLineStart = F
       } else {
         r = r :+ cis(i)
+        atLineStart = F
       }
       i = i + 1
     }
