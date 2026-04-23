@@ -432,9 +432,9 @@ MSTRP:	IDF ( '#' MSTRF WSF? )* '#' MSTRF ;
 
 MSTRPB: IDF ( '#' MSTRF WSF? )* '#' MSTRI '${' ;
 
-MSTRPM: '}$' MSTRF WSF? ( '#' MSTRF WSF? )* '#' MSTRI '${' ;
+MSTRPM: '}$' ( MSTRF WSF? '#' )* MSTRI '${' ;
 
-MSTRPE: '}$' MSTRF? ;
+MSTRPE: '}$' MSTRI ( '\r'? '\n' ( WSF? '#' MSTRI '\r'? '\n' )* )? ;
 
 ID: '\''? IDF | IDESC;
 
