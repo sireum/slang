@@ -437,7 +437,7 @@ SPM: '$' SPI* '$' ;
 
 SPE: '$' SPI* '"' ;
 
-MSTR:	( '#' MSTRF WSF? )* '#' MSTRF ;
+MSTR:	( '#' MSTRLF WSF? )* '#' MSTRLF ;
 
 MSTRP:	IDF ( '#' MSTRF WSF? )* '#' MSTRF ;
 
@@ -471,6 +471,14 @@ WS: ( ' ' | '\t' | '\r' | '\n' )+                    {$channel=HIDDEN;} ;
 fragment MSTRF:	MSTRI '\r'? '\n' ;
 
 fragment MSTRI:	( ~( '\n' | '\r' | '$' ) | '$$' )* ;
+
+/* Plain MSTR (no IDF prefix) has no interpolation, so '$' is a literal
+ * content character — no need to require '$$' escape.  MSTRP / MSTRPB /
+ * MSTRPM / MSTRPE keep MSTRI because '$' is reserved for the '${'
+ * interpolation-begin marker. */
+fragment MSTRLF:	MSTRLI '\r'? '\n' ;
+
+fragment MSTRLI:	( ~( '\n' | '\r' ) )* ;
 
 fragment WSF:	( ' ' | '\t' )+ ;
 
