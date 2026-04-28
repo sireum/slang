@@ -2662,9 +2662,11 @@ object SlangLl2AstBuilder {
     return (rLits, rArgs)
   }
 
-  // Normalize LL(2) multi-line '#' delimiters to match Scala '|' margin format.
-  // - Strip leading '#' (first line delimiter, no Scala equivalent)
-  // - Replace '#' with '|' after newline+whitespace (continuation line markers)
+  // For ST templates (`st#...`): keep the LL(2) `#` continuation markers as
+  // Scala-stripMargin-compatible `|` markers so the ST renderer's own
+  // margin / auto-indentation logic can consume them.  Strips only the
+  // leading `#` on the first line; preserves leading whitespace before
+  // `#` on continuation lines and replaces `#` with `|`.
   def normalizeHashToBar(s: String): String = {
     val cis = conversions.String.toCis(s)
     var r = ISZ[C]()
@@ -2693,6 +2695,53 @@ object SlangLl2AstBuilder {
     return conversions.String.fromCis(r)
   }
 
+  // For plain multi-line interpolated strings (`s#...`): strip the LL(2)
+  // `#` line markers AND the leading code-alignment whitespace before
+  // each `#` so the resulting String contains only the logical content.
+  // Pattern per line:
+  //
+  //   <newline> <ws*> # <content>   →   <newline> <content>
+  //
+  // The leading '#' on the FIRST line is stripped without inserting a
+  // newline (callers strip the start-of-string '#' before the first
+  // character of content).
+  def stripHashMargin(s: String): String = {
+    val cis = conversions.String.toCis(s)
+    var r = ISZ[C]()
+    var i: Z = 0
+    // Strip leading '#' (first-line marker; no preceding newline).
+    if (cis.size > 0 && cis(0) == '#') {
+      i = 1
+    }
+    while (i < cis.size) {
+      if (cis(i) == '\n') {
+        r = r :+ '\n'
+        i = i + 1
+        // Skip leading whitespace + the line-marker '#' on the next line.
+        while (i < cis.size && (cis(i) == ' ' || cis(i) == '\t')) {
+          i = i + 1
+        }
+        if (i < cis.size && cis(i) == '#') {
+          i = i + 1
+        }
+      } else {
+        r = r :+ cis(i)
+        i = i + 1
+      }
+    }
+    return conversions.String.fromCis(r)
+  }
+
+  // Dispatch helper: ST templates keep `|` markers (auto-indentation /
+  // margin handled by ST.render); plain `s#` strings get the margin
+  // stripped so the resulting String is human-readable.
+  def normalizeMstr(prefix: String, s: String): String = {
+    if (prefix == "s") {
+      return stripHashMargin(s)
+    }
+    return normalizeHashToBar(s)
+  }
+
   def parseMSTRP(leaf: ParseTree.Leaf): AST.Exp.StringInterpolate = {
     // MSTRP: IDF ( '#' MSTRF WSF? )* '#' MSTRF - no interpolation
     val text = leaf.text
@@ -2701,7 +2750,7 @@ object SlangLl2AstBuilder {
     // Find first '#'
     val firstHash = sops.indexOf('#')
     val prefix = sops.substring(0, firstHash)
-    val content = normalizeHashToBar(sops.substring(firstHash, text.size))
+    val content = normalizeMstr(prefix, sops.substring(firstHash, text.size))
     // Convert multi-line string content
     return AST.Exp.StringInterpolate(
       prefix = prefix,
@@ -2715,7 +2764,7 @@ object SlangLl2AstBuilder {
     val sops = ops.StringOps(text)
     val firstHash = sops.indexOf('#')
     val prefix = sops.substring(0, firstHash)
-    val firstLit = normalizeHashToBar(sops.substring(firstHash, text.size - 2)) // strip trailing '${'
+    val firstLit = normalizeMstr(prefix, sops.substring(firstHash, text.size - 2)) // strip trailing '${'
 
     var lits = ISZ[AST.Exp.LitString](AST.Exp.LitString(firstLit, attr(mstrpb)))
     var args = ISZ[AST.Exp]()
@@ -2723,7 +2772,7 @@ object SlangLl2AstBuilder {
     val mstrinterpOpt = findChild(node, "mstrinterp")
     mstrinterpOpt match {
       case Some(mi) =>
-        collectMstrinterp(mi, lits, args, reporter) match {
+        collectMstrinterp(mi, prefix, lits, args, reporter) match {
           case (newLits, newArgs) =>
             lits = newLits
             args = newArgs
@@ -2734,7 +2783,7 @@ object SlangLl2AstBuilder {
     return AST.Exp.StringInterpolate(prefix = prefix, lits = lits, args = args, attr = typedAttr(node))
   }
 
-  def collectMstrinterp(node: ParseTree.Node, lits: ISZ[AST.Exp.LitString], args: ISZ[AST.Exp], reporter: message.Reporter): (ISZ[AST.Exp.LitString], ISZ[AST.Exp]) = {
+  def collectMstrinterp(node: ParseTree.Node, prefix: String, lits: ISZ[AST.Exp.LitString], args: ISZ[AST.Exp], reporter: message.Reporter): (ISZ[AST.Exp.LitString], ISZ[AST.Exp]) = {
     var rLits = lits
     var rArgs = args
     // mstrinterp: exp ( MSTRPM mstrinterp | MSTRPE )
@@ -2748,11 +2797,11 @@ object SlangLl2AstBuilder {
         val mText = mstrpm.text
         val mSops = ops.StringOps(mText)
         // MSTRPM: '}$' MSTRF WSF? ( '#' MSTRF WSF? )* '#' MSTRI '${'
-        val litContent = normalizeHashToBar(mSops.substring(2, mText.size - 2))
+        val litContent = normalizeMstr(prefix, mSops.substring(2, mText.size - 2))
         rLits = rLits :+ AST.Exp.LitString(litContent, attr(mstrpm))
         val nextInterp = findChild(node, "mstrinterp")
         nextInterp match {
-          case Some(ni) => return collectMstrinterp(ni, rLits, rArgs, reporter)
+          case Some(ni) => return collectMstrinterp(ni, prefix, rLits, rArgs, reporter)
           case _ =>
         }
       case _ =>
@@ -2763,7 +2812,7 @@ object SlangLl2AstBuilder {
         val mText = mstrpe.text
         val mSops = ops.StringOps(mText)
         // MSTRPE: '}$' MSTRF?
-        val litContent = normalizeHashToBar(mSops.substring(2, mText.size))
+        val litContent = normalizeMstr(prefix, mSops.substring(2, mText.size))
         rLits = rLits :+ AST.Exp.LitString(litContent, attr(mstrpe))
       case _ =>
     }
