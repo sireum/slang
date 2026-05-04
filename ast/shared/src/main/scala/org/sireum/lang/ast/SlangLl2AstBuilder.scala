@@ -286,6 +286,14 @@ object SlangLl2AstBuilder {
     return None()
   }
 
+  def modAnnotation(mods: ISZ[ModInfo], name: String, posTree: ParseTree): ISZ[AST.Annotation] = {
+    if (hasMod(mods, name)) {
+      return ISZ(AST.Annotation(name = AST.Id(name, attr(posTree)), args = ISZ(), nested = ISZ()))
+    } else {
+      return ISZ()
+    }
+  }
+
   // ─── Annotations (LL2 annotation block) ────────────────────────────
 
   def buildAnnot(nodeOpt: Option[ParseTree.Node], reporter: message.Reporter): ISZ[(String, IS[S32, ParseTree])] = {
@@ -957,13 +965,21 @@ object SlangLl2AstBuilder {
     val id = mkId(idText(node), node)
     val isSig = hasMod(mods, "sig")
     val isMsig = hasMod(mods, "msig")
-    val isRecord = hasMod(mods, "record")
+    val isFab = hasMod(mods, "fab")
+    val isRecord = hasMod(mods, "record") || isFab
     val typeParamDefaultKind: Typed.VarKind.Type =
       if (isMsig || isRecord) Typed.VarKind.Mutable else Typed.VarKind.Immutable
     val typeParams = buildTypeParamsWithDefault(findChild(node, "typeParams"), typeParamDefaultKind, reporter)
+    val isEnum = hasMod(mods, "enum")
+    val isRange = hasMod(mods, "range")
+    val isBits = hasMod(mods, "bits")
+    val isAlias = hasMod(mods, "alias")
+    if (isFab && (isSig || isMsig || isEnum || isRange || isBits || isAlias)) {
+      reporter.error(node.posOpt, "Slang", "Slang @fab cannot be combined with @sig, @msig, @enum, @range, @bits, or @alias.")
+    }
 
     // Check for enum
-    if (hasMod(mods, "enum")) {
+    if (isEnum) {
       val enumSuffix = findChild(node, "typeDefnEnumSuffix")
       enumSuffix match {
         case Some(es) =>
@@ -975,15 +991,15 @@ object SlangLl2AstBuilder {
     }
 
     // Check for @range/@bits
-    if (hasMod(mods, "range")) {
+    if (isRange) {
       return buildSubZRange(id, mods, node, reporter)
     }
-    if (hasMod(mods, "bits")) {
+    if (isBits) {
       return buildSubZBits(id, mods, node, reporter)
     }
 
     // Check for alias
-    if (hasMod(mods, "alias")) {
+    if (isAlias) {
       val aliasSuffix = findChild(node, "typeDefnAliasSuffix")
       aliasSuffix match {
         case Some(as) =>
@@ -998,7 +1014,7 @@ object SlangLl2AstBuilder {
     val isTrait = hasMod(mods, "trait")
     val isSealed = hasMod(mods, "sealed")
     val isExt = hasMod(mods, "ext")
-    val isUnclonable = hasMod(mods, "unclonable")
+    val isUnclonable = hasMod(mods, "unclonable") || isFab
 
     if (isSig || isMsig) {
       // Sig (@ext pairs with @sig or @msig)
@@ -1068,6 +1084,7 @@ object SlangLl2AstBuilder {
       case _ =>
     }
 
+    val adtAnnotations = modAnnotation(mods, "fab", node) ++ buildAnnotations(adtAnnotOpt, reporter)
     return AST.Stmt.Adt(
       isRoot = isTrait,
       isDatatype = !isRecord,
@@ -1077,7 +1094,7 @@ object SlangLl2AstBuilder {
       params = params,
       parents = parents,
       stmts = stmts,
-      annotations = buildAnnotations(adtAnnotOpt, reporter),
+      annotations = adtAnnotations,
       attr = attr(node))
   }
 
