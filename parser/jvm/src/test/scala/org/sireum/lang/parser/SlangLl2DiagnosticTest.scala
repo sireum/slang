@@ -142,5 +142,119 @@ class SlangLl2DiagnosticTest extends TestSuite {
           |  return r
           |}""".stripMargin)
     }
+
+    "LL2 gotcha diagnostics" - {
+
+      * - hasIssue(
+        """def f(): Z = 1""",
+        "requires `{ ... return ... }` for method bodies")
+
+      * - passes(
+        """def f(): Z = {
+          |  return 1
+          |}""".stripMargin)
+
+      * - passes(
+        """def @strictpure f(): Z = 1""")
+
+      * - hasIssue(
+        """def f(x: Z): Z = {
+          |  match x {
+          |    case apply: Z => return apply
+          |  }
+          |}""".stripMargin,
+        "`apply` is reserved")
+
+      * - passes(
+        """def f(x: Z): Z = {
+          |  match x {
+          |    case app: Z => return app
+          |  }
+          |}""".stripMargin)
+
+      * - hasIssue(
+        """def f(): Z = {
+          |  val x: Z = z"42"
+          |  return x
+          |}""".stripMargin,
+        "does not have `z\"...\"`")
+
+      * - hasIssue(
+        """def f(): String = {
+          |  val s: String = string"foo"
+          |  return s
+          |}""".stripMargin,
+        "or `string\"...\"` interpolators")
+
+      * - hasIssueWithout(
+        """def f(x: Z): String = {
+          |  val s: String = s"x = ${x}$"
+          |  return s
+          |}""".stripMargin,
+        "Single-line `s\"...\"` interpolation uses `$expr$`",
+        "Expecting")
+
+      * - passes(
+        """def f(x: Z): String = {
+          |  val s: String = s"x = $x$"
+          |  return s
+          |}""".stripMargin)
+
+      * - hasIssue(
+        """def f(): Z = {
+          |  val x: Z = 1 -> 2
+          |  return 0
+          |}""".stripMargin,
+        "map-pair arrow is `~>`, not `->`")
+
+      * - hasIssueWithout(
+        """def f(): Z = {
+          |  if (T) {
+          |    return 1
+          |  } else {
+          |    return 2
+          |  }
+          |}""".stripMargin,
+        "`if` / `while` do not take parens",
+        "Expecting")
+
+      * - hasIssueWithout(
+        """def f(): Z = {
+          |  while (T) {
+          |  }
+          |  return 0
+          |}""".stripMargin,
+        "`if` / `while` do not take parens",
+        "Expecting")
+
+      * - hasIssueWithout(
+        """def f(xs: ISZ[Z]) {
+          |  for (x <- xs) {
+          |  }
+          |}""".stripMargin,
+        "for-loop is `for x: xs { ... }`",
+        "Expecting")
+
+      * - hasIssueWithout(
+        """@pure def f(): Z = {
+          |  return 1
+          |}""".stripMargin,
+        "annotation goes after `def`",
+        "Expecting")
+
+      * - hasIssue(
+        """type Foo = Z""",
+        "type alias is `type @alias Foo = Bar`")
+
+      * - passes(
+        """type @alias Foo = Z""")
+
+      * - hasIssueWithout(
+        """package @ext P {
+          |  def f(): Z = $
+          |}""".stripMargin,
+        "`@ext` def must be a bare signature",
+        "Unrecognized character")
+    }
   }
 }

@@ -702,6 +702,11 @@ class TypeCheckerTest extends TestSuite {
             |println(Z(s = "0").getOrElse(1))
             |""".stripMargin, "Could not find parameter 's'")
 
+        * - failingWorksheet(
+          """import org.sireum._
+            |val m: HashSMap[String, Z] = HashSMap.empty[String, Z]()
+            |""".stripMargin, "does NOT take parens")
+
       }
 
       "Stmt" - {

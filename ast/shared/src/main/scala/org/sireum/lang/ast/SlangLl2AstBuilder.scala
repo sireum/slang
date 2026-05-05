@@ -974,6 +974,11 @@ object SlangLl2AstBuilder {
     val isRange = hasMod(mods, "range")
     val isBits = hasMod(mods, "bits")
     val isAlias = hasMod(mods, "alias")
+    val aliasSuffixOpt = findChild(node, "typeDefnAliasSuffix")
+    if (!isAlias && aliasSuffixOpt.nonEmpty) {
+      reporter.error(node.posOpt, "SlangLl2AstBuilder",
+        "LL(2) type alias is `type @alias Foo = Bar`.")
+    }
     if (isFab && (isSig || isMsig || isEnum || isRange || isBits || isAlias)) {
       reporter.error(node.posOpt, "Slang", "Slang @fab cannot be combined with @sig, @msig, @enum, @range, @bits, or @alias.")
     }
@@ -1000,8 +1005,7 @@ object SlangLl2AstBuilder {
 
     // Check for alias
     if (isAlias) {
-      val aliasSuffix = findChild(node, "typeDefnAliasSuffix")
-      aliasSuffix match {
+      aliasSuffixOpt match {
         case Some(as) =>
           val tipe = buildType(firstNode(as), reporter)
           return AST.Stmt.TypeAlias(id = id, typeParams = typeParams, tipe = tipe, attr = attr(node))
@@ -1706,6 +1710,7 @@ object SlangLl2AstBuilder {
   def buildIdTypePattern(node: ParseTree.Node, reporter: message.Reporter): AST.Pattern.VarBinding = {
     // idTypePattern: ID colonType1
     val id = mkId(idText(node), node)
+    reportApplyPatternBinder(id, reporter)
     val colonType = findChild(node, "colonType1").get
     val type1 = findChild(colonType, "type1").get
     val tipe = buildType1(type1, reporter)
@@ -1779,6 +1784,7 @@ object SlangLl2AstBuilder {
           case _ =>
             // Just a name - could be a VarBinding without type
             if (name.ids.size == 1) {
+              reportApplyPatternBinder(name.ids(0), reporter)
               return AST.Pattern.VarBinding(
                 id = name.ids(0),
                 tipeOpt = None(),
@@ -1806,6 +1812,13 @@ object SlangLl2AstBuilder {
     }
 
     halt(st"Could not build pattern0 from ${node.toST.render}".render)
+  }
+
+  def reportApplyPatternBinder(id: AST.Id, reporter: message.Reporter): Unit = {
+    if (id.value == "apply") {
+      reporter.error(id.attr.posOpt, "SlangLl2AstBuilder",
+        "`apply` is reserved; use a different bound name (e.g. `app`, `node`).")
+    }
   }
 
   def buildPatterns(node: ParseTree.Node, reporter: message.Reporter): ISZ[AST.Pattern] = {
@@ -1924,6 +1937,10 @@ object SlangLl2AstBuilder {
         val left = buildBinaryFromTree(n.children.atS32(s32"0"), contextNode, reporter)
         val opLeaf = n.children.atS32(s32"1").asInstanceOf[ParseTree.Leaf]
         val right = buildBinaryFromTree(n.children.atS32(s32"2"), contextNode, reporter)
+        if (opLeaf.text == "->") {
+          reporter.error(opLeaf.posOpt, "SlangLl2AstBuilder",
+            "LL(2) map-pair arrow is `~>`, not `->`. Rewrite as: `a ~> b`.")
+        }
         return AST.Exp.Binary(
           left = left,
           op = opLeaf.text,
@@ -2577,7 +2594,7 @@ object SlangLl2AstBuilder {
     spOpt match {
       case Some(sp) =>
         // SP: IDF '"' SPI* '"' - e.g., st"hello"
-        return parseSP(sp)
+        return parseSP(sp, reporter)
       case _ =>
     }
 
@@ -2606,13 +2623,14 @@ object SlangLl2AstBuilder {
     halt(st"Could not build interp from ${node.toST.render}".render)
   }
 
-  def parseSP(leaf: ParseTree.Leaf): AST.Exp.StringInterpolate = {
+  def parseSP(leaf: ParseTree.Leaf, reporter: message.Reporter): AST.Exp.StringInterpolate = {
     // SP: IDF '"' SPI* '"' - full string interpolation with no embedded expressions
     val text = leaf.text
     // Find the prefix (IDF part) and the string content
     val sops = ops.StringOps(text)
     val firstQuote = sops.indexOf('"')
     val prefix = sops.substring(0, firstQuote)
+    reportPlainLiteralPrefix(prefix, leaf.posOpt, reporter)
     val content = unescapeString(sops.substring(firstQuote + 1, text.size - 1))
     return AST.Exp.StringInterpolate(
       prefix = prefix,
@@ -2621,12 +2639,20 @@ object SlangLl2AstBuilder {
       attr = typedAttr(leaf))
   }
 
+  def reportPlainLiteralPrefix(prefix: String, posOpt: Option[Position], reporter: message.Reporter): Unit = {
+    if (prefix == "z" || prefix == "string") {
+      reporter.error(posOpt, "SlangLl2AstBuilder",
+        "LL(2) does not have `z\"...\"` or `string\"...\"` interpolators. Use plain literals: `42` (instead of `z\"42\"`), `\"foo\"` (instead of `string\"foo\"`).")
+    }
+  }
+
   def parseSPBInterp(spb: ParseTree.Leaf, node: ParseTree.Node, reporter: message.Reporter): AST.Exp.StringInterpolate = {
     // SPB: IDF '"' SPI* '$'
     val text = spb.text
     val sops = ops.StringOps(text)
     val firstQuote = sops.indexOf('"')
     val prefix = sops.substring(0, firstQuote)
+    reportPlainLiteralPrefix(prefix, spb.posOpt, reporter)
     val firstLit = unescapeString(sops.substring(firstQuote + 1, text.size - 1)) // before the $
 
     var lits = ISZ[AST.Exp.LitString](AST.Exp.LitString(firstLit, attr(spb)))
@@ -3710,6 +3736,10 @@ object SlangLl2AstBuilder {
           case Some(blk) => Some(buildBlock(blk, reporter, methodExpectsValue, methodIsPure, F))
           case _ => None()
         }
+        if (blockOpt.isEmpty && purity != AST.Purity.StrictPure && purity != AST.Purity.Abs) {
+          reporter.error(srcNode.posOpt, "SlangLl2AstBuilder",
+            "Slang LL(2) requires `{ ... return ... }` for method bodies; got `def f(): T = ...`. Rewrite as: `def f(): T = { return ... }`.")
+        }
         blockOpt match {
           case Some(block) =>
             if (purity == AST.Purity.StrictPure || purity == AST.Purity.Abs) {
@@ -3851,6 +3881,11 @@ object SlangLl2AstBuilder {
     val contractAnnotOpt: Option[ParseTree.Node] = defnTypeSuffixOpt match {
       case Some(dts) => findChild(dts, "annot")
       case _ => None()
+    }
+    val bodySrcOpt = findChild(node, "defDefnSuffix")
+    if (bodySrcOpt.nonEmpty || findChild(node, "block").nonEmpty) {
+      reporter.error(node.posOpt, "SlangLl2AstBuilder",
+        "An `@ext` def must be a bare signature: `def foo(): T` (no `=` and no body); the trailing `$` was mis-tokenized.")
     }
     val contract = buildMethodContract(contractAnnotOpt, reporter)
     val isPure = hasMod(mods, "pure")

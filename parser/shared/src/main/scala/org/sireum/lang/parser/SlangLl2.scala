@@ -84,6 +84,49 @@ object SlangLl2 {
     return F
   }
 
+  def reportCommonGotcha(fileUriOpt: Option[String], content: String, reporter: message.Reporter): B = {
+    val chars = Indexable.Ext.fromString(fileUriOpt, content)
+    val (errorIndex, tokens) = SlangLl2Parser.lexerDfas.tokens(chars, T)
+    if (errorIndex >= s32"0") {
+      val sops = ops.StringOps(content)
+      if (sops.contains("@ext") && sops.contains("def") && sops.contains("= $")) {
+        reporter.error(chars.posOptS32(errorIndex, s32"1"), "SlangLl2",
+          "An `@ext` def must be a bare signature: `def foo(): T` (no `=` and no body); the trailing `$` was mis-tokenized.")
+        return T
+      }
+      return F
+    }
+
+    var i = s32"0"
+    while (i < tokens.sizeS32) {
+      val token = tokens.atS32(i)
+      if ((token.ruleName == "IF" || token.ruleName == "WHILE") && i + s32"1" < tokens.sizeS32 &&
+          tokens.atS32(i + s32"1").ruleName == "LPAREN") {
+        reporter.error(tokens.atS32(i + s32"1").posOpt, "SlangLl2",
+          "LL(2) `if` / `while` do not take parens around the condition. Rewrite as: `if c { }` / `while c { }`.")
+        return T
+      }
+      if (token.ruleName == "FOR" && i + s32"1" < tokens.sizeS32 && tokens.atS32(i + s32"1").ruleName == "LPAREN") {
+        reporter.error(tokens.atS32(i + s32"1").posOpt, "SlangLl2",
+          "LL(2) for-loop is `for x: xs { ... }`. Rewrite as: `for x: xs { ... }`.")
+        return T
+      }
+      if (token.ruleName == "AT" && i + s32"2" < tokens.sizeS32 &&
+          tokens.atS32(i + s32"1").ruleName == "ID" && tokens.atS32(i + s32"2").ruleName == "DEF") {
+        reporter.error(token.posOpt, "SlangLl2",
+          "LL(2) annotation goes after `def`: `def @pure foo(...)`.")
+        return T
+      }
+      if (token.ruleName == "SPB" && i + s32"1" < tokens.sizeS32 && tokens.atS32(i + s32"1").ruleName == "LBRACE") {
+        reporter.error(tokens.atS32(i + s32"1").posOpt, "SlangLl2",
+          "Single-line `s\"...\"` interpolation uses `$expr$` (no braces). Use `${expr}$` only inside multi-line `s#...` / `st#...` templates.")
+        return T
+      }
+      i = i + s32"1"
+    }
+    return F
+  }
+
   def parseRule(fileUriOpt: Option[String], content: String, ruleName: String, reporter: message.Reporter): Option[parser.ParseTree] = {
     val parseReporter = message.Reporter.create
     SlangLl2Parser.parseRule(fileUriOpt, content, ruleName, parseReporter) match {
@@ -91,6 +134,9 @@ object SlangLl2 {
         reporter.reports(parseReporter.messages)
         return Some(t)
       case _ =>
+        if (reportCommonGotcha(fileUriOpt, content, reporter)) {
+          return None()
+        }
         if (reportPostfixMatchValueForm(fileUriOpt, content, reporter)) {
           return None()
         }

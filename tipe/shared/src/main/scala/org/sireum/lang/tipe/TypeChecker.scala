@@ -2744,6 +2744,11 @@ import TypeChecker._
             reporter.error(invokeExp.ident.attr.posOpt, typeCheckerKind, s"$m does not accept any argument.")
             return partResultH
           } else if (m.tpe.args.size != invokeExp.args.size) {
+            if (m.mode == AST.MethodMode.Copy && m.owner == ISZ("org", "sireum") && m.name == "HashSMap" && invokeExp.args.isEmpty) {
+              reporter.error(invokeExp.ident.attr.posOpt, typeCheckerKind,
+                "`HashSMap.empty[K, V]` does NOT take parens; remove the trailing `()`.")
+              return partResultH
+            }
             reporter.error(
               invokeExp.ident.attr.posOpt,
               typeCheckerKind,
