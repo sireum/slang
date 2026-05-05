@@ -26,6 +26,7 @@
 package org.sireum.lang.parser
 
 import org.sireum._
+import org.sireum.S32._
 import org.sireum.lang.{ast => AST}
 
 object SlangLl2 {
@@ -35,20 +36,83 @@ object SlangLl2 {
       ops.StringOps.endsWith(cis, conversions.String.toCis(".slang")) || ops.StringOps.endsWith(cis, conversions.String.toCis(".sl"))
     case _ => F
   }
+
+  def isPostfixMatchReceiverEnd(token: parser.Token): B = {
+    token.ruleName.native match {
+      case "ID" => return T
+      case "TRUE" => return T
+      case "FALSE" => return T
+      case "NULL" => return T
+      case "THIS" => return T
+      case "SUPER" => return T
+      case "INT" => return T
+      case "HEX" => return T
+      case "BIN" => return T
+      case "REAL" => return T
+      case "STRING" => return T
+      case "CHAR" => return T
+      case "MSTR" => return T
+      case "MSTRP" => return T
+      case "MSTRPE" => return T
+      case "RPAREN" => return T
+      case "RSQUARE" => return T
+      case _ => return F
+    }
+  }
+
+  def reportPostfixMatchValueForm(fileUriOpt: Option[String], content: String, reporter: message.Reporter): B = {
+    val chars = Indexable.Ext.fromString(fileUriOpt, content)
+    val (errorIndex, tokens) = SlangLl2Parser.lexerDfas.tokens(chars, T)
+    if (errorIndex >= s32"0") {
+      return F
+    }
+    var i = s32"1"
+    while (i < tokens.sizeS32) {
+      val token = tokens.atS32(i)
+      if (token.ruleName == "MATCH" && isPostfixMatchReceiverEnd(tokens.atS32(i - s32"1"))) {
+        reporter.error(token.posOpt, "SlangLl2",
+          st"""Postfix 'exp match { ... }' is not LL(2) value-producing syntax.
+              |Use prefix match with '\' on each value-producing case:
+              |val r: T = match exp {
+              |  case p1 => \ v1
+              |  case p2 => \ v2
+              |}""".render)
+        return T
+      }
+      i = i + s32"1"
+    }
+    return F
+  }
+
+  def parseRule(fileUriOpt: Option[String], content: String, ruleName: String, reporter: message.Reporter): Option[parser.ParseTree] = {
+    val parseReporter = message.Reporter.create
+    SlangLl2Parser.parseRule(fileUriOpt, content, ruleName, parseReporter) match {
+      case Some(t) =>
+        reporter.reports(parseReporter.messages)
+        return Some(t)
+      case _ =>
+        if (reportPostfixMatchValueForm(fileUriOpt, content, reporter)) {
+          return None()
+        }
+        reporter.reports(parseReporter.messages)
+        return None()
+    }
+  }
+
   def parse(fileUriOpt: Option[String], content: String, reporter: message.Reporter): Option[AST.TopUnit.Program] = {
-    SlangLl2Parser.parse(fileUriOpt, content, reporter) match {
+    parseRule(fileUriOpt, content, "file", reporter) match {
       case Some(t) => return AST.SlangLl2AstBuilder.build(fileUriOpt, t, reporter)
       case _ => return None()
     }
   }
   def parseExp(fileUriOpt: Option[String], content: String, reporter: message.Reporter): Option[AST.Exp] = {
-    SlangLl2Parser.parseRule(fileUriOpt, content, "expFile", reporter) match {
+    parseRule(fileUriOpt, content, "expFile", reporter) match {
       case Some(t: parser.ParseTree.Node) => return Some(AST.SlangLl2AstBuilder.buildExp(t, reporter))
       case _ => return None()
     }
   }
   def parseStmt(fileUriOpt: Option[String], content: String, reporter: message.Reporter): Option[AST.Stmt] = {
-    SlangLl2Parser.parseRule(fileUriOpt, content, "stmtFile", reporter) match {
+    parseRule(fileUriOpt, content, "stmtFile", reporter) match {
       case Some(t: parser.ParseTree.Node) => return Some(AST.SlangLl2AstBuilder.buildStmt(t, reporter, F))
       case _ => return None()
     }

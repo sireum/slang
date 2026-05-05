@@ -3308,11 +3308,48 @@ object SlangLl2AstBuilder {
     return buildRhsAsAssignExp(rhsNode, reporter)
   }
 
+  def invalidValueFormExp(node: ParseTree.Node): AST.Exp = {
+    return AST.Exp.Ident(id = AST.Id("__invalid_ll2_value_form__", attr(node)), attr = resolvedAttr(node))
+  }
+
+  def reportReturnValueForm(node: ParseTree.Node, form: String, reporter: message.Reporter): Unit = {
+    reporter.error(node.posOpt, "SlangLl2AstBuilder",
+      st"""LL(2) does not support Scala-Slang value-form '$form' syntax in an expression slot.
+          |If this is a terminal return, prefer rewriting with return per arm:
+          |match exp {
+          |  case p1 => return v1
+          |  case p2 => return v2
+          |  case _  => halt "unexpected"   // or another return
+          |}
+          |
+          |If later work uses the value, rewrite through an explicitly typed value:
+          |val r: T = match exp {
+          |  case p1 => \ v1
+          |  case p2 => \ v2
+          |  case _  => \ vN
+          |}
+          |return r   // ... or further use of r""".render)
+  }
+
   def buildRhs(node: ParseTree.Node, reporter: message.Reporter): AST.Exp = {
     // rhs: exp | block | ifStmt | matchStmt
     val expOpt = findChild(node, "exp")
     expOpt match {
       case Some(e) => return buildExp(e, reporter)
+      case _ =>
+    }
+    val ifOpt = findChild(node, "ifStmt")
+    ifOpt match {
+      case Some(is) =>
+        reportReturnValueForm(is, "if", reporter)
+        return invalidValueFormExp(is)
+      case _ =>
+    }
+    val matchOpt = findChild(node, "matchStmt")
+    matchOpt match {
+      case Some(ms) =>
+        reportReturnValueForm(ms, "match", reporter)
+        return invalidValueFormExp(ms)
       case _ =>
     }
     halt(st"Could not build rhs as exp from ${node.toST.render}".render)
