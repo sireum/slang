@@ -146,12 +146,23 @@ object cli {
     )))
   )
 
+  val slangMigrate: Tool = Tool(
+    name = "slangMigrate",
+    command = "migrate",
+    description = "Pretty print Scala-based Slang to LL(2)",
+    header = "Slang Migrator",
+    usage = "<option>* [<slang-file>]",
+    usageDescOpt = None(),
+    opts = ISZ(),
+    groups = ISZ()
+  )
+
   val group: Group = Group(
     name = "slang",
     description = "Slang tools",
     header = "The Sireum Language (Slang) Tools",
     unlisted = F,
-    subs = ISZ(slangRefactor, slangRun, slangTemplate, slangTipe)
+    subs = ISZ(slangMigrate, slangRefactor, slangRun, slangTemplate, slangTipe)
   )
 
 }
