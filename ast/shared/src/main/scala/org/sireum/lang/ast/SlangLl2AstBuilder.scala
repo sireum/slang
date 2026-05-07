@@ -966,7 +966,8 @@ object SlangLl2AstBuilder {
     val isSig = hasMod(mods, "sig")
     val isMsig = hasMod(mods, "msig")
     val isFab = hasMod(mods, "fab")
-    val isRecord = hasMod(mods, "record") || isFab
+    val hasRecord = hasMod(mods, "record")
+    val isRecord = hasRecord || isFab
     val typeParamDefaultKind: Typed.VarKind.Type =
       if (isMsig || isRecord) Typed.VarKind.Mutable else Typed.VarKind.Immutable
     val typeParams = buildTypeParamsWithDefault(findChild(node, "typeParams"), typeParamDefaultKind, reporter)
@@ -979,8 +980,8 @@ object SlangLl2AstBuilder {
       reporter.error(node.posOpt, "SlangLl2AstBuilder",
         "LL(2) type alias is `type @alias Foo = Bar`.")
     }
-    if (isFab && (isSig || isMsig || isEnum || isRange || isBits || isAlias)) {
-      reporter.error(node.posOpt, "Slang", "Slang @fab cannot be combined with @sig, @msig, @enum, @range, @bits, or @alias.")
+    if (isFab && (hasRecord || isSig || isMsig || isEnum || isRange || isBits || isAlias)) {
+      reporter.error(node.posOpt, "Slang", "Slang @fab cannot be combined with @record, @sig, @msig, @enum, @range, @bits, or @alias.")
     }
 
     // Check for enum
