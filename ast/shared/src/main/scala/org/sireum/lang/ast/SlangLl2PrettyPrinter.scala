@@ -214,6 +214,7 @@ object SlangLl2PrettyPrinter {
       st"$idOpt: ${printRange(o.range)}$condOpt${printLoopContract(o.contract)}"
     }
 
+    @strictpure def postfix(o: AST.Exp.StringInterpolate): ST = st"${o.lits(0).value}${o.prefix}"      // postfix: 0xCC9E2D51u32
     @strictpure def printExp(o: AST.Exp): ST = o match {
       case o: AST.Exp.AssertAgree => halt(s"TODO: $o")
       case o: AST.Exp.AssumeAgree => halt(s"TODO: $o")
@@ -228,23 +229,24 @@ object SlangLl2PrettyPrinter {
         st"${if (o.rightToLeft) "~" else ""}RS(${(for (r <- o.refs) yield printExp(r.asExp), ", ")})"
       case o: AST.Exp.StrictPureBlock => st"\\${printAssignExp(o.block)}"
       case o: AST.Exp.StringInterpolate =>
-        if (T) {//ops.ISZOps(o.lits).forall((s: AST.Exp.LitString) => !ops.StringOps(s.value).contains("\n"))) {
-          if (o.lits.size == 1) {
-            // LL(2) requires postfix form for numeric type prefixes (sr-1lb66).
-            // LitString.prettyST already includes surrounding quotes — do NOT add extra.
-            o.prefix match {
-              case string"u8" | string"u16" | string"u32" | string"u64" |
-                   string"s8" | string"s16" | string"s32" | string"s64" |
-                   string"f16" | string"f32" | string"f64" =>
-                st"${o.lits(0).value}${o.prefix}"      // postfix: 0xCC9E2D51u32
-              case _ =>
-                st"${o.prefix}${o.lits(0).prettyST}"   // string-interpolator: s"foo", st"foo"
-            }
-          } else {
-            st"${o.prefix}${o.lits(0).prettyST}${(for (i <- 1 until o.lits.size) yield st"${printExp(o.args(i - 1))}${o.lits(i).prettyST}", "")}"
+        if (o.lits.size == 1) {
+          o.prefix match {
+            case string"u8" => postfix(o)
+            case string"u16" => postfix(o)
+            case string"u32" => postfix(o)
+            case string"u64" => postfix(o)
+            case string"s8" => postfix(o)
+            case string"s16" => postfix(o)
+            case string"s32" => postfix(o)
+            case string"s64" => postfix(o)
+            case string"f16" => postfix(o)
+            case string"f32" => postfix(o)
+            case string"f64" => postfix(o)
+            case _ =>
+              st"${o.prefix}${o.lits(0).prettyST}"   // string-interpolator: s"foo", st"foo"
           }
         } else {
-          halt("TODO: $o")
+          st"${o.prefix}${o.lits(0).prettyST}${(for (i <- 1 until o.lits.size) yield st"${printExp(o.args(i - 1))}${o.lits(i).prettyST}", "")}"
         }
       case o: AST.Exp.Fun => st"\\(${(for (p <- o.params) yield st"${if (p.idOpt.nonEmpty) p.idOpt.get.value else "_"}${if (p.tipeOpt.nonEmpty) st": ${printType(p.tipeOpt.get)}" else st""}", ", ")}) ${printAssignExp(o.exp)}"
       case o: AST.Exp.Binary => printBinary(o)
