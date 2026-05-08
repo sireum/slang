@@ -240,7 +240,9 @@ object SlangLl2PrettyPrinter {
               case _ =>
                 st"${o.prefix}${o.lits(0).prettyST}"   // string-interpolator: s"foo", st"foo"
             }
-          } else st"${o.prefix}${o.lits(0).prettyST}${(for (i <- 1 until o.lits.size) yield st"${printExp(o.args(i - 1))}${o.lits(i).prettyST}", "")}"
+          } else {
+            st"${o.prefix}${o.lits(0).prettyST}${(for (i <- 1 until o.lits.size) yield st"${printExp(o.args(i - 1))}${o.lits(i).prettyST}", "")}"
+          }
         } else {
           halt("TODO: $o")
         }
