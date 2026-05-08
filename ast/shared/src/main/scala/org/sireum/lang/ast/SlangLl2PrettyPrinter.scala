@@ -229,8 +229,18 @@ object SlangLl2PrettyPrinter {
       case o: AST.Exp.StrictPureBlock => st"\\${printAssignExp(o.block)}"
       case o: AST.Exp.StringInterpolate =>
         if (T) {//ops.ISZOps(o.lits).forall((s: AST.Exp.LitString) => !ops.StringOps(s.value).contains("\n"))) {
-          if (o.lits.size == 1) st"""${o.prefix}"${o.lits(0).prettyST}""""
-          else st"""${o.prefix}"${o.lits(0)}${(for (i <- 1 until o.lits.size) yield st"${printExp(o.args(i - 1))}${o.lits(i).prettyST}", "")}""""
+          if (o.lits.size == 1) {
+            // LL(2) requires postfix form for numeric type prefixes (sr-1lb66).
+            // LitString.prettyST already includes surrounding quotes — do NOT add extra.
+            o.prefix match {
+              case string"u8" | string"u16" | string"u32" | string"u64" |
+                   string"s8" | string"s16" | string"s32" | string"s64" |
+                   string"f16" | string"f32" | string"f64" =>
+                st"${o.lits(0).value}${o.prefix}"      // postfix: 0xCC9E2D51u32
+              case _ =>
+                st"${o.prefix}${o.lits(0).prettyST}"   // string-interpolator: s"foo", st"foo"
+            }
+          } else st"${o.prefix}${o.lits(0).prettyST}${(for (i <- 1 until o.lits.size) yield st"${printExp(o.args(i - 1))}${o.lits(i).prettyST}", "")}"
         } else {
           halt("TODO: $o")
         }
@@ -239,7 +249,7 @@ object SlangLl2PrettyPrinter {
       case o: AST.Exp.Eta => st"${printExp(o.ref.asExp)} _"
       case o: AST.Exp.ForYield => st"yield ${(for (g <- o.enumGens) yield printEnumGen(g), ", ")} => ${printExp(o.exp)}"
       case o: AST.Exp.Ident => st"${o.id.value}"
-      case o: AST.Exp.If => st"? ${printExp(o.cond)}: ${printExp(o.thenExp)} : ${printExp(o.elseExp)}"
+      case o: AST.Exp.If => st"? ${printExp(o.cond)}: ${printExp(o.thenExp)} else ${printExp(o.elseExp)}"
       case o: AST.Exp.Input => st"In(${printExp(o.exp)})"
       case o: AST.Exp.Invoke => printInvoke(o)
       case o: AST.Exp.InvokeNamed => printInvokeNamed(o)
@@ -346,9 +356,13 @@ object SlangLl2PrettyPrinter {
       elseBody.stmts match {
         case ISZ() => st"}"
         case ISZ(ifStmt: AST.Stmt.If) =>
+          // No trailing `}` here — the recursive printIfElse call provides it
+          // (either as `}` for empty elseBody, or as the leading `}` of the
+          // next `} else if`). Original template emitted `}` before recursion,
+          // producing `}}` chains for cascaded else-if (sr-1lb66).
           st"""} else if ${printExp(ifStmt.cond)} {
               |  ${(printStmts(isExp, ifStmt.thenBody.stmts), lineSep)}
-              |}${printIfElse(isExp, ifStmt.elseBody)}"""
+              |${printIfElse(isExp, ifStmt.elseBody)}"""
         case _ =>
           st"""} else {
               |  ${(printStmts(isExp, elseBody.stmts), lineSep)}
@@ -526,9 +540,7 @@ object SlangLl2PrettyPrinter {
             |}"""
       case o: AST.Stmt.DeduceSteps => printDeduceSteps(o)
       case o: AST.Stmt.Enum =>
-        st"""type @enum ${o.id.value}: {
-            |  ${(for (element <- o.elements) yield element.value, lineSep)}
-            |}"""
+        st"""type @enum ${o.id.value}: { ${(for (element <- o.elements) yield element.value, ", ")} }"""
       case o: AST.Stmt.Expr =>
         val expST = printExp(o.exp)
         if (!isExp && shouldAddDo(o.exp)) st"do $expST"
