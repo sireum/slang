@@ -246,7 +246,7 @@ object SlangLl2PrettyPrinter {
               st"${o.prefix}${o.lits(0).prettyST}"   // string-interpolator: s"foo", st"foo"
           }
         } else {
-          st"${o.prefix}${o.lits(0).prettyST}${(for (i <- 1 until o.lits.size) yield st"${printExp(o.args(i - 1))}${o.lits(i).prettyST}", "")}"
+          st"""${o.prefix}"${o.lits(0).value}${(for (i <- 1 until o.lits.size) yield st"$$${printExp(o.args(i - 1))}$$${o.lits(i).value}", "")}""""
         }
       case o: AST.Exp.Fun => st"\\(${(for (p <- o.params) yield st"${if (p.idOpt.nonEmpty) p.idOpt.get.value else "_"}${if (p.tipeOpt.nonEmpty) st": ${printType(p.tipeOpt.get)}" else st""}", ", ")}) ${printAssignExp(o.exp)}"
       case o: AST.Exp.Binary => printBinary(o)
@@ -360,10 +360,6 @@ object SlangLl2PrettyPrinter {
       elseBody.stmts match {
         case ISZ() => st"}"
         case ISZ(ifStmt: AST.Stmt.If) =>
-          // No trailing `}` here — the recursive printIfElse call provides it
-          // (either as `}` for empty elseBody, or as the leading `}` of the
-          // next `} else if`). Original template emitted `}` before recursion,
-          // producing `}}` chains for cascaded else-if (sr-1lb66).
           st"""} else if ${printExp(ifStmt.cond)} {
               |  ${(printStmts(isExp, ifStmt.thenBody.stmts), lineSep)}
               |${printIfElse(isExp, ifStmt.elseBody)}"""
@@ -548,7 +544,8 @@ object SlangLl2PrettyPrinter {
       case o: AST.Stmt.Expr =>
         val expST = printExp(o.exp)
         if (!isExp && shouldAddDo(o.exp)) st"do $expST"
-        else if (isExp) st"\\$expST" else expST
+        else if (isExp) st"return $expST"
+        else expST
       case o: AST.Stmt.Fact =>
         val tparams: ST = printTypeParams(o.typeParams)
         val desc: ST = o.descOpt match {
@@ -618,9 +615,32 @@ object SlangLl2PrettyPrinter {
                 |]"""
           o.bodyOpt match {
             case Some(body) =>
-              st"""$header = {
-                  |  ${(printStmts(F, body.stmts), lineSep)}
-                  |}"""
+              val strictPureExprOpt: Option[AST.Exp] =
+                if (o.purity == AST.Purity.StrictPure && body.stmts.size == 2) {
+                  body.stmts(0) match {
+                    case vd: AST.Stmt.Var if !vd.isSpec && vd.id.value == "_r_" && vd.initOpt.nonEmpty =>
+                      body.stmts(1) match {
+                        case ret: AST.Stmt.Return if ret.expOpt.nonEmpty =>
+                          ret.expOpt.get match {
+                            case ident: AST.Exp.Ident if ident.id.value == "_r_" =>
+                              vd.initOpt.get match {
+                                case ae: AST.Stmt.Expr => Some(ae.exp)
+                                case _ => None()
+                              }
+                            case _ => None()
+                          }
+                        case _ => None()
+                      }
+                    case _ => None()
+                  }
+                } else { None() }
+              strictPureExprOpt match {
+                case Some(expr) => st"$header = ${printExp(expr)}"
+                case _ =>
+                  st"""$header = {
+                      |  ${(printStmts(F, body.stmts), lineSep)}
+                      |}"""
+              }
             case _ => header
           }
         }
