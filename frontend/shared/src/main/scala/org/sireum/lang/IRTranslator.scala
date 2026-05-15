@@ -778,6 +778,12 @@ object IRTranslator {
         fresh.setTemp(0)
       case stmt: AST.Stmt.Expr =>
         stmt.exp match {
+          case exp: AST.Exp.Tuple if exp.args.isEmpty =>
+            fresh.setTemp(0)
+            return
+          case _ =>
+        }
+        stmt.exp match {
           case e: AST.Exp.Invoke =>
             var isPrint: B = F
             var isLine: B = F
@@ -858,6 +864,8 @@ object IRTranslator {
         fresh.setTemp(0)
       case stmt: AST.Stmt.Return =>
         stmt.expOpt match {
+          case Some(exp: AST.Exp.Tuple) if exp.args.isEmpty =>
+            stmts = stmts :+ AST.IR.Stmt.Return(None(), pos)
           case Some(exp) =>
             val r = translateExp(exp)
             stmts = stmts :+ AST.IR.Stmt.Return(Some(r), pos)
@@ -1219,6 +1227,8 @@ object IRTranslator {
 
     val pos = exp.posOpt.get
     exp match {
+      case exp: AST.Exp.Tuple if exp.args.isEmpty =>
+        halt(s"Unit marker reached value translation at ${exp.posOpt}. It should have been erased before IR expression translation.")
       case exp: AST.Exp.LitB => return norm3AC(AST.IR.Exp.Bool(exp.value, pos))
       case exp: AST.Exp.LitC => return norm3AC(AST.IR.Exp.Int(AST.Typed.c, exp.value.toZ, pos))
       case exp: AST.Exp.LitZ => return norm3AC(AST.IR.Exp.Int(AST.Typed.z, exp.value, pos))

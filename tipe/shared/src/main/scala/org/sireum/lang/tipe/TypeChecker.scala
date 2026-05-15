@@ -2139,6 +2139,20 @@ import TypeChecker._
     }
 
     def checkTuple(tupleExp: AST.Exp.Tuple): (AST.Exp, Option[AST.Typed]) = {
+      if (tupleExp.args.isEmpty) {
+        expectedOpt match {
+          case Some(expected) if !expected.isUnitType =>
+            reporter.error(
+              tupleExp.posOpt,
+              typeCheckerKind,
+              s"Expecting '$expected', but '()' found."
+            )
+            return (tupleExp, None())
+          case _ =>
+        }
+        val tOpt = AST.Typed.unitOpt
+        return (tupleExp(attr = tupleExp.attr(typedOpt = tOpt)), tOpt)
+      }
       val expecteds: ISZ[Option[AST.Typed]] = expectedOpt match {
         case Some(expected: AST.Typed.Tuple) =>
           if (tupleExp.args.size == expected.args.size) {

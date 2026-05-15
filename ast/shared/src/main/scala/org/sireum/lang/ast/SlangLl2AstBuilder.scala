@@ -1644,10 +1644,16 @@ object SlangLl2AstBuilder {
   def buildType0(node: ParseTree.Node, reporter: message.Reporter): AST.Type.Named = {
     // type0: ID dotID* typeArgs?
     val id = findLeafByRule(node, "ID").get
+    if (id.text == "Unit") {
+      reporter.error(id.posOpt, "SlangLl2AstBuilder", "LL(2) does not support the Unit type spelling; use '()' instead.")
+    }
     var ids = ISZ[AST.Id](mkId(id.text, id))
     val dotIds = findChildren(node, "dotID")
     for (d <- dotIds) {
       val did = findLeafByRule(d, "ID").get
+      if (did.text == "Unit") {
+        reporter.error(did.posOpt, "SlangLl2AstBuilder", "LL(2) does not support the Unit type spelling; use '()' instead.")
+      }
       ids = ids :+ mkId(did.text, did)
     }
     val typeArgsOpt = findChild(node, "typeArgs")
@@ -2895,8 +2901,58 @@ object SlangLl2AstBuilder {
       case _ =>
     }
 
-    val exp = buildRhsAsAssignExpLambda(rhsNode, reporter)
+    val exp = normalizeLambdaUnitResult(buildRhsAsAssignExpLambda(rhsNode, reporter))
     return AST.Exp.Fun(context = ISZ(), params = params, exp = exp, annotations = ISZ(), attr = typedAttr(node))
+  }
+
+  def unitExp(posOpt: Option[message.Position]): AST.Stmt.Expr = {
+    return AST.Stmt.Expr(
+      exp = AST.Exp.Tuple(args = ISZ(), attr = AST.TypedAttr(posOpt, None())),
+      annotations = ISZ(),
+      attr = AST.TypedAttr(posOpt, None()))
+  }
+
+  def normalizeLambdaUnitResult(assignExp: AST.AssignExp): AST.AssignExp = {
+    assignExp match {
+      case stmt: AST.Stmt.Block =>
+        return stmt(body = normalizeLambdaBody(stmt.body, stmt.posOpt))
+      case stmt: AST.Stmt.If =>
+        return stmt(
+          thenBody = normalizeLambdaBody(stmt.thenBody, stmt.posOpt),
+          elseBody = normalizeLambdaBody(stmt.elseBody, stmt.posOpt))
+      case stmt: AST.Stmt.Match =>
+        if (stmt.cases.isEmpty) {
+          return stmt
+        }
+        val cases = MSZ.create[AST.Case](stmt.cases.size, stmt.cases(0))
+        var i: Z = 0
+        for (cas <- stmt.cases) {
+          cases(i) = cas(body = normalizeLambdaBody(cas.body, stmt.posOpt))
+          i = i + 1
+        }
+        return stmt(cases = cases.toIS)
+      case _ => return assignExp
+    }
+  }
+
+  def normalizeLambdaBody(body: AST.Body, posOpt: Option[message.Position]): AST.Body = {
+    if (body.stmts.isEmpty) {
+      return body(stmts = ISZ(unitExp(posOpt)))
+    }
+    val lastIndex = body.stmts.size - 1
+    body.stmts(lastIndex) match {
+      case assignExp: AST.AssignExp =>
+        val normalized = normalizeLambdaUnitResult(assignExp)
+        return body(stmts = body.stmts(lastIndex ~> normalized.asStmt))
+      case stmt =>
+        val stmts = MSZ.create[AST.Stmt](body.stmts.size + 1, unitExp(stmt.posOpt))
+        var i: Z = 0
+        while (i < body.stmts.size) {
+          stmts(i) = body.stmts(i)
+          i = i + 1
+        }
+        return body(stmts = stmts.toIS)
+    }
   }
 
   def buildDefAnonParams(node: ParseTree.Node, reporter: message.Reporter): ISZ[AST.Exp.Fun.Param] = {
