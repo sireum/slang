@@ -67,24 +67,20 @@ object IRTranslator {
                            val threeAddressCode: B,
                            val threeAddressExpF: AST.IR.Exp => B @pure,
                            val th: TypeHierarchy,
-                           val fresh: IRTranslator.Fresh,
-                           val useExtImplementationOwner: B) {
+                           val fresh: IRTranslator.Fresh) {
 
   var methodContext: AST.IR.MethodContext = AST.IR.MethodContext.empty
   var stmts: ISZ[AST.IR.Stmt] = ISZ()
   var liftedProcedures: ISZ[AST.IR.Procedure] = ISZ()
   var nestedMethodCaptures: HashMap[ISZ[String], ISZ[(B, String, AST.Typed)]] = HashMap.empty
   var varCaptureSet: HashSet[String] = HashSet.empty
+  var extMethodAccum: HashSSet[(B, ISZ[String], String)] = HashSSet.empty
 
-  @strictpure def extOwner(owner: ISZ[String]): ISZ[String] =
-    if (owner.nonEmpty) ops.ISZOps(owner).dropRight(1) :+ s"${owner(owner.size - 1)}_Ext"
-    else owner
-
-  @strictpure def resolveOwner(res: AST.ResolvedInfo.Method): ISZ[String] =
-    if (useExtImplementationOwner && res.mode == AST.MethodMode.Ext) extOwner(res.owner) else res.owner
-
-  def resolveMethodContextType(t: AST.Typed.Fun): AST.Typed.Fun = {
-    return if (useExtImplementationOwner) lowerByNameFunType(t) else t
+  def recordAndResolveExt(res: AST.ResolvedInfo.Method, applyIsInObject: B): ISZ[String] = {
+    if (res.mode == AST.MethodMode.Ext) {
+      extMethodAccum = extMethodAccum + ((applyIsInObject, res.owner, res.id))
+    }
+    return res.owner
   }
 
   @strictpure def mboxType(t: AST.Typed): AST.Typed.Name =
@@ -272,7 +268,7 @@ object IRTranslator {
                        pos: message.Position,
                        bodyOpt: Option[AST.Body]): AST.IR.Procedure = {
     val isInObject = receiverTypeOpt.isEmpty
-    var t: AST.Typed.Fun = resolveMethodContextType(funType)
+    var t: AST.Typed.Fun = funType
     var paramNames = params
     if (!isInObject) {
       paramNames = "this" +: paramNames
@@ -1277,8 +1273,8 @@ object IRTranslator {
           case res: AST.ResolvedInfo.EnumElement =>
             return norm3AC(AST.IR.Exp.EnumElementRef(res.owner, res.name, res.ordinal, pos))
           case res: AST.ResolvedInfo.Method =>
-            val methodType = resolveMethodContextType(res.tpeOpt.get)
-            val owner = resolveOwner(res)
+            val methodType = res.tpeOpt.get
+            val owner = recordAndResolveExt(res, res.isInObject)
             if (res.isInObject) {
               return norm3AC(AST.IR.Exp.Apply(T, owner, res.id, AST.Typed.emptyRTypes, ISZ(), methodType, pos))
             } else {
@@ -1470,7 +1466,7 @@ object IRTranslator {
               case AST.MethodMode.Method =>
                 var args = ISZ[AST.IR.Exp]()
                 val originalMethodType = res.tpeOpt.get
-                var methodType = resolveMethodContextType(originalMethodType)
+                var methodType = originalMethodType
                 exp.receiverOpt match {
                   case Some(receiver) if !res.isInObject =>
                     args = args :+ translateExp(receiver)
@@ -1519,7 +1515,8 @@ object IRTranslator {
                 for (arg <- exp.args) {
                   args = args :+ translateExp(arg)
                 }
-                return norm3AC(AST.IR.Exp.Apply(T, resolveOwner(res), res.id, AST.Typed.emptyRTypes, args, res.tpeOpt.get, pos))
+                return norm3AC(AST.IR.Exp.Apply(T, recordAndResolveExt(res, T), res.id, AST.Typed.emptyRTypes, args,
+                  res.tpeOpt.get, pos))
               case AST.MethodMode.Select =>
                 val rcv: AST.IR.Exp = exp.receiverOpt match {
                   case Some(receiver) =>
@@ -1747,8 +1744,9 @@ object IRTranslator {
                 case _ => ISZ(liftedThiz(res.owner, pos))
               }
             }
+            val owner = recordAndResolveExt(res, res.isInObject)
             return norm3AC(AST.IR.Exp.ClosureRef(
-              owner = res.owner,
+              owner = owner,
               id = res.id,
               captures = captures,
               tipe = funType,
