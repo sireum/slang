@@ -84,6 +84,52 @@ object SlangLl2 {
     return F
   }
 
+  // A value-returning match-case body must be prefixed with '\' (the value-producing
+  // marker): `case p => \ expr`. Without it the LL(2) grammar parses the case body as
+  // statements and the generated parser fails with a bare "Expecting RBRACE, but found
+  // <tok>" at the start of the expression. The grammar can't make '\' optional (LL(2)
+  // 2-token lookahead can't tell a value case from a statement case without the marker),
+  // and a generated parser can't emit a semantic hint, so detect it here on the token
+  // stream after a failed parse. Trigger on the unambiguous case: a ternary '?' (QUESTION)
+  // directly after a CASE arrow. YIELD / quantifier arrows are legitimately value-producing
+  // without '\', so require a CASE to be the nearest controlling token before any
+  // block/arrow boundary.
+  def reportPrefixMatchValueCaseMarker(fileUriOpt: Option[String], content: String, reporter: message.Reporter): B = {
+    val chars = Indexable.Ext.fromString(fileUriOpt, content)
+    val (errorIndex, tokens) = SlangLl2Parser.lexerDfas.tokens(chars, T)
+    if (errorIndex >= s32"0") {
+      return F
+    }
+    var i = s32"1"
+    while (i < tokens.sizeS32) {
+      if (tokens.atS32(i).ruleName == "QUESTION" && tokens.atS32(i - s32"1").ruleName == "ARROW") {
+        var j = i - s32"2"
+        var fromCase = F
+        var done = F
+        while (j >= s32"0" && !done) {
+          val rn = tokens.atS32(j).ruleName
+          if (rn == "CASE") {
+            fromCase = T
+            done = T
+          } else if (rn == "ARROW" || rn == "LBRACE" || rn == "RBRACE" ||
+            rn == "YIELD" || rn == "ALL" || rn == "SOME" || rn == "SYMBOL") {
+            done = T
+          } else {
+            j = j - s32"1"
+          }
+        }
+        if (fromCase) {
+          reporter.error(tokens.atS32(i).posOpt, "SlangLl2",
+            st"""A value-returning match-case body must be prefixed with '\' (e.g. `case p => \ expr`).
+                |Without '\', LL(2) parses the case body as statements and fails at the start of the expression.""".render)
+          return T
+        }
+      }
+      i = i + s32"1"
+    }
+    return F
+  }
+
   def reportCommonGotcha(fileUriOpt: Option[String], content: String, reporter: message.Reporter): B = {
     val chars = Indexable.Ext.fromString(fileUriOpt, content)
     val (errorIndex, tokens) = SlangLl2Parser.lexerDfas.tokens(chars, T)
@@ -138,6 +184,9 @@ object SlangLl2 {
           return None()
         }
         if (reportPostfixMatchValueForm(fileUriOpt, content, reporter)) {
+          return None()
+        }
+        if (reportPrefixMatchValueCaseMarker(fileUriOpt, content, reporter)) {
           return None()
         }
         reporter.reports(parseReporter.messages)

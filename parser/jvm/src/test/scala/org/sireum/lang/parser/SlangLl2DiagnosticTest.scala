@@ -256,5 +256,38 @@ class SlangLl2DiagnosticTest extends TestSuite {
         "`@ext` def must be a bare signature",
         "Unrecognized character")
     }
+
+    "Value-case backslash marker diagnostics" - {
+
+      // Missing '\' on a value-returning case body -> clear hint, not bare "Expecting RBRACE".
+      * - hasIssueWithout(
+        """def f(x: Z): Z = {
+          |  val r: Z = match x {
+          |    case _ => ? x > 0: 1 else 2
+          |  }
+          |  return r
+          |}""".stripMargin,
+        "value-returning match-case body must be prefixed",
+        "Expecting RBRACE")
+
+      // The '\'-marked value case parses cleanly.
+      * - passes(
+        """def f(x: Z): Z = {
+          |  val r: Z = match x {
+          |    case _ => \ ? x > 0: 1 else 2
+          |  }
+          |  return r
+          |}""".stripMargin)
+
+      // Guard: an unrelated "Expecting" failure (no case-arrow-`?`) does NOT get the hint.
+      * - hasIssueWithout(
+        """def f(x: Z): Z = {
+          |  val r: Z = match x {
+          |    case _ => \ 1
+          |  return r
+          |}""".stripMargin,
+        "Expecting",
+        "value-returning match-case body must be prefixed")
+    }
   }
 }
