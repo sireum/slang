@@ -544,6 +544,7 @@ object TypeChecker {
 
   def checkComponents(par: Z, strictAliasing: B, th: TypeHierarchy, nameMap: NameMap, typeMap: TypeMap, reporter: Reporter): TypeHierarchy = {
     var jobs = ISZ[() => (TypeHierarchy => (TypeHierarchy, ISZ[Message]) @pure) @pure]()
+    var packageMethodMap = HashMap.emptyInit[QName, Info.Method](nameMap.size)
     for (info <- typeMap.values) {
       info match {
         case info: TypeInfo.Sig if !info.typeChecked =>
@@ -560,8 +561,19 @@ object TypeChecker {
         case info: Info.Object =>
           jobs = jobs :+ (() => TypeChecker(th, info.name, F, TypeChecker.ModeContext.Code, strictAliasing).
             checkObject(info))
+        case info: Info.Method if info.isInObject && info.hasBody && !info.ast.typeChecked =>
+          val ownerIsObject: B = nameMap.get(info.owner) match {
+            case Some(_: Info.Object) => T
+            case _ => F
+          }
+          if (!ownerIsObject) {
+            packageMethodMap = packageMethodMap + info.name ~> info
+          }
         case _ =>
       }
+    }
+    if (packageMethodMap.nonEmpty) {
+      jobs = jobs :+ (() => checkPackageMethods(th, packageMethodMap.values, strictAliasing))
     }
     val init = (th, ISZ[Message]())
     val p = ops.ISZOps(jobs).parMapFoldLeftCores(
@@ -610,6 +622,30 @@ object TypeChecker {
     }
     reporter.reports(p._2)
     return r
+  }
+
+  def checkPackageMethods(th: TypeHierarchy,
+                          methods: ISZ[Info.Method],
+                          strictAliasing: B): TypeHierarchy => (TypeHierarchy, ISZ[Message]) @pure = {
+    assert(methods.nonEmpty)
+    val reporter = Reporter.create
+    val entries = MSZ.create[(QName, Info)](methods.size, methods(0).name ~> methods(0))
+    for (i <- methods.indices) {
+      val info = methods(i)
+      assert(info.isInObject)
+      assert(info.outlined, st"${(info.name, ".")} is not outlined".render)
+      val mode: TypeChecker.ModeContext.Type =
+        if (info.ast.sig.purity == AST.Purity.Pure &&
+          info.ast.sig.returnType.typedOpt == AST.Typed.unitOpt)
+          TypeChecker.ModeContext.TheoremCode
+        else TypeChecker.ModeContext.Code
+      val method = TypeChecker(th, info.name, F, mode, strictAliasing).
+        checkMethod(info.scope, info.ast, reporter)
+      entries(i) = info.name ~> info(ast = method)
+    }
+    val newEntries = entries.toIS[(QName, Info)]
+    val messages = reporter.messages
+    return (base: TypeHierarchy) => (base(nameMap = base.nameMap ++ newEntries), messages)
   }
 
   @pure def unifyCombine(
