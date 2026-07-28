@@ -164,6 +164,20 @@ object IR {
       @strictpure def depth: Z = 1 + exp.depth
     }
 
+    @datatype class UnaryTemporal(val tipe: Typed, val op: lang.ast.Exp.UnaryTemporalOp.Type, val exp: Exp, val intvl: org.sireum.String, val pos: Position) extends Exp {
+      @strictpure def prettyRawST(p: Printer): ST = {
+        val opString: org.sireum.String = op match {
+          case lang.ast.Exp.UnaryTemporalOp.Future => "F"
+          case lang.ast.Exp.UnaryTemporalOp.Globally => "G"
+          case lang.ast.Exp.UnaryTemporalOp.Once => "O"
+          case lang.ast.Exp.UnaryTemporalOp.Historically => "H"
+        }
+        st"$opString$intvl(${exp.prettyST(p)})"
+      }
+      @strictpure def numOfTemps: Z = exp.numOfTemps
+      @strictpure def depth: Z = 1 + exp.depth
+    }
+
     object Binary {
       @enum object Op {
         "Add"

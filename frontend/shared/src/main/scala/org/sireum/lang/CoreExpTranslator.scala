@@ -279,6 +279,8 @@ import CoreExpTranslator._
         val op: AST.Exp.UnaryOp.Type = if (e.typedOpt.get == AST.Typed.b && e.op == AST.Exp.UnaryOp.Complement)
           AST.Exp.UnaryOp.Not else e.op
         return AST.CoreExp.Unary(op, translateExp(e.exp, funStack, localMap))
+      case e: AST.Exp.UnaryTemporal =>
+        return AST.CoreExp.UnaryTemporal(e.op, translateExp(e.exp, funStack, localMap), e.intvl)
       case e: AST.Exp.Binary =>
         e.attr.resOpt.get match {
           case res: AST.ResolvedInfo.BuiltIn =>

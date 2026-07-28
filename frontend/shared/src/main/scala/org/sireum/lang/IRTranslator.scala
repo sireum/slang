@@ -1476,6 +1476,14 @@ object IRTranslator {
         } else {
           halt(s"TODO: $exp")
         }
+      case exp: AST.Exp.UnaryTemporal =>
+        val t = exp.typedOpt.get
+        if (isScalar(t)) {
+          val e = translateExp(exp.exp)
+          return norm3AC(AST.IR.Exp.UnaryTemporal(t, exp.op, e, exp.intvl, pos))
+        } else {
+          halt(s"TODO: $exp")
+        }
       case exp: AST.Exp.Binary =>
         val t = exp.typedOpt.get
         if (isScalar(t)) {

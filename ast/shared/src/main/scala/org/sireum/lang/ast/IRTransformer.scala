@@ -64,6 +64,7 @@ object IRTransformer {
         case o: IR.Exp.EnumElementRef => return preIRExpEnumElementRef(ctx, o)
         case o: IR.Exp.FieldVarRef => return preIRExpFieldVarRef(ctx, o)
         case o: IR.Exp.Unary => return preIRExpUnary(ctx, o)
+        case o: IR.Exp.UnaryTemporal => return preIRExpUnaryTemporal(ctx, o)
         case o: IR.Exp.Binary => return preIRExpBinary(ctx, o)
         case o: IR.Exp.If => return preIRExpIf(ctx, o)
         case o: IR.Exp.Construct => return preIRExpConstruct(ctx, o)
@@ -125,6 +126,10 @@ object IRTransformer {
     }
 
     @pure def preIRExpUnary(ctx: Context, o: IR.Exp.Unary): PreResult[Context, IR.Exp] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRExpUnaryTemporal(ctx: Context, o: IR.Exp.UnaryTemporal): PreResult[Context, IR.Exp] = {
       return PreResult(ctx, T, None())
     }
 
@@ -577,6 +582,7 @@ object IRTransformer {
         case o: IR.Exp.EnumElementRef => return postIRExpEnumElementRef(ctx, o)
         case o: IR.Exp.FieldVarRef => return postIRExpFieldVarRef(ctx, o)
         case o: IR.Exp.Unary => return postIRExpUnary(ctx, o)
+        case o: IR.Exp.UnaryTemporal => return postIRExpUnaryTemporal(ctx, o)
         case o: IR.Exp.Binary => return postIRExpBinary(ctx, o)
         case o: IR.Exp.If => return postIRExpIf(ctx, o)
         case o: IR.Exp.Construct => return postIRExpConstruct(ctx, o)
@@ -638,6 +644,10 @@ object IRTransformer {
     }
 
     @pure def postIRExpUnary(ctx: Context, o: IR.Exp.Unary): TPostResult[Context, IR.Exp] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRExpUnaryTemporal(ctx: Context, o: IR.Exp.UnaryTemporal): TPostResult[Context, IR.Exp] = {
       return TPostResult(ctx, None())
     }
 
@@ -1212,6 +1222,13 @@ import IRTransformer._
           else
             TPostResult(r1.ctx, None())
         case o2: IR.Exp.Unary =>
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          val r1: TPostResult[Context, IR.Exp] = transformIRExp(r0.ctx, o2.exp)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe), exp = r1.resultOpt.getOrElse(o2.exp))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: IR.Exp.UnaryTemporal =>
           val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
           val r1: TPostResult[Context, IR.Exp] = transformIRExp(r0.ctx, o2.exp)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)

@@ -262,159 +262,161 @@ object MsgPack {
 
     val _astExpUnary: Z = 80
 
-    val _astExpBinary: Z = 81
+    val _astExpUnaryTemporal: Z = 81
 
-    val _astExpIdent: Z = 82
+    val _astExpBinary: Z = 82
 
-    val _astExpEta: Z = 83
+    val _astExpIdent: Z = 83
 
-    val _astExpTuple: Z = 84
+    val _astExpEta: Z = 84
 
-    val _astExpSelect: Z = 85
+    val _astExpTuple: Z = 85
 
-    val _astExpInvoke: Z = 86
+    val _astExpSelect: Z = 86
 
-    val _astExpInvokeNamed: Z = 87
+    val _astExpInvoke: Z = 87
 
-    val _astExpIf: Z = 88
+    val _astExpInvokeNamed: Z = 88
 
-    val _astExpTypeCond: Z = 89
+    val _astExpIf: Z = 89
 
-    val _astExpSym: Z = 90
+    val _astExpTypeCond: Z = 90
 
-    val _astExpFunParam: Z = 91
+    val _astExpSym: Z = 91
 
-    val _astExpFun: Z = 92
+    val _astExpFunParam: Z = 92
 
-    val _astExpForYield: Z = 93
+    val _astExpFun: Z = 93
 
-    val _astExpQuantType: Z = 94
+    val _astExpForYield: Z = 94
 
-    val _astExpQuantRange: Z = 95
+    val _astExpQuantType: Z = 95
 
-    val _astExpQuantEach: Z = 96
+    val _astExpQuantRange: Z = 96
 
-    val _astExpInput: Z = 97
+    val _astExpQuantEach: Z = 97
 
-    val _astExpOld: Z = 98
+    val _astExpInput: Z = 98
 
-    val _astExpRS: Z = 99
+    val _astExpOld: Z = 99
 
-    val _astExpAt: Z = 100
+    val _astExpRS: Z = 100
 
-    val _astExpLoopIndex: Z = 101
+    val _astExpAt: Z = 101
 
-    val _astExpStateSeq: Z = 102
+    val _astExpLoopIndex: Z = 102
 
-    val _astExpStateSeqFragment: Z = 103
+    val _astExpStateSeq: Z = 103
 
-    val _astExpResult: Z = 104
+    val _astExpStateSeqFragment: Z = 104
 
-    val _astExpStrictPureBlock: Z = 105
+    val _astExpResult: Z = 105
 
-    val _astExpLabeled: Z = 106
+    val _astExpStrictPureBlock: Z = 106
 
-    val _astExpAssumeAgree: Z = 107
+    val _astExpLabeled: Z = 107
 
-    val _astExpAssertAgree: Z = 108
+    val _astExpAssumeAgree: Z = 108
 
-    val _astExpInfoFlowInvariant: Z = 109
+    val _astExpAssertAgree: Z = 109
 
-    val _astNamedArg: Z = 110
+    val _astExpInfoFlowInvariant: Z = 110
 
-    val _astId: Z = 111
+    val _astNamedArg: Z = 111
 
-    val _astName: Z = 112
+    val _astId: Z = 112
 
-    val _astBody: Z = 113
+    val _astName: Z = 113
 
-    val _astAdtParam: Z = 114
+    val _astBody: Z = 114
 
-    val _astAnnotation: Z = 115
+    val _astAdtParam: Z = 115
 
-    val _astRTypeVar: Z = 116
+    val _astAnnotation: Z = 116
 
-    val _astRTypeArena: Z = 117
+    val _astRTypeVar: Z = 117
 
-    val _astRTypePool: Z = 118
+    val _astRTypeArena: Z = 118
 
-    val _astRTypeScope: Z = 119
+    val _astRTypePool: Z = 119
 
-    val _astRTypeRaw: Z = 120
+    val _astRTypeScope: Z = 120
 
-    val _astMethodSig: Z = 121
+    val _astRTypeRaw: Z = 121
 
-    val _astParam: Z = 122
+    val _astMethodSig: Z = 122
 
-    val _astTypeParam: Z = 123
+    val _astParam: Z = 123
 
-    val _astAttr: Z = 124
+    val _astTypeParam: Z = 124
 
-    val _astTypedAttr: Z = 125
+    val _astAttr: Z = 125
 
-    val _astResolvedAttr: Z = 126
+    val _astTypedAttr: Z = 126
 
-    val _astResolvedInfoBuiltIn: Z = 127
+    val _astResolvedAttr: Z = 127
 
-    val _astResolvedInfoPackage: Z = 128
+    val _astResolvedInfoBuiltIn: Z = 128
 
-    val _astResolvedInfoEnum: Z = 129
+    val _astResolvedInfoPackage: Z = 129
 
-    val _astResolvedInfoEnumElement: Z = 130
+    val _astResolvedInfoEnum: Z = 130
 
-    val _astResolvedInfoObject: Z = 131
+    val _astResolvedInfoEnumElement: Z = 131
 
-    val _astResolvedInfoVar: Z = 132
+    val _astResolvedInfoObject: Z = 132
 
-    val _astResolvedInfoMethod: Z = 133
+    val _astResolvedInfoVar: Z = 133
 
-    val _astResolvedInfoMethods: Z = 134
+    val _astResolvedInfoMethod: Z = 134
 
-    val _astResolvedInfoTuple: Z = 135
+    val _astResolvedInfoMethods: Z = 135
 
-    val _astResolvedInfoLocalVar: Z = 136
+    val _astResolvedInfoTuple: Z = 136
 
-    val _astResolvedInfoFact: Z = 137
+    val _astResolvedInfoLocalVar: Z = 137
 
-    val _astResolvedInfoTheorem: Z = 138
+    val _astResolvedInfoFact: Z = 138
 
-    val _astResolvedInfoInv: Z = 139
+    val _astResolvedInfoTheorem: Z = 139
 
-    val _astTruthTableRow: Z = 140
+    val _astResolvedInfoInv: Z = 140
 
-    val _astTruthTableAssignment: Z = 141
+    val _astTruthTableRow: Z = 141
 
-    val _astTruthTableConclusionValidity: Z = 142
+    val _astTruthTableAssignment: Z = 142
 
-    val _astTruthTableConclusionTautology: Z = 143
+    val _astTruthTableConclusionValidity: Z = 143
 
-    val _astTruthTableConclusionContradictory: Z = 144
+    val _astTruthTableConclusionTautology: Z = 144
 
-    val _astTruthTableConclusionContingent: Z = 145
+    val _astTruthTableConclusionContradictory: Z = 145
 
-    val _astTypedName: Z = 146
+    val _astTruthTableConclusionContingent: Z = 146
 
-    val _astTypedTuple: Z = 147
+    val _astTypedName: Z = 147
 
-    val _astTypedFun: Z = 148
+    val _astTypedTuple: Z = 148
 
-    val _astTypedTypeVar: Z = 149
+    val _astTypedFun: Z = 149
 
-    val _astTypedPackage: Z = 150
+    val _astTypedTypeVar: Z = 150
 
-    val _astTypedObject: Z = 151
+    val _astTypedPackage: Z = 151
 
-    val _astTypedEnum: Z = 152
+    val _astTypedObject: Z = 152
 
-    val _astTypedMethod: Z = 153
+    val _astTypedEnum: Z = 153
 
-    val _astTypedMethods: Z = 154
+    val _astTypedMethod: Z = 154
 
-    val _astTypedFact: Z = 155
+    val _astTypedMethods: Z = 155
 
-    val _astTypedTheorem: Z = 156
+    val _astTypedFact: Z = 156
 
-    val _astTypedInv: Z = 157
+    val _astTypedTheorem: Z = 157
+
+    val _astTypedInv: Z = 158
 
   }
 
@@ -1467,6 +1469,7 @@ object MsgPack {
         case o: org.sireum.lang.ast.Exp.This => write_astExpThis(o)
         case o: org.sireum.lang.ast.Exp.Super => write_astExpSuper(o)
         case o: org.sireum.lang.ast.Exp.Unary => write_astExpUnary(o)
+        case o: org.sireum.lang.ast.Exp.UnaryTemporal => write_astExpUnaryTemporal(o)
         case o: org.sireum.lang.ast.Exp.Binary => write_astExpBinary(o)
         case o: org.sireum.lang.ast.Exp.Ident => write_astExpIdent(o)
         case o: org.sireum.lang.ast.Exp.Eta => write_astExpEta(o)
@@ -1581,6 +1584,19 @@ object MsgPack {
       writer.writeZ(Constants._astExpUnary)
       write_astExpUnaryOpType(o.op)
       write_astExp(o.exp)
+      write_astResolvedAttr(o.attr)
+      writer.writeOption(o.opPosOpt, writer.writePosition _)
+    }
+
+    def write_astExpUnaryTemporalOpType(o: org.sireum.lang.ast.Exp.UnaryTemporalOp.Type): Unit = {
+      writer.writeZ(o.ordinal)
+    }
+
+    def write_astExpUnaryTemporal(o: org.sireum.lang.ast.Exp.UnaryTemporal): Unit = {
+      writer.writeZ(Constants._astExpUnaryTemporal)
+      write_astExpUnaryTemporalOpType(o.op)
+      write_astExp(o.exp)
+      writer.writeString(o.intvl)
       write_astResolvedAttr(o.attr)
       writer.writeOption(o.opPosOpt, writer.writePosition _)
     }
@@ -4194,6 +4210,7 @@ object MsgPack {
         case Constants._astExpThis => val r = read_astExpThisT(T); return r
         case Constants._astExpSuper => val r = read_astExpSuperT(T); return r
         case Constants._astExpUnary => val r = read_astExpUnaryT(T); return r
+        case Constants._astExpUnaryTemporal => val r = read_astExpUnaryTemporalT(T); return r
         case Constants._astExpBinary => val r = read_astExpBinaryT(T); return r
         case Constants._astExpIdent => val r = read_astExpIdentT(T); return r
         case Constants._astExpEta => val r = read_astExpEtaT(T); return r
@@ -4409,6 +4426,28 @@ object MsgPack {
       val attr = read_astResolvedAttr()
       val opPosOpt = reader.readOption(reader.readPosition _)
       return org.sireum.lang.ast.Exp.Unary(op, exp, attr, opPosOpt)
+    }
+
+    def read_astExpUnaryTemporalOpType(): org.sireum.lang.ast.Exp.UnaryTemporalOp.Type = {
+      val r = reader.readZ()
+      return org.sireum.lang.ast.Exp.UnaryTemporalOp.byOrdinal(r).get
+    }
+
+    def read_astExpUnaryTemporal(): org.sireum.lang.ast.Exp.UnaryTemporal = {
+      val r = read_astExpUnaryTemporalT(F)
+      return r
+    }
+
+    def read_astExpUnaryTemporalT(typeParsed: B): org.sireum.lang.ast.Exp.UnaryTemporal = {
+      if (!typeParsed) {
+        reader.expectZ(Constants._astExpUnaryTemporal)
+      }
+      val op = read_astExpUnaryTemporalOpType()
+      val exp = read_astExp()
+      val intvl = reader.readString()
+      val attr = read_astResolvedAttr()
+      val opPosOpt = reader.readOption(reader.readPosition _)
+      return org.sireum.lang.ast.Exp.UnaryTemporal(op, exp, intvl, attr, opPosOpt)
     }
 
     def read_astExpRef(): org.sireum.lang.ast.Exp.Ref = {
@@ -7687,6 +7726,21 @@ object MsgPack {
       return r
     }
     val r = to(data, f_astExpUnary _)
+    return r
+  }
+
+  def from_astExpUnaryTemporal(o: org.sireum.lang.ast.Exp.UnaryTemporal, pooling: B): ISZ[U8] = {
+    val w = Writer.Default(MessagePack.writer(pooling))
+    w.write_astExpUnaryTemporal(o)
+    return w.result
+  }
+
+  def to_astExpUnaryTemporal(data: ISZ[U8]): Either[org.sireum.lang.ast.Exp.UnaryTemporal, MessagePack.ErrorMsg] = {
+    def f_astExpUnaryTemporal(reader: Reader): org.sireum.lang.ast.Exp.UnaryTemporal = {
+      val r = reader.read_astExpUnaryTemporal()
+      return r
+    }
+    val r = to(data, f_astExpUnaryTemporal _)
     return r
   }
 

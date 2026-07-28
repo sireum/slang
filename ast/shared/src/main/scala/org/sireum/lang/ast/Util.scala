@@ -986,6 +986,15 @@ object Util {
     }
   }
 
+  def unopTemporalId(op: Exp.UnaryTemporalOp.Type): String = {
+    op match {
+      case Exp.UnaryTemporalOp.Future => return "unary_F"
+      case Exp.UnaryTemporalOp.Globally => return "unary_G"
+      case Exp.UnaryTemporalOp.Once => return "unary_O"
+      case Exp.UnaryTemporalOp.Historically => return "unary_H"
+    }
+  }
+
   @pure def isBoolBinop(op: String): B = {
     op match {
       case Exp.BinaryOp.Eq => return T

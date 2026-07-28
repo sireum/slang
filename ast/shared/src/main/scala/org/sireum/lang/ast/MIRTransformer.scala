@@ -109,6 +109,10 @@ object MIRTransformer {
 
   val PostResultIRExpUnary: MOption[IR.Exp] = MNone()
 
+  val PreResultIRExpUnaryTemporal: PreResult[IR.Exp] = PreResult(T, MNone())
+
+  val PostResultIRExpUnaryTemporal: MOption[IR.Exp] = MNone()
+
   val PreResultIRExpBinary: PreResult[IR.Exp] = PreResult(T, MNone())
 
   val PostResultIRExpBinary: MOption[IR.Exp] = MNone()
@@ -382,6 +386,7 @@ import MIRTransformer._
       case o: IR.Exp.EnumElementRef => return preIRExpEnumElementRef(o)
       case o: IR.Exp.FieldVarRef => return preIRExpFieldVarRef(o)
       case o: IR.Exp.Unary => return preIRExpUnary(o)
+      case o: IR.Exp.UnaryTemporal => return preIRExpUnaryTemporal(o)
       case o: IR.Exp.Binary => return preIRExpBinary(o)
       case o: IR.Exp.If => return preIRExpIf(o)
       case o: IR.Exp.Construct => return preIRExpConstruct(o)
@@ -444,6 +449,10 @@ import MIRTransformer._
 
   def preIRExpUnary(o: IR.Exp.Unary): PreResult[IR.Exp] = {
     return PreResultIRExpUnary
+  }
+
+  def preIRExpUnaryTemporal(o: IR.Exp.UnaryTemporal): PreResult[IR.Exp] = {
+    return PreResultIRExpUnaryTemporal
   }
 
   def preIRExpBinary(o: IR.Exp.Binary): PreResult[IR.Exp] = {
@@ -895,6 +904,7 @@ import MIRTransformer._
       case o: IR.Exp.EnumElementRef => return postIRExpEnumElementRef(o)
       case o: IR.Exp.FieldVarRef => return postIRExpFieldVarRef(o)
       case o: IR.Exp.Unary => return postIRExpUnary(o)
+      case o: IR.Exp.UnaryTemporal => return postIRExpUnaryTemporal(o)
       case o: IR.Exp.Binary => return postIRExpBinary(o)
       case o: IR.Exp.If => return postIRExpIf(o)
       case o: IR.Exp.Construct => return postIRExpConstruct(o)
@@ -957,6 +967,10 @@ import MIRTransformer._
 
   def postIRExpUnary(o: IR.Exp.Unary): MOption[IR.Exp] = {
     return PostResultIRExpUnary
+  }
+
+  def postIRExpUnaryTemporal(o: IR.Exp.UnaryTemporal): MOption[IR.Exp] = {
+    return PostResultIRExpUnaryTemporal
   }
 
   def postIRExpBinary(o: IR.Exp.Binary): MOption[IR.Exp] = {
@@ -1492,6 +1506,13 @@ import MIRTransformer._
           else
             MNone()
         case o2: IR.Exp.Unary =>
+          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          val r1: MOption[IR.Exp] = transformIRExp(o2.exp)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(tipe = r0.getOrElse(o2.tipe), exp = r1.getOrElse(o2.exp)))
+          else
+            MNone()
+        case o2: IR.Exp.UnaryTemporal =>
           val r0: MOption[Typed] = transformTyped(o2.tipe)
           val r1: MOption[IR.Exp] = transformIRExp(o2.exp)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)

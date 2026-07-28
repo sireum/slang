@@ -1650,6 +1650,38 @@ object Exp {
     }
   }
 
+  @enum object UnaryTemporalOp {
+    "Future"
+    "Globally"
+    "Once"
+    "Historically"
+  }
+
+  @datatype class UnaryTemporal(val op: UnaryTemporalOp.Type, val exp: Exp, val intvl: String, @hidden val attr: ResolvedAttr, @hidden val opPosOpt: Option[Position]) extends Exp {
+    @strictpure override def posOpt: Option[Position] = opPosOpt
+    @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
+    @strictpure def opString: String = op match {
+      case Exp.UnaryTemporalOp.Future => "F"
+      case Exp.UnaryTemporalOp.Globally => "G"
+      case Exp.UnaryTemporalOp.Once => "O"
+      case Exp.UnaryTemporalOp.Historically => "H"
+    }
+    @pure override def fullPosOpt: Option[Position] = {
+      return attr.posOpt
+    }
+    @pure override def prettyST: ST = {
+      val paren: B = exp match {
+        case _: Exp.Ident => F
+        case exp: LitZ if exp.value >= 0 => F
+        case exp: LitF32 if exp.value >= 0f => F
+        case exp: LitF64 if exp.value >= 0d => F
+        case exp: LitR if exp.value >= r"0" => F
+        case _ => T
+      }
+      return if (paren) st"$opString$intvl(${exp.prettyST})" else st"$opString$intvl${exp.prettyST}"
+    }
+  }
+
   object BinaryOp {
     val Add: String = "+"
     val Sub: String = "-"
@@ -2466,6 +2498,10 @@ object ResolvedInfo {
       "UnaryMinus"
       "UnaryNot"
       "UnaryComplement"
+      "UnaryFuture"
+      "UnaryGlobally"
+      "UnaryOnce"
+      "UnaryHistorically"
     }
 
   }

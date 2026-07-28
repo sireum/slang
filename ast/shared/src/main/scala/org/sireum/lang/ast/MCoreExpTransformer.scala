@@ -165,6 +165,10 @@ object MCoreExpTransformer {
 
   val PostResultCoreExpUnary: MOption[CoreExp.Base] = MNone()
 
+  val PreResultCoreExpUnaryTemporal: PreResult[CoreExp.Base] = PreResult(T, MNone())
+
+  val PostResultCoreExpUnaryTemporal: MOption[CoreExp.Base] = MNone()
+
   val PreResultCoreExpConstructor: PreResult[CoreExp.Base] = PreResult(T, MNone())
 
   val PostResultCoreExpConstructor: MOption[CoreExp.Base] = MNone()
@@ -406,6 +410,13 @@ import MCoreExpTransformer._
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
+      case o: CoreExp.UnaryTemporal =>
+        val r: PreResult[CoreExp] = preCoreExpUnaryTemporal(o) match {
+         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
+         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
+        }
+        return r
       case o: CoreExp.Constructor =>
         val r: PreResult[CoreExp] = preCoreExpConstructor(o) match {
          case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
@@ -572,6 +583,7 @@ import MCoreExpTransformer._
       case o: CoreExp.ObjectVarRef => return preCoreExpObjectVarRef(o)
       case o: CoreExp.Binary => return preCoreExpBinary(o)
       case o: CoreExp.Unary => return preCoreExpUnary(o)
+      case o: CoreExp.UnaryTemporal => return preCoreExpUnaryTemporal(o)
       case o: CoreExp.Constructor => return preCoreExpConstructor(o)
       case o: CoreExp.Select => return preCoreExpSelect(o)
       case o: CoreExp.Update => return preCoreExpUpdate(o)
@@ -664,6 +676,10 @@ import MCoreExpTransformer._
 
   def preCoreExpUnary(o: CoreExp.Unary): PreResult[CoreExp.Base] = {
     return PreResultCoreExpUnary
+  }
+
+  def preCoreExpUnaryTemporal(o: CoreExp.UnaryTemporal): PreResult[CoreExp.Base] = {
+    return PreResultCoreExpUnaryTemporal
   }
 
   def preCoreExpConstructor(o: CoreExp.Constructor): PreResult[CoreExp.Base] = {
@@ -901,6 +917,13 @@ import MCoreExpTransformer._
          case _ => MNone[CoreExp]()
         }
         return r
+      case o: CoreExp.UnaryTemporal =>
+        val r: MOption[CoreExp] = postCoreExpUnaryTemporal(o) match {
+         case MSome(result: CoreExp) => MSome[CoreExp](result)
+         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case _ => MNone[CoreExp]()
+        }
+        return r
       case o: CoreExp.Constructor =>
         val r: MOption[CoreExp] = postCoreExpConstructor(o) match {
          case MSome(result: CoreExp) => MSome[CoreExp](result)
@@ -1067,6 +1090,7 @@ import MCoreExpTransformer._
       case o: CoreExp.ObjectVarRef => return postCoreExpObjectVarRef(o)
       case o: CoreExp.Binary => return postCoreExpBinary(o)
       case o: CoreExp.Unary => return postCoreExpUnary(o)
+      case o: CoreExp.UnaryTemporal => return postCoreExpUnaryTemporal(o)
       case o: CoreExp.Constructor => return postCoreExpConstructor(o)
       case o: CoreExp.Select => return postCoreExpSelect(o)
       case o: CoreExp.Update => return postCoreExpUpdate(o)
@@ -1159,6 +1183,10 @@ import MCoreExpTransformer._
 
   def postCoreExpUnary(o: CoreExp.Unary): MOption[CoreExp.Base] = {
     return PostResultCoreExpUnary
+  }
+
+  def postCoreExpUnaryTemporal(o: CoreExp.UnaryTemporal): MOption[CoreExp.Base] = {
+    return PostResultCoreExpUnaryTemporal
   }
 
   def postCoreExpConstructor(o: CoreExp.Constructor): MOption[CoreExp.Base] = {
@@ -1405,6 +1433,12 @@ import MCoreExpTransformer._
             MSome(o2(exp = r0.getOrElse(o2.exp)))
           else
             MNone()
+        case o2: CoreExp.UnaryTemporal =>
+          val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp)))
+          else
+            MNone()
         case o2: CoreExp.Constructor =>
           val r0: MOption[Typed] = transformTyped(o2.rawType)
           val r1: MOption[IS[Z, CoreExp.Base]] = transformISZ(o2.args, transformCoreExpBase _)
@@ -1611,6 +1645,12 @@ import MCoreExpTransformer._
           else
             MNone()
         case o2: CoreExp.Unary =>
+          val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp)))
+          else
+            MNone()
+        case o2: CoreExp.UnaryTemporal =>
           val r0: MOption[CoreExp.Base] = transformCoreExpBase(o2.exp)
           if (hasChanged || r0.nonEmpty)
             MSome(o2(exp = r0.getOrElse(o2.exp)))

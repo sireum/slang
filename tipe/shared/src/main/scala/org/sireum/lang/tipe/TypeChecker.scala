@@ -289,6 +289,13 @@ object TypeChecker {
     AST.Exp.UnaryOp.Complement ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.UnaryComplement, None()))
   )
 
+  val unopTemporalResOpt: HashMap[AST.Exp.UnaryTemporalOp.Type, Option[AST.ResolvedInfo]] = HashMap ++ ISZ[(AST.Exp.UnaryTemporalOp.Type, Option[AST.ResolvedInfo])](
+    AST.Exp.UnaryTemporalOp.Future ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.UnaryFuture, None())),
+    AST.Exp.UnaryTemporalOp.Globally ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.UnaryGlobally, None())),
+    AST.Exp.UnaryTemporalOp.Once ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.UnaryOnce, None())),
+    AST.Exp.UnaryTemporalOp.Historically ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.UnaryHistorically, None()))
+  )
+
   val binopResOpt: HashMap[String, Option[AST.ResolvedInfo]] = HashMap ++ ISZ[(String, Option[AST.ResolvedInfo])](
     AST.Exp.BinaryOp.Add ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryAdd, None())),
     AST.Exp.BinaryOp.Sub ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinarySub, None())),
@@ -2020,6 +2027,32 @@ import TypeChecker._
       return (newExp, None())
     }
 
+    def checkUnaryTemporal(unaryTemporalExp: AST.Exp.UnaryTemporal): (AST.Exp, Option[AST.Typed]) = {
+      val (newExp, expTypeOpt) = checkExp(None(), scope, unaryTemporalExp.exp, reporter)
+      val newunaryTemporalExp = unaryTemporalExp(exp = newExp)
+      expTypeOpt match {
+        case Some(expType) =>
+          val kindOpt = basicKind(scope, expType)
+          kindOpt match {
+            case Some(kind) =>
+              if (kind != BasicKind.B) {
+                reporter.error(unaryTemporalExp.posOpt, typeCheckerKind, st"Undefined unary operation ${unaryTemporalExp.op} on '$expType'.".render)
+                return (newunaryTemporalExp, None())
+              }
+              var r = newunaryTemporalExp
+              val tOpt: Option[AST.Typed] = Some(expType)
+              r = r(attr = r.attr(typedOpt = tOpt, resOpt = unopTemporalResOpt.get(unaryTemporalExp.op).get))
+              return (r, tOpt)
+            case _ =>
+              val (typedOpt, resOpt, _) =
+                checkSelectH(scope, expType, AST.Id(AST.Util.unopTemporalId(unaryTemporalExp.op), AST.Attr(unaryTemporalExp.posOpt)), ISZ(), reporter)
+              return (unaryTemporalExp(exp = newExp, attr = unaryTemporalExp.attr(resOpt = resOpt, typedOpt = typedOpt)), typedOpt)
+          }
+        case _ =>
+      }
+      return (newExp, None())
+    }
+
     def checkBinary(binaryExp: AST.Exp.Binary): (AST.Exp, Option[AST.Typed]) = {
       def checkAsInvoke(): (AST.Exp, Option[AST.Typed]) = {
         if (ops.StringOps(binaryExp.op).endsWith(":")) {
@@ -3723,6 +3756,8 @@ import TypeChecker._
 
         case exp: AST.Exp.Unary => return checkUnary(exp)
 
+        case exp: AST.Exp.UnaryTemporal => return checkUnaryTemporal(exp)
+
         case exp: AST.Exp.Quant => return checkQuant(exp)
 
         case exp: AST.Exp.Input => return checkInput(exp)
@@ -4505,6 +4540,10 @@ import TypeChecker._
                 case AST.ResolvedInfo.BuiltIn.Kind.UnaryMinus => F
                 case AST.ResolvedInfo.BuiltIn.Kind.UnaryNot => F
                 case AST.ResolvedInfo.BuiltIn.Kind.UnaryComplement => F
+                case AST.ResolvedInfo.BuiltIn.Kind.UnaryFuture => F
+                case AST.ResolvedInfo.BuiltIn.Kind.UnaryGlobally => F
+                case AST.ResolvedInfo.BuiltIn.Kind.UnaryOnce => F
+                case AST.ResolvedInfo.BuiltIn.Kind.UnaryHistorically => F
                 case AST.ResolvedInfo.BuiltIn.Kind.Arrow => F
               }
               if (!ok) {

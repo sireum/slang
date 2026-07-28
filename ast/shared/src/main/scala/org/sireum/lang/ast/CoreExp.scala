@@ -337,6 +337,51 @@ object CoreExp {
     @strictpure override def shouldParen: B = T
   }
 
+  @datatype class UnaryTemporal(val op: Exp.UnaryTemporalOp.Type, val exp: Base, val intvl: String) extends Base {
+    @strictpure override def rawType: Typed = exp.tipe
+    @pure def prettySTH(expST: ST): ST = {
+      val paren: B = exp match {
+        case _: CoreExp.LocalVarRef => F
+        case _: CoreExp.ParamVarRef => F
+        case _: CoreExp.ObjectVarRef => F
+        case exp: CoreExp.LitZ if exp.value >= 0 => F
+        case exp: CoreExp.LitF32 if exp.value >= 0f => F
+        case exp: CoreExp.LitF64 if exp.value >= 0d => F
+        case exp: CoreExp.LitR if exp.value >= r"0" => F
+        case _ => T
+      }
+      return if (paren) st"$opString$intvl($expST)" else st"$opString$intvl$expST"
+    }
+    @strictpure def opString: String = op match {
+      case Exp.UnaryTemporalOp.Future => "F"
+      case Exp.UnaryTemporalOp.Globally => "G"
+      case Exp.UnaryTemporalOp.Once => "O"
+      case Exp.UnaryTemporalOp.Historically => "H"
+    }
+    @pure override def prettyST: ST = {
+      return prettySTH(exp.prettyST)
+    }
+    @pure override def prettyPatternST: ST = {
+      return prettySTH(exp.prettyPatternST)
+    }
+    @pure override def subst(sm: HashMap[String, Typed]): UnaryTemporal = {
+      if (sm.isEmpty) {
+        return this
+      }
+      val thiz = this
+      return thiz(exp = exp.subst(sm))
+    }
+    @pure def incDeBruijn(threshold: Z): UnaryTemporal = {
+      val thiz = this
+      return thiz(exp = exp.incDeBruijn(threshold))
+    }
+    override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
+      val thiz = this
+      return thiz(exp = exp.numberPattern(numMap))
+    }
+    @strictpure override def shouldParen: B = T
+  }
+
   @datatype class Constructor(val rawType: Typed, args: ISZ[Base]) extends Base {
     @strictpure def tOpt: Option[ST] = tipe match {
       case _: Typed.Tuple => None()

@@ -711,6 +711,7 @@ object Transformer {
         case o: Exp.This => return preExpThis(ctx, o)
         case o: Exp.Super => return preExpSuper(ctx, o)
         case o: Exp.Unary => return preExpUnary(ctx, o)
+        case o: Exp.UnaryTemporal => return preExpUnaryTemporal(ctx, o)
         case o: Exp.Binary => return preExpBinary(ctx, o)
         case o: Exp.Ident => return preExpIdent(ctx, o)
         case o: Exp.Eta => return preExpEta(ctx, o)
@@ -826,6 +827,10 @@ object Transformer {
     }
 
     @pure def preExpUnary(ctx: Context, o: Exp.Unary): PreResult[Context, Exp] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preExpUnaryTemporal(ctx: Context, o: Exp.UnaryTemporal): PreResult[Context, Exp] = {
       return PreResult(ctx, T, None())
     }
 
@@ -1884,6 +1889,7 @@ object Transformer {
         case o: Exp.This => return postExpThis(ctx, o)
         case o: Exp.Super => return postExpSuper(ctx, o)
         case o: Exp.Unary => return postExpUnary(ctx, o)
+        case o: Exp.UnaryTemporal => return postExpUnaryTemporal(ctx, o)
         case o: Exp.Binary => return postExpBinary(ctx, o)
         case o: Exp.Ident => return postExpIdent(ctx, o)
         case o: Exp.Eta => return postExpEta(ctx, o)
@@ -1999,6 +2005,10 @@ object Transformer {
     }
 
     @pure def postExpUnary(ctx: Context, o: Exp.Unary): TPostResult[Context, Exp] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postExpUnaryTemporal(ctx: Context, o: Exp.UnaryTemporal): TPostResult[Context, Exp] = {
       return TPostResult(ctx, None())
     }
 
@@ -3910,6 +3920,13 @@ import Transformer._
           else
             TPostResult(r1.ctx, None())
         case o2: Exp.Unary =>
+          val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.exp)
+          val r1: TPostResult[Context, ResolvedAttr] = transformResolvedAttr(r0.ctx, o2.attr)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), attr = r1.resultOpt.getOrElse(o2.attr))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: Exp.UnaryTemporal =>
           val r0: TPostResult[Context, Exp] = transformExp(preR.ctx, o2.exp)
           val r1: TPostResult[Context, ResolvedAttr] = transformResolvedAttr(r0.ctx, o2.attr)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)

@@ -335,6 +335,7 @@ object Evaluator {
       case exp: AST.CoreExp.Labeled => return evalCoreExp(pos, exp.exp, funStack, localMap)
       case exp: AST.CoreExp.Binary => return evalBinary(pos, exp, funStack, localMap)
       case exp: AST.CoreExp.Unary => return evalUnary(pos, exp, funStack, localMap)
+      case exp: AST.CoreExp.UnaryTemporal => halt(s"Unsupported temporal expression: $exp")
       case exp: AST.CoreExp.If => return evalIfExp(pos, exp, funStack, localMap)
       case exp: AST.CoreExp.InstanceOfExp => return evalInstanceOf(pos, exp, funStack, localMap)
       case exp: AST.CoreExp.Indexing => halt(s"TODO: $exp") // TODO
