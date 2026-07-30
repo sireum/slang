@@ -296,6 +296,13 @@ object TypeChecker {
     AST.Exp.UnaryTemporalOp.Historically ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.UnaryHistorically, None()))
   )
 
+  val binopTemporalResOpt: HashMap[AST.Exp.BinaryTemporalOp.Type, Option[AST.ResolvedInfo]] = HashMap ++ ISZ[(AST.Exp.BinaryTemporalOp.Type, Option[AST.ResolvedInfo])](
+    AST.Exp.BinaryTemporalOp.Until ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryUntil, None())),
+    AST.Exp.BinaryTemporalOp.Release ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryRelease, None())),
+    AST.Exp.BinaryTemporalOp.Since ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinarySince, None())),
+    AST.Exp.BinaryTemporalOp.Trigger ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryTrigger, None()))
+  )
+
   val binopResOpt: HashMap[String, Option[AST.ResolvedInfo]] = HashMap ++ ISZ[(String, Option[AST.ResolvedInfo])](
     AST.Exp.BinaryOp.Add ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinaryAdd, None())),
     AST.Exp.BinaryOp.Sub ~> Some(AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.BinarySub, None())),
@@ -2053,6 +2060,23 @@ import TypeChecker._
       return (newExp, None())
     }
 
+    def checkBinaryTemporal(binaryTemporalExp: AST.Exp.BinaryTemporal): (AST.Exp, Option[AST.Typed]) = {
+      val (newLeft, leftTypeOpt) = checkExp(None(), scope, binaryTemporalExp.left, reporter)
+      val (newRight, rightTypeOpt) = checkExp(None(), scope, binaryTemporalExp.right, reporter)
+      val newBinaryTemporalExp = binaryTemporalExp(left = newLeft, right = newRight)
+      (leftTypeOpt, rightTypeOpt) match {
+        case (Some(leftType), Some(rightType)) =>
+          if (basicKind(scope, leftType) != Some(BasicKind.B) || basicKind(scope, rightType) != Some(BasicKind.B)) {
+            reporter.error(binaryTemporalExp.posOpt, typeCheckerKind, st"Undefined binary temporal operation ${binaryTemporalExp.op} on '$leftType' and '$rightType'.".render)
+            return (newBinaryTemporalExp, None())
+          }
+          val r = newBinaryTemporalExp(attr = newBinaryTemporalExp.attr(typedOpt = Some(AST.Typed.b), resOpt = binopTemporalResOpt.get(binaryTemporalExp.op).get))
+          return (r, Some(AST.Typed.b))
+        case _ =>
+      }
+      return (newBinaryTemporalExp, None())
+    }
+
     def checkBinary(binaryExp: AST.Exp.Binary): (AST.Exp, Option[AST.Typed]) = {
       def checkAsInvoke(): (AST.Exp, Option[AST.Typed]) = {
         if (ops.StringOps(binaryExp.op).endsWith(":")) {
@@ -3757,6 +3781,7 @@ import TypeChecker._
         case exp: AST.Exp.Unary => return checkUnary(exp)
 
         case exp: AST.Exp.UnaryTemporal => return checkUnaryTemporal(exp)
+        case exp: AST.Exp.BinaryTemporal => return checkBinaryTemporal(exp)
 
         case exp: AST.Exp.Quant => return checkQuant(exp)
 
@@ -4544,6 +4569,10 @@ import TypeChecker._
                 case AST.ResolvedInfo.BuiltIn.Kind.UnaryGlobally => F
                 case AST.ResolvedInfo.BuiltIn.Kind.UnaryOnce => F
                 case AST.ResolvedInfo.BuiltIn.Kind.UnaryHistorically => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryUntil => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryRelease => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinarySince => F
+                case AST.ResolvedInfo.BuiltIn.Kind.BinaryTrigger => F
                 case AST.ResolvedInfo.BuiltIn.Kind.Arrow => F
               }
               if (!ok) {

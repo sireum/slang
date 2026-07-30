@@ -281,6 +281,8 @@ import CoreExpTranslator._
         return AST.CoreExp.Unary(op, translateExp(e.exp, funStack, localMap))
       case e: AST.Exp.UnaryTemporal =>
         return AST.CoreExp.UnaryTemporal(e.op, translateExp(e.exp, funStack, localMap), e.intvl)
+      case e: AST.Exp.BinaryTemporal =>
+        return AST.CoreExp.BinaryTemporal(translateExp(e.left, funStack, localMap), e.op, e.intvl, translateExp(e.right, funStack, localMap))
       case e: AST.Exp.Binary =>
         e.attr.resOpt.get match {
           case res: AST.ResolvedInfo.BuiltIn =>
@@ -482,4 +484,3 @@ import CoreExpTranslator._
     }
   }
 }
-

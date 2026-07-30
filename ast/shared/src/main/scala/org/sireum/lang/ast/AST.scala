@@ -1682,6 +1682,28 @@ object Exp {
     }
   }
 
+  @enum object BinaryTemporalOp {
+    "Until"
+    "Release"
+    "Since"
+    "Trigger"
+  }
+
+  @datatype class BinaryTemporal(val left: Exp, val op: BinaryTemporalOp.Type, val intvl: String, val right: Exp, @hidden val attr: ResolvedAttr, @hidden val opPosOpt: Option[Position]) extends Exp {
+    @strictpure override def posOpt: Option[Position] = opPosOpt
+    @strictpure override def typedOpt: Option[Typed] = attr.typedOpt
+    @strictpure def opString: String = op match {
+      case Exp.BinaryTemporalOp.Until => "U"
+      case Exp.BinaryTemporalOp.Release => "R"
+      case Exp.BinaryTemporalOp.Since => "S"
+      case Exp.BinaryTemporalOp.Trigger => "T"
+    }
+    @pure override def fullPosOpt: Option[Position] = {
+      return attr.posOpt
+    }
+    @strictpure override def prettyST: ST = st"${left.prettyST} $opString$intvl ${right.prettyST}"
+  }
+
   object BinaryOp {
     val Add: String = "+"
     val Sub: String = "-"
@@ -2502,6 +2524,10 @@ object ResolvedInfo {
       "UnaryGlobally"
       "UnaryOnce"
       "UnaryHistorically"
+      "BinaryUntil"
+      "BinaryRelease"
+      "BinarySince"
+      "BinaryTrigger"
     }
 
   }

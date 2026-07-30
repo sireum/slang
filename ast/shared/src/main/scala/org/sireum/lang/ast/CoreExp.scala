@@ -382,6 +382,34 @@ object CoreExp {
     @strictpure override def shouldParen: B = T
   }
 
+  @datatype class BinaryTemporal(val left: Base, val op: Exp.BinaryTemporalOp.Type, val intvl: String, val right: Base) extends Base {
+    @strictpure override def rawType: Typed = left.tipe
+    @strictpure def opString: String = op match {
+      case Exp.BinaryTemporalOp.Until => "U"
+      case Exp.BinaryTemporalOp.Release => "R"
+      case Exp.BinaryTemporalOp.Since => "S"
+      case Exp.BinaryTemporalOp.Trigger => "T"
+    }
+    @strictpure override def prettyST: ST = st"${left.prettyST} $opString$intvl ${right.prettyST}"
+    @strictpure override def prettyPatternST: ST = st"${left.prettyPatternST} $opString$intvl ${right.prettyPatternST}"
+    @pure override def subst(sm: HashMap[String, Typed]): BinaryTemporal = {
+      if (sm.isEmpty) {
+        return this
+      }
+      val thiz = this
+      return thiz(left = left.subst(sm), right = right.subst(sm))
+    }
+    @pure def incDeBruijn(threshold: Z): BinaryTemporal = {
+      val thiz = this
+      return thiz(left = left.incDeBruijn(threshold), right = right.incDeBruijn(threshold))
+    }
+    override def numberPattern(numMap: MBox[HashMap[(ISZ[String], String), Z]]): CoreExp.Base = {
+      val thiz = this
+      return thiz(left = left.numberPattern(numMap), right = right.numberPattern(numMap))
+    }
+    @strictpure override def shouldParen: B = T
+  }
+
   @datatype class Constructor(val rawType: Typed, args: ISZ[Base]) extends Base {
     @strictpure def tOpt: Option[ST] = tipe match {
       case _: Typed.Tuple => None()

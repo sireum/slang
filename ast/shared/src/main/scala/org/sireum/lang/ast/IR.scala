@@ -178,6 +178,20 @@ object IR {
       @strictpure def depth: Z = 1 + exp.depth
     }
 
+    @datatype class BinaryTemporal(val tipe: Typed, val left: Exp, val op: lang.ast.Exp.BinaryTemporalOp.Type, val intvl: org.sireum.String, val right: Exp, val pos: Position) extends Exp {
+      @strictpure def prettyRawST(p: Printer): ST = {
+        val opString: org.sireum.String = op match {
+          case lang.ast.Exp.BinaryTemporalOp.Until => "U"
+          case lang.ast.Exp.BinaryTemporalOp.Release => "R"
+          case lang.ast.Exp.BinaryTemporalOp.Since => "S"
+          case lang.ast.Exp.BinaryTemporalOp.Trigger => "T"
+        }
+        st"${left.prettyST(p)} $opString$intvl ${right.prettyST(p)}"
+      }
+      @strictpure def numOfTemps: Z = left.numOfTemps + right.numOfTemps
+      @strictpure def depth: Z = 1 + left.depth + right.depth
+    }
+
     object Binary {
       @enum object Op {
         "Add"

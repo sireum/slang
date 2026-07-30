@@ -293,6 +293,8 @@ object SlangLl2PrettyPrinter {
           case _ => T
         }
         if (paren) st"${o.opString}${o.intvl}(${printExp(o.exp)})" else st"${o.opString}${o.intvl}${printExp(o.exp)}"
+      case o: AST.Exp.BinaryTemporal =>
+        st"${printExp(o.left)} ${o.opString}${o.intvl} ${printExp(o.right)}"
       case o: AST.ProofAst.StepId.Num => o.prettyST
       case o: AST.ProofAst.StepId.Str => o.prettyST
     }
