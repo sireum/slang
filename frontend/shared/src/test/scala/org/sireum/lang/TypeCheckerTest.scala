@@ -531,6 +531,41 @@ class TypeCheckerTest extends TestSuite {
 
         * - failingWorksheet(
           """import org.sireum._
+            |val template: ST = st"abc"
+            |assert(template == template)""".stripMargin, "ST values do not support equality")
+
+        * - failingWorksheet(
+          """import org.sireum._
+            |val text: String = "abc"
+            |val template: ST = st"abc"
+            |assert(text === template)""".stripMargin, "ST values do not support equality")
+
+        * - failingWorksheet(
+          """import org.sireum._
+            |val text: String = "abc"
+            |val template: ST = st"abc"
+            |assert(template ≡ text)""".stripMargin, "ST values do not support equality")
+
+        * - failingWorksheet(
+          """import org.sireum._
+            |val text: String = "abc"
+            |val template: ST = st"abc"
+            |assert(text != template)""".stripMargin, "ST values do not support equality")
+
+        * - failingWorksheet(
+          """import org.sireum._
+            |val text: String = "abc"
+            |val template: ST = st"abc"
+            |assert(template =!= text)""".stripMargin, "ST values do not support equality")
+
+        * - failingWorksheet(
+          """import org.sireum._
+            |val text: String = "abc"
+            |val template: ST = st"abc"
+            |assert(text ≢ template)""".stripMargin, "ST values do not support equality")
+
+        * - failingWorksheet(
+          """import org.sireum._
             |def foo(lits: ISZ[String], i: Z): Unit = {
             |  ISZ(ops.StringOps(lits(i).value).escapeST)
             |}""".stripMargin, "'value' is not a member")
