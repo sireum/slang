@@ -454,20 +454,29 @@ object IRTranslator {
     for (cas <- stmt.cases) {
       val (cs, lMap) = translatePattern(stmt.exp, cas.pattern, HashSMap.empty)
       val casPos = cas.pattern.posOpt.get
-      var prefixStmts = ISZ[AST.IR.Stmt](AST.IR.Stmt.Assign.Local(methodContext, matchCondId, AST.Typed.b,
-        AST.IR.Exp.Bool(T, casPos), casPos))
+      var bindingStmts = ISZ[AST.IR.Stmt]()
       if (lMap.nonEmpty) {
-        prefixStmts = prefixStmts :+ AST.IR.Stmt.Decl(F, T, F, methodContext,
+        bindingStmts = bindingStmts :+ AST.IR.Stmt.Decl(F, T, F, methodContext,
           for (e <- lMap.entries) yield AST.IR.Stmt.Decl.Local(e._1._2, e._2.tipe), pos)
         for (e <- lMap.entries) {
-          prefixStmts = prefixStmts :+ AST.IR.Stmt.Assign.Local(methodContext, e._1._2, e._2.tipe, e._2, e._2.pos)
+          bindingStmts = bindingStmts :+ AST.IR.Stmt.Assign.Local(methodContext, e._1._2, e._2.tipe, e._2, e._2.pos)
         }
       }
+      val acceptedStmts = ISZ[AST.IR.Stmt](AST.IR.Stmt.Assign.Local(methodContext, matchCondId, AST.Typed.b,
+        AST.IR.Exp.Bool(T, casPos), casPos)) ++ cas.body.stmts
+      val matchedBlock: AST.IR.Stmt.Block = cas.condOpt match {
+        case Some(cond) =>
+          val guardedBody = AST.IR.Stmt.If(cond.exp, cas.body(stmts = acceptedStmts),
+            AST.IR.Stmt.Block(ISZ(), cond.exp.pos), cond.exp.pos)
+          AST.IR.Stmt.Block(bindingStmts ++ cond.stmts :+ guardedBody, cas.body.pos)
+        case _ =>
+          cas.body(stmts = bindingStmts ++ acceptedStmts)
+      }
       var r: AST.IR.Stmt = if (cs.isEmpty) {
-        cas.body(stmts = prefixStmts ++ cas.body.stmts)
+        matchedBlock
       } else {
         val last = cs(cs.size - 1)
-        var ifStmt = AST.IR.Stmt.If(last, cas.body(stmts = prefixStmts ++ cas.body.stmts),
+        var ifStmt = AST.IR.Stmt.If(last, matchedBlock,
           AST.IR.Stmt.Block(ISZ(), last.pos), last.pos)
         for (i <- cs.size - 2 to 0 by -1) {
           val cond = cs(i)
