@@ -2166,9 +2166,14 @@ import TypeChecker._
           else checkExp(None(), scope, binaryExp.right, reporter)
         rightTypeOpt match {
           case Some(rightType) =>
-            val isCompat = typeHierarchy.isCompatible(leftType, rightType)
-            if (!isCompat) {
-              errIncompat(rightType)
+            if (leftType == AST.Typed.st || rightType == AST.Typed.st) {
+              reporter.error(binaryExp.posOpt, typeCheckerKind,
+                "ST values do not support equality; render them to String before comparing.")
+            } else {
+              val isCompat = typeHierarchy.isCompatible(leftType, rightType)
+              if (!isCompat) {
+                errIncompat(rightType)
+              }
             }
           case _ =>
         }

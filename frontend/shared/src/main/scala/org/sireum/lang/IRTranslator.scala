@@ -1791,9 +1791,22 @@ object IRTranslator {
             val adt = th.typeMap.get(t.ids).get.asInstanceOf[TypeInfo.Adt]
             val sm = tipe.TypeChecker.buildTypeSubstMap(t.ids, exp.posOpt, adt.ast.typeParams, t.args,
               message.Reporter.create).get
-            // Evaluate receiver first (preserves evaluation order)
-            val receiver: AST.IR.Exp = exp.receiverOpt match {
-              case Some(recv) => translateExp(recv)
+            // Evaluate the copy target first (preserves evaluation order).  A named
+            // copy such as `outer.inner(b = T)` retains `outer` as the invocation
+            // receiver and `inner` as the typed identifier, so reconstruct the
+            // selected field rather than copying fields directly from `outer`.
+            val copyTarget: AST.IR.Exp = exp.receiverOpt match {
+              case Some(recv) =>
+                if (exp.ident.id.value == "apply") {
+                  translateExp(recv)
+                } else {
+                  val target = AST.Exp.Select(
+                    receiverOpt = Some(recv),
+                    id = exp.ident.id,
+                    targs = exp.targs,
+                    attr = exp.ident.attr)
+                  translateExp(target)
+                }
               case _ => translateExp(AST.Exp.Ident(exp.ident.id, exp.ident.attr))
             }
             // Evaluate named args in source order (preserves side-effect order)
@@ -1801,7 +1814,7 @@ object IRTranslator {
             for (narg <- exp.args) {
               map = map + narg.index ~> translateExp(narg.arg)
             }
-            // Assemble in param order: use named arg if provided, else copy from receiver
+            // Assemble in param order: use named arg if provided, else copy from the target
             var args = ISZ[AST.IR.Exp]()
             for (i <- adt.ast.params.indices) {
               map.get(i) match {
@@ -1809,7 +1822,7 @@ object IRTranslator {
                 case _ =>
                   val param = adt.ast.params(i)
                   val pt = param.tipe.typedOpt.get.subst(sm)
-                  args = args :+ norm3AC(AST.IR.Exp.FieldVarRef(receiver, param.id.value, pt, pos))
+                  args = args :+ norm3AC(AST.IR.Exp.FieldVarRef(copyTarget, param.id.value, pt, pos))
               }
             }
             return norm3AC(AST.IR.Exp.Construct(t, AST.Typed.emptyRTypes, args, pos))
