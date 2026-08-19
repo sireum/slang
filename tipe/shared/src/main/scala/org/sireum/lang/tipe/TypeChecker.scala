@@ -531,7 +531,7 @@ object TypeChecker {
         st"Type ${(name, ".")} requires ${typeParams.size} type arguments, but ${args.size} is supplied.".render)
       return None()
     }
-    var substMap = emptySubstMap
+    var substMap = HashMap.emptyInit[String, AST.Typed](args.size)
     for (i <- z"0" until args.size) {
       substMap = substMap + typeParams(i).id.value ~> args(i)
     }
@@ -549,7 +549,7 @@ object TypeChecker {
         st"$m requires ${m.typeParams.size} type arguments, but only ${args.size} is supplied.".render)
       return None()
     }
-    var substMap = HashMap.empty[String, AST.Typed]
+    var substMap = HashMap.emptyInit[String, AST.Typed](args.size)
     for (i <- z"0" until args.size) {
       substMap = substMap + m.typeParams(i) ~> args(i)
     }
@@ -1645,6 +1645,9 @@ import TypeChecker._
             val r = info.typeRes(id, inSpec)
             r match {
               case (T, Some(rt), _) =>
+                if (receiverType.args.isEmpty || !rt.hasTypeVars) {
+                  return (Some(rt), r._3, typeArgs)
+                }
                 val smOpt = buildTypeSubstMap(info.name, ident.attr.posOpt, info.ast.typeParams, receiverType.args, reporter)
                 smOpt match {
                   case Some(sm) => return (Some(rt.subst(sm)), AST.ResolvedInfo.substOpt(r._3, sm), typeArgs)
@@ -1659,6 +1662,9 @@ import TypeChecker._
             val r = info.typeRes(id, inSpec)
             r match {
               case (T, Some(rt), _) =>
+                if (receiverType.args.isEmpty || !rt.hasTypeVars) {
+                  return (Some(rt), r._3, typeArgs)
+                }
                 val smOpt = buildTypeSubstMap(info.name, ident.attr.posOpt, info.ast.typeParams, receiverType.args, reporter)
                 smOpt match {
                   case Some(sm) => return (Some(rt.subst(sm)), AST.ResolvedInfo.substOpt(r._3, sm), typeArgs)
