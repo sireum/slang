@@ -678,7 +678,7 @@ object SlangLl2PrettyPrinter {
       case o: AST.Stmt.TypeAlias =>
         val tparams: ST = printTypeParams(o.typeParams)
         st"type @alias ${o.id.value}$tparams = ${printType(o.tipe)}"
-      case o: AST.Stmt.Var => st"${if (o.isVal) "val" else "var"}${if (o.isSpec) " @spec" else ""} ${o.id.value}${if (o.tipeOpt.isEmpty) st"" else st": ${printType(o.tipeOpt.get)}"}${if (o.initOpt.isEmpty) "" else st" = ${printAssignExp(o.initOpt.get)}"}"
+      case o: AST.Stmt.Var => st"${if (o.isVal) "val" else "var"}${if (o.isSpec) " @spec" else ""} ${o.id.value}${if (o.tipeOpt.isEmpty) st"" else st": ${printType(o.tipeOpt.get)}"}${if (o.initOpt.isEmpty) st"" else st" = ${printAssignExp(o.initOpt.get)}"}"
       case o: AST.Stmt.VarPattern =>
         val tipe: ST = o.tipeOpt match {
           case Some(t) => st": ${printType(t)}"

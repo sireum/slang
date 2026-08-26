@@ -488,6 +488,120 @@ class TypeCheckerTest extends TestSuite {
 
       }
 
+      "LubGlb" - {
+
+        "subtype equality None vs Option in Ensures" in {
+          passingWorksheet(
+            """import org.sireum._
+              |@pure def foo[T2](): Option[T2] = {
+              |  Contract(Ensures(None[T2]() ≡ Res))
+              |  return None()
+              |}""".stripMargin)
+        }
+
+        "subtype equality MNone vs MOption" in {
+          passingWorksheet(
+            """import org.sireum._
+              |def f[T](x: MOption[T], y: MNone[T]): B = {
+              |  return x == y
+              |}""".stripMargin)
+        }
+
+        "same enum equality" in {
+          passingWorksheet(
+            """import org.sireum._
+              |@enum object Colour {
+              |  "Red"
+              |  "Green"
+              |}
+              |def f(c1: Colour.Type, c2: Colour.Type): B = {
+              |  return c1 == c2
+              |}
+              |assert(f(Colour.Red, Colour.Green) || T)""".stripMargin)
+        }
+
+        "if-else lub of sibling datatypes" in {
+          passingWorksheet(
+            """import org.sireum._
+              |@datatype trait Base
+              |@datatype class Ai() extends Base
+              |@datatype class Bi() extends Base
+              |assert((if (B.random) Ai() else Bi()).string.size >= 0)""".stripMargin)
+        }
+
+        "if-else lub of Some and None" in {
+          passingWorksheet(
+            """import org.sireum._
+              |assert((if (B.random) Some(z"1") else None[Z]()).nonEmpty || T)""".stripMargin)
+        }
+
+        "asInstanceOf downcast to subclass" in {
+          passingWorksheet(
+            """import org.sireum._
+              |@datatype trait Base
+              |@datatype class Ai(val n: Z) extends Base
+              |val b: Base = Ai(1)
+              |val a = b.asInstanceOf[Ai]
+              |assert(a.n == 1)""".stripMargin)
+        }
+
+        "asInstanceOf upcast to supertype" in {
+          passingWorksheet(
+            """import org.sireum._
+              |@datatype trait Base
+              |@datatype class Ai(val n: Z) extends Base
+              |val a = Ai(1)
+              |val b = a.asInstanceOf[Base]""".stripMargin)
+        }
+
+        "asInstanceOf generic downcast" in {
+          passingWorksheet(
+            """import org.sireum._
+              |@datatype trait Or[L, R]
+              |@datatype class Left[L, R](value: L) extends Or[L, R]
+              |@datatype class Right[L, R](value: R) extends Or[L, R]
+              |val or: Or[Z, B] = Left(5)
+              |val left = or.asInstanceOf[Left[Z, B]]
+              |assert(left.value == 5)""".stripMargin)
+        }
+
+        "asInstanceOf of IS with different element types" in {
+          passingWorksheet(
+            """import org.sireum._
+              |@datatype trait Base
+              |@datatype class Ai() extends Base
+              |val xs: ISZ[Ai] = ISZ(Ai())
+              |val ys: ISZ[Base] = xs.asInstanceOf[ISZ[Base]]""".stripMargin)
+        }
+
+        "match and asInstanceOf of independent traits with a common subtype" in {
+          passingWorksheet(
+            """import org.sireum._
+              |@sig trait TA
+              |@sig trait TB
+              |@datatype class TC() extends TA with TB
+              |def f(a: TA): Z = {
+              |  a match {
+              |    case _: TB => return 1
+              |    case _ => return 0
+              |  }
+              |}
+              |def g(a: TA): TB = {
+              |  return a.asInstanceOf[TB]
+              |}""".stripMargin)
+        }
+
+        "Z equality with Z" in {
+          passingWorksheet(
+            """import org.sireum._
+              |def f(x: Z, y: Z): B = {
+              |  return x == y
+              |}
+              |assert(f(z"1", z"1"))""".stripMargin)
+        }
+
+      }
+
       "Stmt" - {
 
         * - passingStmt("assert(true)")
@@ -741,6 +855,111 @@ class TypeCheckerTest extends TestSuite {
           """import org.sireum._
             |val m: HashSMap[String, Z] = HashSMap.empty[String, Z]()
             |""".stripMargin, "does NOT take parens")
+
+      }
+
+      "LubGlb" - {
+
+        "unrelated enum equality" in {
+          failingWorksheet(
+            """import org.sireum._
+              |@enum object Colour {
+              |  "Red"
+              |  "Green"
+              |}
+              |@enum object Size {
+              |  "Small"
+              |  "Large"
+              |}
+              |def f(c: Colour.Type, s: Size.Type, p: B): B = {
+              |  return (c == s) && p
+              |}""".stripMargin, "Incompatible")
+        }
+
+        "Z equality with B" in {
+          failingWorksheet(
+            """import org.sireum._
+              |def f(x: Z, y: B, p: B): B = {
+              |  return (x == y) && p
+              |}""".stripMargin, "Incompatible")
+        }
+
+        "Z equality with String" in {
+          failingWorksheet(
+            """import org.sireum._
+              |def f(x: Z, y: String): B = {
+              |  return x == y
+              |}""".stripMargin, "Incompatible")
+        }
+
+        "Z equality with F32" in {
+          failingWorksheet(
+            """import org.sireum._
+              |def f(x: Z, y: F32): B = {
+              |  return x == y
+              |}""".stripMargin, "Incompatible")
+        }
+
+        "unrelated datatype equality" in {
+          failingWorksheet(
+            """import org.sireum._
+              |@datatype class P(val n: Z)
+              |@datatype class Q(val n: Z)
+              |def f(p: P, q: Q): B = {
+              |  return p == q
+              |}""".stripMargin, "Incompatible")
+        }
+
+        "enum equality with Z" in {
+          failingWorksheet(
+            """import org.sireum._
+              |@enum object Colour {
+              |  "Red"
+              |}
+              |def f(c: Colour.Type, z: Z): B = {
+              |  return c == z
+              |}""".stripMargin, "Incompatible")
+        }
+
+        "if-else lub of Some[Z] and None[B]" in {
+          failingWorksheet(
+            """import org.sireum._
+              |assert((if (B.random) Some(z"1") else None[B]()).nonEmpty)""".stripMargin, "common ancestor")
+        }
+
+        "if-else lub of unrelated datatypes" in {
+          failingWorksheet(
+            """import org.sireum._
+              |@datatype class P()
+              |@datatype class Q()
+              |assert((if (B.random) P() else Q()).string.size >= 0)""".stripMargin, "common ancestor")
+        }
+
+        "fruitless asInstanceOf Z to B" in {
+          failingWorksheet(
+            """import org.sireum._
+              |def f(x: Z): B = {
+              |  return x.asInstanceOf[B]
+              |}""".stripMargin, "Fruitless")
+        }
+
+        "fruitless asInstanceOf unrelated datatypes" in {
+          failingWorksheet(
+            """import org.sireum._
+              |@datatype class P()
+              |@datatype class Q()
+              |def f(p: P): Q = {
+              |  return p.asInstanceOf[Q]
+              |}""".stripMargin, "Fruitless")
+        }
+
+        "Option[Z] equality with Option[B]" in {
+          failingWorksheet(
+            """import org.sireum._
+              |def f(x: Option[Z], y: Option[B]): B = {
+              |  return x == y
+              |}""".stripMargin, "Incompatible")
+        }
 
       }
 
