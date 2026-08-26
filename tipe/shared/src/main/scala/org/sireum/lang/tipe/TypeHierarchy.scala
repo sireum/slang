@@ -1227,8 +1227,8 @@ object TypeHierarchy {
     }
   }
 
-  @pure def isCompatible(t1: AST.Typed, t2: AST.Typed): B = {
-    return lub(ISZ(t1, t2)).nonEmpty
+  @memoize def isCompatible(t1: AST.Typed, t2: AST.Typed): B = {
+    return if (t1 == t2) T else lub(ISZ(t1, t2)).nonEmpty
   }
 
   @pure def isMutable(t: AST.Typed): B = {
