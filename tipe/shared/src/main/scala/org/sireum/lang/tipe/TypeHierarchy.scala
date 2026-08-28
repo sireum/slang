@@ -686,18 +686,10 @@ object TypeHierarchy {
     return poset.rootNodes
   }
 
-  @pure def lub(ts: ISZ[AST.Typed]): Option[AST.Typed] = {
-    val types: ISZ[AST.Typed] =
-      for (t <- ts if AST.Typed.nothing != t) yield t
-    types.size match {
-      case z"0" => return if (ts.isEmpty) None() else Some(ts(0))
-      case z"1" => return Some(types(0))
-      case _ =>
-    }
-
+  @pure def collectNamedTypes(types: ISZ[AST.Typed]): Option[ISZ[AST.Typed.Name]] = {
     var typeNames = ISZ[AST.Typed.Name]()
     val first = types(0)
-    var i = 1
+    var i = 0
     val size = types.size
     while (i < size) {
       types(i) match {
@@ -710,38 +702,91 @@ object TypeHierarchy {
       }
       i = i + 1
     }
-
-    if (typeNames.size != z"0" && typeNames.size + 1 != types.size) {
+    if (typeNames.size != z"0" && typeNames.size != types.size) {
       return None()
     }
+    return Some(typeNames)
+  }
 
-    if (typeNames.size < 2) {
-      return Some(first)
+  @pure def typeParamSubstMap(tn: AST.Typed.Name): HashMap[String, AST.Typed] = {
+    val tps: ISZ[AST.TypeParam] = typeMap.get(tn.ids) match {
+      case Some(info: TypeInfo.Sig) => info.ast.typeParams
+      case Some(info: TypeInfo.Adt) => info.ast.typeParams
+      case _ => return HashMap.empty
+    }
+    var i = 0
+    var sm = HashMap.emptyInit[String, AST.Typed](tn.args.size)
+    for (tp <- tps) {
+      sm = sm + tp.id.value ~> tn.args(i)
+      i = i + 1
+    }
+    return sm
+  }
+
+  @pure def namedAncestors(ids: QName): ISZ[AST.Typed.Name] = {
+    typeMap.get(ids) match {
+      case Some(info: TypeInfo.Sig) => return info.ancestors
+      case Some(info: TypeInfo.Adt) => return info.ancestors
+      case _ => return ISZ()
+    }
+  }
+
+  @pure def instantiateSupertype(t: AST.Typed.Name, superIds: QName): Option[AST.Typed.Name] = {
+    if (t.ids == superIds) {
+      return Some(t)
+    }
+    val sm = typeParamSubstMap(t)
+    for (a <- namedAncestors(t.ids) if a.ids == superIds) {
+      return Some(a.subst(sm))
+    }
+    return None()
+  }
+
+  @pure def instantiateNamed(ids: QName, from: ISZ[AST.Typed.Name]): Option[AST.Typed.Name] = {
+    for (tn <- from if tn.ids == ids) {
+      return Some(tn)
+    }
+    typeMap.get(ids) match {
+      case Some(info: TypeInfo.Sig) => return Some(info.tpe)
+      case Some(info: TypeInfo.Adt) => return Some(info.tpe)
+      case Some(info) =>
+        info.tpe match {
+          case t: AST.Typed.Name => return Some(t)
+          case _ => return None()
+        }
+      case _ => return None()
+    }
+  }
+
+  @pure def lub(ts: ISZ[AST.Typed]): Option[AST.Typed] = {
+    val types: ISZ[AST.Typed] =
+      for (t <- ts if AST.Typed.nothing != t) yield t
+    types.size match {
+      case z"0" => return if (ts.isEmpty) None() else Some(ts(0))
+      case z"1" => return Some(types(0))
+      case _ =>
     }
 
-    val tns = typeNames.map((tn: AST.Typed.Name) => tn.ids)
-    poset.lub(tns) match {
-      case Some(lub) =>
-        val tn = typeNames(0)
-        val ancestors: ISZ[AST.Typed.Name] = typeMap.get(tn.ids) match {
-          case Some(info: TypeInfo.Sig) => info.ancestors
-          case Some(info: TypeInfo.Adt) => info.ancestors
-          case _ => halt(st"Unexpected situation while computing the least upper bound of { '${(ts, "', '")}' }.".render)
+    collectNamedTypes(types) match {
+      case Some(typeNames) =>
+        if (typeNames.size < 2) {
+          return Some(types(0))
         }
-        var commonType = tn
-        var found = F
-        for (ancestor <- ancestors if !found) {
-          if (ancestor.ids == lub) {
-            commonType = ancestor
-            found = T
-          }
+        val tns = typeNames.map((tn: AST.Typed.Name) => tn.ids)
+        poset.lub(tns) match {
+          case Some(lub) =>
+            instantiateSupertype(typeNames(0), lub) match {
+              case Some(commonType) =>
+                for (typeName <- typeNames) {
+                  if (!isSubType(typeName, commonType)) {
+                    return None()
+                  }
+                }
+                return Some(commonType)
+              case _ => return None()
+            }
+          case _ => return None()
         }
-        for (typeName <- typeNames) {
-          if (!isSubType(typeName, commonType)) {
-            return None()
-          }
-        }
-        return Some(commonType)
       case _ => return None()
     }
   }
@@ -755,44 +800,47 @@ object TypeHierarchy {
       case _ =>
     }
 
-    var typeNames = ISZ[AST.Typed.Name]()
-    val first = types(0)
-    var i = 1
-    val size = types.size
-    while (i < size) {
-      types(i) match {
-        case t: AST.Typed.Name =>
-          typeNames = typeNames :+ t
-        case t =>
-          if (first != t) {
-            return None()
-          }
-      }
-      i = i + 1
-    }
-
-    if (typeNames.size != z"0" && typeNames.size + 1 != types.size) {
-      return None()
-    }
-
-    if (typeNames.size < 2) {
-      return Some(first)
-    }
-
-    val tns = typeNames.map((tn: AST.Typed.Name) => tn.ids)
-    poset.glb(tns) match {
-      case Some(glb) =>
-        val (tpe, ancestors): (AST.Typed, HashSet[AST.Typed.Name]) = typeMap.get(glb) match {
-          case Some(info: TypeInfo.Sig) => (info.tpe, HashSet.empty[AST.Typed.Name] ++ info.ancestors)
-          case Some(info: TypeInfo.Adt) => (info.tpe, HashSet.empty[AST.Typed.Name] ++ info.ancestors)
-          case _ => halt(s"Unexpected situation while computing the greatest lower bound of { '${(ts, "', '")}' }.")
+    collectNamedTypes(types) match {
+      case Some(typeNames) =>
+        if (typeNames.size < 2) {
+          return Some(types(0))
         }
-        for (t <- typeNames) {
-          if (!ancestors.contains(t)) {
-            return None()
-          }
+        val tns = typeNames.map((tn: AST.Typed.Name) => tn.ids)
+        poset.glb(tns) match {
+          case Some(glb) =>
+            instantiateNamed(glb, typeNames) match {
+              case Some(glbType) =>
+                var sameConstructor = T
+                for (t <- typeNames if t.ids != glb) {
+                  sameConstructor = F
+                }
+                if (sameConstructor) {
+                  return Some(glbType)
+                }
+                for (t <- typeNames) {
+                  if (!isSubType(glbType, t)) {
+                    return None()
+                  }
+                }
+                return Some(glbType)
+              case _ => return None()
+            }
+          case _ =>
+            var commons = poset.descendantsOf(tns(0)) + tns(0)
+            var i = 1
+            val size = tns.size
+            while (i < size) {
+              commons = commons ∩ (poset.descendantsOf(tns(i)) + tns(i))
+              i = i + 1
+            }
+            if (commons.isEmpty) {
+              return None()
+            }
+            instantiateNamed(commons.elements(0), typeNames) match {
+              case Some(t) => return Some(t)
+              case _ => return None()
+            }
         }
-        return Some(tpe)
       case _ => return None()
     }
   }
@@ -1179,8 +1227,8 @@ object TypeHierarchy {
     }
   }
 
-  @pure def isCompatible(t1: AST.Typed, t2: AST.Typed): B = {
-    return lub(ISZ(t1, t2)).nonEmpty
+  @memoize def isCompatible(t1: AST.Typed, t2: AST.Typed): B = {
+    return if (t1 == t2) T else lub(ISZ(t1, t2)).nonEmpty
   }
 
   @pure def isMutable(t: AST.Typed): B = {
