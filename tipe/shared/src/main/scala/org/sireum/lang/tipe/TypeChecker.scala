@@ -560,7 +560,7 @@ object TypeChecker {
       info match {
         case info: Info.Object =>
           jobs = jobs :+ (() => TypeChecker(th, info.name, F, TypeChecker.ModeContext.Code, strictAliasing).
-            checkObject(info))
+            checkObjectPar(par, info))
         case info: Info.Method if info.isInObject && info.hasBody && !info.ast.typeChecked =>
           val ownerIsObject: B = nameMap.get(info.owner) match {
             case Some(_: Info.Object) => T
@@ -3931,14 +3931,27 @@ import TypeChecker._
     stmtOpts: ISZ[Option[AST.Stmt]],
     reporter: Reporter
   ): ISZ[Option[AST.Stmt]] = {
-    var newStmtOpts = ISZ[Option[AST.Stmt]]()
-    for (i <- z"0" until stmtOpts.size) {
-      stmtOpts(i) match {
-        case Some(stmt) =>
-          val newStmt = checkStmt(scope, stmt, reporter)
-          newStmtOpts = newStmtOpts :+ Some(newStmt)
-        case _ => newStmtOpts = newStmtOpts :+ None()
+    return checkStmtOptsPar(z"1", scope, stmtOpts, reporter)
+  }
+
+  def checkStmtOptsPar(
+    par: Z,
+    scope: Scope.Local,
+    stmtOpts: ISZ[Option[AST.Stmt]],
+    reporter: Reporter
+  ): ISZ[Option[AST.Stmt]] = {
+    @pure def check(stmtOpt: Option[AST.Stmt]): (Option[AST.Stmt], ISZ[Message]) = {
+      val r = Reporter.create
+      stmtOpt match {
+        case Some(stmt) => return (Some(checkStmt(scope, stmt, r)), r.messages)
+        case _ => return (None(), ISZ())
       }
+    }
+
+    var newStmtOpts = ISZ[Option[AST.Stmt]]()
+    for (result <- ops.ISZOps(stmtOpts).parMapCores(check _, par)) {
+      reporter.reports(result._2)
+      newStmtOpts = newStmtOpts :+ result._1
     }
 
     return newStmtOpts
@@ -5575,6 +5588,10 @@ import TypeChecker._
   }
 
   def checkObject(info: Info.Object): TypeHierarchy => (TypeHierarchy, ISZ[Message]) @pure = {
+    return checkObjectPar(z"1", info)
+  }
+
+  def checkObjectPar(par: Z, info: Info.Object): TypeHierarchy => (TypeHierarchy, ISZ[Message]) @pure = {
     assert(info.outlined, st"${(info.name, ".")} is not outlined".render)
     val name = info.name
     @pure def getInfo(id: String): Info = {
@@ -5609,7 +5626,7 @@ import TypeChecker._
         case _ => stmtOpts = stmtOpts :+ Some(stmt)
       }
     }
-    val newStmtOpts = checkStmtOpts(scope, stmtOpts, reporter)
+    val newStmtOpts = checkStmtOptsPar(par, scope, stmtOpts, reporter)
     var i = 0
     var newStmts = ISZ[AST.Stmt]()
     var nameEntries = ISZ[(QName, Info)]()

@@ -43,6 +43,22 @@ class TypeCheckerTest extends TestSuite {
 
       "Worksheet" - {
 
+        "parallel object checking preserves serial results" in {
+          val methods = (0 until 16).map(i => s"def f$i(x: Z): Z = { return x + $i }").mkString("\n")
+          val reporter = Reporter.create
+          val Some(program) = Parser(s"import org.sireum._\nobject A {\n$methods\n}").
+            parseTopUnit[TopUnit.Program](isWorksheet = T, isDiet = F, None(), reporter)
+          assert(!reporter.hasIssue)
+
+          val serialReporter = Reporter.create
+          val serial = FrontEnd.checkWorksheet(1, Some(typeChecker.typeHierarchy), program, serialReporter)
+          val parallelReporter = Reporter.create
+          val parallel = FrontEnd.checkWorksheet(4, Some(typeChecker.typeHierarchy), program, parallelReporter)
+
+          assert(serialReporter.messages == parallelReporter.messages)
+          assert(serial == parallel)
+        }
+
         * - passingWorksheet(
           """import org.sireum._
             |
