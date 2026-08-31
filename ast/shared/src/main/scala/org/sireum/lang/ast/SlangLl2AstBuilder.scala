@@ -156,14 +156,14 @@ object SlangLl2AstBuilder {
   }
 
   def findChildren(node: ParseTree.Node, ruleName: String): ISZ[ParseTree.Node] = {
-    var r = ISZ[ParseTree.Node]()
+    val r = Buffer.create[ParseTree.Node]()
     for (c <- node.children) {
       c match {
-        case c: ParseTree.Node if c.ruleName == ruleName => r = r :+ c
+        case c: ParseTree.Node if c.ruleName == ruleName => r.append(c)
         case _ =>
       }
     }
-    return r
+    return r.toIS
   }
 
   def findLeaf(node: ParseTree.Node, tokenText: String): Option[ParseTree.Leaf] = {
@@ -645,27 +645,34 @@ object SlangLl2AstBuilder {
     // full: pkg member*
     val pkgNode = findChild(node, "pkg").get
     val packageName = buildPkgName(pkgNode, reporter)
-    var stmts = ISZ[AST.Stmt]()
+    val stmts = Buffer.create[AST.Stmt]()
     val members = findChildren(node, "member")
     for (m <- members) {
-      stmts = stmts ++ buildMember(m, F, reporter)
+      for (s <- buildMember(m, F, reporter)) {
+        stmts.append(s)
+      }
     }
-    return (packageName, stmts)
+    return (packageName, stmts.toIS)
   }
 
   def buildScript(node: ParseTree.Node, reporter: message.Reporter): ISZ[AST.Stmt] = {
     // script: scriptMemberNoPkg scriptMember*
-    var stmts = ISZ[AST.Stmt]()
+    val stmts = Buffer.create[AST.Stmt]()
     val firstOpt = findChild(node, "scriptMemberNoPkg")
     firstOpt match {
-      case Some(first) => stmts = stmts ++ buildScriptMemberNoPkg(first, reporter)
+      case Some(first) =>
+        for (s <- buildScriptMemberNoPkg(first, reporter)) {
+          stmts.append(s)
+        }
       case _ =>
     }
     val members = findChildren(node, "scriptMember")
     for (m <- members) {
-      stmts = stmts ++ buildScriptMember(m, reporter)
+      for (s <- buildScriptMember(m, reporter)) {
+        stmts.append(s)
+      }
     }
-    return stmts
+    return stmts.toIS
   }
 
   def buildScriptMemberNoPkg(node: ParseTree.Node, reporter: message.Reporter): ISZ[AST.Stmt] = {
@@ -898,19 +905,21 @@ object SlangLl2AstBuilder {
       case _ => None()
     }
 
-    var stmts = ISZ[AST.Stmt]()
+    val stmts = Buffer.create[AST.Stmt]()
 
     // pkgSuffix: LBRACE member* RBRACE
     val pkgMembers = findChildren(pkgSuffix, "member")
     for (m <- pkgMembers) {
-      stmts = stmts ++ buildMember(m, extNameOpt.nonEmpty, reporter)
+      for (s <- buildMember(m, extNameOpt.nonEmpty, reporter)) {
+        stmts.append(s)
+      }
     }
 
     return AST.Stmt.Object(
       isApp = isApp,
       extNameOpt = extNameOpt,
       id = mkId(idLeaf.text, idLeaf),
-      stmts = stmts,
+      stmts = stmts.toIS,
       annotations = buildAnnotations(annotOpt, reporter),
       attr = attr(node))
   }
@@ -4172,10 +4181,10 @@ object SlangLl2AstBuilder {
 
   def buildBlockContent(node: ParseTree.Node, reporter: message.Reporter, expectsValue: Z, isPure: B, isLambda: B): ISZ[AST.Stmt] = {
     // blockContent: stmt* ret?
-    var stmts = ISZ[AST.Stmt]()
+    val stmts = Buffer.create[AST.Stmt]()
     val stmtNodes = findChildren(node, "stmt")
     for (s <- stmtNodes) {
-      stmts = stmts :+ buildStmt(s, reporter, isPure)
+      stmts.append(buildStmt(s, reporter, isPure))
     }
     val retOpt = findChild(node, "ret")
     retOpt match {
@@ -4184,7 +4193,7 @@ object SlangLl2AstBuilder {
           reporter.error(r.posOpt, "SlangLl2AstBuilder",
             "'return' is not allowed inside a lambda body — the last expression is the result value")
         }
-        stmts = stmts :+ buildReturn(r, reporter)
+        stmts.append(buildReturn(r, reporter))
       case _ =>
         // Rule 1: check for missing value marker at leaf
         if (expectsValue > 0 && stmtNodes.nonEmpty) {
@@ -4208,7 +4217,7 @@ object SlangLl2AstBuilder {
           }
         }
     }
-    return stmts
+    return stmts.toIS
   }
 
   def buildReturn(node: ParseTree.Node, reporter: message.Reporter): AST.Stmt = {

@@ -543,15 +543,15 @@ object TypeChecker {
   }
 
   def checkComponents(par: Z, strictAliasing: B, th: TypeHierarchy, nameMap: NameMap, typeMap: TypeMap, reporter: Reporter): TypeHierarchy = {
-    var jobs = ISZ[() => (TypeHierarchy => (TypeHierarchy, ISZ[Message]) @pure) @pure]()
+    val jobs = Buffer.create[() => (TypeHierarchy => (TypeHierarchy, ISZ[Message]) @pure) @pure]()
     var packageMethodMap = HashMap.emptyInit[QName, Info.Method](nameMap.size)
     for (info <- typeMap.values) {
       info match {
         case info: TypeInfo.Sig if !info.typeChecked =>
-          jobs = jobs :+ (() => TypeChecker(th, info.name, !info.ast.isImmutable, TypeChecker.ModeContext.Code,
+          jobs.append(() => TypeChecker(th, info.name, !info.ast.isImmutable, TypeChecker.ModeContext.Code,
             strictAliasing).checkSig(info))
         case info: TypeInfo.Adt if !info.typeChecked =>
-          jobs = jobs :+ (() => TypeChecker(th, info.name, !info.ast.isDatatype, TypeChecker.ModeContext.Code,
+          jobs.append(() => TypeChecker(th, info.name, !info.ast.isDatatype, TypeChecker.ModeContext.Code,
             strictAliasing).checkAdt(info))
         case _ =>
       }
@@ -559,7 +559,7 @@ object TypeChecker {
     for (info <- nameMap.values) {
       info match {
         case info: Info.Object =>
-          jobs = jobs :+ (() => TypeChecker(th, info.name, F, TypeChecker.ModeContext.Code, strictAliasing).
+          jobs.append(() => TypeChecker(th, info.name, F, TypeChecker.ModeContext.Code, strictAliasing).
             checkObjectPar(par, info))
         case info: Info.Method if info.isInObject && info.hasBody && !info.ast.typeChecked =>
           val ownerIsObject: B = nameMap.get(info.owner) match {
@@ -573,44 +573,44 @@ object TypeChecker {
       }
     }
     if (packageMethodMap.nonEmpty) {
-      jobs = jobs :+ (() => checkPackageMethods(th, packageMethodMap.values, strictAliasing))
+      jobs.append(() => checkPackageMethods(th, packageMethodMap.values, strictAliasing))
     }
     val init = (th, ISZ[Message]())
-    val p = ops.ISZOps(jobs).parMapFoldLeftCores(
+    val p = ops.ISZOps(jobs.toIS).parMapFoldLeftCores(
       (f: () => (TypeHierarchy => (TypeHierarchy, ISZ[Message]) @pure)@pure) => f(), TypeHierarchy.combine _, init, par)
     var r = p._1
     def reconstructObject(info: Info): Unit = {
       info match {
         case info: Info.Object =>
-          var newStmts = ISZ[AST.Stmt]()
+          val newStmts = Buffer.create[AST.Stmt]()
           for (stmt <- info.ast.stmts) {
             stmt match {
               case stmt: AST.Stmt.Adt =>
                 r.typeMap.get(info.name :+ stmt.id.value) match {
-                  case Some(adtInfo: TypeInfo.Adt) => newStmts = newStmts :+ adtInfo.ast
+                  case Some(adtInfo: TypeInfo.Adt) => newStmts.append(adtInfo.ast)
                   case _ => halt(s"Unexpected situation when type checking object @datatype/@record members")
                 }
               case stmt: AST.Stmt.Sig =>
                 r.typeMap.get(info.name :+ stmt.id.value) match {
-                  case Some(sigInfo: TypeInfo.Sig) => newStmts = newStmts :+ sigInfo.ast
+                  case Some(sigInfo: TypeInfo.Sig) => newStmts.append(sigInfo.ast)
                   case _ => halt(s"Unexpected situation when type checking object @datatype/@record members")
                 }
               case stmt: AST.Stmt.TypeAlias =>
                 r.typeMap.get(info.name :+ stmt.id.value) match {
-                  case Some(taInfo: TypeInfo.TypeAlias) => newStmts = newStmts :+ taInfo.ast
+                  case Some(taInfo: TypeInfo.TypeAlias) => newStmts.append(taInfo.ast)
                   case _ => halt(s"Unexpected situation when type checking object type alias members")
                 }
               case stmt: AST.Stmt.Object =>
                 val name = info.name :+ stmt.id.value
                 reconstructObject(r.nameMap.get(name).get)
                 r.nameMap.get(name) match {
-                  case Some(objectInfo: Info.Object) => newStmts = newStmts :+ objectInfo.ast
+                  case Some(objectInfo: Info.Object) => newStmts.append(objectInfo.ast)
                   case _ => halt(s"Unexpected situation when type checking object members of object")
                 }
-              case _ => newStmts = newStmts :+ stmt
+              case _ => newStmts.append(stmt)
             }
           }
-          r = r(nameMap = r.nameMap + info.name ~> info(typeChecked = T, ast = info.ast(stmts = newStmts)))
+          r = r(nameMap = r.nameMap + info.name ~> info(typeChecked = T, ast = info.ast(stmts = newStmts.toIS)))
         case _ =>
       }
     }
@@ -2634,29 +2634,31 @@ import TypeChecker._
         }
         val repArgs = Reporter.create
         def tryArgs(): (AST.Exp, Option[AST.Typed]) = {
-          var newArgs = ISZ[AST.Exp]()
-          var argTypes = ISZ[AST.Typed]()
+          val newArgs = Buffer.create[AST.Exp]()
+          val argTypes = Buffer.create[AST.Typed]()
           for (e <- expArgs) {
             val (newArg, argTypeOpt) = checkExp(None(), scope, e, repArgs)
-            newArgs = newArgs :+ newArg
+            newArgs.append(newArg)
             argTypeOpt match {
-              case Some(argType) => argTypes = argTypes :+ argType
+              case Some(argType) => argTypes.append(argType)
               case _ =>
             }
           }
+          val newArgsIS = newArgs.toIS
+          val argTypesIS = argTypes.toIS
 
-          val smOpt = unifies(typeHierarchy, expId.attr.posOpt, TypeRelation.Supertype, argTypes, m.tpe.args, repArgs)
+          val smOpt = unifies(typeHierarchy, expId.attr.posOpt, TypeRelation.Supertype, argTypesIS, m.tpe.args, repArgs)
           smOpt match {
             case Some(sm) =>
               val ok = checkUnboundTypeVar(expId.attr.posOpt, m, sm, m.typeParams, repArgs)
               if (!ok) {
-                return (make(newArgs, None(), AST.Typed.Fun(AST.Purity.Impure,F, ISZ(), AST.Typed.nothing)), None())
+                return (make(newArgsIS, None(), AST.Typed.Fun(AST.Purity.Impure,F, ISZ(), AST.Typed.nothing)), None())
               }
               val funType = m.tpe.subst(sm)
-              return (make(newArgs, Some(funType.ret), funType), Some(funType.ret))
+              return (make(newArgsIS, Some(funType.ret), funType), Some(funType.ret))
             case _ =>
-              repArgs.error(expId.attr.posOpt, typeCheckerKind, st"Could not unify (${(argTypes, ", ")}) with (${(m.tpe.args, ", ")})".render)
-              return (make(newArgs, None(), AST.Typed.Fun(AST.Purity.Impure,F, ISZ(), AST.Typed.nothing)), None())
+              repArgs.error(expId.attr.posOpt, typeCheckerKind, st"Could not unify (${(argTypesIS, ", ")}) with (${(m.tpe.args, ", ")})".render)
+              return (make(newArgsIS, None(), AST.Typed.Fun(AST.Purity.Impure,F, ISZ(), AST.Typed.nothing)), None())
           }
         }
         val rArgs = tryArgs()
@@ -2739,16 +2741,17 @@ import TypeChecker._
           case _ => return None()
         }
       }
-      var argPaths = ISZ[Option[ISZ[String]]]()
+      val argPathsBuf = Buffer.create[Option[ISZ[String]]]()
       for (arg <- args) {
         arg.typedOpt match {
-          case Some(t) if typeHierarchy.isMutable(t) => argPaths = argPaths :+ expPath(arg, ISZ())
-          case _ => argPaths = argPaths :+ None()
+          case Some(t) if typeHierarchy.isMutable(t) => argPathsBuf.append(expPath(arg, ISZ()))
+          case _ => argPathsBuf.append(None())
         }
       }
       for (access <- accesses) {
-        argPaths = argPaths :+ mVarAccess(if (args.nonEmpty) expPath(args(0), ISZ()) else Some(ISZ("this")), Some(access))
+        argPathsBuf.append(mVarAccess(if (args.nonEmpty) expPath(args(0), ISZ()) else Some(ISZ("this")), Some(access)))
       }
+      val argPaths = argPathsBuf.toIS
       for (i <- 0 until args.size) {
         for (j <- i + 1 until args.size) {
           (argPaths(i), argPaths(j)) match {
@@ -3893,7 +3896,7 @@ import TypeChecker._
     stmts: ISZ[AST.Stmt],
     reporter: Reporter
   ): ISZ[AST.Stmt] = {
-    var newStmts = ISZ[AST.Stmt]()
+    val newStmts = Buffer.create[AST.Stmt]()
 
     def checkStmtH(i: Z): AST.Stmt = {
       val scope: Scope.Local = if (scopes.size == 1) scopes(0) else scopes(i)
@@ -3903,26 +3906,26 @@ import TypeChecker._
     val size = stmts.size - 1
     for (i <- z"0" until size if !reporter.hasError) {
       val newStmt = checkStmtH(i)
-      newStmts = newStmts :+ newStmt
+      newStmts.append(newStmt)
     }
 
     if (reporter.hasError) {
-      return newStmts ++ ops.ISZOps(stmts).slice(newStmts.size, stmts.size)
+      return newStmts.toIS ++ ops.ISZOps(stmts).slice(newStmts.size, stmts.size)
     }
 
     if (size < 0) {
-      return newStmts
+      return newStmts.toIS
     }
 
     if (isAssignExp) {
       val stmt = stmts(size)
       val newScope: Scope.Local = if (scopes.size == 1) scopes(0) else scopes(size)
       val (r, _) = checkAssignExp(expectedOpt, newScope, stmt.asAssignExp, reporter)
-      val newStmt = r.asStmt
-      return newStmts :+ newStmt
+      newStmts.append(r.asStmt)
+      return newStmts.toIS
     } else {
-      val newStmt = checkStmtH(size)
-      return newStmts :+ newStmt
+      newStmts.append(checkStmtH(size))
+      return newStmts.toIS
     }
   }
 
@@ -3948,13 +3951,13 @@ import TypeChecker._
       }
     }
 
-    var newStmtOpts = ISZ[Option[AST.Stmt]]()
+    val newStmtOpts = Buffer.create[Option[AST.Stmt]]()
     for (result <- ops.ISZOps(stmtOpts).parMapCores(check _, par)) {
       reporter.reports(result._2)
-      newStmtOpts = newStmtOpts :+ result._1
+      newStmtOpts.append(result._1)
     }
 
-    return newStmtOpts
+    return newStmtOpts.toIS
   }
 
   def checkImport(scope: Scope.Local, stmt: AST.Stmt.Import, reporter: Reporter): (Option[Scope.Local], AST.Stmt) = {
@@ -4005,7 +4008,7 @@ import TypeChecker._
         case _ =>
       }
     }
-    var stmts = ISZ[AST.Stmt]()
+    val stmtsBuf = Buffer.create[AST.Stmt]()
     for (stmt <- body.stmts) {
       stmt match {
         case stmt: AST.Stmt.Import =>
@@ -4014,7 +4017,7 @@ import TypeChecker._
             case Some(newScope) => scope = newScope
             case _ => return (scope, body)
           }
-          stmts = stmts :+ newStmt
+          stmtsBuf.append(newStmt)
         case stmt: AST.Stmt.Method =>
           val id = stmt.sig.id.value
           checkLocalId(id, stmt.posOpt)
@@ -4026,7 +4029,7 @@ import TypeChecker._
           infoOpt match {
             case Some(info: Info.Method) =>
               scope = scope(nameMap = scope.nameMap + id ~> info)
-              stmts = stmts :+ info.ast
+              stmtsBuf.append(info.ast)
             case _ => ok = F
           }
         case stmt: AST.Stmt.SpecMethod =>
@@ -4041,19 +4044,20 @@ import TypeChecker._
           infoOpt match {
             case Some(info: Info.SpecMethod) =>
               scope = scope(nameMap = scope.nameMap + id ~> info)
-              stmts = stmts :+ info.ast
+              stmtsBuf.append(info.ast)
             case _ => ok = F
           }
-        case _ => stmts = stmts :+ stmt
+        case _ => stmtsBuf.append(stmt)
       }
     }
     if (!ok) {
       return (scope, body)
     }
+    val stmts = stmtsBuf.toIS
     scope = sc(nameMap = scope.nameMap)
     var nameMap = scope.nameMap
     var tcNameMap = typeHierarchy.nameMap
-    var stmts2 = ISZ[AST.Stmt]()
+    val stmts2Buf = Buffer.create[AST.Stmt]()
     val mscopes = MSZ.create(stmts.size, scope)
     for (i <- z"0" until stmts.size) {
       mscopes(i) = scope
@@ -4062,12 +4066,12 @@ import TypeChecker._
         case stmt: AST.Stmt.Import =>
           val (newScopeOpt, newStmt) = checkImport(scope, stmt, reporter)
           scope = newScopeOpt.get
-          stmts2 = stmts2 :+ newStmt
+          stmts2Buf.append(newStmt)
         case stmt: AST.Stmt.Method if stmt.hasContract =>
           val id = stmt.sig.id.value
           val newStmt = TypeChecker.checkMethodContractSequent(strictAliasing, typeHierarchy, context :+ id, scope,
             isInMutableContext, stmt, reporter)
-          stmts2 = stmts2 :+ newStmt
+          stmts2Buf.append(newStmt)
           val info = nameMap.get(id).get.asInstanceOf[Info.Method]
           nameMap = nameMap + id ~> info(ast = newStmt)
         case stmt: AST.Stmt.Fact =>
@@ -4075,7 +4079,7 @@ import TypeChecker._
           val name = context :+ id
           val newStmt = TypeChecker.checkFactStmt(strictAliasing, typeHierarchy, name, scope,
             stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Fact(name, stmt.id.attr.posOpt)))), reporter)
-          stmts2 = stmts2 :+ newStmt
+          stmts2Buf.append(newStmt)
           val info = typeHierarchy.nameMap.get(name).get.asInstanceOf[Info.Fact]
           val newInfo = info(ast = newStmt)
           nameMap = nameMap + id ~> newInfo
@@ -4084,7 +4088,7 @@ import TypeChecker._
           val id = stmt.id.value
           val name = context :+ id
           val newStmt = TypeChecker.checkInvStmt(strictAliasing, typeHierarchy, name, scope, stmt, reporter)
-          stmts2 = stmts2 :+ newStmt
+          stmts2Buf.append(newStmt)
           val info = typeHierarchy.nameMap.get(name).get.asInstanceOf[Info.Inv]
           nameMap = nameMap + id ~> info(ast = newStmt)
         case stmt: AST.Stmt.Var =>
@@ -4093,57 +4097,58 @@ import TypeChecker._
             case Some(newScope) => scope = newScope
             case _ => return (sc, body)
           }
-          stmts2 = stmts2 :+ newStmt
+          stmts2Buf.append(newStmt)
         case stmt: AST.Stmt.VarPattern =>
           val (newScopeOpt, newStmt) = checkVarPatternStmt(scope, stmt, reporter)
           newScopeOpt match {
             case Some(newScope) => scope = newScope
             case _ => return (sc, body)
           }
-          stmts2 = stmts2 :+ newStmt
+          stmts2Buf.append(newStmt)
         case _ =>
-          stmts2 = stmts2 :+ stmt
+          stmts2Buf.append(stmt)
       }
     }
-    stmts = stmts2
-    stmts2 = ISZ()
+    val stmtsAfterContract = stmts2Buf.toIS
+    val stmts3Buf = Buffer.create[AST.Stmt]()
     val th = typeHierarchy(nameMap = tcNameMap)
-    for (i <- z"0" until stmts.size) {
-      val stmt = stmts(i)
+    for (i <- z"0" until stmtsAfterContract.size) {
+      val stmt = stmtsAfterContract(i)
       stmt match {
         case stmt: AST.Stmt.Theorem =>
           val id = stmt.id.value
           val name = context :+ id
           val newStmt = TypeChecker.checkTheoremStmt(strictAliasing, th, name, scope,
             stmt(attr = stmt.attr(resOpt = Some(AST.ResolvedInfo.Theorem(name, stmt.id.attr.posOpt)))), reporter)
-          stmts2 = stmts2 :+ newStmt
+          stmts3Buf.append(newStmt)
           val info = typeHierarchy.nameMap.get(name).get.asInstanceOf[Info.Theorem]
           val newInfo = info(ast = newStmt)
           nameMap = nameMap + id ~> newInfo
           tcNameMap = tcNameMap + name ~> newInfo
         case _ =>
-          stmts2 = stmts2 :+ stmt
+          stmts3Buf.append(stmt)
       }
     }
+    val stmts2 = stmts3Buf.toIS
     val scopes = mscopes.toIS[Scope.Local]
     val thisL = this
     val newStmts = thisL(typeHierarchy = typeHierarchy(nameMap = tcNameMap)).checkStmts(isAssignExp, scopes,
       expectedOpt, stmts2, reporter)
     val newScope: Scope.Local = if (scopes.isEmpty) scope else scopes(scopes.size - 1)
     val undecls: ISZ[AST.ResolvedInfo.LocalVar] = {
-      var r = ISZ[AST.ResolvedInfo.LocalVar]()
+      val r = Buffer.create[AST.ResolvedInfo.LocalVar]()
       for (e <- newScope.nameMap.entries) {
         e._2 match {
           case _: Info.Method =>
           case _: Info.SpecMethod =>
           case _: Info.SpecVar =>
           case _: Info.Var =>
-          case Info.LocalVar(_, _, _, _, _, Some(res: AST.ResolvedInfo.LocalVar)) => r = r :+ res
+          case Info.LocalVar(_, _, _, _, _, Some(res: AST.ResolvedInfo.LocalVar)) => r.append(res)
           case _: Info.LocalVar =>
           case _ => halt(s"Infeasible: ${e._2}")
         }
       }
-      r
+      r.toIS
     }
     return (scope, body(stmts = newStmts, undecls = undecls))
   }
@@ -5608,60 +5613,60 @@ import TypeChecker._
       }
     }
     scope = scope(localThisOpt = Some(AST.Typed.Object(info.owner, info.ast.id.value)), nameMap = nameMap)
-    var stmtOpts = ISZ[Option[AST.Stmt]]()
+    val stmtOpts = Buffer.create[Option[AST.Stmt]]()
     for (stmt <- info.ast.stmts) {
       stmt match {
-        case stmt: AST.Stmt.Var => stmtOpts = stmtOpts :+ (if (info.ast.extNameOpt.nonEmpty) None() else Some(stmt))
-        case stmt: AST.Stmt.SpecVar => stmtOpts = stmtOpts :+ Some(stmt)
-        case stmt: AST.Stmt.Method => stmtOpts = stmtOpts :+ Some(stmt)
-        case stmt: AST.Stmt.SpecMethod => stmtOpts = stmtOpts :+ Some(stmt)
-        case stmt: AST.Stmt.ExtMethod => stmtOpts = stmtOpts :+ Some(stmt)
-        case stmt: AST.Stmt.JustMethod => stmtOpts = stmtOpts :+ Some(stmt)
-        case _: AST.Stmt.Fact =>  stmtOpts = stmtOpts :+ None()
-        case _: AST.Stmt.Theorem =>  stmtOpts = stmtOpts :+ None()
-        case _: AST.Stmt.Inv =>  stmtOpts = stmtOpts :+ None()
-        case _: AST.Stmt.Sig => stmtOpts = stmtOpts :+ None()
-        case _: AST.Stmt.Adt => stmtOpts = stmtOpts :+ None()
-        case _: AST.Stmt.Object => stmtOpts = stmtOpts :+ None()
-        case _ => stmtOpts = stmtOpts :+ Some(stmt)
+        case stmt: AST.Stmt.Var => stmtOpts.append(if (info.ast.extNameOpt.nonEmpty) None() else Some(stmt))
+        case stmt: AST.Stmt.SpecVar => stmtOpts.append(Some(stmt))
+        case stmt: AST.Stmt.Method => stmtOpts.append(Some(stmt))
+        case stmt: AST.Stmt.SpecMethod => stmtOpts.append(Some(stmt))
+        case stmt: AST.Stmt.ExtMethod => stmtOpts.append(Some(stmt))
+        case stmt: AST.Stmt.JustMethod => stmtOpts.append(Some(stmt))
+        case _: AST.Stmt.Fact => stmtOpts.append(None())
+        case _: AST.Stmt.Theorem => stmtOpts.append(None())
+        case _: AST.Stmt.Inv => stmtOpts.append(None())
+        case _: AST.Stmt.Sig => stmtOpts.append(None())
+        case _: AST.Stmt.Adt => stmtOpts.append(None())
+        case _: AST.Stmt.Object => stmtOpts.append(None())
+        case _ => stmtOpts.append(Some(stmt))
       }
     }
-    val newStmtOpts = checkStmtOptsPar(par, scope, stmtOpts, reporter)
+    val newStmtOpts = checkStmtOptsPar(par, scope, stmtOpts.toIS, reporter)
     var i = 0
-    var newStmts = ISZ[AST.Stmt]()
-    var nameEntries = ISZ[(QName, Info)]()
+    val newStmts = Buffer.create[AST.Stmt]()
+    val nameEntries = Buffer.create[(QName, Info)]()
     for (stmtOpt <- newStmtOpts) {
       stmtOpt match {
         case Some(stmt) =>
           stmt match {
             case stmt: AST.Stmt.Var =>
               val v = getInfo(stmt.id.value).asInstanceOf[Info.Var]
-              nameEntries = nameEntries :+ (v.name ~> v(ast = stmt))
+              nameEntries.append(v.name ~> v(ast = stmt))
             case stmt: AST.Stmt.SpecVar =>
               val sv = getInfo(stmt.id.value).asInstanceOf[Info.SpecVar]
-              nameEntries = nameEntries :+ (sv.name ~> sv(ast = stmt))
+              nameEntries.append(sv.name ~> sv(ast = stmt))
             case stmt: AST.Stmt.Method =>
               val m = getInfo(stmt.sig.id.value).asInstanceOf[Info.Method]
-              nameEntries = nameEntries :+ (m.name ~> m(ast = stmt))
+              nameEntries.append(m.name ~> m(ast = stmt))
             case stmt: AST.Stmt.SpecMethod =>
               val sm = getInfo(stmt.sig.id.value).asInstanceOf[Info.SpecMethod]
-              nameEntries = nameEntries :+ (sm.name ~> sm(ast = stmt))
+              nameEntries.append(sm.name ~> sm(ast = stmt))
             case stmt: AST.Stmt.ExtMethod =>
               val em = getInfo(stmt.sig.id.value).asInstanceOf[Info.ExtMethod]
-              nameEntries = nameEntries :+ (em.name ~> em(ast = stmt))
+              nameEntries.append(em.name ~> em(ast = stmt))
             case stmt: AST.Stmt.JustMethod =>
               val em = getInfo(stmt.sig.id.value).asInstanceOf[Info.JustMethod]
-              nameEntries = nameEntries :+ (em.name ~> em(ast = stmt))
+              nameEntries.append(em.name ~> em(ast = stmt))
             case _ =>
           }
-          newStmts = newStmts :+ stmt
-        case _ => newStmts = newStmts :+ info.ast.stmts(i)
+          newStmts.append(stmt)
+        case _ => newStmts.append(info.ast.stmts(i))
       }
       i = i + 1
     }
-    nameEntries = nameEntries :+ (info.name ~> info(ast = info.ast(stmts = newStmts)))
+    nameEntries.append(info.name ~> info(ast = info.ast(stmts = newStmts.toIS)))
     val messages = reporter.messages
-    val newInfos = nameEntries
+    val newInfos = nameEntries.toIS
     return (th: TypeHierarchy) => (th(nameMap = th.nameMap ++ newInfos), messages)
   }
 }

@@ -247,12 +247,12 @@ class SlangParser(
     val util = new scala.meta.InputUtil(input)
     var line = 0
     import org.sireum._
-    var r = ISZ[U32]()
+    val r = Buffer.create[U32]()
     try while (true) {
-      r = r :+ U32(util.lineToOffset(line))
+      r.append(U32(util.lineToOffset(line)))
       line = line + 1
     } catch { case _: Throwable => }
-    r
+    r.toIS
   })
 
   def parseTopUnit(): Result = {
