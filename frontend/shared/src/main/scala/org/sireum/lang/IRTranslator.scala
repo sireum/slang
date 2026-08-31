@@ -498,7 +498,7 @@ object IRTranslator {
 
   def toBasic(body: AST.IR.Body.Block, pos: message.Position): AST.IR.Body.Basic = {
 
-    var blocks = ISZ[AST.IR.BasicBlock]()
+    val blocks = Buffer.create[AST.IR.BasicBlock]()
     var grounds = ISZ[AST.IR.Stmt.Ground]()
     var decls = ISZ[AST.IR.Stmt.Decl]()
 
@@ -512,10 +512,10 @@ object IRTranslator {
       return AST.IR.BasicBlock(label, stmts, jump)
     }
 
-    def stmtToBasic(label: Z, stmt: AST.IR.Stmt): Option[Z] = {
+    def stmtToBasic(label: Z, stmt: AST.IR.Stmt, blocksBuf: Buffer[AST.IR.BasicBlock]): Option[Z] = {
       stmt match {
         case stmt: AST.IR.Stmt.Block =>
-          return blockToBasic(label, stmt)
+          return blockToBasic(label, stmt, blocksBuf)
         case stmt: AST.IR.Stmt.Expr =>
           addGround(stmt)
           return Some(label)
@@ -529,15 +529,15 @@ object IRTranslator {
         case stmt: AST.IR.Stmt.Assertume =>
           val tLabel = fresh.label()
           var fLabel = fresh.label()
-          blocks = blocks :+ AST.IR.BasicBlock(label, grounds, AST.IR.Jump.If(stmt.cond, tLabel, fLabel, stmt.pos))
+          blocksBuf.append(AST.IR.BasicBlock(label, grounds, AST.IR.Jump.If(stmt.cond, tLabel, fLabel, stmt.pos)))
           grounds = ISZ()
           var addF = T
           stmt.messageOpt match {
             case Some(m) =>
-              stmtToBasic(fLabel, AST.IR.Stmt.Block(m.stmts, m.exp.pos)) match {
+              stmtToBasic(fLabel, AST.IR.Stmt.Block(m.stmts, m.exp.pos), blocksBuf) match {
                 case Some(l) =>
                   fLabel = l
-                  stmtToBasic(fLabel, AST.IR.Stmt.Print(AST.IR.Stmt.Print.Kind.Err, T, ISZ(m.exp), m.exp.pos)) match {
+                  stmtToBasic(fLabel, AST.IR.Stmt.Print(AST.IR.Stmt.Print.Kind.Err, T, ISZ(m.exp), m.exp.pos), blocksBuf) match {
                     case Some(l2) => fLabel = l2
                     case _ => addF = F
                   }
@@ -546,19 +546,19 @@ object IRTranslator {
             case _ =>
           }
           if (addF) {
-            blocks = blocks :+ AST.IR.BasicBlock(fLabel, grounds, AST.IR.Jump.Halt(pos))
+            blocksBuf.append(AST.IR.BasicBlock(fLabel, grounds, AST.IR.Jump.Halt(pos)))
           }
           grounds = ISZ()
           return Some(tLabel)
         case stmt: AST.IR.Stmt.Halt =>
           stmt.message match {
             case m: AST.IR.Exp.String if m.value.size == 0 =>
-              blocks = blocks :+ AST.IR.BasicBlock(label, grounds, AST.IR.Jump.Halt(pos))
+              blocksBuf.append(AST.IR.BasicBlock(label, grounds, AST.IR.Jump.Halt(pos)))
               grounds = ISZ()
             case _ =>
-              stmtToBasic(label, AST.IR.Stmt.Print(AST.IR.Stmt.Print.Kind.Err, T, ISZ(stmt.message), pos)) match {
+              stmtToBasic(label, AST.IR.Stmt.Print(AST.IR.Stmt.Print.Kind.Err, T, ISZ(stmt.message), pos), blocksBuf) match {
                 case Some(l) =>
-                  blocks = blocks :+ AST.IR.BasicBlock(l, grounds, AST.IR.Jump.Halt(pos))
+                  blocksBuf.append(AST.IR.BasicBlock(l, grounds, AST.IR.Jump.Halt(pos)))
                   grounds = ISZ()
                 case _ =>
               }
@@ -631,40 +631,40 @@ object IRTranslator {
                 case _ => defaultOpt = Some(labels(i))
               }
             }
-            blocks = blocks :+ AST.IR.BasicBlock(label, grounds, AST.IR.Jump.Switch(stmt.exp, cases, defaultOpt, pos))
+            blocksBuf.append(AST.IR.BasicBlock(label, grounds, AST.IR.Jump.Switch(stmt.exp, cases, defaultOpt, pos)))
             for (i <- labels.indices) {
               grounds = ISZ()
-              stmtToBasic(labels(i), stmt.cases(i).body) match {
-                case Some(l) => blocks = blocks :+ AST.IR.BasicBlock(l, grounds, AST.IR.Jump.Goto(end, pos))
+              stmtToBasic(labels(i), stmt.cases(i).body, blocksBuf) match {
+                case Some(l) => blocksBuf.append(AST.IR.BasicBlock(l, grounds, AST.IR.Jump.Goto(end, pos)))
                 case _ =>
               }
             }
             grounds = ISZ()
             return Some(end)
           } else {
-            return stmtToBasic(label, simplifyMatch(stmt))
+            return stmtToBasic(label, simplifyMatch(stmt), blocksBuf)
           }
         case stmt: AST.IR.Stmt.AssignPattern =>
-          return stmtToBasic(label, simplifyAssignPattern(stmt))
+          return stmtToBasic(label, simplifyAssignPattern(stmt), blocksBuf)
         case stmt: AST.IR.Stmt.For => halt(s"TODO: $stmt")
         case stmt: AST.IR.Stmt.If =>
           val t = fresh.label()
           val e = fresh.label()
           val f: Z = if (stmt.elseBlock.stmts.isEmpty) e else fresh.label()
-          blocks = blocks :+ basicBlock(label, grounds, AST.IR.Jump.If(stmt.cond, t, f, stmt.pos))
+          blocksBuf.append(basicBlock(label, grounds, AST.IR.Jump.If(stmt.cond, t, f, stmt.pos)))
           grounds = ISZ()
           var allReturn = T
-          blockToBasic(t, stmt.thenBlock) match {
+          blockToBasic(t, stmt.thenBlock, blocksBuf) match {
             case Some(l) =>
-              blocks = blocks :+ basicBlock(l, grounds, AST.IR.Jump.Goto(e, stmt.pos))
+              blocksBuf.append(basicBlock(l, grounds, AST.IR.Jump.Goto(e, stmt.pos)))
               allReturn = F
             case _ =>
           }
           if (stmt.elseBlock.stmts.nonEmpty) {
             grounds = ISZ()
-            blockToBasic(f, stmt.elseBlock) match {
+            blockToBasic(f, stmt.elseBlock, blocksBuf) match {
               case Some(l) =>
-                blocks = blocks :+ basicBlock(l, grounds, AST.IR.Jump.Goto(e, stmt.pos))
+                blocksBuf.append(basicBlock(l, grounds, AST.IR.Jump.Goto(e, stmt.pos)))
                 allReturn = F
               case _ =>
             }
@@ -675,16 +675,16 @@ object IRTranslator {
           return if (allReturn) None() else Some(e)
         case stmt: AST.IR.Stmt.While =>
           val n = fresh.label()
-          blocks = blocks :+ basicBlock(label, grounds, AST.IR.Jump.Goto(n, stmt.pos))
+          blocksBuf.append(basicBlock(label, grounds, AST.IR.Jump.Goto(n, stmt.pos)))
           grounds = ISZ()
-          blockToBasic(n, AST.IR.Stmt.Block(stmt.cond.stmts, stmt.cond.exp.pos)) match {
+          blockToBasic(n, AST.IR.Stmt.Block(stmt.cond.stmts, stmt.cond.exp.pos), blocksBuf) match {
             case Some(l) =>
               val t = fresh.label()
               val e = fresh.label()
-              blocks = blocks :+ basicBlock(l, grounds, AST.IR.Jump.If(stmt.cond.exp, t, e, stmt.pos))
+              blocksBuf.append(basicBlock(l, grounds, AST.IR.Jump.If(stmt.cond.exp, t, e, stmt.pos)))
               grounds = ISZ()
-              blockToBasic(t, stmt.block) match {
-                case Some(l2) => blocks = blocks :+ basicBlock(l2, grounds, AST.IR.Jump.Goto(n, stmt.pos))
+              blockToBasic(t, stmt.block, blocksBuf) match {
+                case Some(l2) => blocksBuf.append(basicBlock(l2, grounds, AST.IR.Jump.Goto(n, stmt.pos)))
                 case _ =>
               }
               grounds = ISZ()
@@ -693,7 +693,7 @@ object IRTranslator {
               return None()
           }
         case stmt: AST.IR.Stmt.Return =>
-          blocks = blocks :+ basicBlock(label, grounds, AST.IR.Jump.Return(stmt.expOpt, pos))
+          blocksBuf.append(basicBlock(label, grounds, AST.IR.Jump.Return(stmt.expOpt, pos)))
           grounds = ISZ()
           return None()
         case stmt: AST.IR.Stmt.Intrinsic =>
@@ -702,12 +702,12 @@ object IRTranslator {
       }
     }
 
-    def blockToBasic(label: Z, block: AST.IR.Stmt.Block): Option[Z] = {
+    def blockToBasic(label: Z, block: AST.IR.Stmt.Block, blocksBuf: Buffer[AST.IR.BasicBlock]): Option[Z] = {
       val oldDecls = decls
       decls = ISZ()
       var l = label
       for (stmt <- block.stmts) {
-        stmtToBasic(l, stmt) match {
+        stmtToBasic(l, stmt, blocksBuf) match {
           case Some(next) => l = next
           case _ => return None()
         }
@@ -719,11 +719,11 @@ object IRTranslator {
       return Some(l)
     }
 
-    blockToBasic(initLabel, body.block) match {
-      case Some(l) => blocks = blocks :+ basicBlock(l, grounds, AST.IR.Jump.Return(None(), pos))
+    blockToBasic(initLabel, body.block, blocks) match {
+      case Some(l) => blocks.append(basicBlock(l, grounds, AST.IR.Jump.Return(None(), pos)))
       case _ =>
     }
-    return AST.IR.Body.Basic(blocks)
+    return AST.IR.Body.Basic(blocks.toIS)
   }
 
   def translateExpBlock(exp: AST.Exp): AST.IR.ExpBlock = {
