@@ -2536,8 +2536,7 @@ object ResolvedInfo {
   @pure def substOpt(resOpt: Option[ResolvedInfo], substMap: HashMap[String, Typed]): Option[ResolvedInfo] = {
     resOpt match {
       case Some(res) if substMap.nonEmpty =>
-        val newRes = res.subst(substMap)
-        return if (newRes == res) resOpt else Some(newRes)
+        return Some(res.subst(substMap))
       case _ => return resOpt
     }
   }

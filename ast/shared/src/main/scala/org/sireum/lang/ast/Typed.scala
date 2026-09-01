@@ -75,44 +75,12 @@ import org.sireum._
   @pure def isEqual(other: Typed): B = {
     (this, other) match {
       case (t1: Typed.Name, t2: Typed.Name) =>
-        if (t1.args.size != t2.args.size) {
-          return F
-        }
-        if (t1.ids != t2.ids) {
-          return F
-        }
-        for (i <- z"0" until t1.args.size) {
-          if (t1.args(i) != t2.args(i)) {
-            return F
-          }
-        }
-        return T
+        return t1.args.size == t2.args.size && t1.ids == t2.ids && t1.args == t2.args
       case (t1: Typed.Tuple, t2: Typed.Tuple) =>
-        if (t1.args.size != t2.args.size) {
-          return F
-        }
-        for (i <- z"0" until t1.args.size) {
-          if (t1.args(i) != t2.args(i)) {
-            return F
-          }
-        }
-        return T
+        return t1.args == t2.args
       case (t1: Typed.Fun, t2: Typed.Fun) =>
-        if (t1.purity != t2.purity || t1.isByName != t2.isByName) {
-          return F
-        }
-        if (t1.args.size != t2.args.size) {
-          return F
-        }
-        if (t1.ret != t2.ret) {
-          return F
-        }
-        for (i <- z"0" until t1.args.size) {
-          if (t1.args(i) != t2.args(i)) {
-            return F
-          }
-        }
-        return T
+        return t1.purity == t2.purity && t1.isByName == t2.isByName &&
+          t1.args.size == t2.args.size && t1.ret == t2.ret && t1.args == t2.args
       case (t1: Typed.TypeVar, t2: Typed.TypeVar) =>
         return t1.id == t2.id && t1.kind == t2.kind
       case (t1: Typed.Package, t2: Typed.Package) =>
@@ -260,8 +228,12 @@ object Typed {
     }
 
     @pure override def hasTypeVars: B = {
-      for (arg <- args if arg.hasTypeVars) {
-        return T
+      var i = 0
+      while (i < args.size) {
+        if (args(i).hasTypeVars) {
+          return T
+        }
+        i = i + 1
       }
       return F
     }
@@ -287,8 +259,12 @@ object Typed {
     }
 
     @pure override def hasTypeVars: B = {
-      for (arg <- args if arg.hasTypeVars) {
-        return T
+      var i = 0
+      while (i < args.size) {
+        if (args(i).hasTypeVars) {
+          return T
+        }
+        i = i + 1
       }
       return F
     }
@@ -316,8 +292,12 @@ object Typed {
     }
 
     @pure override def hasTypeVars: B = {
-      for (arg <- args if arg.hasTypeVars) {
-        return T
+      var i = 0
+      while (i < args.size) {
+        if (args(i).hasTypeVars) {
+          return T
+        }
+        i = i + 1
       }
       return ret.hasTypeVars
     }
@@ -488,8 +468,12 @@ object Typed {
     }
 
     @pure override def hasTypeVars: B = {
-      for (m <- methods if m.hasTypeVars) {
-        return T
+      var i = 0
+      while (i < methods.size) {
+        if (methods(i).hasTypeVars) {
+          return T
+        }
+        i = i + 1
       }
       return F
     }
@@ -797,4 +781,3 @@ object Typed {
     }
   }
 }
-

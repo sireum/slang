@@ -518,8 +518,10 @@ object TypeChecker {
       return None()
     }
     var substMap = HashMap.emptyInit[String, AST.Typed](args.size)
-    for (i <- z"0" until args.size) {
+    var i = 0
+    while (i < args.size) {
       substMap = substMap + typeParams(i).id.value ~> args(i)
+      i = i + 1
     }
     return Some(substMap)
   }
@@ -536,8 +538,10 @@ object TypeChecker {
       return None()
     }
     var substMap = HashMap.emptyInit[String, AST.Typed](args.size)
-    for (i <- z"0" until args.size) {
+    var i = 0
+    while (i < args.size) {
       substMap = substMap + m.typeParams(i) ~> args(i)
+      i = i + 1
     }
     return Some(substMap)
   }
@@ -1580,6 +1584,18 @@ import TypeChecker._
       return (None(), None(), typeArgs)
     }
 
+    @pure def substResult(rt: AST.Typed, resOpt: Option[AST.ResolvedInfo],
+                         sm: HashMap[String, AST.Typed]): (Option[AST.Typed], Option[AST.ResolvedInfo], ISZ[AST.Typed]) = {
+      val newResOpt = AST.ResolvedInfo.substOpt(resOpt, sm)
+      val newRt: AST.Typed = (rt, resOpt, newResOpt) match {
+        case (m: AST.Typed.Method, Some(oldRes: AST.ResolvedInfo.Method), Some(newRes: AST.ResolvedInfo.Method))
+          if oldRes.tpeOpt.nonEmpty && oldRes.tpeOpt.get == m.tpe && newRes.tpeOpt.nonEmpty =>
+          m(tpe = newRes.tpeOpt.get)
+        case _ => rt.subst(sm)
+      }
+      return (Some(newRt), newResOpt, typeArgs)
+    }
+
     def errAccess(t: AST.Typed): Unit = {
       if (!reporter.ignore) {
         reporter.error(ident.attr.posOpt, typeCheckerKind, s"'$id' is not a member of type '$t'.")
@@ -1649,7 +1665,7 @@ import TypeChecker._
                 }
                 val smOpt = buildTypeSubstMap(info.name, ident.attr.posOpt, info.ast.typeParams, receiverType.args, reporter)
                 smOpt match {
-                  case Some(sm) => return (Some(rt.subst(sm)), AST.ResolvedInfo.substOpt(r._3, sm), typeArgs)
+                  case Some(sm) => return substResult(rt, r._3, sm)
                   case _ => return noResult
                 }
               case (T, _, _) => val res = checkAccess(receiverType); return res
@@ -1666,7 +1682,7 @@ import TypeChecker._
                 }
                 val smOpt = buildTypeSubstMap(info.name, ident.attr.posOpt, info.ast.typeParams, receiverType.args, reporter)
                 smOpt match {
-                  case Some(sm) => return (Some(rt.subst(sm)), AST.ResolvedInfo.substOpt(r._3, sm), typeArgs)
+                  case Some(sm) => return substResult(rt, r._3, sm)
                   case _ => return noResult
                 }
               case (T, _, _) => val res = checkAccess(receiverType); return res
@@ -2649,13 +2665,16 @@ import TypeChecker._
         def tryArgs(): (AST.Exp, Option[AST.Typed]) = {
           val newArgs = Buffer.create[AST.Exp]()
           val argTypes = Buffer.create[AST.Typed]()
-          for (e <- expArgs) {
+          var i = 0
+          while (i < expArgs.size) {
+            val e = expArgs(i)
             val (newArg, argTypeOpt) = checkExp(None(), scope, e, repArgs)
             newArgs.append(newArg)
             argTypeOpt match {
               case Some(argType) => argTypes.append(argType)
               case _ =>
             }
+            i = i + 1
           }
           val newArgsIS = newArgs.toIS
           val argTypesIS = argTypes.toIS
@@ -2754,19 +2773,27 @@ import TypeChecker._
           case _ => return None()
         }
       }
-      val argPathsBuf = Buffer.create[Option[ISZ[String]]]()
-      for (arg <- args) {
+      val argPaths = MSZ.create[Option[ISZ[String]]](args.size + accesses.size, None())
+      var argIndex = 0
+      while (argIndex < args.size) {
+        val arg = args(argIndex)
         arg.typedOpt match {
-          case Some(t) if typeHierarchy.isMutable(t) => argPathsBuf.append(expPath(arg, ISZ()))
-          case _ => argPathsBuf.append(None())
+          case Some(t) if typeHierarchy.isMutable(t) => argPaths(argIndex) = expPath(arg, ISZ())
+          case _ =>
         }
+        argIndex = argIndex + 1
       }
-      for (access <- accesses) {
-        argPathsBuf.append(mVarAccess(if (args.nonEmpty) expPath(args(0), ISZ()) else Some(ISZ("this")), Some(access)))
+      var accessIndex = 0
+      while (accessIndex < accesses.size) {
+        val access = accesses(accessIndex)
+        argPaths(args.size + accessIndex) =
+          mVarAccess(if (args.nonEmpty) expPath(args(0), ISZ()) else Some(ISZ("this")), Some(access))
+        accessIndex = accessIndex + 1
       }
-      val argPaths = argPathsBuf.toIS
-      for (i <- 0 until args.size) {
-        for (j <- i + 1 until args.size) {
+      var i = 0
+      while (i < args.size) {
+        var j = i + 1
+        while (j < args.size) {
           (argPaths(i), argPaths(j)) match {
             case (Some(path1), Some(path2)) =>
               val size: Z = if (path1.size > path2.size) path2.size else path1.size
@@ -2782,7 +2809,9 @@ import TypeChecker._
               }
             case (_, _) =>
           }
+          j = j + 1
         }
+        i = i + 1
       }
     }
 
@@ -2843,7 +2872,7 @@ import TypeChecker._
                     (HashSSet ++ r.reads ++ r.writes).elements
                   )
                 }
-                if (funType == r.tpeOpt.get) Some(r) else Some(r(tpeOpt = Some(funType)))
+                Some(r(tpeOpt = Some(funType)))
               case _: AST.ResolvedInfo.BuiltIn => mResOpt
               case _ => halt(s"Unexpected symbol info: ${resOpt.get}")
             }
@@ -3161,7 +3190,7 @@ import TypeChecker._
                     checkInvokeArgs(receiverOpt.map((rcv: AST.Exp) => ISZ(rcv)).getOrElseEager(ISZ()) ++
                       (for (arg <- args) yield arg.arg), (HashSSet ++ r.reads ++ r.writes).elements)
                   }
-                  if (r.tpeOpt.get == funType) Some(r) else Some(r(tpeOpt = Some(funType)))
+                  Some(r(tpeOpt = Some(funType)))
                 case _: AST.ResolvedInfo.BuiltIn => resOpt
                 case _ => halt(s"Unexpected symbol info: ${resOpt.get}")
               }

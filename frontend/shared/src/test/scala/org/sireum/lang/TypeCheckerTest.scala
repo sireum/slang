@@ -52,6 +52,37 @@ class TypeCheckerTest extends TestSuite {
       assert(TypeChecker.unifyCombine(left, empty + ("A" ~> Typed.b)).isEmpty)
     }
 
+    "typed equality, type variables, and substitution" in {
+      val typeVar = Typed.TypeVar("T", Typed.VarKind.Immutable)
+      val named = Typed.Name(ISZ("A"), None(), ISZ(typeVar, Typed.z))
+      val fun = Typed.Fun(Purity.Pure, F, ISZ(named), Typed.b)
+
+      assert(named.isEqual(named))
+      assert(!named.isEqual(Typed.Name(ISZ("A"), None(), ISZ(typeVar, Typed.b))))
+      assert(fun.isEqual(fun))
+      assert(!fun.isEqual(Typed.Fun(Purity.Pure, F, ISZ(Typed.z), Typed.b)))
+      assert(named.hasTypeVars)
+      assert(fun.hasTypeVars)
+      assert(!Typed.Name(ISZ("A"), None(), ISZ(Typed.z)).hasTypeVars)
+
+      val method = ResolvedInfo.Method(T, MethodMode.Method, ISZ("T"), ISZ("A"), "f", ISZ("x"),
+        Some(Typed.Fun(Purity.Pure, F, ISZ(typeVar), typeVar)), ISZ(), ISZ(), None())
+      val substMap = HashMap.empty[String, Typed] + ("T" ~> Typed.z)
+      val Some(substed: ResolvedInfo.Method) = ResolvedInfo.substOpt(Some(method), substMap)
+      assert(substed.tpeOpt == Some(Typed.Fun(Purity.Pure, F, ISZ(Typed.z), Typed.z)))
+    }
+
+    "generic member substitution" in {
+      passingWorksheet(
+        """import org.sireum._
+          |@sig trait Box[T] {
+          |  def value: T
+          |}
+          |def f(box: Box[Z]): Z = {
+          |  return box.value
+          |}""".stripMargin)
+    }
+
     "Passing" - {
 
       "Worksheet" - {

@@ -1231,7 +1231,7 @@ object TypeHierarchy {
     return if (t1 == t2) T else lub(ISZ(t1, t2)).nonEmpty
   }
 
-  @pure def isMutable(t: AST.Typed): B = {
+  @memoize def isMutable(t: AST.Typed): B = {
     t match {
       case t: AST.Typed.Name =>
         if (t.ids == AST.Typed.msName) {
