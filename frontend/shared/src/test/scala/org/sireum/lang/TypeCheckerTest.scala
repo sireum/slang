@@ -39,6 +39,19 @@ class TypeCheckerTest extends TestSuite {
 
   val tests = Tests {
 
+    "unify combine" in {
+      val empty = HashMap.empty[String, Typed]
+      val left = empty + ("A" ~> Typed.z)
+      val right = empty + ("B" ~> Typed.b)
+      val both = left + ("B" ~> Typed.b)
+
+      assert(TypeChecker.unifyCombine(empty, right) == Some(right))
+      assert(TypeChecker.unifyCombine(left, empty) == Some(left))
+      assert(TypeChecker.unifyCombine(left, left) == Some(left))
+      assert(TypeChecker.unifyCombine(left, right) == Some(both))
+      assert(TypeChecker.unifyCombine(left, empty + ("A" ~> Typed.b)).isEmpty)
+    }
+
     "Passing" - {
 
       "Worksheet" - {

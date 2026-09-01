@@ -652,16 +652,29 @@ object TypeChecker {
     r: HashMap[String, AST.Typed],
     m: HashMap[String, AST.Typed]
   ): Option[HashMap[String, AST.Typed]] = {
+    if (r.size == 0) {
+      return Some(m)
+    }
+    if (m.size == 0) {
+      return Some(r)
+    }
     var res = r
-    for (e <- m.entries) {
-      val (key, value) = e
-      res.get(key) match {
-        case Some(v) =>
-          if (value != v) {
-            return None()
-          }
-        case _ => res = res + key ~> value
+    var i = 0
+    while (i < m.mapEntries.size) {
+      val entries = m.mapEntries(i).entries
+      var j = 0
+      while (j < entries.size) {
+        val (key, value) = entries(j)
+        res.get(key) match {
+          case Some(v) =>
+            if (value != v) {
+              return None()
+            }
+          case _ => res = res + key ~> value
+        }
+        j = j + 1
       }
+      i = i + 1
     }
     return Some(res)
   }
