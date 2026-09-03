@@ -417,6 +417,14 @@ object MTransformer {
 
   val PostResultExpUnary: MOption[Exp] = MNone()
 
+  val PreResultExpUnaryTemporal: PreResult[Exp] = PreResult(T, MNone())
+
+  val PostResultExpUnaryTemporal: MOption[Exp] = MNone()
+
+  val PreResultExpBinaryTemporal: PreResult[Exp] = PreResult(T, MNone())
+
+  val PostResultExpBinaryTemporal: MOption[Exp] = MNone()
+
   val PreResultExpBinary: PreResult[Exp] = PreResult(T, MNone())
 
   val PostResultExpBinary: MOption[Exp] = MNone()
@@ -1397,6 +1405,8 @@ import MTransformer._
       case o: Exp.This => return preExpThis(o)
       case o: Exp.Super => return preExpSuper(o)
       case o: Exp.Unary => return preExpUnary(o)
+      case o: Exp.UnaryTemporal => return preExpUnaryTemporal(o)
+      case o: Exp.BinaryTemporal => return preExpBinaryTemporal(o)
       case o: Exp.Binary => return preExpBinary(o)
       case o: Exp.Ident => return preExpIdent(o)
       case o: Exp.Eta => return preExpEta(o)
@@ -1513,6 +1523,14 @@ import MTransformer._
 
   def preExpUnary(o: Exp.Unary): PreResult[Exp] = {
     return PreResultExpUnary
+  }
+
+  def preExpUnaryTemporal(o: Exp.UnaryTemporal): PreResult[Exp] = {
+    return PreResultExpUnaryTemporal
+  }
+
+  def preExpBinaryTemporal(o: Exp.BinaryTemporal): PreResult[Exp] = {
+    return PreResultExpBinaryTemporal
   }
 
   def preExpRef(o: Exp.Ref): PreResult[Exp.Ref] = {
@@ -2570,6 +2588,8 @@ import MTransformer._
       case o: Exp.This => return postExpThis(o)
       case o: Exp.Super => return postExpSuper(o)
       case o: Exp.Unary => return postExpUnary(o)
+      case o: Exp.UnaryTemporal => return postExpUnaryTemporal(o)
+      case o: Exp.BinaryTemporal => return postExpBinaryTemporal(o)
       case o: Exp.Binary => return postExpBinary(o)
       case o: Exp.Ident => return postExpIdent(o)
       case o: Exp.Eta => return postExpEta(o)
@@ -2686,6 +2706,14 @@ import MTransformer._
 
   def postExpUnary(o: Exp.Unary): MOption[Exp] = {
     return PostResultExpUnary
+  }
+
+  def postExpUnaryTemporal(o: Exp.UnaryTemporal): MOption[Exp] = {
+    return PostResultExpUnaryTemporal
+  }
+
+  def postExpBinaryTemporal(o: Exp.BinaryTemporal): MOption[Exp] = {
+    return PostResultExpBinaryTemporal
   }
 
   def postExpRef(o: Exp.Ref): MOption[Exp.Ref] = {
@@ -4562,6 +4590,21 @@ import MTransformer._
           val r1: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
             MSome(o2(exp = r0.getOrElse(o2.exp), attr = r1.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Exp.UnaryTemporal =>
+          val r0: MOption[Exp] = transformExp(o2.exp)
+          val r1: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp), attr = r1.getOrElse(o2.attr)))
+          else
+            MNone()
+        case o2: Exp.BinaryTemporal =>
+          val r0: MOption[Exp] = transformExp(o2.left)
+          val r1: MOption[Exp] = transformExp(o2.right)
+          val r2: MOption[ResolvedAttr] = transformResolvedAttr(o2.attr)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(left = r0.getOrElse(o2.left), right = r1.getOrElse(o2.right), attr = r2.getOrElse(o2.attr)))
           else
             MNone()
         case o2: Exp.Binary =>
