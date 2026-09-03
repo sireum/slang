@@ -283,6 +283,18 @@ object SlangLl2PrettyPrinter {
           case _ => T
         }
         if (paren) st"${o.opString}(${printExp(o.exp)})" else st"${o.opString}${printExp(o.exp)}"
+      case o: AST.Exp.UnaryTemporal =>
+        val paren: B = o.exp match {
+          case _: Exp.Ident => F
+          case exp: AST.Exp.LitZ if exp.value >= 0 => F
+          case exp: AST.Exp.LitF32 if exp.value >= 0f => F
+          case exp: AST.Exp.LitF64 if exp.value >= 0d => F
+          case exp: AST.Exp.LitR if exp.value >= r"0" => F
+          case _ => T
+        }
+        if (paren) st"${o.opString}${o.intvl}(${printExp(o.exp)})" else st"${o.opString}${o.intvl}${printExp(o.exp)}"
+      case o: AST.Exp.BinaryTemporal =>
+        st"${printExp(o.left)} ${o.opString}${o.intvl} ${printExp(o.right)}"
       case o: AST.ProofAst.StepId.Num => o.prettyST
       case o: AST.ProofAst.StepId.Str => o.prettyST
     }
