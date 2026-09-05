@@ -254,7 +254,7 @@ object SlangLl2PrettyPrinter {
       case o: AST.Exp.Fun => st"\\(${(for (p <- o.params) yield st"${if (p.idOpt.nonEmpty) p.idOpt.get.value else "_"}${if (p.tipeOpt.nonEmpty) st": ${printType(p.tipeOpt.get)}" else st""}", ", ")}) ${printAssignExp(o.exp)}"
       case o: AST.Exp.Binary => printBinary(o)
       case o: AST.Exp.Eta => st"${printExp(o.ref.asExp)} _"
-      case o: AST.Exp.ForYield => st"yield ${(for (g <- o.enumGens) yield printEnumGen(g), ", ")} => ${printExp(o.exp)}"
+      case o: AST.Exp.ForYield => st"(yield ${(for (g <- o.enumGens) yield printEnumGen(g), ", ")} => ${printExp(o.exp)})"
       case o: AST.Exp.Ident => st"${o.id.value}"
       case o: AST.Exp.If => st"? ${printExp(o.cond)}: ${printExp(o.thenExp)} else ${printExp(o.elseExp)}"
       case o: AST.Exp.Input => st"In(${printExp(o.exp)})"
@@ -432,7 +432,7 @@ object SlangLl2PrettyPrinter {
       case _: AST.Pattern.SeqWildcard => st"*"
       case o: AST.Pattern.Structure =>
         val id: ST = o.idOpt match {
-          case Some(idAt) => st"$idAt@"
+          case Some(idAt) => st"${idAt.value}@"
           case _ => st""
         }
         val name: ST = o.nameOpt match {
@@ -549,8 +549,12 @@ object SlangLl2PrettyPrinter {
         st"""type @enum ${o.id.value}: { ${(for (element <- o.elements) yield element.value, ", ")} }"""
       case o: AST.Stmt.Expr =>
         val expST = printExp(o.exp)
+        val isHalt: B = o.exp match {
+          case e: AST.Exp.Invoke => e.receiverOpt.isEmpty && e.ident.id.value == "halt"
+          case _ => F
+        }
         if (!isExp && shouldAddDo(o.exp)) st"do $expST"
-        else if (isExp) st"\\ $expST"
+        else if (isExp && !isHalt) st"\\ $expST"
         else expST
       case o: AST.Stmt.Fact =>
         val tparams: ST = printTypeParams(o.typeParams)
