@@ -2367,10 +2367,14 @@ object SlangLl2AstBuilder {
     return conversions.String.fromCis(r)
   }
 
+  def unescapeStringInterp(s: String): String = {
+    return unescapeString(ops.StringOps(s).replaceAllLiterally("$$", "$"))
+  }
+
   def parseMStr(text: String): String = {
     // MSTR grammar:  ( '#' MSTRF WSF? )* '#' MSTRF
-    //   MSTRF = MSTRI '\r'? '\n'
-    //   MSTRI = ( ~('\n' | '\r' | '$') | '$$' )*
+    //   MSTRF = MSTRLI '\r'? '\n'
+    //   MSTRLI = ~('\n' | '\r')*
     //   WSF   = (' ' | '\t')+
     //
     // The lexer captures the full token text including every '#' line prefix
@@ -2379,8 +2383,6 @@ object SlangLl2AstBuilder {
     //   - Skip leading whitespace at the start of each line.
     //   - Skip the '#' marker at each line start.
     //   - Normalize '\r\n' to '\n' and preserve '\n'.
-    //   - Unescape '$$' to a single '$' (the only escape permitted inside
-    //     MSTRI per the grammar).
     //   - Preserve any '#' that appears mid-content (only the line-start
     //     marker is stripped).
     val cis = conversions.String.toCis(text)
@@ -2403,10 +2405,6 @@ object SlangLl2AstBuilder {
         r = r :+ '\n'
         i = i + 1
         atLineStart = T
-      } else if (c == '$' && i + 1 < len && cis(i + 1) == '$') {
-        r = r :+ '$'
-        i = i + 2
-        atLineStart = F
       } else {
         r = r :+ c
         i = i + 1
@@ -2647,7 +2645,7 @@ object SlangLl2AstBuilder {
     val firstQuote = sops.indexOf('"')
     val prefix = sops.substring(0, firstQuote)
     reportPlainLiteralPrefix(prefix, leaf.posOpt, reporter)
-    val content = unescapeString(sops.substring(firstQuote + 1, text.size - 1))
+    val content = unescapeStringInterp(sops.substring(firstQuote + 1, text.size - 1))
     return AST.Exp.StringInterpolate(
       prefix = prefix,
       lits = ISZ(AST.Exp.LitString(content, attr(leaf))),
@@ -2669,7 +2667,7 @@ object SlangLl2AstBuilder {
     val firstQuote = sops.indexOf('"')
     val prefix = sops.substring(0, firstQuote)
     reportPlainLiteralPrefix(prefix, spb.posOpt, reporter)
-    val firstLit = unescapeString(sops.substring(firstQuote + 1, text.size - 1)) // before the $
+    val firstLit = unescapeStringInterp(sops.substring(firstQuote + 1, text.size - 1)) // before the $
 
     var lits = ISZ[AST.Exp.LitString](AST.Exp.LitString(firstLit, attr(spb)))
     var args = ISZ[AST.Exp]()
@@ -2701,7 +2699,7 @@ object SlangLl2AstBuilder {
             val spmText = spm.text
             val spmSops = ops.StringOps(spmText)
             // SPM: '$' SPI* '$'
-            val litContent = unescapeString(spmSops.substring(1, spmText.size - 1))
+            val litContent = unescapeStringInterp(spmSops.substring(1, spmText.size - 1))
             rLits = rLits :+ AST.Exp.LitString(litContent, attr(spm))
             return collectSinterp(sinterp, rLits, rArgs, reporter)
           case _ =>
@@ -2712,7 +2710,7 @@ object SlangLl2AstBuilder {
             val speText = spe.text
             val speSops = ops.StringOps(speText)
             // SPE: '$' SPI* '"'
-            val litContent = unescapeString(speSops.substring(1, speText.size - 1))
+            val litContent = unescapeStringInterp(speSops.substring(1, speText.size - 1))
             rLits = rLits :+ AST.Exp.LitString(litContent, attr(spe))
           case _ =>
         }
@@ -2795,10 +2793,11 @@ object SlangLl2AstBuilder {
   // margin handled by ST.render); plain `s#` strings get the margin
   // stripped so the resulting String is human-readable.
   def normalizeMstr(prefix: String, s: String): String = {
+    val unescaped = ops.StringOps(s).replaceAllLiterally("$$", "$")
     if (prefix == "s") {
-      return stripHashMargin(s)
+      return stripHashMargin(unescaped)
     }
-    return normalizeHashToBar(s)
+    return normalizeHashToBar(unescaped)
   }
 
   def parseMSTRP(leaf: ParseTree.Leaf): AST.Exp.StringInterpolate = {

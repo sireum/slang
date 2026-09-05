@@ -30,6 +30,52 @@ import org.sireum.test._
 
 class SlangLl2AstBuilderTest extends SireumRcSpec {
 
+  registerTest("LL(2) string segments follow their dollar grammar") {
+    val unicodeDollar = "\\" + "u0024"
+    val source = String(
+      "val x: Z = 1\n" +
+        "val plain = #a$$b\n" +
+        "val single = st\"a$$b\"\n" +
+        "val singleUnicode = st\"" + unicodeDollar + unicodeDollar + "\"\n" +
+        "val singleInterp = st\"a$$b$x$c$$d$x$e$$f\"\n" +
+        "val multi = st#a$$b\n" +
+        "val multiEscape = st#a\\nb\n" +
+        "val multiInterp = st#a$$b${x}$c$$d${x}$e$$f\n")
+    val reporter = message.Reporter.create
+    val tree = SlangLl2Parser.parse(None(), source, reporter).get
+    val program = lang.ast.SlangLl2AstBuilder.build(None(), tree, reporter).get
+    assert(!reporter.hasError)
+
+    def exp(id: String): lang.ast.Exp = {
+      for (stmt <- program.body.stmts) {
+        stmt match {
+          case v: lang.ast.Stmt.Var if v.id.value == id =>
+            return v.initOpt.get.asInstanceOf[lang.ast.Stmt.Expr].exp
+          case _ =>
+        }
+      }
+      throw new AssertionError(s"missing LL(2) variable: $id")
+    }
+
+    assert(exp(String("plain")).asInstanceOf[lang.ast.Exp.LitString].value == String("a$$b\n"))
+    val single = exp(String("single")).asInstanceOf[lang.ast.Exp.StringInterpolate]
+    assert(single.lits.map((l: lang.ast.Exp.LitString) => l.value) == ISZ(String("a$b")))
+    val singleUnicode = exp(String("singleUnicode")).asInstanceOf[lang.ast.Exp.StringInterpolate]
+    assert(singleUnicode.lits.map((l: lang.ast.Exp.LitString) => l.value) == ISZ(String("$$")))
+    val singleInterp = exp(String("singleInterp")).asInstanceOf[lang.ast.Exp.StringInterpolate]
+    assert(singleInterp.lits.map((l: lang.ast.Exp.LitString) => l.value) ==
+      ISZ(String("a$b"), String("c$d"), String("e$f")))
+    assert(singleInterp.args.size == 2)
+    val multi = exp(String("multi")).asInstanceOf[lang.ast.Exp.StringInterpolate]
+    assert(multi.lits.map((l: lang.ast.Exp.LitString) => l.value) == ISZ(String("a$b\n")))
+    val multiEscape = exp(String("multiEscape")).asInstanceOf[lang.ast.Exp.StringInterpolate]
+    assert(multiEscape.lits.map((l: lang.ast.Exp.LitString) => l.value) == ISZ(String("a\\nb\n")))
+    val multiInterp = exp(String("multiInterp")).asInstanceOf[lang.ast.Exp.StringInterpolate]
+    assert(multiInterp.lits.map((l: lang.ast.Exp.LitString) => l.value) ==
+      ISZ(String("a$b"), String("c$d"), String("e$f\n")))
+    assert(multiInterp.args.size == 2)
+  }
+
   def shouldIgnore(name: Predef.String, isSimplified: Boolean): Boolean = false
 
   def textResources: scala.collection.SortedMap[scala.Vector[Predef.String], Predef.String] = {
