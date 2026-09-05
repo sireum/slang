@@ -588,8 +588,13 @@ object IRTranslator {
 
   @pure def simplifyAssignPattern(stmt: AST.IR.Stmt.AssignPattern): AST.IR.Stmt.Block = {
     val pos = stmt.pos
-    val (_, lMap) = translatePattern(stmt.rhs, stmt.pattern, HashSMap.empty)
-    var assignStmts = ISZ[AST.IR.Stmt]()
+    val initId = assignExpId("$pattern.", None(), pos)
+    val initType = stmt.rhs.tipe
+    val init = AST.IR.Exp.LocalVarRef(T, stmt.context, initId, initType, pos)
+    var assignStmts = ISZ[AST.IR.Stmt](
+      AST.IR.Stmt.Decl(F, T, F, stmt.context, ISZ(AST.IR.Stmt.Decl.Local(initId, initType)), pos),
+      AST.IR.Stmt.Assign.Local(stmt.context, initId, initType, stmt.rhs, pos))
+    val (_, lMap) = translatePattern(init, stmt.pattern, HashSMap.empty)
     for (e <- lMap.entries) {
       assignStmts = assignStmts :+ AST.IR.Stmt.Assign.Local(stmt.context, e._1._2, e._2.tipe, e._2, e._2.pos)
     }
@@ -1249,8 +1254,15 @@ object IRTranslator {
         val oldStmts = stmts
         stmts = ISZ()
         val init = assignRhs(stmt.pattern.typedOpt.get, stmt.init)
+        val initId = assignExpId("$pattern.", None(), pos)
+        val initType = init.tipe
+        stmts = stmts :+ AST.IR.Stmt.Decl(F, T, F, methodContext,
+          ISZ(AST.IR.Stmt.Decl.Local(initId, initType)), pos)
+        stmts = stmts :+ AST.IR.Stmt.Assign.Local(methodContext, initId, initType,
+          init, pos)
+        val patternInit = AST.IR.Exp.LocalVarRef(T, methodContext, initId, initType, pos)
         stmts = stmts :+ patternDecl(methodContext, stmt.pattern)
-        val (_, lMap) = translatePattern(init, stmt.pattern, HashSMap.empty)
+        val (_, lMap) = translatePattern(patternInit, stmt.pattern, HashSMap.empty)
         for (e <- lMap.entries) {
           stmts = stmts :+ AST.IR.Stmt.Assign.Local(methodContext, e._1._2, e._2.tipe, e._2, e._2.pos)
         }
