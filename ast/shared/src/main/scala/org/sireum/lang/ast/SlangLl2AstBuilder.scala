@@ -3156,7 +3156,7 @@ object SlangLl2AstBuilder {
         c match {
           case c: ParseTree.Node =>
             c.ruleName.native match {
-              case "varPattern" =>
+              case "varPattern" if findLeafByRule(c, "VAR").get.text == "var" =>
                 reporter.error(c.posOpt, "SlangLl2AstBuilder",
                   "'var' declarations are not allowed in @strictpure/@abs methods or strict pure blocks")
               case "whileStmt" =>
