@@ -57,30 +57,17 @@ object SlangLl2ParseTreeUtil {
 
     @strictpure override def shouldParenthesizeOperands(t: ParseTree): B = F
 
-    @strictpure override def precedence(t: ParseTree): Option[Z] = t match {
-      case t: ParseTree.Leaf =>
-        if (t.text == "->" || t.text == "-->" || t.text == "__>:" || t.text == "___>:") {
-          Some(1)
-        } else {
-          ops.StringOps(t.text).first match {
-            case '|' => Some(2)
-            case '^' => Some(3)
-            case '&' => Some(4)
-            case '=' => Some(5)
-            case '!' => Some(5)
-            case '<' => Some(6)
-            case '>' => Some(6)
-            case ':' => Some(7)
-            case '+' => Some(8)
-            case '-' => Some(8)
-            case '*' => Some(9)
-            case '/' => Some(9)
-            case '%' => Some(9)
-            case _ => Some(lowestPrecedence)
+    @pure override def precedence(t: ParseTree): Option[Z] = {
+      t match {
+        case t: ParseTree.Leaf =>
+          if (t.text == "->" || t.text == "-->" || t.text == "__>:" || t.text == "___>:") {
+            return Some(1)
           }
-        }
-      case t: ParseTree.Node if isBinary(t) => precedence(t.children.atS32(s32"1"))
-      case _ => None()
+          val level = Exp.BinaryOp.precendenceLevel(t.text)
+          return Some(if (level == 10) lowestPrecedence else 11 - level)
+        case t: ParseTree.Node if isBinary(t) => return precedence(t.children.atS32(s32"1"))
+        case _ => return None()
+      }
     }
 
     @strictpure override def posOpt(t: ParseTree): Option[Position] = t.posOpt

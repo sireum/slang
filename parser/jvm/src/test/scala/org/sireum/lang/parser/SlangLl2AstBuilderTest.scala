@@ -143,6 +143,24 @@ class SlangLl2AstBuilderTest extends SireumRcSpec {
     assert(result.right.isInstanceOf[lang.ast.Exp.ForYield])
   }
 
+  registerTest("LL(2) migration preserves symbolic operator precedence") {
+    val program = migrate("""// #Sireum
+      |import org.sireum._
+      |def insert(m: HashSMap[String, Z]): HashSMap[String, Z] = { return m + ("x" ~> 1) }
+      |def equivalent(a: Z, b: Z, c: Z): B = { return (a ≡ b) & (b ≢ c) }
+      |""".stripMargin)
+    val methods = program.body.stmts.elements.collect { case m: lang.ast.Stmt.Method => m }
+    val insert = methods(0).bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Return].expOpt.get
+      .asInstanceOf[lang.ast.Exp.Binary]
+    assert(insert.op == String("+"))
+    assert(insert.right.asInstanceOf[lang.ast.Exp.Binary].op == String("~>"))
+    val equivalent = methods(1).bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Return].expOpt.get
+      .asInstanceOf[lang.ast.Exp.Binary]
+    assert(equivalent.op == String("&"))
+    assert(equivalent.left.asInstanceOf[lang.ast.Exp.Binary].op == String("≡"))
+    assert(equivalent.right.asInstanceOf[lang.ast.Exp.Binary].op == String("≢"))
+  }
+
   registerTest("LL(2) migration preserves pattern aliases") {
     val program = migrate("""// #Sireum
       |import org.sireum._

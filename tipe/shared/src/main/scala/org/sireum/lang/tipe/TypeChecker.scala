@@ -4727,7 +4727,7 @@ import TypeChecker._
 
     var r = stmt
     val resOpt: Option[AST.ResolvedInfo] = scope.resolveName(typeHierarchy.nameMap, ISZ(key)) match {
-      case Some(info: Info.Var) => info.resOpt
+      case Some(info: Info.Var) if info.name == name => info.resOpt
       case Some(_: Info.LocalVar) =>
         err()
         return (None(), r)

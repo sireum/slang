@@ -1685,7 +1685,7 @@ object Exp {
     val MapsTo: String = "~>"
     val Arrow: String = "=>:"
 
-    def precendenceLevel(op: String): Z = {
+    @pure def precendenceLevel(op: String): Z = {
       val c = conversions.String.toCis(op)(0)
       c match {
         case '*' => return 2
