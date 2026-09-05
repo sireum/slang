@@ -129,6 +129,56 @@ class SlangLl2AstBuilderTest extends SireumRcSpec {
     }
   }
 
+  registerTest("LL(2) migration preserves comprehension operands") {
+    val program = migrate("""// #Sireum
+      |import org.sireum._
+      |def append(xs: ISZ[Z], ys: ISZ[Z]): ISZ[Z] = {
+      |  return (for (x <- xs) yield x + 1) ++ (for (y <- ys) yield y - 1)
+      |}
+      |""".stripMargin)
+    val method = program.body.stmts.elements.collect { case m: lang.ast.Stmt.Method => m }.head
+    val result = method.bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Return].expOpt.get
+      .asInstanceOf[lang.ast.Exp.Binary]
+    assert(result.left.isInstanceOf[lang.ast.Exp.ForYield])
+    assert(result.right.isInstanceOf[lang.ast.Exp.ForYield])
+  }
+
+  registerTest("LL(2) migration preserves pattern aliases") {
+    val program = migrate("""// #Sireum
+      |import org.sireum._
+      |def keep(value: Option[Z]): Option[Z] = {
+      |  value match { case r@Some(_) => return r; case _ => return None() }
+      |}
+      |""".stripMargin)
+    val method = program.body.stmts.elements.collect { case m: lang.ast.Stmt.Method => m }.head
+    val matched = method.bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Match]
+    val pattern = matched.cases(0).pattern.asInstanceOf[lang.ast.Pattern.Structure]
+    assert(pattern.idOpt.get.value == String("r"))
+    assert(pattern.nameOpt.get.ids.map(_.value) == ISZ(String("Some")))
+    assert(pattern.patterns(0).isInstanceOf[lang.ast.Pattern.Wildcard])
+  }
+
+  registerTest("LL(2) migration preserves halting value branches") {
+    val program = migrate("""// #Sireum
+      |import org.sireum._
+      |@strictpure def choose(x: Z): Z = x match { case 0 => 1; case _ => halt("invalid") }
+      |def local(x: Z): Z = {
+      |  val result: Z = x match { case 0 => 1; case _ => halt("invalid") }
+      |  return result
+      |}
+      |""".stripMargin)
+    val methods = program.body.stmts.elements.collect { case m: lang.ast.Stmt.Method => m }
+    assert(methods.size == 2)
+    for (method <- methods) {
+      val matched = method.bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Var].initOpt.get
+        .asInstanceOf[lang.ast.Stmt.Match]
+      val halted = matched.cases(1).body.stmts(0).asInstanceOf[lang.ast.Stmt.Expr].exp
+        .asInstanceOf[lang.ast.Exp.Invoke]
+      assert(halted.ident.id.value == String("halt") && halted.receiverOpt.isEmpty)
+      assert(halted.args(0).asInstanceOf[lang.ast.Exp.LitString].value == String("invalid"))
+    }
+  }
+
   registerTest("LL(2) string segments follow their dollar grammar") {
     val unicodeDollar = "\\" + "u0024"
     val source = String(
