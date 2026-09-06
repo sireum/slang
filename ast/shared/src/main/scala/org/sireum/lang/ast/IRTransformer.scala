@@ -1077,12 +1077,12 @@ object IRTransformer {
     val s2: MS[Z, T] = s.toMS
     var changed: B = F
     var ctxi = ctx
-    for (i <- s2.indices) {
-      val e: T = s(i)
+    for (i <- 0 until s.size) {
+      val e: T = s.atZ(i)
       val r: TPostResult[Context, T] = f(ctxi, e)
       ctxi = r.ctx
       changed = changed || r.resultOpt.nonEmpty
-      s2(i) = r.resultOpt.getOrElse(e)
+      s2.updateZ(i, r.resultOpt.getOrElse(e))
     }
     if (changed) {
       return TPostResult(ctxi, Some(s2.toIS))

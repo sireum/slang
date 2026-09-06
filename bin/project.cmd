@@ -72,7 +72,7 @@ val tipeShared = moduleSharedPub(
   )
 )
 
-val frontendShared = moduleSharedPub(
+val frontendSharedBase = moduleSharedPub(
   id = s"$slang-$frontend",
   baseDir = homeDir / frontend,
   sharedDeps = ISZ(parserShared.id, tipeShared.id),
@@ -83,6 +83,10 @@ val frontendShared = moduleSharedPub(
     licenses = bsd2,
     devs = ISZ(robby)
   )
+)
+
+val frontendShared = frontendSharedBase(
+  resources = frontendSharedBase.resources :+ "../../../tools/shared/src/main/scala/org/sireum"
 )
 
 val (evalShared, evalJvm) = moduleSharedJvmPub(
