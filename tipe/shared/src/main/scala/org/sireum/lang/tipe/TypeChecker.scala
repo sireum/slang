@@ -2639,6 +2639,34 @@ import TypeChecker._
       return (Some(tpe), resOpt, newTypeArgs, ISZ())
     }
 
+    def checkInvokeArg(
+      pt: AST.Typed,
+      at: AST.Exp,
+      index: Z,
+      rep: Reporter,
+      infer: B
+    ): (AST.Exp, Option[AST.Typed]) = {
+      val tc: TypeChecker = pt match {
+        case ft: AST.Typed.Fun if ft.isByName && ft.args.isEmpty =>
+          val suffix: String = at.posOpt match {
+            case Some(pos) => s"${pos.beginLine}.${pos.beginColumn}.$index"
+            case _ => s"$index"
+          }
+          this(context = context :+ s"$$byname.$suffix")
+        case _ => this
+      }
+      val expected: Option[AST.Typed] = if (infer) {
+        None()
+      } else {
+        val expectedType: AST.Typed = pt match {
+          case ft: AST.Typed.Fun if ft.isByName && ft.args.isEmpty => ft.ret
+          case _ => pt
+        }
+        Some(expectedType)
+      }
+      return tc.checkExp(expected, scope, at, rep)
+    }
+
     def checkInvokeGenH(
       m: AST.Typed.Method,
       expId: AST.Id,
@@ -2667,7 +2695,7 @@ import TypeChecker._
               case (AST.Typed.stepId, lit: AST.Exp.LitString) =>
                 args = args :+ AST.ProofAst.StepId.Str(F, lit.value, lit.attr)
               case _ =>
-                val (newArg, _) = checkExp(Some(pt), scope, at, rep)
+                val newArg = checkInvokeArg(pt, at, i, rep, F)._1
                 args = args :+ newArg
             }
             i = i + 1
@@ -2684,7 +2712,7 @@ import TypeChecker._
               case (AST.Typed.stepId, lit: AST.Exp.LitString) =>
                 args = args + m.paramNames(i) ~> AST.ProofAst.StepId.Str(F, lit.value, lit.attr)
               case _ =>
-                val (newArg, _) = checkExp(Some(pt), scope, at, rep)
+                val newArg = checkInvokeArg(pt, at, i, rep, F)._1
                 args = args + m.paramNames(i) ~> newArg
             }
             i = i + 1
@@ -2725,7 +2753,7 @@ import TypeChecker._
           var i = 0
           while (i < expArgs.size) {
             val e = expArgs(i)
-            val (newArg, argTypeOpt) = checkExp(None(), scope, e, repArgs)
+            val (newArg, argTypeOpt) = checkInvokeArg(m.tpe.args(i), e, i, repArgs, T)
             newArgs.append(newArg)
             argTypeOpt match {
               case Some(argType) => argTypes.append(argType)
@@ -3105,8 +3133,7 @@ import TypeChecker._
             var i = 0
             var newArgs = ISZ[AST.Exp]()
             while (i < size) {
-              val (newArg, _) =
-                checkExp(Some(t.args(i)), scope, invokeExp.args(i), reporter)
+              val newArg = checkInvokeArg(t.args(i), invokeExp.args(i), i, reporter, F)._1
               newArgs = newArgs :+ newArg
               i = i + 1
             }
