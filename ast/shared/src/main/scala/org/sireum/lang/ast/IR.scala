@@ -520,6 +520,23 @@ object IR {
       }
     }
 
+    @datatype class Switch(val exp: Exp, val cases: ISZ[Switch.Case], val pos: Position) extends Stmt {
+      @strictpure def prettyRawST(p: Printer): ST =
+        st"${exp.prettyST(p)} switch { ${(for (c <- cases) yield c.prettyST(p), " ")} }"
+    }
+
+    object Switch {
+      @datatype class Case(val valueOpt: Option[Exp], val body: Block) {
+        @strictpure def prettyST(p: Printer): ST = {
+          val valueST: ST = valueOpt match {
+            case Some(value) => value.prettyST(p)
+            case _ => st"_"
+          }
+          st"case $valueST => ${body.prettyST(p)}"
+        }
+      }
+    }
+
     @datatype class While(val cond: ExpBlock, val block: Block, val pos: Position) extends Stmt {
       @strictpure def prettyRawST(p: Printer): ST = st"while (${cond.prettyST(p)}) ${block.prettyST(p)}"
     }
