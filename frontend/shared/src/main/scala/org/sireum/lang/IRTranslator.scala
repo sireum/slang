@@ -33,6 +33,57 @@ import org.sireum.lang.{ast => AST}
 import org.sireum.U32._
 
 object IRTranslator {
+  @enum object PatternOwnerKind {
+    "Adt"
+    "Other"
+    "SubZ"
+  }
+
+  @datatype class PatternField(val id: String, val tipe: AST.Typed)
+
+  @datatype class PatternOwner(val kind: PatternOwnerKind.Type,
+                               val typeParamIds: ISZ[String],
+                               val visibleParams: ISZ[PatternField])
+
+  @datatype class PatternDeclFacts(val owners: HashSMap[ISZ[String], PatternOwner])
+
+  @pure def visiblePatternFields(info: TypeInfo.Adt): ISZ[PatternField] = {
+    val fields = Buffer.create[PatternField]()
+    for (param <- info.ast.params if !param.isHidden) {
+      val fieldType: AST.Typed = info.vars.get(param.id.value) match {
+        case Some(field) => field.typedOpt match {
+          case Some(tipe) => tipe
+          case _ => halt("Pattern declaration facts require a resolved ADT field")
+        }
+        case _ => halt("Pattern declaration facts require ADT field metadata")
+      }
+      fields.append(PatternField(param.id.value, fieldType))
+    }
+    return fields.toIS
+  }
+
+  @pure def freezePatternDeclFacts(th: TypeHierarchy): PatternDeclFacts = {
+    val entries = Buffer.create[(ISZ[String], PatternOwner)]()
+    for (entry <- th.typeMap.entries) {
+      entry._2 match {
+        case info: TypeInfo.Adt =>
+          if (!info.typeChecked) {
+            halt("Pattern declaration facts require a checked ADT owner")
+          }
+          val typeParamIds: ISZ[String] = for (typeParam <- info.ast.typeParams) yield typeParam.id.value
+          entries.append((entry._1, PatternOwner(PatternOwnerKind.Adt, typeParamIds, visiblePatternFields(info))))
+        case _: TypeInfo.Sig =>
+          entries.append((entry._1, PatternOwner(PatternOwnerKind.Other, ISZ[String](), ISZ[PatternField]())))
+        case _: TypeInfo.Enum =>
+          entries.append((entry._1, PatternOwner(PatternOwnerKind.Other, ISZ[String](), ISZ[PatternField]())))
+        case _: TypeInfo.SubZ =>
+          entries.append((entry._1, PatternOwner(PatternOwnerKind.SubZ, ISZ[String](), ISZ[PatternField]())))
+        case _ =>
+      }
+    }
+    return PatternDeclFacts(HashSMap.empty[ISZ[String], PatternOwner] ++ entries.toIS)
+  }
+
   @msig trait Fresh {
     def setLabel(n: Z): Unit
     def setTemp(n: Z): Unit
@@ -615,6 +666,11 @@ object IRTranslator {
   }
 
   @pure def simplifyAssignPattern(stmt: AST.IR.Stmt.AssignPattern): AST.IR.Stmt.Block = {
+    return simplifyAssignPatternH(stmt, None())
+  }
+
+  @pure def simplifyAssignPatternH(stmt: AST.IR.Stmt.AssignPattern,
+                                   patternFactsOpt: Option[IRTranslator.PatternDeclFacts]): AST.IR.Stmt.Block = {
     val pos = stmt.pos
     val initId = assignExpId("$pattern.", None(), pos)
     val initType = stmt.rhs.tipe
@@ -622,7 +678,7 @@ object IRTranslator {
     var assignStmts = ISZ[AST.IR.Stmt](
       AST.IR.Stmt.Decl(F, T, F, stmt.context, ISZ(AST.IR.Stmt.Decl.Local(initId, initType)), pos),
       AST.IR.Stmt.Assign.Local(stmt.context, initId, initType, stmt.rhs, pos))
-    val (_, lMap) = translatePattern(init, stmt.pattern, HashSMap.empty)
+    val (_, lMap) = translatePatternH(init, stmt.pattern, HashSMap.empty, patternFactsOpt)
     for (e <- lMap.entries) {
       assignStmts = assignStmts :+ AST.IR.Stmt.Assign.Local(stmt.context, e._1._2, e._2.tipe, e._2, e._2.pos)
     }
@@ -630,6 +686,11 @@ object IRTranslator {
   }
 
   @pure def simplifyMatch(stmt: AST.IR.Stmt.Match): AST.IR.Stmt.Block = {
+    return simplifyMatchH(stmt, None())
+  }
+
+  @pure def simplifyMatchH(stmt: AST.IR.Stmt.Match,
+                            patternFactsOpt: Option[IRTranslator.PatternDeclFacts]): AST.IR.Stmt.Block = {
     val matchCondId = matchExpId(stmt.exp.pos)
     val pos = stmt.pos
     var stmts = ISZ[AST.IR.Stmt](
@@ -638,7 +699,7 @@ object IRTranslator {
     )
     var first = T
     for (cas <- stmt.cases) {
-      val (cs, lMap) = translatePattern(stmt.exp, cas.pattern, HashSMap.empty)
+      val (cs, lMap) = translatePatternH(stmt.exp, cas.pattern, HashSMap.empty, patternFactsOpt)
       val casPos = cas.pattern.posOpt.get
       var bindingStmts = ISZ[AST.IR.Stmt]()
       if (lMap.nonEmpty) {
@@ -683,6 +744,11 @@ object IRTranslator {
   }
 
   def scalarSwitchCaseValue(pattern: AST.Pattern): Option[AST.IR.Exp] = {
+    return scalarSwitchCaseValueH(pattern, None())
+  }
+
+  def scalarSwitchCaseValueH(pattern: AST.Pattern,
+                             patternFactsOpt: Option[IRTranslator.PatternDeclFacts]): Option[AST.IR.Exp] = {
     def directLit(lit: AST.Lit): AST.IR.Exp = {
       lit match {
         case lit: AST.Exp.LitB => return AST.IR.Exp.Bool(lit.value, lit.posOpt.get)
@@ -707,7 +773,7 @@ object IRTranslator {
           case AST.Typed.f32 => return Some(AST.IR.Exp.F32(F32(pattern.value).get, ppos))
           case AST.Typed.f64 => return Some(AST.IR.Exp.F64(F64(pattern.value).get, ppos))
           case AST.Typed.r => return Some(AST.IR.Exp.R(R(pattern.value).get, ppos))
-          case _ if isSubZ(t) => return Some(AST.IR.Exp.Int(t, Z(pattern.value).get, ppos))
+          case _ if isSubZWithPatternFacts(t, patternFactsOpt) => return Some(AST.IR.Exp.Int(t, Z(pattern.value).get, ppos))
           case _ => halt(s"Infeasible: $pattern")
         }
       case _ => halt(s"Infeasible: $pattern")
@@ -715,6 +781,16 @@ object IRTranslator {
   }
 
   def preparePatternBody(body: AST.IR.Body.Block): AST.IR.Body.Block = {
+    return preparePatternBodyH(body, None())
+  }
+
+  def preparePatternBodyWithPatternFacts(body: AST.IR.Body.Block,
+                                         patternFacts: IRTranslator.PatternDeclFacts): AST.IR.Body.Block = {
+    return preparePatternBodyH(body, Some(patternFacts))
+  }
+
+  def preparePatternBodyH(body: AST.IR.Body.Block,
+                          patternFactsOpt: Option[IRTranslator.PatternDeclFacts]): AST.IR.Body.Block = {
     def prepareExpBlock(expBlock: AST.IR.ExpBlock): AST.IR.ExpBlock = {
       val prepared = prepareBlock(AST.IR.Stmt.Block(expBlock.stmts, expBlock.exp.pos))
       return AST.IR.ExpBlock(prepared._1.stmts, expBlock.exp)
@@ -726,19 +802,19 @@ object IRTranslator {
           val prepared = prepareBlock(s)
           return (prepared._1, prepared._2)
         case s: AST.IR.Stmt.Match =>
-          if (isScalar(s.exp.tipe) && ops.ISZOps(s.cases).forall((c : AST.IR.Stmt.Match.Case) =>
+          if (isScalarWithPatternFacts(s.exp.tipe, patternFactsOpt) && ops.ISZOps(s.cases).forall((c : AST.IR.Stmt.Match.Case) =>
             c.condOpt.isEmpty && c.decl.locals.isEmpty && (c.pattern.isInstanceOf[AST.Pattern.LitInterpolate] ||
               c.pattern.isInstanceOf[AST.Pattern.Literal] || c.pattern.isInstanceOf[AST.Pattern.Wildcard]))) {
             val cases = Buffer.create[AST.IR.Stmt.Switch.Case]()
             for (c <- s.cases) {
               val preparedBody = prepareBlock(c.body)
-              cases.append(AST.IR.Stmt.Switch.Case(scalarSwitchCaseValue(c.pattern), preparedBody._1))
+              cases.append(AST.IR.Stmt.Switch.Case(scalarSwitchCaseValueH(c.pattern, patternFactsOpt), preparedBody._1))
             }
             return (AST.IR.Stmt.Switch(s.exp, cases.toIS, s.pos), T)
           }
-          return prepareStmt(simplifyMatch(s))
+          return prepareStmt(simplifyMatchH(s, patternFactsOpt))
         case s: AST.IR.Stmt.AssignPattern =>
-          return prepareStmt(simplifyAssignPattern(s))
+          return prepareStmt(simplifyAssignPatternH(s, patternFactsOpt))
         case s: AST.IR.Stmt.If =>
           val thenPrepared = prepareBlock(s.thenBlock)
           val elsePrepared = prepareBlock(s.elseBlock)
@@ -1637,7 +1713,29 @@ object IRTranslator {
     return F
   }
 
+  @pure def isSubZWithPatternFacts(t: AST.Typed,
+                                   patternFactsOpt: Option[IRTranslator.PatternDeclFacts]): B = {
+    patternFactsOpt match {
+      case Some(patternFacts) =>
+        t match {
+          case tn: AST.Typed.Name if tn.args.isEmpty =>
+            patternFacts.owners.get(tn.ids) match {
+              case Some(owner) => return owner.kind == IRTranslator.PatternOwnerKind.SubZ
+              case _ =>
+            }
+          case _ =>
+        }
+        return F
+      case _ => return isSubZ(t)
+    }
+  }
+
   @memoize def isScalar(t: AST.Typed): B = {
+    return isScalarWithPatternFacts(t, None())
+  }
+
+  @pure def isScalarWithPatternFacts(t: AST.Typed,
+                                     patternFactsOpt: Option[IRTranslator.PatternDeclFacts]): B = {
     t match {
       case AST.Typed.b =>
       case AST.Typed.c =>
@@ -1645,7 +1743,7 @@ object IRTranslator {
       case AST.Typed.f32 =>
       case AST.Typed.f64 =>
       case AST.Typed.r =>
-      case _ => return isSubZ(t)
+      case _ => return isSubZWithPatternFacts(t, patternFactsOpt)
     }
     return T
   }
@@ -2625,6 +2723,20 @@ object IRTranslator {
   @pure def translatePattern(exp: AST.IR.Exp,
                              pattern: AST.Pattern,
                              localMap: HashSMap[(ISZ[String], String), AST.IR.Exp]): (ISZ[AST.IR.Exp], HashSMap[(ISZ[String], String), AST.IR.Exp]) = {
+    return translatePatternH(exp, pattern, localMap, None())
+  }
+
+  @pure def translatePatternWithPatternFacts(exp: AST.IR.Exp,
+                                             pattern: AST.Pattern,
+                                             localMap: HashSMap[(ISZ[String], String), AST.IR.Exp],
+                                             patternFacts: IRTranslator.PatternDeclFacts): (ISZ[AST.IR.Exp], HashSMap[(ISZ[String], String), AST.IR.Exp]) = {
+    return translatePatternH(exp, pattern, localMap, Some(patternFacts))
+  }
+
+  @pure def translatePatternH(exp: AST.IR.Exp,
+                              pattern: AST.Pattern,
+                              localMap: HashSMap[(ISZ[String], String), AST.IR.Exp],
+                              patternFactsOpt: Option[IRTranslator.PatternDeclFacts]): (ISZ[AST.IR.Exp], HashSMap[(ISZ[String], String), AST.IR.Exp]) = {
     var r = ISZ[AST.IR.Exp]()
     var lMap = localMap
     val pos = pattern.posOpt.get
@@ -2681,7 +2793,7 @@ object IRTranslator {
             for (j <- 0 until t.args.size) {
               val pat = pattern.patterns(i)
               val f = AST.IR.Exp.FieldVarRef(baseExp, s"_${j + 1}", t.args(j), pat.posOpt.get)
-              val (pconds, lMap2) = translatePattern(f, pat, lMap)
+              val (pconds, lMap2) = translatePatternH(f, pat, lMap, patternFactsOpt)
               conds = conds ++ pconds
               lMap = lMap2
               i = i + 1
@@ -2697,29 +2809,37 @@ object IRTranslator {
               conds = conds :+ AST.IR.Exp.Binary(AST.Typed.b, AST.IR.Exp.FieldVarRef(baseExp, "size", AST.Typed.z, pos), op,
                 AST.IR.Exp.Int(AST.Typed.z, size, pos), pos)
               val indexType = t.args(0)
-              var n: Z = th.typeMap.get(t.args(0).asInstanceOf[AST.Typed.Name].ids).get match {
-                case ti: TypeInfo.SubZ =>
-                  if (ti.ast.isZeroIndex) 0 else ti.ast.index
-                case _ => 0
-              }
               for (i <- 0 until pattern.patterns.size - (if (hasWildcard) 1 else 0)) {
                 val pat = pattern.patterns(i)
                 val f = AST.IR.Exp.Indexing(baseExp, AST.IR.Exp.Int(indexType, i, pos), pat.posOpt.get)
-                val (pconds, lMap2) = translatePattern(f, pat, lMap)
+                val (pconds, lMap2) = translatePatternH(f, pat, lMap, patternFactsOpt)
                 conds = conds ++ pconds
                 lMap = lMap2
-                n = n + 1
               }
             } else {
-              val adt = th.typeMap.get(t.ids).get.asInstanceOf[TypeInfo.Adt]
-              val subst = tipe.TypeChecker.buildTypeSubstMap(t.ids, pattern.posOpt,
-                adt.ast.typeParams, t.args, message.Reporter.create).get
+              var typeParamIds = ISZ[String]()
+              var visibleParams = ISZ[IRTranslator.PatternField]()
+              patternFactsOpt match {
+                case Some(patternFacts) =>
+                  patternFacts.owners.get(t.ids) match {
+                    case Some(owner) if owner.kind == IRTranslator.PatternOwnerKind.Adt =>
+                      typeParamIds = owner.typeParamIds
+                      visibleParams = owner.visibleParams
+                    case _ => halt(s"Infeasible pattern owner: ${(t.ids, ".")}")
+                  }
+                case _ =>
+                  val adt = th.typeMap.get(t.ids).get.asInstanceOf[TypeInfo.Adt]
+                  typeParamIds = for (typeParam <- adt.ast.typeParams) yield typeParam.id.value
+                  visibleParams = IRTranslator.visiblePatternFields(adt)
+              }
+              val subst = tipe.TypeChecker.buildTypeSubstMapFromIds(t.ids, pattern.posOpt,
+                typeParamIds, t.args, message.Reporter.create).get
               var i = 0
-              for (p <- adt.ast.params if !p.isHidden) {
+              for (p <- visibleParams) {
                 val pat = pattern.patterns(i)
-                val fieldType = p.tipe.typedOpt.get.subst(subst)
-                val f = AST.IR.Exp.FieldVarRef(baseExp, p.id.value, fieldType, pat.posOpt.get)
-                val (pconds, lMap2) = translatePattern(f, pat, lMap)
+                val fieldType = p.tipe.subst(subst)
+                val f = AST.IR.Exp.FieldVarRef(baseExp, p.id, fieldType, pat.posOpt.get)
+                val (pconds, lMap2) = translatePatternH(f, pat, lMap, patternFactsOpt)
                 conds = conds ++ pconds
                 lMap = lMap2
                 i = i + 1
