@@ -1216,11 +1216,11 @@ object IRTranslator {
           }
         }
         val matchStmt = AST.IR.Stmt.Match(exp, cases, pos)
-        var hasPackageVarRef = F
-        for (c <- cases if !hasPackageVarRef) {
-          hasPackageVarRef = hasPackageVarPattern(c.pattern)
+        var hasValueRef = F
+        for (c <- cases if !hasValueRef) {
+          hasValueRef = hasValueRefPattern(c.pattern)
         }
-        if (hasPackageVarRef) {
+        if (hasValueRef) {
           val id = assignExpId("$pattern.", None(), pos)
           val value = AST.IR.Exp.LocalVarRef(T, methodContext, id, exp.tipe, pos)
           val body = simplifyMatch(matchStmt(exp = value))
@@ -1441,16 +1441,17 @@ object IRTranslator {
     }
   }
 
-  @pure def hasPackageVarPattern(pattern: AST.Pattern): B = {
+  @pure def hasValueRefPattern(pattern: AST.Pattern): B = {
     pattern match {
       case p: AST.Pattern.Ref =>
         p.attr.resOpt match {
-          case Some(res: AST.ResolvedInfo.Var) if res.isInObject => return T
+          case Some(_: AST.ResolvedInfo.Var) => return T
+          case Some(_: AST.ResolvedInfo.LocalVar) => return T
           case _ =>
         }
       case p: AST.Pattern.Structure =>
         for (sub <- p.patterns) {
-          if (hasPackageVarPattern(sub)) {
+          if (hasValueRefPattern(sub)) {
             return T
           }
         }
