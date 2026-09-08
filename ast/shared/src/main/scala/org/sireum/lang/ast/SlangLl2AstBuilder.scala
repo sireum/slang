@@ -1750,8 +1750,16 @@ object SlangLl2AstBuilder {
     val litOpt = findChild(node, "lit")
     litOpt match {
       case Some(l) =>
-        val lit = buildLit(l, reporter)
-        return AST.Pattern.Literal(lit = lit)
+        val litExp = buildLitExp(l, reporter)
+        litExp match {
+          case lit: AST.Lit => return AST.Pattern.Literal(lit = lit)
+          case interp: AST.Exp.StringInterpolate =>
+            if (interp.args.isEmpty && interp.lits.size == 1) {
+              return AST.Pattern.LitInterpolate(prefix = interp.prefix, value = interp.lits(0).value, attr = interp.attr)
+            }
+            halt("Infeasible literal pattern interpolation")
+          case _ => halt("Infeasible literal pattern")
+        }
       case _ =>
     }
 

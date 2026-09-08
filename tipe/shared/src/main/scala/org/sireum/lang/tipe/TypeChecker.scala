@@ -512,18 +512,24 @@ object TypeChecker {
     args: ISZ[AST.Typed],
     reporter: Reporter
   ): Option[HashMap[String, AST.Typed]] = {
-    if (typeParams.size != args.size) {
+    val typeParamIds: ISZ[String] = for (typeParam <- typeParams) yield typeParam.id.value
+    return buildTypeSubstMapFromIds(name, posOpt, typeParamIds, args, reporter)
+  }
+
+  def buildTypeSubstMapFromIds(
+    name: QName,
+    posOpt: Option[Position],
+    typeParamIds: ISZ[String],
+    args: ISZ[AST.Typed],
+    reporter: Reporter
+  ): Option[HashMap[String, AST.Typed]] = {
+    if (typeParamIds.size != args.size) {
       reporter.error(posOpt, typeCheckerKind,
-        st"Type ${(name, ".")} requires ${typeParams.size} type arguments, but ${args.size} is supplied.".render)
+        st"Type ${(name, ".")} requires ${typeParamIds.size} type arguments, but ${args.size} is supplied.".render)
       return None()
     }
-    var substMap = HashMap.emptyInit[String, AST.Typed](args.size)
-    var i = 0
-    while (i < args.size) {
-      substMap = substMap + typeParams(i).id.value ~> args(i)
-      i = i + 1
-    }
-    return Some(substMap)
+    val entries: ISZ[(String, AST.Typed)] = for (i <- 0 until args.size) yield typeParamIds(i) ~> args(i)
+    return Some(HashMap ++ entries)
   }
 
   def buildMethodSubstMap(
