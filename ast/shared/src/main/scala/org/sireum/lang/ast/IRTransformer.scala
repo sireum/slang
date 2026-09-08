@@ -233,6 +233,7 @@ object IRTransformer {
         case o: IR.Stmt.Block => return preIRStmtBlock(ctx, o)
         case o: IR.Stmt.If => return preIRStmtIf(ctx, o)
         case o: IR.Stmt.Match => return preIRStmtMatch(ctx, o)
+        case o: IR.Stmt.Switch => return preIRStmtSwitch(ctx, o)
         case o: IR.Stmt.While => return preIRStmtWhile(ctx, o)
         case o: IR.Stmt.For => return preIRStmtFor(ctx, o)
         case o: IR.Stmt.Return => return preIRStmtReturn(ctx, o)
@@ -361,6 +362,14 @@ object IRTransformer {
     }
 
     @pure def preIRStmtMatchCase(ctx: Context, o: IR.Stmt.Match.Case): PreResult[Context, IR.Stmt.Match.Case] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRStmtSwitch(ctx: Context, o: IR.Stmt.Switch): PreResult[Context, IR.Stmt] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRStmtSwitchCase(ctx: Context, o: IR.Stmt.Switch.Case): PreResult[Context, IR.Stmt.Switch.Case] = {
       return PreResult(ctx, T, None())
     }
 
@@ -746,6 +755,7 @@ object IRTransformer {
         case o: IR.Stmt.Block => return postIRStmtBlock(ctx, o)
         case o: IR.Stmt.If => return postIRStmtIf(ctx, o)
         case o: IR.Stmt.Match => return postIRStmtMatch(ctx, o)
+        case o: IR.Stmt.Switch => return postIRStmtSwitch(ctx, o)
         case o: IR.Stmt.While => return postIRStmtWhile(ctx, o)
         case o: IR.Stmt.For => return postIRStmtFor(ctx, o)
         case o: IR.Stmt.Return => return postIRStmtReturn(ctx, o)
@@ -874,6 +884,14 @@ object IRTransformer {
     }
 
     @pure def postIRStmtMatchCase(ctx: Context, o: IR.Stmt.Match.Case): TPostResult[Context, IR.Stmt.Match.Case] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRStmtSwitch(ctx: Context, o: IR.Stmt.Switch): TPostResult[Context, IR.Stmt] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRStmtSwitchCase(ctx: Context, o: IR.Stmt.Switch.Case): TPostResult[Context, IR.Stmt.Switch.Case] = {
       return TPostResult(ctx, None())
     }
 
@@ -1436,6 +1454,13 @@ import IRTransformer._
             TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), cases = r1.resultOpt.getOrElse(o2.cases))))
           else
             TPostResult(r1.ctx, None())
+        case o2: IR.Stmt.Switch =>
+          val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.exp)
+          val r1: TPostResult[Context, IS[Z, IR.Stmt.Switch.Case]] = transformISZ(r0.ctx, o2.cases, transformIRStmtSwitchCase _)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), cases = r1.resultOpt.getOrElse(o2.cases))))
+          else
+            TPostResult(r1.ctx, None())
         case o2: IR.Stmt.While =>
           val r0: TPostResult[Context, IR.ExpBlock] = transformIRExpBlock(preR.ctx, o2.cond)
           val r1: TPostResult[Context, IR.Stmt.Block] = transformIRStmtBlock(r0.ctx, o2.block)
@@ -1691,6 +1716,34 @@ import IRTransformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: IR.Stmt.Match.Case = r.resultOpt.getOrElse(o)
     val postR: TPostResult[Context, IR.Stmt.Match.Case] = pp.postIRStmtMatchCase(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformIRStmtSwitchCase(ctx: Context, o: IR.Stmt.Switch.Case): TPostResult[Context, IR.Stmt.Switch.Case] = {
+    val preR: PreResult[Context, IR.Stmt.Switch.Case] = pp.preIRStmtSwitchCase(ctx, o)
+    val r: TPostResult[Context, IR.Stmt.Switch.Case] = if (preR.continu) {
+      val o2: IR.Stmt.Switch.Case = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: TPostResult[Context, Option[IR.Exp]] = transformOption(preR.ctx, o2.valueOpt, transformIRExp _)
+      val r1: TPostResult[Context, IR.Stmt.Block] = transformIRStmtBlock(r0.ctx, o2.body)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+        TPostResult(r1.ctx, Some(o2(valueOpt = r0.resultOpt.getOrElse(o2.valueOpt), body = r1.resultOpt.getOrElse(o2.body))))
+      else
+        TPostResult(r1.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: IR.Stmt.Switch.Case = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, IR.Stmt.Switch.Case] = pp.postIRStmtSwitchCase(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {

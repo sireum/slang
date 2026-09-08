@@ -682,6 +682,117 @@ object IRTranslator {
     return AST.IR.Stmt.Block(stmts, pos)
   }
 
+  def scalarSwitchCaseValue(pattern: AST.Pattern): Option[AST.IR.Exp] = {
+    def directLit(lit: AST.Lit): AST.IR.Exp = {
+      lit match {
+        case lit: AST.Exp.LitB => return AST.IR.Exp.Bool(lit.value, lit.posOpt.get)
+        case lit: AST.Exp.LitC => return AST.IR.Exp.Int(AST.Typed.c, lit.value.toZ, lit.posOpt.get)
+        case lit: AST.Exp.LitZ => return AST.IR.Exp.Int(AST.Typed.z, lit.value, lit.posOpt.get)
+        case lit: AST.Exp.LitF32 => return AST.IR.Exp.F32(lit.value, lit.posOpt.get)
+        case lit: AST.Exp.LitF64 => return AST.IR.Exp.F64(lit.value, lit.posOpt.get)
+        case lit: AST.Exp.LitR => return AST.IR.Exp.R(lit.value, lit.posOpt.get)
+        case lit: AST.Exp.LitString => return AST.IR.Exp.String(lit.value, lit.posOpt.get)
+        case _ => halt(s"Infeasible: $lit")
+      }
+    }
+    pattern match {
+      case _: AST.Pattern.Wildcard => return None()
+      case pattern: AST.Pattern.Literal => return Some(directLit(pattern.lit))
+      case pattern: AST.Pattern.LitInterpolate =>
+        val t = pattern.attr.typedOpt.get
+        val ppos = pattern.posOpt.get
+        t match {
+          case AST.Typed.z => return Some(AST.IR.Exp.Int(t, Z(pattern.value).get, ppos))
+          case AST.Typed.c => return Some(AST.IR.Exp.Int(t, conversions.String.toCis(pattern.value)(0).toZ, ppos))
+          case AST.Typed.f32 => return Some(AST.IR.Exp.F32(F32(pattern.value).get, ppos))
+          case AST.Typed.f64 => return Some(AST.IR.Exp.F64(F64(pattern.value).get, ppos))
+          case AST.Typed.r => return Some(AST.IR.Exp.R(R(pattern.value).get, ppos))
+          case _ if isSubZ(t) => return Some(AST.IR.Exp.Int(t, Z(pattern.value).get, ppos))
+          case _ => halt(s"Infeasible: $pattern")
+        }
+      case _ => halt(s"Infeasible: $pattern")
+    }
+  }
+
+  def preparePatternBody(body: AST.IR.Body.Block): AST.IR.Body.Block = {
+    def prepareExpBlock(expBlock: AST.IR.ExpBlock): AST.IR.ExpBlock = {
+      val prepared = prepareBlock(AST.IR.Stmt.Block(expBlock.stmts, expBlock.exp.pos))
+      return AST.IR.ExpBlock(prepared._1.stmts, expBlock.exp)
+    }
+
+    def prepareStmt(stmt: AST.IR.Stmt): (AST.IR.Stmt, B) = {
+      stmt match {
+        case s: AST.IR.Stmt.Block =>
+          val prepared = prepareBlock(s)
+          return (prepared._1, prepared._2)
+        case s: AST.IR.Stmt.Match =>
+          if (isScalar(s.exp.tipe) && ops.ISZOps(s.cases).forall((c : AST.IR.Stmt.Match.Case) =>
+            c.condOpt.isEmpty && c.decl.locals.isEmpty && (c.pattern.isInstanceOf[AST.Pattern.LitInterpolate] ||
+              c.pattern.isInstanceOf[AST.Pattern.Literal] || c.pattern.isInstanceOf[AST.Pattern.Wildcard]))) {
+            val cases = Buffer.create[AST.IR.Stmt.Switch.Case]()
+            for (c <- s.cases) {
+              val preparedBody = prepareBlock(c.body)
+              cases.append(AST.IR.Stmt.Switch.Case(scalarSwitchCaseValue(c.pattern), preparedBody._1))
+            }
+            return (AST.IR.Stmt.Switch(s.exp, cases.toIS, s.pos), T)
+          }
+          return prepareStmt(simplifyMatch(s))
+        case s: AST.IR.Stmt.AssignPattern =>
+          return prepareStmt(simplifyAssignPattern(s))
+        case s: AST.IR.Stmt.If =>
+          val thenPrepared = prepareBlock(s.thenBlock)
+          val elsePrepared = prepareBlock(s.elseBlock)
+          return (AST.IR.Stmt.If(s.cond, thenPrepared._1, elsePrepared._1, s.pos),
+            thenPrepared._2 || elsePrepared._2)
+        case s: AST.IR.Stmt.While =>
+          val condPrepared = prepareBlock(AST.IR.Stmt.Block(s.cond.stmts, s.cond.exp.pos))
+          val cond = AST.IR.ExpBlock(condPrepared._1.stmts, s.cond.exp)
+          if (!condPrepared._2) {
+            return (AST.IR.Stmt.While(cond, AST.IR.Stmt.Block(ISZ(), s.block.pos), s.pos), F)
+          }
+          val bodyPrepared = prepareBlock(s.block)
+          return (AST.IR.Stmt.While(cond, bodyPrepared._1, s.pos), T)
+        case s: AST.IR.Stmt.For =>
+          val condOpt: Option[AST.IR.ExpBlock] = s.condOpt match {
+            case Some(cond) => Some(prepareExpBlock(cond))
+            case _ => None()
+          }
+          val bodyPrepared = prepareBlock(s.block)
+          return (AST.IR.Stmt.For(s.context, s.idOpt, s.range, condOpt, bodyPrepared._1, s.pos), T)
+        case s: AST.IR.Stmt.Assertume =>
+          val messageOpt: Option[AST.IR.ExpBlock] = s.messageOpt match {
+            case Some(message) => Some(prepareExpBlock(message))
+            case _ => None()
+          }
+          return (AST.IR.Stmt.Assertume(s.isAssert, s.cond, messageOpt, s.pos), T)
+        case s: AST.IR.Stmt.Switch =>
+          val cases = Buffer.create[AST.IR.Stmt.Switch.Case]()
+          for (c <- s.cases) {
+            cases.append(AST.IR.Stmt.Switch.Case(c.valueOpt, prepareBlock(c.body)._1))
+          }
+          return (AST.IR.Stmt.Switch(s.exp, cases.toIS, s.pos), T)
+        case _: AST.IR.Stmt.Halt => return (stmt, F)
+        case _: AST.IR.Stmt.Return => return (stmt, F)
+        case _ => return (stmt, T)
+      }
+    }
+
+    def prepareBlock(block: AST.IR.Stmt.Block): (AST.IR.Stmt.Block, B) = {
+      val stmts = Buffer.create[AST.IR.Stmt]()
+      var continues = T
+      var i: Z = 0
+      while (i < block.stmts.size && continues) {
+        val prepared = prepareStmt(block.stmts(i))
+        stmts.append(prepared._1)
+        continues = prepared._2
+        i = i + 1
+      }
+      return (AST.IR.Stmt.Block(stmts.toIS, block.pos), continues)
+    }
+
+    return AST.IR.Body.Block(prepareBlock(body.block)._1)
+  }
+
   def toBasic(body: AST.IR.Body.Block, pos: message.Position): AST.IR.Body.Basic = {
 
     val blocks = Buffer.create[AST.IR.BasicBlock]()
@@ -776,60 +887,24 @@ object IRTranslator {
           if (isScalar(stmt.exp.tipe) && ops.ISZOps(stmt.cases).forall((c : AST.IR.Stmt.Match.Case) =>
             c.condOpt.isEmpty && c.decl.locals.isEmpty && (c.pattern.isInstanceOf[AST.Pattern.LitInterpolate] ||
               c.pattern.isInstanceOf[AST.Pattern.Literal] || c.pattern.isInstanceOf[AST.Pattern.Wildcard]))) {
-            def litOf(pattern: AST.Pattern): Option[AST.IR.Exp] = {
-              def directLit(lit: AST.Lit): AST.IR.Exp = {
-                lit match {
-                  case lit: AST.Exp.LitB => return AST.IR.Exp.Bool(lit.value, lit.posOpt.get)
-                  case lit: AST.Exp.LitC => return AST.IR.Exp.Int(AST.Typed.c, lit.value.toZ, lit.posOpt.get)
-                  case lit: AST.Exp.LitZ => return AST.IR.Exp.Int(AST.Typed.z, lit.value, lit.posOpt.get)
-                  case lit: AST.Exp.LitF32 => return AST.IR.Exp.F32(lit.value, lit.posOpt.get)
-                  case lit: AST.Exp.LitF64 => return AST.IR.Exp.F64(lit.value, lit.posOpt.get)
-                  case lit: AST.Exp.LitR => return AST.IR.Exp.R(lit.value, lit.posOpt.get)
-                  case lit: AST.Exp.LitString => return AST.IR.Exp.String(lit.value, lit.posOpt.get)
-                  case _ => halt(s"Infeasible: $lit")
-                }
-              }
-              pattern match {
-                case _: AST.Pattern.Wildcard => return None()
-                case pattern: AST.Pattern.Literal => return Some(directLit(pattern.lit))
-                case pattern: AST.Pattern.LitInterpolate =>
-                  val t = pattern.attr.typedOpt.get
-                  val ppos = pattern.posOpt.get
-                  t match {
-                    case AST.Typed.z => return Some(AST.IR.Exp.Int(t, Z(pattern.value).get, ppos))
-                    case AST.Typed.c => return Some(AST.IR.Exp.Int(t, conversions.String.toCis(pattern.value)(0).toZ, ppos))
-                    case AST.Typed.f32 => return Some(AST.IR.Exp.F32(F32(pattern.value).get, ppos))
-                    case AST.Typed.f64 => return Some(AST.IR.Exp.F64(F64(pattern.value).get, ppos))
-                    case AST.Typed.r => return Some(AST.IR.Exp.R(R(pattern.value).get, ppos))
-                    case _ if isSubZ(t) => return Some(AST.IR.Exp.Int(t, Z(pattern.value).get, ppos))
-                    case _ => halt(s"Infeasible: $pattern")
-                  }
-                case _ => halt(s"Infeasible: $pattern")
-              }
+            val values = Buffer.create[Option[AST.IR.Exp]]()
+            val bodies = Buffer.create[AST.IR.Stmt.Block]()
+            for (c <- stmt.cases) {
+              values.append(scalarSwitchCaseValue(c.pattern))
+              bodies.append(c.body)
             }
-            val labels: ISZ[Z] = for (_ <- stmt.cases.indices) yield fresh.label()
-            val end = fresh.label()
-            var cases = ISZ[AST.IR.Jump.Switch.Case]()
-            var defaultOpt = Option.none[Z]()
-            for (i <- labels.indices) {
-              litOf(stmt.cases(i).pattern) match {
-                case Some(caseExp) => cases = cases :+ AST.IR.Jump.Switch.Case(caseExp, labels(i))
-                case _ => defaultOpt = Some(labels(i))
-              }
-            }
-            blocksBuf.append(AST.IR.BasicBlock(label, grounds, AST.IR.Jump.Switch(stmt.exp, cases, defaultOpt, pos)))
-            for (i <- labels.indices) {
-              grounds = ISZ()
-              stmtToBasic(labels(i), stmt.cases(i).body, blocksBuf) match {
-                case Some(l) => blocksBuf.append(AST.IR.BasicBlock(l, grounds, AST.IR.Jump.Goto(end, pos)))
-                case _ =>
-              }
-            }
-            grounds = ISZ()
-            return Some(end)
+            return switchToBasic(label, stmt.exp, values.toIS, bodies.toIS, pos, blocksBuf)
           } else {
             return stmtToBasic(label, simplifyMatch(stmt), blocksBuf)
           }
+        case stmt: AST.IR.Stmt.Switch =>
+          val values = Buffer.create[Option[AST.IR.Exp]]()
+          val bodies = Buffer.create[AST.IR.Stmt.Block]()
+          for (c <- stmt.cases) {
+            values.append(c.valueOpt)
+            bodies.append(c.body)
+          }
+          return switchToBasic(label, stmt.exp, values.toIS, bodies.toIS, pos, blocksBuf)
         case stmt: AST.IR.Stmt.AssignPattern =>
           return stmtToBasic(label, simplifyAssignPattern(stmt), blocksBuf)
         case stmt: AST.IR.Stmt.For => halt(s"TODO: $stmt")
@@ -886,6 +961,35 @@ object IRTranslator {
           addGround(stmt)
           return Some(label)
       }
+    }
+
+    def switchToBasic(label: Z,
+                      exp: AST.IR.Exp,
+                      values: ISZ[Option[AST.IR.Exp]],
+                      bodies: ISZ[AST.IR.Stmt.Block],
+                      switchPos: message.Position,
+                      blocksBuf: Buffer[AST.IR.BasicBlock]): Option[Z] = {
+      val labels: ISZ[Z] = for (_ <- values.indices) yield fresh.label()
+      val end = fresh.label()
+      val cases = Buffer.create[AST.IR.Jump.Switch.Case]()
+      var defaultOpt = Option.none[Z]()
+      for (i <- labels.indices) {
+        values(i) match {
+          case Some(caseExp) => cases.append(AST.IR.Jump.Switch.Case(caseExp, labels(i)))
+          case _ => defaultOpt = Some(labels(i))
+        }
+      }
+      blocksBuf.append(AST.IR.BasicBlock(label, grounds,
+        AST.IR.Jump.Switch(exp, cases.toIS, defaultOpt, switchPos)))
+      for (i <- labels.indices) {
+        grounds = ISZ()
+        stmtToBasic(labels(i), bodies(i), blocksBuf) match {
+          case Some(l) => blocksBuf.append(AST.IR.BasicBlock(l, grounds, AST.IR.Jump.Goto(end, switchPos)))
+          case _ =>
+        }
+      }
+      grounds = ISZ()
+      return Some(end)
     }
 
     def blockToBasic(label: Z, block: AST.IR.Stmt.Block, blocksBuf: Buffer[AST.IR.BasicBlock]): Option[Z] = {
