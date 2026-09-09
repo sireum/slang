@@ -57,6 +57,54 @@ object MIRTransformer {
     }
   }
 
+  def transformOption[T](option: Option[T], f: T => MOption[T]): MOption[Option[T]] = {
+    option match {
+      case Some(v) =>
+        val r = f(v)
+        r match {
+          case MSome(v2) => return MSome(Some(v2))
+          case _ => return MNone()
+        }
+      case _ => return MNone()
+    }
+  }
+
+  val PreResultIRPatternLiteral: PreResult[IR.Pattern] = PreResult(T, MNone())
+
+  val PostResultIRPatternLiteral: MOption[IR.Pattern] = MNone()
+
+  val PreResultIRPatternWildcard: PreResult[IR.Pattern] = PreResult(T, MNone())
+
+  val PostResultIRPatternWildcard: MOption[IR.Pattern] = MNone()
+
+  val PreResultIRPatternSeqWildcard: PreResult[IR.Pattern] = PreResult(T, MNone())
+
+  val PostResultIRPatternSeqWildcard: MOption[IR.Pattern] = MNone()
+
+  val PreResultIRPatternVarBinding: PreResult[IR.Pattern] = PreResult(T, MNone())
+
+  val PostResultIRPatternVarBinding: MOption[IR.Pattern] = MNone()
+
+  val PreResultIRPatternStructure: PreResult[IR.Pattern] = PreResult(T, MNone())
+
+  val PostResultIRPatternStructure: MOption[IR.Pattern] = MNone()
+
+  val PreResultIRPatternLocalRef: PreResult[IR.Pattern] = PreResult(T, MNone())
+
+  val PostResultIRPatternLocalRef: MOption[IR.Pattern] = MNone()
+
+  val PreResultIRPatternFieldRef: PreResult[IR.Pattern] = PreResult(T, MNone())
+
+  val PostResultIRPatternFieldRef: MOption[IR.Pattern] = MNone()
+
+  val PreResultIRPatternGlobalRef: PreResult[IR.Pattern] = PreResult(T, MNone())
+
+  val PostResultIRPatternGlobalRef: MOption[IR.Pattern] = MNone()
+
+  val PreResultIRPatternEnumElementRef: PreResult[IR.Pattern] = PreResult(T, MNone())
+
+  val PostResultIRPatternEnumElementRef: MOption[IR.Pattern] = MNone()
+
   val PreResultIRExpBool: PreResult[IR.Exp] = PreResult(T, MNone())
 
   val PostResultIRExpBool: MOption[IR.Exp] = MNone()
@@ -152,18 +200,6 @@ object MIRTransformer {
   val PreResultIRExpApplyClosure: PreResult[IR.Exp] = PreResult(T, MNone())
 
   val PostResultIRExpApplyClosure: MOption[IR.Exp] = MNone()
-
-  def transformOption[T](option: Option[T], f: T => MOption[T]): MOption[Option[T]] = {
-    option match {
-      case Some(v) =>
-        val r = f(v)
-        r match {
-          case MSome(v2) => return MSome(Some(v2))
-          case _ => return MNone()
-        }
-      case _ => return MNone()
-    }
-  }
 
   val PreResultIRStmtExpr: PreResult[IR.Stmt.Ground] = PreResult(T, MNone())
 
@@ -381,6 +417,56 @@ import MIRTransformer._
 
   def preIRMethodContext(o: IR.MethodContext): PreResult[IR.MethodContext] = {
     return PreResultIRMethodContext
+  }
+
+  def preIRPattern(o: IR.Pattern): PreResult[IR.Pattern] = {
+    o match {
+      case o: IR.Pattern.Literal => return preIRPatternLiteral(o)
+      case o: IR.Pattern.Wildcard => return preIRPatternWildcard(o)
+      case o: IR.Pattern.SeqWildcard => return preIRPatternSeqWildcard(o)
+      case o: IR.Pattern.VarBinding => return preIRPatternVarBinding(o)
+      case o: IR.Pattern.Structure => return preIRPatternStructure(o)
+      case o: IR.Pattern.LocalRef => return preIRPatternLocalRef(o)
+      case o: IR.Pattern.FieldRef => return preIRPatternFieldRef(o)
+      case o: IR.Pattern.GlobalRef => return preIRPatternGlobalRef(o)
+      case o: IR.Pattern.EnumElementRef => return preIRPatternEnumElementRef(o)
+    }
+  }
+
+  def preIRPatternLiteral(o: IR.Pattern.Literal): PreResult[IR.Pattern] = {
+    return PreResultIRPatternLiteral
+  }
+
+  def preIRPatternWildcard(o: IR.Pattern.Wildcard): PreResult[IR.Pattern] = {
+    return PreResultIRPatternWildcard
+  }
+
+  def preIRPatternSeqWildcard(o: IR.Pattern.SeqWildcard): PreResult[IR.Pattern] = {
+    return PreResultIRPatternSeqWildcard
+  }
+
+  def preIRPatternVarBinding(o: IR.Pattern.VarBinding): PreResult[IR.Pattern] = {
+    return PreResultIRPatternVarBinding
+  }
+
+  def preIRPatternStructure(o: IR.Pattern.Structure): PreResult[IR.Pattern] = {
+    return PreResultIRPatternStructure
+  }
+
+  def preIRPatternLocalRef(o: IR.Pattern.LocalRef): PreResult[IR.Pattern] = {
+    return PreResultIRPatternLocalRef
+  }
+
+  def preIRPatternFieldRef(o: IR.Pattern.FieldRef): PreResult[IR.Pattern] = {
+    return PreResultIRPatternFieldRef
+  }
+
+  def preIRPatternGlobalRef(o: IR.Pattern.GlobalRef): PreResult[IR.Pattern] = {
+    return PreResultIRPatternGlobalRef
+  }
+
+  def preIRPatternEnumElementRef(o: IR.Pattern.EnumElementRef): PreResult[IR.Pattern] = {
+    return PreResultIRPatternEnumElementRef
   }
 
   def preIRExp(o: IR.Exp): PreResult[IR.Exp] = {
@@ -955,6 +1041,56 @@ import MIRTransformer._
 
   def postIRMethodContext(o: IR.MethodContext): MOption[IR.MethodContext] = {
     return PostResultIRMethodContext
+  }
+
+  def postIRPattern(o: IR.Pattern): MOption[IR.Pattern] = {
+    o match {
+      case o: IR.Pattern.Literal => return postIRPatternLiteral(o)
+      case o: IR.Pattern.Wildcard => return postIRPatternWildcard(o)
+      case o: IR.Pattern.SeqWildcard => return postIRPatternSeqWildcard(o)
+      case o: IR.Pattern.VarBinding => return postIRPatternVarBinding(o)
+      case o: IR.Pattern.Structure => return postIRPatternStructure(o)
+      case o: IR.Pattern.LocalRef => return postIRPatternLocalRef(o)
+      case o: IR.Pattern.FieldRef => return postIRPatternFieldRef(o)
+      case o: IR.Pattern.GlobalRef => return postIRPatternGlobalRef(o)
+      case o: IR.Pattern.EnumElementRef => return postIRPatternEnumElementRef(o)
+    }
+  }
+
+  def postIRPatternLiteral(o: IR.Pattern.Literal): MOption[IR.Pattern] = {
+    return PostResultIRPatternLiteral
+  }
+
+  def postIRPatternWildcard(o: IR.Pattern.Wildcard): MOption[IR.Pattern] = {
+    return PostResultIRPatternWildcard
+  }
+
+  def postIRPatternSeqWildcard(o: IR.Pattern.SeqWildcard): MOption[IR.Pattern] = {
+    return PostResultIRPatternSeqWildcard
+  }
+
+  def postIRPatternVarBinding(o: IR.Pattern.VarBinding): MOption[IR.Pattern] = {
+    return PostResultIRPatternVarBinding
+  }
+
+  def postIRPatternStructure(o: IR.Pattern.Structure): MOption[IR.Pattern] = {
+    return PostResultIRPatternStructure
+  }
+
+  def postIRPatternLocalRef(o: IR.Pattern.LocalRef): MOption[IR.Pattern] = {
+    return PostResultIRPatternLocalRef
+  }
+
+  def postIRPatternFieldRef(o: IR.Pattern.FieldRef): MOption[IR.Pattern] = {
+    return PostResultIRPatternFieldRef
+  }
+
+  def postIRPatternGlobalRef(o: IR.Pattern.GlobalRef): MOption[IR.Pattern] = {
+    return PostResultIRPatternGlobalRef
+  }
+
+  def postIRPatternEnumElementRef(o: IR.Pattern.EnumElementRef): MOption[IR.Pattern] = {
+    return PostResultIRPatternEnumElementRef
   }
 
   def postIRExp(o: IR.Exp): MOption[IR.Exp] = {
@@ -1554,6 +1690,88 @@ import MIRTransformer._
     }
   }
 
+  def transformIRPattern(o: IR.Pattern): MOption[IR.Pattern] = {
+    val preR: PreResult[IR.Pattern] = preIRPattern(o)
+    val r: MOption[IR.Pattern] = if (preR.continu) {
+      val o2: IR.Pattern = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: MOption[IR.Pattern] = o2 match {
+        case o2: IR.Pattern.Literal =>
+          val r0: MOption[IR.Exp] = transformIRExp(o2.exp)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp)))
+          else
+            MNone()
+        case o2: IR.Pattern.Wildcard =>
+          val r0: MOption[Option[Typed]] = transformOption(o2.guardTipeOpt, transformTyped _)
+          val r1: MOption[Typed] = transformTyped(o2.tipe)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(guardTipeOpt = r0.getOrElse(o2.guardTipeOpt), tipe = r1.getOrElse(o2.tipe)))
+          else
+            MNone()
+        case o2: IR.Pattern.SeqWildcard =>
+          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(tipe = r0.getOrElse(o2.tipe)))
+          else
+            MNone()
+        case o2: IR.Pattern.VarBinding =>
+          val r0: MOption[Option[Typed]] = transformOption(o2.guardTipeOpt, transformTyped _)
+          val r1: MOption[Typed] = transformTyped(o2.tipe)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(guardTipeOpt = r0.getOrElse(o2.guardTipeOpt), tipe = r1.getOrElse(o2.tipe)))
+          else
+            MNone()
+        case o2: IR.Pattern.Structure =>
+          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          val r1: MOption[IS[Z, IR.Pattern]] = transformISZ(o2.patterns, transformIRPattern _)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(tipe = r0.getOrElse(o2.tipe), patterns = r1.getOrElse(o2.patterns)))
+          else
+            MNone()
+        case o2: IR.Pattern.LocalRef =>
+          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(tipe = r0.getOrElse(o2.tipe)))
+          else
+            MNone()
+        case o2: IR.Pattern.FieldRef =>
+          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(tipe = r0.getOrElse(o2.tipe)))
+          else
+            MNone()
+        case o2: IR.Pattern.GlobalRef =>
+          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(tipe = r0.getOrElse(o2.tipe)))
+          else
+            MNone()
+        case o2: IR.Pattern.EnumElementRef =>
+          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(tipe = r0.getOrElse(o2.tipe)))
+          else
+            MNone()
+      }
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: IR.Pattern = r.getOrElse(o)
+    val postR: MOption[IR.Pattern] = postIRPattern(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
   def transformIRExp(o: IR.Exp): MOption[IR.Exp] = {
     val preR: PreResult[IR.Exp] = preIRExp(o)
     val r: MOption[IR.Exp] = if (preR.continu) {
@@ -1843,9 +2061,10 @@ import MIRTransformer._
             MNone()
         case o2: IR.Stmt.AssignPattern =>
           val r0: MOption[IR.MethodContext] = transformIRMethodContext(o2.context)
-          val r1: MOption[IR.Exp] = transformIRExp(o2.rhs)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(context = r0.getOrElse(o2.context), rhs = r1.getOrElse(o2.rhs)))
+          val r1: MOption[IR.Pattern] = transformIRPattern(o2.pattern)
+          val r2: MOption[IR.Exp] = transformIRExp(o2.rhs)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(context = r0.getOrElse(o2.context), pattern = r1.getOrElse(o2.pattern), rhs = r2.getOrElse(o2.rhs)))
           else
             MNone()
         case o2: IR.Stmt.Block =>
@@ -2117,10 +2336,11 @@ import MIRTransformer._
       val o2: IR.Stmt.Match.Case = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: MOption[IR.Stmt.Decl] = transformIRStmtDecl(o2.decl)
-      val r1: MOption[Option[IR.ExpBlock]] = transformOption(o2.condOpt, transformIRExpBlock _)
-      val r2: MOption[IR.Stmt.Block] = transformIRStmtBlock(o2.body)
-      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-        MSome(o2(decl = r0.getOrElse(o2.decl), condOpt = r1.getOrElse(o2.condOpt), body = r2.getOrElse(o2.body)))
+      val r1: MOption[IR.Pattern] = transformIRPattern(o2.pattern)
+      val r2: MOption[Option[IR.ExpBlock]] = transformOption(o2.condOpt, transformIRExpBlock _)
+      val r3: MOption[IR.Stmt.Block] = transformIRStmtBlock(o2.body)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+        MSome(o2(decl = r0.getOrElse(o2.decl), pattern = r1.getOrElse(o2.pattern), condOpt = r2.getOrElse(o2.condOpt), body = r3.getOrElse(o2.body)))
       else
         MNone()
     } else if (preR.resultOpt.nonEmpty) {
