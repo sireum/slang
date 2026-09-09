@@ -2339,40 +2339,40 @@ object SlangLl2AstBuilder {
   def unescapeString(s: String): String = {
     val cis = conversions.String.toCis(s)
     val len = cis.size
-    var r = ISZ[C]()
+    val r = Buffer.create[C]()
     var i: Z = 0
     while (i < len) {
       if (cis(i) == '\\' && i + 1 < len) {
         val next = cis(i + 1)
-        if (next == 'n') { r = r :+ '\n'; i = i + 2 }
-        else if (next == 't') { r = r :+ '\t'; i = i + 2 }
-        else if (next == 'r') { r = r :+ '\r'; i = i + 2 }
-        else if (next == 'f') { r = r :+ '\u000c'; i = i + 2 }
-        else if (next == 'b') { r = r :+ '\u0008'; i = i + 2 }
-        else if (next == '\\') { r = r :+ '\\'; i = i + 2 }
-        else if (next == '"') { r = r :+ '"'; i = i + 2 }
-        else if (next == '\'') { r = r :+ '\''; i = i + 2 }
+        if (next == 'n') { r.append('\n'); i = i + 2 }
+        else if (next == 't') { r.append('\t'); i = i + 2 }
+        else if (next == 'r') { r.append('\r'); i = i + 2 }
+        else if (next == 'f') { r.append('\u000c'); i = i + 2 }
+        else if (next == 'b') { r.append('\u0008'); i = i + 2 }
+        else if (next == '\\') { r.append('\\'); i = i + 2 }
+        else if (next == '"') { r.append('"'); i = i + 2 }
+        else if (next == '\'') { r.append('\''); i = i + 2 }
         else if (next == 'u' && i + 5 < len) {
-          val hex = conversions.String.fromCis(ISZ(cis(i + 2), cis(i + 3), cis(i + 4), cis(i + 5)))
+          val hex = ops.StringOps.substring(cis, i + 2, i + 6)
           val codeOpt = Z(s"0x$hex")
           codeOpt match {
             case Some(code) =>
-              r = r :+ conversions.U32.toC(conversions.Z.toU32(code))
+              r.append(conversions.U32.toC(conversions.Z.toU32(code)))
               i = i + 6
             case _ =>
-              r = r :+ cis(i)
+              r.append(cis(i))
               i = i + 1
           }
         } else {
-          r = r :+ cis(i)
+          r.append(cis(i))
           i = i + 1
         }
       } else {
-        r = r :+ cis(i)
+        r.append(cis(i))
         i = i + 1
       }
     }
-    return conversions.String.fromCis(r)
+    return conversions.String.fromCis(r.toIS)
   }
 
   def unescapeStringInterp(s: String): String = {
@@ -2579,19 +2579,15 @@ object SlangLl2AstBuilder {
       case "CHAR" =>
         val sops = ops.StringOps(leaf.text)
         val inner = sops.substring(1, leaf.text.size - 1)
-        val c: C = if (ops.StringOps(inner).startsWith("\\")) {
-          val escChar = ops.StringOps(inner).substring(1, inner.size)
-          escChar.native match {
-            case "n" => '\n'
-            case "t" => '\t'
-            case "r" => '\r'
-            case "\\" => '\\'
-            case "'" => '\''
-            case "\"" => '"'
-            case _ => conversions.String.toCis(inner)(0)
-          }
+        val innerCis = conversions.String.toCis(inner)
+        var c: C = innerCis(0)
+        if (innerCis.size > 1 && innerCis(0) == '\\' && innerCis(1) == 'u') {
+          val hexDigits: Z = innerCis.size - 2
+          val hex = ops.StringOps.substring(innerCis, 2, 2 + hexDigits)
+          val code = Z(st"0x$hex".render).get
+          c = conversions.U32.toC(conversions.Z.toU32(code))
         } else {
-          conversions.String.toCis(inner)(0)
+          c = conversions.String.toCis(unescapeString(inner))(0)
         }
         return AST.Exp.LitC(value = c, attr = attr(leaf))
       case "MSTR" =>

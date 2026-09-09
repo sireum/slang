@@ -243,6 +243,62 @@ class SlangLl2AstBuilderTest extends SireumRcSpec {
     assert(multiInterp.args.size == 2)
   }
 
+  registerTest("LL(2) character escapes preserve code points in expressions and patterns") {
+    val unicode1 = "\\" + "u0001"
+    val unicode5 = "\\" + "u1F600"
+    val rawSupplementary = "😀"
+    val source = String(
+      "def expression(): C = { return '" + unicode1 + "' }\n" +
+        "def pattern(value: C): Z = {\n" +
+        "  match value {\n" +
+        "    case '" + unicode1 + "' => return 1\n" +
+        "    case _ => return 0\n" +
+        "  }\n" +
+        "}\n" +
+        "def named(): C = { return '\\b' }\n" +
+        "def formFeed(): C = { return '\\f' }\n" +
+        "def supplementary(): C = { return '" + unicode5 + "' }\n" +
+        "def afterRaw(): String = { return \"" + rawSupplementary + unicode1 + "\" }\n")
+    val reporter = message.Reporter.create
+    val tree = SlangLl2Parser.parse(None(), source, reporter).get
+    val program = lang.ast.SlangLl2AstBuilder.build(None(), tree, reporter).get
+    assert(!reporter.hasError, reporter.messages.toString)
+    val methods = program.body.stmts.elements.collect { case m: lang.ast.Stmt.Method => m }
+    def returned(method: lang.ast.Stmt.Method): lang.ast.Exp.LitC = {
+      return method.bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Return].expOpt.get
+        .asInstanceOf[lang.ast.Exp.LitC]
+    }
+    assert(returned(methods(0)).value.value == 1)
+    val matched = methods(1).bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Match]
+    val pattern = matched.cases(0).pattern.asInstanceOf[lang.ast.Pattern.Literal].lit
+      .asInstanceOf[lang.ast.Exp.LitC]
+    assert(pattern.value.value == 1)
+    assert(returned(methods(2)).value.value == 8)
+    assert(returned(methods(3)).value.value == 12)
+    assert(returned(methods(4)).value.value == 0x1F600)
+    val afterRaw = methods(5).bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Return].expOpt.get
+      .asInstanceOf[lang.ast.Exp.LitString]
+    assert(afterRaw.value == conversions.String.fromCis(ISZ(C(0x1F600), C(1))))
+  }
+
+  registerTest("LL(2) string escapes preserve following hexadecimal text") {
+    val escaped = "😀" + "\\" + "u0001control"
+    val source = String("def plain(): String = { return \"" + escaped + "\" }\n" +
+      "def interpolated(): String = { return s\"" + escaped + "$1$\" }\n")
+    val reporter = message.Reporter.create
+    val tree = SlangLl2Parser.parse(None(), source, reporter).get
+    val program = lang.ast.SlangLl2AstBuilder.build(None(), tree, reporter).get
+    assert(!reporter.hasError, reporter.messages.toString)
+    val methods = program.body.stmts.elements.collect { case m: lang.ast.Stmt.Method => m }
+    val plain = methods(0).bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Return].expOpt.get
+      .asInstanceOf[lang.ast.Exp.LitString]
+    val interpolated = methods(1).bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Return].expOpt.get
+      .asInstanceOf[lang.ast.Exp.StringInterpolate]
+    val expected = String("😀" + 1.toChar + "control")
+    assert(plain.value == expected)
+    assert(interpolated.lits(0).value == expected)
+  }
+
   def shouldIgnore(name: Predef.String, isSimplified: Boolean): Boolean = false
 
   def textResources: scala.collection.SortedMap[scala.Vector[Predef.String], Predef.String] = {
