@@ -1046,7 +1046,9 @@ object IRTranslator {
       for (stmt <- block.stmts) {
         stmtToBasic(l, stmt, blocksBuf) match {
           case Some(next) => l = next
-          case _ => return None()
+          case _ =>
+            decls = oldDecls
+            return None()
         }
       }
       for (d <- decls) {
