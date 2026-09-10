@@ -208,7 +208,9 @@ object SlangLl2 {
   }
   def parseStmt(fileUriOpt: Option[String], content: String, reporter: message.Reporter): Option[AST.Stmt] = {
     parseRule(fileUriOpt, content, "stmtFile", reporter) match {
-      case Some(t: parser.ParseTree.Node) => return Some(AST.SlangLl2AstBuilder.buildStmt(t, reporter, F))
+      case Some(t: parser.ParseTree.Node) =>
+        val stmt = AST.SlangLl2AstBuilder.findChild(t, "stmt").get
+        return Some(AST.SlangLl2AstBuilder.buildStmt(stmt, reporter, F))
       case _ => return None()
     }
   }

@@ -30,6 +30,14 @@ import org.sireum.test._
 
 class SlangLl2ParserTest extends SireumRcSpec {
 
+  registerTest("LL(2) parseStmt unwraps stmtFile") {
+    val reporter = message.Reporter.create
+    val stmtOpt = SlangLl2.parseStmt(Some("parse-stmt.sl"), "val x: Z = 1\n", reporter)
+    assert(stmtOpt.nonEmpty)
+    assert(stmtOpt.get.isInstanceOf[lang.ast.Stmt.Var])
+    assert(!reporter.hasError)
+  }
+
   def shouldIgnore(name: Predef.String, isSimplified: Boolean): Boolean = false
 
   def textResources: scala.collection.SortedMap[scala.Vector[Predef.String], Predef.String] = {
