@@ -403,6 +403,40 @@ class IRTranslatorTest extends TestSuite {
     assert(partialConstructed.args(1).isInstanceOf[IR.Exp.Temp])
   }
 
+  registerTest("static companion binary operators omit the type receiver") {
+    val input =
+      """import org.sireum._
+        |@record class Box() {
+        |  @pure def staticMap(): HashMap[String, Z] = {
+        |    val entries: ISZ[(String, Z)] = ISZ("x" ~> 7)
+        |    return HashMap ++ entries
+        |  }
+        |  @pure def instanceMap(): HashMap[String, Z] = {
+        |    val base: HashMap[String, Z] = HashMap.empty[String, Z]
+        |    val entries: ISZ[(String, Z)] = ISZ("x" ~> 7)
+        |    return base ++ entries
+        |  }
+        |}""".stripMargin
+    val (_, staticProcedure) = translated(input, "Box", "staticMap")
+    val staticApply = returnStmt(staticProcedure).expOpt.get.asInstanceOf[IR.Exp.Apply]
+    assert(staticApply.isInObject)
+    assert(staticApply.owner == ISZ(SString("org"), SString("sireum"), SString("HashMap")))
+    assert(staticApply.id.value == "++")
+    assert(staticApply.args.size == 1)
+    assert(staticApply.args(0).isInstanceOf[IR.Exp.LocalVarRef])
+    assert(staticApply.methodType.args.size == 1)
+
+    val (_, instanceProcedure) = translated(input, "Box", "instanceMap")
+    val instanceApply = returnStmt(instanceProcedure).expOpt.get.asInstanceOf[IR.Exp.Apply]
+    assert(!instanceApply.isInObject)
+    assert(instanceApply.owner == ISZ(SString("org"), SString("sireum"), SString("HashMap")))
+    assert(instanceApply.id.value == "++")
+    assert(instanceApply.args.size == 2)
+    assert(instanceApply.args(0).isInstanceOf[IR.Exp.LocalVarRef])
+    assert(instanceApply.args(1).isInstanceOf[IR.Exp.LocalVarRef])
+    assert(instanceApply.methodType.args.size == 2)
+  }
+
   registerTest("hidden-first named constructors retain full parameter indices") {
     val input =
       """import org.sireum._
