@@ -403,6 +403,49 @@ class IRTranslatorTest extends TestSuite {
     assert(partialConstructed.args(1).isInstanceOf[IR.Exp.Temp])
   }
 
+  registerTest("hidden-first named constructors retain full parameter indices") {
+    val input =
+      """import org.sireum._
+        |@datatype class HiddenFirst(@hidden first: Option[Z], second: Option[Z], third: Option[Z]) {
+        |  @pure def make(): HiddenFirst = {
+        |    return HiddenFirst(third = Some(33), first = Some(11), second = Some(22))
+        |  }
+        |}""".stripMargin
+    val (th, program) = checked(input)
+    val info = th.typeMap.get(ISZ("HiddenFirst")).get.asInstanceOf[org.sireum.lang.symbol.TypeInfo.Adt]
+    val constructor = info.constructorTypeOpt.get.asInstanceOf[Typed.Method]
+    assert(constructor.paramNames == ISZ[String]("first", "second", "third"))
+    assert(info.extractorTypeMap.get("first").isEmpty)
+    assert(info.extractorTypeMap.get("second").nonEmpty)
+    assert(info.extractorTypeMap.get("third").nonEmpty)
+
+    val (_, method) = findMethod(program, "HiddenFirst", "make")
+    val ret = method.bodyOpt.get.stmts(0).asInstanceOf[Stmt.Return]
+    val invoke = ret.expOpt.get.asInstanceOf[ast.Exp.InvokeNamed]
+    assert(invoke.args.map(_.index) == ISZ[Z](2, 0, 1))
+
+    def valueOf(exp: IR.Exp): Z = exp match {
+      case lit: IR.Exp.Int => return lit.value
+      case construct: IR.Exp.Construct =>
+        assert(construct.args.size == 1)
+        return valueOf(construct.args(0))
+      case _ => halt(st"Unexpected constructor argument $exp".render)
+    }
+
+    val (_, procedure) = translated(input, "HiddenFirst", "make")
+    val block = procedure.body.asInstanceOf[IR.Body.Block].block
+    var tempRhs = HashMap.empty[Z, IR.Exp]
+    for (stmt <- block.stmts) {
+      stmt match {
+        case temp: IR.Stmt.Assign.Temp => tempRhs = tempRhs + temp.lhs ~> temp.rhs
+        case _ =>
+      }
+    }
+    val constructed = returnStmt(procedure).expOpt.get.asInstanceOf[IR.Exp.Construct]
+    val values = for (arg <- constructed.args) yield valueOf(tempRhs.get(arg.asInstanceOf[IR.Exp.Temp].n).get)
+    assert(values == ISZ[Z](11, 22, 33))
+  }
+
   registerTest("for generators preserve range and guard temporary prefixes") {
     val input =
       """import org.sireum._

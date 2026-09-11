@@ -2613,7 +2613,7 @@ import TypeChecker._
                           info.constructorTypeOpt match {
                             case Some(constructorType) =>
                               return (Some(constructorType), info.constructorResOpt, newTypeArgs,
-                                for (p <- info.ast.params if !p.isHidden) yield p.id.value)
+                                for (p <- info.ast.params) yield p.id.value)
                             case _ =>
                               reporter.error(posOpt, typeCheckerKind,
                                 st"Cannot create an object of type ${(tpe.name, ".")}.".render)
