@@ -26,7 +26,7 @@
 package org.sireum.lang
 
 import org.sireum._
-import org.sireum.lang.ast.{IR, Stmt, Typed}
+import org.sireum.lang.ast.{IR, IRTransformer, Stmt, Typed}
 import org.sireum.lang.parser.Parser
 import org.sireum.message.Reporter
 import org.sireum.test._
@@ -136,6 +136,66 @@ class IRTranslatorTest extends TestSuite {
       case _ =>
     }
     halt("Unable to find direct super apply")
+  }
+
+  def assertTempPrefix(defs: ISZ[IR.Stmt.Assign.Temp], exps: ISZ[IR.Exp]): Unit = {
+    var defined = ISZ[Z]()
+    val checker = new IRTransformer.PrePost[ISZ[Z]] {
+      override def string: org.sireum.String = org.sireum.String("IRTranslatorTest.TempChecker")
+
+      override def preIRExpTemp(ctx: ISZ[Z], o: IR.Exp.Temp): IRTransformer.PreResult[ISZ[Z], IR.Exp] = {
+        assert(ops.ISZOps(ctx).contains(o.n), st"Temporary $o is used before its definition".render)
+        return IRTransformer.PreResult(ctx, T, None())
+      }
+    }
+    val transformer = new IRTransformer[ISZ[Z]](checker)
+    for (temp <- defs) {
+      assert(!ops.ISZOps(defined).contains(temp.lhs), st"Temporary ${temp.lhs} is redefined in one prefix".render)
+      transformer.transformIRExp(defined, temp.rhs)
+      defined = defined :+ temp.lhs
+    }
+    for (exp <- exps) {
+      transformer.transformIRExp(defined, exp)
+    }
+  }
+
+  def assertGeneratorTemps(procedure: IR.Procedure): Unit = {
+    val block = procedure.body.asInstanceOf[IR.Body.Block].block
+    var pending = ISZ[IR.Stmt.Assign.Temp]()
+    var found = 0
+    for (stmt <- block.stmts) {
+      stmt match {
+        case temp: IR.Stmt.Assign.Temp => pending = pending :+ temp
+        case loop: IR.Stmt.For =>
+          val exps: ISZ[IR.Exp] = loop.range match {
+            case range: IR.Stmt.For.Range.Expr => ISZ(range.exp)
+            case range: IR.Stmt.For.Range.Step =>
+              var r = ISZ[IR.Exp](range.start, range.end)
+              range.byOpt match {
+                case Some(by) => r = r :+ by
+                case _ =>
+              }
+              r
+          }
+          assertTempPrefix(pending, exps)
+          loop.condOpt match {
+            case Some(cond) =>
+              var condDefs = ISZ[IR.Stmt.Assign.Temp]()
+              for (condStmt <- cond.stmts) {
+                condStmt match {
+                  case temp: IR.Stmt.Assign.Temp => condDefs = condDefs :+ temp
+                  case _ =>
+                }
+              }
+              assertTempPrefix(condDefs, ISZ(cond.exp))
+            case _ =>
+          }
+          found = found + 1
+          pending = ISZ()
+        case _ => pending = ISZ()
+      }
+    }
+    assert(found == 2)
   }
 
   registerTest("super method calls carry direct dispatch metadata") {
@@ -341,6 +401,27 @@ class IRTranslatorTest extends TestSuite {
     assert(partialConstructed.args(0).isInstanceOf[IR.Exp.FieldVarRef])
     assert(partialConstructed.args(0).asInstanceOf[IR.Exp.FieldVarRef].receiver.isInstanceOf[IR.Exp.Temp])
     assert(partialConstructed.args(1).isInstanceOf[IR.Exp.Temp])
+  }
+
+  registerTest("for generators preserve range and guard temporary prefixes") {
+    val input =
+      """import org.sireum._
+        |@record class Call(inObject: B, owner: ISZ[String], args: ISZ[Z], direct: B)
+        |@record class Bounds(start: Z, end: Z)
+        |@record class Box() {
+        |  def probe(): Unit = {
+        |    val call = Call(F, ISZ("p"), ISZ(1), T)
+        |    val bounds = Bounds(0, 1)
+        |    for (invalid <- ISZ[Call](call(inObject = T), call(owner = ISZ[String]()), call(args = ISZ[Z]())) if call(inObject = T).direct) {
+        |      println(invalid.direct)
+        |    }
+        |    for (i <- bounds(start = 0).start until bounds(end = 1).end) {
+        |      println(i)
+        |    }
+        |  }
+        |}""".stripMargin
+    val (_, procedure) = translated(input, "Box", "probe")
+    assertGeneratorTemps(procedure)
   }
 
   registerTest("inherited super calls keep parent ABI and owner") {

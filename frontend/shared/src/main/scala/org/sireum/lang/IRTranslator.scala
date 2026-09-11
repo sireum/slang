@@ -1435,7 +1435,8 @@ object IRTranslator {
           }
           return AST.IR.Stmt.For(methodContext, idOpt, range, condOpt, innerBlock, fPos)
         }
-        stmts = stmts :+ translateForEnumGen(0)
+        val forStmt = translateForEnumGen(0)
+        stmts = stmts :+ forStmt
         resetTemp()
       case stmt: AST.Stmt.VarPattern =>
         val oldStmts = stmts
