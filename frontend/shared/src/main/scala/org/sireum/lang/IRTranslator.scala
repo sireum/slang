@@ -139,6 +139,10 @@ object IRTranslator {
       capturesThis = T
       return AST.MTransformer.PostResultExpThis
     }
+    override def postExpSuper(o: AST.Exp.Super): MOption[AST.Exp] = {
+      capturesThis = T
+      return AST.MTransformer.PostResultExpSuper
+    }
     override def postExpIdent(o: AST.Exp.Ident): MOption[AST.Exp] = {
       o.resOpt match {
         case Some(res: AST.ResolvedInfo.Var) if !res.isInObject => capturesThis = T
@@ -922,12 +926,12 @@ object IRTranslator {
           for (j <- i until stmt.args.size) {
             val arg = stmt.args(j)
             grounds = grounds :+ AST.IR.Stmt.Expr(AST.IR.Exp.Apply(T, AST.Typed.sireumName, id, AST.Typed.emptyRTypes, args :+ stmt.args(j),
-              AST.Typed.Fun(AST.Purity.Impure, F, ISZ(arg.tipe), AST.Typed.unit), arg.pos))
+              AST.Typed.Fun(AST.Purity.Impure, F, ISZ(arg.tipe), AST.Typed.unit), arg.pos, F))
           }
           if (stmt.line) {
             grounds = grounds :+ AST.IR.Stmt.Expr(AST.IR.Exp.Apply(T, AST.Typed.sireumName, id, AST.Typed.emptyRTypes, args :+
               AST.IR.Exp.Int(AST.Typed.c, 10, stmt.pos), AST.Typed.Fun(AST.Purity.Impure, F, ISZ(AST.Typed.c),
-              AST.Typed.unit), stmt.pos))
+              AST.Typed.unit), stmt.pos, F))
           }
           return Some(label)
         case stmt: AST.IR.Stmt.Match =>
@@ -1930,7 +1934,13 @@ object IRTranslator {
     val nestedKey = res.owner :+ res.id
     val nestedCaptureListOpt: Option[ISZ[(B, String, AST.Typed)]] =
       if (isExt) None() else nestedMethodCaptures.get(nestedKey)
+    var isSuper = F
     receiverOpt match {
+      case Some(receiver: AST.Exp.Super) if !res.isInObject && !isExt =>
+        val receiverExp = thiz(pos)
+        args.append(if (named) snapshot(receiverExp) else receiverExp)
+        methodType = methodType(args = lowerByNameType(receiver.typedOpt.get) +: methodType.args)
+        isSuper = T
       case Some(receiver) if !res.isInObject && (isExt || nestedCaptureListOpt.isEmpty) =>
         val receiverExp = translateExp(receiver)
         args.append(if (named) snapshot(receiverExp) else receiverExp)
@@ -1996,7 +2006,7 @@ object IRTranslator {
       applyOwner = recordAndResolveExt(res, T)
       applyIsInObject = T
     }
-    return norm3AC(AST.IR.Exp.Apply(applyIsInObject, applyOwner, applyId, AST.Typed.emptyRTypes, args.toIS, methodType, pos))
+    return norm3AC(AST.IR.Exp.Apply(applyIsInObject, applyOwner, applyId, AST.Typed.emptyRTypes, args.toIS, methodType, pos, isSuper))
   }
 
   def translateExp(exp: AST.Exp): AST.IR.Exp = {
@@ -2068,11 +2078,11 @@ object IRTranslator {
             val methodType = res.tpeOpt.get
             val owner = recordAndResolveExt(res, res.isInObject)
             if (res.isInObject) {
-              return norm3AC(AST.IR.Exp.Apply(T, owner, res.id, AST.Typed.emptyRTypes, ISZ(), methodType, pos))
+              return norm3AC(AST.IR.Exp.Apply(T, owner, res.id, AST.Typed.emptyRTypes, ISZ(), methodType, pos, F))
             } else {
               val receiver = thiz(pos)
               return norm3AC(AST.IR.Exp.Apply(F, owner, res.id, AST.Typed.emptyRTypes, ISZ(receiver),
-                methodType(args = receiver.tipe +: methodType.args), pos))
+                methodType(args = receiver.tipe +: methodType.args), pos, F))
             }
           case _ => halt(s"Infeasible: $exp")
         }
@@ -2115,23 +2125,39 @@ object IRTranslator {
             val receiver = translateExp(exp.receiverOpt.get)
             return norm3AC(AST.IR.Exp.FieldVarRef(receiver, s"_${res.index}", t, pos))
           case AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.String) =>
-            val receiver = translateExp(exp.receiverOpt.get)
-            val receiverType = exp.receiverOpt.get.typedOpt.get
+            val receiverExp = exp.receiverOpt.get
+            val receiver: AST.IR.Exp = receiverExp match {
+              case _: AST.Exp.Super => thiz(pos)
+              case _ => translateExp(receiverExp)
+            }
+            val receiverType = receiverExp.typedOpt.get
             val owner: ISZ[String] = receiverType match {
               case tn: AST.Typed.Name => tn.ids
               case _ => ISZ[String]()
             }
             val methodType = AST.Typed.Fun(AST.Purity.Impure, F, ISZ(receiverType), AST.Typed.string)
-            return norm3AC(AST.IR.Exp.Apply(F, owner, "string", AST.Typed.emptyRTypes, ISZ(receiver), methodType, pos))
+            val isSuper: B = receiverExp match {
+              case _: AST.Exp.Super => T
+              case _ => F
+            }
+            return norm3AC(AST.IR.Exp.Apply(F, owner, "string", AST.Typed.emptyRTypes, ISZ(receiver), methodType, pos, isSuper))
           case AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Hash) =>
-            val receiver = translateExp(exp.receiverOpt.get)
-            val receiverType = exp.receiverOpt.get.typedOpt.get
+            val receiverExp = exp.receiverOpt.get
+            val receiver: AST.IR.Exp = receiverExp match {
+              case _: AST.Exp.Super => thiz(pos)
+              case _ => translateExp(receiverExp)
+            }
+            val receiverType = receiverExp.typedOpt.get
             val owner: ISZ[String] = receiverType match {
               case tn: AST.Typed.Name => tn.ids
               case _ => ISZ[String]()
             }
             val methodType = AST.Typed.Fun(AST.Purity.Impure, F, ISZ(receiverType), AST.Typed.z)
-            return norm3AC(AST.IR.Exp.Apply(F, owner, "hash", AST.Typed.emptyRTypes, ISZ(receiver), methodType, pos))
+            val isSuper: B = receiverExp match {
+              case _: AST.Exp.Super => T
+              case _ => F
+            }
+            return norm3AC(AST.IR.Exp.Apply(F, owner, "hash", AST.Typed.emptyRTypes, ISZ(receiver), methodType, pos, isSuper))
           case res => halt(s"TODO: $res")
         }
       case exp: AST.Exp.Unary =>
@@ -2233,7 +2259,7 @@ object IRTranslator {
             val leftType = exp.left.typedOpt.get
             val rightType = exp.right.typedOpt.get
             val methodType = AST.Typed.Fun(AST.Purity.Impure, F, ISZ(leftType, rightType), t)
-            return norm3AC(AST.IR.Exp.Apply(T, tupleIds, "of", AST.Typed.emptyRTypes, ISZ(left, right), methodType, pos))
+            return norm3AC(AST.IR.Exp.Apply(T, tupleIds, "of", AST.Typed.emptyRTypes, ISZ(left, right), methodType, pos, F))
           case _ =>
         }
         // Non-scalar, non-seq binary op: lower to method call on left operand
@@ -2249,7 +2275,7 @@ object IRTranslator {
             // Use resolved method type (with proper type substitution) + prepend receiver
             var methodType = res.tpeOpt.get
             methodType = methodType(args = receiverType +: methodType.args)
-            return norm3AC(AST.IR.Exp.Apply(F, owner, res.id, AST.Typed.emptyRTypes, ISZ(left, right), methodType, pos))
+            return norm3AC(AST.IR.Exp.Apply(F, owner, res.id, AST.Typed.emptyRTypes, ISZ(left, right), methodType, pos, F))
           case _ =>
         }
         halt(s"TODO: $exp")
@@ -2337,7 +2363,7 @@ object IRTranslator {
                     case _ => halt(s"Unexpected Store arg at ${arg.posOpt}: $arg")
                   }
                   rcv = norm3AC(AST.IR.Exp.Apply(T, seqType.ids, "functionalUpdate",
-                    AST.Typed.emptyRTypes, ISZ(rcv, index, value), methodType, pos))
+                    AST.Typed.emptyRTypes, ISZ(rcv, index, value), methodType, pos, F))
                 }
                 return rcv
               case _ => halt(s"TODO: $exp")
@@ -2423,11 +2449,14 @@ object IRTranslator {
             val adt = th.typeMap.get(t.ids).get.asInstanceOf[TypeInfo.Adt]
             val sm = tipe.TypeChecker.buildTypeSubstMap(t.ids, exp.posOpt, adt.ast.typeParams, t.args,
               message.Reporter.create).get
-            // Evaluate the copy target first (preserves evaluation order).  A named
-            // copy such as `outer.inner(b = T)` retains `outer` as the invocation
-            // receiver and `inner` as the typed identifier, so reconstruct the
-            // selected field rather than copying fields directly from `outer`.
-            val copyTarget: AST.IR.Exp = exp.receiverOpt match {
+            val oldStmts = stmts
+            stmts = ISZ()
+            val copyStmts = Buffer.create[AST.IR.Stmt]()
+            // A named copy such as `outer.inner(b = T)` retains `outer` as the
+            // invocation receiver and `inner` as the typed identifier, so
+            // reconstruct the selected field rather than copying fields directly
+            // from `outer`.
+            val targetExp: AST.IR.Exp = exp.receiverOpt match {
               case Some(recv) =>
                 if (exp.ident.id.value == "apply") {
                   translateExp(recv)
@@ -2441,23 +2470,37 @@ object IRTranslator {
                 }
               case _ => translateExp(AST.Exp.Ident(exp.ident.id, exp.ident.attr))
             }
-            // Evaluate named args in source order (preserves side-effect order)
-            var map = HashMap.empty[Z, AST.IR.Exp]
-            for (narg <- exp.args) {
-              map = map + narg.index ~> translateExp(narg.arg)
+            for (stmt <- stmts) {
+              copyStmts.append(stmt)
             }
+            stmts = ISZ()
+            val targetN = fresh.temp()
+            copyStmts.append(AST.IR.Stmt.Assign.Temp(targetN, targetExp, targetExp.pos))
+            val copyTarget: AST.IR.Exp = AST.IR.Exp.Temp(targetN, targetExp.tipe, targetExp.pos)
+            val namedArgs = MSZ.create[Option[AST.IR.Exp]](adt.ast.params.size, None())
+            for (narg <- exp.args) {
+              val arg = translateExp(narg.arg)
+              for (stmt <- stmts) {
+                copyStmts.append(stmt)
+              }
+              stmts = ISZ()
+              val n = fresh.temp()
+              copyStmts.append(AST.IR.Stmt.Assign.Temp(n, arg, arg.pos))
+              namedArgs(narg.index) = Some(AST.IR.Exp.Temp(n, arg.tipe, arg.pos))
+            }
+            stmts = oldStmts ++ copyStmts.toIS
             // Assemble in param order: use named arg if provided, else copy from the target
-            var args = ISZ[AST.IR.Exp]()
+            val args = Buffer.create[AST.IR.Exp]()
             for (i <- adt.ast.params.indices) {
-              map.get(i) match {
-                case Some(arg) => args = args :+ arg
+              namedArgs(i) match {
+                case Some(arg) => args.append(arg)
                 case _ =>
                   val param = adt.ast.params(i)
                   val pt = param.tipe.typedOpt.get.subst(sm)
-                  args = args :+ norm3AC(AST.IR.Exp.FieldVarRef(copyTarget, param.id.value, pt, pos))
+                  args.append(norm3AC(AST.IR.Exp.FieldVarRef(copyTarget, param.id.value, pt, pos)))
               }
             }
-            return norm3AC(AST.IR.Exp.Construct(t, AST.Typed.emptyRTypes, args, pos))
+            return norm3AC(AST.IR.Exp.Construct(t, AST.Typed.emptyRTypes, args.toIS, pos))
           case _ =>
             halt(s"TODO: $exp")
         }
@@ -2471,7 +2514,7 @@ object IRTranslator {
           argTypes = argTypes :+ arg.typedOpt.get
         }
         val methodType = AST.Typed.Fun(AST.Purity.Impure, F, argTypes, tupleType)
-        return norm3AC(AST.IR.Exp.Apply(T, tupleIds, "of", AST.Typed.emptyRTypes, args, methodType, pos))
+        return norm3AC(AST.IR.Exp.Apply(T, tupleIds, "of", AST.Typed.emptyRTypes, args, methodType, pos, F))
       case exp: AST.Exp.ForYield =>
         val resultType = exp.typedOpt.get.asInstanceOf[AST.Typed.Name]
         val resultId = st"$$forYield.${pos.beginLine}.${pos.beginColumn}.${sha3(pos.string)}".render
