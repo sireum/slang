@@ -2266,6 +2266,9 @@ object IRTranslator {
         // Non-scalar, non-seq binary op: lower to method call on left operand
         exp.attr.resOpt.get match {
           case res: AST.ResolvedInfo.Method =>
+            if (res.isInObject) {
+              return translateMethodInvoke(res, None(), ISZ(exp.right), None(), pos)
+            }
             val left = translateExp(exp.left)
             val right = translateExp(exp.right)
             val receiverType: AST.Typed = exp.left.typedOpt.get
