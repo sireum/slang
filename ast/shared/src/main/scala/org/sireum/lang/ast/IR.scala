@@ -338,10 +338,12 @@ object IR {
     }
 
     @datatype class Apply(val isInObject: B, val owner: ISZ[org.sireum.String], val id: org.sireum.String,
-                          val rTypes: ISZ[RType], val args: ISZ[Exp], val methodType: Typed.Fun, val pos: Position) extends Exp {
+                          val rTypes: ISZ[RType], val args: ISZ[Exp], val methodType: Typed.Fun, val pos: Position,
+                          val isSuper: B) extends Exp {
       @strictpure def tipe: Typed = methodType.ret
       @strictpure def prettyRawST(p: Printer): ST = p.exp(this).getOrElse(
-        if (!isInObject && ops.StringOps(id).isScalaOp && args.size == 2) st"(${args(0).prettyST(p)} $id ${args(1).prettyST(p)})"
+        if (isSuper) st"super.$id(${(for (i <- 1 until args.size) yield args(i).prettyST(p), ", ")})"
+        else if (!isInObject && ops.StringOps(id).isScalaOp && args.size == 2) st"(${args(0).prettyST(p)} $id ${args(1).prettyST(p)})"
         else if (args.isEmpty) st"${if (owner.nonEmpty) st"${(owner, ".")}${if (isInObject) "." else "#"}" else st""}$id(${(for (arg <- args) yield arg.prettyST(p), ", ")})"
         else st"${args(0).prettyST(p)}.$id(${(for (i <- 1 until args.size) yield args(i).prettyST(p), ", ")})")
       @pure def numOfTemps: Z = {
