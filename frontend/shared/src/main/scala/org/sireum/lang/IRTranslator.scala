@@ -1619,6 +1619,9 @@ object IRTranslator {
           case Some(res: AST.ResolvedInfo.LocalVar) =>
             return AST.IR.Pattern.LocalRef(res.isVal, res.id, t, pos)
           case Some(res: AST.ResolvedInfo.Var) if res.isInObject =>
+            if (res.owner == AST.Typed.sireumName && (res.id == "T" || res.id == "F")) {
+              return AST.IR.Pattern.Literal(AST.IR.Exp.Bool(res.id == "T", pos))
+            }
             return AST.IR.Pattern.GlobalRef(res.owner, res.id, t, pos)
           case Some(res: AST.ResolvedInfo.Var) =>
             return AST.IR.Pattern.FieldRef(res.id, t, pos)
