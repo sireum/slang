@@ -188,29 +188,27 @@ object IRTranslator {
       }
       return AST.MTransformer.PostResultExpInvokeNamed
     }
-    override def transformExpInvoke(o: AST.Exp.Invoke): MOption[AST.Exp.Invoke] = {
+    override def preExpInvoke(o: AST.Exp.Invoke): AST.MTransformer.PreResult[AST.Exp] = {
       o.receiverOpt match {
         case Some(receiver) => transformExp(receiver)
-        case _ =>
+        case _ => transformExpIdent(o.ident)
       }
       for (arg <- o.args) {
         transformExp(arg)
       }
       transformResolvedAttr(o.attr)
-      postExpInvoke(o)
-      return MNone[AST.Exp.Invoke]()
+      return AST.MTransformer.PreResult(F, MNone[AST.Exp]())
     }
-    override def transformExpInvokeNamed(o: AST.Exp.InvokeNamed): MOption[AST.Exp.InvokeNamed] = {
+    override def preExpInvokeNamed(o: AST.Exp.InvokeNamed): AST.MTransformer.PreResult[AST.Exp] = {
       o.receiverOpt match {
         case Some(receiver) => transformExp(receiver)
-        case _ =>
+        case _ => transformExpIdent(o.ident)
       }
       for (arg <- o.args) {
         transformExp(arg.arg)
       }
       transformResolvedAttr(o.attr)
-      postExpInvokeNamed(o)
-      return MNone[AST.Exp.InvokeNamed]()
+      return AST.MTransformer.PreResult(F, MNone[AST.Exp]())
     }
   }
 
@@ -2013,6 +2011,21 @@ object IRTranslator {
     return norm3AC(AST.IR.Exp.Apply(applyIsInObject, applyOwner, applyId, AST.Typed.emptyRTypes, args.toIS, methodType, pos, isSuper))
   }
 
+  def translateClosureInvoke(exp: AST.Exp.Invoke, closure: AST.IR.Exp, funType: AST.Typed.Fun): AST.IR.Exp = {
+    val args = Buffer.createWithCapacity[AST.IR.Exp](exp.args.size, closure)
+    val pos = exp.posOpt.get
+    for (i <- z"0" until exp.args.size) {
+      val formalT = funType.args(i)
+      byNameValueTypeOpt(formalT) match {
+        case Some(_) =>
+          args.append(makeByNameClosure(exp.args(i), formalT.asInstanceOf[AST.Typed.Fun], pos))
+        case _ =>
+          args.append(translateExp(exp.args(i)))
+      }
+    }
+    return norm3AC(AST.IR.Exp.ApplyClosure(closure, args.toIS, exp.typedOpt.get, pos))
+  }
+
   def translateExp(exp: AST.Exp): AST.IR.Exp = {
     expDepth = expDepth + 1
     val r = translateExpH(exp)
@@ -2375,6 +2388,10 @@ object IRTranslator {
                 return rcv
               case _ => halt(s"TODO: $exp")
             }
+          case AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Apply) =>
+            val receiver = exp.receiverOpt.get
+            val funType = receiver.typedOpt.get.asInstanceOf[AST.Typed.Fun]
+            return translateClosureInvoke(exp, translateExp(receiver), funType)
           case res: AST.ResolvedInfo.LocalVar =>
             // Calling a function-typed local variable, e.g. f(10) where f: Z => Z
             val originalFunType = exp.ident.attr.typedOpt.get.asInstanceOf[AST.Typed.Fun]
@@ -2384,18 +2401,7 @@ object IRTranslator {
               case _ =>
                 AST.IR.Exp.LocalVarRef(res.isVal, methodContext, res.id, loweredFunType, pos)
             }
-            var args = ISZ[AST.IR.Exp]()
-            for (i <- z"0" until exp.args.size) {
-              val formalT = originalFunType.args(i)
-              byNameValueTypeOpt(formalT) match {
-                case Some(_) =>
-                  args = args :+ makeByNameClosure(exp.args(i), formalT.asInstanceOf[AST.Typed.Fun], pos)
-                case _ =>
-                  args = args :+ translateExp(exp.args(i))
-              }
-            }
-            val retType = exp.typedOpt.get
-            return norm3AC(AST.IR.Exp.ApplyClosure(closureVar, args, retType, pos))
+            return translateClosureInvoke(exp, closureVar, originalFunType)
           case res: AST.ResolvedInfo.Var =>
             // Calling a function-typed field/global variable, e.g. this.p(10) where p: T => B
             val originalFunType = exp.ident.attr.typedOpt.get.asInstanceOf[AST.Typed.Fun]
@@ -2412,18 +2418,7 @@ object IRTranslator {
                     AST.IR.Exp.FieldVarRef(liftedThiz(res.owner, pos), res.id, loweredFunType, pos)
                 }
               }
-            var args = ISZ[AST.IR.Exp]()
-            for (i <- z"0" until exp.args.size) {
-              val formalT = originalFunType.args(i)
-              byNameValueTypeOpt(formalT) match {
-                case Some(_) =>
-                  args = args :+ makeByNameClosure(exp.args(i), formalT.asInstanceOf[AST.Typed.Fun], pos)
-                case _ =>
-                  args = args :+ translateExp(exp.args(i))
-              }
-            }
-            val retType = exp.typedOpt.get
-            return norm3AC(AST.IR.Exp.ApplyClosure(closureVar, args, retType, pos))
+            return translateClosureInvoke(exp, closureVar, originalFunType)
           case res => halt(s"TODO: $exp (res: $res)")
         }
       case exp: AST.Exp.InvokeNamed =>

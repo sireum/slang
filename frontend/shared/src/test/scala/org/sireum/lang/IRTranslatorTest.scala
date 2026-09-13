@@ -198,6 +198,92 @@ class IRTranslatorTest extends TestSuite {
     assert(found == 2)
   }
 
+  registerTest("closure capture traversal agrees for direct and general invocations") {
+    val context = ISZ[String]("fixture", "outer")
+    val owner = ISZ[String]("fixture", "Foreign")
+    val ownerType = Typed.Name(owner, None(), ISZ[Typed]())
+    val funType = Typed.Fun(purity = ast.Purity.Pure, isByName = F, args = ISZ[Typed](Typed.z), ret = Typed.string)
+    def local(id: String, tipe: Typed): ast.Exp.Ident = {
+      val res = ast.ResolvedInfo.LocalVar(context = context, scope = ast.ResolvedInfo.LocalVar.Scope.Closure,
+        isSpec = F, isVal = T, id = id, defPosOpt = None())
+      return ast.Exp.Ident(ast.Id(id, ast.Attr(None())), ast.ResolvedAttr(None(), Some(res), Some(tipe)))
+    }
+    def collect(exp: ast.Exp, direct: B): IRTranslator.ClosureCaptureCollector = {
+      val collector = IRTranslator.ClosureCaptureCollector(HashSMap.empty, F)
+      if (direct) {
+        exp match {
+          case e: ast.Exp.Invoke => collector.transformExpInvoke(e)
+          case e: ast.Exp.InvokeNamed => collector.transformExpInvokeNamed(e)
+          case _ => fail("Expected an invocation")
+        }
+      } else {
+        collector.transformExp(exp)
+      }
+      return collector
+    }
+    val receiver = local("receiver", ownerType)
+    val arg = local("arg", Typed.z)
+    val methodRes = ast.ResolvedInfo.Method(isInObject = F, mode = ast.MethodMode.Method,
+      typeParams = ISZ[String](), owner = owner, id = "run", paramNames = ISZ[String]("arg"),
+      tpeOpt = Some(funType), reads = ISZ[ast.ResolvedInfo](), writes = ISZ[ast.ResolvedInfo](), defPosOpt = None())
+    val method = ast.Exp.Ident(ast.Id("run", ast.Attr(None())), ast.ResolvedAttr(None(), Some(methodRes), Some(funType)))
+    val attr = method.attr(typedOpt = Typed.stringOpt)
+    val invoke = ast.Exp.Invoke(receiverOpt = Some(receiver), ident = method, rTypes = ISZ[ast.RType](),
+      targs = ISZ[ast.Type](), args = ISZ[ast.Exp](arg), attr = attr)
+    val named = ast.Exp.InvokeNamed(receiverOpt = Some(receiver), ident = method, rTypes = ISZ[ast.RType](),
+      targs = ISZ[ast.Type](), args = ISZ[ast.NamedArg](ast.NamedArg(ast.Id("arg", ast.Attr(None())), arg, 0)), attr = attr)
+    val explicitCaptures = ISZ[(ISZ[String], B, String, Typed)](
+      (context, T, "receiver", ownerType), (context, T, "arg", Typed.z))
+    for (direct <- ISZ[B](F, T)) {
+      for (exp <- ISZ[ast.Exp](invoke, named)) {
+        val collector = collect(exp, direct)
+        assert(!collector.capturesThis && collector.captures.values == explicitCaptures)
+      }
+      for (exp <- ISZ[ast.Exp](invoke(receiverOpt = None()), named(receiverOpt = None()))) {
+        val collector = collect(exp, direct)
+        assert(collector.capturesThis)
+        assert(collector.captures.values == ISZ[(ISZ[String], B, String, Typed)]((context, T, "arg", Typed.z)))
+      }
+      val function = local("function", funType)
+      val call = invoke(receiverOpt = None(), ident = function, attr = function.attr(typedOpt = Typed.stringOpt))
+      val collector = collect(call, direct)
+      assert(!collector.capturesThis)
+      assert(collector.captures.values == ISZ[(ISZ[String], B, String, Typed)](
+        (context, T, "function", funType), (context, T, "arg", Typed.z)))
+    }
+  }
+
+
+  registerTest("chained function calls preserve the receiver and ordered arguments") {
+    val input =
+      """import org.sireum._
+        |@record class Box() {
+        |  @pure def first(): Z = { return 11 }
+        |  @pure def second(): Z = { return 22 }
+        |  @pure def indexed(fs: ISZ[(Z, Z) => Z]): Z = {
+        |    return fs(0)(first(), second())
+        |  }
+        |  @pure def select(fs: ISZ[(Z, Z) => Z]): (Z, Z) => Z = { return fs(0) }
+        |  @pure def returned(fs: ISZ[(Z, Z) => Z]): Z = {
+        |    return select(fs)(first(), second())
+        |  }
+        |}""".stripMargin
+    val (_, indexed) = translated(input, "Box", "indexed")
+    val (_, returned) = translated(input, "Box", "returned")
+    for (procedure <- ISZ(indexed, returned)) {
+      val call = returnStmt(procedure).expOpt.get.asInstanceOf[IR.Exp.ApplyClosure]
+      assert(call.tipe == Typed.z)
+      assert(call.args.size == 2)
+      assert(call.args(0).asInstanceOf[IR.Exp.Apply].id == SString("first"))
+      assert(call.args(1).asInstanceOf[IR.Exp.Apply].id == SString("second"))
+    }
+    val indexedCall = returnStmt(indexed).expOpt.get.asInstanceOf[IR.Exp.ApplyClosure]
+    val access = indexedCall.closureExp.asInstanceOf[IR.Exp.Indexing]
+    assert(access.index.asInstanceOf[IR.Exp.Int].value == z"0")
+    assert(access.exp.asInstanceOf[IR.Exp.LocalVarRef].id == SString("fs"))
+    val returnedCall = returnStmt(returned).expOpt.get.asInstanceOf[IR.Exp.ApplyClosure]
+    assert(returnedCall.closureExp.asInstanceOf[IR.Exp.Apply].id == SString("select"))
+  }
   registerTest("super method calls carry direct dispatch metadata") {
       val input =
         """import org.sireum._
