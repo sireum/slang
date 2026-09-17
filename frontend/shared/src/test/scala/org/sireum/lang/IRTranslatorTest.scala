@@ -602,6 +602,7 @@ class IRTranslatorTest extends TestSuite {
     assert(result.tipe == Typed.z)
     assert(result.methodType.ret == Typed.z)
     assert(result.args(0).tipe == Typed.Name(ISZ[String]("Negative"), None(), ISZ()))
+    assert(result.methodType.args == ISZ(result.args(0).tipe))
   }
 
   registerTest("inherited super calls keep parent ABI and owner") {

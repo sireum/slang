@@ -1946,7 +1946,7 @@ object IRTranslator {
       case Some(receiver) if !res.isInObject && (isExt || nestedCaptureListOpt.isEmpty) =>
         val receiverExp = translateExp(receiver)
         args.append(if (named) snapshot(receiverExp) else receiverExp)
-        methodType = methodType(args = lowerByNameType(receiver.typedOpt.get) +: methodType.args)
+        methodType = methodType(args = lowerByNameType(receiverExp.tipe) +: methodType.args)
       case _ if !isExt && !res.isInObject && nestedCaptureListOpt.isEmpty =>
         val receiverExp = thiz(pos)
         args.append(if (named) snapshot(receiverExp) else receiverExp)
