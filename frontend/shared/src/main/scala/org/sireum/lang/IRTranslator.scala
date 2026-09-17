@@ -2127,11 +2127,11 @@ object IRTranslator {
                   return norm3AC(AST.IR.Exp.FieldVarRef(rcv, res.id, lowerByNameType(res.tpeOpt.get.ret), pos))
                 } else {
                   return translateExp(AST.Exp.Invoke(exp.receiverOpt, AST.Exp.Ident(exp.id, exp.attr), ISZ(), ISZ(), ISZ(),
-                    exp.attr(typedOpt = Some(exp.typedOpt.get.asInstanceOf[AST.Typed.Method].tpe.ret))))
+                    exp.attr(typedOpt = Some(res.tpeOpt.get.ret))))
                 }
               case _ =>
                 return translateExp(AST.Exp.Invoke(None(), AST.Exp.Ident(exp.id, exp.attr), ISZ(), ISZ(), ISZ(),
-                  exp.attr(typedOpt = Some(exp.typedOpt.get.asInstanceOf[AST.Typed.Method].tpe.ret))))
+                  exp.attr(typedOpt = Some(res.tpeOpt.get.ret))))
             }
           case AST.ResolvedInfo.BuiltIn(kind) if kind == AST.ResolvedInfo.BuiltIn.Kind.AsInstanceOf ||
           kind == AST.ResolvedInfo.BuiltIn.Kind.IsInstanceOf =>

@@ -587,6 +587,23 @@ class IRTranslatorTest extends TestSuite {
     assertGeneratorTemps(procedure)
   }
 
+  registerTest("selected range conversions retain instantiated result types") {
+    val input =
+      """import org.sireum._
+        |@range(min = -10, max = 0) class Negative
+        |@record class Box() {
+        |  @pure def probe(value: Option[Negative]): Z = {
+        |    return value.get.toZ
+        |  }
+        |}""".stripMargin
+    val (_, procedure) = translated(input, "Box", "probe")
+    val result = returnStmt(procedure).expOpt.get.asInstanceOf[IR.Exp.Apply]
+    assert(result.id.value == "toZ")
+    assert(result.tipe == Typed.z)
+    assert(result.methodType.ret == Typed.z)
+    assert(result.args(0).tipe == Typed.Name(ISZ[String]("Negative"), None(), ISZ()))
+  }
+
   registerTest("inherited super calls keep parent ABI and owner") {
     val input =
       """import org.sireum._
