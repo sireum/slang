@@ -33,6 +33,68 @@ import org.sireum.lang.{ast => AST}
 import org.sireum.U32._
 
 object IRTranslator {
+  @enum object PatternOwnerKind {
+    "Adt"
+    "Other"
+    "SubZ"
+  }
+
+  @datatype class PatternField(val id: String, val tipe: AST.Typed)
+
+  @datatype class PatternOwner(val kind: PatternOwnerKind.Type,
+                               val typeParamIds: ISZ[String],
+                               val visibleParams: ISZ[PatternField])
+
+  @datatype class PatternDeclFacts(val owners: HashSMap[ISZ[String], PatternOwner])
+
+  @pure def patternCondAnd(conditions: ISZ[AST.IR.Exp], pos: message.Position): AST.IR.Exp = {
+    if (conditions.isEmpty) {
+      return AST.IR.Exp.Bool(T, pos)
+    }
+    var result = conditions(0)
+    for (i <- 1 until conditions.size) {
+      result = AST.IR.condAnd(result, conditions(i), pos)
+    }
+    return result
+  }
+
+  @pure def visiblePatternFields(info: TypeInfo.Adt): ISZ[PatternField] = {
+    val fields = Buffer.create[PatternField]()
+    for (param <- info.ast.params if !param.isHidden) {
+      val fieldType: AST.Typed = info.vars.get(param.id.value) match {
+        case Some(field) => field.typedOpt match {
+          case Some(tipe) => tipe
+          case _ => halt("Pattern declaration facts require a resolved ADT field")
+        }
+        case _ => halt("Pattern declaration facts require ADT field metadata")
+      }
+      fields.append(PatternField(param.id.value, fieldType))
+    }
+    return fields.toIS
+  }
+
+  @pure def freezePatternDeclFacts(th: TypeHierarchy): PatternDeclFacts = {
+    val entries = Buffer.create[(ISZ[String], PatternOwner)]()
+    for (entry <- th.typeMap.entries) {
+      entry._2 match {
+        case info: TypeInfo.Adt =>
+          if (!info.typeChecked) {
+            halt("Pattern declaration facts require a checked ADT owner")
+          }
+          val typeParamIds: ISZ[String] = for (typeParam <- info.ast.typeParams) yield typeParam.id.value
+          entries.append((entry._1, PatternOwner(PatternOwnerKind.Adt, typeParamIds, visiblePatternFields(info))))
+        case _: TypeInfo.Sig =>
+          entries.append((entry._1, PatternOwner(PatternOwnerKind.Other, ISZ[String](), ISZ[PatternField]())))
+        case _: TypeInfo.Enum =>
+          entries.append((entry._1, PatternOwner(PatternOwnerKind.Other, ISZ[String](), ISZ[PatternField]())))
+        case _: TypeInfo.SubZ =>
+          entries.append((entry._1, PatternOwner(PatternOwnerKind.SubZ, ISZ[String](), ISZ[PatternField]())))
+        case _ =>
+      }
+    }
+    return PatternDeclFacts(HashSMap.empty[ISZ[String], PatternOwner] ++ entries.toIS)
+  }
+
   @msig trait Fresh {
     def setLabel(n: Z): Unit
     def setTemp(n: Z): Unit
@@ -49,9 +111,33 @@ object IRTranslator {
   @record class ClosureCaptureCollector(var captures: HashSMap[(ISZ[String], String), (ISZ[String], B, String, AST.Typed)],
                                         var capturesThis: B)
     extends AST.MTransformer {
+    var lambdaContexts: Stack[ISZ[String]] = Stack.empty
+
+    def isLambdaContext(context: ISZ[String]): B = {
+      for (c <- lambdaContexts.elements) {
+        if (c == context) {
+          return T
+        }
+      }
+      return F
+    }
+
+    override def preExpFun(o: AST.Exp.Fun): AST.MTransformer.PreResult[AST.Exp] = {
+      lambdaContexts = lambdaContexts.push(o.context)
+      return AST.MTransformer.PreResultExpFun
+    }
+
+    override def postExpFun(o: AST.Exp.Fun): MOption[AST.Exp] = {
+      lambdaContexts.pop match {
+        case Some((_, rest)) => lambdaContexts = rest
+        case _ => halt("Infeasible: empty lambda context stack")
+      }
+      return AST.MTransformer.PostResultExpFun
+    }
+
     override def postResolvedAttr(o: AST.ResolvedAttr): MOption[AST.ResolvedAttr] = {
       o.resOpt match {
-        case Some(res: AST.ResolvedInfo.LocalVar) if res.scope == AST.ResolvedInfo.LocalVar.Scope.Closure =>
+        case Some(res: AST.ResolvedInfo.LocalVar) if res.scope == AST.ResolvedInfo.LocalVar.Scope.Closure && !isLambdaContext(res.context) =>
           val key = (res.context, res.id)
           if (!captures.contains(key)) {
             captures = captures + key ~> ((res.context, res.isVal, res.id, o.typedOpt.get))
@@ -64,6 +150,10 @@ object IRTranslator {
       capturesThis = T
       return AST.MTransformer.PostResultExpThis
     }
+    override def postExpSuper(o: AST.Exp.Super): MOption[AST.Exp] = {
+      capturesThis = T
+      return AST.MTransformer.PostResultExpSuper
+    }
     override def postExpIdent(o: AST.Exp.Ident): MOption[AST.Exp] = {
       o.resOpt match {
         case Some(res: AST.ResolvedInfo.Var) if !res.isInObject => capturesThis = T
@@ -71,6 +161,13 @@ object IRTranslator {
         case _ =>
       }
       return AST.MTransformer.PostResultExpIdent
+    }
+    override def postPatternRef(o: AST.Pattern.Ref): MOption[AST.Pattern] = {
+      o.attr.resOpt match {
+        case Some(res: AST.ResolvedInfo.Var) if !res.isInObject => capturesThis = T
+        case _ =>
+      }
+      return AST.MTransformer.PostResultPatternRef
     }
     override def postExpSelect(o: AST.Exp.Select): MOption[AST.Exp] = {
       if (o.receiverOpt.isEmpty) {
@@ -102,29 +199,84 @@ object IRTranslator {
       }
       return AST.MTransformer.PostResultExpInvokeNamed
     }
-    override def transformExpInvoke(o: AST.Exp.Invoke): MOption[AST.Exp.Invoke] = {
+    override def preExpInvoke(o: AST.Exp.Invoke): AST.MTransformer.PreResult[AST.Exp] = {
       o.receiverOpt match {
         case Some(receiver) => transformExp(receiver)
-        case _ =>
+        case _ => transformExpIdent(o.ident)
       }
       for (arg <- o.args) {
         transformExp(arg)
       }
       transformResolvedAttr(o.attr)
-      postExpInvoke(o)
-      return MNone[AST.Exp.Invoke]()
+      return AST.MTransformer.PreResult(F, MNone[AST.Exp]())
     }
-    override def transformExpInvokeNamed(o: AST.Exp.InvokeNamed): MOption[AST.Exp.InvokeNamed] = {
+    override def preExpInvokeNamed(o: AST.Exp.InvokeNamed): AST.MTransformer.PreResult[AST.Exp] = {
       o.receiverOpt match {
         case Some(receiver) => transformExp(receiver)
-        case _ =>
+        case _ => transformExpIdent(o.ident)
       }
       for (arg <- o.args) {
         transformExp(arg.arg)
       }
       transformResolvedAttr(o.attr)
-      postExpInvokeNamed(o)
-      return MNone[AST.Exp.InvokeNamed]()
+      return AST.MTransformer.PreResult(F, MNone[AST.Exp]())
+    }
+  }
+
+  @record class NestedMethodCallCollector(val calls: Buffer[ISZ[String]], var seen: HashSSet[ISZ[String]]) extends AST.MTransformer {
+    def record(res: AST.ResolvedInfo.Method): Unit = {
+      if (res.mode == AST.MethodMode.Method) {
+        val key = res.owner :+ res.id
+        if (!seen.contains(key)) {
+          seen = seen + key
+          calls.append(key)
+        }
+      }
+      return
+    }
+    override def preStmtMethod(o: AST.Stmt.Method): AST.MTransformer.PreResult[AST.Stmt] = {
+      return AST.MTransformer.PreResult(F, MNone())
+    }
+    override def postExpInvoke(o: AST.Exp.Invoke): MOption[AST.Exp] = {
+      o.attr.resOpt match {
+        case Some(res: AST.ResolvedInfo.Method) => record(res)
+        case _ =>
+      }
+      return AST.MTransformer.PostResultExpInvoke
+    }
+    override def postExpInvokeNamed(o: AST.Exp.InvokeNamed): MOption[AST.Exp] = {
+      o.attr.resOpt match {
+        case Some(res: AST.ResolvedInfo.Method) => record(res)
+        case _ =>
+      }
+      return AST.MTransformer.PostResultExpInvokeNamed
+    }
+    override def postExpIdent(o: AST.Exp.Ident): MOption[AST.Exp] = {
+      o.resOpt match {
+        case Some(res: AST.ResolvedInfo.Method) => record(res)
+        case _ =>
+      }
+      return AST.MTransformer.PostResultExpIdent
+    }
+  }
+
+  @record class NestedMethodDeclarationCollector(val methods: Buffer[AST.Stmt.Method],
+                                                 var seen: HashSSet[ISZ[String]]) extends AST.MTransformer {
+    override def preStmtMethod(o: AST.Stmt.Method): AST.MTransformer.PreResult[AST.Stmt] = {
+      o.bodyOpt match {
+        case Some(_) =>
+          o.attr.resOpt match {
+            case Some(res: AST.ResolvedInfo.Method) =>
+              val key = res.owner :+ res.id
+              if (!seen.contains(key)) {
+                seen = seen + key
+                methods.append(o)
+              }
+            case _ =>
+          }
+        case _ =>
+      }
+      return AST.MTransformer.PreResultStmtMethod
     }
   }
 
@@ -140,9 +292,18 @@ object IRTranslator {
   var stmts: ISZ[AST.IR.Stmt] = ISZ()
   var liftedProcedures: ISZ[AST.IR.Procedure] = ISZ()
   var nestedMethodCaptures: HashMap[ISZ[String], ISZ[(B, String, AST.Typed)]] = HashMap.empty
+  var nestedMethodCaptureInfo: HashMap[ISZ[String], ISZ[(ISZ[String], B, String, AST.Typed)]] = HashMap.empty
   var varCaptureSet: HashSet[String] = HashSet.empty
   var capturedThisTypeOpt: Option[AST.Typed] = None()
+  var currentThisExpOpt: Option[AST.IR.Exp] = None()
   var extMethodAccum: HashSSet[(B, ISZ[String], String)] = HashSSet.empty
+  var expDepth: Z = 0
+
+  def resetTemp(): Unit = {
+    if (expDepth == 0) {
+      fresh.setTemp(0)
+    }
+  }
 
   def recordAndResolveExt(res: AST.ResolvedInfo.Method, applyIsInObject: B): ISZ[String] = {
     if (res.mode == AST.MethodMode.Ext) {
@@ -151,8 +312,15 @@ object IRTranslator {
     return res.owner
   }
 
+  @strictpure def liftedNestedMethodId(res: AST.ResolvedInfo.Method): String =
+    st"$$nested.${(res.owner, ".")}.${res.id}".render
+
   @strictpure def mboxType(t: AST.Typed): AST.Typed.Name =
     AST.Typed.Name(AST.Typed.sireumName :+ "MBox", None(), ISZ(t))
+
+  def loweredMBoxType(t: AST.Typed): AST.Typed.Name = {
+    return mboxType(lowerByNameType(t))
+  }
 
   def collectTypeVarIds(t: AST.Typed, seen: HashSet[String]): (ISZ[String], HashSet[String]) = {
     t match {
@@ -233,7 +401,23 @@ object IRTranslator {
     return lowerByNameType(t).asInstanceOf[AST.Typed.Fun]
   }
 
+  def nestedCaptureExp(capture: (B, String, AST.Typed), pos: message.Position): AST.IR.Exp = {
+    val captureId = capture._2
+    val captureType = capture._3
+    if (captureId == "this") {
+      return thiz(pos)
+    }
+    if (!capture._1 || varCaptureSet.contains(captureId)) {
+      return AST.IR.Exp.LocalVarRef(capture._1, methodContext, captureId, loweredMBoxType(captureType), pos)
+    }
+    return AST.IR.Exp.LocalVarRef(capture._1, methodContext, captureId, lowerByNameType(captureType), pos)
+  }
+
   def currentThisTypeOpt: Option[AST.Typed] = {
+    currentThisExpOpt match {
+      case Some(exp) => return Some(exp.tipe)
+      case _ =>
+    }
     capturedThisTypeOpt match {
       case Some(t) => return Some(t)
       case _ =>
@@ -245,7 +429,7 @@ object IRTranslator {
   }
 
   def prependThisCapture(captures: ISZ[(B, String, AST.Typed)], capturesThis: B): ISZ[(B, String, AST.Typed)] = {
-    if (capturesThis) {
+    if (capturesThis && captureThisTypeOpt(captures).isEmpty) {
       currentThisTypeOpt match {
         case Some(t) => return (T, "this", t) +: captures
         case _ =>
@@ -278,7 +462,58 @@ object IRTranslator {
   def collectCapturesExp(exp: AST.Exp): (ISZ[(ISZ[String], B, String, AST.Typed)], B) = {
     val collector = IRTranslator.ClosureCaptureCollector(HashSMap.empty, F)
     collector.transformExp(exp)
-    return (collector.captures.values, collector.capturesThis)
+    val calls = collectNestedMethodCallsExp(exp)
+    return (augmentNestedCaptureInfo(collector.captures.values, calls), collector.capturesThis)
+  }
+
+  def collectNestedMethodCalls(body: AST.Body): ISZ[ISZ[String]] = {
+    val collector = IRTranslator.NestedMethodCallCollector(Buffer.create[ISZ[String]](), HashSSet.empty[ISZ[String]])
+    collector.transformBody(body)
+    return collector.calls.toIS
+  }
+
+  def collectNestedMethodCallsExp(exp: AST.Exp): ISZ[ISZ[String]] = {
+    val collector = IRTranslator.NestedMethodCallCollector(Buffer.create[ISZ[String]](), HashSSet.empty[ISZ[String]])
+    collector.transformExp(exp)
+    return collector.calls.toIS
+  }
+
+  def collectNestedMethodCallsAssignExp(exp: AST.AssignExp): ISZ[ISZ[String]] = {
+    val collector = IRTranslator.NestedMethodCallCollector(Buffer.create[ISZ[String]](), HashSSet.empty[ISZ[String]])
+    collector.transformAssignExp(exp)
+    return collector.calls.toIS
+  }
+
+  def augmentNestedCaptureInfo(captures: ISZ[(ISZ[String], B, String, AST.Typed)], calls: ISZ[ISZ[String]]): ISZ[(ISZ[String], B, String, AST.Typed)] = {
+    val result = Buffer.create[(ISZ[String], B, String, AST.Typed)]()
+    var ids = HashSet.empty[String]
+    for (capture <- captures) {
+      result.append(capture)
+      ids = ids + capture._3
+    }
+    for (key <- calls) {
+      nestedMethodCaptureInfo.get(key) match {
+        case Some(nestedCaptures) =>
+          for (capture <- nestedCaptures) {
+            if (!ids.contains(capture._3)) {
+              result.append(capture)
+              ids = ids + capture._3
+            }
+          }
+        case _ =>
+      }
+    }
+    return result.toIS
+  }
+
+  def prependThisCaptureInfo(captures: ISZ[(ISZ[String], B, String, AST.Typed)], capturesThis: B): ISZ[(ISZ[String], B, String, AST.Typed)] = {
+    if (capturesThis) {
+      currentThisTypeOpt match {
+        case Some(t) => return ((methodContext.owner :+ methodContext.id), T, "this", t) +: captures
+        case _ =>
+      }
+    }
+    return captures
   }
 
   def makeByNameClosure(arg: AST.Exp, byNameType: AST.Typed.Fun, pos: message.Position): AST.IR.Exp = {
@@ -302,7 +537,7 @@ object IRTranslator {
         captureTypes = captureTypes :+ loweredCaptureType
         captureExprs = captureExprs :+ thiz(pos)
       } else if (!captureIsVal || varCaptureSet.contains(captureId)) {
-        val mt = mboxType(captureType)
+        val mt = mboxType(loweredCaptureType)
         captureTypes = captureTypes :+ mt
         captureExprs = captureExprs :+ AST.IR.Exp.LocalVarRef(T, methodContext, captureId, mt, pos)
         liftedVarCaptureSet = liftedVarCaptureSet + captureId
@@ -316,7 +551,9 @@ object IRTranslator {
     val savedStmts = stmts
     val savedVarCaptureSet = varCaptureSet
     val savedNestedMethodCaptures = nestedMethodCaptures
+    val savedNestedMethodCaptureInfo = nestedMethodCaptureInfo
     val savedCapturedThisTypeOpt = capturedThisTypeOpt
+    val savedCurrentThisExpOpt = currentThisExpOpt
 
     methodContext = AST.IR.MethodContext(
       isInObject = T,
@@ -326,8 +563,8 @@ object IRTranslator {
     )
     stmts = ISZ()
     varCaptureSet = liftedVarCaptureSet
-    nestedMethodCaptures = HashMap.empty
     capturedThisTypeOpt = captureThisTypeOpt(captures)
+    currentThisExpOpt = None()
 
     val bodyPos = arg.posOpt.get
     if (thunkType.ret == AST.Typed.unit) {
@@ -364,7 +601,9 @@ object IRTranslator {
     stmts = savedStmts
     varCaptureSet = savedVarCaptureSet
     nestedMethodCaptures = savedNestedMethodCaptures
+    nestedMethodCaptureInfo = savedNestedMethodCaptureInfo
     capturedThisTypeOpt = savedCapturedThisTypeOpt
+    currentThisExpOpt = savedCurrentThisExpOpt
 
     return norm3AC(AST.IR.Exp.ClosureRef(
       owner = owner,
@@ -393,14 +632,19 @@ object IRTranslator {
     }
     val oldCapturedThisTypeOpt = capturedThisTypeOpt
     capturedThisTypeOpt = None()
+    val oldCurrentThisExpOpt = currentThisExpOpt
+    currentThisExpOpt = None()
     methodContext = AST.IR.MethodContext(isInObject, owner, id, t)
+    val methodCaptureContext = owner :+ id
+    val isWorksheetMain = owner.isEmpty && id == "main"
     val oldVarCaptureSet = varCaptureSet
     varCaptureSet = HashSet.empty
     bodyOpt match {
       case Some(b) =>
         val collector = IRTranslator.ClosureCaptureCollector(HashSMap.empty, F)
         collector.transformBody(b)
-        for (capture <- collector.captures.values if !capture._2) {
+        for (capture <- collector.captures.values if
+          (capture._1 == methodCaptureContext || (isWorksheetMain && capture._1.isEmpty)) && !capture._2) {
           varCaptureSet = varCaptureSet + capture._3
         }
       case _ =>
@@ -417,6 +661,7 @@ object IRTranslator {
     }
     varCaptureSet = oldVarCaptureSet
     capturedThisTypeOpt = oldCapturedThisTypeOpt
+    currentThisExpOpt = oldCurrentThisExpOpt
     if (isBasic) {
       body = toBasic(body.asInstanceOf[AST.IR.Body.Block], pos)
     }
@@ -434,9 +679,19 @@ object IRTranslator {
   }
 
   @pure def simplifyAssignPattern(stmt: AST.IR.Stmt.AssignPattern): AST.IR.Stmt.Block = {
+    return simplifyAssignPatternH(stmt, None())
+  }
+
+  @pure def simplifyAssignPatternH(stmt: AST.IR.Stmt.AssignPattern,
+                                   patternFactsOpt: Option[IRTranslator.PatternDeclFacts]): AST.IR.Stmt.Block = {
     val pos = stmt.pos
-    val (_, lMap) = translatePattern(stmt.rhs, stmt.pattern, HashSMap.empty)
-    var assignStmts = ISZ[AST.IR.Stmt]()
+    val initId = assignExpId("$pattern.", None(), pos)
+    val initType = stmt.rhs.tipe
+    val init = AST.IR.Exp.LocalVarRef(T, stmt.context, initId, initType, pos)
+    var assignStmts = ISZ[AST.IR.Stmt](
+      AST.IR.Stmt.Decl(F, T, F, stmt.context, ISZ(AST.IR.Stmt.Decl.Local(initId, initType)), pos),
+      AST.IR.Stmt.Assign.Local(stmt.context, initId, initType, stmt.rhs, pos))
+    val (_, lMap) = translatePatternH(init, stmt.pattern, HashSMap.empty, patternFactsOpt)
     for (e <- lMap.entries) {
       assignStmts = assignStmts :+ AST.IR.Stmt.Assign.Local(stmt.context, e._1._2, e._2.tipe, e._2, e._2.pos)
     }
@@ -444,6 +699,11 @@ object IRTranslator {
   }
 
   @pure def simplifyMatch(stmt: AST.IR.Stmt.Match): AST.IR.Stmt.Block = {
+    return simplifyMatchH(stmt, None())
+  }
+
+  @pure def simplifyMatchH(stmt: AST.IR.Stmt.Match,
+                            patternFactsOpt: Option[IRTranslator.PatternDeclFacts]): AST.IR.Stmt.Block = {
     val matchCondId = matchExpId(stmt.exp.pos)
     val pos = stmt.pos
     var stmts = ISZ[AST.IR.Stmt](
@@ -452,8 +712,8 @@ object IRTranslator {
     )
     var first = T
     for (cas <- stmt.cases) {
-      val (cs, lMap) = translatePattern(stmt.exp, cas.pattern, HashSMap.empty)
-      val casPos = cas.pattern.posOpt.get
+      val (cs, lMap) = translatePatternH(stmt.exp, cas.pattern, HashSMap.empty, patternFactsOpt)
+      val casPos = cas.pattern.pos
       var bindingStmts = ISZ[AST.IR.Stmt]()
       if (lMap.nonEmpty) {
         bindingStmts = bindingStmts :+ AST.IR.Stmt.Decl(F, T, F, methodContext,
@@ -494,6 +754,103 @@ object IRTranslator {
       stmts = stmts :+ r
     }
     return AST.IR.Stmt.Block(stmts, pos)
+  }
+
+  def scalarSwitchCaseValue(pattern: AST.IR.Pattern): Option[AST.IR.Exp] = {
+    pattern match {
+      case _: AST.IR.Pattern.Wildcard => return None()
+      case pattern: AST.IR.Pattern.Literal => return Some(AST.IR.Pattern.directLiteral(pattern.exp))
+      case _ => halt(s"Infeasible: $pattern")
+    }
+  }
+
+  def preparePatternBody(body: AST.IR.Body.Block): AST.IR.Body.Block = {
+    return preparePatternBodyH(body, None())
+  }
+
+  def preparePatternBodyWithPatternFacts(body: AST.IR.Body.Block,
+                                         patternFacts: IRTranslator.PatternDeclFacts): AST.IR.Body.Block = {
+    return preparePatternBodyH(body, Some(patternFacts))
+  }
+
+  def preparePatternBodyH(body: AST.IR.Body.Block,
+                          patternFactsOpt: Option[IRTranslator.PatternDeclFacts]): AST.IR.Body.Block = {
+    def prepareExpBlock(expBlock: AST.IR.ExpBlock): AST.IR.ExpBlock = {
+      val prepared = prepareBlock(AST.IR.Stmt.Block(expBlock.stmts, expBlock.exp.pos))
+      return AST.IR.ExpBlock(prepared._1.stmts, expBlock.exp)
+    }
+
+    def prepareStmt(stmt: AST.IR.Stmt): (AST.IR.Stmt, B) = {
+      stmt match {
+        case s: AST.IR.Stmt.Block =>
+          val prepared = prepareBlock(s)
+          return (prepared._1, prepared._2)
+        case s: AST.IR.Stmt.Match =>
+          if (isScalarWithPatternFacts(s.exp.tipe, patternFactsOpt) && ops.ISZOps(s.cases).forall((c : AST.IR.Stmt.Match.Case) =>
+            c.condOpt.isEmpty && c.decl.locals.isEmpty && (c.pattern.isInstanceOf[AST.IR.Pattern.Literal] ||
+              c.pattern.isInstanceOf[AST.IR.Pattern.Wildcard]))) {
+            val cases = Buffer.create[AST.IR.Stmt.Switch.Case]()
+            for (c <- s.cases) {
+              val preparedBody = prepareBlock(c.body)
+              cases.append(AST.IR.Stmt.Switch.Case(scalarSwitchCaseValue(c.pattern), preparedBody._1))
+            }
+            return (AST.IR.Stmt.Switch(s.exp, cases.toIS, s.pos), T)
+          }
+          return prepareStmt(simplifyMatchH(s, patternFactsOpt))
+        case s: AST.IR.Stmt.AssignPattern =>
+          return prepareStmt(simplifyAssignPatternH(s, patternFactsOpt))
+        case s: AST.IR.Stmt.If =>
+          val thenPrepared = prepareBlock(s.thenBlock)
+          val elsePrepared = prepareBlock(s.elseBlock)
+          return (AST.IR.Stmt.If(s.cond, thenPrepared._1, elsePrepared._1, s.pos),
+            thenPrepared._2 || elsePrepared._2)
+        case s: AST.IR.Stmt.While =>
+          val condPrepared = prepareBlock(AST.IR.Stmt.Block(s.cond.stmts, s.cond.exp.pos))
+          val cond = AST.IR.ExpBlock(condPrepared._1.stmts, s.cond.exp)
+          if (!condPrepared._2) {
+            return (AST.IR.Stmt.While(cond, AST.IR.Stmt.Block(ISZ(), s.block.pos), s.pos), F)
+          }
+          val bodyPrepared = prepareBlock(s.block)
+          return (AST.IR.Stmt.While(cond, bodyPrepared._1, s.pos), T)
+        case s: AST.IR.Stmt.For =>
+          val condOpt: Option[AST.IR.ExpBlock] = s.condOpt match {
+            case Some(cond) => Some(prepareExpBlock(cond))
+            case _ => None()
+          }
+          val bodyPrepared = prepareBlock(s.block)
+          return (AST.IR.Stmt.For(s.context, s.idOpt, s.range, condOpt, bodyPrepared._1, s.pos), T)
+        case s: AST.IR.Stmt.Assertume =>
+          val messageOpt: Option[AST.IR.ExpBlock] = s.messageOpt match {
+            case Some(message) => Some(prepareExpBlock(message))
+            case _ => None()
+          }
+          return (AST.IR.Stmt.Assertume(s.isAssert, s.cond, messageOpt, s.pos), T)
+        case s: AST.IR.Stmt.Switch =>
+          val cases = Buffer.create[AST.IR.Stmt.Switch.Case]()
+          for (c <- s.cases) {
+            cases.append(AST.IR.Stmt.Switch.Case(c.valueOpt, prepareBlock(c.body)._1))
+          }
+          return (AST.IR.Stmt.Switch(s.exp, cases.toIS, s.pos), T)
+        case _: AST.IR.Stmt.Halt => return (stmt, F)
+        case _: AST.IR.Stmt.Return => return (stmt, F)
+        case _ => return (stmt, T)
+      }
+    }
+
+    def prepareBlock(block: AST.IR.Stmt.Block): (AST.IR.Stmt.Block, B) = {
+      val stmts = Buffer.create[AST.IR.Stmt]()
+      var continues = T
+      var i: Z = 0
+      while (i < block.stmts.size && continues) {
+        val prepared = prepareStmt(block.stmts(i))
+        stmts.append(prepared._1)
+        continues = prepared._2
+        i = i + 1
+      }
+      return (AST.IR.Stmt.Block(stmts.toIS, block.pos), continues)
+    }
+
+    return AST.IR.Body.Block(prepareBlock(body.block)._1)
   }
 
   def toBasic(body: AST.IR.Body.Block, pos: message.Position): AST.IR.Body.Basic = {
@@ -578,72 +935,36 @@ object IRTranslator {
           for (j <- i until stmt.args.size) {
             val arg = stmt.args(j)
             grounds = grounds :+ AST.IR.Stmt.Expr(AST.IR.Exp.Apply(T, AST.Typed.sireumName, id, AST.Typed.emptyRTypes, args :+ stmt.args(j),
-              AST.Typed.Fun(AST.Purity.Impure, F, ISZ(arg.tipe), AST.Typed.unit), arg.pos))
+              AST.Typed.Fun(AST.Purity.Impure, F, ISZ(arg.tipe), AST.Typed.unit), arg.pos, F))
           }
           if (stmt.line) {
             grounds = grounds :+ AST.IR.Stmt.Expr(AST.IR.Exp.Apply(T, AST.Typed.sireumName, id, AST.Typed.emptyRTypes, args :+
               AST.IR.Exp.Int(AST.Typed.c, 10, stmt.pos), AST.Typed.Fun(AST.Purity.Impure, F, ISZ(AST.Typed.c),
-              AST.Typed.unit), stmt.pos))
+              AST.Typed.unit), stmt.pos, F))
           }
           return Some(label)
         case stmt: AST.IR.Stmt.Match =>
           if (isScalar(stmt.exp.tipe) && ops.ISZOps(stmt.cases).forall((c : AST.IR.Stmt.Match.Case) =>
-            c.condOpt.isEmpty && c.decl.locals.isEmpty && (c.pattern.isInstanceOf[AST.Pattern.LitInterpolate] ||
-              c.pattern.isInstanceOf[AST.Pattern.Literal] || c.pattern.isInstanceOf[AST.Pattern.Wildcard]))) {
-            def litOf(pattern: AST.Pattern): Option[AST.IR.Exp] = {
-              def directLit(lit: AST.Lit): AST.IR.Exp = {
-                lit match {
-                  case lit: AST.Exp.LitB => return AST.IR.Exp.Bool(lit.value, lit.posOpt.get)
-                  case lit: AST.Exp.LitC => return AST.IR.Exp.Int(AST.Typed.c, lit.value.toZ, lit.posOpt.get)
-                  case lit: AST.Exp.LitZ => return AST.IR.Exp.Int(AST.Typed.z, lit.value, lit.posOpt.get)
-                  case lit: AST.Exp.LitF32 => return AST.IR.Exp.F32(lit.value, lit.posOpt.get)
-                  case lit: AST.Exp.LitF64 => return AST.IR.Exp.F64(lit.value, lit.posOpt.get)
-                  case lit: AST.Exp.LitR => return AST.IR.Exp.R(lit.value, lit.posOpt.get)
-                  case lit: AST.Exp.LitString => return AST.IR.Exp.String(lit.value, lit.posOpt.get)
-                  case _ => halt(s"Infeasible: $lit")
-                }
-              }
-              pattern match {
-                case _: AST.Pattern.Wildcard => return None()
-                case pattern: AST.Pattern.Literal => return Some(directLit(pattern.lit))
-                case pattern: AST.Pattern.LitInterpolate =>
-                  val t = pattern.attr.typedOpt.get
-                  val ppos = pattern.posOpt.get
-                  t match {
-                    case AST.Typed.z => return Some(AST.IR.Exp.Int(t, Z(pattern.value).get, ppos))
-                    case AST.Typed.c => return Some(AST.IR.Exp.Int(t, conversions.String.toCis(pattern.value)(0).toZ, ppos))
-                    case AST.Typed.f32 => return Some(AST.IR.Exp.F32(F32(pattern.value).get, ppos))
-                    case AST.Typed.f64 => return Some(AST.IR.Exp.F64(F64(pattern.value).get, ppos))
-                    case AST.Typed.r => return Some(AST.IR.Exp.R(R(pattern.value).get, ppos))
-                    case _ if isSubZ(t) => return Some(AST.IR.Exp.Int(t, Z(pattern.value).get, ppos))
-                    case _ => halt(s"Infeasible: $pattern")
-                  }
-                case _ => halt(s"Infeasible: $pattern")
-              }
+            c.condOpt.isEmpty && c.decl.locals.isEmpty && (c.pattern.isInstanceOf[AST.IR.Pattern.Literal] ||
+              c.pattern.isInstanceOf[AST.IR.Pattern.Wildcard]))) {
+            val values = Buffer.create[Option[AST.IR.Exp]]()
+            val bodies = Buffer.create[AST.IR.Stmt.Block]()
+            for (c <- stmt.cases) {
+              values.append(scalarSwitchCaseValue(c.pattern))
+              bodies.append(c.body)
             }
-            val labels: ISZ[Z] = for (_ <- stmt.cases.indices) yield fresh.label()
-            val end = fresh.label()
-            var cases = ISZ[AST.IR.Jump.Switch.Case]()
-            var defaultOpt = Option.none[Z]()
-            for (i <- labels.indices) {
-              litOf(stmt.cases(i).pattern) match {
-                case Some(caseExp) => cases = cases :+ AST.IR.Jump.Switch.Case(caseExp, labels(i))
-                case _ => defaultOpt = Some(labels(i))
-              }
-            }
-            blocksBuf.append(AST.IR.BasicBlock(label, grounds, AST.IR.Jump.Switch(stmt.exp, cases, defaultOpt, pos)))
-            for (i <- labels.indices) {
-              grounds = ISZ()
-              stmtToBasic(labels(i), stmt.cases(i).body, blocksBuf) match {
-                case Some(l) => blocksBuf.append(AST.IR.BasicBlock(l, grounds, AST.IR.Jump.Goto(end, pos)))
-                case _ =>
-              }
-            }
-            grounds = ISZ()
-            return Some(end)
+            return switchToBasic(label, stmt.exp, values.toIS, bodies.toIS, pos, blocksBuf)
           } else {
             return stmtToBasic(label, simplifyMatch(stmt), blocksBuf)
           }
+        case stmt: AST.IR.Stmt.Switch =>
+          val values = Buffer.create[Option[AST.IR.Exp]]()
+          val bodies = Buffer.create[AST.IR.Stmt.Block]()
+          for (c <- stmt.cases) {
+            values.append(c.valueOpt)
+            bodies.append(c.body)
+          }
+          return switchToBasic(label, stmt.exp, values.toIS, bodies.toIS, pos, blocksBuf)
         case stmt: AST.IR.Stmt.AssignPattern =>
           return stmtToBasic(label, simplifyAssignPattern(stmt), blocksBuf)
         case stmt: AST.IR.Stmt.For => halt(s"TODO: $stmt")
@@ -702,6 +1023,35 @@ object IRTranslator {
       }
     }
 
+    def switchToBasic(label: Z,
+                      exp: AST.IR.Exp,
+                      values: ISZ[Option[AST.IR.Exp]],
+                      bodies: ISZ[AST.IR.Stmt.Block],
+                      switchPos: message.Position,
+                      blocksBuf: Buffer[AST.IR.BasicBlock]): Option[Z] = {
+      val labels: ISZ[Z] = for (_ <- values.indices) yield fresh.label()
+      val end = fresh.label()
+      val cases = Buffer.create[AST.IR.Jump.Switch.Case]()
+      var defaultOpt = Option.none[Z]()
+      for (i <- labels.indices) {
+        values(i) match {
+          case Some(caseExp) => cases.append(AST.IR.Jump.Switch.Case(caseExp, labels(i)))
+          case _ => defaultOpt = Some(labels(i))
+        }
+      }
+      blocksBuf.append(AST.IR.BasicBlock(label, grounds,
+        AST.IR.Jump.Switch(exp, cases.toIS, defaultOpt, switchPos)))
+      for (i <- labels.indices) {
+        grounds = ISZ()
+        stmtToBasic(labels(i), bodies(i), blocksBuf) match {
+          case Some(l) => blocksBuf.append(AST.IR.BasicBlock(l, grounds, AST.IR.Jump.Goto(end, switchPos)))
+          case _ =>
+        }
+      }
+      grounds = ISZ()
+      return Some(end)
+    }
+
     def blockToBasic(label: Z, block: AST.IR.Stmt.Block, blocksBuf: Buffer[AST.IR.BasicBlock]): Option[Z] = {
       val oldDecls = decls
       decls = ISZ()
@@ -709,7 +1059,9 @@ object IRTranslator {
       for (stmt <- block.stmts) {
         stmtToBasic(l, stmt, blocksBuf) match {
           case Some(next) => l = next
-          case _ => return None()
+          case _ =>
+            decls = oldDecls
+            return None()
         }
       }
       for (d <- decls) {
@@ -731,7 +1083,7 @@ object IRTranslator {
     stmts = ISZ()
     val e = translateExp(exp)
     val r = AST.IR.ExpBlock(stmts, e)
-    fresh.setTemp(0)
+    resetTemp()
     stmts = oldStmts
     return r
   }
@@ -777,7 +1129,7 @@ object IRTranslator {
             AST.IR.Exp.LocalVarRef(T, methodContext, id, t, aePos)
         }
         if (varCaptureSet.contains(stmt.id.value)) {
-          val mt = mboxType(t)
+          val mt = loweredMBoxType(t)
           stmts = stmts :+ AST.IR.Stmt.Assign.Local(methodContext, stmt.id.value, mt,
             AST.IR.Exp.Construct(mt, AST.Typed.emptyRTypes, ISZ(varRhs), pos), pos)
           oldStmts = oldStmts :+ AST.IR.Stmt.Decl(F, T, F, methodContext,
@@ -788,7 +1140,7 @@ object IRTranslator {
             ISZ(AST.IR.Stmt.Decl.Local(stmt.id.value, t)), pos)
         }
         stmts = oldStmts ++ stmts
-        fresh.setTemp(0)
+        resetTemp()
       case stmt: AST.Stmt.Assign =>
         val oldStmts = stmts
         stmts = ISZ()
@@ -799,9 +1151,10 @@ object IRTranslator {
                 val rhs = assignRhs(lhs.typedOpt.get, stmt.rhs)
                 if (varCaptureSet.contains(lhs.id.value)) {
                   val t = lhs.typedOpt.get
-                  val mt = mboxType(t)
+                  val valueT = lowerByNameType(t)
+                  val mt = mboxType(valueT)
                   val mboxRef = AST.IR.Exp.LocalVarRef(T, methodContext, lhs.id.value, mt, pos)
-                  stmts = stmts :+ AST.IR.Stmt.Assign.Field(mboxRef, "value", t, rhs, pos)
+                  stmts = stmts :+ AST.IR.Stmt.Assign.Field(mboxRef, "value", valueT, rhs, pos)
                 } else {
                   stmts = stmts :+ AST.IR.Stmt.Assign.Local(methodContext, lhs.id.value, lhs.typedOpt.get, rhs, pos)
                 }
@@ -876,25 +1229,25 @@ object IRTranslator {
           case _ => halt("Infeasible")
         }
         stmts = oldStmts ++ stmts
-        fresh.setTemp(0)
+        resetTemp()
       case stmt: AST.Stmt.If =>
         val oldStmts = stmts
         stmts = ISZ()
         val cond = translateExp(stmt.cond)
         val condStmts = stmts
-        fresh.setTemp(0)
+        resetTemp()
         stmts = ISZ()
         translateBody(stmt.thenBody, localOpt)
         val thenPos = bodyPos(stmt.thenBody, pos)
         val thenStmts = stmts
-        fresh.setTemp(0)
+        resetTemp()
         stmts = ISZ()
         translateBody(stmt.elseBody, localOpt)
         val elsePos = bodyPos(stmt.elseBody, pos)
         val elseStmts = stmts
         stmts = oldStmts ++ condStmts :+
           AST.IR.Stmt.If(cond, AST.IR.Stmt.Block(thenStmts, thenPos), AST.IR.Stmt.Block(elseStmts, elsePos), pos)
-        fresh.setTemp(0)
+        resetTemp()
       case stmt: AST.Stmt.While =>
         val cond = translateExpBlock(stmt.cond)
         val oldStmts = stmts
@@ -902,11 +1255,11 @@ object IRTranslator {
         translateBody(stmt.body, None())
         val bPos = bodyPos(stmt.body, pos)
         stmts = oldStmts :+ AST.IR.Stmt.While(cond, AST.IR.Stmt.Block(stmts, bPos), pos)
-        fresh.setTemp(0)
+        resetTemp()
       case stmt: AST.Stmt.Expr =>
         stmt.exp match {
           case exp: AST.Exp.Tuple if exp.args.isEmpty =>
-            fresh.setTemp(0)
+            resetTemp()
             return
           case _ =>
         }
@@ -957,21 +1310,21 @@ object IRTranslator {
                 args = args :+ arg
               }
               stmts = stmts :+ AST.IR.Stmt.Print(printKind, isLine, args, pos)
-              fresh.setTemp(0)
+              resetTemp()
               return
             } else if (isAssert || isAssume) {
               val cond = translateExp(e.args(0))
-              fresh.setTemp(0)
+              resetTemp()
               val messageOpt: Option[AST.IR.ExpBlock] =
                 if (e.args.size == 2) Some(translateExpBlock(e.args(1)))
                 else None()
               stmts = stmts :+ AST.IR.Stmt.Assertume(isAssert, cond, messageOpt, pos)
-              fresh.setTemp(0)
+              resetTemp()
               return
             } else if (isHalt) {
               val msg = translateExp(e.args(0))
               stmts = stmts :+ AST.IR.Stmt.Halt(msg, pos)
-              fresh.setTemp(0)
+              resetTemp()
               return
             }
           case _ =>
@@ -988,7 +1341,7 @@ object IRTranslator {
         } else {
           halt("Infeasible")
         }
-        fresh.setTemp(0)
+        resetTemp()
       case stmt: AST.Stmt.Return =>
         stmt.expOpt match {
           case Some(exp: AST.Exp.Tuple) if exp.args.isEmpty =>
@@ -999,36 +1352,53 @@ object IRTranslator {
           case _ =>
             stmts = stmts :+ AST.IR.Stmt.Return(None(), pos)
         }
-        fresh.setTemp(0)
+        resetTemp()
       case stmt: AST.Stmt.Block =>
         val oldStmts = stmts
         stmts = ISZ()
         translateBody(stmt.body, localOpt)
         stmts = oldStmts :+ AST.IR.Stmt.Block(stmts, stmt.posOpt.get)
-        fresh.setTemp(0)
+        resetTemp()
       case stmt: AST.Stmt.Match =>
         val exp = translateExp(stmt.exp)
-        fresh.setTemp(0)
+        resetTemp()
         var cases = ISZ[AST.IR.Stmt.Match.Case]()
         val oldStmts = stmts
         for (c <- stmt.cases) {
           stmts = ISZ()
-          val decl = patternDecl(methodContext, c.pattern)
+          val pattern = resolvePattern(c.pattern)
+          val decl = patternDecl(methodContext, pattern)
           c.condOpt match {
             case Some(cond) =>
               val condExp = translateExpBlock(cond)
               translateBody(c.body, localOpt)
               val block = AST.IR.Stmt.Block(stmts, pos)
-              fresh.setTemp(0)
-              cases = cases :+ AST.IR.Stmt.Match.Case(decl, c.pattern, Some(condExp), block)
+              resetTemp()
+              cases = cases :+ AST.IR.Stmt.Match.Case(decl, pattern, Some(condExp), block)
             case _ =>
               translateBody(c.body, localOpt)
               val block = AST.IR.Stmt.Block(stmts, stmt.posOpt.get)
-              fresh.setTemp(0)
-              cases = cases :+ AST.IR.Stmt.Match.Case(decl, c.pattern, None(), block)
+              resetTemp()
+              cases = cases :+ AST.IR.Stmt.Match.Case(decl, pattern, None(), block)
           }
         }
-        stmts = oldStmts :+ AST.IR.Stmt.Match(exp, cases, pos)
+        val matchStmt = AST.IR.Stmt.Match(exp, cases, pos)
+        var hasValueRef = F
+        for (c <- cases if !hasValueRef) {
+          hasValueRef = hasValueRefPattern(c.pattern)
+        }
+        if (hasValueRef) {
+          val id = assignExpId("$pattern.", None(), pos)
+          val value = AST.IR.Exp.LocalVarRef(T, methodContext, id, exp.tipe, pos)
+          val body = simplifyMatch(matchStmt(exp = value))
+          stmts = oldStmts ++ ISZ[AST.IR.Stmt](
+            AST.IR.Stmt.Decl(F, T, F, methodContext,
+              ISZ(AST.IR.Stmt.Decl.Local(id, exp.tipe)), pos),
+            AST.IR.Stmt.Assign.Local(methodContext, id, exp.tipe, exp, pos),
+            body)
+        } else {
+          stmts = oldStmts :+ matchStmt
+        }
       case stmt: AST.Stmt.For =>
         val fPos = stmt.posOpt.get
         def translateForEnumGen(i: Z): AST.IR.Stmt.For = {
@@ -1061,7 +1431,7 @@ object IRTranslator {
             val nested = translateForEnumGen(i + 1)
             val nestedStmts = stmts :+ nested
             stmts = oldStmts2
-            fresh.setTemp(0)
+            resetTemp()
             AST.IR.Stmt.Block(nestedStmts, fPos)
           } else {
             val oldStmts2 = stmts
@@ -1069,19 +1439,28 @@ object IRTranslator {
             translateBody(stmt.body, None())
             val bodyStmts = stmts
             stmts = oldStmts2
-            fresh.setTemp(0)
+            resetTemp()
             AST.IR.Stmt.Block(bodyStmts, fPos)
           }
           return AST.IR.Stmt.For(methodContext, idOpt, range, condOpt, innerBlock, fPos)
         }
-        stmts = stmts :+ translateForEnumGen(0)
-        fresh.setTemp(0)
+        val forStmt = translateForEnumGen(0)
+        stmts = stmts :+ forStmt
+        resetTemp()
       case stmt: AST.Stmt.VarPattern =>
         val oldStmts = stmts
         stmts = ISZ()
         val init = assignRhs(stmt.pattern.typedOpt.get, stmt.init)
-        stmts = stmts :+ patternDecl(methodContext, stmt.pattern)
-        val (_, lMap) = translatePattern(init, stmt.pattern, HashSMap.empty)
+        val pattern = resolvePattern(stmt.pattern)
+        val initId = assignExpId("$pattern.", None(), pos)
+        val initType = init.tipe
+        stmts = stmts :+ AST.IR.Stmt.Decl(F, T, F, methodContext,
+          ISZ(AST.IR.Stmt.Decl.Local(initId, initType)), pos)
+        stmts = stmts :+ AST.IR.Stmt.Assign.Local(methodContext, initId, initType,
+          init, pos)
+        val patternInit = AST.IR.Exp.LocalVarRef(T, methodContext, initId, initType, pos)
+        stmts = stmts :+ patternDecl(methodContext, pattern)
+        val (_, lMap) = translatePattern(patternInit, pattern, HashSMap.empty)
         for (e <- lMap.entries) {
           stmts = stmts :+ AST.IR.Stmt.Assign.Local(methodContext, e._1._2, e._2.tipe, e._2, e._2.pos)
         }
@@ -1097,18 +1476,17 @@ object IRTranslator {
             val collector = IRTranslator.ClosureCaptureCollector(HashSMap.empty, F)
             collector.transformBody(body)
             val captures = collector.captures.values
-            // Filter out captures from the nested method's own scope — those are
-            // lambda-internal captures handled by lambda lifting, not captures
-            // the nested method needs from the enclosing scope
-            val captureList: ISZ[(B, String, AST.Typed)] =
-              prependThisCapture(for (c <- captures if c._1 != nestedKey) yield (c._2, c._3, c._4), collector.capturesThis)
-
-            // Register captures for call-site rewriting
-            nestedMethodCaptures = nestedMethodCaptures + nestedKey ~> captureList
+            // Filter out captures from the nested method's own or descendant scopes.
+            if (!nestedMethodCaptures.contains(nestedKey)) {
+              registerNestedMethods(AST.Body(ISZ(stmt), ISZ()))
+            }
+            val captureList = nestedMethodCaptures.get(nestedKey).get
 
             // Build capture param names and types
             val captureParamNames: ISZ[String] = for (c <- captureList) yield c._2
-            val captureParamTypes: ISZ[AST.Typed] = for (c <- captureList) yield c._3
+            val captureParamTypes: ISZ[AST.Typed] = for (c <- captureList) yield
+              if (c._2 != "this" && (!c._1 || varCaptureSet.contains(c._2))) loweredMBoxType(c._3)
+              else lowerByNameType(c._3)
 
             // Original param names and funType
             val typeParams: ISZ[String] = for (tp <- stmt.sig.typeParams) yield tp.id.value
@@ -1125,18 +1503,25 @@ object IRTranslator {
             val savedStmts = stmts
             val savedVarCaptureSet = varCaptureSet
             val savedNestedMethodCaptures = nestedMethodCaptures
+            val savedNestedMethodCaptureInfo = nestedMethodCaptureInfo
             val savedCapturedThisTypeOpt = capturedThisTypeOpt
+            val savedCurrentThisExpOpt = currentThisExpOpt
 
             // Set up new methodContext for the nested method
             // Owner is the enclosing type/package FQN (methodContext.owner), not local scope
             val liftedOwner = methodContext.owner
-            methodContext = AST.IR.MethodContext(T, liftedOwner, res.id, liftedFunType)
+            val liftedId = liftedNestedMethodId(res)
+            methodContext = AST.IR.MethodContext(T, liftedOwner, liftedId, liftedFunType)
             varCaptureSet = HashSet.empty
             capturedThisTypeOpt = captureThisTypeOpt(captureList)
+            currentThisExpOpt = None()
 
             // Check for var captures that need MBox wrapping in the nested method's body
-            for (capture <- captures if !capture._2) {
+            for (capture <- captures if capture._1 == nestedKey && !capture._2) {
               varCaptureSet = varCaptureSet + capture._3
+            }
+            for (capture <- captureList if capture._2 != "this" && savedVarCaptureSet.contains(capture._2)) {
+              varCaptureSet = varCaptureSet + capture._2
             }
 
             // Translate the body
@@ -1149,7 +1534,7 @@ object IRTranslator {
               rTypeParams = ISZ(),
               typeParams = liftedTypeParams,
               owner = liftedOwner,
-              id = res.id,
+              id = liftedId,
               paramNames = liftedParamNames,
               tipe = liftedFunType,
               body = irBody,
@@ -1161,7 +1546,9 @@ object IRTranslator {
             stmts = savedStmts
             varCaptureSet = savedVarCaptureSet
             nestedMethodCaptures = savedNestedMethodCaptures
+            nestedMethodCaptureInfo = savedNestedMethodCaptureInfo
             capturedThisTypeOpt = savedCapturedThisTypeOpt
+            currentThisExpOpt = savedCurrentThisExpOpt
           case _ => // abstract nested method — skip
         }
       case _: AST.Stmt.ExtMethod => // skip
@@ -1176,28 +1563,109 @@ object IRTranslator {
 
   }
 
-  def patternDecl(context: AST.IR.MethodContext, pattern: AST.Pattern): AST.IR.Stmt.Decl = {
-    var r = ISZ[AST.IR.Stmt.Decl.Local]()
-    def rec(p: AST.Pattern): Unit = {
+  def patternLiteralExp(lit: AST.Lit): AST.IR.Exp = {
+    lit match {
+      case lit: AST.Exp.LitB => return AST.IR.Exp.Bool(lit.value, lit.posOpt.get)
+      case lit: AST.Exp.LitC => return AST.IR.Exp.Int(AST.Typed.c, lit.value.toZ, lit.posOpt.get)
+      case lit: AST.Exp.LitZ => return AST.IR.Exp.Int(AST.Typed.z, lit.value, lit.posOpt.get)
+      case lit: AST.Exp.LitF32 => return AST.IR.Exp.F32(lit.value, lit.posOpt.get)
+      case lit: AST.Exp.LitF64 => return AST.IR.Exp.F64(lit.value, lit.posOpt.get)
+      case lit: AST.Exp.LitR => return AST.IR.Exp.R(lit.value, lit.posOpt.get)
+      case lit: AST.Exp.LitString => return AST.IR.Exp.String(lit.value, lit.posOpt.get)
+      case _ => halt(s"Infeasible pattern literal: $lit")
+    }
+  }
+
+  def patternInterpolateExp(pattern: AST.Pattern.LitInterpolate): AST.IR.Exp = {
+    val pos = pattern.posOpt.get
+    val t = pattern.attr.typedOpt.get
+    pattern.prefix match {
+      case string"string" => return AST.IR.Exp.String(pattern.value, pos)
+      case string"c" => return AST.IR.Exp.Int(AST.Typed.c, conversions.String.toCis(pattern.value)(0).toZ, pos)
+      case string"z" => return AST.IR.Exp.Int(AST.Typed.z, Z(pattern.value).get, pos)
+      case string"f32" => return AST.IR.Exp.F32(F32(pattern.value).get, pos)
+      case string"f64" => return AST.IR.Exp.F64(F64(pattern.value).get, pos)
+      case string"r" => return AST.IR.Exp.R(R(pattern.value).get, pos)
+      case _ if isSubZ(t) => return AST.IR.Exp.Int(t, Z(pattern.value).get, pos)
+      case _ => halt(s"Infeasible pattern interpolation: $pattern")
+    }
+  }
+
+  def resolvePattern(pattern: AST.Pattern): AST.IR.Pattern = {
+    val pos = pattern.posOpt.get
+    pattern match {
+      case p: AST.Pattern.Literal =>
+        return AST.IR.Pattern.Literal(patternLiteralExp(p.lit))
+      case p: AST.Pattern.LitInterpolate =>
+        return AST.IR.Pattern.Literal(patternInterpolateExp(p))
+      case p: AST.Pattern.Wildcard =>
+        val guardTipeOpt: Option[AST.Typed] = p.typeOpt match {
+          case Some(t) => Some(t.typedOpt.get)
+          case _ => None()
+        }
+        return AST.IR.Pattern.Wildcard(guardTipeOpt, p.typedOpt.get, pos)
+      case p: AST.Pattern.SeqWildcard =>
+        return AST.IR.Pattern.SeqWildcard(p.typedOpt.get, pos)
+      case p: AST.Pattern.VarBinding =>
+        val guardTipeOpt: Option[AST.Typed] = p.tipeOpt match {
+          case Some(t) => Some(t.typedOpt.get)
+          case _ => None()
+        }
+        return AST.IR.Pattern.VarBinding(p.id.value, guardTipeOpt, p.typedOpt.get, p.idContext, pos)
+      case p: AST.Pattern.Structure =>
+        val patterns = Buffer.create[AST.IR.Pattern]()
+        for (sub <- p.patterns) {
+          patterns.append(resolvePattern(sub))
+        }
+        val idOpt: Option[String] = p.idOpt match {
+          case Some(id) => Some(id.value)
+          case _ => None()
+        }
+        return AST.IR.Pattern.Structure(idOpt, p.typedOpt.get, patterns.toIS, p.idContext, pos)
+      case p: AST.Pattern.Ref =>
+        val t = p.typedOpt.get
+        p.attr.resOpt match {
+          case Some(res: AST.ResolvedInfo.LocalVar) =>
+            return AST.IR.Pattern.LocalRef(res.isVal, res.id, t, pos)
+          case Some(res: AST.ResolvedInfo.Var) if res.isInObject =>
+            if (res.owner == AST.Typed.sireumName && (res.id == "T" || res.id == "F")) {
+              return AST.IR.Pattern.Literal(AST.IR.Exp.Bool(res.id == "T", pos))
+            }
+            return AST.IR.Pattern.GlobalRef(res.owner, res.id, t, pos)
+          case Some(res: AST.ResolvedInfo.Var) =>
+            return AST.IR.Pattern.FieldRef(res.id, t, pos)
+          case Some(res: AST.ResolvedInfo.EnumElement) =>
+            return AST.IR.Pattern.EnumElementRef(res.owner, res.name, res.ordinal, t, pos)
+          case _ =>
+            halt(s"Infeasible pattern reference: $pattern")
+        }
+    }
+  }
+
+  def patternDecl(context: AST.IR.MethodContext, pattern: AST.IR.Pattern): AST.IR.Stmt.Decl = {
+    val r = Buffer.create[AST.IR.Stmt.Decl.Local]()
+    def rec(p: AST.IR.Pattern): Unit = {
       p match {
-        case p: AST.Pattern.VarBinding => r = r :+ AST.IR.Stmt.Decl.Local(p.id.value, p.attr.typedOpt.get)
-        case p: AST.Pattern.Structure =>
+        case p: AST.IR.Pattern.VarBinding => r.append(AST.IR.Stmt.Decl.Local(p.id, p.tipe))
+        case p: AST.IR.Pattern.Structure =>
           p.idOpt match {
-            case Some(id) => r = r :+ AST.IR.Stmt.Decl.Local(id.value, p.attr.typedOpt.get)
+            case Some(id) => r.append(AST.IR.Stmt.Decl.Local(id, p.tipe))
             case _ =>
           }
           for (sub <- p.patterns) {
             rec(sub)
           }
-        case _: AST.Pattern.Ref => // skip
-        case _: AST.Pattern.Literal => // skip
-        case _: AST.Pattern.Wildcard => // skip
-        case _: AST.Pattern.LitInterpolate => // skip
-        case _: AST.Pattern.SeqWildcard => // skip
+        case _: AST.IR.Pattern.LocalRef =>
+        case _: AST.IR.Pattern.FieldRef =>
+        case _: AST.IR.Pattern.GlobalRef =>
+        case _: AST.IR.Pattern.EnumElementRef =>
+        case _: AST.IR.Pattern.Literal =>
+        case _: AST.IR.Pattern.Wildcard =>
+        case _: AST.IR.Pattern.SeqWildcard =>
       }
     }
     rec(pattern)
-    return AST.IR.Stmt.Decl(F, T, F, context, r, pattern.posOpt.get)
+    return AST.IR.Stmt.Decl(F, T, F, context, r.toIS, pattern.pos)
   }
 
   @pure def bodyPos(body: AST.Body, default: message.Position): message.Position = {
@@ -1208,6 +1676,7 @@ object IRTranslator {
   }
 
   def translateBody(body: AST.Body, localOpt: Option[(String, AST.Typed)]): Unit = {
+    registerNestedMethods(body)
     val stmts = body.stmts
     localOpt match {
       case Some((_, _)) =>
@@ -1219,6 +1688,60 @@ object IRTranslator {
         for (stmt <- body.stmts) {
           translateStmt(stmt, None())
         }
+    }
+  }
+
+  @pure def hasValueRefPattern(pattern: AST.IR.Pattern): B = {
+    pattern match {
+      case _: AST.IR.Pattern.LocalRef => return T
+      case _: AST.IR.Pattern.FieldRef => return T
+      case _: AST.IR.Pattern.GlobalRef => return T
+      case p: AST.IR.Pattern.Structure =>
+        for (sub <- p.patterns) {
+          if (hasValueRefPattern(sub)) {
+            return T
+          }
+        }
+      case _ =>
+    }
+    return F
+  }
+
+  def registerNestedMethods(body: AST.Body): Unit = {
+    val methods = Buffer.create[ISZ[String]]()
+    var calls = HashMap.empty[ISZ[String], ISZ[ISZ[String]]]
+    val declarationCollector = IRTranslator.NestedMethodDeclarationCollector(
+      Buffer.create[AST.Stmt.Method](), HashSSet.empty[ISZ[String]])
+    declarationCollector.transformBody(body)
+    for (m <- declarationCollector.methods.toIS) {
+      val res = m.attr.resOpt.get.asInstanceOf[AST.ResolvedInfo.Method]
+      val key = res.owner :+ res.id
+      val collector = IRTranslator.ClosureCaptureCollector(HashSMap.empty, F)
+      collector.transformBody(m.bodyOpt.get)
+      val captures = prependThisCaptureInfo(
+        for (c <- collector.captures.values if !isContextPrefix(key, c._1)) yield c,
+        collector.capturesThis)
+      methods.append(key)
+      nestedMethodCaptureInfo = nestedMethodCaptureInfo + key ~> captures
+      calls = calls + key ~> collectNestedMethodCalls(m.bodyOpt.get)
+    }
+    val keys = methods.toIS
+    var changed = T
+    while (changed) {
+      changed = F
+      for (key <- keys) {
+        val oldCaptures = nestedMethodCaptureInfo.get(key).get
+        val captures: ISZ[(ISZ[String], B, String, AST.Typed)] = for (c <- augmentNestedCaptureInfo(oldCaptures, calls.get(key).get)
+          if !isContextPrefix(key, c._1)) yield c
+        if (captures != oldCaptures) {
+          nestedMethodCaptureInfo = nestedMethodCaptureInfo + key ~> captures
+          changed = T
+        }
+      }
+    }
+    for (key <- keys) {
+      val captures: ISZ[(B, String, AST.Typed)] = for (c <- nestedMethodCaptureInfo.get(key).get) yield (c._2, c._3, c._4)
+      nestedMethodCaptures = nestedMethodCaptures + key ~> captures
     }
   }
 
@@ -1257,7 +1780,29 @@ object IRTranslator {
     return F
   }
 
+  @pure def isSubZWithPatternFacts(t: AST.Typed,
+                                   patternFactsOpt: Option[IRTranslator.PatternDeclFacts]): B = {
+    patternFactsOpt match {
+      case Some(patternFacts) =>
+        t match {
+          case tn: AST.Typed.Name if tn.args.isEmpty =>
+            patternFacts.owners.get(tn.ids) match {
+              case Some(owner) => return owner.kind == IRTranslator.PatternOwnerKind.SubZ
+              case _ =>
+            }
+          case _ =>
+        }
+        return F
+      case _ => return isSubZ(t)
+    }
+  }
+
   @memoize def isScalar(t: AST.Typed): B = {
+    return isScalarWithPatternFacts(t, None())
+  }
+
+  @pure def isScalarWithPatternFacts(t: AST.Typed,
+                                     patternFactsOpt: Option[IRTranslator.PatternDeclFacts]): B = {
     t match {
       case AST.Typed.b =>
       case AST.Typed.c =>
@@ -1265,7 +1810,7 @@ object IRTranslator {
       case AST.Typed.f32 =>
       case AST.Typed.f64 =>
       case AST.Typed.r =>
-      case _ => return isSubZ(t)
+      case _ => return isSubZWithPatternFacts(t, patternFactsOpt)
     }
     return T
   }
@@ -1300,6 +1845,10 @@ object IRTranslator {
   }
 
   def thiz(pos: message.Position): AST.IR.Exp = {
+    currentThisExpOpt match {
+      case Some(exp) => return norm3AC(exp)
+      case _ =>
+    }
     capturedThisTypeOpt match {
       case Some(t) => return norm3AC(AST.IR.Exp.LocalVarRef(T, methodContext, "this", t, pos))
       case _ =>
@@ -1351,10 +1900,151 @@ object IRTranslator {
   def collectCaptures(assignExp: AST.AssignExp): (ISZ[(ISZ[String], B, String, AST.Typed)], B) = {
     val collector = IRTranslator.ClosureCaptureCollector(HashSMap.empty, F)
     collector.transformAssignExp(assignExp)
-    return (collector.captures.values, collector.capturesThis)
+    val calls = collectNestedMethodCallsAssignExp(assignExp)
+    return (augmentNestedCaptureInfo(collector.captures.values, calls), collector.capturesThis)
+  }
+
+  @pure def isContextPrefix(prefix: ISZ[String], context: ISZ[String]): B = {
+    if (prefix.size > context.size) {
+      return F
+    }
+    var i: Z = 0
+    while (i < prefix.size) {
+      if (prefix(i) != context(i)) {
+        return F
+      }
+      i = i + 1
+    }
+    return T
+  }
+
+  def translateMethodInvoke(res: AST.ResolvedInfo.Method,
+                            receiverOpt: Option[AST.Exp],
+                            expArgs: ISZ[AST.Exp],
+                            namedIndicesOpt: Option[ISZ[Z]],
+                            pos: message.Position): AST.IR.Exp = {
+    val named = namedIndicesOpt.nonEmpty
+    val oldStmts = stmts
+    val argStmts = Buffer.create[AST.IR.Stmt]()
+    if (named) {
+      stmts = ISZ()
+    }
+
+    def snapshot(e: AST.IR.Exp): AST.IR.Exp = {
+      for (stmt <- stmts) {
+        argStmts.append(stmt)
+      }
+      stmts = ISZ()
+      val n = fresh.temp()
+      argStmts.append(AST.IR.Stmt.Assign.Temp(n, e, e.pos))
+      return AST.IR.Exp.Temp(n, e.tipe, e.pos)
+    }
+
+    val args = Buffer.create[AST.IR.Exp]()
+    val originalMethodType = res.tpeOpt.get
+    var methodType = originalMethodType
+    val isExt = res.mode == AST.MethodMode.Ext
+    val nestedKey = res.owner :+ res.id
+    val nestedCaptureListOpt: Option[ISZ[(B, String, AST.Typed)]] =
+      if (isExt) None() else nestedMethodCaptures.get(nestedKey)
+    var isSuper = F
+    receiverOpt match {
+      case Some(receiver: AST.Exp.Super) if !res.isInObject && !isExt =>
+        val receiverExp = thiz(pos)
+        args.append(if (named) snapshot(receiverExp) else receiverExp)
+        methodType = methodType(args = lowerByNameType(receiver.typedOpt.get) +: methodType.args)
+        isSuper = T
+      case Some(receiver) if !res.isInObject && (isExt || nestedCaptureListOpt.isEmpty) =>
+        val receiverExp = translateExp(receiver)
+        args.append(if (named) snapshot(receiverExp) else receiverExp)
+        methodType = methodType(args = lowerByNameType(receiverExp.tipe) +: methodType.args)
+      case _ if !isExt && !res.isInObject && nestedCaptureListOpt.isEmpty =>
+        val receiverExp = thiz(pos)
+        args.append(if (named) snapshot(receiverExp) else receiverExp)
+        methodType = methodType(args = lowerByNameType(receiverExp.tipe) +: methodType.args)
+      case _ =>
+    }
+
+    // Check if this is a call to a nested method with captures
+    var applyOwner = res.owner
+    var applyIsInObject = res.isInObject
+    var applyId = res.id
+    nestedCaptureListOpt match {
+      case Some(captureList) =>
+        // Prepend capture LocalVarRef expressions to args
+        val captureTypes: ISZ[AST.Typed] = for (c <- captureList) yield
+          if (c._2 != "this" && (!c._1 || varCaptureSet.contains(c._2))) loweredMBoxType(c._3)
+          else lowerByNameType(c._3)
+        for (c <- captureList) {
+          val captureExp = nestedCaptureExp(c, pos)
+          args.append(if (named) snapshot(captureExp) else captureExp)
+        }
+        // Update method type to include capture types as leading params
+        methodType = methodType(args = captureTypes ++ methodType.args)
+        // The lifted procedure's owner is the enclosing type/package
+        applyOwner = methodContext.owner
+        applyIsInObject = T
+        applyId = liftedNestedMethodId(res)
+      case _ =>
+    }
+    namedIndicesOpt match {
+      case Some(namedIndices) =>
+        val namedArgs = MSZ.create[Option[AST.IR.Exp]](expArgs.size, None())
+        for (i <- z"0" until expArgs.size) {
+          val formalIndex = namedIndices(i)
+          val formalT = originalMethodType.args(formalIndex)
+          val arg: AST.IR.Exp = byNameValueTypeOpt(formalT) match {
+            case Some(_) => makeByNameClosure(expArgs(i), formalT.asInstanceOf[AST.Typed.Fun], pos)
+            case _ => translateExp(expArgs(i))
+          }
+          namedArgs(formalIndex) = Some(snapshot(arg))
+        }
+        stmts = oldStmts ++ argStmts.toIS
+        for (arg <- namedArgs.toIS[Option[AST.IR.Exp]]) {
+          args.append(arg.get)
+        }
+      case _ =>
+        for (i <- z"0" until expArgs.size) {
+          val formalT = originalMethodType.args(i)
+          byNameValueTypeOpt(formalT) match {
+            case Some(_) =>
+              args.append(makeByNameClosure(expArgs(i), formalT.asInstanceOf[AST.Typed.Fun], pos))
+            case _ =>
+              args.append(translateExp(expArgs(i)))
+          }
+        }
+    }
+    if (isExt) {
+      methodType = lowerByNameFunType(methodType)
+      applyOwner = recordAndResolveExt(res, T)
+      applyIsInObject = T
+    }
+    return norm3AC(AST.IR.Exp.Apply(applyIsInObject, applyOwner, applyId, AST.Typed.emptyRTypes, args.toIS, methodType, pos, isSuper))
+  }
+
+  def translateClosureInvoke(exp: AST.Exp.Invoke, closure: AST.IR.Exp, funType: AST.Typed.Fun): AST.IR.Exp = {
+    val args = Buffer.createWithCapacity[AST.IR.Exp](exp.args.size, closure)
+    val pos = exp.posOpt.get
+    for (i <- z"0" until exp.args.size) {
+      val formalT = funType.args(i)
+      byNameValueTypeOpt(formalT) match {
+        case Some(_) =>
+          args.append(makeByNameClosure(exp.args(i), formalT.asInstanceOf[AST.Typed.Fun], pos))
+        case _ =>
+          args.append(translateExp(exp.args(i)))
+      }
+    }
+    return norm3AC(AST.IR.Exp.ApplyClosure(closure, args.toIS, exp.typedOpt.get, pos))
   }
 
   def translateExp(exp: AST.Exp): AST.IR.Exp = {
+    expDepth = expDepth + 1
+    val r = translateExpH(exp)
+    expDepth = expDepth - 1
+    return r
+  }
+
+  def translateExpH(exp: AST.Exp): AST.IR.Exp = {
 
     val pos = exp.posOpt.get
     exp match {
@@ -1388,9 +2078,10 @@ object IRTranslator {
         exp.resOpt.get match {
           case res: AST.ResolvedInfo.LocalVar =>
             if (varCaptureSet.contains(res.id)) {
-              val mt = mboxType(t)
+              val valueT = lowerByNameType(t)
+              val mt = mboxType(valueT)
               val mboxRef = AST.IR.Exp.LocalVarRef(T, methodContext, res.id, mt, pos)
-              return norm3AC(AST.IR.Exp.FieldVarRef(mboxRef, "value", t, pos))
+              return norm3AC(AST.IR.Exp.FieldVarRef(mboxRef, "value", valueT, pos))
             }
             byNameValueTypeOpt(t) match {
               case Some(valueT) =>
@@ -1408,14 +2099,18 @@ object IRTranslator {
           case res: AST.ResolvedInfo.EnumElement =>
             return norm3AC(AST.IR.Exp.EnumElementRef(res.owner, res.name, res.ordinal, pos))
           case res: AST.ResolvedInfo.Method =>
+            val nestedKey = res.owner :+ res.id
+            if (nestedMethodCaptures.contains(nestedKey)) {
+              return translateMethodInvoke(res, None(), ISZ(), None(), pos)
+            }
             val methodType = res.tpeOpt.get
             val owner = recordAndResolveExt(res, res.isInObject)
             if (res.isInObject) {
-              return norm3AC(AST.IR.Exp.Apply(T, owner, res.id, AST.Typed.emptyRTypes, ISZ(), methodType, pos))
+              return norm3AC(AST.IR.Exp.Apply(T, owner, res.id, AST.Typed.emptyRTypes, ISZ(), methodType, pos, F))
             } else {
               val receiver = thiz(pos)
               return norm3AC(AST.IR.Exp.Apply(F, owner, res.id, AST.Typed.emptyRTypes, ISZ(receiver),
-                methodType(args = receiver.tipe +: methodType.args), pos))
+                methodType(args = receiver.tipe +: methodType.args), pos, F))
             }
           case _ => halt(s"Infeasible: $exp")
         }
@@ -1443,11 +2138,11 @@ object IRTranslator {
                   return norm3AC(AST.IR.Exp.FieldVarRef(rcv, res.id, lowerByNameType(res.tpeOpt.get.ret), pos))
                 } else {
                   return translateExp(AST.Exp.Invoke(exp.receiverOpt, AST.Exp.Ident(exp.id, exp.attr), ISZ(), ISZ(), ISZ(),
-                    exp.attr(typedOpt = Some(exp.typedOpt.get.asInstanceOf[AST.Typed.Method].tpe.ret))))
+                    exp.attr(typedOpt = Some(res.tpeOpt.get.ret))))
                 }
               case _ =>
                 return translateExp(AST.Exp.Invoke(None(), AST.Exp.Ident(exp.id, exp.attr), ISZ(), ISZ(), ISZ(),
-                  exp.attr(typedOpt = Some(exp.typedOpt.get.asInstanceOf[AST.Typed.Method].tpe.ret))))
+                  exp.attr(typedOpt = Some(res.tpeOpt.get.ret))))
             }
           case AST.ResolvedInfo.BuiltIn(kind) if kind == AST.ResolvedInfo.BuiltIn.Kind.AsInstanceOf ||
           kind == AST.ResolvedInfo.BuiltIn.Kind.IsInstanceOf =>
@@ -1458,23 +2153,39 @@ object IRTranslator {
             val receiver = translateExp(exp.receiverOpt.get)
             return norm3AC(AST.IR.Exp.FieldVarRef(receiver, s"_${res.index}", t, pos))
           case AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.String) =>
-            val receiver = translateExp(exp.receiverOpt.get)
-            val receiverType = exp.receiverOpt.get.typedOpt.get
+            val receiverExp = exp.receiverOpt.get
+            val receiver: AST.IR.Exp = receiverExp match {
+              case _: AST.Exp.Super => thiz(pos)
+              case _ => translateExp(receiverExp)
+            }
+            val receiverType = receiverExp.typedOpt.get
             val owner: ISZ[String] = receiverType match {
               case tn: AST.Typed.Name => tn.ids
               case _ => ISZ[String]()
             }
             val methodType = AST.Typed.Fun(AST.Purity.Impure, F, ISZ(receiverType), AST.Typed.string)
-            return norm3AC(AST.IR.Exp.Apply(F, owner, "string", AST.Typed.emptyRTypes, ISZ(receiver), methodType, pos))
+            val isSuper: B = receiverExp match {
+              case _: AST.Exp.Super => T
+              case _ => F
+            }
+            return norm3AC(AST.IR.Exp.Apply(F, owner, "string", AST.Typed.emptyRTypes, ISZ(receiver), methodType, pos, isSuper))
           case AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Hash) =>
-            val receiver = translateExp(exp.receiverOpt.get)
-            val receiverType = exp.receiverOpt.get.typedOpt.get
+            val receiverExp = exp.receiverOpt.get
+            val receiver: AST.IR.Exp = receiverExp match {
+              case _: AST.Exp.Super => thiz(pos)
+              case _ => translateExp(receiverExp)
+            }
+            val receiverType = receiverExp.typedOpt.get
             val owner: ISZ[String] = receiverType match {
               case tn: AST.Typed.Name => tn.ids
               case _ => ISZ[String]()
             }
             val methodType = AST.Typed.Fun(AST.Purity.Impure, F, ISZ(receiverType), AST.Typed.z)
-            return norm3AC(AST.IR.Exp.Apply(F, owner, "hash", AST.Typed.emptyRTypes, ISZ(receiver), methodType, pos))
+            val isSuper: B = receiverExp match {
+              case _: AST.Exp.Super => T
+              case _ => F
+            }
+            return norm3AC(AST.IR.Exp.Apply(F, owner, "hash", AST.Typed.emptyRTypes, ISZ(receiver), methodType, pos, isSuper))
           case res => halt(s"TODO: $res")
         }
       case exp: AST.Exp.Unary =>
@@ -1576,12 +2287,15 @@ object IRTranslator {
             val leftType = exp.left.typedOpt.get
             val rightType = exp.right.typedOpt.get
             val methodType = AST.Typed.Fun(AST.Purity.Impure, F, ISZ(leftType, rightType), t)
-            return norm3AC(AST.IR.Exp.Apply(T, tupleIds, "of", AST.Typed.emptyRTypes, ISZ(left, right), methodType, pos))
+            return norm3AC(AST.IR.Exp.Apply(T, tupleIds, "of", AST.Typed.emptyRTypes, ISZ(left, right), methodType, pos, F))
           case _ =>
         }
         // Non-scalar, non-seq binary op: lower to method call on left operand
         exp.attr.resOpt.get match {
           case res: AST.ResolvedInfo.Method =>
+            if (res.isInObject) {
+              return translateMethodInvoke(res, None(), ISZ(exp.right), None(), pos)
+            }
             val left = translateExp(exp.left)
             val right = translateExp(exp.right)
             val receiverType: AST.Typed = exp.left.typedOpt.get
@@ -1592,7 +2306,7 @@ object IRTranslator {
             // Use resolved method type (with proper type substitution) + prepend receiver
             var methodType = res.tpeOpt.get
             methodType = methodType(args = receiverType +: methodType.args)
-            return norm3AC(AST.IR.Exp.Apply(F, owner, res.id, AST.Typed.emptyRTypes, ISZ(left, right), methodType, pos))
+            return norm3AC(AST.IR.Exp.Apply(F, owner, res.id, AST.Typed.emptyRTypes, ISZ(left, right), methodType, pos, F))
           case _ =>
         }
         halt(s"TODO: $exp")
@@ -1624,66 +2338,9 @@ object IRTranslator {
           case res: AST.ResolvedInfo.Method =>
             res.mode match {
               case AST.MethodMode.Method =>
-                var args = ISZ[AST.IR.Exp]()
-                val originalMethodType = res.tpeOpt.get
-                var methodType = originalMethodType
-                val nestedKey = res.owner :+ res.id
-                val nestedCaptureListOpt = nestedMethodCaptures.get(nestedKey)
-                exp.receiverOpt match {
-                  case Some(receiver) if !res.isInObject && nestedCaptureListOpt.isEmpty =>
-                    args = args :+ translateExp(receiver)
-                    methodType = methodType(args = lowerByNameType(receiver.typedOpt.get) +: methodType.args)
-                  case _ if !res.isInObject && nestedCaptureListOpt.isEmpty =>
-                    val receiver = thiz(pos)
-                    args = args :+ receiver
-                    methodType = methodType(args = lowerByNameType(receiver.tipe) +: methodType.args)
-                  case _ =>
-                }
-                // Check if this is a call to a nested method with captures
-                var applyOwner = res.owner
-                var applyIsInObject = res.isInObject
-                nestedCaptureListOpt match {
-                  case Some(captureList) =>
-                    // Prepend capture LocalVarRef expressions to args
-                    val captureTypes: ISZ[AST.Typed] = for (c <- captureList) yield lowerByNameType(c._3)
-                    for (c <- captureList) {
-                      val captureId = c._2
-                      val captureTyped = c._3
-                      val isVal = c._1
-                      if (captureId == "this") {
-                        args = args :+ thiz(pos)
-                      } else if (varCaptureSet.contains(captureId)) {
-                        // Captured var is MBox-wrapped in the enclosing scope
-                        args = args :+ AST.IR.Exp.LocalVarRef(isVal, methodContext, captureId,
-                          mboxType(captureTyped), pos)
-                      } else {
-                        args = args :+ AST.IR.Exp.LocalVarRef(isVal, methodContext, captureId, captureTyped, pos)
-                      }
-                    }
-                    // Update method type to include capture types as leading params
-                    methodType = methodType(args = captureTypes ++ methodType.args)
-                    // The lifted procedure's owner is the enclosing type/package
-                    applyOwner = methodContext.owner
-                    applyIsInObject = T
-                  case _ =>
-                }
-                for (i <- z"0" until exp.args.size) {
-                  val formalT = originalMethodType.args(i)
-                  byNameValueTypeOpt(formalT) match {
-                    case Some(_) =>
-                      args = args :+ makeByNameClosure(exp.args(i), formalT.asInstanceOf[AST.Typed.Fun], pos)
-                    case _ =>
-                      args = args :+ translateExp(exp.args(i))
-                  }
-                }
-                return norm3AC(AST.IR.Exp.Apply(applyIsInObject, applyOwner, res.id, AST.Typed.emptyRTypes, args, methodType, pos))
+                return translateMethodInvoke(res, exp.receiverOpt, exp.args, None(), pos)
               case AST.MethodMode.Ext =>
-                var args = ISZ[AST.IR.Exp]()
-                for (arg <- exp.args) {
-                  args = args :+ translateExp(arg)
-                }
-                return norm3AC(AST.IR.Exp.Apply(T, recordAndResolveExt(res, T), res.id, AST.Typed.emptyRTypes, args,
-                  res.tpeOpt.get, pos))
+                return translateMethodInvoke(res, exp.receiverOpt, exp.args, None(), pos)
               case AST.MethodMode.Select =>
                 val rcv: AST.IR.Exp = exp.receiverOpt match {
                   case Some(receiver) =>
@@ -1737,11 +2394,15 @@ object IRTranslator {
                     case _ => halt(s"Unexpected Store arg at ${arg.posOpt}: $arg")
                   }
                   rcv = norm3AC(AST.IR.Exp.Apply(T, seqType.ids, "functionalUpdate",
-                    AST.Typed.emptyRTypes, ISZ(rcv, index, value), methodType, pos))
+                    AST.Typed.emptyRTypes, ISZ(rcv, index, value), methodType, pos, F))
                 }
                 return rcv
               case _ => halt(s"TODO: $exp")
             }
+          case AST.ResolvedInfo.BuiltIn(AST.ResolvedInfo.BuiltIn.Kind.Apply) =>
+            val receiver = exp.receiverOpt.get
+            val funType = receiver.typedOpt.get.asInstanceOf[AST.Typed.Fun]
+            return translateClosureInvoke(exp, translateExp(receiver), funType)
           case res: AST.ResolvedInfo.LocalVar =>
             // Calling a function-typed local variable, e.g. f(10) where f: Z => Z
             val originalFunType = exp.ident.attr.typedOpt.get.asInstanceOf[AST.Typed.Fun]
@@ -1751,18 +2412,7 @@ object IRTranslator {
               case _ =>
                 AST.IR.Exp.LocalVarRef(res.isVal, methodContext, res.id, loweredFunType, pos)
             }
-            var args = ISZ[AST.IR.Exp]()
-            for (i <- z"0" until exp.args.size) {
-              val formalT = originalFunType.args(i)
-              byNameValueTypeOpt(formalT) match {
-                case Some(_) =>
-                  args = args :+ makeByNameClosure(exp.args(i), formalT.asInstanceOf[AST.Typed.Fun], pos)
-                case _ =>
-                  args = args :+ translateExp(exp.args(i))
-              }
-            }
-            val retType = exp.typedOpt.get
-            return norm3AC(AST.IR.Exp.ApplyClosure(closureVar, args, retType, pos))
+            return translateClosureInvoke(exp, closureVar, originalFunType)
           case res: AST.ResolvedInfo.Var =>
             // Calling a function-typed field/global variable, e.g. this.p(10) where p: T => B
             val originalFunType = exp.ident.attr.typedOpt.get.asInstanceOf[AST.Typed.Fun]
@@ -1779,32 +2429,47 @@ object IRTranslator {
                     AST.IR.Exp.FieldVarRef(liftedThiz(res.owner, pos), res.id, loweredFunType, pos)
                 }
               }
-            var args = ISZ[AST.IR.Exp]()
-            for (i <- z"0" until exp.args.size) {
-              val formalT = originalFunType.args(i)
-              byNameValueTypeOpt(formalT) match {
-                case Some(_) =>
-                  args = args :+ makeByNameClosure(exp.args(i), formalT.asInstanceOf[AST.Typed.Fun], pos)
-                case _ =>
-                  args = args :+ translateExp(exp.args(i))
-              }
-            }
-            val retType = exp.typedOpt.get
-            return norm3AC(AST.IR.Exp.ApplyClosure(closureVar, args, retType, pos))
+            return translateClosureInvoke(exp, closureVar, originalFunType)
           case res => halt(s"TODO: $exp (res: $res)")
         }
       case exp: AST.Exp.InvokeNamed =>
         exp.attr.resOpt.get match {
+          case res: AST.ResolvedInfo.Method if res.mode == AST.MethodMode.Method || res.mode == AST.MethodMode.Ext =>
+            val expArgs: ISZ[AST.Exp] = for (narg <- exp.args) yield narg.arg
+            val namedIndices: ISZ[Z] = for (narg <- exp.args) yield narg.index
+            return translateMethodInvoke(res, exp.receiverOpt, expArgs, Some(namedIndices), pos)
+          case res: AST.ResolvedInfo.Method if res.mode == AST.MethodMode.Constructor =>
+            val oldStmts = stmts
+            stmts = ISZ()
+            val argStmts = Buffer.create[AST.IR.Stmt]()
+            val args = MSZ.create[Option[AST.IR.Exp]](exp.args.size, None())
+            for (narg <- exp.args) {
+              val arg = translateExp(narg.arg)
+              for (stmt <- stmts) {
+                argStmts.append(stmt)
+              }
+              stmts = ISZ()
+              val n = fresh.temp()
+              argStmts.append(AST.IR.Stmt.Assign.Temp(n, arg, arg.pos))
+              args(narg.index) = Some(AST.IR.Exp.Temp(n, arg.tipe, arg.pos))
+            }
+            stmts = oldStmts ++ argStmts.toIS
+            val orderedArgs: ISZ[AST.IR.Exp] = for (arg <- args.toIS[Option[AST.IR.Exp]]) yield arg.get
+            return norm3AC(AST.IR.Exp.Construct(exp.typedOpt.get.asInstanceOf[AST.Typed.Name], AST.Typed.emptyRTypes,
+              orderedArgs, pos))
           case res: AST.ResolvedInfo.Method if res.mode == AST.MethodMode.Copy =>
             val t = exp.typedOpt.get.asInstanceOf[AST.Typed.Name]
             val adt = th.typeMap.get(t.ids).get.asInstanceOf[TypeInfo.Adt]
             val sm = tipe.TypeChecker.buildTypeSubstMap(t.ids, exp.posOpt, adt.ast.typeParams, t.args,
               message.Reporter.create).get
-            // Evaluate the copy target first (preserves evaluation order).  A named
-            // copy such as `outer.inner(b = T)` retains `outer` as the invocation
-            // receiver and `inner` as the typed identifier, so reconstruct the
-            // selected field rather than copying fields directly from `outer`.
-            val copyTarget: AST.IR.Exp = exp.receiverOpt match {
+            val oldStmts = stmts
+            stmts = ISZ()
+            val copyStmts = Buffer.create[AST.IR.Stmt]()
+            // A named copy such as `outer.inner(b = T)` retains `outer` as the
+            // invocation receiver and `inner` as the typed identifier, so
+            // reconstruct the selected field rather than copying fields directly
+            // from `outer`.
+            val targetExp: AST.IR.Exp = exp.receiverOpt match {
               case Some(recv) =>
                 if (exp.ident.id.value == "apply") {
                   translateExp(recv)
@@ -1818,23 +2483,37 @@ object IRTranslator {
                 }
               case _ => translateExp(AST.Exp.Ident(exp.ident.id, exp.ident.attr))
             }
-            // Evaluate named args in source order (preserves side-effect order)
-            var map = HashMap.empty[Z, AST.IR.Exp]
-            for (narg <- exp.args) {
-              map = map + narg.index ~> translateExp(narg.arg)
+            for (stmt <- stmts) {
+              copyStmts.append(stmt)
             }
+            stmts = ISZ()
+            val targetN = fresh.temp()
+            copyStmts.append(AST.IR.Stmt.Assign.Temp(targetN, targetExp, targetExp.pos))
+            val copyTarget: AST.IR.Exp = AST.IR.Exp.Temp(targetN, targetExp.tipe, targetExp.pos)
+            val namedArgs = MSZ.create[Option[AST.IR.Exp]](adt.ast.params.size, None())
+            for (narg <- exp.args) {
+              val arg = translateExp(narg.arg)
+              for (stmt <- stmts) {
+                copyStmts.append(stmt)
+              }
+              stmts = ISZ()
+              val n = fresh.temp()
+              copyStmts.append(AST.IR.Stmt.Assign.Temp(n, arg, arg.pos))
+              namedArgs(narg.index) = Some(AST.IR.Exp.Temp(n, arg.tipe, arg.pos))
+            }
+            stmts = oldStmts ++ copyStmts.toIS
             // Assemble in param order: use named arg if provided, else copy from the target
-            var args = ISZ[AST.IR.Exp]()
+            val args = Buffer.create[AST.IR.Exp]()
             for (i <- adt.ast.params.indices) {
-              map.get(i) match {
-                case Some(arg) => args = args :+ arg
+              namedArgs(i) match {
+                case Some(arg) => args.append(arg)
                 case _ =>
                   val param = adt.ast.params(i)
                   val pt = param.tipe.typedOpt.get.subst(sm)
-                  args = args :+ norm3AC(AST.IR.Exp.FieldVarRef(copyTarget, param.id.value, pt, pos))
+                  args.append(norm3AC(AST.IR.Exp.FieldVarRef(copyTarget, param.id.value, pt, pos)))
               }
             }
-            return norm3AC(AST.IR.Exp.Construct(t, AST.Typed.emptyRTypes, args, pos))
+            return norm3AC(AST.IR.Exp.Construct(t, AST.Typed.emptyRTypes, args.toIS, pos))
           case _ =>
             halt(s"TODO: $exp")
         }
@@ -1848,7 +2527,7 @@ object IRTranslator {
           argTypes = argTypes :+ arg.typedOpt.get
         }
         val methodType = AST.Typed.Fun(AST.Purity.Impure, F, argTypes, tupleType)
-        return norm3AC(AST.IR.Exp.Apply(T, tupleIds, "of", AST.Typed.emptyRTypes, args, methodType, pos))
+        return norm3AC(AST.IR.Exp.Apply(T, tupleIds, "of", AST.Typed.emptyRTypes, args, methodType, pos, F))
       case exp: AST.Exp.ForYield =>
         val resultType = exp.typedOpt.get.asInstanceOf[AST.Typed.Name]
         val resultId = st"$$forYield.${pos.beginLine}.${pos.beginColumn}.${sha3(pos.string)}".render
@@ -1886,7 +2565,7 @@ object IRTranslator {
             val nested = translateEnumGen(i + 1)
             val nestedStmts = stmts :+ nested
             stmts = oldStmts2
-            fresh.setTemp(0)
+            resetTemp()
             AST.IR.Stmt.Block(nestedStmts, pos)
           } else {
             val oldStmts2 = stmts
@@ -1899,7 +2578,7 @@ object IRTranslator {
             val bodyStmts = stmts :+ AST.IR.Stmt.Assign.Local(methodContext, resultId, resultType,
               appendExp, yieldPos)
             stmts = oldStmts2
-            fresh.setTemp(0)
+            resetTemp()
             AST.IR.Stmt.Block(bodyStmts, yieldPos)
           }
           return AST.IR.Stmt.For(methodContext, idOpt, range, condOpt, innerBlock, pos)
@@ -1911,6 +2590,25 @@ object IRTranslator {
         val funType = exp.attr.typedOpt.get.asInstanceOf[AST.Typed.Fun]
         exp.ref.resOpt.get match {
           case res: AST.ResolvedInfo.Method =>
+            val nestedKey = res.owner :+ res.id
+            val nestedCaptureListOpt: Option[ISZ[(B, String, AST.Typed)]] =
+              if (res.mode == AST.MethodMode.Ext) None() else nestedMethodCaptures.get(nestedKey)
+            nestedCaptureListOpt match {
+              case Some(captureList) =>
+                val captureExps = Buffer.create[AST.IR.Exp]()
+                for (capture <- captureList) {
+                  captureExps.append(nestedCaptureExp(capture, pos))
+                }
+                return norm3AC(AST.IR.Exp.ClosureRef(
+                  owner = methodContext.owner,
+                  id = liftedNestedMethodId(res),
+                  captures = captureExps.toIS,
+                  tipe = funType,
+                  pos = pos
+                ))
+              case _ =>
+            }
+            val closureType: AST.Typed.Fun = if (res.mode == AST.MethodMode.Ext) lowerByNameFunType(funType) else funType
             val captures: ISZ[AST.IR.Exp] = if (res.isInObject) {
               ISZ()
             } else {
@@ -1929,14 +2627,15 @@ object IRTranslator {
               owner = owner,
               id = res.id,
               captures = captures,
-              tipe = funType,
+              tipe = closureType,
               pos = pos
             ))
           case res: AST.ResolvedInfo.LocalVar =>
             if (varCaptureSet.contains(res.id)) {
-              val mt = mboxType(funType)
+              val valueT = lowerByNameType(funType)
+              val mt = mboxType(valueT)
               val mboxRef = AST.IR.Exp.LocalVarRef(T, methodContext, res.id, mt, pos)
-              return norm3AC(AST.IR.Exp.FieldVarRef(mboxRef, "value", funType, pos))
+              return norm3AC(AST.IR.Exp.FieldVarRef(mboxRef, "value", valueT, pos))
             }
             return norm3AC(AST.IR.Exp.LocalVarRef(
               isVal = res.isVal,
@@ -1957,31 +2656,39 @@ object IRTranslator {
 
         // Step 2: Collect captures from the lambda body
         val captureInfo = collectCaptures(exp.exp)
-        val captures = prependThisCapture(for (capture <- captureInfo._1) yield (capture._2, capture._3, capture._4), captureInfo._2)
+        val captureBuf = Buffer.create[(B, String, AST.Typed)]()
+        for (capture <- captureInfo._1 if capture._1 != exp.context) {
+          captureBuf.append((capture._2, capture._3, capture._4))
+        }
+        val captures = prependThisCapture(captureBuf.toIS, captureInfo._2)
+        val ownVarCaptureNames: ISZ[String] = for (capture <- captureInfo._1 if
+          capture._1 == exp.context && !capture._2) yield capture._3
+        val liftedCaptureNames: ISZ[String] = for (capture <- captures if
+          capture._2 != "this" && (!capture._1 || varCaptureSet.contains(capture._2))) yield capture._2
+        var liftedVarCaptureSet = HashSet.empty[String] ++ ownVarCaptureNames ++ liftedCaptureNames
 
         // Step 3: Build capture names/types and lambda param names/types
         var captureNames = ISZ[String]()
         var captureTypes = ISZ[AST.Typed]()
         var captureExprs = ISZ[AST.IR.Exp]()
-        var liftedVarCaptureSet = HashSet.empty[String]
         for (capture <- captures) {
           val captureIsVal = capture._1
           val captureId = capture._2
           val captureType = capture._3
+          val loweredCaptureType = lowerByNameType(captureType)
           captureNames = captureNames :+ captureId
           if (captureId == "this") {
-            captureTypes = captureTypes :+ captureType
+            captureTypes = captureTypes :+ loweredCaptureType
             captureExprs = captureExprs :+ thiz(pos)
           } else if (!captureIsVal || varCaptureSet.contains(captureId)) {
             // var capture: already MBox-wrapped in enclosing scope
-            val mt = mboxType(captureType)
+            val mt = mboxType(loweredCaptureType)
             captureTypes = captureTypes :+ mt
             captureExprs = captureExprs :+ AST.IR.Exp.LocalVarRef(T, methodContext, captureId, mt, pos)
-            liftedVarCaptureSet = liftedVarCaptureSet + captureId
           } else {
             // val capture: pass value directly
-            captureTypes = captureTypes :+ captureType
-            captureExprs = captureExprs :+ AST.IR.Exp.LocalVarRef(T, methodContext, captureId, captureType, pos)
+            captureTypes = captureTypes :+ loweredCaptureType
+            captureExprs = captureExprs :+ AST.IR.Exp.LocalVarRef(T, methodContext, captureId, loweredCaptureType, pos)
           }
         }
 
@@ -2001,7 +2708,9 @@ object IRTranslator {
         val savedStmts = stmts
         val savedVarCaptureSet = varCaptureSet
         val savedNestedMethodCaptures = nestedMethodCaptures
+        val savedNestedMethodCaptureInfo = nestedMethodCaptureInfo
         val savedCapturedThisTypeOpt = capturedThisTypeOpt
+        val savedCurrentThisExpOpt = currentThisExpOpt
 
         // Step 6: Set fresh state for lifted body
         methodContext = AST.IR.MethodContext(
@@ -2012,8 +2721,8 @@ object IRTranslator {
         )
         stmts = ISZ()
         varCaptureSet = liftedVarCaptureSet
-        nestedMethodCaptures = HashMap.empty
         capturedThisTypeOpt = captureThisTypeOpt(captures)
+        currentThisExpOpt = None()
 
         // Step 7: Translate lambda body
         // Exp.Fun.exp is an AssignExp; translate it as the return value
@@ -2083,7 +2792,9 @@ object IRTranslator {
         stmts = savedStmts
         varCaptureSet = savedVarCaptureSet
         nestedMethodCaptures = savedNestedMethodCaptures
+        nestedMethodCaptureInfo = savedNestedMethodCaptureInfo
         capturedThisTypeOpt = savedCapturedThisTypeOpt
+        currentThisExpOpt = savedCurrentThisExpOpt
 
         // Step 10: Return ClosureRef with capture expressions and original fun type
         return norm3AC(AST.IR.Exp.ClosureRef(
@@ -2116,49 +2827,56 @@ object IRTranslator {
   }
 
   @pure def translatePattern(exp: AST.IR.Exp,
-                             pattern: AST.Pattern,
+                             pattern: AST.IR.Pattern,
                              localMap: HashSMap[(ISZ[String], String), AST.IR.Exp]): (ISZ[AST.IR.Exp], HashSMap[(ISZ[String], String), AST.IR.Exp]) = {
+    return translatePatternH(exp, pattern, localMap, None())
+  }
+
+  @pure def translatePatternWithPatternFacts(exp: AST.IR.Exp,
+                                             pattern: AST.IR.Pattern,
+                                             localMap: HashSMap[(ISZ[String], String), AST.IR.Exp],
+                                             patternFacts: IRTranslator.PatternDeclFacts): (ISZ[AST.IR.Exp], HashSMap[(ISZ[String], String), AST.IR.Exp]) = {
+    return translatePatternH(exp, pattern, localMap, Some(patternFacts))
+  }
+
+  @pure def translatePatternH(exp: AST.IR.Exp,
+                              pattern: AST.IR.Pattern,
+                              localMap: HashSMap[(ISZ[String], String), AST.IR.Exp],
+                              patternFactsOpt: Option[IRTranslator.PatternDeclFacts]): (ISZ[AST.IR.Exp], HashSMap[(ISZ[String], String), AST.IR.Exp]) = {
     var r = ISZ[AST.IR.Exp]()
     var lMap = localMap
-    val pos = pattern.posOpt.get
-    def directPatternLit(lit: AST.Lit): AST.IR.Exp = {
-      lit match {
-        case lit: AST.Exp.LitB => return AST.IR.Exp.Bool(lit.value, lit.posOpt.get)
-        case lit: AST.Exp.LitC => return AST.IR.Exp.Int(AST.Typed.c, lit.value.toZ, lit.posOpt.get)
-        case lit: AST.Exp.LitZ => return AST.IR.Exp.Int(AST.Typed.z, lit.value, lit.posOpt.get)
-        case lit: AST.Exp.LitF32 => return AST.IR.Exp.F32(lit.value, lit.posOpt.get)
-        case lit: AST.Exp.LitF64 => return AST.IR.Exp.F64(lit.value, lit.posOpt.get)
-        case lit: AST.Exp.LitR => return AST.IR.Exp.R(lit.value, lit.posOpt.get)
-        case lit: AST.Exp.LitString => return AST.IR.Exp.String(lit.value, lit.posOpt.get)
-        case _ => halt("Infeasible")
-      }
-    }
+    val pos = pattern.pos
     pattern match {
-      case pattern: AST.Pattern.Wildcard =>
-        pattern.typeOpt match {
+      case pattern: AST.IR.Pattern.Wildcard =>
+        pattern.guardTipeOpt match {
           case Some(tipe) =>
-            val t = tipe.typedOpt.get
-            if (t != exp.tipe) {
-              r = r :+ AST.IR.Exp.Type(T, exp, t.asInstanceOf[AST.Typed.Name], pos)
+            if (tipe != exp.tipe) {
+              r = r :+ AST.IR.Exp.Type(T, exp, tipe.asInstanceOf[AST.Typed.Name], pos)
             }
           case _ =>
         }
-      case pattern: AST.Pattern.Literal =>
-        r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, directPatternLit(pattern.lit), pos)
-      case pattern: AST.Pattern.VarBinding =>
-        pattern.tipeOpt match {
+      case pattern: AST.IR.Pattern.Literal =>
+        val right = AST.IR.Pattern.directLiteral(pattern.exp)
+        r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, right, pos)
+      case pattern: AST.IR.Pattern.VarBinding =>
+        var boundExp = exp
+        pattern.guardTipeOpt match {
           case Some(tipe) =>
-            val t = tipe.typedOpt.get
-            if (t != exp.tipe) {
-              r = r :+ AST.IR.Exp.Type(T, exp, t.asInstanceOf[AST.Typed.Name], pos)
+            if (tipe != exp.tipe) {
+              r = r :+ AST.IR.Exp.Type(T, exp, tipe.asInstanceOf[AST.Typed.Name], pos)
+              boundExp = AST.IR.Exp.Type(F, exp, tipe.asInstanceOf[AST.Typed.Name], pos)
             }
           case _ =>
         }
-        lMap = lMap + (pattern.idContext, pattern.id.value) ~> exp
-      case pattern: AST.Pattern.Structure =>
-        val t = pattern.typedOpt.get
+        lMap = lMap + (pattern.idContext, pattern.id) ~> boundExp
+      case pattern: AST.IR.Pattern.Structure =>
+        val t = pattern.tipe
+        val baseExp: AST.IR.Exp = t match {
+          case tn: AST.Typed.Name if exp.tipe != t => AST.IR.Exp.Type(F, exp, tn, pos)
+          case _ => exp
+        }
         lMap = pattern.idOpt match {
-          case Some(id) => localMap + (pattern.idContext, id.value) ~> exp
+          case Some(id) => localMap + (pattern.idContext, id) ~> baseExp
           case _ => localMap
         }
         t match {
@@ -2167,101 +2885,82 @@ object IRTranslator {
             var conds = ISZ[AST.IR.Exp]()
             for (j <- 0 until t.args.size) {
               val pat = pattern.patterns(i)
-              val f = AST.IR.Exp.FieldVarRef(exp, s"_${j + 1}", pat.typedOpt.get, pat.posOpt.get)
-              val (pconds, lMap2) = translatePattern(f, pat, lMap)
+              val f = AST.IR.Exp.FieldVarRef(baseExp, s"_${j + 1}", t.args(j), pat.pos)
+              val (pconds, lMap2) = translatePatternH(f, pat, lMap, patternFactsOpt)
               conds = conds ++ pconds
               lMap = lMap2
               i = i + 1
             }
-            r = r :+ AST.IR.bigAnd(conds, pos)
+            r = r :+ IRTranslator.patternCondAnd(conds, pos)
           case t: AST.Typed.Name =>
             var conds = ISZ[AST.IR.Exp]()
             if (t.ids == AST.Typed.isName || t.ids == AST.Typed.msName) {
               val hasWildcard = pattern.patterns.size > 0 && pattern.patterns(pattern.patterns.size - 1).
-                isInstanceOf[AST.Pattern.SeqWildcard]
+                isInstanceOf[AST.IR.Pattern.SeqWildcard]
               val (size, op): (Z, AST.IR.Exp.Binary.Op.Type) = if (hasWildcard) (pattern.patterns.size - 1, AST.IR.Exp.Binary.Op.Ge)
               else (pattern.patterns.size, AST.IR.Exp.Binary.Op.Eq)
-              conds = conds :+ AST.IR.Exp.Binary(AST.Typed.b, AST.IR.Exp.FieldVarRef(exp, "size", AST.Typed.z, pos), op,
+              conds = conds :+ AST.IR.Exp.Binary(AST.Typed.b, AST.IR.Exp.FieldVarRef(baseExp, "size", AST.Typed.z, pos), op,
                 AST.IR.Exp.Int(AST.Typed.z, size, pos), pos)
               val indexType = t.args(0)
-              var n: Z = th.typeMap.get(t.args(0).asInstanceOf[AST.Typed.Name].ids).get match {
-                case ti: TypeInfo.SubZ =>
-                  if (ti.ast.isZeroIndex) 0 else ti.ast.index
-                case _ => 0
-              }
               for (i <- 0 until pattern.patterns.size - (if (hasWildcard) 1 else 0)) {
                 val pat = pattern.patterns(i)
-                val f = AST.IR.Exp.Indexing(exp, AST.IR.Exp.Int(indexType, i, pos), pat.posOpt.get)
-                val (pconds, lMap2) = translatePattern(f, pat, lMap)
+                val f = AST.IR.Exp.Indexing(baseExp, AST.IR.Exp.Int(indexType, i, pos), pat.pos)
+                val (pconds, lMap2) = translatePatternH(f, pat, lMap, patternFactsOpt)
                 conds = conds ++ pconds
                 lMap = lMap2
-                n = n + 1
               }
             } else {
-              val adt = th.typeMap.get(t.ids).get.asInstanceOf[TypeInfo.Adt]
+              var typeParamIds = ISZ[String]()
+              var visibleParams = ISZ[IRTranslator.PatternField]()
+              patternFactsOpt match {
+                case Some(patternFacts) =>
+                  patternFacts.owners.get(t.ids) match {
+                    case Some(owner) if owner.kind == IRTranslator.PatternOwnerKind.Adt =>
+                      typeParamIds = owner.typeParamIds
+                      visibleParams = owner.visibleParams
+                    case _ => halt(s"Infeasible pattern owner: ${(t.ids, ".")}")
+                  }
+                case _ =>
+                  val adt = th.typeMap.get(t.ids).get.asInstanceOf[TypeInfo.Adt]
+                  typeParamIds = for (typeParam <- adt.ast.typeParams) yield typeParam.id.value
+                  visibleParams = IRTranslator.visiblePatternFields(adt)
+              }
+              val subst = tipe.TypeChecker.buildTypeSubstMapFromIds(t.ids, Some(pattern.pos),
+                typeParamIds, t.args, message.Reporter.create).get
               var i = 0
-              for (p <- adt.ast.params if !p.isHidden) {
+              for (p <- visibleParams) {
                 val pat = pattern.patterns(i)
-                val f = AST.IR.Exp.FieldVarRef(exp, p.id.value, pat.typedOpt.get, pat.posOpt.get)
-                val (pconds, lMap2) = translatePattern(f, pat, lMap)
+                val fieldType = p.tipe.subst(subst)
+                val f = AST.IR.Exp.FieldVarRef(baseExp, p.id, fieldType, pat.pos)
+                val (pconds, lMap2) = translatePatternH(f, pat, lMap, patternFactsOpt)
                 conds = conds ++ pconds
                 lMap = lMap2
                 i = i + 1
               }
             }
-            r = r :+ AST.IR.condAnd(AST.IR.Exp.Type(T, exp, t, pos), AST.IR.bigAnd(conds, pos), pos)
+            r = r :+ AST.IR.condAnd(AST.IR.Exp.Type(T, exp, t, pos), IRTranslator.patternCondAnd(conds, pos), pos)
           case _ => halt("Infeasible")
         }
-      case pattern: AST.Pattern.Ref =>
-        val right: AST.IR.Exp = pattern.attr.resOpt.get match {
-          case res: AST.ResolvedInfo.Var =>
-            if (res.isInObject) {
-              val ids = pattern.name.ids
-              val owner: ISZ[String] = for (i <- 0 until pattern.name.ids.size - 1) yield ids(i).value
-              AST.IR.Exp.GlobalVarRef(owner :+ ids(ids.size - 1).value, pattern.typedOpt.get, pos)
-            } else {
-              AST.IR.Exp.FieldVarRef(thiz(pos), res.id, pattern.typedOpt.get, pos)
-            }
-          case res: AST.ResolvedInfo.LocalVar =>
-            if (varCaptureSet.contains(res.id)) {
-              val pt = pattern.typedOpt.get
-              val mt = mboxType(pt)
-              val mboxRef = AST.IR.Exp.LocalVarRef(T, methodContext, res.id, mt, pos)
-              AST.IR.Exp.FieldVarRef(mboxRef, "value", pt, pos)
-            } else {
-              AST.IR.Exp.LocalVarRef(res.isVal, methodContext, res.id, pattern.typedOpt.get, pos)
-            }
-          case res: AST.ResolvedInfo.EnumElement =>
-            AST.IR.Exp.EnumElementRef(res.owner, res.name, res.ordinal, pos)
-          case _ => halt("Infeasible")
+      case pattern: AST.IR.Pattern.FieldRef =>
+        r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp,
+          AST.IR.Exp.Binary.Op.Eq, AST.IR.Exp.FieldVarRef(thiz(pos), pattern.id, pattern.tipe, pos), pos)
+      case pattern: AST.IR.Pattern.GlobalRef =>
+        r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp,
+          AST.IR.Exp.Binary.Op.Eq, AST.IR.Exp.GlobalVarRef(pattern.owner :+ pattern.id, pattern.tipe, pos), pos)
+      case pattern: AST.IR.Pattern.LocalRef =>
+        val right: AST.IR.Exp = if (varCaptureSet.contains(pattern.id)) {
+          val valueT = lowerByNameType(pattern.tipe)
+          val mt = mboxType(valueT)
+          val mboxRef = AST.IR.Exp.LocalVarRef(T, methodContext, pattern.id, mt, pos)
+          AST.IR.Exp.FieldVarRef(mboxRef, "value", valueT, pos)
+        } else {
+          AST.IR.Exp.LocalVarRef(pattern.isVal, methodContext, pattern.id, pattern.tipe, pos)
         }
         r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, right, pos)
-      case pattern: AST.Pattern.LitInterpolate =>
-        pattern.prefix match {
-          case string"string" =>
-            val right = AST.IR.Exp.String(pattern.value, pos)
-            r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, right, pos)
-          case string"c" =>
-            val right = AST.IR.Exp.Int(AST.Typed.c, conversions.String.toCis(pattern.value)(0).toZ, pos)
-            r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, right, pos)
-          case string"z" =>
-            val right = AST.IR.Exp.Int(AST.Typed.z, Z(pattern.value).get, pos)
-            r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, right, pos)
-          case string"f32" =>
-            val right = AST.IR.Exp.F32(F32(pattern.value).get, pos)
-            r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, right, pos)
-          case string"f64" =>
-            val right = AST.IR.Exp.F64(F64(pattern.value).get, pos)
-            r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, right, pos)
-          case string"r" =>
-            val right = AST.IR.Exp.R(R(pattern.value).get, pos)
-            r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, right, pos)
-          case _ =>
-            val t = pattern.typedOpt.get
-            val right = AST.IR.Exp.Int(t, Z(pattern.value).get, pos)
-            r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, right, pos)
-        }
-      case _: AST.Pattern.SeqWildcard => halt("Infeasible")
+      case pattern: AST.IR.Pattern.EnumElementRef =>
+        val right = AST.IR.Exp.EnumElementRef(pattern.owner, pattern.id, pattern.ordinal, pos)
+        r = r :+ AST.IR.Exp.Binary(AST.Typed.b, exp, AST.IR.Exp.Binary.Op.Eq, right, pos)
+      case _: AST.IR.Pattern.SeqWildcard => halt("Infeasible")
     }
     return (r, lMap)
   }

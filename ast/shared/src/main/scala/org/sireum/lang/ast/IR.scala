@@ -42,6 +42,88 @@ object IR {
     @strictpure def empty: MethodContext = MethodContext(F, ISZ(), "", Typed.Fun(Purity.Impure, F, ISZ(), Typed.nothing))
   }
 
+  @datatype trait Pattern {
+    @strictpure def pos: Position
+    @pure def tipe: Typed
+    @strictpure def prettyST(p: Printer): ST
+  }
+
+  object Pattern {
+
+    @strictpure def directLiteral(exp: Exp): Exp = exp match {
+      case _: Exp.Bool => exp
+      case _: Exp.Int => exp
+      case _: Exp.F32 => exp
+      case _: Exp.F64 => exp
+      case _: Exp.R => exp
+      case _: Exp.String => exp
+      case _ => halt("IR pattern literals must be direct scalar expressions")
+    }
+
+    @datatype class Literal(val exp: Exp) extends Pattern {
+      @strictpure def pos: Position = exp.pos
+      @pure def tipe: Typed = {
+        return Pattern.directLiteral(exp).tipe
+      }
+      @strictpure def prettyST(p: Printer): ST = Pattern.directLiteral(exp).prettyST(p)
+    }
+
+    @datatype class Wildcard(val guardTipeOpt: Option[Typed], val tipe: Typed, val pos: Position) extends Pattern {
+      @strictpure def prettyST(p: Printer): ST = guardTipeOpt match {
+        case Some(t) => st"_: $t"
+        case _ => st"_"
+      }
+    }
+
+    @datatype class SeqWildcard(val tipe: Typed, val pos: Position) extends Pattern {
+      @strictpure def prettyST(p: Printer): ST = st"_*"
+    }
+
+    @datatype class VarBinding(val id: String,
+                              val guardTipeOpt: Option[Typed],
+                              val tipe: Typed,
+                              val idContext: ISZ[String],
+                              val pos: Position) extends Pattern {
+      @strictpure def prettyST(p: Printer): ST = {
+        val annotationOpt: Option[ST] = guardTipeOpt match {
+          case Some(t) => Some(st": $t")
+          case _ => None()
+        }
+        st"$id$annotationOpt"
+      }
+    }
+
+    @datatype class Structure(val idOpt: Option[String],
+                              val tipe: Typed,
+                              val patterns: ISZ[Pattern],
+                              val idContext: ISZ[String],
+                              val pos: Position) extends Pattern {
+      @strictpure def prettyST(p: Printer): ST = {
+        val bindingOpt: Option[ST] = idOpt match {
+          case Some(id) => Some(st"$id@")
+          case _ => None()
+        }
+        st"$bindingOpt$tipe(${(for (pattern <- patterns) yield pattern.prettyST(p), ", ")})"
+      }
+    }
+
+    @datatype class LocalRef(val isVal: B, val id: String, val tipe: Typed, val pos: Position) extends Pattern {
+      @strictpure def prettyST(p: Printer): ST = st"$id"
+    }
+
+    @datatype class FieldRef(val id: String, val tipe: Typed, val pos: Position) extends Pattern {
+      @strictpure def prettyST(p: Printer): ST = st"$id"
+    }
+
+    @datatype class GlobalRef(val owner: ISZ[String], val id: String, val tipe: Typed, val pos: Position) extends Pattern {
+      @strictpure def prettyST(p: Printer): ST = st"${(owner :+ id, ".")}"
+    }
+
+    @datatype class EnumElementRef(val owner: ISZ[String], val id: String, val ordinal: Z, val tipe: Typed, val pos: Position) extends Pattern {
+      @strictpure def prettyST(p: Printer): ST = st"${(owner, ".")}.$id"
+    }
+  }
+
   @datatype trait Exp  {
     @pure def tipe: Typed
     @strictpure def pos: Position
@@ -284,10 +366,12 @@ object IR {
     }
 
     @datatype class Apply(val isInObject: B, val owner: ISZ[org.sireum.String], val id: org.sireum.String,
-                          val rTypes: ISZ[RType], val args: ISZ[Exp], val methodType: Typed.Fun, val pos: Position) extends Exp {
+                          val rTypes: ISZ[RType], val args: ISZ[Exp], val methodType: Typed.Fun, val pos: Position,
+                          val isSuper: B) extends Exp {
       @strictpure def tipe: Typed = methodType.ret
       @strictpure def prettyRawST(p: Printer): ST = p.exp(this).getOrElse(
-        if (!isInObject && ops.StringOps(id).isScalaOp && args.size == 2) st"(${args(0).prettyST(p)} $id ${args(1).prettyST(p)})"
+        if (isSuper) st"super.$id(${(for (i <- 1 until args.size) yield args(i).prettyST(p), ", ")})"
+        else if (!isInObject && ops.StringOps(id).isScalaOp && args.size == 2) st"(${args(0).prettyST(p)} $id ${args(1).prettyST(p)})"
         else if (args.isEmpty) st"${if (owner.nonEmpty) st"${(owner, ".")}${if (isInObject) "." else "#"}" else st""}$id(${(for (arg <- args) yield arg.prettyST(p), ", ")})"
         else st"${args(0).prettyST(p)}.$id(${(for (i <- 1 until args.size) yield args(i).prettyST(p), ", ")})")
       @pure def numOfTemps: Z = {
@@ -485,8 +569,8 @@ object IR {
       }
     }
 
-    @datatype class AssignPattern(val context: MethodContext, val pattern: lang.ast.Pattern, val rhs: Exp, val pos: Position) extends Stmt {
-      @strictpure def prettyRawST(p: Printer): ST = st"${pattern.prettyST} = ${rhs.prettyST(p)}"
+    @datatype class AssignPattern(val context: MethodContext, val pattern: IR.Pattern, val rhs: Exp, val pos: Position) extends Stmt {
+      @strictpure def prettyRawST(p: Printer): ST = st"${pattern.prettyST(p)} = ${rhs.prettyST(p)}"
     }
 
     @datatype class Block(val stmts: ISZ[Stmt], val pos: Position) extends Stmt {
@@ -508,14 +592,31 @@ object IR {
     }
 
     object Match {
-      @datatype class Case(val decl: Stmt.Decl, val pattern: Pattern, val condOpt: Option[ExpBlock], val body: Block) {
+      @datatype class Case(val decl: Stmt.Decl, val pattern: IR.Pattern, val condOpt: Option[ExpBlock], val body: Block) {
         @strictpure def prettyST(p: Printer): ST = {
           val cOpt: Option[ST] = condOpt match {
             case Some(cond) => Some(st" if ${cond.prettyST(p)}")
             case _ => None()
           }
-          st"""case ${pattern.prettyST}$cOpt =>
+          st"""case ${pattern.prettyST(p)}$cOpt =>
               |  ${(for (stmt <- body.stmts) yield stmt.prettyST(p), "\n")}"""
+        }
+      }
+    }
+
+    @datatype class Switch(val exp: Exp, val cases: ISZ[Switch.Case], val pos: Position) extends Stmt {
+      @strictpure def prettyRawST(p: Printer): ST =
+        st"${exp.prettyST(p)} switch { ${(for (c <- cases) yield c.prettyST(p), " ")} }"
+    }
+
+    object Switch {
+      @datatype class Case(val valueOpt: Option[Exp], val body: Block) {
+        @strictpure def prettyST(p: Printer): ST = {
+          val valueST: ST = valueOpt match {
+            case Some(value) => value.prettyST(p)
+            case _ => st"_"
+          }
+          st"case $valueST => ${body.prettyST(p)}"
         }
       }
     }

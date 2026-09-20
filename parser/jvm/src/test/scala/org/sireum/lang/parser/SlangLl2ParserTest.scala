@@ -30,11 +30,13 @@ import org.sireum.test._
 
 class SlangLl2ParserTest extends SireumRcSpec {
 
-  lazy val temp: Os.Path = if (Os.env("GITHUB_ACTION").isEmpty) {
-    val t = Os.home / "Temp" / "ll2"
-    t.removeAll()
-    t
-  } else null
+  registerTest("LL(2) parseStmt unwraps stmtFile") {
+    val reporter = message.Reporter.create
+    val stmtOpt = SlangLl2.parseStmt(Some("parse-stmt.sl"), "val x: Z = 1\n", reporter)
+    assert(stmtOpt.nonEmpty)
+    assert(stmtOpt.get.isInstanceOf[lang.ast.Stmt.Var])
+    assert(!reporter.hasError)
+  }
 
   def shouldIgnore(name: Predef.String, isSimplified: Boolean): Boolean = false
 
@@ -58,20 +60,10 @@ class SlangLl2ParserTest extends SireumRcSpec {
     val reporter = message.Reporter.create
     lang.parser.Parser(content).parseTopUnit[lang.ast.TopUnit.Program](isWorksheet = T, isDiet = F, uriOpt, reporter) match {
       case Some(program) if !reporter.hasIssue =>
-        try {
-          val ll2 = lang.ast.SlangLl2PrettyPrinter.prettyPrint(program).render
-          println(ll2)
-          if (temp != null) {
-            val f = temp / ops.StringOps(uriOpt.get).replaceAllLiterally(".sc", ".sl")
-            f.up.mkdirAll()
-            f.writeOver(ll2)
-            println(s"Wrote $f")
-          }
-          SlangLl2Parser.parse(uriOpt, ll2, reporter).get
-          SlangLl2ParserUtil.parse(uriOpt, ll2, reporter)
-        } catch {
-          case _: Throwable => return false
-        }
+        val ll2 = lang.ast.SlangLl2PrettyPrinter.prettyPrint(program).render
+        println(ll2)
+        SlangLl2Parser.parse(uriOpt, ll2, reporter).get
+        SlangLl2ParserUtil.parse(uriOpt, ll2, reporter)
       case _ =>
     }
     if (reporter.hasIssue) {

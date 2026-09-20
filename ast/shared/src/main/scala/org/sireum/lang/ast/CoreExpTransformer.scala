@@ -2,7 +2,7 @@
 // @formatter:off
 
 /*
- Copyright (c) 2017-2026,Robby, Kansas State University
+ Copyright (c) 2017-2026, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -1089,12 +1089,12 @@ object CoreExpTransformer {
     val s2: MS[Z, T] = s.toMS
     var changed: B = F
     var ctxi = ctx
-    for (i <- s2.indices) {
-      val e: T = s(i)
+    for (i <- 0 until s.size) {
+      val e: T = s.atZ(i)
       val r: TPostResult[Context, T] = f(ctxi, e)
       ctxi = r.ctx
       changed = changed || r.resultOpt.nonEmpty
-      s2(i) = r.resultOpt.getOrElse(e)
+      s2.updateZ(i, r.resultOpt.getOrElse(e))
     }
     if (changed) {
       return TPostResult(ctxi, Some(s2.toIS))

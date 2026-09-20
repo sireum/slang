@@ -526,18 +526,24 @@ object TypeChecker {
     args: ISZ[AST.Typed],
     reporter: Reporter
   ): Option[HashMap[String, AST.Typed]] = {
-    if (typeParams.size != args.size) {
+    val typeParamIds: ISZ[String] = for (typeParam <- typeParams) yield typeParam.id.value
+    return buildTypeSubstMapFromIds(name, posOpt, typeParamIds, args, reporter)
+  }
+
+  def buildTypeSubstMapFromIds(
+    name: QName,
+    posOpt: Option[Position],
+    typeParamIds: ISZ[String],
+    args: ISZ[AST.Typed],
+    reporter: Reporter
+  ): Option[HashMap[String, AST.Typed]] = {
+    if (typeParamIds.size != args.size) {
       reporter.error(posOpt, typeCheckerKind,
-        st"Type ${(name, ".")} requires ${typeParams.size} type arguments, but ${args.size} is supplied.".render)
+        st"Type ${(name, ".")} requires ${typeParamIds.size} type arguments, but ${args.size} is supplied.".render)
       return None()
     }
-    var substMap = HashMap.emptyInit[String, AST.Typed](args.size)
-    var i = 0
-    while (i < args.size) {
-      substMap = substMap + typeParams(i).id.value ~> args(i)
-      i = i + 1
-    }
-    return Some(substMap)
+    val entries: ISZ[(String, AST.Typed)] = for (i <- 0 until args.size) yield typeParamIds(i) ~> args(i)
+    return Some(HashMap ++ entries)
   }
 
   def buildMethodSubstMap(
@@ -2607,7 +2613,7 @@ import TypeChecker._
                           info.constructorTypeOpt match {
                             case Some(constructorType) =>
                               return (Some(constructorType), info.constructorResOpt, newTypeArgs,
-                                for (p <- info.ast.params if !p.isHidden) yield p.id.value)
+                                for (p <- info.ast.params) yield p.id.value)
                             case _ =>
                               reporter.error(posOpt, typeCheckerKind,
                                 st"Cannot create an object of type ${(tpe.name, ".")}.".render)
@@ -2639,6 +2645,34 @@ import TypeChecker._
       return (Some(tpe), resOpt, newTypeArgs, ISZ())
     }
 
+    def checkInvokeArg(
+      pt: AST.Typed,
+      at: AST.Exp,
+      index: Z,
+      rep: Reporter,
+      infer: B
+    ): (AST.Exp, Option[AST.Typed]) = {
+      val tc: TypeChecker = pt match {
+        case ft: AST.Typed.Fun if ft.isByName && ft.args.isEmpty =>
+          val suffix: String = at.posOpt match {
+            case Some(pos) => s"${pos.beginLine}.${pos.beginColumn}.$index"
+            case _ => s"$index"
+          }
+          this(context = context :+ s"$$byname.$suffix")
+        case _ => this
+      }
+      val expected: Option[AST.Typed] = if (infer) {
+        None()
+      } else {
+        val expectedType: AST.Typed = pt match {
+          case ft: AST.Typed.Fun if ft.isByName && ft.args.isEmpty => ft.ret
+          case _ => pt
+        }
+        Some(expectedType)
+      }
+      return tc.checkExp(expected, scope, at, rep)
+    }
+
     def checkInvokeGenH(
       m: AST.Typed.Method,
       expId: AST.Id,
@@ -2667,7 +2701,7 @@ import TypeChecker._
               case (AST.Typed.stepId, lit: AST.Exp.LitString) =>
                 args = args :+ AST.ProofAst.StepId.Str(F, lit.value, lit.attr)
               case _ =>
-                val (newArg, _) = checkExp(Some(pt), scope, at, rep)
+                val newArg = checkInvokeArg(pt, at, i, rep, F)._1
                 args = args :+ newArg
             }
             i = i + 1
@@ -2684,7 +2718,7 @@ import TypeChecker._
               case (AST.Typed.stepId, lit: AST.Exp.LitString) =>
                 args = args + m.paramNames(i) ~> AST.ProofAst.StepId.Str(F, lit.value, lit.attr)
               case _ =>
-                val (newArg, _) = checkExp(Some(pt), scope, at, rep)
+                val newArg = checkInvokeArg(pt, at, i, rep, F)._1
                 args = args + m.paramNames(i) ~> newArg
             }
             i = i + 1
@@ -2725,7 +2759,7 @@ import TypeChecker._
           var i = 0
           while (i < expArgs.size) {
             val e = expArgs(i)
-            val (newArg, argTypeOpt) = checkExp(None(), scope, e, repArgs)
+            val (newArg, argTypeOpt) = checkInvokeArg(m.tpe.args(i), e, i, repArgs, T)
             newArgs.append(newArg)
             argTypeOpt match {
               case Some(argType) => argTypes.append(argType)
@@ -3105,8 +3139,7 @@ import TypeChecker._
             var i = 0
             var newArgs = ISZ[AST.Exp]()
             while (i < size) {
-              val (newArg, _) =
-                checkExp(Some(t.args(i)), scope, invokeExp.args(i), reporter)
+              val newArg = checkInvokeArg(t.args(i), invokeExp.args(i), i, reporter, F)._1
               newArgs = newArgs :+ newArg
               i = i + 1
             }
@@ -4795,7 +4828,7 @@ import TypeChecker._
 
     var r = stmt
     val resOpt: Option[AST.ResolvedInfo] = scope.resolveName(typeHierarchy.nameMap, ISZ(key)) match {
-      case Some(info: Info.Var) => info.resOpt
+      case Some(info: Info.Var) if info.name == name => info.resOpt
       case Some(_: Info.LocalVar) =>
         err()
         return (None(), r)

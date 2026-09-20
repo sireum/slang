@@ -2,7 +2,7 @@
 // @formatter:off
 
 /*
- Copyright (c) 2017-2026,Robby, Kansas State University
+ Copyright (c) 2017-2026, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -40,11 +40,11 @@ object MTransformer {
   def transformISZ[T](s: IS[Z, T], f: T => MOption[T]): MOption[IS[Z, T]] = {
     val s2: MS[Z, T] = s.toMS
     var changed: B = F
-    for (i <- s2.indices) {
-      val e: T = s(i)
+    for (i <- 0 until s.size) {
+      val e: T = s.atZ(i)
       val r: MOption[T] = f(e)
       changed = changed || r.nonEmpty
-      s2(i) = r.getOrElse(e)
+      s2.updateZ(i, r.getOrElse(e))
     }
     if (changed) {
       return MSome(s2.toIS)
@@ -761,15 +761,21 @@ import MTransformer._
       case o: Stmt.VarPattern => return preStmtVarPattern(o)
       case o: Stmt.SpecVar =>
         val r: PreResult[Stmt] = preStmtSpecVar(o) match {
-         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Stmt => PreResult(continu, MSome[Stmt](r))
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
         }
         return r
       case o: Stmt.RsVal =>
         val r: PreResult[Stmt] = preStmtRsVal(o) match {
-         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Stmt => PreResult(continu, MSome[Stmt](r))
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
         }
         return r
@@ -777,15 +783,21 @@ import MTransformer._
       case o: Stmt.ExtMethod => return preStmtExtMethod(o)
       case o: Stmt.JustMethod =>
         val r: PreResult[Stmt] = preStmtJustMethod(o) match {
-         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Stmt => PreResult(continu, MSome[Stmt](r))
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
         }
         return r
       case o: Stmt.SpecMethod =>
         val r: PreResult[Stmt] = preStmtSpecMethod(o) match {
-         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Stmt => PreResult(continu, MSome[Stmt](r))
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
         }
         return r
@@ -800,8 +812,11 @@ import MTransformer._
       case o: Stmt.If => return preStmtIf(o)
       case o: Stmt.Induct =>
         val r: PreResult[Stmt] = preStmtInduct(o) match {
-         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Stmt => PreResult(continu, MSome[Stmt](r))
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
         }
         return r
@@ -812,64 +827,91 @@ import MTransformer._
       case o: Stmt.Expr => return preStmtExpr(o)
       case o: Stmt.Fact =>
         val r: PreResult[Stmt] = preStmtFact(o) match {
-         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Stmt => PreResult(continu, MSome[Stmt](r))
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
         }
         return r
       case o: Stmt.Inv =>
         val r: PreResult[Stmt] = preStmtInv(o) match {
-         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Stmt => PreResult(continu, MSome[Stmt](r))
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
         }
         return r
       case o: Stmt.Theorem =>
         val r: PreResult[Stmt] = preStmtTheorem(o) match {
-         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Stmt => PreResult(continu, MSome[Stmt](r))
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
         }
         return r
       case o: Stmt.DataRefinement =>
         val r: PreResult[Stmt] = preStmtDataRefinement(o) match {
-         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Stmt => PreResult(continu, MSome[Stmt](r))
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
         }
         return r
       case o: Stmt.SpecLabel =>
         val r: PreResult[Stmt] = preStmtSpecLabel(o) match {
-         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Stmt => PreResult(continu, MSome[Stmt](r))
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
         }
         return r
       case o: Stmt.SpecBlock =>
         val r: PreResult[Stmt] = preStmtSpecBlock(o) match {
-         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Stmt => PreResult(continu, MSome[Stmt](r))
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
         }
         return r
       case o: Stmt.DeduceSequent =>
         val r: PreResult[Stmt] = preStmtDeduceSequent(o) match {
-         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Stmt => PreResult(continu, MSome[Stmt](r))
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
         }
         return r
       case o: Stmt.DeduceSteps =>
         val r: PreResult[Stmt] = preStmtDeduceSteps(o) match {
-         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Stmt => PreResult(continu, MSome[Stmt](r))
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
         }
         return r
       case o: Stmt.Havoc =>
         val r: PreResult[Stmt] = preStmtHavoc(o) match {
-         case PreResult(continu, MSome(r: Stmt)) => PreResult(continu, MSome[Stmt](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Stmt => PreResult(continu, MSome[Stmt](r))
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Stmt]())
         }
         return r
@@ -880,22 +922,31 @@ import MTransformer._
     o match {
       case o: LoopContract =>
         val r: PreResult[HasModifies] = preLoopContract(o) match {
-         case PreResult(continu, MSome(r: HasModifies)) => PreResult(continu, MSome[HasModifies](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type HasModifies")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: HasModifies => PreResult(continu, MSome[HasModifies](r))
+             case _ => halt("Can only produce object of type HasModifies")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[HasModifies]())
         }
         return r
       case o: MethodContract.Simple =>
         val r: PreResult[HasModifies] = preMethodContractSimple(o) match {
-         case PreResult(continu, MSome(r: HasModifies)) => PreResult(continu, MSome[HasModifies](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type HasModifies")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: HasModifies => PreResult(continu, MSome[HasModifies](r))
+             case _ => halt("Can only produce object of type HasModifies")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[HasModifies]())
         }
         return r
       case o: MethodContract.Cases =>
         val r: PreResult[HasModifies] = preMethodContractCases(o) match {
-         case PreResult(continu, MSome(r: HasModifies)) => PreResult(continu, MSome[HasModifies](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type HasModifies")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: HasModifies => PreResult(continu, MSome[HasModifies](r))
+             case _ => halt("Can only produce object of type HasModifies")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[HasModifies]())
         }
         return r
@@ -1217,36 +1268,51 @@ import MTransformer._
     o match {
       case o: Stmt.Block =>
         val r: PreResult[AssignExp] = preStmtBlock(o) match {
-         case PreResult(continu, MSome(r: AssignExp)) => PreResult(continu, MSome[AssignExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type AssignExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: AssignExp => PreResult(continu, MSome[AssignExp](r))
+             case _ => halt("Can only produce object of type AssignExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[AssignExp]())
         }
         return r
       case o: Stmt.If =>
         val r: PreResult[AssignExp] = preStmtIf(o) match {
-         case PreResult(continu, MSome(r: AssignExp)) => PreResult(continu, MSome[AssignExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type AssignExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: AssignExp => PreResult(continu, MSome[AssignExp](r))
+             case _ => halt("Can only produce object of type AssignExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[AssignExp]())
         }
         return r
       case o: Stmt.Match =>
         val r: PreResult[AssignExp] = preStmtMatch(o) match {
-         case PreResult(continu, MSome(r: AssignExp)) => PreResult(continu, MSome[AssignExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type AssignExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: AssignExp => PreResult(continu, MSome[AssignExp](r))
+             case _ => halt("Can only produce object of type AssignExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[AssignExp]())
         }
         return r
       case o: Stmt.Return =>
         val r: PreResult[AssignExp] = preStmtReturn(o) match {
-         case PreResult(continu, MSome(r: AssignExp)) => PreResult(continu, MSome[AssignExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type AssignExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: AssignExp => PreResult(continu, MSome[AssignExp](r))
+             case _ => halt("Can only produce object of type AssignExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[AssignExp]())
         }
         return r
       case o: Stmt.Expr =>
         val r: PreResult[AssignExp] = preStmtExpr(o) match {
-         case PreResult(continu, MSome(r: AssignExp)) => PreResult(continu, MSome[AssignExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type AssignExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: AssignExp => PreResult(continu, MSome[AssignExp](r))
+             case _ => halt("Can only produce object of type AssignExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[AssignExp]())
         }
         return r
@@ -1340,64 +1406,91 @@ import MTransformer._
     o match {
       case o: ProofAst.StepId.Num =>
         val r: PreResult[Exp] = preProofAstStepIdNum(o) match {
-         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Exp => PreResult(continu, MSome[Exp](r))
+             case _ => halt("Can only produce object of type Exp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
         }
         return r
       case o: ProofAst.StepId.Str =>
         val r: PreResult[Exp] = preProofAstStepIdStr(o) match {
-         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Exp => PreResult(continu, MSome[Exp](r))
+             case _ => halt("Can only produce object of type Exp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
         }
         return r
       case o: Exp.LitB =>
         val r: PreResult[Exp] = preExpLitB(o) match {
-         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Exp => PreResult(continu, MSome[Exp](r))
+             case _ => halt("Can only produce object of type Exp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
         }
         return r
       case o: Exp.LitC =>
         val r: PreResult[Exp] = preExpLitC(o) match {
-         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Exp => PreResult(continu, MSome[Exp](r))
+             case _ => halt("Can only produce object of type Exp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
         }
         return r
       case o: Exp.LitZ =>
         val r: PreResult[Exp] = preExpLitZ(o) match {
-         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Exp => PreResult(continu, MSome[Exp](r))
+             case _ => halt("Can only produce object of type Exp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
         }
         return r
       case o: Exp.LitF32 =>
         val r: PreResult[Exp] = preExpLitF32(o) match {
-         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Exp => PreResult(continu, MSome[Exp](r))
+             case _ => halt("Can only produce object of type Exp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
         }
         return r
       case o: Exp.LitF64 =>
         val r: PreResult[Exp] = preExpLitF64(o) match {
-         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Exp => PreResult(continu, MSome[Exp](r))
+             case _ => halt("Can only produce object of type Exp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
         }
         return r
       case o: Exp.LitR =>
         val r: PreResult[Exp] = preExpLitR(o) match {
-         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Exp => PreResult(continu, MSome[Exp](r))
+             case _ => halt("Can only produce object of type Exp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
         }
         return r
       case o: Exp.LitString =>
         val r: PreResult[Exp] = preExpLitString(o) match {
-         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Exp => PreResult(continu, MSome[Exp](r))
+             case _ => halt("Can only produce object of type Exp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
         }
         return r
@@ -1421,22 +1514,31 @@ import MTransformer._
       case o: Exp.ForYield => return preExpForYield(o)
       case o: Exp.QuantType =>
         val r: PreResult[Exp] = preExpQuantType(o) match {
-         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Exp => PreResult(continu, MSome[Exp](r))
+             case _ => halt("Can only produce object of type Exp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
         }
         return r
       case o: Exp.QuantRange =>
         val r: PreResult[Exp] = preExpQuantRange(o) match {
-         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Exp => PreResult(continu, MSome[Exp](r))
+             case _ => halt("Can only produce object of type Exp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
         }
         return r
       case o: Exp.QuantEach =>
         val r: PreResult[Exp] = preExpQuantEach(o) match {
-         case PreResult(continu, MSome(r: Exp)) => PreResult(continu, MSome[Exp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Exp => PreResult(continu, MSome[Exp](r))
+             case _ => halt("Can only produce object of type Exp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Exp]())
         }
         return r
@@ -1459,15 +1561,21 @@ import MTransformer._
     o match {
       case o: ProofAst.StepId.Num =>
         val r: PreResult[Lit] = preProofAstStepIdNum(o) match {
-         case PreResult(continu, MSome(r: Lit)) => PreResult(continu, MSome[Lit](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Lit")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Lit => PreResult(continu, MSome[Lit](r))
+             case _ => halt("Can only produce object of type Lit")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Lit]())
         }
         return r
       case o: ProofAst.StepId.Str =>
         val r: PreResult[Lit] = preProofAstStepIdStr(o) match {
-         case PreResult(continu, MSome(r: Lit)) => PreResult(continu, MSome[Lit](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Lit")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Lit => PreResult(continu, MSome[Lit](r))
+             case _ => halt("Can only produce object of type Lit")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Lit]())
         }
         return r
@@ -1537,15 +1645,21 @@ import MTransformer._
     o match {
       case o: Exp.Ident =>
         val r: PreResult[Exp.Ref] = preExpIdent(o) match {
-         case PreResult(continu, MSome(r: Exp.Ref)) => PreResult(continu, MSome[Exp.Ref](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp.Ref")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Exp.Ref => PreResult(continu, MSome[Exp.Ref](r))
+             case _ => halt("Can only produce object of type Exp.Ref")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Exp.Ref]())
         }
         return r
       case o: Exp.Select =>
         val r: PreResult[Exp.Ref] = preExpSelect(o) match {
-         case PreResult(continu, MSome(r: Exp.Ref)) => PreResult(continu, MSome[Exp.Ref](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp.Ref")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: Exp.Ref => PreResult(continu, MSome[Exp.Ref](r))
+             case _ => halt("Can only produce object of type Exp.Ref")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[Exp.Ref]())
         }
         return r
@@ -1944,15 +2058,21 @@ import MTransformer._
       case o: Stmt.VarPattern => return postStmtVarPattern(o)
       case o: Stmt.SpecVar =>
         val r: MOption[Stmt] = postStmtSpecVar(o) match {
-         case MSome(result: Stmt) => MSome[Stmt](result)
-         case MSome(_) => halt("Can only produce object of type Stmt")
+         case MSome(result) =>
+           result match {
+             case result: Stmt => MSome[Stmt](result)
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case _ => MNone[Stmt]()
         }
         return r
       case o: Stmt.RsVal =>
         val r: MOption[Stmt] = postStmtRsVal(o) match {
-         case MSome(result: Stmt) => MSome[Stmt](result)
-         case MSome(_) => halt("Can only produce object of type Stmt")
+         case MSome(result) =>
+           result match {
+             case result: Stmt => MSome[Stmt](result)
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case _ => MNone[Stmt]()
         }
         return r
@@ -1960,15 +2080,21 @@ import MTransformer._
       case o: Stmt.ExtMethod => return postStmtExtMethod(o)
       case o: Stmt.JustMethod =>
         val r: MOption[Stmt] = postStmtJustMethod(o) match {
-         case MSome(result: Stmt) => MSome[Stmt](result)
-         case MSome(_) => halt("Can only produce object of type Stmt")
+         case MSome(result) =>
+           result match {
+             case result: Stmt => MSome[Stmt](result)
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case _ => MNone[Stmt]()
         }
         return r
       case o: Stmt.SpecMethod =>
         val r: MOption[Stmt] = postStmtSpecMethod(o) match {
-         case MSome(result: Stmt) => MSome[Stmt](result)
-         case MSome(_) => halt("Can only produce object of type Stmt")
+         case MSome(result) =>
+           result match {
+             case result: Stmt => MSome[Stmt](result)
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case _ => MNone[Stmt]()
         }
         return r
@@ -1983,8 +2109,11 @@ import MTransformer._
       case o: Stmt.If => return postStmtIf(o)
       case o: Stmt.Induct =>
         val r: MOption[Stmt] = postStmtInduct(o) match {
-         case MSome(result: Stmt) => MSome[Stmt](result)
-         case MSome(_) => halt("Can only produce object of type Stmt")
+         case MSome(result) =>
+           result match {
+             case result: Stmt => MSome[Stmt](result)
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case _ => MNone[Stmt]()
         }
         return r
@@ -1995,64 +2124,91 @@ import MTransformer._
       case o: Stmt.Expr => return postStmtExpr(o)
       case o: Stmt.Fact =>
         val r: MOption[Stmt] = postStmtFact(o) match {
-         case MSome(result: Stmt) => MSome[Stmt](result)
-         case MSome(_) => halt("Can only produce object of type Stmt")
+         case MSome(result) =>
+           result match {
+             case result: Stmt => MSome[Stmt](result)
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case _ => MNone[Stmt]()
         }
         return r
       case o: Stmt.Inv =>
         val r: MOption[Stmt] = postStmtInv(o) match {
-         case MSome(result: Stmt) => MSome[Stmt](result)
-         case MSome(_) => halt("Can only produce object of type Stmt")
+         case MSome(result) =>
+           result match {
+             case result: Stmt => MSome[Stmt](result)
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case _ => MNone[Stmt]()
         }
         return r
       case o: Stmt.Theorem =>
         val r: MOption[Stmt] = postStmtTheorem(o) match {
-         case MSome(result: Stmt) => MSome[Stmt](result)
-         case MSome(_) => halt("Can only produce object of type Stmt")
+         case MSome(result) =>
+           result match {
+             case result: Stmt => MSome[Stmt](result)
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case _ => MNone[Stmt]()
         }
         return r
       case o: Stmt.DataRefinement =>
         val r: MOption[Stmt] = postStmtDataRefinement(o) match {
-         case MSome(result: Stmt) => MSome[Stmt](result)
-         case MSome(_) => halt("Can only produce object of type Stmt")
+         case MSome(result) =>
+           result match {
+             case result: Stmt => MSome[Stmt](result)
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case _ => MNone[Stmt]()
         }
         return r
       case o: Stmt.SpecLabel =>
         val r: MOption[Stmt] = postStmtSpecLabel(o) match {
-         case MSome(result: Stmt) => MSome[Stmt](result)
-         case MSome(_) => halt("Can only produce object of type Stmt")
+         case MSome(result) =>
+           result match {
+             case result: Stmt => MSome[Stmt](result)
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case _ => MNone[Stmt]()
         }
         return r
       case o: Stmt.SpecBlock =>
         val r: MOption[Stmt] = postStmtSpecBlock(o) match {
-         case MSome(result: Stmt) => MSome[Stmt](result)
-         case MSome(_) => halt("Can only produce object of type Stmt")
+         case MSome(result) =>
+           result match {
+             case result: Stmt => MSome[Stmt](result)
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case _ => MNone[Stmt]()
         }
         return r
       case o: Stmt.DeduceSequent =>
         val r: MOption[Stmt] = postStmtDeduceSequent(o) match {
-         case MSome(result: Stmt) => MSome[Stmt](result)
-         case MSome(_) => halt("Can only produce object of type Stmt")
+         case MSome(result) =>
+           result match {
+             case result: Stmt => MSome[Stmt](result)
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case _ => MNone[Stmt]()
         }
         return r
       case o: Stmt.DeduceSteps =>
         val r: MOption[Stmt] = postStmtDeduceSteps(o) match {
-         case MSome(result: Stmt) => MSome[Stmt](result)
-         case MSome(_) => halt("Can only produce object of type Stmt")
+         case MSome(result) =>
+           result match {
+             case result: Stmt => MSome[Stmt](result)
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case _ => MNone[Stmt]()
         }
         return r
       case o: Stmt.Havoc =>
         val r: MOption[Stmt] = postStmtHavoc(o) match {
-         case MSome(result: Stmt) => MSome[Stmt](result)
-         case MSome(_) => halt("Can only produce object of type Stmt")
+         case MSome(result) =>
+           result match {
+             case result: Stmt => MSome[Stmt](result)
+             case _ => halt("Can only produce object of type Stmt")
+           }
          case _ => MNone[Stmt]()
         }
         return r
@@ -2063,22 +2219,31 @@ import MTransformer._
     o match {
       case o: LoopContract =>
         val r: MOption[HasModifies] = postLoopContract(o) match {
-         case MSome(result: HasModifies) => MSome[HasModifies](result)
-         case MSome(_) => halt("Can only produce object of type HasModifies")
+         case MSome(result) =>
+           result match {
+             case result: HasModifies => MSome[HasModifies](result)
+             case _ => halt("Can only produce object of type HasModifies")
+           }
          case _ => MNone[HasModifies]()
         }
         return r
       case o: MethodContract.Simple =>
         val r: MOption[HasModifies] = postMethodContractSimple(o) match {
-         case MSome(result: HasModifies) => MSome[HasModifies](result)
-         case MSome(_) => halt("Can only produce object of type HasModifies")
+         case MSome(result) =>
+           result match {
+             case result: HasModifies => MSome[HasModifies](result)
+             case _ => halt("Can only produce object of type HasModifies")
+           }
          case _ => MNone[HasModifies]()
         }
         return r
       case o: MethodContract.Cases =>
         val r: MOption[HasModifies] = postMethodContractCases(o) match {
-         case MSome(result: HasModifies) => MSome[HasModifies](result)
-         case MSome(_) => halt("Can only produce object of type HasModifies")
+         case MSome(result) =>
+           result match {
+             case result: HasModifies => MSome[HasModifies](result)
+             case _ => halt("Can only produce object of type HasModifies")
+           }
          case _ => MNone[HasModifies]()
         }
         return r
@@ -2400,36 +2565,51 @@ import MTransformer._
     o match {
       case o: Stmt.Block =>
         val r: MOption[AssignExp] = postStmtBlock(o) match {
-         case MSome(result: AssignExp) => MSome[AssignExp](result)
-         case MSome(_) => halt("Can only produce object of type AssignExp")
+         case MSome(result) =>
+           result match {
+             case result: AssignExp => MSome[AssignExp](result)
+             case _ => halt("Can only produce object of type AssignExp")
+           }
          case _ => MNone[AssignExp]()
         }
         return r
       case o: Stmt.If =>
         val r: MOption[AssignExp] = postStmtIf(o) match {
-         case MSome(result: AssignExp) => MSome[AssignExp](result)
-         case MSome(_) => halt("Can only produce object of type AssignExp")
+         case MSome(result) =>
+           result match {
+             case result: AssignExp => MSome[AssignExp](result)
+             case _ => halt("Can only produce object of type AssignExp")
+           }
          case _ => MNone[AssignExp]()
         }
         return r
       case o: Stmt.Match =>
         val r: MOption[AssignExp] = postStmtMatch(o) match {
-         case MSome(result: AssignExp) => MSome[AssignExp](result)
-         case MSome(_) => halt("Can only produce object of type AssignExp")
+         case MSome(result) =>
+           result match {
+             case result: AssignExp => MSome[AssignExp](result)
+             case _ => halt("Can only produce object of type AssignExp")
+           }
          case _ => MNone[AssignExp]()
         }
         return r
       case o: Stmt.Return =>
         val r: MOption[AssignExp] = postStmtReturn(o) match {
-         case MSome(result: AssignExp) => MSome[AssignExp](result)
-         case MSome(_) => halt("Can only produce object of type AssignExp")
+         case MSome(result) =>
+           result match {
+             case result: AssignExp => MSome[AssignExp](result)
+             case _ => halt("Can only produce object of type AssignExp")
+           }
          case _ => MNone[AssignExp]()
         }
         return r
       case o: Stmt.Expr =>
         val r: MOption[AssignExp] = postStmtExpr(o) match {
-         case MSome(result: AssignExp) => MSome[AssignExp](result)
-         case MSome(_) => halt("Can only produce object of type AssignExp")
+         case MSome(result) =>
+           result match {
+             case result: AssignExp => MSome[AssignExp](result)
+             case _ => halt("Can only produce object of type AssignExp")
+           }
          case _ => MNone[AssignExp]()
         }
         return r
@@ -2523,64 +2703,91 @@ import MTransformer._
     o match {
       case o: ProofAst.StepId.Num =>
         val r: MOption[Exp] = postProofAstStepIdNum(o) match {
-         case MSome(result: Exp) => MSome[Exp](result)
-         case MSome(_) => halt("Can only produce object of type Exp")
+         case MSome(result) =>
+           result match {
+             case result: Exp => MSome[Exp](result)
+             case _ => halt("Can only produce object of type Exp")
+           }
          case _ => MNone[Exp]()
         }
         return r
       case o: ProofAst.StepId.Str =>
         val r: MOption[Exp] = postProofAstStepIdStr(o) match {
-         case MSome(result: Exp) => MSome[Exp](result)
-         case MSome(_) => halt("Can only produce object of type Exp")
+         case MSome(result) =>
+           result match {
+             case result: Exp => MSome[Exp](result)
+             case _ => halt("Can only produce object of type Exp")
+           }
          case _ => MNone[Exp]()
         }
         return r
       case o: Exp.LitB =>
         val r: MOption[Exp] = postExpLitB(o) match {
-         case MSome(result: Exp) => MSome[Exp](result)
-         case MSome(_) => halt("Can only produce object of type Exp")
+         case MSome(result) =>
+           result match {
+             case result: Exp => MSome[Exp](result)
+             case _ => halt("Can only produce object of type Exp")
+           }
          case _ => MNone[Exp]()
         }
         return r
       case o: Exp.LitC =>
         val r: MOption[Exp] = postExpLitC(o) match {
-         case MSome(result: Exp) => MSome[Exp](result)
-         case MSome(_) => halt("Can only produce object of type Exp")
+         case MSome(result) =>
+           result match {
+             case result: Exp => MSome[Exp](result)
+             case _ => halt("Can only produce object of type Exp")
+           }
          case _ => MNone[Exp]()
         }
         return r
       case o: Exp.LitZ =>
         val r: MOption[Exp] = postExpLitZ(o) match {
-         case MSome(result: Exp) => MSome[Exp](result)
-         case MSome(_) => halt("Can only produce object of type Exp")
+         case MSome(result) =>
+           result match {
+             case result: Exp => MSome[Exp](result)
+             case _ => halt("Can only produce object of type Exp")
+           }
          case _ => MNone[Exp]()
         }
         return r
       case o: Exp.LitF32 =>
         val r: MOption[Exp] = postExpLitF32(o) match {
-         case MSome(result: Exp) => MSome[Exp](result)
-         case MSome(_) => halt("Can only produce object of type Exp")
+         case MSome(result) =>
+           result match {
+             case result: Exp => MSome[Exp](result)
+             case _ => halt("Can only produce object of type Exp")
+           }
          case _ => MNone[Exp]()
         }
         return r
       case o: Exp.LitF64 =>
         val r: MOption[Exp] = postExpLitF64(o) match {
-         case MSome(result: Exp) => MSome[Exp](result)
-         case MSome(_) => halt("Can only produce object of type Exp")
+         case MSome(result) =>
+           result match {
+             case result: Exp => MSome[Exp](result)
+             case _ => halt("Can only produce object of type Exp")
+           }
          case _ => MNone[Exp]()
         }
         return r
       case o: Exp.LitR =>
         val r: MOption[Exp] = postExpLitR(o) match {
-         case MSome(result: Exp) => MSome[Exp](result)
-         case MSome(_) => halt("Can only produce object of type Exp")
+         case MSome(result) =>
+           result match {
+             case result: Exp => MSome[Exp](result)
+             case _ => halt("Can only produce object of type Exp")
+           }
          case _ => MNone[Exp]()
         }
         return r
       case o: Exp.LitString =>
         val r: MOption[Exp] = postExpLitString(o) match {
-         case MSome(result: Exp) => MSome[Exp](result)
-         case MSome(_) => halt("Can only produce object of type Exp")
+         case MSome(result) =>
+           result match {
+             case result: Exp => MSome[Exp](result)
+             case _ => halt("Can only produce object of type Exp")
+           }
          case _ => MNone[Exp]()
         }
         return r
@@ -2604,22 +2811,31 @@ import MTransformer._
       case o: Exp.ForYield => return postExpForYield(o)
       case o: Exp.QuantType =>
         val r: MOption[Exp] = postExpQuantType(o) match {
-         case MSome(result: Exp) => MSome[Exp](result)
-         case MSome(_) => halt("Can only produce object of type Exp")
+         case MSome(result) =>
+           result match {
+             case result: Exp => MSome[Exp](result)
+             case _ => halt("Can only produce object of type Exp")
+           }
          case _ => MNone[Exp]()
         }
         return r
       case o: Exp.QuantRange =>
         val r: MOption[Exp] = postExpQuantRange(o) match {
-         case MSome(result: Exp) => MSome[Exp](result)
-         case MSome(_) => halt("Can only produce object of type Exp")
+         case MSome(result) =>
+           result match {
+             case result: Exp => MSome[Exp](result)
+             case _ => halt("Can only produce object of type Exp")
+           }
          case _ => MNone[Exp]()
         }
         return r
       case o: Exp.QuantEach =>
         val r: MOption[Exp] = postExpQuantEach(o) match {
-         case MSome(result: Exp) => MSome[Exp](result)
-         case MSome(_) => halt("Can only produce object of type Exp")
+         case MSome(result) =>
+           result match {
+             case result: Exp => MSome[Exp](result)
+             case _ => halt("Can only produce object of type Exp")
+           }
          case _ => MNone[Exp]()
         }
         return r
@@ -2642,15 +2858,21 @@ import MTransformer._
     o match {
       case o: ProofAst.StepId.Num =>
         val r: MOption[Lit] = postProofAstStepIdNum(o) match {
-         case MSome(result: Lit) => MSome[Lit](result)
-         case MSome(_) => halt("Can only produce object of type Lit")
+         case MSome(result) =>
+           result match {
+             case result: Lit => MSome[Lit](result)
+             case _ => halt("Can only produce object of type Lit")
+           }
          case _ => MNone[Lit]()
         }
         return r
       case o: ProofAst.StepId.Str =>
         val r: MOption[Lit] = postProofAstStepIdStr(o) match {
-         case MSome(result: Lit) => MSome[Lit](result)
-         case MSome(_) => halt("Can only produce object of type Lit")
+         case MSome(result) =>
+           result match {
+             case result: Lit => MSome[Lit](result)
+             case _ => halt("Can only produce object of type Lit")
+           }
          case _ => MNone[Lit]()
         }
         return r
@@ -2720,15 +2942,21 @@ import MTransformer._
     o match {
       case o: Exp.Ident =>
         val r: MOption[Exp.Ref] = postExpIdent(o) match {
-         case MSome(result: Exp.Ref) => MSome[Exp.Ref](result)
-         case MSome(_) => halt("Can only produce object of type Exp.Ref")
+         case MSome(result) =>
+           result match {
+             case result: Exp.Ref => MSome[Exp.Ref](result)
+             case _ => halt("Can only produce object of type Exp.Ref")
+           }
          case _ => MNone[Exp.Ref]()
         }
         return r
       case o: Exp.Select =>
         val r: MOption[Exp.Ref] = postExpSelect(o) match {
-         case MSome(result: Exp.Ref) => MSome[Exp.Ref](result)
-         case MSome(_) => halt("Can only produce object of type Exp.Ref")
+         case MSome(result) =>
+           result match {
+             case result: Exp.Ref => MSome[Exp.Ref](result)
+             case _ => halt("Can only produce object of type Exp.Ref")
+           }
          case _ => MNone[Exp.Ref]()
         }
         return r
@@ -5757,8 +5985,11 @@ import MTransformer._
 
   def transformExpLitString(o: Exp.LitString): MOption[Exp.LitString] = {
     val preR: PreResult[Exp.LitString] = preExpLitString(o) match {
-     case PreResult(continu, MSome(r: Exp.LitString)) => PreResult(continu, MSome[Exp.LitString](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp.LitString")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: Exp.LitString => PreResult(continu, MSome[Exp.LitString](r))
+         case _ => halt("Can only produce object of type Exp.LitString")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[Exp.LitString]())
     }
     val r: MOption[Exp.LitString] = if (preR.continu) {
@@ -5777,8 +6008,11 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Exp.LitString = r.getOrElse(o)
     val postR: MOption[Exp.LitString] = postExpLitString(o2) match {
-     case MSome(result: Exp.LitString) => MSome[Exp.LitString](result)
-     case MSome(_) => halt("Can only produce object of type Exp.LitString")
+     case MSome(result) =>
+       result match {
+         case result: Exp.LitString => MSome[Exp.LitString](result)
+         case _ => halt("Can only produce object of type Exp.LitString")
+       }
      case _ => MNone[Exp.LitString]()
     }
     if (postR.nonEmpty) {
@@ -5792,8 +6026,11 @@ import MTransformer._
 
   def transformTypeNamed(o: Type.Named): MOption[Type.Named] = {
     val preR: PreResult[Type.Named] = preTypeNamed(o) match {
-     case PreResult(continu, MSome(r: Type.Named)) => PreResult(continu, MSome[Type.Named](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Type.Named")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: Type.Named => PreResult(continu, MSome[Type.Named](r))
+         case _ => halt("Can only produce object of type Type.Named")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[Type.Named]())
     }
     val r: MOption[Type.Named] = if (preR.continu) {
@@ -5815,8 +6052,11 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Type.Named = r.getOrElse(o)
     val postR: MOption[Type.Named] = postTypeNamed(o2) match {
-     case MSome(result: Type.Named) => MSome[Type.Named](result)
-     case MSome(_) => halt("Can only produce object of type Type.Named")
+     case MSome(result) =>
+       result match {
+         case result: Type.Named => MSome[Type.Named](result)
+         case _ => halt("Can only produce object of type Type.Named")
+       }
      case _ => MNone[Type.Named]()
     }
     if (postR.nonEmpty) {
@@ -5830,8 +6070,11 @@ import MTransformer._
 
   def transformStmtBlock(o: Stmt.Block): MOption[Stmt.Block] = {
     val preR: PreResult[Stmt.Block] = preStmtBlock(o) match {
-     case PreResult(continu, MSome(r: Stmt.Block)) => PreResult(continu, MSome[Stmt.Block](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Stmt.Block")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: Stmt.Block => PreResult(continu, MSome[Stmt.Block](r))
+         case _ => halt("Can only produce object of type Stmt.Block")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[Stmt.Block]())
     }
     val r: MOption[Stmt.Block] = if (preR.continu) {
@@ -5852,8 +6095,11 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Stmt.Block = r.getOrElse(o)
     val postR: MOption[Stmt.Block] = postStmtBlock(o2) match {
-     case MSome(result: Stmt.Block) => MSome[Stmt.Block](result)
-     case MSome(_) => halt("Can only produce object of type Stmt.Block")
+     case MSome(result) =>
+       result match {
+         case result: Stmt.Block => MSome[Stmt.Block](result)
+         case _ => halt("Can only produce object of type Stmt.Block")
+       }
      case _ => MNone[Stmt.Block]()
     }
     if (postR.nonEmpty) {
@@ -5867,8 +6113,11 @@ import MTransformer._
 
   def transformExpLitZ(o: Exp.LitZ): MOption[Exp.LitZ] = {
     val preR: PreResult[Exp.LitZ] = preExpLitZ(o) match {
-     case PreResult(continu, MSome(r: Exp.LitZ)) => PreResult(continu, MSome[Exp.LitZ](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp.LitZ")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: Exp.LitZ => PreResult(continu, MSome[Exp.LitZ](r))
+         case _ => halt("Can only produce object of type Exp.LitZ")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[Exp.LitZ]())
     }
     val r: MOption[Exp.LitZ] = if (preR.continu) {
@@ -5887,8 +6136,11 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Exp.LitZ = r.getOrElse(o)
     val postR: MOption[Exp.LitZ] = postExpLitZ(o2) match {
-     case MSome(result: Exp.LitZ) => MSome[Exp.LitZ](result)
-     case MSome(_) => halt("Can only produce object of type Exp.LitZ")
+     case MSome(result) =>
+       result match {
+         case result: Exp.LitZ => MSome[Exp.LitZ](result)
+         case _ => halt("Can only produce object of type Exp.LitZ")
+       }
      case _ => MNone[Exp.LitZ]()
     }
     if (postR.nonEmpty) {
@@ -5902,8 +6154,11 @@ import MTransformer._
 
   def transformExpIdent(o: Exp.Ident): MOption[Exp.Ident] = {
     val preR: PreResult[Exp.Ident] = preExpIdent(o) match {
-     case PreResult(continu, MSome(r: Exp.Ident)) => PreResult(continu, MSome[Exp.Ident](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp.Ident")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: Exp.Ident => PreResult(continu, MSome[Exp.Ident](r))
+         case _ => halt("Can only produce object of type Exp.Ident")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[Exp.Ident]())
     }
     val r: MOption[Exp.Ident] = if (preR.continu) {
@@ -5923,8 +6178,11 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Exp.Ident = r.getOrElse(o)
     val postR: MOption[Exp.Ident] = postExpIdent(o2) match {
-     case MSome(result: Exp.Ident) => MSome[Exp.Ident](result)
-     case MSome(_) => halt("Can only produce object of type Exp.Ident")
+     case MSome(result) =>
+       result match {
+         case result: Exp.Ident => MSome[Exp.Ident](result)
+         case _ => halt("Can only produce object of type Exp.Ident")
+       }
      case _ => MNone[Exp.Ident]()
     }
     if (postR.nonEmpty) {
@@ -5938,8 +6196,11 @@ import MTransformer._
 
   def transformExpInvoke(o: Exp.Invoke): MOption[Exp.Invoke] = {
     val preR: PreResult[Exp.Invoke] = preExpInvoke(o) match {
-     case PreResult(continu, MSome(r: Exp.Invoke)) => PreResult(continu, MSome[Exp.Invoke](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp.Invoke")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: Exp.Invoke => PreResult(continu, MSome[Exp.Invoke](r))
+         case _ => halt("Can only produce object of type Exp.Invoke")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[Exp.Invoke]())
     }
     val r: MOption[Exp.Invoke] = if (preR.continu) {
@@ -5963,8 +6224,11 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Exp.Invoke = r.getOrElse(o)
     val postR: MOption[Exp.Invoke] = postExpInvoke(o2) match {
-     case MSome(result: Exp.Invoke) => MSome[Exp.Invoke](result)
-     case MSome(_) => halt("Can only produce object of type Exp.Invoke")
+     case MSome(result) =>
+       result match {
+         case result: Exp.Invoke => MSome[Exp.Invoke](result)
+         case _ => halt("Can only produce object of type Exp.Invoke")
+       }
      case _ => MNone[Exp.Invoke]()
     }
     if (postR.nonEmpty) {
@@ -5978,8 +6242,11 @@ import MTransformer._
 
   def transformExpInvokeNamed(o: Exp.InvokeNamed): MOption[Exp.InvokeNamed] = {
     val preR: PreResult[Exp.InvokeNamed] = preExpInvokeNamed(o) match {
-     case PreResult(continu, MSome(r: Exp.InvokeNamed)) => PreResult(continu, MSome[Exp.InvokeNamed](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp.InvokeNamed")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: Exp.InvokeNamed => PreResult(continu, MSome[Exp.InvokeNamed](r))
+         case _ => halt("Can only produce object of type Exp.InvokeNamed")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[Exp.InvokeNamed]())
     }
     val r: MOption[Exp.InvokeNamed] = if (preR.continu) {
@@ -6003,8 +6270,11 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Exp.InvokeNamed = r.getOrElse(o)
     val postR: MOption[Exp.InvokeNamed] = postExpInvokeNamed(o2) match {
-     case MSome(result: Exp.InvokeNamed) => MSome[Exp.InvokeNamed](result)
-     case MSome(_) => halt("Can only produce object of type Exp.InvokeNamed")
+     case MSome(result) =>
+       result match {
+         case result: Exp.InvokeNamed => MSome[Exp.InvokeNamed](result)
+         case _ => halt("Can only produce object of type Exp.InvokeNamed")
+       }
      case _ => MNone[Exp.InvokeNamed]()
     }
     if (postR.nonEmpty) {
@@ -6018,8 +6288,11 @@ import MTransformer._
 
   def transformExpEta(o: Exp.Eta): MOption[Exp.Eta] = {
     val preR: PreResult[Exp.Eta] = preExpEta(o) match {
-     case PreResult(continu, MSome(r: Exp.Eta)) => PreResult(continu, MSome[Exp.Eta](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp.Eta")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: Exp.Eta => PreResult(continu, MSome[Exp.Eta](r))
+         case _ => halt("Can only produce object of type Exp.Eta")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[Exp.Eta]())
     }
     val r: MOption[Exp.Eta] = if (preR.continu) {
@@ -6039,8 +6312,11 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Exp.Eta = r.getOrElse(o)
     val postR: MOption[Exp.Eta] = postExpEta(o2) match {
-     case MSome(result: Exp.Eta) => MSome[Exp.Eta](result)
-     case MSome(_) => halt("Can only produce object of type Exp.Eta")
+     case MSome(result) =>
+       result match {
+         case result: Exp.Eta => MSome[Exp.Eta](result)
+         case _ => halt("Can only produce object of type Exp.Eta")
+       }
      case _ => MNone[Exp.Eta]()
     }
     if (postR.nonEmpty) {
@@ -6054,8 +6330,11 @@ import MTransformer._
 
   def transformTypedName(o: Typed.Name): MOption[Typed.Name] = {
     val preR: PreResult[Typed.Name] = preTypedName(o) match {
-     case PreResult(continu, MSome(r: Typed.Name)) => PreResult(continu, MSome[Typed.Name](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Typed.Name")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: Typed.Name => PreResult(continu, MSome[Typed.Name](r))
+         case _ => halt("Can only produce object of type Typed.Name")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[Typed.Name]())
     }
     val r: MOption[Typed.Name] = if (preR.continu) {
@@ -6075,8 +6354,11 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Typed.Name = r.getOrElse(o)
     val postR: MOption[Typed.Name] = postTypedName(o2) match {
-     case MSome(result: Typed.Name) => MSome[Typed.Name](result)
-     case MSome(_) => halt("Can only produce object of type Typed.Name")
+     case MSome(result) =>
+       result match {
+         case result: Typed.Name => MSome[Typed.Name](result)
+         case _ => halt("Can only produce object of type Typed.Name")
+       }
      case _ => MNone[Typed.Name]()
     }
     if (postR.nonEmpty) {
@@ -6090,8 +6372,11 @@ import MTransformer._
 
   def transformExpFun(o: Exp.Fun): MOption[Exp.Fun] = {
     val preR: PreResult[Exp.Fun] = preExpFun(o) match {
-     case PreResult(continu, MSome(r: Exp.Fun)) => PreResult(continu, MSome[Exp.Fun](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp.Fun")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: Exp.Fun => PreResult(continu, MSome[Exp.Fun](r))
+         case _ => halt("Can only produce object of type Exp.Fun")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[Exp.Fun]())
     }
     val r: MOption[Exp.Fun] = if (preR.continu) {
@@ -6113,8 +6398,11 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Exp.Fun = r.getOrElse(o)
     val postR: MOption[Exp.Fun] = postExpFun(o2) match {
-     case MSome(result: Exp.Fun) => MSome[Exp.Fun](result)
-     case MSome(_) => halt("Can only produce object of type Exp.Fun")
+     case MSome(result) =>
+       result match {
+         case result: Exp.Fun => MSome[Exp.Fun](result)
+         case _ => halt("Can only produce object of type Exp.Fun")
+       }
      case _ => MNone[Exp.Fun]()
     }
     if (postR.nonEmpty) {
@@ -6128,8 +6416,11 @@ import MTransformer._
 
   def transformMethodContractInfoFlowCase(o: MethodContract.InfoFlowCase): MOption[MethodContract.InfoFlowCase] = {
     val preR: PreResult[MethodContract.InfoFlowCase] = preMethodContractInfoFlowCase(o) match {
-     case PreResult(continu, MSome(r: MethodContract.InfoFlowCase)) => PreResult(continu, MSome[MethodContract.InfoFlowCase](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type MethodContract.InfoFlowCase")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: MethodContract.InfoFlowCase => PreResult(continu, MSome[MethodContract.InfoFlowCase](r))
+         case _ => halt("Can only produce object of type MethodContract.InfoFlowCase")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[MethodContract.InfoFlowCase]())
     }
     val r: MOption[MethodContract.InfoFlowCase] = if (preR.continu) {
@@ -6151,8 +6442,11 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: MethodContract.InfoFlowCase = r.getOrElse(o)
     val postR: MOption[MethodContract.InfoFlowCase] = postMethodContractInfoFlowCase(o2) match {
-     case MSome(result: MethodContract.InfoFlowCase) => MSome[MethodContract.InfoFlowCase](result)
-     case MSome(_) => halt("Can only produce object of type MethodContract.InfoFlowCase")
+     case MSome(result) =>
+       result match {
+         case result: MethodContract.InfoFlowCase => MSome[MethodContract.InfoFlowCase](result)
+         case _ => halt("Can only produce object of type MethodContract.InfoFlowCase")
+       }
      case _ => MNone[MethodContract.InfoFlowCase]()
     }
     if (postR.nonEmpty) {
@@ -6166,8 +6460,11 @@ import MTransformer._
 
   def transformResolvedInfoLocalVar(o: ResolvedInfo.LocalVar): MOption[ResolvedInfo.LocalVar] = {
     val preR: PreResult[ResolvedInfo.LocalVar] = preResolvedInfoLocalVar(o) match {
-     case PreResult(continu, MSome(r: ResolvedInfo.LocalVar)) => PreResult(continu, MSome[ResolvedInfo.LocalVar](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type ResolvedInfo.LocalVar")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: ResolvedInfo.LocalVar => PreResult(continu, MSome[ResolvedInfo.LocalVar](r))
+         case _ => halt("Can only produce object of type ResolvedInfo.LocalVar")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[ResolvedInfo.LocalVar]())
     }
     val r: MOption[ResolvedInfo.LocalVar] = if (preR.continu) {
@@ -6185,8 +6482,11 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: ResolvedInfo.LocalVar = r.getOrElse(o)
     val postR: MOption[ResolvedInfo.LocalVar] = postResolvedInfoLocalVar(o2) match {
-     case MSome(result: ResolvedInfo.LocalVar) => MSome[ResolvedInfo.LocalVar](result)
-     case MSome(_) => halt("Can only produce object of type ResolvedInfo.LocalVar")
+     case MSome(result) =>
+       result match {
+         case result: ResolvedInfo.LocalVar => MSome[ResolvedInfo.LocalVar](result)
+         case _ => halt("Can only produce object of type ResolvedInfo.LocalVar")
+       }
      case _ => MNone[ResolvedInfo.LocalVar]()
     }
     if (postR.nonEmpty) {
@@ -6200,8 +6500,11 @@ import MTransformer._
 
   def transformRTypeVar(o: RType.Var): MOption[RType.Var] = {
     val preR: PreResult[RType.Var] = preRTypeVar(o) match {
-     case PreResult(continu, MSome(r: RType.Var)) => PreResult(continu, MSome[RType.Var](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type RType.Var")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: RType.Var => PreResult(continu, MSome[RType.Var](r))
+         case _ => halt("Can only produce object of type RType.Var")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[RType.Var]())
     }
     val r: MOption[RType.Var] = if (preR.continu) {
@@ -6220,8 +6523,11 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: RType.Var = r.getOrElse(o)
     val postR: MOption[RType.Var] = postRTypeVar(o2) match {
-     case MSome(result: RType.Var) => MSome[RType.Var](result)
-     case MSome(_) => halt("Can only produce object of type RType.Var")
+     case MSome(result) =>
+       result match {
+         case result: RType.Var => MSome[RType.Var](result)
+         case _ => halt("Can only produce object of type RType.Var")
+       }
      case _ => MNone[RType.Var]()
     }
     if (postR.nonEmpty) {
@@ -6235,8 +6541,11 @@ import MTransformer._
 
   def transformTypedFun(o: Typed.Fun): MOption[Typed.Fun] = {
     val preR: PreResult[Typed.Fun] = preTypedFun(o) match {
-     case PreResult(continu, MSome(r: Typed.Fun)) => PreResult(continu, MSome[Typed.Fun](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Typed.Fun")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: Typed.Fun => PreResult(continu, MSome[Typed.Fun](r))
+         case _ => halt("Can only produce object of type Typed.Fun")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[Typed.Fun]())
     }
     val r: MOption[Typed.Fun] = if (preR.continu) {
@@ -6256,8 +6565,11 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Typed.Fun = r.getOrElse(o)
     val postR: MOption[Typed.Fun] = postTypedFun(o2) match {
-     case MSome(result: Typed.Fun) => MSome[Typed.Fun](result)
-     case MSome(_) => halt("Can only produce object of type Typed.Fun")
+     case MSome(result) =>
+       result match {
+         case result: Typed.Fun => MSome[Typed.Fun](result)
+         case _ => halt("Can only produce object of type Typed.Fun")
+       }
      case _ => MNone[Typed.Fun]()
     }
     if (postR.nonEmpty) {
@@ -6271,8 +6583,11 @@ import MTransformer._
 
   def transformResolvedInfoMethod(o: ResolvedInfo.Method): MOption[ResolvedInfo.Method] = {
     val preR: PreResult[ResolvedInfo.Method] = preResolvedInfoMethod(o) match {
-     case PreResult(continu, MSome(r: ResolvedInfo.Method)) => PreResult(continu, MSome[ResolvedInfo.Method](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type ResolvedInfo.Method")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: ResolvedInfo.Method => PreResult(continu, MSome[ResolvedInfo.Method](r))
+         case _ => halt("Can only produce object of type ResolvedInfo.Method")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[ResolvedInfo.Method]())
     }
     val r: MOption[ResolvedInfo.Method] = if (preR.continu) {
@@ -6293,8 +6608,11 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: ResolvedInfo.Method = r.getOrElse(o)
     val postR: MOption[ResolvedInfo.Method] = postResolvedInfoMethod(o2) match {
-     case MSome(result: ResolvedInfo.Method) => MSome[ResolvedInfo.Method](result)
-     case MSome(_) => halt("Can only produce object of type ResolvedInfo.Method")
+     case MSome(result) =>
+       result match {
+         case result: ResolvedInfo.Method => MSome[ResolvedInfo.Method](result)
+         case _ => halt("Can only produce object of type ResolvedInfo.Method")
+       }
      case _ => MNone[ResolvedInfo.Method]()
     }
     if (postR.nonEmpty) {
@@ -6308,8 +6626,11 @@ import MTransformer._
 
   def transformExpLitB(o: Exp.LitB): MOption[Exp.LitB] = {
     val preR: PreResult[Exp.LitB] = preExpLitB(o) match {
-     case PreResult(continu, MSome(r: Exp.LitB)) => PreResult(continu, MSome[Exp.LitB](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Exp.LitB")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: Exp.LitB => PreResult(continu, MSome[Exp.LitB](r))
+         case _ => halt("Can only produce object of type Exp.LitB")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[Exp.LitB]())
     }
     val r: MOption[Exp.LitB] = if (preR.continu) {
@@ -6328,8 +6649,11 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Exp.LitB = r.getOrElse(o)
     val postR: MOption[Exp.LitB] = postExpLitB(o2) match {
-     case MSome(result: Exp.LitB) => MSome[Exp.LitB](result)
-     case MSome(_) => halt("Can only produce object of type Exp.LitB")
+     case MSome(result) =>
+       result match {
+         case result: Exp.LitB => MSome[Exp.LitB](result)
+         case _ => halt("Can only produce object of type Exp.LitB")
+       }
      case _ => MNone[Exp.LitB]()
     }
     if (postR.nonEmpty) {
@@ -6343,8 +6667,11 @@ import MTransformer._
 
   def transformTypedMethod(o: Typed.Method): MOption[Typed.Method] = {
     val preR: PreResult[Typed.Method] = preTypedMethod(o) match {
-     case PreResult(continu, MSome(r: Typed.Method)) => PreResult(continu, MSome[Typed.Method](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Typed.Method")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: Typed.Method => PreResult(continu, MSome[Typed.Method](r))
+         case _ => halt("Can only produce object of type Typed.Method")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[Typed.Method]())
     }
     val r: MOption[Typed.Method] = if (preR.continu) {
@@ -6363,8 +6690,11 @@ import MTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Typed.Method = r.getOrElse(o)
     val postR: MOption[Typed.Method] = postTypedMethod(o2) match {
-     case MSome(result: Typed.Method) => MSome[Typed.Method](result)
-     case MSome(_) => halt("Can only produce object of type Typed.Method")
+     case MSome(result) =>
+       result match {
+         case result: Typed.Method => MSome[Typed.Method](result)
+         case _ => halt("Can only produce object of type Typed.Method")
+       }
      case _ => MNone[Typed.Method]()
     }
     if (postR.nonEmpty) {

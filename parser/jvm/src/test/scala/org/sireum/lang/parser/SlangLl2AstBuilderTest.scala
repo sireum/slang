@@ -30,6 +30,173 @@ import org.sireum.test._
 
 class SlangLl2AstBuilderTest extends SireumRcSpec {
 
+  private def migrate(source: Predef.String): lang.ast.TopUnit.Program = {
+    val reporter = message.Reporter.create
+    val program = Parser(String(source)).parseTopUnit[lang.ast.TopUnit.Program](T, F, None(), reporter)
+    assert(program.nonEmpty && !reporter.hasError, reporter.messages.toString)
+    val printed = lang.ast.SlangLl2PrettyPrinter.prettyPrint(program.get).render
+    val tree = SlangLl2Parser.parse(None(), printed, reporter)
+    assert(tree.nonEmpty && !reporter.hasError, printed.native + "\n" + reporter.messages.toString)
+    val result = lang.ast.SlangLl2AstBuilder.build(None(), tree.get, reporter)
+    assert(result.nonEmpty && !reporter.hasError, printed.native + "\n" + reporter.messages.toString)
+    return result.get
+  }
+
+  registerTest("LL(2) migration preserves empty and named invocations") {
+    val program = migrate("""// #Sireum
+      |import org.sireum._
+      |def empty(): ISZ[Z] = { return ISZ[Z]() }
+      |def named(): Pair = { return Pair(left = 1, right = 2) }
+      |def invoke(): Z = { return empty().size }
+      |""".stripMargin)
+    val methods = program.body.stmts.elements.collect { case m: lang.ast.Stmt.Method => m }
+    val empty = methods(0).bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Return].expOpt.get
+    assert(empty.isInstanceOf[lang.ast.Exp.Invoke])
+    assert(empty.asInstanceOf[lang.ast.Exp.Invoke].args.isEmpty)
+    val named = methods(1).bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Return].expOpt.get
+      .asInstanceOf[lang.ast.Exp.InvokeNamed]
+    assert(named.args.map(_.id.value) == ISZ(String("left"), String("right")))
+    val select = methods(2).bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Return].expOpt.get
+      .asInstanceOf[lang.ast.Exp.Select]
+    assert(select.receiverOpt.get.isInstanceOf[lang.ast.Exp.Invoke])
+  }
+
+  registerTest("LL(2) migration preserves strict pure value blocks") {
+    val program = migrate("""// #Sireum
+      |import org.sireum._
+      |@strictpure def choose(x: Z): Z = x match { case 0 => 1; case _ => 2 }
+      |@strictpure def block(x: Z): Z = { val y: Z = x + 1; y match { case 0 => 1; case _ => y } }
+      |def chooseLocal(x: Z): Z = { val y: Z = x match { case 0 => 1; case _ => 2 }; return y }
+      |""".stripMargin)
+    val methods = program.body.stmts.elements.collect { case m: lang.ast.Stmt.Method => m }
+    assert(methods.size == 3)
+    assert(methods(0).purity == lang.ast.Purity.StrictPure)
+    assert(methods(1).purity == lang.ast.Purity.StrictPure)
+    val init = methods(0).bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Var].initOpt.get
+    val matched = init.asInstanceOf[lang.ast.Stmt.Match]
+    assert(matched.cases.elements.forall(_.body.stmts.elements.last.isInstanceOf[lang.ast.Stmt.Expr]))
+    val block = methods(1).bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Var].initOpt.get
+      .asInstanceOf[lang.ast.Stmt.Block]
+    assert(block.body.stmts.elements.last.isInstanceOf[lang.ast.Stmt.Match])
+    for (purity <- scala.Seq("strictpure", "abs")) {
+      val reporter = message.Reporter.create
+      val text = String(s"def @$purity reject(): Z = {\n  var x: Z = 1\n  \\ x\n}")
+      val tree = SlangLl2Parser.parse(None(), text, reporter)
+      assert(tree.nonEmpty && !reporter.hasError)
+      lang.ast.SlangLl2AstBuilder.build(None(), tree.get, reporter)
+      assert(reporter.hasError, s"@$purity accepted a mutable local")
+    }
+  }
+
+  registerTest("LL(2) migration preserves datatype constructor fields") {
+    val program = migrate("""// #Sireum
+      |import org.sireum._
+      |@datatype class Payload(@hidden val label: String, val count: Z)
+      |@record class Counter(val label: String, var count: Z)
+      |@datatype trait Root
+      |""".stripMargin)
+    val adts = program.body.stmts.elements.collect { case a: lang.ast.Stmt.Adt => a }
+    assert(adts.size == 3)
+    assert(adts(0).params.map(_.id.value) == ISZ(String("label"), String("count")))
+    assert(adts(0).params(0).isHidden)
+    assert(adts(0).params.elements.forall(_.isVal.value))
+    assert(adts(1).params(0).isVal && !adts(1).params(1).isVal)
+    assert(adts(2).isRoot && adts(2).params.isEmpty)
+  }
+
+  registerTest("LL(2) migration preserves string template segments") {
+    val triple = "\"" * 3
+    val source = "// #Sireum\nimport org.sireum._\n" +
+      "def quoted(name: String): ST = { return st\"\\\"${name}\\\"\\\\tail\\n$$\" }\n" +
+      "def multi(name: String): ST = { return st" + triple + "first ${name}\n  |second $$" + triple + " }\n" +
+      "def literal(): ST = { return st\"$$literal\" }\n"
+    val reporter = message.Reporter.create
+    val original = Parser(String(source)).parseTopUnit[lang.ast.TopUnit.Program](T, F, None(), reporter).get
+    assert(!reporter.hasError)
+    val migrated = migrate(source)
+    def templates(program: lang.ast.TopUnit.Program): scala.Seq[lang.ast.Exp.StringInterpolate] =
+      program.body.stmts.elements.collect { case method: lang.ast.Stmt.Method =>
+        method.bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Return].expOpt.get
+          .asInstanceOf[lang.ast.Exp.StringInterpolate]
+      }
+    val expected = templates(original)
+    val actual = templates(migrated)
+    assert(actual.size == expected.size)
+    for ((a, e) <- actual.zip(expected)) {
+      assert(a.prefix == e.prefix)
+      assert(a.lits.map(_.value) == e.lits.map(_.value))
+      assert(a.args.size == e.args.size)
+    }
+  }
+
+  registerTest("LL(2) migration preserves comprehension operands") {
+    val program = migrate("""// #Sireum
+      |import org.sireum._
+      |def append(xs: ISZ[Z], ys: ISZ[Z]): ISZ[Z] = {
+      |  return (for (x <- xs) yield x + 1) ++ (for (y <- ys) yield y - 1)
+      |}
+      |""".stripMargin)
+    val method = program.body.stmts.elements.collect { case m: lang.ast.Stmt.Method => m }.head
+    val result = method.bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Return].expOpt.get
+      .asInstanceOf[lang.ast.Exp.Binary]
+    assert(result.left.isInstanceOf[lang.ast.Exp.ForYield])
+    assert(result.right.isInstanceOf[lang.ast.Exp.ForYield])
+  }
+
+  registerTest("LL(2) migration preserves symbolic operator precedence") {
+    val program = migrate("""// #Sireum
+      |import org.sireum._
+      |def insert(m: HashSMap[String, Z]): HashSMap[String, Z] = { return m + ("x" ~> 1) }
+      |def equivalent(a: Z, b: Z, c: Z): B = { return (a ≡ b) & (b ≢ c) }
+      |""".stripMargin)
+    val methods = program.body.stmts.elements.collect { case m: lang.ast.Stmt.Method => m }
+    val insert = methods(0).bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Return].expOpt.get
+      .asInstanceOf[lang.ast.Exp.Binary]
+    assert(insert.op == String("+"))
+    assert(insert.right.asInstanceOf[lang.ast.Exp.Binary].op == String("~>"))
+    val equivalent = methods(1).bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Return].expOpt.get
+      .asInstanceOf[lang.ast.Exp.Binary]
+    assert(equivalent.op == String("&"))
+    assert(equivalent.left.asInstanceOf[lang.ast.Exp.Binary].op == String("≡"))
+    assert(equivalent.right.asInstanceOf[lang.ast.Exp.Binary].op == String("≢"))
+  }
+
+  registerTest("LL(2) migration preserves pattern aliases") {
+    val program = migrate("""// #Sireum
+      |import org.sireum._
+      |def keep(value: Option[Z]): Option[Z] = {
+      |  value match { case r@Some(_) => return r; case _ => return None() }
+      |}
+      |""".stripMargin)
+    val method = program.body.stmts.elements.collect { case m: lang.ast.Stmt.Method => m }.head
+    val matched = method.bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Match]
+    val pattern = matched.cases(0).pattern.asInstanceOf[lang.ast.Pattern.Structure]
+    assert(pattern.idOpt.get.value == String("r"))
+    assert(pattern.nameOpt.get.ids.map(_.value) == ISZ(String("Some")))
+    assert(pattern.patterns(0).isInstanceOf[lang.ast.Pattern.Wildcard])
+  }
+
+  registerTest("LL(2) migration preserves halting value branches") {
+    val program = migrate("""// #Sireum
+      |import org.sireum._
+      |@strictpure def choose(x: Z): Z = x match { case 0 => 1; case _ => halt("invalid") }
+      |def local(x: Z): Z = {
+      |  val result: Z = x match { case 0 => 1; case _ => halt("invalid") }
+      |  return result
+      |}
+      |""".stripMargin)
+    val methods = program.body.stmts.elements.collect { case m: lang.ast.Stmt.Method => m }
+    assert(methods.size == 2)
+    for (method <- methods) {
+      val matched = method.bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Var].initOpt.get
+        .asInstanceOf[lang.ast.Stmt.Match]
+      val halted = matched.cases(1).body.stmts(0).asInstanceOf[lang.ast.Stmt.Expr].exp
+        .asInstanceOf[lang.ast.Exp.Invoke]
+      assert(halted.ident.id.value == String("halt") && halted.receiverOpt.isEmpty)
+      assert(halted.args(0).asInstanceOf[lang.ast.Exp.LitString].value == String("invalid"))
+    }
+  }
+
   registerTest("LL(2) string segments follow their dollar grammar") {
     val unicodeDollar = "\\" + "u0024"
     val source = String(
@@ -74,6 +241,62 @@ class SlangLl2AstBuilderTest extends SireumRcSpec {
     assert(multiInterp.lits.map((l: lang.ast.Exp.LitString) => l.value) ==
       ISZ(String("a$b"), String("c$d"), String("e$f\n")))
     assert(multiInterp.args.size == 2)
+  }
+
+  registerTest("LL(2) character escapes preserve code points in expressions and patterns") {
+    val unicode1 = "\\" + "u0001"
+    val unicode5 = "\\" + "u1F600"
+    val rawSupplementary = "😀"
+    val source = String(
+      "def expression(): C = { return '" + unicode1 + "' }\n" +
+        "def pattern(value: C): Z = {\n" +
+        "  match value {\n" +
+        "    case '" + unicode1 + "' => return 1\n" +
+        "    case _ => return 0\n" +
+        "  }\n" +
+        "}\n" +
+        "def named(): C = { return '\\b' }\n" +
+        "def formFeed(): C = { return '\\f' }\n" +
+        "def supplementary(): C = { return '" + unicode5 + "' }\n" +
+        "def afterRaw(): String = { return \"" + rawSupplementary + unicode1 + "\" }\n")
+    val reporter = message.Reporter.create
+    val tree = SlangLl2Parser.parse(None(), source, reporter).get
+    val program = lang.ast.SlangLl2AstBuilder.build(None(), tree, reporter).get
+    assert(!reporter.hasError, reporter.messages.toString)
+    val methods = program.body.stmts.elements.collect { case m: lang.ast.Stmt.Method => m }
+    def returned(method: lang.ast.Stmt.Method): lang.ast.Exp.LitC = {
+      return method.bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Return].expOpt.get
+        .asInstanceOf[lang.ast.Exp.LitC]
+    }
+    assert(returned(methods(0)).value.value == 1)
+    val matched = methods(1).bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Match]
+    val pattern = matched.cases(0).pattern.asInstanceOf[lang.ast.Pattern.Literal].lit
+      .asInstanceOf[lang.ast.Exp.LitC]
+    assert(pattern.value.value == 1)
+    assert(returned(methods(2)).value.value == 8)
+    assert(returned(methods(3)).value.value == 12)
+    assert(returned(methods(4)).value.value == 0x1F600)
+    val afterRaw = methods(5).bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Return].expOpt.get
+      .asInstanceOf[lang.ast.Exp.LitString]
+    assert(afterRaw.value == conversions.String.fromCis(ISZ(C(0x1F600), C(1))))
+  }
+
+  registerTest("LL(2) string escapes preserve following hexadecimal text") {
+    val escaped = "😀" + "\\" + "u0001control"
+    val source = String("def plain(): String = { return \"" + escaped + "\" }\n" +
+      "def interpolated(): String = { return s\"" + escaped + "$1$\" }\n")
+    val reporter = message.Reporter.create
+    val tree = SlangLl2Parser.parse(None(), source, reporter).get
+    val program = lang.ast.SlangLl2AstBuilder.build(None(), tree, reporter).get
+    assert(!reporter.hasError, reporter.messages.toString)
+    val methods = program.body.stmts.elements.collect { case m: lang.ast.Stmt.Method => m }
+    val plain = methods(0).bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Return].expOpt.get
+      .asInstanceOf[lang.ast.Exp.LitString]
+    val interpolated = methods(1).bodyOpt.get.stmts(0).asInstanceOf[lang.ast.Stmt.Return].expOpt.get
+      .asInstanceOf[lang.ast.Exp.StringInterpolate]
+    val expected = String("😀" + 1.toChar + "control")
+    assert(plain.value == expected)
+    assert(interpolated.lits(0).value == expected)
   }
 
   def shouldIgnore(name: Predef.String, isSimplified: Boolean): Boolean = false

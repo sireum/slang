@@ -438,7 +438,7 @@ object FrontEnd {
           ParseResult(AST.TopUnit.Program.empty, gdr.globalNameMap, gdr.globalTypeMap, ISZ())
         )
       reporter.reports(messages)
-      if (reporter.hasIssue) {
+      if (reporter.hasError) {
         return (th, program)
       }
 

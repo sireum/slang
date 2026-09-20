@@ -2,7 +2,7 @@
 // @formatter:off
 
 /*
- Copyright (c) 2017-2026,Robby, Kansas State University
+ Copyright (c) 2017-2026, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -46,6 +46,56 @@ object IRTransformer {
   @sig trait PrePost[Context] {
 
     @pure def preIRMethodContext(ctx: Context, o: IR.MethodContext): PreResult[Context, IR.MethodContext] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRPattern(ctx: Context, o: IR.Pattern): PreResult[Context, IR.Pattern] = {
+      o match {
+        case o: IR.Pattern.Literal => return preIRPatternLiteral(ctx, o)
+        case o: IR.Pattern.Wildcard => return preIRPatternWildcard(ctx, o)
+        case o: IR.Pattern.SeqWildcard => return preIRPatternSeqWildcard(ctx, o)
+        case o: IR.Pattern.VarBinding => return preIRPatternVarBinding(ctx, o)
+        case o: IR.Pattern.Structure => return preIRPatternStructure(ctx, o)
+        case o: IR.Pattern.LocalRef => return preIRPatternLocalRef(ctx, o)
+        case o: IR.Pattern.FieldRef => return preIRPatternFieldRef(ctx, o)
+        case o: IR.Pattern.GlobalRef => return preIRPatternGlobalRef(ctx, o)
+        case o: IR.Pattern.EnumElementRef => return preIRPatternEnumElementRef(ctx, o)
+      }
+    }
+
+    @pure def preIRPatternLiteral(ctx: Context, o: IR.Pattern.Literal): PreResult[Context, IR.Pattern] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRPatternWildcard(ctx: Context, o: IR.Pattern.Wildcard): PreResult[Context, IR.Pattern] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRPatternSeqWildcard(ctx: Context, o: IR.Pattern.SeqWildcard): PreResult[Context, IR.Pattern] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRPatternVarBinding(ctx: Context, o: IR.Pattern.VarBinding): PreResult[Context, IR.Pattern] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRPatternStructure(ctx: Context, o: IR.Pattern.Structure): PreResult[Context, IR.Pattern] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRPatternLocalRef(ctx: Context, o: IR.Pattern.LocalRef): PreResult[Context, IR.Pattern] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRPatternFieldRef(ctx: Context, o: IR.Pattern.FieldRef): PreResult[Context, IR.Pattern] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRPatternGlobalRef(ctx: Context, o: IR.Pattern.GlobalRef): PreResult[Context, IR.Pattern] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRPatternEnumElementRef(ctx: Context, o: IR.Pattern.EnumElementRef): PreResult[Context, IR.Pattern] = {
       return PreResult(ctx, T, None())
     }
 
@@ -243,6 +293,7 @@ object IRTransformer {
         case o: IR.Stmt.Block => return preIRStmtBlock(ctx, o)
         case o: IR.Stmt.If => return preIRStmtIf(ctx, o)
         case o: IR.Stmt.Match => return preIRStmtMatch(ctx, o)
+        case o: IR.Stmt.Switch => return preIRStmtSwitch(ctx, o)
         case o: IR.Stmt.While => return preIRStmtWhile(ctx, o)
         case o: IR.Stmt.For => return preIRStmtFor(ctx, o)
         case o: IR.Stmt.Return => return preIRStmtReturn(ctx, o)
@@ -371,6 +422,14 @@ object IRTransformer {
     }
 
     @pure def preIRStmtMatchCase(ctx: Context, o: IR.Stmt.Match.Case): PreResult[Context, IR.Stmt.Match.Case] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRStmtSwitch(ctx: Context, o: IR.Stmt.Switch): PreResult[Context, IR.Stmt] = {
+      return PreResult(ctx, T, None())
+    }
+
+    @pure def preIRStmtSwitchCase(ctx: Context, o: IR.Stmt.Switch.Case): PreResult[Context, IR.Stmt.Switch.Case] = {
       return PreResult(ctx, T, None())
     }
 
@@ -572,6 +631,56 @@ object IRTransformer {
       return TPostResult(ctx, None())
     }
 
+    @pure def postIRPattern(ctx: Context, o: IR.Pattern): TPostResult[Context, IR.Pattern] = {
+      o match {
+        case o: IR.Pattern.Literal => return postIRPatternLiteral(ctx, o)
+        case o: IR.Pattern.Wildcard => return postIRPatternWildcard(ctx, o)
+        case o: IR.Pattern.SeqWildcard => return postIRPatternSeqWildcard(ctx, o)
+        case o: IR.Pattern.VarBinding => return postIRPatternVarBinding(ctx, o)
+        case o: IR.Pattern.Structure => return postIRPatternStructure(ctx, o)
+        case o: IR.Pattern.LocalRef => return postIRPatternLocalRef(ctx, o)
+        case o: IR.Pattern.FieldRef => return postIRPatternFieldRef(ctx, o)
+        case o: IR.Pattern.GlobalRef => return postIRPatternGlobalRef(ctx, o)
+        case o: IR.Pattern.EnumElementRef => return postIRPatternEnumElementRef(ctx, o)
+      }
+    }
+
+    @pure def postIRPatternLiteral(ctx: Context, o: IR.Pattern.Literal): TPostResult[Context, IR.Pattern] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRPatternWildcard(ctx: Context, o: IR.Pattern.Wildcard): TPostResult[Context, IR.Pattern] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRPatternSeqWildcard(ctx: Context, o: IR.Pattern.SeqWildcard): TPostResult[Context, IR.Pattern] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRPatternVarBinding(ctx: Context, o: IR.Pattern.VarBinding): TPostResult[Context, IR.Pattern] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRPatternStructure(ctx: Context, o: IR.Pattern.Structure): TPostResult[Context, IR.Pattern] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRPatternLocalRef(ctx: Context, o: IR.Pattern.LocalRef): TPostResult[Context, IR.Pattern] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRPatternFieldRef(ctx: Context, o: IR.Pattern.FieldRef): TPostResult[Context, IR.Pattern] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRPatternGlobalRef(ctx: Context, o: IR.Pattern.GlobalRef): TPostResult[Context, IR.Pattern] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRPatternEnumElementRef(ctx: Context, o: IR.Pattern.EnumElementRef): TPostResult[Context, IR.Pattern] = {
+      return TPostResult(ctx, None())
+    }
+
     @pure def postIRExp(ctx: Context, o: IR.Exp): TPostResult[Context, IR.Exp] = {
       o match {
         case o: IR.Exp.Bool => return postIRExpBool(ctx, o)
@@ -766,6 +875,7 @@ object IRTransformer {
         case o: IR.Stmt.Block => return postIRStmtBlock(ctx, o)
         case o: IR.Stmt.If => return postIRStmtIf(ctx, o)
         case o: IR.Stmt.Match => return postIRStmtMatch(ctx, o)
+        case o: IR.Stmt.Switch => return postIRStmtSwitch(ctx, o)
         case o: IR.Stmt.While => return postIRStmtWhile(ctx, o)
         case o: IR.Stmt.For => return postIRStmtFor(ctx, o)
         case o: IR.Stmt.Return => return postIRStmtReturn(ctx, o)
@@ -894,6 +1004,14 @@ object IRTransformer {
     }
 
     @pure def postIRStmtMatchCase(ctx: Context, o: IR.Stmt.Match.Case): TPostResult[Context, IR.Stmt.Match.Case] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRStmtSwitch(ctx: Context, o: IR.Stmt.Switch): TPostResult[Context, IR.Stmt] = {
+      return TPostResult(ctx, None())
+    }
+
+    @pure def postIRStmtSwitchCase(ctx: Context, o: IR.Stmt.Switch.Case): TPostResult[Context, IR.Stmt.Switch.Case] = {
       return TPostResult(ctx, None())
     }
 
@@ -1097,12 +1215,12 @@ object IRTransformer {
     val s2: MS[Z, T] = s.toMS
     var changed: B = F
     var ctxi = ctx
-    for (i <- s2.indices) {
-      val e: T = s(i)
+    for (i <- 0 until s.size) {
+      val e: T = s.atZ(i)
       val r: TPostResult[Context, T] = f(ctxi, e)
       ctxi = r.ctx
       changed = changed || r.resultOpt.nonEmpty
-      s2(i) = r.resultOpt.getOrElse(e)
+      s2.updateZ(i, r.resultOpt.getOrElse(e))
     }
     if (changed) {
       return TPostResult(ctxi, Some(s2.toIS))
@@ -1147,6 +1265,88 @@ import IRTransformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: IR.MethodContext = r.resultOpt.getOrElse(o)
     val postR: TPostResult[Context, IR.MethodContext] = pp.postIRMethodContext(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformIRPattern(ctx: Context, o: IR.Pattern): TPostResult[Context, IR.Pattern] = {
+    val preR: PreResult[Context, IR.Pattern] = pp.preIRPattern(ctx, o)
+    val r: TPostResult[Context, IR.Pattern] = if (preR.continu) {
+      val o2: IR.Pattern = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: TPostResult[Context, IR.Pattern] = o2 match {
+        case o2: IR.Pattern.Literal =>
+          val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.exp)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp))))
+          else
+            TPostResult(r0.ctx, None())
+        case o2: IR.Pattern.Wildcard =>
+          val r0: TPostResult[Context, Option[Typed]] = transformOption(preR.ctx, o2.guardTipeOpt, transformTyped _)
+          val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(guardTipeOpt = r0.resultOpt.getOrElse(o2.guardTipeOpt), tipe = r1.resultOpt.getOrElse(o2.tipe))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: IR.Pattern.SeqWildcard =>
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+          else
+            TPostResult(r0.ctx, None())
+        case o2: IR.Pattern.VarBinding =>
+          val r0: TPostResult[Context, Option[Typed]] = transformOption(preR.ctx, o2.guardTipeOpt, transformTyped _)
+          val r1: TPostResult[Context, Typed] = transformTyped(r0.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(guardTipeOpt = r0.resultOpt.getOrElse(o2.guardTipeOpt), tipe = r1.resultOpt.getOrElse(o2.tipe))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: IR.Pattern.Structure =>
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          val r1: TPostResult[Context, IS[Z, IR.Pattern]] = transformISZ(r0.ctx, o2.patterns, transformIRPattern _)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe), patterns = r1.resultOpt.getOrElse(o2.patterns))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: IR.Pattern.LocalRef =>
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+          else
+            TPostResult(r0.ctx, None())
+        case o2: IR.Pattern.FieldRef =>
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+          else
+            TPostResult(r0.ctx, None())
+        case o2: IR.Pattern.GlobalRef =>
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+          else
+            TPostResult(r0.ctx, None())
+        case o2: IR.Pattern.EnumElementRef =>
+          val r0: TPostResult[Context, Typed] = transformTyped(preR.ctx, o2.tipe)
+          if (hasChanged || r0.resultOpt.nonEmpty)
+            TPostResult(r0.ctx, Some(o2(tipe = r0.resultOpt.getOrElse(o2.tipe))))
+          else
+            TPostResult(r0.ctx, None())
+      }
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: IR.Pattern = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, IR.Pattern] = pp.postIRPattern(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -1445,11 +1645,12 @@ import IRTransformer._
             TPostResult(r0.ctx, None())
         case o2: IR.Stmt.AssignPattern =>
           val r0: TPostResult[Context, IR.MethodContext] = transformIRMethodContext(preR.ctx, o2.context)
-          val r1: TPostResult[Context, IR.Exp] = transformIRExp(r0.ctx, o2.rhs)
-          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
-            TPostResult(r1.ctx, Some(o2(context = r0.resultOpt.getOrElse(o2.context), rhs = r1.resultOpt.getOrElse(o2.rhs))))
+          val r1: TPostResult[Context, IR.Pattern] = transformIRPattern(r0.ctx, o2.pattern)
+          val r2: TPostResult[Context, IR.Exp] = transformIRExp(r1.ctx, o2.rhs)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
+            TPostResult(r2.ctx, Some(o2(context = r0.resultOpt.getOrElse(o2.context), pattern = r1.resultOpt.getOrElse(o2.pattern), rhs = r2.resultOpt.getOrElse(o2.rhs))))
           else
-            TPostResult(r1.ctx, None())
+            TPostResult(r2.ctx, None())
         case o2: IR.Stmt.Block =>
           val r0: TPostResult[Context, IS[Z, IR.Stmt]] = transformISZ(preR.ctx, o2.stmts, transformIRStmt _)
           if (hasChanged || r0.resultOpt.nonEmpty)
@@ -1467,6 +1668,13 @@ import IRTransformer._
         case o2: IR.Stmt.Match =>
           val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.exp)
           val r1: TPostResult[Context, IS[Z, IR.Stmt.Match.Case]] = transformISZ(r0.ctx, o2.cases, transformIRStmtMatchCase _)
+          if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+            TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), cases = r1.resultOpt.getOrElse(o2.cases))))
+          else
+            TPostResult(r1.ctx, None())
+        case o2: IR.Stmt.Switch =>
+          val r0: TPostResult[Context, IR.Exp] = transformIRExp(preR.ctx, o2.exp)
+          val r1: TPostResult[Context, IS[Z, IR.Stmt.Switch.Case]] = transformISZ(r0.ctx, o2.cases, transformIRStmtSwitchCase _)
           if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
             TPostResult(r1.ctx, Some(o2(exp = r0.resultOpt.getOrElse(o2.exp), cases = r1.resultOpt.getOrElse(o2.cases))))
           else
@@ -1712,12 +1920,13 @@ import IRTransformer._
       val o2: IR.Stmt.Match.Case = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: TPostResult[Context, IR.Stmt.Decl] = transformIRStmtDecl(preR.ctx, o2.decl)
-      val r1: TPostResult[Context, Option[IR.ExpBlock]] = transformOption(r0.ctx, o2.condOpt, transformIRExpBlock _)
-      val r2: TPostResult[Context, IR.Stmt.Block] = transformIRStmtBlock(r1.ctx, o2.body)
-      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty)
-        TPostResult(r2.ctx, Some(o2(decl = r0.resultOpt.getOrElse(o2.decl), condOpt = r1.resultOpt.getOrElse(o2.condOpt), body = r2.resultOpt.getOrElse(o2.body))))
+      val r1: TPostResult[Context, IR.Pattern] = transformIRPattern(r0.ctx, o2.pattern)
+      val r2: TPostResult[Context, Option[IR.ExpBlock]] = transformOption(r1.ctx, o2.condOpt, transformIRExpBlock _)
+      val r3: TPostResult[Context, IR.Stmt.Block] = transformIRStmtBlock(r2.ctx, o2.body)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty || r2.resultOpt.nonEmpty || r3.resultOpt.nonEmpty)
+        TPostResult(r3.ctx, Some(o2(decl = r0.resultOpt.getOrElse(o2.decl), pattern = r1.resultOpt.getOrElse(o2.pattern), condOpt = r2.resultOpt.getOrElse(o2.condOpt), body = r3.resultOpt.getOrElse(o2.body))))
       else
-        TPostResult(r2.ctx, None())
+        TPostResult(r3.ctx, None())
     } else if (preR.resultOpt.nonEmpty) {
       TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
     } else {
@@ -1726,6 +1935,34 @@ import IRTransformer._
     val hasChanged: B = r.resultOpt.nonEmpty
     val o2: IR.Stmt.Match.Case = r.resultOpt.getOrElse(o)
     val postR: TPostResult[Context, IR.Stmt.Match.Case] = pp.postIRStmtMatchCase(r.ctx, o2)
+    if (postR.resultOpt.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return TPostResult(postR.ctx, Some(o2))
+    } else {
+      return TPostResult(postR.ctx, None())
+    }
+  }
+
+  @pure def transformIRStmtSwitchCase(ctx: Context, o: IR.Stmt.Switch.Case): TPostResult[Context, IR.Stmt.Switch.Case] = {
+    val preR: PreResult[Context, IR.Stmt.Switch.Case] = pp.preIRStmtSwitchCase(ctx, o)
+    val r: TPostResult[Context, IR.Stmt.Switch.Case] = if (preR.continu) {
+      val o2: IR.Stmt.Switch.Case = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: TPostResult[Context, Option[IR.Exp]] = transformOption(preR.ctx, o2.valueOpt, transformIRExp _)
+      val r1: TPostResult[Context, IR.Stmt.Block] = transformIRStmtBlock(r0.ctx, o2.body)
+      if (hasChanged || r0.resultOpt.nonEmpty || r1.resultOpt.nonEmpty)
+        TPostResult(r1.ctx, Some(o2(valueOpt = r0.resultOpt.getOrElse(o2.valueOpt), body = r1.resultOpt.getOrElse(o2.body))))
+      else
+        TPostResult(r1.ctx, None())
+    } else if (preR.resultOpt.nonEmpty) {
+      TPostResult(preR.ctx, Some(preR.resultOpt.getOrElse(o)))
+    } else {
+      TPostResult(preR.ctx, None())
+    }
+    val hasChanged: B = r.resultOpt.nonEmpty
+    val o2: IR.Stmt.Switch.Case = r.resultOpt.getOrElse(o)
+    val postR: TPostResult[Context, IR.Stmt.Switch.Case] = pp.postIRStmtSwitchCase(r.ctx, o2)
     if (postR.resultOpt.nonEmpty) {
       return postR
     } else if (hasChanged) {

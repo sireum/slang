@@ -2,7 +2,7 @@
 // @formatter:off
 
 /*
- Copyright (c) 2017-2026,Robby, Kansas State University
+ Copyright (c) 2017-2026, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -40,11 +40,11 @@ object MCoreExpTransformer {
   def transformISZ[T](s: IS[Z, T], f: T => MOption[T]): MOption[IS[Z, T]] = {
     val s2: MS[Z, T] = s.toMS
     var changed: B = F
-    for (i <- s2.indices) {
-      val e: T = s(i)
+    for (i <- 0 until s.size) {
+      val e: T = s.atZ(i)
       val r: MOption[T] = f(e)
       changed = changed || r.nonEmpty
-      s2(i) = r.getOrElse(e)
+      s2.updateZ(i, r.getOrElse(e))
     }
     if (changed) {
       return MSome(s2.toIS)
@@ -304,212 +304,302 @@ import MCoreExpTransformer._
     o match {
       case o: CoreExp.LitB =>
         val r: PreResult[CoreExp] = preCoreExpLitB(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.LitC =>
         val r: PreResult[CoreExp] = preCoreExpLitC(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.LitZ =>
         val r: PreResult[CoreExp] = preCoreExpLitZ(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.LitF32 =>
         val r: PreResult[CoreExp] = preCoreExpLitF32(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.LitF64 =>
         val r: PreResult[CoreExp] = preCoreExpLitF64(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.LitR =>
         val r: PreResult[CoreExp] = preCoreExpLitR(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.LitString =>
         val r: PreResult[CoreExp] = preCoreExpLitString(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.LitRange =>
         val r: PreResult[CoreExp] = preCoreExpLitRange(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.LitBits =>
         val r: PreResult[CoreExp] = preCoreExpLitBits(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.LitEnum =>
         val r: PreResult[CoreExp] = preCoreExpLitEnum(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.StringInterpolate =>
         val r: PreResult[CoreExp] = preCoreExpStringInterpolate(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.ParamVarRef =>
         val r: PreResult[CoreExp] = preCoreExpParamVarRef(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.LocalVarRef =>
         val r: PreResult[CoreExp] = preCoreExpLocalVarRef(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.ObjectVarRef =>
         val r: PreResult[CoreExp] = preCoreExpObjectVarRef(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.Binary =>
         val r: PreResult[CoreExp] = preCoreExpBinary(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.Unary =>
         val r: PreResult[CoreExp] = preCoreExpUnary(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.UnaryTemporal =>
         val r: PreResult[CoreExp] = preCoreExpUnaryTemporal(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.BinaryTemporal =>
         val r: PreResult[CoreExp] = preCoreExpBinaryTemporal(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.Constructor =>
         val r: PreResult[CoreExp] = preCoreExpConstructor(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.Select =>
         val r: PreResult[CoreExp] = preCoreExpSelect(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.Update =>
         val r: PreResult[CoreExp] = preCoreExpUpdate(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.Indexing =>
         val r: PreResult[CoreExp] = preCoreExpIndexing(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.IndexingUpdate =>
         val r: PreResult[CoreExp] = preCoreExpIndexingUpdate(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.If =>
         val r: PreResult[CoreExp] = preCoreExpIf(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.Apply =>
         val r: PreResult[CoreExp] = preCoreExpApply(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.Fun =>
         val r: PreResult[CoreExp] = preCoreExpFun(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.Quant =>
         val r: PreResult[CoreExp] = preCoreExpQuant(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.InstanceOfExp =>
         val r: PreResult[CoreExp] = preCoreExpInstanceOfExp(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.Arrow => return preCoreExpArrow(o)
       case o: CoreExp.Halt =>
         val r: PreResult[CoreExp] = preCoreExpHalt(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.Labeled =>
         val r: PreResult[CoreExp] = preCoreExpLabeled(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
@@ -520,71 +610,101 @@ import MCoreExpTransformer._
     o match {
       case o: CoreExp.LitB =>
         val r: PreResult[CoreExp.Base] = preCoreExpLitB(o) match {
-         case PreResult(continu, MSome(r: CoreExp.Base)) => PreResult(continu, MSome[CoreExp.Base](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp.Base")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp.Base => PreResult(continu, MSome[CoreExp.Base](r))
+             case _ => halt("Can only produce object of type CoreExp.Base")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp.Base]())
         }
         return r
       case o: CoreExp.LitC =>
         val r: PreResult[CoreExp.Base] = preCoreExpLitC(o) match {
-         case PreResult(continu, MSome(r: CoreExp.Base)) => PreResult(continu, MSome[CoreExp.Base](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp.Base")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp.Base => PreResult(continu, MSome[CoreExp.Base](r))
+             case _ => halt("Can only produce object of type CoreExp.Base")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp.Base]())
         }
         return r
       case o: CoreExp.LitZ =>
         val r: PreResult[CoreExp.Base] = preCoreExpLitZ(o) match {
-         case PreResult(continu, MSome(r: CoreExp.Base)) => PreResult(continu, MSome[CoreExp.Base](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp.Base")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp.Base => PreResult(continu, MSome[CoreExp.Base](r))
+             case _ => halt("Can only produce object of type CoreExp.Base")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp.Base]())
         }
         return r
       case o: CoreExp.LitF32 =>
         val r: PreResult[CoreExp.Base] = preCoreExpLitF32(o) match {
-         case PreResult(continu, MSome(r: CoreExp.Base)) => PreResult(continu, MSome[CoreExp.Base](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp.Base")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp.Base => PreResult(continu, MSome[CoreExp.Base](r))
+             case _ => halt("Can only produce object of type CoreExp.Base")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp.Base]())
         }
         return r
       case o: CoreExp.LitF64 =>
         val r: PreResult[CoreExp.Base] = preCoreExpLitF64(o) match {
-         case PreResult(continu, MSome(r: CoreExp.Base)) => PreResult(continu, MSome[CoreExp.Base](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp.Base")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp.Base => PreResult(continu, MSome[CoreExp.Base](r))
+             case _ => halt("Can only produce object of type CoreExp.Base")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp.Base]())
         }
         return r
       case o: CoreExp.LitR =>
         val r: PreResult[CoreExp.Base] = preCoreExpLitR(o) match {
-         case PreResult(continu, MSome(r: CoreExp.Base)) => PreResult(continu, MSome[CoreExp.Base](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp.Base")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp.Base => PreResult(continu, MSome[CoreExp.Base](r))
+             case _ => halt("Can only produce object of type CoreExp.Base")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp.Base]())
         }
         return r
       case o: CoreExp.LitString =>
         val r: PreResult[CoreExp.Base] = preCoreExpLitString(o) match {
-         case PreResult(continu, MSome(r: CoreExp.Base)) => PreResult(continu, MSome[CoreExp.Base](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp.Base")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp.Base => PreResult(continu, MSome[CoreExp.Base](r))
+             case _ => halt("Can only produce object of type CoreExp.Base")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp.Base]())
         }
         return r
       case o: CoreExp.LitRange =>
         val r: PreResult[CoreExp.Base] = preCoreExpLitRange(o) match {
-         case PreResult(continu, MSome(r: CoreExp.Base)) => PreResult(continu, MSome[CoreExp.Base](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp.Base")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp.Base => PreResult(continu, MSome[CoreExp.Base](r))
+             case _ => halt("Can only produce object of type CoreExp.Base")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp.Base]())
         }
         return r
       case o: CoreExp.LitBits =>
         val r: PreResult[CoreExp.Base] = preCoreExpLitBits(o) match {
-         case PreResult(continu, MSome(r: CoreExp.Base)) => PreResult(continu, MSome[CoreExp.Base](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp.Base")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp.Base => PreResult(continu, MSome[CoreExp.Base](r))
+             case _ => halt("Can only produce object of type CoreExp.Base")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp.Base]())
         }
         return r
       case o: CoreExp.LitEnum =>
         val r: PreResult[CoreExp.Base] = preCoreExpLitEnum(o) match {
-         case PreResult(continu, MSome(r: CoreExp.Base)) => PreResult(continu, MSome[CoreExp.Base](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp.Base")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp.Base => PreResult(continu, MSome[CoreExp.Base](r))
+             case _ => halt("Can only produce object of type CoreExp.Base")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp.Base]())
         }
         return r
@@ -823,212 +943,302 @@ import MCoreExpTransformer._
     o match {
       case o: CoreExp.LitB =>
         val r: MOption[CoreExp] = postCoreExpLitB(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.LitC =>
         val r: MOption[CoreExp] = postCoreExpLitC(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.LitZ =>
         val r: MOption[CoreExp] = postCoreExpLitZ(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.LitF32 =>
         val r: MOption[CoreExp] = postCoreExpLitF32(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.LitF64 =>
         val r: MOption[CoreExp] = postCoreExpLitF64(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.LitR =>
         val r: MOption[CoreExp] = postCoreExpLitR(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.LitString =>
         val r: MOption[CoreExp] = postCoreExpLitString(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.LitRange =>
         val r: MOption[CoreExp] = postCoreExpLitRange(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.LitBits =>
         val r: MOption[CoreExp] = postCoreExpLitBits(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.LitEnum =>
         val r: MOption[CoreExp] = postCoreExpLitEnum(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.StringInterpolate =>
         val r: MOption[CoreExp] = postCoreExpStringInterpolate(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.ParamVarRef =>
         val r: MOption[CoreExp] = postCoreExpParamVarRef(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.LocalVarRef =>
         val r: MOption[CoreExp] = postCoreExpLocalVarRef(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.ObjectVarRef =>
         val r: MOption[CoreExp] = postCoreExpObjectVarRef(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.Binary =>
         val r: MOption[CoreExp] = postCoreExpBinary(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.Unary =>
         val r: MOption[CoreExp] = postCoreExpUnary(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.UnaryTemporal =>
         val r: MOption[CoreExp] = postCoreExpUnaryTemporal(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.BinaryTemporal =>
         val r: MOption[CoreExp] = postCoreExpBinaryTemporal(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.Constructor =>
         val r: MOption[CoreExp] = postCoreExpConstructor(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.Select =>
         val r: MOption[CoreExp] = postCoreExpSelect(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.Update =>
         val r: MOption[CoreExp] = postCoreExpUpdate(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.Indexing =>
         val r: MOption[CoreExp] = postCoreExpIndexing(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.IndexingUpdate =>
         val r: MOption[CoreExp] = postCoreExpIndexingUpdate(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.If =>
         val r: MOption[CoreExp] = postCoreExpIf(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.Apply =>
         val r: MOption[CoreExp] = postCoreExpApply(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.Fun =>
         val r: MOption[CoreExp] = postCoreExpFun(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.Quant =>
         val r: MOption[CoreExp] = postCoreExpQuant(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.InstanceOfExp =>
         val r: MOption[CoreExp] = postCoreExpInstanceOfExp(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.Arrow => return postCoreExpArrow(o)
       case o: CoreExp.Halt =>
         val r: MOption[CoreExp] = postCoreExpHalt(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.Labeled =>
         val r: MOption[CoreExp] = postCoreExpLabeled(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
@@ -1039,71 +1249,101 @@ import MCoreExpTransformer._
     o match {
       case o: CoreExp.LitB =>
         val r: MOption[CoreExp.Base] = postCoreExpLitB(o) match {
-         case MSome(result: CoreExp.Base) => MSome[CoreExp.Base](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp.Base")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp.Base => MSome[CoreExp.Base](result)
+             case _ => halt("Can only produce object of type CoreExp.Base")
+           }
          case _ => MNone[CoreExp.Base]()
         }
         return r
       case o: CoreExp.LitC =>
         val r: MOption[CoreExp.Base] = postCoreExpLitC(o) match {
-         case MSome(result: CoreExp.Base) => MSome[CoreExp.Base](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp.Base")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp.Base => MSome[CoreExp.Base](result)
+             case _ => halt("Can only produce object of type CoreExp.Base")
+           }
          case _ => MNone[CoreExp.Base]()
         }
         return r
       case o: CoreExp.LitZ =>
         val r: MOption[CoreExp.Base] = postCoreExpLitZ(o) match {
-         case MSome(result: CoreExp.Base) => MSome[CoreExp.Base](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp.Base")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp.Base => MSome[CoreExp.Base](result)
+             case _ => halt("Can only produce object of type CoreExp.Base")
+           }
          case _ => MNone[CoreExp.Base]()
         }
         return r
       case o: CoreExp.LitF32 =>
         val r: MOption[CoreExp.Base] = postCoreExpLitF32(o) match {
-         case MSome(result: CoreExp.Base) => MSome[CoreExp.Base](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp.Base")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp.Base => MSome[CoreExp.Base](result)
+             case _ => halt("Can only produce object of type CoreExp.Base")
+           }
          case _ => MNone[CoreExp.Base]()
         }
         return r
       case o: CoreExp.LitF64 =>
         val r: MOption[CoreExp.Base] = postCoreExpLitF64(o) match {
-         case MSome(result: CoreExp.Base) => MSome[CoreExp.Base](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp.Base")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp.Base => MSome[CoreExp.Base](result)
+             case _ => halt("Can only produce object of type CoreExp.Base")
+           }
          case _ => MNone[CoreExp.Base]()
         }
         return r
       case o: CoreExp.LitR =>
         val r: MOption[CoreExp.Base] = postCoreExpLitR(o) match {
-         case MSome(result: CoreExp.Base) => MSome[CoreExp.Base](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp.Base")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp.Base => MSome[CoreExp.Base](result)
+             case _ => halt("Can only produce object of type CoreExp.Base")
+           }
          case _ => MNone[CoreExp.Base]()
         }
         return r
       case o: CoreExp.LitString =>
         val r: MOption[CoreExp.Base] = postCoreExpLitString(o) match {
-         case MSome(result: CoreExp.Base) => MSome[CoreExp.Base](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp.Base")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp.Base => MSome[CoreExp.Base](result)
+             case _ => halt("Can only produce object of type CoreExp.Base")
+           }
          case _ => MNone[CoreExp.Base]()
         }
         return r
       case o: CoreExp.LitRange =>
         val r: MOption[CoreExp.Base] = postCoreExpLitRange(o) match {
-         case MSome(result: CoreExp.Base) => MSome[CoreExp.Base](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp.Base")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp.Base => MSome[CoreExp.Base](result)
+             case _ => halt("Can only produce object of type CoreExp.Base")
+           }
          case _ => MNone[CoreExp.Base]()
         }
         return r
       case o: CoreExp.LitBits =>
         val r: MOption[CoreExp.Base] = postCoreExpLitBits(o) match {
-         case MSome(result: CoreExp.Base) => MSome[CoreExp.Base](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp.Base")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp.Base => MSome[CoreExp.Base](result)
+             case _ => halt("Can only produce object of type CoreExp.Base")
+           }
          case _ => MNone[CoreExp.Base]()
         }
         return r
       case o: CoreExp.LitEnum =>
         val r: MOption[CoreExp.Base] = postCoreExpLitEnum(o) match {
-         case MSome(result: CoreExp.Base) => MSome[CoreExp.Base](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp.Base")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp.Base => MSome[CoreExp.Base](result)
+             case _ => halt("Can only produce object of type CoreExp.Base")
+           }
          case _ => MNone[CoreExp.Base]()
         }
         return r
@@ -1911,8 +2151,11 @@ import MCoreExpTransformer._
 
   def transformTypedFun(o: Typed.Fun): MOption[Typed.Fun] = {
     val preR: PreResult[Typed.Fun] = preTypedFun(o) match {
-     case PreResult(continu, MSome(r: Typed.Fun)) => PreResult(continu, MSome[Typed.Fun](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Typed.Fun")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: Typed.Fun => PreResult(continu, MSome[Typed.Fun](r))
+         case _ => halt("Can only produce object of type Typed.Fun")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[Typed.Fun]())
     }
     val r: MOption[Typed.Fun] = if (preR.continu) {
@@ -1932,8 +2175,11 @@ import MCoreExpTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Typed.Fun = r.getOrElse(o)
     val postR: MOption[Typed.Fun] = postTypedFun(o2) match {
-     case MSome(result: Typed.Fun) => MSome[Typed.Fun](result)
-     case MSome(_) => halt("Can only produce object of type Typed.Fun")
+     case MSome(result) =>
+       result match {
+         case result: Typed.Fun => MSome[Typed.Fun](result)
+         case _ => halt("Can only produce object of type Typed.Fun")
+       }
      case _ => MNone[Typed.Fun]()
     }
     if (postR.nonEmpty) {
@@ -1947,8 +2193,11 @@ import MCoreExpTransformer._
 
   def transformTypedMethod(o: Typed.Method): MOption[Typed.Method] = {
     val preR: PreResult[Typed.Method] = preTypedMethod(o) match {
-     case PreResult(continu, MSome(r: Typed.Method)) => PreResult(continu, MSome[Typed.Method](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Typed.Method")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: Typed.Method => PreResult(continu, MSome[Typed.Method](r))
+         case _ => halt("Can only produce object of type Typed.Method")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[Typed.Method]())
     }
     val r: MOption[Typed.Method] = if (preR.continu) {
@@ -1967,8 +2216,11 @@ import MCoreExpTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Typed.Method = r.getOrElse(o)
     val postR: MOption[Typed.Method] = postTypedMethod(o2) match {
-     case MSome(result: Typed.Method) => MSome[Typed.Method](result)
-     case MSome(_) => halt("Can only produce object of type Typed.Method")
+     case MSome(result) =>
+       result match {
+         case result: Typed.Method => MSome[Typed.Method](result)
+         case _ => halt("Can only produce object of type Typed.Method")
+       }
      case _ => MNone[Typed.Method]()
     }
     if (postR.nonEmpty) {

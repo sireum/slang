@@ -153,15 +153,15 @@ object SlangLl2PrettyPrinter {
       val id: String = if (o.ident.id.value == "apply") "" else o.ident.id.value
       val receiver: ST = if (o.receiverOpt.isEmpty) st"" else st"${printExp(o.receiverOpt.get)}${if (id.size == 0) "" else "."}"
       val targs: ST = if (o.targs.isEmpty) st"" else st"[${(for (t <- o.targs) yield printType(t), ", ")}]"
-      val args: ST = if (o.args.isEmpty) st"" else st"(${(for (e <- o.args) yield printExp(e), ", ")})"
+      val args: ST = st"(${(for (e <- o.args) yield printExp(e), ", ")})"
       st"$receiver$id$targs$args"
     }
     @strictpure def printNamedArg(o: AST.NamedArg): ST = st"${o.id.value} = ${printExp(o.arg)}"
     @strictpure def printInvokeNamed(o: AST.Exp.InvokeNamed): ST = {
-      val id: String = if (o.ident.id.value == "apply") "." else o.ident.id.value
+      val id: String = if (o.ident.id.value == "apply") "" else o.ident.id.value
       val receiver: ST = if (o.receiverOpt.isEmpty) st"" else st"${printExp(o.receiverOpt.get)}${if (id.size == 0) "" else "."}"
       val targs: ST = if (o.targs.isEmpty) st"" else st"[${(for (t <- o.targs) yield printType(t), ", ")}]"
-      val args: ST = if (o.args.isEmpty) st"" else st"(${(for (na <- o.args) yield printNamedArg(na), ", ")})"
+      val args: ST = st"(${(for (na <- o.args) yield printNamedArg(na), ", ")})"
       st"$receiver$id$targs$args"
     }
     @strictpure def printBinary(o: AST.Exp.Binary): ST = {
@@ -215,6 +215,9 @@ object SlangLl2PrettyPrinter {
     }
 
     @strictpure def postfix(o: AST.Exp.StringInterpolate): ST = st"${o.lits(0).value}${o.prefix}"      // postfix: 0xCC9E2D51u32
+    @pure def printInterpLit(o: AST.Exp.LitString): ST = {
+      return ops.StringOps(ops.StringOps(o.value).replaceAllLiterally("$", "$$")).escapeST
+    }
     @strictpure def printExp(o: AST.Exp): ST = o match {
       case o: AST.Exp.AssertAgree => halt(s"TODO: $o")
       case o: AST.Exp.AssumeAgree => halt(s"TODO: $o")
@@ -243,15 +246,15 @@ object SlangLl2PrettyPrinter {
             case string"f32" => postfix(o)
             case string"f64" => postfix(o)
             case _ =>
-              st"${o.prefix}${o.lits(0).prettyST}"   // string-interpolator: s"foo", st"foo"
+              st"""${o.prefix}"${printInterpLit(o.lits(0))}""""
           }
         } else {
-          st"""${o.prefix}"${o.lits(0).value}${(for (i <- 1 until o.lits.size) yield st"$$${printExp(o.args(i - 1))}$$${o.lits(i).value}", "")}""""
+          st"""${o.prefix}"${printInterpLit(o.lits(0))}${(for (i <- 1 until o.lits.size) yield st"$$${printExp(o.args(i - 1))}$$${printInterpLit(o.lits(i))}", "")}""""
         }
       case o: AST.Exp.Fun => st"\\(${(for (p <- o.params) yield st"${if (p.idOpt.nonEmpty) p.idOpt.get.value else "_"}${if (p.tipeOpt.nonEmpty) st": ${printType(p.tipeOpt.get)}" else st""}", ", ")}) ${printAssignExp(o.exp)}"
       case o: AST.Exp.Binary => printBinary(o)
       case o: AST.Exp.Eta => st"${printExp(o.ref.asExp)} _"
-      case o: AST.Exp.ForYield => st"yield ${(for (g <- o.enumGens) yield printEnumGen(g), ", ")} => ${printExp(o.exp)}"
+      case o: AST.Exp.ForYield => st"(yield ${(for (g <- o.enumGens) yield printEnumGen(g), ", ")} => ${printExp(o.exp)})"
       case o: AST.Exp.Ident => st"${o.id.value}"
       case o: AST.Exp.If => st"? ${printExp(o.cond)}: ${printExp(o.thenExp)} else ${printExp(o.elseExp)}"
       case o: AST.Exp.Input => st"In(${printExp(o.exp)})"
@@ -394,6 +397,8 @@ object SlangLl2PrettyPrinter {
     }
     @strictpure def printTypeParams(o: ISZ[AST.TypeParam]): ST = if (o.isEmpty) st"" else st"[${(for (tp <- o) yield printTypeParam(tp), ", ")}]"
     @strictpure def printParam(o: AST.Param): ST = st"${if (o.isHidden) "@hidden " else ""}${o.id.value}: ${printType(o.tipe)}"
+    @strictpure def printAdtParam(o: AST.AdtParam): ST =
+      st"${if (o.isVal) "" else "var "}${if (o.isHidden) "@hidden " else ""}${o.id.value}: ${printType(o.tipe)}"
     @strictpure def printParams(hasParams: B, o: ISZ[AST.Param]): ST = if (hasParams) st"(${(for (p <- o) yield printParam(p), ", ")})" else st""
     @strictpure def printAccesses(id: String, o: AST.MethodContract.Accesses): ISZ[ST] =
       if (o.isEmpty) ISZ() else ISZ(st"$id ${(for (ref <- o.refs) yield printExp(ref.asExp), ", ")}")
@@ -439,7 +444,7 @@ object SlangLl2PrettyPrinter {
       case _: AST.Pattern.SeqWildcard => st"*"
       case o: AST.Pattern.Structure =>
         val id: ST = o.idOpt match {
-          case Some(idAt) => st"$idAt@"
+          case Some(idAt) => st"${idAt.value}@"
           case _ => st""
         }
         val name: ST = o.nameOpt match {
@@ -513,6 +518,7 @@ object SlangLl2PrettyPrinter {
       case o: AST.Stmt.RsVal => st"val @rw ${o.id} = ${printExp(o.init)}"
       case o: AST.Stmt.Adt =>
         val tparams = printTypeParams(o.typeParams)
+        val params: ST = if (o.isRoot) st"" else st"(${(for (p <- o.params) yield printAdtParam(p), ", ")})"
         val kind: String = if (o.isDatatype) "@datatype" else "@record"
         val root: String = if (o.isRoot) " @trait" else ""
         val clonable: String = if (o.isUnclonable) " @unclonable" else ""
@@ -521,7 +527,7 @@ object SlangLl2PrettyPrinter {
           st""" {
               |  ${(printStmts(F, o.stmts), lineSep)}
               |}"""
-        st"type $kind$root$clonable ${o.id.value}$tparams$supers$members"
+        st"type $kind$root$clonable ${o.id.value}$tparams$params$supers$members"
       case o: AST.Stmt.Sig =>
         val tparams = printTypeParams(o.typeParams)
         val kind: String = if (o.isImmutable) "@sig" else "@msig"
@@ -555,8 +561,12 @@ object SlangLl2PrettyPrinter {
         st"""type @enum ${o.id.value}: { ${(for (element <- o.elements) yield element.value, ", ")} }"""
       case o: AST.Stmt.Expr =>
         val expST = printExp(o.exp)
+        val isHalt: B = o.exp match {
+          case e: AST.Exp.Invoke => e.receiverOpt.isEmpty && e.ident.id.value == "halt"
+          case _ => F
+        }
         if (!isExp && shouldAddDo(o.exp)) st"do $expST"
-        else if (isExp) st"return $expST"
+        else if (isExp && !isHalt) st"\\ $expST"
         else expST
       case o: AST.Stmt.Fact =>
         val tparams: ST = printTypeParams(o.typeParams)
@@ -627,18 +637,15 @@ object SlangLl2PrettyPrinter {
                 |]"""
           o.bodyOpt match {
             case Some(body) =>
-              val strictPureExprOpt: Option[AST.Exp] =
-                if (o.purity == AST.Purity.StrictPure && body.stmts.size == 2) {
+              val strictPureExprOpt: Option[AST.AssignExp] =
+                if ((o.purity == AST.Purity.StrictPure || o.purity == AST.Purity.Abs) && body.stmts.size == 2) {
                   body.stmts(0) match {
                     case vd: AST.Stmt.Var if !vd.isSpec && vd.id.value == "_r_" && vd.initOpt.nonEmpty =>
                       body.stmts(1) match {
                         case ret: AST.Stmt.Return if ret.expOpt.nonEmpty =>
                           ret.expOpt.get match {
                             case ident: AST.Exp.Ident if ident.id.value == "_r_" =>
-                              vd.initOpt.get match {
-                                case ae: AST.Stmt.Expr => Some(ae.exp)
-                                case _ => None()
-                              }
+                              vd.initOpt
                             case _ => None()
                           }
                         case _ => None()
@@ -647,7 +654,7 @@ object SlangLl2PrettyPrinter {
                   }
                 } else { None() }
               strictPureExprOpt match {
-                case Some(expr) => st"$header = ${printExp(expr)}"
+                case Some(expr) => st"$header = ${printAssignExp(expr)}"
                 case _ =>
                   st"""$header = {
                       |  ${(printStmts(F, body.stmts), lineSep)}

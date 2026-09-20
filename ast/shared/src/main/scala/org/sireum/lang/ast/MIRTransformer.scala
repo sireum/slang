@@ -2,7 +2,7 @@
 // @formatter:off
 
 /*
- Copyright (c) 2017-2026,Robby, Kansas State University
+ Copyright (c) 2017-2026, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -44,11 +44,11 @@ object MIRTransformer {
   def transformISZ[T](s: IS[Z, T], f: T => MOption[T]): MOption[IS[Z, T]] = {
     val s2: MS[Z, T] = s.toMS
     var changed: B = F
-    for (i <- s2.indices) {
-      val e: T = s(i)
+    for (i <- 0 until s.size) {
+      val e: T = s.atZ(i)
       val r: MOption[T] = f(e)
       changed = changed || r.nonEmpty
-      s2(i) = r.getOrElse(e)
+      s2.updateZ(i, r.getOrElse(e))
     }
     if (changed) {
       return MSome(s2.toIS)
@@ -56,6 +56,54 @@ object MIRTransformer {
       return MNone()
     }
   }
+
+  def transformOption[T](option: Option[T], f: T => MOption[T]): MOption[Option[T]] = {
+    option match {
+      case Some(v) =>
+        val r = f(v)
+        r match {
+          case MSome(v2) => return MSome(Some(v2))
+          case _ => return MNone()
+        }
+      case _ => return MNone()
+    }
+  }
+
+  val PreResultIRPatternLiteral: PreResult[IR.Pattern] = PreResult(T, MNone())
+
+  val PostResultIRPatternLiteral: MOption[IR.Pattern] = MNone()
+
+  val PreResultIRPatternWildcard: PreResult[IR.Pattern] = PreResult(T, MNone())
+
+  val PostResultIRPatternWildcard: MOption[IR.Pattern] = MNone()
+
+  val PreResultIRPatternSeqWildcard: PreResult[IR.Pattern] = PreResult(T, MNone())
+
+  val PostResultIRPatternSeqWildcard: MOption[IR.Pattern] = MNone()
+
+  val PreResultIRPatternVarBinding: PreResult[IR.Pattern] = PreResult(T, MNone())
+
+  val PostResultIRPatternVarBinding: MOption[IR.Pattern] = MNone()
+
+  val PreResultIRPatternStructure: PreResult[IR.Pattern] = PreResult(T, MNone())
+
+  val PostResultIRPatternStructure: MOption[IR.Pattern] = MNone()
+
+  val PreResultIRPatternLocalRef: PreResult[IR.Pattern] = PreResult(T, MNone())
+
+  val PostResultIRPatternLocalRef: MOption[IR.Pattern] = MNone()
+
+  val PreResultIRPatternFieldRef: PreResult[IR.Pattern] = PreResult(T, MNone())
+
+  val PostResultIRPatternFieldRef: MOption[IR.Pattern] = MNone()
+
+  val PreResultIRPatternGlobalRef: PreResult[IR.Pattern] = PreResult(T, MNone())
+
+  val PostResultIRPatternGlobalRef: MOption[IR.Pattern] = MNone()
+
+  val PreResultIRPatternEnumElementRef: PreResult[IR.Pattern] = PreResult(T, MNone())
+
+  val PostResultIRPatternEnumElementRef: MOption[IR.Pattern] = MNone()
 
   val PreResultIRExpBool: PreResult[IR.Exp] = PreResult(T, MNone())
 
@@ -153,18 +201,6 @@ object MIRTransformer {
 
   val PostResultIRExpApplyClosure: MOption[IR.Exp] = MNone()
 
-  def transformOption[T](option: Option[T], f: T => MOption[T]): MOption[Option[T]] = {
-    option match {
-      case Some(v) =>
-        val r = f(v)
-        r match {
-          case MSome(v2) => return MSome(Some(v2))
-          case _ => return MNone()
-        }
-      case _ => return MNone()
-    }
-  }
-
   val PreResultIRStmtExpr: PreResult[IR.Stmt.Ground] = PreResult(T, MNone())
 
   val PostResultIRStmtExpr: MOption[IR.Stmt.Ground] = MNone()
@@ -232,6 +268,14 @@ object MIRTransformer {
   val PreResultIRStmtMatchCase: PreResult[IR.Stmt.Match.Case] = PreResult(T, MNone())
 
   val PostResultIRStmtMatchCase: MOption[IR.Stmt.Match.Case] = MNone()
+
+  val PreResultIRStmtSwitch: PreResult[IR.Stmt] = PreResult(T, MNone())
+
+  val PostResultIRStmtSwitch: MOption[IR.Stmt] = MNone()
+
+  val PreResultIRStmtSwitchCase: PreResult[IR.Stmt.Switch.Case] = PreResult(T, MNone())
+
+  val PostResultIRStmtSwitchCase: MOption[IR.Stmt.Switch.Case] = MNone()
 
   val PreResultIRStmtWhile: PreResult[IR.Stmt] = PreResult(T, MNone())
 
@@ -375,6 +419,56 @@ import MIRTransformer._
     return PreResultIRMethodContext
   }
 
+  def preIRPattern(o: IR.Pattern): PreResult[IR.Pattern] = {
+    o match {
+      case o: IR.Pattern.Literal => return preIRPatternLiteral(o)
+      case o: IR.Pattern.Wildcard => return preIRPatternWildcard(o)
+      case o: IR.Pattern.SeqWildcard => return preIRPatternSeqWildcard(o)
+      case o: IR.Pattern.VarBinding => return preIRPatternVarBinding(o)
+      case o: IR.Pattern.Structure => return preIRPatternStructure(o)
+      case o: IR.Pattern.LocalRef => return preIRPatternLocalRef(o)
+      case o: IR.Pattern.FieldRef => return preIRPatternFieldRef(o)
+      case o: IR.Pattern.GlobalRef => return preIRPatternGlobalRef(o)
+      case o: IR.Pattern.EnumElementRef => return preIRPatternEnumElementRef(o)
+    }
+  }
+
+  def preIRPatternLiteral(o: IR.Pattern.Literal): PreResult[IR.Pattern] = {
+    return PreResultIRPatternLiteral
+  }
+
+  def preIRPatternWildcard(o: IR.Pattern.Wildcard): PreResult[IR.Pattern] = {
+    return PreResultIRPatternWildcard
+  }
+
+  def preIRPatternSeqWildcard(o: IR.Pattern.SeqWildcard): PreResult[IR.Pattern] = {
+    return PreResultIRPatternSeqWildcard
+  }
+
+  def preIRPatternVarBinding(o: IR.Pattern.VarBinding): PreResult[IR.Pattern] = {
+    return PreResultIRPatternVarBinding
+  }
+
+  def preIRPatternStructure(o: IR.Pattern.Structure): PreResult[IR.Pattern] = {
+    return PreResultIRPatternStructure
+  }
+
+  def preIRPatternLocalRef(o: IR.Pattern.LocalRef): PreResult[IR.Pattern] = {
+    return PreResultIRPatternLocalRef
+  }
+
+  def preIRPatternFieldRef(o: IR.Pattern.FieldRef): PreResult[IR.Pattern] = {
+    return PreResultIRPatternFieldRef
+  }
+
+  def preIRPatternGlobalRef(o: IR.Pattern.GlobalRef): PreResult[IR.Pattern] = {
+    return PreResultIRPatternGlobalRef
+  }
+
+  def preIRPatternEnumElementRef(o: IR.Pattern.EnumElementRef): PreResult[IR.Pattern] = {
+    return PreResultIRPatternEnumElementRef
+  }
+
   def preIRExp(o: IR.Exp): PreResult[IR.Exp] = {
     o match {
       case o: IR.Exp.Bool => return preIRExpBool(o)
@@ -508,57 +602,81 @@ import MIRTransformer._
     o match {
       case o: IR.Stmt.Expr =>
         val r: PreResult[IR.Stmt] = preIRStmtExpr(o) match {
-         case PreResult(continu, MSome(r: IR.Stmt)) => PreResult(continu, MSome[IR.Stmt](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Stmt")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: IR.Stmt => PreResult(continu, MSome[IR.Stmt](r))
+             case _ => halt("Can only produce object of type IR.Stmt")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt]())
         }
         return r
       case o: IR.Stmt.Assign.Local =>
         val r: PreResult[IR.Stmt] = preIRStmtAssignLocal(o) match {
-         case PreResult(continu, MSome(r: IR.Stmt)) => PreResult(continu, MSome[IR.Stmt](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Stmt")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: IR.Stmt => PreResult(continu, MSome[IR.Stmt](r))
+             case _ => halt("Can only produce object of type IR.Stmt")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt]())
         }
         return r
       case o: IR.Stmt.Assign.Global =>
         val r: PreResult[IR.Stmt] = preIRStmtAssignGlobal(o) match {
-         case PreResult(continu, MSome(r: IR.Stmt)) => PreResult(continu, MSome[IR.Stmt](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Stmt")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: IR.Stmt => PreResult(continu, MSome[IR.Stmt](r))
+             case _ => halt("Can only produce object of type IR.Stmt")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt]())
         }
         return r
       case o: IR.Stmt.Assign.Temp =>
         val r: PreResult[IR.Stmt] = preIRStmtAssignTemp(o) match {
-         case PreResult(continu, MSome(r: IR.Stmt)) => PreResult(continu, MSome[IR.Stmt](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Stmt")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: IR.Stmt => PreResult(continu, MSome[IR.Stmt](r))
+             case _ => halt("Can only produce object of type IR.Stmt")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt]())
         }
         return r
       case o: IR.Stmt.Assign.Field =>
         val r: PreResult[IR.Stmt] = preIRStmtAssignField(o) match {
-         case PreResult(continu, MSome(r: IR.Stmt)) => PreResult(continu, MSome[IR.Stmt](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Stmt")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: IR.Stmt => PreResult(continu, MSome[IR.Stmt](r))
+             case _ => halt("Can only produce object of type IR.Stmt")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt]())
         }
         return r
       case o: IR.Stmt.Assign.Index =>
         val r: PreResult[IR.Stmt] = preIRStmtAssignIndex(o) match {
-         case PreResult(continu, MSome(r: IR.Stmt)) => PreResult(continu, MSome[IR.Stmt](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Stmt")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: IR.Stmt => PreResult(continu, MSome[IR.Stmt](r))
+             case _ => halt("Can only produce object of type IR.Stmt")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt]())
         }
         return r
       case o: IR.Stmt.Decl =>
         val r: PreResult[IR.Stmt] = preIRStmtDecl(o) match {
-         case PreResult(continu, MSome(r: IR.Stmt)) => PreResult(continu, MSome[IR.Stmt](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Stmt")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: IR.Stmt => PreResult(continu, MSome[IR.Stmt](r))
+             case _ => halt("Can only produce object of type IR.Stmt")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt]())
         }
         return r
       case o: IR.Stmt.Intrinsic =>
         val r: PreResult[IR.Stmt] = preIRStmtIntrinsic(o) match {
-         case PreResult(continu, MSome(r: IR.Stmt)) => PreResult(continu, MSome[IR.Stmt](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Stmt")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: IR.Stmt => PreResult(continu, MSome[IR.Stmt](r))
+             case _ => halt("Can only produce object of type IR.Stmt")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt]())
         }
         return r
@@ -569,6 +687,7 @@ import MIRTransformer._
       case o: IR.Stmt.Block => return preIRStmtBlock(o)
       case o: IR.Stmt.If => return preIRStmtIf(o)
       case o: IR.Stmt.Match => return preIRStmtMatch(o)
+      case o: IR.Stmt.Switch => return preIRStmtSwitch(o)
       case o: IR.Stmt.While => return preIRStmtWhile(o)
       case o: IR.Stmt.For => return preIRStmtFor(o)
       case o: IR.Stmt.Return => return preIRStmtReturn(o)
@@ -580,36 +699,51 @@ import MIRTransformer._
       case o: IR.Stmt.Expr => return preIRStmtExpr(o)
       case o: IR.Stmt.Assign.Local =>
         val r: PreResult[IR.Stmt.Ground] = preIRStmtAssignLocal(o) match {
-         case PreResult(continu, MSome(r: IR.Stmt.Ground)) => PreResult(continu, MSome[IR.Stmt.Ground](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Stmt.Ground")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: IR.Stmt.Ground => PreResult(continu, MSome[IR.Stmt.Ground](r))
+             case _ => halt("Can only produce object of type IR.Stmt.Ground")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt.Ground]())
         }
         return r
       case o: IR.Stmt.Assign.Global =>
         val r: PreResult[IR.Stmt.Ground] = preIRStmtAssignGlobal(o) match {
-         case PreResult(continu, MSome(r: IR.Stmt.Ground)) => PreResult(continu, MSome[IR.Stmt.Ground](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Stmt.Ground")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: IR.Stmt.Ground => PreResult(continu, MSome[IR.Stmt.Ground](r))
+             case _ => halt("Can only produce object of type IR.Stmt.Ground")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt.Ground]())
         }
         return r
       case o: IR.Stmt.Assign.Temp =>
         val r: PreResult[IR.Stmt.Ground] = preIRStmtAssignTemp(o) match {
-         case PreResult(continu, MSome(r: IR.Stmt.Ground)) => PreResult(continu, MSome[IR.Stmt.Ground](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Stmt.Ground")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: IR.Stmt.Ground => PreResult(continu, MSome[IR.Stmt.Ground](r))
+             case _ => halt("Can only produce object of type IR.Stmt.Ground")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt.Ground]())
         }
         return r
       case o: IR.Stmt.Assign.Field =>
         val r: PreResult[IR.Stmt.Ground] = preIRStmtAssignField(o) match {
-         case PreResult(continu, MSome(r: IR.Stmt.Ground)) => PreResult(continu, MSome[IR.Stmt.Ground](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Stmt.Ground")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: IR.Stmt.Ground => PreResult(continu, MSome[IR.Stmt.Ground](r))
+             case _ => halt("Can only produce object of type IR.Stmt.Ground")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt.Ground]())
         }
         return r
       case o: IR.Stmt.Assign.Index =>
         val r: PreResult[IR.Stmt.Ground] = preIRStmtAssignIndex(o) match {
-         case PreResult(continu, MSome(r: IR.Stmt.Ground)) => PreResult(continu, MSome[IR.Stmt.Ground](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Stmt.Ground")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: IR.Stmt.Ground => PreResult(continu, MSome[IR.Stmt.Ground](r))
+             case _ => halt("Can only produce object of type IR.Stmt.Ground")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt.Ground]())
         }
         return r
@@ -698,6 +832,14 @@ import MIRTransformer._
 
   def preIRStmtMatchCase(o: IR.Stmt.Match.Case): PreResult[IR.Stmt.Match.Case] = {
     return PreResultIRStmtMatchCase
+  }
+
+  def preIRStmtSwitch(o: IR.Stmt.Switch): PreResult[IR.Stmt] = {
+    return PreResultIRStmtSwitch
+  }
+
+  def preIRStmtSwitchCase(o: IR.Stmt.Switch.Case): PreResult[IR.Stmt.Switch.Case] = {
+    return PreResultIRStmtSwitchCase
   }
 
   def preIRStmtWhile(o: IR.Stmt.While): PreResult[IR.Stmt] = {
@@ -817,8 +959,11 @@ import MIRTransformer._
     o match {
       case o: IR.Printer.Empty =>
         val r: PreResult[IR.Printer] = preIRPrinterEmpty(o) match {
-         case PreResult(continu, MSome(r: IR.Printer)) => PreResult(continu, MSome[IR.Printer](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Printer")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: IR.Printer => PreResult(continu, MSome[IR.Printer](r))
+             case _ => halt("Can only produce object of type IR.Printer")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[IR.Printer]())
         }
         return r
@@ -896,6 +1041,56 @@ import MIRTransformer._
 
   def postIRMethodContext(o: IR.MethodContext): MOption[IR.MethodContext] = {
     return PostResultIRMethodContext
+  }
+
+  def postIRPattern(o: IR.Pattern): MOption[IR.Pattern] = {
+    o match {
+      case o: IR.Pattern.Literal => return postIRPatternLiteral(o)
+      case o: IR.Pattern.Wildcard => return postIRPatternWildcard(o)
+      case o: IR.Pattern.SeqWildcard => return postIRPatternSeqWildcard(o)
+      case o: IR.Pattern.VarBinding => return postIRPatternVarBinding(o)
+      case o: IR.Pattern.Structure => return postIRPatternStructure(o)
+      case o: IR.Pattern.LocalRef => return postIRPatternLocalRef(o)
+      case o: IR.Pattern.FieldRef => return postIRPatternFieldRef(o)
+      case o: IR.Pattern.GlobalRef => return postIRPatternGlobalRef(o)
+      case o: IR.Pattern.EnumElementRef => return postIRPatternEnumElementRef(o)
+    }
+  }
+
+  def postIRPatternLiteral(o: IR.Pattern.Literal): MOption[IR.Pattern] = {
+    return PostResultIRPatternLiteral
+  }
+
+  def postIRPatternWildcard(o: IR.Pattern.Wildcard): MOption[IR.Pattern] = {
+    return PostResultIRPatternWildcard
+  }
+
+  def postIRPatternSeqWildcard(o: IR.Pattern.SeqWildcard): MOption[IR.Pattern] = {
+    return PostResultIRPatternSeqWildcard
+  }
+
+  def postIRPatternVarBinding(o: IR.Pattern.VarBinding): MOption[IR.Pattern] = {
+    return PostResultIRPatternVarBinding
+  }
+
+  def postIRPatternStructure(o: IR.Pattern.Structure): MOption[IR.Pattern] = {
+    return PostResultIRPatternStructure
+  }
+
+  def postIRPatternLocalRef(o: IR.Pattern.LocalRef): MOption[IR.Pattern] = {
+    return PostResultIRPatternLocalRef
+  }
+
+  def postIRPatternFieldRef(o: IR.Pattern.FieldRef): MOption[IR.Pattern] = {
+    return PostResultIRPatternFieldRef
+  }
+
+  def postIRPatternGlobalRef(o: IR.Pattern.GlobalRef): MOption[IR.Pattern] = {
+    return PostResultIRPatternGlobalRef
+  }
+
+  def postIRPatternEnumElementRef(o: IR.Pattern.EnumElementRef): MOption[IR.Pattern] = {
+    return PostResultIRPatternEnumElementRef
   }
 
   def postIRExp(o: IR.Exp): MOption[IR.Exp] = {
@@ -1031,57 +1226,81 @@ import MIRTransformer._
     o match {
       case o: IR.Stmt.Expr =>
         val r: MOption[IR.Stmt] = postIRStmtExpr(o) match {
-         case MSome(result: IR.Stmt) => MSome[IR.Stmt](result)
-         case MSome(_) => halt("Can only produce object of type IR.Stmt")
+         case MSome(result) =>
+           result match {
+             case result: IR.Stmt => MSome[IR.Stmt](result)
+             case _ => halt("Can only produce object of type IR.Stmt")
+           }
          case _ => MNone[IR.Stmt]()
         }
         return r
       case o: IR.Stmt.Assign.Local =>
         val r: MOption[IR.Stmt] = postIRStmtAssignLocal(o) match {
-         case MSome(result: IR.Stmt) => MSome[IR.Stmt](result)
-         case MSome(_) => halt("Can only produce object of type IR.Stmt")
+         case MSome(result) =>
+           result match {
+             case result: IR.Stmt => MSome[IR.Stmt](result)
+             case _ => halt("Can only produce object of type IR.Stmt")
+           }
          case _ => MNone[IR.Stmt]()
         }
         return r
       case o: IR.Stmt.Assign.Global =>
         val r: MOption[IR.Stmt] = postIRStmtAssignGlobal(o) match {
-         case MSome(result: IR.Stmt) => MSome[IR.Stmt](result)
-         case MSome(_) => halt("Can only produce object of type IR.Stmt")
+         case MSome(result) =>
+           result match {
+             case result: IR.Stmt => MSome[IR.Stmt](result)
+             case _ => halt("Can only produce object of type IR.Stmt")
+           }
          case _ => MNone[IR.Stmt]()
         }
         return r
       case o: IR.Stmt.Assign.Temp =>
         val r: MOption[IR.Stmt] = postIRStmtAssignTemp(o) match {
-         case MSome(result: IR.Stmt) => MSome[IR.Stmt](result)
-         case MSome(_) => halt("Can only produce object of type IR.Stmt")
+         case MSome(result) =>
+           result match {
+             case result: IR.Stmt => MSome[IR.Stmt](result)
+             case _ => halt("Can only produce object of type IR.Stmt")
+           }
          case _ => MNone[IR.Stmt]()
         }
         return r
       case o: IR.Stmt.Assign.Field =>
         val r: MOption[IR.Stmt] = postIRStmtAssignField(o) match {
-         case MSome(result: IR.Stmt) => MSome[IR.Stmt](result)
-         case MSome(_) => halt("Can only produce object of type IR.Stmt")
+         case MSome(result) =>
+           result match {
+             case result: IR.Stmt => MSome[IR.Stmt](result)
+             case _ => halt("Can only produce object of type IR.Stmt")
+           }
          case _ => MNone[IR.Stmt]()
         }
         return r
       case o: IR.Stmt.Assign.Index =>
         val r: MOption[IR.Stmt] = postIRStmtAssignIndex(o) match {
-         case MSome(result: IR.Stmt) => MSome[IR.Stmt](result)
-         case MSome(_) => halt("Can only produce object of type IR.Stmt")
+         case MSome(result) =>
+           result match {
+             case result: IR.Stmt => MSome[IR.Stmt](result)
+             case _ => halt("Can only produce object of type IR.Stmt")
+           }
          case _ => MNone[IR.Stmt]()
         }
         return r
       case o: IR.Stmt.Decl =>
         val r: MOption[IR.Stmt] = postIRStmtDecl(o) match {
-         case MSome(result: IR.Stmt) => MSome[IR.Stmt](result)
-         case MSome(_) => halt("Can only produce object of type IR.Stmt")
+         case MSome(result) =>
+           result match {
+             case result: IR.Stmt => MSome[IR.Stmt](result)
+             case _ => halt("Can only produce object of type IR.Stmt")
+           }
          case _ => MNone[IR.Stmt]()
         }
         return r
       case o: IR.Stmt.Intrinsic =>
         val r: MOption[IR.Stmt] = postIRStmtIntrinsic(o) match {
-         case MSome(result: IR.Stmt) => MSome[IR.Stmt](result)
-         case MSome(_) => halt("Can only produce object of type IR.Stmt")
+         case MSome(result) =>
+           result match {
+             case result: IR.Stmt => MSome[IR.Stmt](result)
+             case _ => halt("Can only produce object of type IR.Stmt")
+           }
          case _ => MNone[IR.Stmt]()
         }
         return r
@@ -1092,6 +1311,7 @@ import MIRTransformer._
       case o: IR.Stmt.Block => return postIRStmtBlock(o)
       case o: IR.Stmt.If => return postIRStmtIf(o)
       case o: IR.Stmt.Match => return postIRStmtMatch(o)
+      case o: IR.Stmt.Switch => return postIRStmtSwitch(o)
       case o: IR.Stmt.While => return postIRStmtWhile(o)
       case o: IR.Stmt.For => return postIRStmtFor(o)
       case o: IR.Stmt.Return => return postIRStmtReturn(o)
@@ -1103,36 +1323,51 @@ import MIRTransformer._
       case o: IR.Stmt.Expr => return postIRStmtExpr(o)
       case o: IR.Stmt.Assign.Local =>
         val r: MOption[IR.Stmt.Ground] = postIRStmtAssignLocal(o) match {
-         case MSome(result: IR.Stmt.Ground) => MSome[IR.Stmt.Ground](result)
-         case MSome(_) => halt("Can only produce object of type IR.Stmt.Ground")
+         case MSome(result) =>
+           result match {
+             case result: IR.Stmt.Ground => MSome[IR.Stmt.Ground](result)
+             case _ => halt("Can only produce object of type IR.Stmt.Ground")
+           }
          case _ => MNone[IR.Stmt.Ground]()
         }
         return r
       case o: IR.Stmt.Assign.Global =>
         val r: MOption[IR.Stmt.Ground] = postIRStmtAssignGlobal(o) match {
-         case MSome(result: IR.Stmt.Ground) => MSome[IR.Stmt.Ground](result)
-         case MSome(_) => halt("Can only produce object of type IR.Stmt.Ground")
+         case MSome(result) =>
+           result match {
+             case result: IR.Stmt.Ground => MSome[IR.Stmt.Ground](result)
+             case _ => halt("Can only produce object of type IR.Stmt.Ground")
+           }
          case _ => MNone[IR.Stmt.Ground]()
         }
         return r
       case o: IR.Stmt.Assign.Temp =>
         val r: MOption[IR.Stmt.Ground] = postIRStmtAssignTemp(o) match {
-         case MSome(result: IR.Stmt.Ground) => MSome[IR.Stmt.Ground](result)
-         case MSome(_) => halt("Can only produce object of type IR.Stmt.Ground")
+         case MSome(result) =>
+           result match {
+             case result: IR.Stmt.Ground => MSome[IR.Stmt.Ground](result)
+             case _ => halt("Can only produce object of type IR.Stmt.Ground")
+           }
          case _ => MNone[IR.Stmt.Ground]()
         }
         return r
       case o: IR.Stmt.Assign.Field =>
         val r: MOption[IR.Stmt.Ground] = postIRStmtAssignField(o) match {
-         case MSome(result: IR.Stmt.Ground) => MSome[IR.Stmt.Ground](result)
-         case MSome(_) => halt("Can only produce object of type IR.Stmt.Ground")
+         case MSome(result) =>
+           result match {
+             case result: IR.Stmt.Ground => MSome[IR.Stmt.Ground](result)
+             case _ => halt("Can only produce object of type IR.Stmt.Ground")
+           }
          case _ => MNone[IR.Stmt.Ground]()
         }
         return r
       case o: IR.Stmt.Assign.Index =>
         val r: MOption[IR.Stmt.Ground] = postIRStmtAssignIndex(o) match {
-         case MSome(result: IR.Stmt.Ground) => MSome[IR.Stmt.Ground](result)
-         case MSome(_) => halt("Can only produce object of type IR.Stmt.Ground")
+         case MSome(result) =>
+           result match {
+             case result: IR.Stmt.Ground => MSome[IR.Stmt.Ground](result)
+             case _ => halt("Can only produce object of type IR.Stmt.Ground")
+           }
          case _ => MNone[IR.Stmt.Ground]()
         }
         return r
@@ -1221,6 +1456,14 @@ import MIRTransformer._
 
   def postIRStmtMatchCase(o: IR.Stmt.Match.Case): MOption[IR.Stmt.Match.Case] = {
     return PostResultIRStmtMatchCase
+  }
+
+  def postIRStmtSwitch(o: IR.Stmt.Switch): MOption[IR.Stmt] = {
+    return PostResultIRStmtSwitch
+  }
+
+  def postIRStmtSwitchCase(o: IR.Stmt.Switch.Case): MOption[IR.Stmt.Switch.Case] = {
+    return PostResultIRStmtSwitchCase
   }
 
   def postIRStmtWhile(o: IR.Stmt.While): MOption[IR.Stmt] = {
@@ -1340,8 +1583,11 @@ import MIRTransformer._
     o match {
       case o: IR.Printer.Empty =>
         val r: MOption[IR.Printer] = postIRPrinterEmpty(o) match {
-         case MSome(result: IR.Printer) => MSome[IR.Printer](result)
-         case MSome(_) => halt("Can only produce object of type IR.Printer")
+         case MSome(result) =>
+           result match {
+             case result: IR.Printer => MSome[IR.Printer](result)
+             case _ => halt("Can only produce object of type IR.Printer")
+           }
          case _ => MNone[IR.Printer]()
         }
         return r
@@ -1435,6 +1681,88 @@ import MIRTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: IR.MethodContext = r.getOrElse(o)
     val postR: MOption[IR.MethodContext] = postIRMethodContext(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformIRPattern(o: IR.Pattern): MOption[IR.Pattern] = {
+    val preR: PreResult[IR.Pattern] = preIRPattern(o)
+    val r: MOption[IR.Pattern] = if (preR.continu) {
+      val o2: IR.Pattern = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val rOpt: MOption[IR.Pattern] = o2 match {
+        case o2: IR.Pattern.Literal =>
+          val r0: MOption[IR.Exp] = transformIRExp(o2.exp)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp)))
+          else
+            MNone()
+        case o2: IR.Pattern.Wildcard =>
+          val r0: MOption[Option[Typed]] = transformOption(o2.guardTipeOpt, transformTyped _)
+          val r1: MOption[Typed] = transformTyped(o2.tipe)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(guardTipeOpt = r0.getOrElse(o2.guardTipeOpt), tipe = r1.getOrElse(o2.tipe)))
+          else
+            MNone()
+        case o2: IR.Pattern.SeqWildcard =>
+          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(tipe = r0.getOrElse(o2.tipe)))
+          else
+            MNone()
+        case o2: IR.Pattern.VarBinding =>
+          val r0: MOption[Option[Typed]] = transformOption(o2.guardTipeOpt, transformTyped _)
+          val r1: MOption[Typed] = transformTyped(o2.tipe)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(guardTipeOpt = r0.getOrElse(o2.guardTipeOpt), tipe = r1.getOrElse(o2.tipe)))
+          else
+            MNone()
+        case o2: IR.Pattern.Structure =>
+          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          val r1: MOption[IS[Z, IR.Pattern]] = transformISZ(o2.patterns, transformIRPattern _)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(tipe = r0.getOrElse(o2.tipe), patterns = r1.getOrElse(o2.patterns)))
+          else
+            MNone()
+        case o2: IR.Pattern.LocalRef =>
+          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(tipe = r0.getOrElse(o2.tipe)))
+          else
+            MNone()
+        case o2: IR.Pattern.FieldRef =>
+          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(tipe = r0.getOrElse(o2.tipe)))
+          else
+            MNone()
+        case o2: IR.Pattern.GlobalRef =>
+          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(tipe = r0.getOrElse(o2.tipe)))
+          else
+            MNone()
+        case o2: IR.Pattern.EnumElementRef =>
+          val r0: MOption[Typed] = transformTyped(o2.tipe)
+          if (hasChanged || r0.nonEmpty)
+            MSome(o2(tipe = r0.getOrElse(o2.tipe)))
+          else
+            MNone()
+      }
+      rOpt
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: IR.Pattern = r.getOrElse(o)
+    val postR: MOption[IR.Pattern] = postIRPattern(o2)
     if (postR.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -1733,9 +2061,10 @@ import MIRTransformer._
             MNone()
         case o2: IR.Stmt.AssignPattern =>
           val r0: MOption[IR.MethodContext] = transformIRMethodContext(o2.context)
-          val r1: MOption[IR.Exp] = transformIRExp(o2.rhs)
-          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
-            MSome(o2(context = r0.getOrElse(o2.context), rhs = r1.getOrElse(o2.rhs)))
+          val r1: MOption[IR.Pattern] = transformIRPattern(o2.pattern)
+          val r2: MOption[IR.Exp] = transformIRExp(o2.rhs)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
+            MSome(o2(context = r0.getOrElse(o2.context), pattern = r1.getOrElse(o2.pattern), rhs = r2.getOrElse(o2.rhs)))
           else
             MNone()
         case o2: IR.Stmt.Block =>
@@ -1755,6 +2084,13 @@ import MIRTransformer._
         case o2: IR.Stmt.Match =>
           val r0: MOption[IR.Exp] = transformIRExp(o2.exp)
           val r1: MOption[IS[Z, IR.Stmt.Match.Case]] = transformISZ(o2.cases, transformIRStmtMatchCase _)
+          if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+            MSome(o2(exp = r0.getOrElse(o2.exp), cases = r1.getOrElse(o2.cases)))
+          else
+            MNone()
+        case o2: IR.Stmt.Switch =>
+          val r0: MOption[IR.Exp] = transformIRExp(o2.exp)
+          val r1: MOption[IS[Z, IR.Stmt.Switch.Case]] = transformISZ(o2.cases, transformIRStmtSwitchCase _)
           if (hasChanged || r0.nonEmpty || r1.nonEmpty)
             MSome(o2(exp = r0.getOrElse(o2.exp), cases = r1.getOrElse(o2.cases)))
           else
@@ -2000,10 +2336,11 @@ import MIRTransformer._
       val o2: IR.Stmt.Match.Case = preR.resultOpt.getOrElse(o)
       val hasChanged: B = preR.resultOpt.nonEmpty
       val r0: MOption[IR.Stmt.Decl] = transformIRStmtDecl(o2.decl)
-      val r1: MOption[Option[IR.ExpBlock]] = transformOption(o2.condOpt, transformIRExpBlock _)
-      val r2: MOption[IR.Stmt.Block] = transformIRStmtBlock(o2.body)
-      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty)
-        MSome(o2(decl = r0.getOrElse(o2.decl), condOpt = r1.getOrElse(o2.condOpt), body = r2.getOrElse(o2.body)))
+      val r1: MOption[IR.Pattern] = transformIRPattern(o2.pattern)
+      val r2: MOption[Option[IR.ExpBlock]] = transformOption(o2.condOpt, transformIRExpBlock _)
+      val r3: MOption[IR.Stmt.Block] = transformIRStmtBlock(o2.body)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty || r2.nonEmpty || r3.nonEmpty)
+        MSome(o2(decl = r0.getOrElse(o2.decl), pattern = r1.getOrElse(o2.pattern), condOpt = r2.getOrElse(o2.condOpt), body = r3.getOrElse(o2.body)))
       else
         MNone()
     } else if (preR.resultOpt.nonEmpty) {
@@ -2014,6 +2351,34 @@ import MIRTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: IR.Stmt.Match.Case = r.getOrElse(o)
     val postR: MOption[IR.Stmt.Match.Case] = postIRStmtMatchCase(o2)
+    if (postR.nonEmpty) {
+      return postR
+    } else if (hasChanged) {
+      return MSome(o2)
+    } else {
+      return MNone()
+    }
+  }
+
+  def transformIRStmtSwitchCase(o: IR.Stmt.Switch.Case): MOption[IR.Stmt.Switch.Case] = {
+    val preR: PreResult[IR.Stmt.Switch.Case] = preIRStmtSwitchCase(o)
+    val r: MOption[IR.Stmt.Switch.Case] = if (preR.continu) {
+      val o2: IR.Stmt.Switch.Case = preR.resultOpt.getOrElse(o)
+      val hasChanged: B = preR.resultOpt.nonEmpty
+      val r0: MOption[Option[IR.Exp]] = transformOption(o2.valueOpt, transformIRExp _)
+      val r1: MOption[IR.Stmt.Block] = transformIRStmtBlock(o2.body)
+      if (hasChanged || r0.nonEmpty || r1.nonEmpty)
+        MSome(o2(valueOpt = r0.getOrElse(o2.valueOpt), body = r1.getOrElse(o2.body)))
+      else
+        MNone()
+    } else if (preR.resultOpt.nonEmpty) {
+      MSome(preR.resultOpt.getOrElse(o))
+    } else {
+      MNone()
+    }
+    val hasChanged: B = r.nonEmpty
+    val o2: IR.Stmt.Switch.Case = r.getOrElse(o)
+    val postR: MOption[IR.Stmt.Switch.Case] = postIRStmtSwitchCase(o2)
     if (postR.nonEmpty) {
       return postR
     } else if (hasChanged) {
@@ -2550,8 +2915,11 @@ import MIRTransformer._
 
   def transformTypedFun(o: Typed.Fun): MOption[Typed.Fun] = {
     val preR: PreResult[Typed.Fun] = preTypedFun(o) match {
-     case PreResult(continu, MSome(r: Typed.Fun)) => PreResult(continu, MSome[Typed.Fun](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Typed.Fun")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: Typed.Fun => PreResult(continu, MSome[Typed.Fun](r))
+         case _ => halt("Can only produce object of type Typed.Fun")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[Typed.Fun]())
     }
     val r: MOption[Typed.Fun] = if (preR.continu) {
@@ -2571,8 +2939,11 @@ import MIRTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Typed.Fun = r.getOrElse(o)
     val postR: MOption[Typed.Fun] = postTypedFun(o2) match {
-     case MSome(result: Typed.Fun) => MSome[Typed.Fun](result)
-     case MSome(_) => halt("Can only produce object of type Typed.Fun")
+     case MSome(result) =>
+       result match {
+         case result: Typed.Fun => MSome[Typed.Fun](result)
+         case _ => halt("Can only produce object of type Typed.Fun")
+       }
      case _ => MNone[Typed.Fun]()
     }
     if (postR.nonEmpty) {
@@ -2586,8 +2957,11 @@ import MIRTransformer._
 
   def transformTypedName(o: Typed.Name): MOption[Typed.Name] = {
     val preR: PreResult[Typed.Name] = preTypedName(o) match {
-     case PreResult(continu, MSome(r: Typed.Name)) => PreResult(continu, MSome[Typed.Name](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Typed.Name")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: Typed.Name => PreResult(continu, MSome[Typed.Name](r))
+         case _ => halt("Can only produce object of type Typed.Name")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[Typed.Name]())
     }
     val r: MOption[Typed.Name] = if (preR.continu) {
@@ -2606,8 +2980,11 @@ import MIRTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Typed.Name = r.getOrElse(o)
     val postR: MOption[Typed.Name] = postTypedName(o2) match {
-     case MSome(result: Typed.Name) => MSome[Typed.Name](result)
-     case MSome(_) => halt("Can only produce object of type Typed.Name")
+     case MSome(result) =>
+       result match {
+         case result: Typed.Name => MSome[Typed.Name](result)
+         case _ => halt("Can only produce object of type Typed.Name")
+       }
      case _ => MNone[Typed.Name]()
     }
     if (postR.nonEmpty) {
@@ -2621,8 +2998,11 @@ import MIRTransformer._
 
   def transformIRExpApply(o: IR.Exp.Apply): MOption[IR.Exp.Apply] = {
     val preR: PreResult[IR.Exp.Apply] = preIRExpApply(o) match {
-     case PreResult(continu, MSome(r: IR.Exp.Apply)) => PreResult(continu, MSome[IR.Exp.Apply](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Exp.Apply")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: IR.Exp.Apply => PreResult(continu, MSome[IR.Exp.Apply](r))
+         case _ => halt("Can only produce object of type IR.Exp.Apply")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[IR.Exp.Apply]())
     }
     val r: MOption[IR.Exp.Apply] = if (preR.continu) {
@@ -2642,8 +3022,11 @@ import MIRTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: IR.Exp.Apply = r.getOrElse(o)
     val postR: MOption[IR.Exp.Apply] = postIRExpApply(o2) match {
-     case MSome(result: IR.Exp.Apply) => MSome[IR.Exp.Apply](result)
-     case MSome(_) => halt("Can only produce object of type IR.Exp.Apply")
+     case MSome(result) =>
+       result match {
+         case result: IR.Exp.Apply => MSome[IR.Exp.Apply](result)
+         case _ => halt("Can only produce object of type IR.Exp.Apply")
+       }
      case _ => MNone[IR.Exp.Apply]()
     }
     if (postR.nonEmpty) {
@@ -2657,8 +3040,11 @@ import MIRTransformer._
 
   def transformIRStmtBlock(o: IR.Stmt.Block): MOption[IR.Stmt.Block] = {
     val preR: PreResult[IR.Stmt.Block] = preIRStmtBlock(o) match {
-     case PreResult(continu, MSome(r: IR.Stmt.Block)) => PreResult(continu, MSome[IR.Stmt.Block](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Stmt.Block")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: IR.Stmt.Block => PreResult(continu, MSome[IR.Stmt.Block](r))
+         case _ => halt("Can only produce object of type IR.Stmt.Block")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt.Block]())
     }
     val r: MOption[IR.Stmt.Block] = if (preR.continu) {
@@ -2677,8 +3063,11 @@ import MIRTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: IR.Stmt.Block = r.getOrElse(o)
     val postR: MOption[IR.Stmt.Block] = postIRStmtBlock(o2) match {
-     case MSome(result: IR.Stmt.Block) => MSome[IR.Stmt.Block](result)
-     case MSome(_) => halt("Can only produce object of type IR.Stmt.Block")
+     case MSome(result) =>
+       result match {
+         case result: IR.Stmt.Block => MSome[IR.Stmt.Block](result)
+         case _ => halt("Can only produce object of type IR.Stmt.Block")
+       }
      case _ => MNone[IR.Stmt.Block]()
     }
     if (postR.nonEmpty) {
@@ -2692,8 +3081,11 @@ import MIRTransformer._
 
   def transformIRStmtDecl(o: IR.Stmt.Decl): MOption[IR.Stmt.Decl] = {
     val preR: PreResult[IR.Stmt.Decl] = preIRStmtDecl(o) match {
-     case PreResult(continu, MSome(r: IR.Stmt.Decl)) => PreResult(continu, MSome[IR.Stmt.Decl](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type IR.Stmt.Decl")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: IR.Stmt.Decl => PreResult(continu, MSome[IR.Stmt.Decl](r))
+         case _ => halt("Can only produce object of type IR.Stmt.Decl")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[IR.Stmt.Decl]())
     }
     val r: MOption[IR.Stmt.Decl] = if (preR.continu) {
@@ -2713,8 +3105,11 @@ import MIRTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: IR.Stmt.Decl = r.getOrElse(o)
     val postR: MOption[IR.Stmt.Decl] = postIRStmtDecl(o2) match {
-     case MSome(result: IR.Stmt.Decl) => MSome[IR.Stmt.Decl](result)
-     case MSome(_) => halt("Can only produce object of type IR.Stmt.Decl")
+     case MSome(result) =>
+       result match {
+         case result: IR.Stmt.Decl => MSome[IR.Stmt.Decl](result)
+         case _ => halt("Can only produce object of type IR.Stmt.Decl")
+       }
      case _ => MNone[IR.Stmt.Decl]()
     }
     if (postR.nonEmpty) {
@@ -2728,8 +3123,11 @@ import MIRTransformer._
 
   def transformTypedMethod(o: Typed.Method): MOption[Typed.Method] = {
     val preR: PreResult[Typed.Method] = preTypedMethod(o) match {
-     case PreResult(continu, MSome(r: Typed.Method)) => PreResult(continu, MSome[Typed.Method](r))
-     case PreResult(_, MSome(_)) => halt("Can only produce object of type Typed.Method")
+     case PreResult(continu, MSome(r)) =>
+       r match {
+         case r: Typed.Method => PreResult(continu, MSome[Typed.Method](r))
+         case _ => halt("Can only produce object of type Typed.Method")
+       }
      case PreResult(continu, _) => PreResult(continu, MNone[Typed.Method]())
     }
     val r: MOption[Typed.Method] = if (preR.continu) {
@@ -2748,8 +3146,11 @@ import MIRTransformer._
     val hasChanged: B = r.nonEmpty
     val o2: Typed.Method = r.getOrElse(o)
     val postR: MOption[Typed.Method] = postTypedMethod(o2) match {
-     case MSome(result: Typed.Method) => MSome[Typed.Method](result)
-     case MSome(_) => halt("Can only produce object of type Typed.Method")
+     case MSome(result) =>
+       result match {
+         case result: Typed.Method => MSome[Typed.Method](result)
+         case _ => halt("Can only produce object of type Typed.Method")
+       }
      case _ => MNone[Typed.Method]()
     }
     if (postR.nonEmpty) {
