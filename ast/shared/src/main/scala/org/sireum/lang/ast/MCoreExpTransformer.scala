@@ -2,7 +2,7 @@
 // @formatter:off
 
 /*
- Copyright (c) 2017-2026,Robby, Kansas State University
+ Copyright (c) 2017-2026, Robby, Kansas State University
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -464,15 +464,21 @@ import MCoreExpTransformer._
         return r
       case o: CoreExp.UnaryTemporal =>
         val r: PreResult[CoreExp] = preCoreExpUnaryTemporal(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
       case o: CoreExp.BinaryTemporal =>
         val r: PreResult[CoreExp] = preCoreExpBinaryTemporal(o) match {
-         case PreResult(continu, MSome(r: CoreExp)) => PreResult(continu, MSome[CoreExp](r))
-         case PreResult(_, MSome(_)) => halt("Can only produce object of type CoreExp")
+         case PreResult(continu, MSome(r)) =>
+           r match {
+             case r: CoreExp => PreResult(continu, MSome[CoreExp](r))
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case PreResult(continu, _) => PreResult(continu, MNone[CoreExp]())
         }
         return r
@@ -1097,15 +1103,21 @@ import MCoreExpTransformer._
         return r
       case o: CoreExp.UnaryTemporal =>
         val r: MOption[CoreExp] = postCoreExpUnaryTemporal(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
       case o: CoreExp.BinaryTemporal =>
         val r: MOption[CoreExp] = postCoreExpBinaryTemporal(o) match {
-         case MSome(result: CoreExp) => MSome[CoreExp](result)
-         case MSome(_) => halt("Can only produce object of type CoreExp")
+         case MSome(result) =>
+           result match {
+             case result: CoreExp => MSome[CoreExp](result)
+             case _ => halt("Can only produce object of type CoreExp")
+           }
          case _ => MNone[CoreExp]()
         }
         return r
