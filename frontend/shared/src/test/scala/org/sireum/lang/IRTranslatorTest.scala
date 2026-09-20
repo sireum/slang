@@ -198,6 +198,29 @@ class IRTranslatorTest extends TestSuite {
     assert(found == 2)
   }
 
+  registerTest("sequence size guards short circuit before element conditions") {
+    val pos = org.sireum.message.Position.none
+    val seqType = Typed.Name(Typed.isName, Typed.noRType, ISZ[Typed](Typed.z, Typed.z))
+    val fun = Typed.Fun(purity = ast.Purity.Pure, isByName = F, args = ISZ[Typed](seqType), ret = Typed.b)
+    val context = IR.MethodContext(T, ISZ[String]("fixture"), "matches", fun)
+    val sequence = IR.Exp.LocalVarRef(isVal = T, context = context, id = "values", tipe = seqType, pos = pos)
+    val literal = IR.Exp.Int(Typed.z, 42, pos)
+    val pattern = IR.Pattern.Structure(idOpt = None[String](), tipe = seqType,
+      patterns = ISZ[IR.Pattern](IR.Pattern.Literal(literal), IR.Pattern.SeqWildcard(seqType, pos)),
+      idContext = ISZ[String](), pos = pos)
+    val translator = IRTranslator(spec = F, threeAddressCode = F, threeAddressExpF = (_: IR.Exp) => F,
+      th = tipe.TypeHierarchy.empty, fresh = IRTranslator.createFresh)
+    val (conditions, bindings) = translator.translatePattern(sequence, pattern, HashSMap.empty)
+    val length = IR.Exp.Binary(tipe = Typed.b, left = IR.Exp.FieldVarRef(sequence, "size", Typed.z, pos),
+      op = IR.Exp.Binary.Op.Ge, right = IR.Exp.Int(Typed.z, 1, pos), pos = pos)
+    val element = IR.Exp.Binary(tipe = Typed.b,
+      left = IR.Exp.Indexing(sequence, IR.Exp.Int(Typed.z, 0, pos), pos),
+      op = IR.Exp.Binary.Op.Eq, right = literal, pos = pos)
+    assert(conditions == ISZ[IR.Exp](IR.condAnd(IR.Exp.Type(T, sequence, seqType, pos),
+      IR.condAnd(length, element, pos), pos)))
+    assert(bindings.isEmpty)
+  }
+
   registerTest("closure capture traversal agrees for direct and general invocations") {
     val context = ISZ[String]("fixture", "outer")
     val owner = ISZ[String]("fixture", "Foreign")

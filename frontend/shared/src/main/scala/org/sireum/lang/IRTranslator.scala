@@ -47,6 +47,17 @@ object IRTranslator {
 
   @datatype class PatternDeclFacts(val owners: HashSMap[ISZ[String], PatternOwner])
 
+  @pure def patternCondAnd(conditions: ISZ[AST.IR.Exp], pos: message.Position): AST.IR.Exp = {
+    if (conditions.isEmpty) {
+      return AST.IR.Exp.Bool(T, pos)
+    }
+    var result = conditions(0)
+    for (i <- 1 until conditions.size) {
+      result = AST.IR.condAnd(result, conditions(i), pos)
+    }
+    return result
+  }
+
   @pure def visiblePatternFields(info: TypeInfo.Adt): ISZ[PatternField] = {
     val fields = Buffer.create[PatternField]()
     for (param <- info.ast.params if !param.isHidden) {
@@ -2880,7 +2891,7 @@ object IRTranslator {
               lMap = lMap2
               i = i + 1
             }
-            r = r :+ AST.IR.bigAnd(conds, pos)
+            r = r :+ IRTranslator.patternCondAnd(conds, pos)
           case t: AST.Typed.Name =>
             var conds = ISZ[AST.IR.Exp]()
             if (t.ids == AST.Typed.isName || t.ids == AST.Typed.msName) {
@@ -2927,7 +2938,7 @@ object IRTranslator {
                 i = i + 1
               }
             }
-            r = r :+ AST.IR.condAnd(AST.IR.Exp.Type(T, exp, t, pos), AST.IR.bigAnd(conds, pos), pos)
+            r = r :+ AST.IR.condAnd(AST.IR.Exp.Type(T, exp, t, pos), IRTranslator.patternCondAnd(conds, pos), pos)
           case _ => halt("Infeasible")
         }
       case pattern: AST.IR.Pattern.FieldRef =>
